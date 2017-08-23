@@ -24,10 +24,12 @@ private:
     BeFileName m_seed;
     void CreateInitialSeedDb();
     void InitLogging();
+    void Initialize(ScopediModelHubHost* host);
 protected:
     static double s_lastProgressBytesTransfered;
     static double s_lastProgressBytesTotal;
     ScopediModelHubHost *m_pHost;
+    Utf8String m_projectId;
 
     Request::ProgressCallback CreateProgressCallback();
     void CheckProgressNotified();
@@ -41,11 +43,11 @@ public:
     BeFileName LocalPath(Utf8StringCR baseName);
     
     DgnDbPtr CreateTestDb(Utf8StringCR baseName);
-    ClientPtr SetUpClient(Utf8StringCR host, Credentials credentials, IHttpHandlerPtr customHandler = nullptr);
+    ClientPtr SetUpClient(Credentials credentials, IHttpHandlerPtr customHandler = nullptr);
     iModelInfoPtr CreateNewiModel(ClientCR client, Utf8StringCR imodelName);
     iModelInfoPtr CreateNewiModelFromDb(ClientCR client, DgnDbR db);
     iModelConnectionPtr ConnectToiModel(ClientCR client, iModelInfoPtr imodelInfo);
-    void DeleteiModel(ClientCR client, iModelInfoCR imodel);
+    void DeleteiModel(Utf8StringCR projectId, ClientCR client, iModelInfoCR imodel);
     BriefcasePtr AcquireBriefcase(ClientCR client, iModelInfoCR imodelInfo, bool pull = false);
     void InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount);
     BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db, bool changeGuid = true);

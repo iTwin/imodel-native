@@ -21,7 +21,7 @@ struct LRPTests : public IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
         auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
         m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
         }
 
@@ -38,12 +38,12 @@ struct LRPTests : public IntegrationTestsBase
 
     void DeleteiModels()
         {
-        auto result = m_client->GetiModels()->GetResult();
+        auto result = m_client->GetiModels(m_projectId)->GetResult();
         EXPECT_SUCCESS(result);
 
         for (auto imodel : result.GetValue())
             {
-            DeleteiModel(*m_client, *imodel);
+            DeleteiModel(m_projectId, *m_client, *imodel);
             }
         }
 
@@ -62,7 +62,7 @@ TEST_F(LRPTests, InitializeFileJob)
     EXPECT_EQ(DgnDbStatus::Success, InsertStyle("InitializeStyle1", *db, true));
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
 
-    auto createResult = m_client->CreateNewiModel(*db)->GetResult();
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db)->GetResult();
     EXPECT_SUCCESS(createResult);
 
     auto imodelInfoPtr = createResult.GetValue();
@@ -93,5 +93,5 @@ TEST_F(LRPTests, InitializeFileJob)
     ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 4);
     ExpectLocksCount(*briefcasePtr, 0);
 
-    DeleteiModel(*m_client, *imodelInfoPtr);
+    DeleteiModel(m_projectId, *m_client, *imodelInfoPtr);
     }

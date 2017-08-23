@@ -1,7 +1,6 @@
 {
   "Environment": "DEV",
-  "Host": "https://dev-imodelhubapi.bentley.com",
-  "ProjectNr": "c71f2356-7255-42bd-81a5-43a46d8a2f29",
+  "ProjectId": "90157441-fd54-4c45-8dc9-185237b11dcf",
   "Users": [
     {
       "Password": "admin_password",

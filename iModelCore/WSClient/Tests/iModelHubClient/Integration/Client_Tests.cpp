@@ -21,7 +21,7 @@ struct ClientTests : public IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
         auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
         m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
         }
 
@@ -38,12 +38,12 @@ struct ClientTests : public IntegrationTestsBase
 
     void DeleteiModels()
         {
-        auto result = m_client->GetiModels()->GetResult();
+        auto result = m_client->GetiModels(m_projectId)->GetResult();
         EXPECT_SUCCESS(result);
 
         for (auto imodel : result.GetValue())
             {
-            DeleteiModel(*m_client, *imodel);
+            DeleteiModel(m_projectId, *m_client, *imodel);
             }
         }
 
@@ -57,25 +57,25 @@ TEST_F(ClientTests, SuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
 
-    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     CheckProgressNotified();
 
-    auto result = m_client->GetiModels()->GetResult();
+    auto result = m_client->GetiModels(m_projectId)->GetResult();
     EXPECT_SUCCESS(result);
     EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_FALSE(result.GetValue().empty());
 
-    DeleteiModel(*m_client, *createResult.GetValue());
+    DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
 TEST_F(ClientTests, UnauthorizedCreateiModel)
     {
     auto db = CreateTestDb();
 
-    m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
+    m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
-    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto result = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, result.GetError().GetId());
     CheckNoProgress();
@@ -85,17 +85,17 @@ TEST_F(ClientTests, RepeatedCreateiModel)
     {
     auto db = CreateTestDb();
 
-    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto result = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
     CheckProgressNotified();
     auto imodel = result.GetValue();
     ConnectToiModel(*m_client, imodel);
 
-    result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    result = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     CheckNoProgress();
     EXPECT_EQ(Error::Id::iModelAlreadyExists, result.GetError().GetId());
-    DeleteiModel(*m_client, *imodel);
+    DeleteiModel(m_projectId, *m_client, *imodel);
     }
 
 //---------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ TEST_F(ClientTests, CancelCreateiModel)
 
     // Act
     SimpleCancellationTokenPtr cancellationToken = SimpleCancellationToken::Create();
-    auto createiModelTask = m_client->CreateNewiModel(*db, true, nullptr, cancellationToken);
+    auto createiModelTask = m_client->CreateNewiModel(m_projectId, *db, true, nullptr, cancellationToken);
     createiModelTask->Execute();
     cancellationToken->SetCanceled();
     createiModelTask->Wait();
@@ -122,14 +122,14 @@ TEST_F(ClientTests, CancelCreateiModel)
     if (name.empty())
         BeStringUtilities::WCharToUtf8(name, db->GetFileName().GetFileNameWithoutExtension().c_str());
     
-    auto iModelToDeleteResult = m_client->GetiModelByName(name)->GetResult();
+    auto iModelToDeleteResult = m_client->GetiModelByName(m_projectId, name)->GetResult();
     if (iModelToDeleteResult.IsSuccess())
         {
         auto iModelToDeletePtr = iModelToDeleteResult.GetValue();
         EXPECT_FALSE(iModelToDeletePtr.IsValid());
         if (iModelToDeletePtr.IsValid())
             {
-            DeleteiModel(*m_client, *iModelToDeletePtr);
+            DeleteiModel(m_projectId, *m_client, *iModelToDeletePtr);
             }
         }
     }
@@ -138,12 +138,12 @@ TEST_F(ClientTests, UnsuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
 
-    m_client = SetUpClient(IntegrationTestSettings::Instance().GetInvalidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials());
+    m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials());
 
-    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto result = m_client->CreateNewiModel("bad project", *db, true, CreateProgressCallback())->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
-    EXPECT_EQ(Error::Id::WebServicesError, result.GetError().GetId());
+    EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
     CheckNoProgress();
     }
 
@@ -153,7 +153,7 @@ TEST_F(ClientTests, SuccessfulGetiModels)
     auto imodel1 = CreateNewiModel();
     auto imodel2 = CreateNewiModel();
 
-    auto result = m_client->GetiModels()->GetResult();
+    auto result = m_client->GetiModels(m_projectId)->GetResult();
     EXPECT_SUCCESS(result);
     EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
 
@@ -170,8 +170,8 @@ TEST_F(ClientTests, SuccessfulGetiModels)
         EXPECT_TRUE(createdDate.IsValid());
         EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, createdDate));
         }
-    DeleteiModel(*m_client, *imodel1);
-    DeleteiModel(*m_client, *imodel2);
+    DeleteiModel(m_projectId, *m_client, *imodel1);
+    DeleteiModel(m_projectId, *m_client, *imodel2);
     }
 
 TEST_F(ClientTests, SuccessfulGetiModelByName)
@@ -179,7 +179,7 @@ TEST_F(ClientTests, SuccessfulGetiModelByName)
     DeleteiModels();
     auto imodel = IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
     
-    auto result1 = m_client->GetiModelByName(imodel->GetName())->GetResult();
+    auto result1 = m_client->GetiModelByName(m_projectId, imodel->GetName())->GetResult();
     EXPECT_SUCCESS(result1);
 
     imodel = result1.GetValue();
@@ -195,27 +195,27 @@ TEST_F(ClientTests, SuccessfulGetiModelByName)
     EXPECT_TRUE(createdDate.IsValid());
     EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(compareDate, createdDate));
 
-    DeleteiModel(*m_client, *imodel);
+    DeleteiModel(m_projectId, *m_client, *imodel);
     }
 
 TEST_F(ClientTests, UnsuccessfulGetiModels)
     {
     auto imodel = CreateNewiModel();
 
-    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetInvalidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials());
+    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials());
 
-    auto result = badClient->GetiModels()->GetResult();
+    auto result = badClient->GetiModels("bad project")->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
-    EXPECT_EQ(Error::Id::WebServicesError, result.GetError().GetId());
-    DeleteiModel(*m_client, *imodel);
+    EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
+    DeleteiModel(m_projectId, *m_client, *imodel);
     }
 
 TEST_F(ClientTests, EmptyGetiModels)
     {
     DeleteiModels();
 
-    auto result = m_client->GetiModels()->GetResult();
+    auto result = m_client->GetiModels(m_projectId)->GetResult();
 
     EXPECT_SUCCESS(result);
     EXPECT_TRUE(result.GetValue().empty());
@@ -225,15 +225,15 @@ TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
     {
     auto db = IntegrationTestsBase::CreateTestDb("Client Test");
 
-    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     CheckProgressNotified();
 
-    auto result = m_client->GetiModels ()->GetResult ();
+    auto result = m_client->GetiModels (m_projectId)->GetResult ();
     EXPECT_SUCCESS(result);
     EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_TRUE (!result.GetValue ().empty ());
-    DeleteiModel(*m_client, *createResult.GetValue());
+    DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
 TEST_F(ClientTests, ReplaceSeedFile)
@@ -241,11 +241,11 @@ TEST_F(ClientTests, ReplaceSeedFile)
     // Create imodel and get a connection to it
     auto db = CreateTestDb();
     auto firstGuid = db->GetDbGuid();
-    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     CheckProgressNotified();
     auto imodelInfoPtr = createResult.GetValue();
-    auto connectionResult = m_client->ConnectToiModel(createResult.GetValue()->GetId())->GetResult();
+    auto connectionResult = m_client->ConnectToiModel(*createResult.GetValue())->GetResult();
     EXPECT_SUCCESS(connectionResult);
     auto imodelConnection = connectionResult.GetValue();
 
@@ -308,7 +308,7 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_SUCCESS(pushResult);
     CheckProgressNotified();
 
-    DeleteiModel(*m_client, *createResult.GetValue());
+    DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
 TEST_F(ClientTests, DownloadArchivedFiles)
@@ -360,7 +360,7 @@ TEST_F(ClientTests, DownloadArchivedFiles)
         }
     originalDb->CloseDb();
 
-    DeleteiModel(*m_client, *imodelInfo);
+    DeleteiModel(m_projectId, *m_client, *imodelInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -388,12 +388,12 @@ TEST_F(ClientTests, CancelDownloadChangeSets)
     EXPECT_FALSE(changeSetsTask->GetResult().IsSuccess());
 
     CheckNoProgress();
-    DeleteiModel(*m_client, *imodelInfo);
+    DeleteiModel(m_projectId, *m_client, *imodelInfo);
     }
 
 
 TEST_F(ClientTests, UnauthorizedSignIn)
     {
-    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
+    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetWrongPassword());
     EXPECT_TRUE(badClient.IsNull());
     }

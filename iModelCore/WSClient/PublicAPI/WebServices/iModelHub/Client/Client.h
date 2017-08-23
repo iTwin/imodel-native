@@ -15,6 +15,7 @@
 #include <WebServices/iModelHub/Client/Briefcase.h>
 #include <WebServices/iModelHub/Client/iModelManager.h>
 #include <WebServices/iModelHub/Client/iModelAdmin.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -40,7 +41,6 @@ struct Client : RefCountedBase
 private:
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
-    Utf8String                  m_projectId;
     ClientInfoPtr               m_clientInfo;
     IHttpHandlerPtr             m_customHandler;
     iModelAdmin                 m_iModelAdmin;
@@ -48,15 +48,15 @@ private:
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath);
 
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
-        m_clientInfo(clientInfo), m_customHandler(customHandler), m_projectId(""), m_iModelAdmin(this) {}
+        m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this) { m_serverUrl = UrlProvider::Urls::iModelHubApi.Get(); }
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                 FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
-    iModelTaskPtr CreateiModelInstance(Utf8StringCR iModelName, Utf8StringCR description,
+    iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const { return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_customHandler); }
-    IWSRepositoryClientPtr CreateProjectConnection() const;
+    IWSRepositoryClientPtr CreateProjectConnection(Utf8StringCR projectId) const;
 
     BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
 
@@ -76,23 +76,6 @@ public:
     //! @private
     Utf8StringCR GetServerUrl() const {return m_serverUrl;}
 
-    //! Get the project ID
-    //! @private
-    Utf8StringCR GetProjectId() const {return m_projectId;}
-
-    //! Get the client's credentials
-    //! @private
-    CredentialsCR GetCredentials() const {return m_credentials;}
-
-    //! Address of the server.
-    void SetServerURL(Utf8StringCR serverUrl) {m_serverUrl = serverUrl;}
-
-    //! Credentials used to authenticate to the on-premise server.
-    void SetCredentials(CredentialsCR credentials) {m_credentials = credentials;}
-
-    //! ProjectId to bind iModels to. Required for IMS authentication and should be empty for Basic.
-    void SetProject(Utf8StringCR projectId) {m_projectId = projectId;}
-
     //! Returns iModel admin that caches iModelManager instances.
     DgnPlatformLib::Host::RepositoryAdmin* GetiModelAdmin() { return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_iModelAdmin); }
 
@@ -110,29 +93,33 @@ public:
 
     //! Creates a connection to a iModel. Use this method if you need to access iModel information without acquirying a briefcase.
     //! If you already have a briefcase, please use Briefcase.GetiModelConnection()
-    IMODELHUBCLIENT_EXPORT iModelConnectionTaskPtr ConnectToiModel(Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelConnectionTaskPtr ConnectToiModel(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get list of available repostiories for this client.
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has a collection of iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetiModels(ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets iModel with the specified name.
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] iModelName
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelByName(Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets iModel with the specified id.
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] iModelId
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] db A DgnDb file to upload as a seed file for the iModel.
     //! @param[in] waitForInitialized Wait for initialized iModel.
     //! @param[in] callback Progress callback for the file upload.
@@ -140,9 +127,10 @@ public:
     //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
     //! @note This method uses name and description properties from dgn_Proj namespace as iModel name and description. If name property is not set, it will use the filename instead.
     //! @note Returned iModel Id might be different from the user supplied iModel name.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(DgnDbCR db, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] db A DgnDb file to upload as a seed file for the iModel.
     //! @param[in] iModelName Explicit iModel name.
     //! @param[in] description Explicit description of the iModel.
@@ -152,13 +140,14 @@ public:
     //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
     //! @note CreateNewiModel without iModelName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned iModel Id might be different from the user supplied iModel name.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized = true,
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized = true,
                                                                                      Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a iModel from server
+    //! @param[in] projectId Project Id to connect to.
     //! @param[in] iModelInfo Information of iModel to be deleted. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] cancellationToken Cancellation is not going to prevent iModel deletion, if the request is already sent.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteiModel(iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a iModel from the server.
     //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
