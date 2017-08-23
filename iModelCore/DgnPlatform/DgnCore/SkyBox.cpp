@@ -359,7 +359,7 @@ void SpatialViewController::DrawSkyBox(DecorateContextR context)
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
     drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
-    context.SetBackground(*skyGraphic->Finish());
+    context.SetViewBackground(*skyGraphic->Finish());
     }
 
 //=======================================================================================

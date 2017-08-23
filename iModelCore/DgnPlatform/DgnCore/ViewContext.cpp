@@ -1092,9 +1092,9 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DecorateContext::SetBackground(Render::GraphicR graphic)
+void DecorateContext::SetViewBackground(Render::GraphicR graphic)
     {
-    m_decorations.m_background = &graphic;
+    m_decorations.m_viewBackground = &graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
