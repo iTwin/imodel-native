@@ -4268,7 +4268,7 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool isBlendFaces)
+BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool createCap)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (faces.empty())
@@ -4301,29 +4301,67 @@ BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<I
     options.allow_disjoint = true;
     options.repair_fa_fa = PK_repair_fa_fa_yes_c;
 
+    if (createCap)
+        {
+        options.heal_action = PK_FACE_heal_cap_c;
+        options.heal_loops = PK_FACE_heal_loops_together_c;
+        }
+
     PK_ERROR_code_t failureCode = PK_FACE_delete_2((int) faceTags.size(), &faceTags.front(), &options, &tracking);
 
     PK_TOPOL_track_r_f(&tracking);
 
-    if (PK_ERROR_cant_heal_wound == failureCode && isBlendFaces) // Retry delete as blend...
-        {
+    if (PK_ERROR_no_errors != failureCode)
         PK_MARK_goto(markTag);
 
-        PK_TOPOL_track_r_t* blendTracking = nullptr;
-        PK_TOPOL_local_r_t* blendResults = nullptr;
-        PK_FACE_delete_blends_o_t blendOptions;
+    PK_MARK_delete(markTag);
 
-        PK_FACE_delete_blends_o_m(blendOptions);
-        blendOptions.simplify = PK_FACE_simplify_adj_blends_c;
+    return (SUCCESS == failureCode ? SUCCESS : ERROR);
+#else
+    return ERROR;
+#endif
+    }
 
-        failureCode = PK_FACE_delete_blends((int) faceTags.size(), &faceTags.front(), 1.0e-5, &blendOptions, blendTracking, blendResults);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::DeleteEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (edges.empty())
+        return ERROR;
 
-        PK_TOPOL_track_r_f(blendTracking);
-        PK_TOPOL_local_r_f(blendResults);
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
-        PK_MEMORY_free(blendTracking);
-        PK_MEMORY_free(blendResults);
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_EDGE_t> edgeTags;
+
+    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+        {
+        if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
+            continue;
+
+        edgeTags.push_back(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]));
         }
+
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+    PK_EDGE_delete_o_t options;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+    PK_EDGE_delete_o_m(options);
+
+    PK_ERROR_code_t failureCode = PK_EDGE_delete((int) edgeTags.size(), &edgeTags.front(), &options, &tracking, &results);
+
+    PK_TOPOL_track_r_f(&tracking);
+    PK_TOPOL_local_r_f(&results);
 
     if (PK_ERROR_no_errors != failureCode)
         PK_MARK_goto(markTag);
