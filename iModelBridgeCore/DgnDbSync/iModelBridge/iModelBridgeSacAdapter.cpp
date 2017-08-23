@@ -213,8 +213,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
     else
         {
         BeSQLite::DbResult dbres;
-        bool madeSchemaChanges_dont_care;
-        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care);
+        bool madeSchemaChanges_dont_care, madeDynamicSchemaChange;
+        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care, madeDynamicSchemaChange);
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
