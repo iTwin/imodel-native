@@ -100,7 +100,7 @@ private:
     DateTime    m_createDate;
 
     friend struct iModelConnection;
-    friend Client;
+    friend struct Client;
 
     static Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member);
 
