@@ -892,14 +892,17 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         if (extractOption == ExtractOption::InstancesOnly && !primaryClass->IsRelationshipClass())
             {
             ExtractInstance(rowEntry);
+            rowEntry.~RowEntry();
             continue;
             }
         
         if (extractOption == ExtractOption::RelationshipInstancesOnly)
             {
             ExtractRelInstances(rowEntry);
+            rowEntry.~RowEntry();
             continue;
             }
+        rowEntry.~RowEntry();
         }
 
     return SUCCESS;
