@@ -658,6 +658,34 @@ static PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
 
 bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
     {
+    if (points.size () == 2)
+        {
+        delauney = nullptr;
+        double a = 20.0;    // make voronoi region this far out . ..
+        double b = 20.0;
+        bvector<DPoint3d> points1 {
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5, points[1], -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5, points[1],  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 - b, points[1], -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 - b, points[1],  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 + b, points[1], -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 + b, points[1],  a)
+        };
+        //     3----------------1-----------------5
+        //     |                |                 |
+        //     |                |                 |
+        //     |             P0 | P1              |
+        //     |                |                 |
+        //     |                |                 |
+        //     2----------------0-----------------4
+        int q = 1;  // one-based
+        bvector<int> index1 {
+            q + 3, q + 2, q + 0, q + 1, 0,
+            q + 1, q + 0, q + 4, q + 5, 0
+        };
+        voronoi = PolyfaceHeader::CreateIndexedMesh (0, points1, index1);
+        return true;
+        }
     VuSetP graph = CreateDelauney (points);
     if (graph != nullptr)
         {

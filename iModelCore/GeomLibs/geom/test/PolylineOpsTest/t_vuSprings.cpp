@@ -1063,6 +1063,8 @@ TEST(Vu,CreateDelauneyCircle)
     Check::ClearGeometry ("Vu.CreateDelauneyCircle");
     }
 
+
+
 TEST(Vu,IncircleFlipProblem)
     {
     bvector<DPoint3d> points
@@ -1081,6 +1083,26 @@ TEST(Vu,IncircleFlipProblem)
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
+
+TEST(Vu,TwoPoints)
+    {
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (1,4), 
+        DPoint3d::From (3,1)
+        };
+    PolyfaceHeaderPtr delauney, voronoi;
+    if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+        {
+        //Check::SaveTransformed (*delauney);
+        Check::SaveTransformed (*voronoi);
+        Check::SaveTransformedMarkers (points, -0.1);
+        }
+    Check::ClearGeometry ("Vu.TwoPoints");
+    
+    }
+
+
 //! construct delauney triangulations and voronoi diagram for given station points (e.g. room centers)
 //! clip the voronoi to the wall polygon.
 bool DoClips (
