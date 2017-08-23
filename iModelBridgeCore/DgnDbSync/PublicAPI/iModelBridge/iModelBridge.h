@@ -258,7 +258,7 @@ struct iModelBridge
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @param[out] madeSchemaChanges Set to true if OpenDgnDb imported or upgraded schemas.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges);
+    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange);
 
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
