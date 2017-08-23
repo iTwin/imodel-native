@@ -782,6 +782,9 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
         Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node
       </Files>
+	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>
     </Bindings>
   </Part>
 
@@ -794,6 +797,9 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
         Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node
       </Files>
+	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>
     </Bindings>  </Part>
 
   <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_7_10_0">
@@ -803,6 +809,9 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
         Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node
       </Files>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>	  
     </Bindings>
   </Part>
 
@@ -814,11 +823,6 @@
 	<SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
     <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
-	<!-- <Bindings> -->
-      <!-- <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules"> -->
-        <!-- Delivery/PresentationRules/*.xml -->
-      <!-- </Files> -->
-    <!-- </Bindings> -->
   </Part>
 
 </BuildContext>
