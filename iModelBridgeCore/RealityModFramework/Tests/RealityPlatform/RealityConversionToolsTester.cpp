@@ -141,6 +141,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Id": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
                     "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
                     "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "DataLocationGuid": "99999999-9999-9999-9999-999999999999",
                     "Name": "Helsinki",
                     "Dataset": "Geogratis",
                     "Group": "TestGroup",
@@ -198,6 +199,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Id": "bf3c43a9-1797-4765-a7c3-6f1cd6706fa9",
                     "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
                     "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "DataLocationGuid": "99999999-9999-9999-9999-999999999999",
                     "Name": "Helsinki2",
                     "Dataset": "Geogratis2",
                     "Group": "TestGroup",
@@ -523,6 +525,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetIdentifier(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
     ASSERT_EQ(realityData->GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(realityData->GetContainerName(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
+    ASSERT_EQ(realityData->GetDataLocationGuid(), "99999999-9999-9999-9999-999999999999");
     ASSERT_EQ(realityData->GetName(), "Helsinki");
     ASSERT_EQ(realityData->GetDataset(), "Geogratis");
     ASSERT_EQ(realityData->GetGroup(), "TestGroup");

@@ -1127,6 +1127,7 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
         DisplayInfo(Utf8PrintfString(" OrganizationId     : %s\n", entity->GetOrganizationId()));
         DisplayInfo(Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
+        DisplayInfo(Utf8PrintfString(" Data Location GUID : %s\n", entity->GetDataLocationGuid()));
         DisplayInfo(Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
         DisplayInfo(Utf8PrintfString(" Dataset            : %s\n", entity->GetDataset()));
         DisplayInfo(Utf8PrintfString(" Group              : %s\n", entity->GetGroup()));

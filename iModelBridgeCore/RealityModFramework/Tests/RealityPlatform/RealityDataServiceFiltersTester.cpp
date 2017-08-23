@@ -213,6 +213,7 @@ struct RealityMap
         realityDataFieldVector.emplace_back(RealityDataField::Id, "Id");
         realityDataFieldVector.emplace_back(RealityDataField::OrganizationId, "OrganizationId");
         realityDataFieldVector.emplace_back(RealityDataField::ContainerName, "ContainerName");
+        realityDataFieldVector.emplace_back(RealityDataField::DataLocationGuid, "DataLocationGuid");
         realityDataFieldVector.emplace_back(RealityDataField::Name, "Name");
         realityDataFieldVector.emplace_back(RealityDataField::Dataset, "Dataset");
         realityDataFieldVector.emplace_back(RealityDataField::Description, "Description");

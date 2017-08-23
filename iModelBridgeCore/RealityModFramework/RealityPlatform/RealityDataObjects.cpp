@@ -729,6 +729,9 @@ void RealityData::SetOrganizationId(Utf8CP organizationId) { m_organizationId = 
 Utf8StringCR RealityData::GetContainerName() const { return m_containerName; }
 void RealityData::SetContainerName(Utf8CP containerName) { m_containerName = containerName; }
 
+Utf8StringCR RealityData::GetDataLocationGuid() const { return m_dataLocationGuid; }
+void RealityData::SetDataLocationGuid(Utf8CP dataLocationGuid) { m_dataLocationGuid = dataLocationGuid; }
+
 Utf8StringCR RealityData::GetRootDocument() const { return m_rootDocument; }
 void RealityData::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
 

@@ -256,6 +256,10 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     if (properties.isMember("ContainerName") && !properties["ContainerName"].isNull())
         data->SetContainerName(Utf8CP(properties["ContainerName"].asString().c_str()));
     
+    // Data Location
+    if (properties.isMember("DataLocationGuid") && !properties["DataLocationGuid"].isNull())
+        data->SetDataLocationGuid(Utf8CP(properties["DataLocationGuid"].asString().c_str()));
+
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())
         data->SetName(Utf8CP(properties["Name"].asString().c_str()));
@@ -385,6 +389,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeROProps && (includeUnsetProps || (realityData.GetContainerName().size() != 0)))
         properties.push_back(RealityDataField::ContainerName);
 
+    if (includeROProps && (includeUnsetProps || (realityData.GetDataLocationGuid().size() != 0)))
+        properties.push_back(RealityDataField::DataLocationGuid);
+
     if (includeUnsetProps || (realityData.GetName().size() != 0))
         properties.push_back(RealityDataField::Name);
 
@@ -483,6 +490,11 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         case RealityDataField::ContainerName:
             propertyString.append("\"ContainerName\" : \"");
             propertyString.append(realityData.GetContainerName());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::DataLocationGuid:
+            propertyString.append("\"DataLocationGuid\" : \"");
+            propertyString.append(realityData.GetDataLocationGuid());
             propertyString.append("\"");
             break;
         case RealityDataField::Name:

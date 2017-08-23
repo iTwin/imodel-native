@@ -358,6 +358,7 @@ enum class RealityDataField
     Id,
     OrganizationId,
     ContainerName,
+    DataLocationGuid,
     Name,
     Dataset,
     Description,
@@ -437,6 +438,12 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
     REALITYDATAPLATFORM_EXPORT void SetContainerName(Utf8CP containerName);
 
+    //! [RDS Specific] The GUID of the Data Location. This represents the identifier
+    //! of the Azure Data Center reserved in the Data Location registry in CONNECT
+    //! When set it shall be a valid known data location guid.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataLocationGuid() const;
+    REALITYDATAPLATFORM_EXPORT void SetDataLocationGuid(Utf8CP dataLocationGuid);
+
     //! Given the data can be accessed by a root document , the location of this document
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRootDocument() const;
     REALITYDATAPLATFORM_EXPORT void SetRootDocument(Utf8CP rootDocument);
@@ -495,6 +502,7 @@ protected:
 
     Utf8String m_organizationId;
     Utf8String m_containerName;
+    Utf8String m_dataLocationGuid;
     Utf8String m_rootDocument;
     Utf8String m_metadataUrl;
     Utf8String m_ultimateId;

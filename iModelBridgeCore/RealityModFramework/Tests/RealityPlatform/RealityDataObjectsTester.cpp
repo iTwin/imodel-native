@@ -713,6 +713,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
 
     EXPECT_STREQ(myRealityData->GetOrganizationId().c_str(), "");
     EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetDataLocationGuid().c_str(), "");
     EXPECT_STREQ(myRealityData->GetDescription().c_str(), "");
     EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "");
     EXPECT_STREQ(myRealityData->GetAccuracy().c_str(), "");
@@ -787,6 +788,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetOrganizationId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
     myRealityData->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29");
     EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "167b96ea-52eb-46c0-9865-8b7e5913bb29");
+    myRealityData->SetDataLocationGuid("99999999-9999-9999-9999-999999999999");
+    EXPECT_STREQ(myRealityData->GetDataLocationGuid().c_str(), "99999999-9999-9999-9999-999999999999");
     myRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
     EXPECT_STREQ(myRealityData->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
     myRealityData->SetRootDocument("./RootDocument");
@@ -960,6 +963,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
         "\"className\" : \"RealityDataDocument\","
         "\"properties\" : {"
         "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+        "\"DataLocationGuid\": \"99999999-9999-9999-9999-999999999999\","
         "\"Name\" : \"Marseille.3mx\","
         "\"Id\" : \"TBD\","
         "\"FolderId\" : \"\","
@@ -986,6 +990,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     RealityDataDocumentPtr myDocument = RealityDataDocument::Create(instance);
 
     EXPECT_STREQ(myDocument->GetContainerName().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_STREQ(myDocument->GetContainerName().c_str(), "99999999-9999-9999-9999-999999999999");
     EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
     EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/");
     EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file");

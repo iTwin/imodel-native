@@ -665,6 +665,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Id, "Id");
     m.Insert(RealityDataField::OrganizationId, "OrganizationId");
     m.Insert(RealityDataField::ContainerName, "ContainerName");
+    m.Insert(RealityDataField::DataLocationGuid, "DataLocationGuid");
     m.Insert(RealityDataField::Name, "Name");
     m.Insert(RealityDataField::Dataset, "Dataset");
     m.Insert(RealityDataField::Description, "Description");
