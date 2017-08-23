@@ -2947,7 +2947,7 @@ struct PixelData
         Unknown, //!< Geometry was not selected, or type could not be determined
         None, //!< No geometry was rendered to this pixel
         Surface, //!< A surface
-        Linear, //!< A point or polyline
+        Linear, //!< A polyline
         Edge, //!< The edge of a surface
         Silhouette, //!< A silhouette of a surface
     };
