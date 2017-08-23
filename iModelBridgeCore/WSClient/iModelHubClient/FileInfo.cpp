@@ -231,7 +231,6 @@ FileAccessKeyPtr FileAccessKey::Parse(RapidJsonValueCR properties)
     if (!uploadUrl.empty())
         result->m_uploadUrl = uploadUrl;
 
-    result->m_valueSet = true;
     return result;
     }
 
