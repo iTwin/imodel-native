@@ -759,7 +759,7 @@ protected:
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
     
-    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const {return NULL;}
+    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const {return nullptr;}
     virtual bool                                _IsCalculated() const {return false;}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
 
@@ -1395,7 +1395,7 @@ private:
     static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
-    void            AddDerivedClass(ECClassCR derivedClass) const;
+    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back((ECClassP) &derivedClass);}
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();
     void            RemoveBaseClasses();
@@ -1419,7 +1419,7 @@ protected:
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-    ECSchemaCP _GetContainerSchema() const override;
+    ECSchemaCP _GetContainerSchema() const override {return &m_schema;}
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -1473,12 +1473,12 @@ public:
     bool HasId() const {return m_ecClassId.IsValid();}
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    ECOBJECTS_EXPORT ECClassId GetId() const;
+    ECClassId GetId() const {BeAssert(HasId()); return m_ecClassId;}
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP GetDefaultStandaloneEnabler() const;
 
     //! The type of derived ECClass this is
-    ECOBJECTS_EXPORT ECClassType GetClassType() const;
+    ECClassType GetClassType() const {return _GetClassType();}
 
     //! Is the class an entity class
     bool IsEntityClass() const {return ECClassType::Entity == GetClassType();}
@@ -1493,35 +1493,35 @@ public:
     bool IsRelationshipClass() const {return ECClassType::Relationship == GetClassType();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
+    ECRelationshipClassCP GetRelationshipClassCP() const {return _GetRelationshipClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECRelationshipClassP GetRelationshipClassP();
+    ECRelationshipClassP GetRelationshipClassP() {return _GetRelationshipClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECEntityClassCP GetEntityClassCP() const;
+    ECEntityClassCP GetEntityClassCP() const {return _GetEntityClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECEntityClassP GetEntityClassP();
+    ECEntityClassP GetEntityClassP() {return _GetEntityClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECCustomAttributeClassCP GetCustomAttributeClassCP() const;
+    ECCustomAttributeClassCP GetCustomAttributeClassCP() const {return _GetCustomAttributeClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECCustomAttributeClassP GetCustomAttributeClassP();
+    ECCustomAttributeClassP GetCustomAttributeClassP() {return _GetCustomAttributeClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECStructClassCP GetStructClassCP() const;
+    ECStructClassCP GetStructClassCP() const {return _GetStructClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECStructClassP GetStructClassP();
+    ECStructClassP GetStructClassP() {return _GetStructClassP();}
 
     //! Returns the class modifier
-    ECOBJECTS_EXPORT ECClassModifier GetClassModifier() const;
+    ECClassModifier GetClassModifier() const {return m_modifier;}
     //! Sets the class modifier
-    ECOBJECTS_EXPORT void SetClassModifier(ECClassModifier modifier);
+    void SetClassModifier(ECClassModifier modifier) {m_modifier = modifier;}
 
     //! The ECSchema that this class is defined in
-    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
+    ECSchemaCR GetSchema() const {return m_schema;}
     // schemas index class by name so publicly name can not be reset
     //! The name of this ECClass
-    ECOBJECTS_EXPORT Utf8StringCR GetName() const;
+    Utf8StringCR GetName() const {return m_validatedName.GetName();}
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8CP GetFullName() const;
     //! Formats the class name for use in an ECSQL statement. ([{SchemaName}].[{ClassName}])
@@ -1532,24 +1532,24 @@ public:
     //! Returns the number of ECProperties in this class
     ECOBJECTS_EXPORT size_t GetPropertyCount (bool includeBaseProperties = true) const;
     //! Returns a list of the classes this ECClass is derived from
-    ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;
+    const ECBaseClassesList& GetBaseClasses() const {return m_baseClasses;}
     //! Returns a list of the classes that derive from this class.
-    ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;
+    const ECDerivedClassesList& GetDerivedClasses() const {return m_derivedClasses;}
 
     //! Sets the description of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR description);
+    ECObjectsStatus SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;}
     //! Gets the description of this ECClass.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
     //! Gets the invariant description for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
+    Utf8StringCR GetInvariantDescription() const {return m_description;}
     //! Sets the display label of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel);
     //! Whether the display label is explicitly defined or not
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
     //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
     //! Gets the invariant display label for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
 
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
@@ -1568,7 +1568,7 @@ public:
     //! so will return an error. You also can't add a base class to final classes
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
+    ECObjectsStatus AddBaseClass(ECClassCR baseClass) {return AddBaseClass(baseClass, false);}
 
     //! Adds a base class at either the beginning or end of the base class list
     //! @remarks This method is intended for the rare case where you need to control at which position
@@ -1583,15 +1583,15 @@ public:
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
     //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
     //! false if @p baseClass is added to the end of the list
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
+    ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) {return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, true);}
     
     //! Returns whether there are any base classes for this class
-    ECOBJECTS_EXPORT bool HasBaseClasses() const;
+    bool HasBaseClasses() const {return m_baseClasses.size() > 0;}
     //! Returns whether there are any derived classes for this class
-    bool HasDerivedClasses() const { return m_derivedClasses.size() > 0; }
+    bool HasDerivedClasses() const {return m_derivedClasses.size() > 0;}
 
-    //! Removes a base class.
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
+    //! Removes the given base class.
+    ECObjectsStatus RemoveBaseClass(ECClassCR baseClass) {return _RemoveBaseClass(baseClass);}
 
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
