@@ -256,7 +256,6 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeScene,
         DefineGeometryTexture,
         DestroyTarget,
-        FindNearestZ,
         Initialize,
         OverrideFeatureSymbology,
         ReadImage,
@@ -2942,34 +2941,36 @@ public:
 //=======================================================================================
 struct PixelData
 {
+    //! Describes the foremost type of geometry which produced the pixel
     enum class GeometryType : uint8_t
     {
-        Unknown,
-        None,
-        Surface,
-        Linear,
-        Edge,
-        Silhouette,
+        Unknown, //!< Geometry was not selected, or type could not be determined
+        None, //!< No geometry was rendered to this pixel
+        Surface, //!< A surface
+        Linear, //!< A point or polyline
+        Edge, //!< The edge of a surface
+        Silhouette, //!< A silhouette of a surface
     };
 
+    //! Describes the planarity of the foremost geometry which produced the pixel
     enum class Planarity : uint8_t
     {
-        Unknown,
-        None,
-        Planar,
-        NonPlanar,
+        Unknown, //!< Geometry was not selected, or planarity could not be determined
+        None, //!< No geometry was rendered to this pixel
+        Planar, //!< Planar geometry
+        NonPlanar, //!< Non-planar geometry
     };
 
+    //! Bit-mask by which callers of DgnViewport::ReadPixels() specify which aspects are of interest.
+    //! Aspects not specified will be omitted from the returned data.
     enum class Selector : uint8_t
     {
         None = 0,
-        ElementId = 1 << 0,
-        Distance = 1 << 1,
-        Geometry = 1 << 2,
+        ElementId = 1 << 0, //!< Select element IDs
+        Distance = 1 << 1, //!< Select distances from near plane
+        Geometry = 1 << 2, //!< Select geometry type and planarity
 
-        DistanceAndId = ElementId | Distance,
-        GeometryAndId = ElementId | Geometry,
-        GeometryAndDistance = Geometry | Distance,
+        GeometryAndDistance = Geometry | Distance, //!< Select geometry type/planarity and distance from near plane
     };
 private:
     DgnElementId    m_elementId;
@@ -2981,13 +2982,13 @@ public:
     PixelData(DgnElementId id, double distance, GeometryType geomType, Planarity planarity)
         : m_elementId(id), m_distance(distance), m_type(geomType), m_planarity(planarity) { }
 
-    //! Returns the ID of the top-most element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
+    //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
     DgnElementId GetElementId() const { return m_elementId; }
-    //! Returns the distance from the near plane, or a negative value if distances were not selected.
+    //! Returns the distance from the near plane in world units, or a negative value if distances were not selected.
     double GetDistance() const { return m_distance; }
-    //! Returns the type of geometry that produced this pixel, or Unknown if geometry was not selected
+    //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
     GeometryType GetGeometryType() const { return m_type; }
-    //! Returns the planarity of the geometry that produced this pixel, or Unknown if geometry was not selected
+    //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
     Planarity GetPlanarity() const { return m_planarity; }
 
     void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
@@ -2998,7 +2999,7 @@ public:
 ENUM_IS_FLAGS(PixelData::Selector);
 
 //=======================================================================================
-//! Represents the results of a ReadPixels() operation.
+//! A rectangular array of pixels as read from a Target's render buffers.
 // @bsistruct                                                   Paul.Connelly   08/17
 //=======================================================================================
 struct IPixelDataBuffer : RefCountedBase
@@ -3051,7 +3052,6 @@ public:
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
