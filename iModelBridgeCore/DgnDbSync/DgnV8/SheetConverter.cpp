@@ -24,36 +24,6 @@ struct SheetViewFactory : ViewFactory
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFilePtr RootModelConverter::FindOrOpenV8FileForDrawings(BentleyApi::BeFileNameCR fn)
-    {
-    auto v8File = FindOpenV8FileByName(fn);
-    if (nullptr != v8File)
-        return v8File;
-
-    DgnV8Api::DgnFileStatus openStatus;
-    auto newV8File = OpenAndRegisterV8FileForDrawings(openStatus, fn);
-    if (!newV8File.IsValid())
-        return nullptr;
-
-    return newV8File.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8FileP RootModelConverter::FindOpenV8FileByName(BeFileNameCR fn)
-    {
-    for (auto v8File : m_v8Files)
-        {
-        if (fn.EqualsI(v8File->GetFileName().c_str()))
-            return v8File;
-        }
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertSheets()
     {
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_SHEETS());

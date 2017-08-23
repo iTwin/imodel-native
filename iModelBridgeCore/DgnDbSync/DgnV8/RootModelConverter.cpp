@@ -784,8 +784,7 @@ void RootModelConverter::_ConvertSpatialViews()
     if (firstView.IsValid() && !m_defaultViewId.IsValid())
         m_defaultViewId = firstView;
 
-    auto v8File = m_rootFile;
-    NamedViewCollectionCR namedViews = v8File->GetNamedViews();
+    NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
     for (DgnV8Api::NamedViewPtr namedView : namedViews)
         ConvertNamedView(*namedView, m_rootTrans, vf);
     }
@@ -1053,7 +1052,8 @@ void RootModelConverter::_ConvertModels()
 
     if (nullptr != m_rootModelRef && m_isRootModelSpatial)
         {
-        ImportSpatialModels(*m_rootModelRef, m_rootTrans);
+        bool haveFoundSpatialRoot = false;
+        ImportSpatialModels(haveFoundSpatialRoot, *m_rootModelRef, m_rootTrans);
         if (WasAborted())
             return;
         }
@@ -1066,13 +1066,31 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
+bool RootModelConverter::IsFileAssignedToBridge(DgnV8FileCR v8File) const 
+    {
+    BeFileName fn(v8File.GetFileName().c_str());
+    return m_params.IsFileAssignedToBridge(fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The purpose of this function is to *discover* spatial models, not to convert their contents.
+* The outcome of this function is to a) create an (empty) BIM spatial model for each discovered V8 spatial model,
+* and b) to discover and record the spatial transform that should be applied when (later) converting
+* the elements in each model.
+* This function also has the side effect of creating or updating the job subject hierarchy.
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
     {
     // NB: Don't filter out files or models here. We need to know about the existence of all of them 
     // (e.g., so that we can infer deleted models). We will do any applicable filtering in ConvertElementsInModel.
 
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
     DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
+
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+    if (isThisMyFile)
+        haveFoundSpatialRoot = true;
 
     // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
     ClassifyNormal2dModels (thisV8File);
@@ -1092,8 +1110,12 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
         DgnV8Api::DgnAttachmentLoadOptions loadOptions;
         loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
         loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::Model);
-        if (GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) // If we know that we won't be processing graphics in this model but only attachments
-            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements); //  Then we can save a lot of time by filling only the control section
+        // If we know that we won't be processing graphics in this model but only attachments
+        // then we can save a lot of time by filling only the control section. We do that in two
+        // cases: 1) this bridge should not convert this file (but may have to convert references attached to it),
+        // or 2) this is an update and this file has not changed and so no elements in it will be converted.
+        if (!isThisMyFile || GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) 
+            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
 
         if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
             loadOptions.m_loadRasterRefs = true;
@@ -1114,6 +1136,9 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
         {                  
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
+
+        if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
+            continue; // this leads to models in another bridge's territory. Stay out.
 
         // Keep the mapping between models and the attachment that references the model
         DgnV8Api::Fd_opts fdOpts = attachment->GetFDOptsCR();
@@ -1146,7 +1171,7 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
             }
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
-        ImportSpatialModels(*attachment, refTrans);
+        ImportSpatialModels(haveFoundSpatialRoot, *attachment, refTrans);
         }
 
     if (hasPushedReferencesSubject)

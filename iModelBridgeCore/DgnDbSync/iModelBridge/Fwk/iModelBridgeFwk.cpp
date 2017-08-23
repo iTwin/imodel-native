@@ -944,6 +944,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    params.SetAssignmentChecker(*this);
+    params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1418,6 +1420,8 @@ BeFileName iModelBridgeFwk::QueryBridgeLibraryPathByName(uint64_t* rowid, WStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName)
     {
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
     auto stmt = m_stateDb.GetCachedStatement("SELECT b.BridgeLibraryPath, b.Name FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (a.SourceFile=?) AND (b.ROWID = a.Bridge)");
     stmt->BindText(1, Utf8String(docName), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
@@ -1547,6 +1551,8 @@ BentleyStatus iModelBridgeFwk::SearchForBridgeToAssignToDocument(BeFileNameCR so
     QueryBridgeLibraryPathByName(&bestBridgeRowid, bestBridge.m_bridgeRegSubKey);
     BeAssert(0 != bestBridgeRowid);
 
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
     auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
     insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
     insertAssignment->BindInt64(2, bestBridgeRowid);
@@ -1555,6 +1561,20 @@ BentleyStatus iModelBridgeFwk::SearchForBridgeToAssignToDocument(BeFileNameCR so
 
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
     return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
+    {
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
+    auto findBridgeForDoc = m_stateDb.GetCachedStatement("SELECT b.ROWID BridgeLibraryPath FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (a.SourceFile=?) AND (b.Name=?)");
+    findBridgeForDoc->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
+    findBridgeForDoc->BindText(2, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
+    return BE_SQLITE_ROW == findBridgeForDoc->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1571,6 +1591,8 @@ void iModelBridgeFwk::SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR topD
         {
         if (entryName.GetBaseName().EndsWithI(L".prp"))         // Filter out some control files that we know we should ignore
             continue;
+
+        // *** NEEDS WORK: Should probably store relative paths
 
         if (!isDir)
             SearchForBridgeToAssignToDocument(entryName);
@@ -1611,6 +1633,9 @@ BentleyStatus iModelBridgeFwk::WriteBridgesFile()
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
         return BSIERROR;
         }
+
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir - turn it back into an abs dir for .txt file?
+
     auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased, a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
     while (BE_SQLITE_ROW == stmt->Step())
         bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), WString(stmt->GetValueText(2), true).c_str(), stmt->GetValueBoolean(1));
