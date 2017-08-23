@@ -474,3 +474,13 @@ Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLi
     // no bridge string found, search platform strings
     return BeSQLite::L10N::GetString(scope, name, &hasString);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              08/17
+//---------------------------------------------------------------------------------------
+bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
+    {
+    if (nullptr == m_assignmentChecker) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
+        return true;
+    return m_assignmentChecker->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+    }

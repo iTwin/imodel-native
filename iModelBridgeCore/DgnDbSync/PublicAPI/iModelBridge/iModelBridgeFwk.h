@@ -38,7 +38,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeFwk
+struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
 {
     enum class EffectiveServerError
         {
@@ -202,6 +202,7 @@ protected:
     BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
     BentleyStatus ComputeBridgeAffinityToDocument(iModelBridge::BridgeAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
     BentleyStatus WriteBridgesFile();
+    bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
 
     DgnProgressMeter& GetProgressMeter() const;
 

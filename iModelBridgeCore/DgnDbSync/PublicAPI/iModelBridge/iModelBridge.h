@@ -171,6 +171,17 @@ struct iModelBridge
         UseGcsTransformWithScaling,             //!< Convert using a best fit transform that includes scaling to GCS grid coordinates.
         };
 
+    //! Interface implemented by an agent that can check of a file is assigned to a specified bridge
+    struct FileAssignmentChecker
+        {
+        // Check if the specified file is assigned to the specified bridge.
+        //! @param fn   The name of the file that is to be converted
+        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        //! @return true if the specified bridge should convert the specified file
+        // *** NEEDS WORK: Should probably use and check relative paths
+        virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+        };
+
     //! Parameters that are common to all bridges.
     //! These parameters are set up by the iModelBridgeFwk based on job definition parameters and other sources.
     //! In a standalone converter, they are set from the command line.
@@ -198,6 +209,8 @@ struct iModelBridge
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
+        FileAssignmentChecker* m_assignmentChecker = nullptr;
+        WString m_thisBridgeRegSubKey;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
@@ -236,6 +249,11 @@ struct iModelBridge
         bool WantThumbnails() const {return m_wantThumbnails;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
+        void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
+        WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
+        void SetAssignmentChecker(FileAssignmentChecker& c) {m_assignmentChecker = &c;}
+        FileAssignmentChecker* GetAssignmentChecker() const {return m_assignmentChecker;}
+        IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
         };
 
     private:

@@ -566,6 +566,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
                 std::wstring buddiUrl;
                 connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
+
                 serverUrl.assign(buddiUrl.c_str());
                 }
             catch (...)
@@ -587,7 +588,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             //user has multiples, etc
             //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
             //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-            RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
+            //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
+
+            RealityDataService::SetProjectId(Utf8String("95b8160c-8df9-437b-a9bf-22ad01fecc6b"));
 
             return SUCCESS;
             }

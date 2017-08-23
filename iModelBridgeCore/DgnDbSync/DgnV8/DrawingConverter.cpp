@@ -109,7 +109,10 @@ void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& root
     bvector<DgnFilePtr> tempKeepAlive;
     bvector<DgnV8FileP> filesToSearch;
     for (auto v8 : m_v8Files) // start with the files that we already know about
-        filesToSearch.push_back(v8);
+        {
+        if (IsFileAssignedToBridge(*v8))
+            filesToSearch.push_back(v8);
+        }
 
     for (auto const& fn : m_params.GetDrawingAndSheetFiles())
         {
@@ -118,7 +121,7 @@ void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& root
 
         DgnV8Api::DgnFileStatus openStatus;
         Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn);     // Just open it. Don't register it in syncinfo. We'll do that in Import2dModel if we actually find something in there.
-        if (v8File.IsValid())
+        if (v8File.IsValid() && IsFileAssignedToBridge(*v8File))
             {
             tempKeepAlive.push_back(v8File);
             filesToSearch.push_back(v8File.get());
