@@ -78,9 +78,12 @@ ISolidPrimitivePtr  surface
     bvector<DPoint3d> const* lineString;
     DEllipse3dCP arc;
     MSBsplineCurveCP spline;
+    DSegment3dCP line;
 
     if (nullptr != (lineString = curve->GetLineStringCP()))
         originPoint = (*lineString)[0];
+    else if (nullptr != (line = curve->GetLineCP()))
+        originPoint = line->point[0];
     else if (nullptr != (arc = curve->GetArcCP()))
         originPoint = arc->center;
     else if (nullptr != (spline = curve->GetBsplineCurveCP()))
