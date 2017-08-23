@@ -62,16 +62,18 @@ private:
     Flags           m_flags;
     double          m_expandDistance;
     Utf8String      m_name;
+    bool            m_isActive;
 
 public:
-    ModelSpatialClassifier() { }
-    ModelSpatialClassifier(DgnModelId modelId, DgnCategoryId categoryId, DgnElementId elementId, Flags flags, Utf8StringCR name, double expandDistance) : m_modelId(modelId), m_categoryId(categoryId), m_elementId(elementId), m_name(name), m_flags(flags), m_expandDistance(expandDistance) { }
+    ModelSpatialClassifier()  { }
+    ModelSpatialClassifier(DgnModelId modelId, DgnCategoryId categoryId, DgnElementId elementId, Flags flags, Utf8StringCR name, double expandDistance, bool isActive) : m_modelId(modelId), m_categoryId(categoryId), m_elementId(elementId), m_name(name), m_flags(flags), m_expandDistance(expandDistance), m_isActive(isActive) { }
 
     DgnModelId GetModelId()  const { return m_modelId; }
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     Utf8String  GetName() const { return m_name; }
     Type GetType() const { return (Type) m_flags.m_type; }
     double ExpandDistance() const { return m_expandDistance; }
+    bool GetIsActive() const { return m_isActive; }
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& value);
