@@ -209,7 +209,7 @@ struct iModelBridge
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
-        FileAssignmentChecker* m_assignmentChecker;
+        FileAssignmentChecker* m_assignmentChecker = nullptr;
         WString m_thisBridgeRegSubKey;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
@@ -253,7 +253,7 @@ struct iModelBridge
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
         void SetAssignmentChecker(FileAssignmentChecker& c) {m_assignmentChecker = &c;}
         FileAssignmentChecker* GetAssignmentChecker() const {return m_assignmentChecker;}
-        bool IsFileAssignedToBridge(BeFileNameCR fn) const;
+        IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
         };
 
     private:
