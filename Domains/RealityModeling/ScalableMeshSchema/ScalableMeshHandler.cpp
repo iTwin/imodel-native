@@ -1828,9 +1828,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
 
-    DPoint3d translation = { 0,0,0 };
 
-    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+    
+    m_storageToUorsTransfo = DMatrix4d::From(m_smToModelUorTransform);
 
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
