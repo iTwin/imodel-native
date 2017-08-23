@@ -140,6 +140,14 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     if (nullptr == el)
         return;
 
+    // TFS#742735: Only colorize focused element if we have set this ViewController to do so
+    if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
+        {
+        m_symbology.GetUntouchedOverrides(symbologyOverrides);
+        T_Super::_OverrideGraphicParams(symbologyOverrides, source);
+        return;
+        }
+
     PersistentState elementIdData = m_comparisonData->GetPersistentState(el->GetElementId());
     TransientState elementData = m_comparisonData->GetTransientState(el->GetElementId());
 
