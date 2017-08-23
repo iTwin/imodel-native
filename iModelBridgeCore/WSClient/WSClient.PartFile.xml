@@ -774,7 +774,7 @@
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
     
-    <Part Name="NuGetPackage-WSClientCompatibilityTestTool" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
+    <Part Name="NuGetPackage-WSClientCompatibilityTestTool" DeferType="BuildUnitTests" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WSClientCompatibilityTests" />

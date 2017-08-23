@@ -479,11 +479,10 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                             }
                         }
                     txn.Commit();
-
-                    temporaryFiles->clear();
                     })
                         ->Then<Result>([=]
                         {
+                        temporaryFiles->clear();
                         return *result;
                         });
     }
