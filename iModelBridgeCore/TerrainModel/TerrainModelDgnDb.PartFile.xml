@@ -26,6 +26,7 @@
     <Part Name="Formats" BMakeFile="formats\formatsDgnDb.mke" ApiNumber="G">
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
+		<SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />

@@ -17,7 +17,7 @@ DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
 
 baseDir         = $(_MakeFilePath)
-terrainModelFormatsObj = $(OutputRootDir)build/TerrainModel/TerrainModelFormats/inroadstm/
+terrainModelFormatsObj = $(OutputRootDir)build/TerrainModelDgnDb/TerrainModelFormats/inroadstm/
 
 OPTIMIZE_FOR_SPEED=1
 
