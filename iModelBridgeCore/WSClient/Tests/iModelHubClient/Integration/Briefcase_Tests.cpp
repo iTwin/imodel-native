@@ -29,7 +29,7 @@ struct BriefcaseTests: public IntegrationTestsBase
         IntegrationTestsBase::SetUp();
 
         auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
         m_imodel = CreateNewiModel(*m_client, "BriefcaseTest");
 
         m_imodelConnection = ConnectToiModel(*m_client, m_imodel);
@@ -40,7 +40,7 @@ struct BriefcaseTests: public IntegrationTestsBase
     virtual void TearDown() override
         {
         if (m_imodel.IsValid())
-            DeleteiModel(*m_client, *m_imodel);
+            DeleteiModel(m_projectId, *m_client, *m_imodel);
         m_client = nullptr;
         IntegrationTestsBase::TearDown();
         }
@@ -83,7 +83,7 @@ TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     {
     //Attempt acquiring briefcase from a non-existing imodel
     auto imodel = CreateNewiModel(*m_client, "BriefcaseTest");
-    auto deleteResult = m_client->DeleteiModel(*imodel)->GetResult();
+    auto deleteResult = m_client->DeleteiModel(m_projectId, *imodel)->GetResult();
     EXPECT_SUCCESS(deleteResult);
     auto result = m_client->AcquireBriefcase(*imodel, m_pHost->GetOutputDirectory(), false, CreateProgressCallback())->GetResult();
 
@@ -94,7 +94,7 @@ TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
 
 TEST_F(BriefcaseTests, AcquireAfterQuerying)
     {
-    auto imodelResult = m_client->GetiModelById(m_imodel->GetId())->GetResult();
+    auto imodelResult = m_client->GetiModelById(m_projectId, m_imodel->GetId())->GetResult();
     EXPECT_SUCCESS(imodelResult);
     EXPECT_EQ(imodelResult.GetValue()->GetUserCreated(), imodelResult.GetValue()->GetOwnerInfo()->GetId());
 
@@ -102,7 +102,7 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
     EXPECT_SUCCESS(result);
     CheckProgressNotified();
 
-    auto imodelResult2 = m_client->GetiModelByName(m_imodel->GetName())->GetResult();
+    auto imodelResult2 = m_client->GetiModelByName(m_projectId, m_imodel->GetName())->GetResult();
     EXPECT_SUCCESS(imodelResult2);
     EXPECT_EQ(imodelResult2.GetValue()->GetUserCreated(), imodelResult2.GetValue()->GetOwnerInfo()->GetId());
 
@@ -162,7 +162,7 @@ TEST_F(BriefcaseTests, SuccessfulAbandonBriefcase)
 
 TEST_F(BriefcaseTests, SuccessfulAbandonOtherUserBriefcase)
     {
-    auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
+    auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     //User A acquires a briefcase
     auto briefcaseA = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
@@ -215,7 +215,7 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     // We randomly were getting ASSERTION FAILURE (0): id==GetThreadId(). It was because the last db pointer was released during closing OpenBriefcase async task
     // and not from this test since test is short and it ends before async task ends. Async task starts closing only after we get result from it.
     result.GetValue() = nullptr;
-    DeleteiModel(*m_client, *m_imodel);
+    DeleteiModel(m_projectId, *m_client, *m_imodel);
     m_imodel = nullptr;
     m_client = nullptr;
     // It would be great to call StopThreadingAndWait to make sure async tasks are closed before this test ends.
@@ -239,7 +239,7 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
     EXPECT_SUCCESS(briefcaseResult);
     CheckNoProgress();
 
-    DeleteiModel(*m_client, *m_imodel);
+    DeleteiModel(m_projectId, *m_client, *m_imodel);
     m_imodel = nullptr;
     m_client = nullptr;
     // Same comment as in SuccessfulOpenBriefcase test.
@@ -263,7 +263,7 @@ TEST_F(BriefcaseTests, SuccessfulAcquireAndMergeBriefcase)
     Utf8String lastChangeSetId = db->Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
 
-    DeleteiModel(*m_client, *m_imodel);
+    DeleteiModel(m_projectId, *m_client, *m_imodel);
     m_imodel = nullptr;
     m_client = nullptr;
     // Same comment as in SuccessfulOpenBriefcase test.
@@ -290,14 +290,14 @@ TEST_F(BriefcaseTests, OpenSeedFileAsBriefcase)
     DgnDbPtr db = CreateTestDb("BriefcaseTest");
     EXPECT_TRUE(db.IsValid());
 
-    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     CheckProgressNotified();
 
     auto result = m_client->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::FileIsNotBriefcase, result.GetError().GetId());
-    DeleteiModel(*m_client, *createResult.GetValue());
+    DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     CheckNoProgress();
     }
 

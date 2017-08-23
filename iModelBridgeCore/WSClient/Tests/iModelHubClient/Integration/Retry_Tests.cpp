@@ -37,7 +37,7 @@ struct RetryTests : public IntegrationTestsBase
         ServerInfoProvider::InvalidateAllInfo();
 
         auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
         m_imodel = CreateNewiModel(*m_client, nullptr);
         m_imodelConnection = ConnectToiModel(*m_client, m_imodel);
 
@@ -49,7 +49,7 @@ struct RetryTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     virtual void TearDown() override
         {
-        DeleteiModel(*m_client, *m_imodel);
+        DeleteiModel(m_projectId, *m_client, *m_imodel);
         m_client = nullptr;
         IntegrationTestsBase::TearDown();
         }

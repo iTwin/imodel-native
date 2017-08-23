@@ -272,44 +272,6 @@ StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAcces
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::UploadServerFile(BeFileNameCR filePath, FileInfoCR downloadInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
-    {
-    auto fileAccessKey = downloadInfo.GetFileAccessKey();
-    
-    if (fileAccessKey.IsNull())
-        return OnPremiseFileUpload(filePath, downloadInfo.GetObjectId(), callback, cancellationToken);
-    else
-        return AzureFileUpload(filePath, fileAccessKey, callback, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
-    {
-    const Utf8String methodName = "iModelConnection::OnPremiseFileUpload";
-    if (objectId.remoteId.empty())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
-        }
-
-    return m_wsRepositoryClient->SendUpdateFileRequest(objectId, filePath, callback, cancellationToken)
-        ->Then<StatusResult>([=] (const WSUpdateFileResult& uploadFileResult)
-        {
-        if (!uploadFileResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadFileResult.GetError().GetMessage().c_str());
-            return StatusResult::Error(uploadFileResult.GetError());
-            }
-
-        return StatusResult::Success();
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::UpdateServerFile";
@@ -2841,7 +2803,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                 }
             finalResult->SetSuccess(createdFileInfo);
 
-            UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (StatusResultCR uploadResult)
+            AzureFileUpload(filePath, createdFileInfo->GetFileAccessKey(), callback, cancellationToken)->Then([=] (StatusResultCR uploadResult)
                 {
 #if defined (ENABLE_BIM_CRASH_TESTS)
                 BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterUploadServerFile);

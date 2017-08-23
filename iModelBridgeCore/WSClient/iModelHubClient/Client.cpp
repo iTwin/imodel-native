@@ -31,10 +31,10 @@ BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-IWSRepositoryClientPtr Client::CreateProjectConnection() const
+IWSRepositoryClientPtr Client::CreateProjectConnection(Utf8StringCR projectId) const
     {
     Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Plugin::Project, m_projectId.c_str());
+    project.Sprintf("%s--%s", ServerSchema::Plugin::Project, projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
     client->GetWSClient()->EnableWsgServerHeader(true);
@@ -65,7 +65,7 @@ iModelConnectionTaskPtr Client::ConnectToiModel(iModelInfoCR iModelInfo, ICancel
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken) const
+iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::ConnectToiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -80,7 +80,7 @@ iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR iModelId, ICancella
         return CreateCompletedAsyncTask<iModelConnectionResult>(iModelConnectionResult::Error(Error::Id::CredentialsNotSet));
         }
 
-    return GetiModelById(iModelId, cancellationToken)
+    return GetiModelById(projectId, iModelId, cancellationToken)
         ->Then<iModelConnectionResult>([=] (iModelResultCR result)
         {
         if (!result.IsSuccess())
@@ -104,7 +104,7 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
+iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::GetiModels";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -128,8 +128,8 @@ iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
     iModelInfo::AddOwnerInfoSelect(select);
     query.SetSelect(select);
 
-    IWSRepositoryClientPtr client = CreateProjectConnection();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", m_projectId.c_str());
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
@@ -153,7 +153,7 @@ iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::GetiModelByName";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -181,7 +181,7 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
     iModelInfo::AddOwnerInfoSelect(select);
     query.SetSelect(select);
 
-    IWSRepositoryClientPtr client = CreateProjectConnection();
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
@@ -205,7 +205,7 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::GetiModelById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -234,7 +234,7 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr
     iModelInfo::AddOwnerInfoSelect(select);
     query.SetSelect(select);
 
-    IWSRepositoryClientPtr client = CreateProjectConnection();
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
@@ -273,15 +273,15 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR iModelName, Utf8StringCR description,
+iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                                                ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateiModelInstance";
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
 
     Json::Value imodelCreationJson = iModelCreationJson(iModelName, description);
-    IWSRepositoryClientPtr client = CreateProjectConnection();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create iModel request for project %s.", m_projectId.c_str());
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create iModel request for project %s.", projectId.c_str());
     return client->SendCreateObjectRequest(imodelCreationJson, BeFileName(), nullptr, cancellationToken)
         ->Then([=](const WSCreateObjectResult& createiModelResult)
         {
@@ -349,7 +349,7 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR iModelName, Utf8StringCR
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized,
+iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized,
     Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateNewiModel";
@@ -381,7 +381,7 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, 
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating iModel instance. Name: %s.", iModelName.c_str());
-    return CreateiModelInstance(iModelName, description, cancellationToken)
+    return CreateiModelInstance(projectId, iModelName, description, cancellationToken)
         ->Then([=] (iModelResultCR createiModelResult)
         {
         if (!createiModelResult.IsSuccess())
@@ -396,7 +396,7 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, 
 
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Successfully created iModel instance. Instance ID: %s.", iModelInfo->GetId().c_str());
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to created iModel.");
-        ConnectToiModel(iModelInfo->GetId(), cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
+        ConnectToiModel(*iModelInfo, cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
             {
             if (!connectionResult.IsSuccess())
                 {
@@ -427,7 +427,7 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
+iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateNewiModel";
@@ -442,7 +442,7 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, bool waitForInitialized, 
         BeStringUtilities::WCharToUtf8(name, db.GetFileName().GetFileNameWithoutExtension().c_str());
     Utf8String description;
     db.QueryProperty(description, BeSQLite::PropertySpec(Db::Properties::Description, Db::Properties::ProjectNamespace));
-    return CreateNewiModel(db, name, description, waitForInitialized, callback, cancellationToken);
+    return CreateNewiModel(projectId, db, name, description, waitForInitialized, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -817,7 +817,7 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
-    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), connection->GetiModelInfo(), *fileInfo);
+    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), iModelInfo, *fileInfo);
     if (filePath.DoesPathExist())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
@@ -900,13 +900,13 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Client::DeleteiModel(iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Client::DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DeleteiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    IWSRepositoryClientPtr client = CreateProjectConnection();
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     ObjectId iModelId = ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId());
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete iModel request. iModel ID: %s.", iModelInfo.GetId().c_str());
     return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)

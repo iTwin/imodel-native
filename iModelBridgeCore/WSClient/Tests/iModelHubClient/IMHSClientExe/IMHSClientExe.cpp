@@ -10,6 +10,8 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeThread.h>
 #include "../Integration/IntegrationTestsBase.h"
+#include <WebServices/Connect/ConnectSignInManager.h>
+#include <WebServices/iModelHub/Client/ClientHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -32,14 +34,16 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     m_exePath = exePath;
     DgnPlatformLib::Initialize(*this, true);
 
-    ClientInfoPtr clientInfo(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem"));
-    m_client = Client::Create(clientInfo);
-    if (m_client.IsNull())
+    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
+
+    auto clientHelper = ClientHelper::Initialize(clientInfo);
+
+    auto manager = ConnectSignInManager::Create(clientInfo, ProxyHttpHandler::GetFiddlerProxyIfReachable());
+    SignInResult signInResult = manager->SignInWithCredentials(IntegrationTestSettings::Instance().GetValidAdminCredentials())->GetResult();
+    if (!signInResult.IsSuccess())
         return BSIERROR;
-    
-    auto credentials = IntegrationTestSettings::Instance().GetValidAdminCredentials();
-    m_client->SetServerURL(IntegrationTestSettings::Instance().GetValidHost());
-    m_client->SetCredentials(credentials);
+
+    ClientPtr client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
 
     WString logFileName = L"iModelHubIntgerationTests.log";
     WString path = _wgetenv(L"LOCALAPPDATA") + WString(L"\\Bentley\\LogsThread\\");
@@ -59,13 +63,13 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, Utf8String guid)
+BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, iModelInfoPtr imodelInfo, Utf8String guid)
     {
     BeFileName briefcaseLocation(GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     briefcaseLocation.AppendToPath(BeFileName(guid));
     briefcaseLocation.AppendSeparator();
     BeFileName::CreateNewDirectory(briefcaseLocation.c_str());
-    auto acquireResult = m_client->AcquireBriefcase(connection->GetiModelInfo(), briefcaseLocation, false)->GetResult();
+    auto acquireResult = m_client->AcquireBriefcase(*imodelInfo, briefcaseLocation, false)->GetResult();
     if (!acquireResult.IsSuccess())
         return nullptr;
 
@@ -86,10 +90,11 @@ BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-int IMHSClientExe::CreateNewModelAndPush(Utf8String imodelId)
+int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodelId)
     {
+    auto getiModelResult = m_client->GetiModelById(projectId, imodelId)->GetResult();
     // Connect to imodel
-    auto connectionResult = m_client->ConnectToiModel(imodelId)->GetResult();
+    auto connectionResult = m_client->ConnectToiModel(*getiModelResult.GetValue())->GetResult();
     if (!connectionResult.IsSuccess())
         return BSIERROR;
     iModelConnectionPtr connection = connectionResult.GetValue();
@@ -97,7 +102,7 @@ int IMHSClientExe::CreateNewModelAndPush(Utf8String imodelId)
 
     // Acquire briefcase
     Utf8String guid = BeSQLite::BeGuid(true).ToString();
-    auto briefcase = AcquireBriefcase(connection, guid);
+    auto briefcase = AcquireBriefcase(connection, getiModelResult.GetValue(), guid);
     if (briefcase.IsNull())
         return 1;
     DgnDbR briefcaseDb = briefcase->GetDgnDb();
@@ -133,7 +138,7 @@ int IMHSClientExe::CreateNewModelAndPush(Utf8String imodelId)
 * @bsimethod                                    Algirdas.Mikoliunas              12/16
 * This exe is used in the integration test PerformanceTests.PullMergeAndPush_PerformanceTests
 * This test acquires briefcase from imodel, adds one model, waits 5 seconds and pushes changes to the server
-* This exe could be run in following format: IMHSClientExe.exe {iModelId}
+* This exe could be run in following format: IMHSClientExe.exe {ProjectId} {iModelId}
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
@@ -142,7 +147,7 @@ int wmain (int argc, wchar_t const* argv[])
     if (BSISUCCESS != imhsClient.Initialize(exePath))
         return 1;
 
-    int result = imhsClient.CreateNewModelAndPush(Utf8String(argv[1]));
+    int result = imhsClient.CreateNewModelAndPush(Utf8String(argv[1]), Utf8String(argv[2]));
     if (0 != result)
         std::cout << "Thread failed: " << result << "\n\n";
 

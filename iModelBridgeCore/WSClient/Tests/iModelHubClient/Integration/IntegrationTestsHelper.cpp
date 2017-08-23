@@ -68,8 +68,7 @@ void IntegrationTestSettings::ReadSettings(BeFileNameCR settingsFile)
         m_nonAdminCredentials = Credentials(user["Username"].asString(), user["Password"].asString());
         }
 
-    m_host = settings["Host"].asString();
-    m_projectNr = settings["ProjectNr"].asString();
+    m_projectId = settings["ProjectId"].asString();
     Utf8String environment = settings["Environment"].asString();
     if ("DEV" == environment)
         m_environment = UrlProvider::Environment::Dev;
@@ -99,19 +98,9 @@ Credentials IntegrationTestSettings::GetWrongPassword() const
     return Credentials(m_adminCredentials.GetUsername(), m_adminCredentials.GetPassword() + "wrong");
     }
 
-Utf8String IntegrationTestSettings::GetValidHost() const
+Utf8String IntegrationTestSettings::GetProjectId() const
     {
-    return m_host;
-    }
-
-Utf8String IntegrationTestSettings::GetInvalidHost() const
-    {
-    return m_host + "/invalid";
-    }
-
-Utf8String IntegrationTestSettings::GetProjectNr() const
-    {
-    return m_projectNr;
+    return m_projectId;
     }
 
 ClientInfoPtr IntegrationTestSettings::GetClientInfo() const

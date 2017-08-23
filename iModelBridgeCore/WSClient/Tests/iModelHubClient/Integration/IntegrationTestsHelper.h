@@ -25,8 +25,7 @@ private:
     Http::Credentials m_nonAdminCredentials;
     Http::Credentials m_adminCredentials;
 
-    Utf8String m_host;
-    Utf8String m_projectNr;
+    Utf8String m_projectId;
     UrlProvider::Environment m_environment;
     void ReadSettings(BeFileNameCR settingsFile);
 public:
@@ -35,9 +34,7 @@ public:
     Http::CredentialsCR GetValidNonAdminCredentials() const;
     Http::Credentials GetWrongUsername() const;
     Http::Credentials GetWrongPassword() const;
-    Utf8String GetValidHost() const;
-    Utf8String GetInvalidHost() const;
-    Utf8String GetProjectNr() const;
+    Utf8String GetProjectId() const;
     UrlProvider::Environment GetEnvironment() const;
     ClientInfoPtr GetClientInfo() const;
     };
