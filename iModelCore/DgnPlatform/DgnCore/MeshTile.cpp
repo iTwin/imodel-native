@@ -1201,9 +1201,19 @@ struct SolidKernelTileGeometry : TileGeometry
 private:
     IBRepEntityPtr      m_entity;
     BeMutex             m_mutex;
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    // Otherwise, 'unused private member' warning from clang...
+    DgnDbR              m_db;
+#endif
 
     SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
+        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+#if defined (BENTLEYCONFIG_PARASOLID) 
+        , m_db(db)
+#endif
+        {
+        //
+        }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
@@ -1599,6 +1609,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
                 {
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
+                faceParams.Resolve(m_db);
 
                 TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(GetDisplayParams().GetColor(), faceParams);
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
@@ -2800,7 +2811,15 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+
+            // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
+            DPoint2d sheetSize = sheetModel->GetSheetSize();
+            if (0.0 == sheetSize.x)
+                sheetSize.x = 0.1;
+            if (0.0 == sheetSize.y)
+                sheetSize.y = 0.1;
+
+            Sheet::Model::DrawBorder (context, sheetSize);
             PushCurrentGeometry();
             }
 

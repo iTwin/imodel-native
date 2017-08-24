@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IManipulator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,8 +175,30 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
+#if defined (NOT_NOW)
+enum class ControlType
+    {
+    Placement = 0, //!< Prefer placement controls
+    Geometry  = 1, //!< Prefer geometry/vertex controls
+    };
+
+enum class DefaultActions
+    {
+    None      = 0,        //!< Default controls disabled
+    Translate = (1 << 0), //!< Default controls may apply translation
+    Rotate    = (1 << 1), //!< Default controls may apply rotation
+    Scale     = (1 << 2), //!< Default controls may apply scale
+    Copy      = (1 << 3), //!< Default controls may create a copy
+    Geometry  = (1 << 4), //!< Default controls may modify GeometryPrimitives
+    All       = 0xffff,   //!< Default controls unrestricted
+    };
+
+virtual DefaultActions _GetAllowedActions() {return DefaultActions::All;}
+#endif
+
 virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR elm) = 0;
 virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0;
+
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 
 //! @private

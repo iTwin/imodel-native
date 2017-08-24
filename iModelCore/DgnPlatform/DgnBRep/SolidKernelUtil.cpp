@@ -3237,6 +3237,46 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
 
     BentleyStatus   status = (SUCCESS == PK_FACE_transform_2((int) faceTags.size(), &faceTags.front(), &transfs.front(), 1.0e-6, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
 
+    // NOTE: Try to remove any redundant step faces that may have been created...
+    if (SUCCESS == status && tracking.n_track_records > 0 && StepFacesOption::AddNonCoincident == addStep)
+        {
+        bvector<PK_FACE_t> resultFaces;
+
+        for (int iResult = 0; iResult < tracking.n_track_records; ++iResult)
+            {
+            if (PK_TOPOL_track_create_c != tracking.track_records[iResult].track)
+                continue;
+
+            for (int iProduct = 0; iProduct < tracking.track_records[iResult].n_product_topols; ++iProduct)
+                {
+                PK_ENTITY_t entityTag = tracking.track_records[iResult].product_topols[iProduct];
+                PK_CLASS_t  entityClass;
+
+                PK_ENTITY_ask_class(entityTag, &entityClass);
+
+                if (PK_CLASS_face != entityClass)
+                    continue;
+
+                resultFaces.push_back(entityTag);
+                }
+            }
+
+        if (resultFaces.size() > 0)
+            {
+            PK_TOPOL_track_r_t tracking2;
+            PK_TOPOL_delete_redundant_2_o_s options2;
+
+            memset(&tracking2, 0, sizeof(tracking2));
+            PK_TOPOL_delete_redundant_2_o_m(options2);
+            options2.max_topol_dimension = PK_TOPOL_dimension_1_c;
+            options2.scope = PK_redundant_merge_out_c;
+
+            // NOTE: I think we're ok not setting a mark...
+            PK_TOPOL_delete_redundant_2((int) resultFaces.size(), &resultFaces.front(), &options2, &tracking2);
+            PK_TOPOL_track_r_f(&tracking2);
+            }
+        }
+
     PK_TOPOL_local_r_f(&results);
     PK_TOPOL_track_r_f(&tracking);
 
@@ -4228,7 +4268,7 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool isBlendFaces)
+BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool createCap)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (faces.empty())
@@ -4261,29 +4301,67 @@ BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<I
     options.allow_disjoint = true;
     options.repair_fa_fa = PK_repair_fa_fa_yes_c;
 
+    if (createCap)
+        {
+        options.heal_action = PK_FACE_heal_cap_c;
+        options.heal_loops = PK_FACE_heal_loops_together_c;
+        }
+
     PK_ERROR_code_t failureCode = PK_FACE_delete_2((int) faceTags.size(), &faceTags.front(), &options, &tracking);
 
     PK_TOPOL_track_r_f(&tracking);
 
-    if (PK_ERROR_cant_heal_wound == failureCode && isBlendFaces) // Retry delete as blend...
-        {
+    if (PK_ERROR_no_errors != failureCode)
         PK_MARK_goto(markTag);
 
-        PK_TOPOL_track_r_t* blendTracking = nullptr;
-        PK_TOPOL_local_r_t* blendResults = nullptr;
-        PK_FACE_delete_blends_o_t blendOptions;
+    PK_MARK_delete(markTag);
 
-        PK_FACE_delete_blends_o_m(blendOptions);
-        blendOptions.simplify = PK_FACE_simplify_adj_blends_c;
+    return (SUCCESS == failureCode ? SUCCESS : ERROR);
+#else
+    return ERROR;
+#endif
+    }
 
-        failureCode = PK_FACE_delete_blends((int) faceTags.size(), &faceTags.front(), 1.0e-5, &blendOptions, blendTracking, blendResults);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::DeleteEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (edges.empty())
+        return ERROR;
 
-        PK_TOPOL_track_r_f(blendTracking);
-        PK_TOPOL_local_r_f(blendResults);
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
-        PK_MEMORY_free(blendTracking);
-        PK_MEMORY_free(blendResults);
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_EDGE_t> edgeTags;
+
+    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+        {
+        if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
+            continue;
+
+        edgeTags.push_back(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]));
         }
+
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+    PK_EDGE_delete_o_t options;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+    PK_EDGE_delete_o_m(options);
+
+    PK_ERROR_code_t failureCode = PK_EDGE_delete((int) edgeTags.size(), &edgeTags.front(), &options, &tracking, &results);
+
+    PK_TOPOL_track_r_f(&tracking);
+    PK_TOPOL_local_r_f(&results);
 
     if (PK_ERROR_no_errors != failureCode)
         PK_MARK_goto(markTag);

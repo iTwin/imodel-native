@@ -143,6 +143,7 @@ protected:
     ComparisonDataCPtr              m_comparisonData;
     ComparisonSymbologyOverrides    m_symbology;
 
+    DgnElementId    m_focusedElementId;
     Utf8String      m_labelString;
     TextStringPtr   m_label;
 
@@ -162,6 +163,7 @@ public:
     DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }
     DGNPLATFORM_EXPORT void SetSymbology(ComparisonSymbologyOverrides overrides) { m_symbology = overrides; }
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
+    DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
 
     //! Constructors
     DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags), m_visitingTransientElements(false), m_label(nullptr) { }
