@@ -512,6 +512,7 @@ static GEOMDLLIMPEXP double SumAbs (bvector<double> const &data);
 //! roughly 4 times as long as the simple sum but may be significantly more accurate.
 static GEOMDLLIMPEXP double PreciseSum (double *data, size_t n);
 static GEOMDLLIMPEXP double PreciseSum (double a, double b, double c);
+static GEOMDLLIMPEXP double PreciseSum (double a, double b, double c, double d);
 
 //! replace each value by its fractional position between a0 and a1.
 //! return false and leave unchanged if a0==a1.
