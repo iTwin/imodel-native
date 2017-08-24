@@ -79,8 +79,9 @@ ISolidPrimitivePtr  surface
     DEllipse3dCP arc;
     MSBsplineCurveCP spline;
     DSegment3dCP line;
+    MSInterpolationCurveCP interpolationCurve;
 
-    if (nullptr != (lineString = curve->GetLineStringCP()))
+    if (nullptr != (lineString = curve->GetLineStringCP()) || nullptr != (lineString = curve->GetPointStringCP()))
         originPoint = (*lineString)[0];
     else if (nullptr != (line = curve->GetLineCP()))
         originPoint = line->point[0];
@@ -88,6 +89,8 @@ ISolidPrimitivePtr  surface
         originPoint = arc->center;
     else if (nullptr != (spline = curve->GetBsplineCurveCP()))
         originPoint = spline->GetPole(0);
+    else if (nullptr != (interpolationCurve = curve->GetInterpolationCurveCP()))
+        originPoint = interpolationCurve->startTangent;
     else
         BeAssert(!"Unrecognized DrivingSurface Base Curve");
 
