@@ -635,10 +635,12 @@ BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
     if (schemas.empty())
         return BentleyApi::SUCCESS; //no schemas to import
 
-    // need to ensure there are no duplicated aliases
+    // need to ensure there are no duplicated aliases.  Also need to remove unused references
     bset<Utf8String, CompareIUtf8Ascii> prefixes;
     for (ECN::ECSchemaP schema : schemas)
         {
+        schema->RemoveUnusedSchemaReferences();
+
         auto it = prefixes.find(schema->GetAlias());
         if (it == prefixes.end())
             {
@@ -663,6 +665,9 @@ BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
         }
 
     bvector<BECN::ECSchemaCP> constSchemas = m_schemaReadContext->GetCache().GetSchemas();
+    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
+    auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
+    constSchemas.erase(removeAt, constSchemas.end());
 
 //#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS

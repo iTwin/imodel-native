@@ -1191,20 +1191,42 @@ int iModelBridgeFwk::UpdateExistingBim()
     // Open the briefcase
     // Note that iModelBridge::_Initialize may have registered new or changed domains, so we have to permit schema changes.
     bool madeSchemaChanges = false;
-    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges);
+    bool hasDynamicSchemaChanges = false;
+    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
     if (!m_briefcaseDgnDb.IsValid())
         {
         GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
         return BentleyStatus::ERROR;
         }
 
-    if (madeSchemaChanges)
+    if (madeSchemaChanges || hasDynamicSchemaChanges)
         {
         // We must isolate schema changes in their own revision, before we let the bridge move on to making data changes.
         m_briefcaseDgnDb->SaveChanges();
         if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
             return RETURN_STATUS_SERVER_ERROR;
         Briefcase_ReleaseSharedLocks();
+        }
+
+    //If we had a schema change, we cannot process the dynamic schema change in the same transaction. So reopen the db.
+    if (madeSchemaChanges)
+        {
+        m_briefcaseDgnDb->CloseDb();
+        m_briefcaseDgnDb = nullptr;
+
+        m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
+        if (!m_briefcaseDgnDb.IsValid())
+            {
+            GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+            return BentleyStatus::ERROR;
+            }
+        if (hasDynamicSchemaChanges)
+            {
+            m_briefcaseDgnDb->SaveChanges();
+            if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
+                return RETURN_STATUS_SERVER_ERROR;
+            Briefcase_ReleaseSharedLocks();
+            }
         }
 
 #ifdef COMMENT_OUT

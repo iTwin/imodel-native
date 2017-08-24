@@ -3451,6 +3451,7 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model)
     {
     m_rootModelRef = &rootV8Model;
+    m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
     }
 
