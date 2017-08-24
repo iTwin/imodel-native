@@ -2,10 +2,15 @@
 #
 #     $Source: gtest/CheckLogfilesForFailures.py $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 import os, sys, re
+import time
+#search path for importing symlinks python script from bentleybuild 
+searchpath=os.path.join(os.environ.get ("SrcRoot"),"BentleyBuild")
+sys.path.append(searchpath)
+import bentleybuild.symlinks as symlinks
 
 # Failure patterns to match
 # [  FAILED  ] RleEditorTester.MaxRleRunSetPixels    
@@ -13,13 +18,56 @@ import os, sys, re
 failedpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
 summarypat = re.compile (r"\[==========\].*ran", re.I)
 runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
+mspat = re.compile (r"ms\s*\)", re.I)
+
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Ridha.Malik      08/2017
+#-------------------------------------------------------------------------------------------
+def ignoreflakytest(srcpath,testListf):
+    for root, dirs, files in os.walk(srcpath):
+        for file in files:
+            if file == "ignore_list.txt":
+               fpath=os.path.join(root,file)
+               status=symlinks.isSymbolicLink(fpath)
+               if status:
+                   fpath1=symlinks.getFinalPath(fpath)
+                   filep=open(fpath1,'a+')
+                   for key,value in failedTestsDic.items():
+                       filep.write("\n"+key+"\n")
+                       for v in value:
+                           filep.write(v+"\n")
+                   filep.close()
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Ridha.Malik      08/2017
+#-------------------------------------------------------------------------------------------
+def FindFailedTestFailures(lines,failedTestsList):
+    failedTestsDic={}
+    i=0
+    start=0
+    end=0
+    for x in failedTestsList:
+        for line in lines:
+            if x in line and (runpat.search(line)!=None):
+                   start=i
+            if x in line and (failedpat.search(line)!=None) and (mspat.search(line)!=None):
+                   end =i
+            i=i+1
+        i=0
+        failedTestsDic.setdefault(x,[])
+        details="Stream:Bim0200, build configuration : Release, architecture: x64,"+" Date: "+time.strftime("%d/%m/%Y")
+        failedTestsDic[x].append(details)
+        for j in range(start+1,end):
+            failedTestsDic[x].append(lines[j])
+    return failedTestsDic
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson      05/2016
 #-------------------------------------------------------------------------------------------
 def checkLogFileForFailures(logfilename):
+    global exename
     exename = ''
     foundSummary = False
+    global failedTestsList
     failedTestsList = ""
     lastTestRun = ""
     colon = ''
@@ -27,8 +75,12 @@ def checkLogFileForFailures(logfilename):
     lineNo = 0
     summaryLineNo = 0
     summarystr = logfilename + '\n'
+    lines=''
+    global failedTestsDic
+    failedTestsDic={}
     with open(logfilename, 'r') as logfile:
-        for line in logfile.readlines():
+        lines=logfile.readlines()
+        for line in lines:
 
             lineNo = lineNo + 1
 
@@ -67,6 +119,10 @@ def checkLogFileForFailures(logfilename):
                     failedTestsList = failedTestsList + colon + failed.group(1)
                     colon = ':'
                     continue
+
+        if failedTestsList!='' and ignorefailure:
+           failedTestsListemp=failedTestsList.split(':')
+           failedTestsDic=FindFailedTestFailures(lines,failedTestsListemp)
 
     if not anyFailures and foundSummary:
         return '',summarystr
@@ -117,11 +173,15 @@ if __name__ == '__main__':
 
     dir = sys.argv[1]
     breakonfailure = False
+    ignorefailure = False
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
-
+    if len(sys.argv) >3 and str(sys.argv[3]) =="True":
+        ignorefailure = True
     advicestr = ''
     summarystr = ''
+    exename = ''
+    failedTestsDic=''
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:
             if not file.endswith('.log'):
@@ -146,6 +206,19 @@ if __name__ == '__main__':
         print "All tests passed."
         exit (0)
 
+    statusfilename=os.path.join(dir,"CheckStatus.txt")
+    if len(failedTestsDic)!=0 and ignorefailure:
+       if "using" in exename:
+           exename=exename.split("using ")
+           srcpath=os.path.dirname(exename[1])
+       else:
+           srcpath=os.path.dirname(exename)
+       ignoreflakytest(srcpath,failedTestsDic)
+       file=open(statusfilename,'wb')
+       file.write("FlakyTests")
+       file.close()
+    elif(os.path.isfile(statusfilename)):
+        os.remove(statusfilename)
     print advicestr
     exit(breakonfailure)
 
