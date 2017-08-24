@@ -8479,7 +8479,10 @@
                   </Member>
                   <Member>
                     <KeyName>LondonGrid</KeyName>
-                  </Member>				  
+                  </Member>			
+                  <Member>
+                    <KeyName>HeathrowAirportGrid2007</KeyName>
+                  </Member>			  
                 </Members>
               </Group>
 
