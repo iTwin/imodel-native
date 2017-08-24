@@ -6700,12 +6700,6 @@
                     <KeyName>EPSG:3397-1</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:3398-1</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3399-1</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>EPSG:4647</KeyName>
                   </Member>
                   <Member>
@@ -28438,6 +28432,12 @@
               <Member>
                 <KeyName>EPSG:102067</KeyName>
               </Member>
+              <Member>
+                <KeyName>EPSG:3398-1</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3399-1</KeyName>
+              </Member>	      
             </Members>
             <Groups>
               <Group>
