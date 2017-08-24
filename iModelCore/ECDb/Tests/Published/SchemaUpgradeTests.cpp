@@ -265,6 +265,57 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority) 
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='string' priority='1010' />"
+        "       <ECProperty propertyName='P2' typeName='string' priority='1020' />"
+        "       <ECProperty propertyName='P3' typeName='string' priority='1030' />"
+        "       <ECProperty propertyName='P4' typeName='string' />"
+        "       <ECProperty propertyName='P5' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_priority.ecdb", schemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+    ASSERT_EQ(1010, foo->GetPropertyP("P1")->GetPriority());
+    ASSERT_EQ(1020, foo->GetPropertyP("P2")->GetPriority());
+    ASSERT_EQ(1030, foo->GetPropertyP("P3")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P4")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P5")->GetPriority());
+    }
+    ReopenECDb();
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='string' priority='2010' />"
+        "       <ECProperty propertyName='P2' typeName='string' priority='2020' />"
+        "       <ECProperty propertyName='P3' typeName='string'                 />"
+        "       <ECProperty propertyName='P4' typeName='string' priority='1040' />"
+        "       <ECProperty propertyName='P5' typeName='string' priority='1050' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+    ASSERT_EQ(2010, foo->GetPropertyP("P1")->GetPriority());
+    ASSERT_EQ(2020, foo->GetPropertyP("P2")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetPriority());
+    ASSERT_EQ(1040, foo->GetPropertyP("P4")->GetPriority());
+    ASSERT_EQ(1050, foo->GetPropertyP("P5")->GetPriority());
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
@@ -6377,7 +6428,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyCustomAttributePropertyValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttributeClass)
+TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Complex)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6520,7 +6571,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttributeClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass)
+TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Simple)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6537,7 +6588,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {false, false}, "Deleting a ECCustomAttributeClass");
+    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, true}, "Deleting a ECCustomAttributeClass");
     }
 
 //---------------------------------------------------------------------------------------
