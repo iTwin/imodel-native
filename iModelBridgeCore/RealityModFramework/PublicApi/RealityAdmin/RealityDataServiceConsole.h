@@ -84,7 +84,7 @@ private:
     void PrintResults(bmap<Utf8String, bvector<Utf8String>> results);
     void Usage();
     void Choice(bvector<Utf8String> options, Utf8StringR input);
-    void InterpretCommand();
+    void InterpretCommand(bool emptyDisplayMessage =true);
     void List();
     void ListAll();
     void ListRoots();

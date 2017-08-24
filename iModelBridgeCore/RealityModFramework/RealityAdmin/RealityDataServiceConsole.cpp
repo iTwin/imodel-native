@@ -38,7 +38,7 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
         *s_outputDestination << pMsg << std::endl;
     }
 
-void RealityDataConsole::InterpretCommand()
+void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
     {
     m_lastCommand = Command::Dummy;
     std::string str;
@@ -49,7 +49,8 @@ void RealityDataConsole::InterpretCommand()
     BeStringUtilities::ParseArguments(args, m_lastInput.c_str());
     if (args.size() < 1)
         {
-        DisplayInfo("missing input. Please refer to \"Help\" \n", DisplayOption::Error);
+        if (emptyDisplayMessage)
+            DisplayInfo("missing input. Please refer to \"Help\" \n", DisplayOption::Error);
         return;
         }
     if (args.size() > 2)
@@ -928,12 +929,42 @@ void RealityDataConsole::EnterpriseStat()
 
 void RealityDataConsole::AllEnterpriseStats()
     {
+    DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
+    DisplayInfo("   ''                   --> current date\n", DisplayOption::Question);
+    DisplayInfo("   yyyy-mm-dd           --> Specific date\n", DisplayOption::Question);
+    DisplayInfo("   yyyy-mm-dd yyy-mm-dd --> Range date \n", DisplayOption::Question);
+    DisplayInfo("Choice ? ", DisplayOption::Question);
+
+    InterpretCommand(false);    // accept empty input
+    if (m_lastCommand == Command::Cancel)
+        return;
+
+    bvector<Utf8String> specDates;
+    BeStringUtilities::Split(m_lastInput.c_str(), " ", specDates);
+
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataAllEnterpriseStatsRequest* ptt = new RealityDataAllEnterpriseStatsRequest("");
+    RealityDataAllEnterpriseStatsRequest* ptt=0;
+
+    DisplayInfo(Utf8PrintfString("   NbRealityData : %s\n", m_lastInput));
+
+    DateTime curInfoDate;
+    if (specDates.size() == 0)
+        {
+        ptt = new RealityDataAllEnterpriseStatsRequest(""); // All enterprise
+        curInfoDate = DateTime::GetCurrentTimeUtc();
+        }
+    else if (specDates.size() == 1)
+        {
+        DateTime::FromString(curInfoDate, specDates[0].c_str());
+        ptt = new RealityDataAllEnterpriseStatsRequest("", curInfoDate);
+        }
+
     bvector<RealityDataEnterpriseStat> stats;
     stats = RealityDataService::Request(*ptt, rawResponse);
 
-    DisplayInfo("Enterprise statistics: \n");
+    DisplayInfo(Utf8PrintfString("Enterprise statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
+                                                                            curInfoDate.GetMonth(),
+                                                                            curInfoDate.GetDay()));
 
     for (auto currentStat : stats)
         {
