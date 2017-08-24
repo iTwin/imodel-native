@@ -2235,7 +2235,7 @@ void TraceOnEdge::ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures)
 void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     {
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-    long nextPnt1, nextPnt2 = dtmP->nullPnt, nextPnt3 = dtmP->nullPnt;
+    long nextPnt1 = 0, nextPnt2 = dtmP->nullPnt, nextPnt3 = dtmP->nullPnt;
     DPoint3d nextPt;
     if (pnt3 == dtmP->nullPnt)
         {

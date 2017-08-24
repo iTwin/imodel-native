@@ -34,7 +34,7 @@
     <Part Name="Formats" BMakeFile="formats\formats.mke">
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
-        <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="IppUtlDll"  PartFile="ImagePP" Repository="ImagePP" />
         <SubPart PartName="IppGraDll"  PartFile="ImagePP" Repository="ImagePP" />

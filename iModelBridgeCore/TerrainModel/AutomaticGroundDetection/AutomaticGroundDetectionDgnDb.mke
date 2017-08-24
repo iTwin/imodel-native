@@ -10,7 +10,7 @@ baseDir         = $(_MakeFilePath)
 %include  mdl.mki
 %include $(SrcRoot)TerrainModel/privmki/sourcedirsdgndb.mki
 %include $(SrcRoot)TerrainModel/privmki/outputdirsdgndb.mki
-%include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+%include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetectionDgnDb.mki
 
 ##  Symlink all src PublicAPI folders into build output PublicAPI folder
 always:
@@ -19,7 +19,7 @@ always:
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------
-o = $(OutputRootDir)Build/TerrainModel/$(appName)/
+o = $(OutputRootDir)Build/TerrainModelDgnDb/$(appName)/
 
 always:
     !~@mkdir $(o)
@@ -106,11 +106,7 @@ DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_NO_INITIALIZE_FUNCTION  = 1
-DLM_NO_DEF                  = 1
-DLM_NOMSBUILTINS            = 1
-DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
-DLM_NO_IMPLIB               = 1
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
@@ -119,12 +115,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BaseGeoCoord.lib \
     $(ContextSubpartsLibs)Bentley.lib \
     $(ContextSubpartsLibs)BentleyGeom.lib \
-    $(ContextSubpartsLibs)CGAL.lib \
     ws2_32.lib \
     $(ContextSubpartsLibs)TerrainModelCore.lib \
     $(ContextSubpartsLibs)TerrainModelFormats.lib
-    #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_system-vc140-mt-1_57.lib \
-    #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_thread-vc140-mt-1_57.lib    
     # \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)
 
 #LINKER_LIBRARIES            = 

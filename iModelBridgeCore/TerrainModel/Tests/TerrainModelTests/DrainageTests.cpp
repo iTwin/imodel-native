@@ -8,6 +8,9 @@
 #pragma warning(disable:4505) // unreferenced local function has been removed [in gtest-port.h]
 
 #include "stdafx.h"
+#include <TerrainModel/Drainage/Drainage.h>
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 TEST (TmTest, Triangulate)
     {

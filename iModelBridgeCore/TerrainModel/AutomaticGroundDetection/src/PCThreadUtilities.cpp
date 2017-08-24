@@ -262,7 +262,7 @@ PointCloudThread::~PointCloudThread()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudThread::Start()
     {
-    BeThreadUtilities::StartNewThread(1024 * 1024, PlatformThreadRunner, this);
+    BeThreadUtilities::StartNewThread(PlatformThreadRunner, this, 1024*1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
