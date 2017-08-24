@@ -1243,7 +1243,13 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
     // It is possible that the source is bis-ified as an Aspect (this is BAD, but there are schemas/dgns that do this).  In that case, the relationship cannot be bisified.
     for (auto constraintClass : inputClass.GetSource().GetConstraintClasses())
         {
-        if (!constraintClass->Is(GetDefaultConstraintClass()))
+        ECEntityClassCP asEntity = constraintClass->GetEntityClassCP();
+        if (asEntity != nullptr && asEntity->IsMixin())
+            {
+            if (!asEntity->GetAppliesToClass()->Is(GetDefaultConstraintClass()))
+                return nullptr;
+            }
+        else if (!constraintClass->Is(GetDefaultConstraintClass()))
             return nullptr;
         }
 
