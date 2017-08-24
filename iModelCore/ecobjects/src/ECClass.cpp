@@ -1992,7 +1992,18 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
                 {
                 ECValue except;
                 ca->GetValue(except, "Except");
-                if (except.IsNull() || Utf8String::IsNullOrEmpty(except.GetUtf8CP()) || !Utf8String(except.GetUtf8CP()).Equals(baseClass->GetFullName()))
+                if (except.IsNull() || Utf8String::IsNullOrEmpty(except.GetUtf8CP()))
+                    return SchemaReadStatus::Success;
+                bvector<Utf8String> baseNames;
+                BeStringUtilities::Split(except.GetUtf8CP(), ";", baseNames);
+                bool addThisBaseClass = false;
+                for (Utf8String baseName : baseNames)
+                    if (baseName.Equals(baseClass->GetFullName()))
+                        {
+                        addThisBaseClass = true;
+                        break;
+                        }
+                if (!addThisBaseClass)
                     return SchemaReadStatus::Success;
                 }
             }
