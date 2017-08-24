@@ -6,7 +6,7 @@
 |       $Date: 2012/08/16 16:17:17 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*
@@ -15,6 +15,11 @@
 #include <Bentley\BeTimeUtilities.h>
 #include "MXModelFile.h"
 #include "mxtriangle.h"
+
+#ifndef PUSH_MSVC_IGNORE
+#define PUSH_MSVC_IGNORE(a)
+#define POP_MSVC_IGNORE
+#endif
 
 #define asLong(a) *((long*)a)
 
@@ -1139,7 +1144,8 @@ ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord
 
             for(int j = 0; j < 50; j++)
                 {
-                memset(mt.models[j].modelName, ' ', 32);
+                memset(mt.models[j].modelName, ' ', 28);
+                memset(mt.models[j].modelType, ' ', 4);
                 mt.models[j].stringTablePos = 0;
                 mt.models[j].date = 0;
 
@@ -1479,9 +1485,12 @@ void ModelTableRecord::UpdateFile()
         ModelFileRecord str;
 
         memset(&str, 0, sizeof(str));
-        for(int j = 0; j < 50; j++)
-            memset(str.strings[j].stringName, ' ', 8);
-
+        for (int j = 0; j < 50; j++)
+            {
+            asLong(str.strings[j].stringName) = asLong("    ");
+            asLong(str.strings[j].subReference) = asLong("    ");
+            }
+        
         str.nextRecord = mt.models[recordEntry].stringTablePos;
         str.lastRecord = stringTableType;
         str.pad[0] = 0xffdbed2d;
@@ -3187,16 +3196,12 @@ ErrorStatus MXTriangleString::loadData(MXTriangle* tri)
             }
         triangleP = triangles->getArrayPtr();
         pNum = points->size();
-        long* ptNums = new long[pNum];
-        for(i = 0; i < pNum; i++)
-            {
-            ptNums[i] = 0;
-            }
+        bvector<long> ptNums;
+        
+        ptNums.resize(pNum, 0);
 
         for(i = 0; i < reUsePointNum.size(); i++)
-            {
             ptNums[reUsePointNum[i]] = -1;
-            }
 
         int pNum = 0;
         for(i = 0; i < points->size(); i++)
@@ -3219,7 +3224,6 @@ ErrorStatus MXTriangleString::loadData(MXTriangle* tri)
                 //    j = j;
                 }
             }
-        delete [] ptNums;
         points->setBlockSize(0);
         points->setLogicalLength(pNum);
         points->setPhysicalLength(pNum);
@@ -4013,7 +4017,9 @@ ErrorStatus MXTriangleString::getTriangle(const int triangleNumber, ElementTrian
         _timeNumbers[i] = CurTime++;
         ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)_records[i];
         data.doubles = rec.doubles[triangleNumber % 10];
+        PUSH_MSVC_IGNORE(6385);
         data.ints = rec.ints[triangleNumber % 10];
+        POP_MSVC_IGNORE;
         }
     return eOk;
     }
@@ -4059,7 +4065,9 @@ ErrorStatus MXTriangleString::setTriangle(const int triangleNumber, const Elemen
         _timeNumbers[i] = CurTime++;
         ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)_records[i];
         rec.doubles[triangleNumber % 10] = data.doubles;
+        PUSH_MSVC_IGNORE(6386);
         rec.ints[triangleNumber % 10] = data.ints;
+        POP_MSVC_IGNORE;
         _recordNumbers[i] = -recordNumber;
         }
     return eOk;

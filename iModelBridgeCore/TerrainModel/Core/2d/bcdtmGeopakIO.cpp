@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmGeopakIO.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -867,7 +867,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400DataObject(DTM_DAT_OBJ
             {
              if( oldUserTag == oldNullTag ) userTag = DTM_NULL_USER_TAG ;
              else                           userTag = ( DTMUserTag ) oldUserTag ;
-             memcpy(utP,&userTag,sizeof(DTMUserTag));
+             *utP = userTag;
             }
          }
       }

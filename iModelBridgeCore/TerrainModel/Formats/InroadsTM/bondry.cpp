@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* bondry.c                                            tmi    14-Apr-1990     */
@@ -105,7 +105,10 @@ static int aecDTM_getSurfacePerimeterWithExterior /* <= TRUE if error         */
       for ( pP = blkP->rec.pnt; pP < blkP->rec.pnt + blkP->use; pP++ )
 	if ( !aecDTM_isPointDeletedFlagSet(pP) )
         {
-	  DTMPOINTTODPOINT ( srfP, pP, tmpP[i] );
+        PUSH_MSVC_IGNORE(6386);
+        DTMPOINTTODPOINT ( srfP, pP, tmpP[i] );
+        POP_MSVC_IGNORE;
+
           i++;
         }
 

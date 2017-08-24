@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* filuti.c                                            tmi    06-Jan-1993     */
@@ -29,7 +29,7 @@ const wchar_t *fname,
 const wchar_t *ext 
 )
 {
-    wchar_t wcsFileName[512];
+    wchar_t wcsFileName[512] = L"";
     _wmakepath( wcsFileName, drive, dir, fname, ext );
 
     size_t len = wcslen(wcsFileName);

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmConnect.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2906,7 +2906,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 /*
 ** Allocate Memory To Hold Connected String Offsets
 */
- conStringP = (DTM_CONNECTED_STRING * ) malloc ( numConnectLines * sizeof(DTM_CONNECTED_STRING)) ;
+ conStringP = new DTM_CONNECTED_STRING [numConnectLines] ;
  if( conStringP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -3117,7 +3117,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 */
  cleanup :
  if( lineMarkP     != NULL ) { free(lineMarkP)     ; lineMarkP     = NULL ; }
- if( conStringP    != NULL ) { free(conStringP)    ; conStringP    = NULL ; }
+ if( conStringP    != NULL ) { delete [] conStringP    ; conStringP    = NULL ; }
  if( minConStringP != NULL ) { free(minConStringP) ; minConStringP = NULL ; }
 /*
 ** Job Completed

@@ -10,6 +10,11 @@
 #include "bcdtminlines.h" 
 #include <mutex>
 
+#ifndef PUSH_MSVC_IGNORE
+#define PUSH_MSVC_IGNORE(a)
+#define POP_MSVC_IGNORE
+#endif
+
 std::mutex s_dtmMutex;
 
 /*-------------------------------------------------------------------+
@@ -2301,7 +2306,9 @@ BENTLEYDTM_Public int bcdtmObject_resizeFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP
             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
             goto errexit ; 
             }
+        PUSH_MSVC_IGNORE(6386);
         for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n ) dtmP->fTablePP[n] = nullptr ;
+        POP_MSVC_IGNORE;
         /*
         **  Allocate Memory For Feature Partitions
         */
@@ -2316,12 +2323,14 @@ BENTLEYDTM_Public int bcdtmObject_resizeFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP
             /*
             **     Allocate Partition Memory
             */
+            PUSH_MSVC_IGNORE(6385);
             dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
             if( dtmP->fTablePP[n] == nullptr )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
                 }
+            POP_MSVC_IGNORE;
             if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld Completed",partitionSize,n) ;
             }
         }
@@ -2649,7 +2658,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
       }
+    PUSH_MSVC_IGNORE(6386);
     for( n = 0 ; n < dtmP->numPointPartitions ; ++n ) dtmP->pointsPP[n] = NULL ;
+    POP_MSVC_IGNORE;
 /*
 **  Allocate Memory For Point Partitions
 */
@@ -2664,12 +2675,14 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **     Allocate Partition Memory
 */
+       PUSH_MSVC_IGNORE(6385);
        dtmP->pointsPP[n] = ( DPoint3d * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DPoint3d)) ;
        if( dtmP->pointsPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
+       POP_MSVC_IGNORE;
       }
    }
 /*
@@ -2870,7 +2883,9 @@ BENTLEYDTM_Public int  bcdtmObject_allocateNodesMemoryDtmObject(BC_DTM_OBJ *dtmP
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
       }
+    PUSH_MSVC_IGNORE(6386);
     for( n = 0 ; n < dtmP->numNodePartitions ; ++n ) dtmP->nodesPP[n] = NULL ;
+    POP_MSVC_IGNORE;
 /*
 **  Allocate Memory For Node Partitions
 */
@@ -2885,12 +2900,14 @@ BENTLEYDTM_Public int  bcdtmObject_allocateNodesMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **     Allocate Partition Memory
 */
+       PUSH_MSVC_IGNORE(6385);
        dtmP->nodesPP[n] = ( DTM_TIN_NODE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Node, n, partitionSize * sizeof( DTM_TIN_NODE)) ; 
        if( dtmP->nodesPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
+       POP_MSVC_IGNORE;
       }
    }
 /*
@@ -3098,8 +3115,10 @@ BENTLEYDTM_Public int  bcdtmObject_allocateCircularListMemoryDtmObject(BC_DTM_OB
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
       }
+    PUSH_MSVC_IGNORE(6386);
     for( n = 0 ; n < dtmP->numClistPartitions ; ++n ) dtmP->cListPP[n] = NULL ;
-/*
+    POP_MSVC_IGNORE;
+    /*
 **  Allocate Memory For Clist Partitions
 */
     for( n = 0 ; n < dtmP->numClistPartitions ; ++n )
@@ -3113,13 +3132,15 @@ BENTLEYDTM_Public int  bcdtmObject_allocateCircularListMemoryDtmObject(BC_DTM_OB
 /*
 **     Allocate Partition Memory
 */
+       PUSH_MSVC_IGNORE(6385);
        dtmP->cListPP[n] = ( DTM_CIR_LIST * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::CList, n, partitionSize * sizeof( DTM_CIR_LIST)) ;
        if( dtmP->cListPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
-      }
+       POP_MSVC_IGNORE;
+       }
    }
 /*
 ** Incremental Allocation
@@ -3316,7 +3337,10 @@ BENTLEYDTM_Public int  bcdtmObject_allocateFeatureListMemoryDtmObject(BC_DTM_OBJ
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
       }
+    PUSH_MSVC_IGNORE(6386);
     for( n = 0 ; n < dtmP->numFlistPartitions ; ++n ) dtmP->fListPP[n] = NULL ;
+    POP_MSVC_IGNORE;
+
 /*
 **  Allocate Memory For Flist Partitions
 */
@@ -3331,12 +3355,14 @@ BENTLEYDTM_Public int  bcdtmObject_allocateFeatureListMemoryDtmObject(BC_DTM_OBJ
 /*
 **     Allocate Partition Memory
 */
+       PUSH_MSVC_IGNORE(6385);
        dtmP->fListPP[n] = ( DTM_FEATURE_LIST * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::FList, n, partitionSize * sizeof( DTM_FEATURE_LIST)) ;
        if( dtmP->fListPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
+       POP_MSVC_IGNORE;
        if( dbg ) bcdtmWrite_message(0,0,0,"Partition Memory Allocated") ;
       }
    }
