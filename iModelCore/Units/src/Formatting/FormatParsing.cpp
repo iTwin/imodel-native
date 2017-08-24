@@ -1460,6 +1460,7 @@ size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
     return m_vect.size();
     }
 
+PUSH_MSVC_IGNORE(6385 6386)
 Utf8String FormatParseVector::GetPattern()
     {
     Utf8Char last, foll;
@@ -1492,6 +1493,7 @@ Utf8String FormatParseVector::GetSignature()
         }
     return Utf8String(buf);
     }
+POP_MSVC_IGNORE
 //===================================================
 //
 // CursorScanTriplet Methods
@@ -1755,6 +1757,7 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
         m_dval = ng.GetReal();
         }
     }
+PUSH_MSVC_IGNORE(6385 6386)
 FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit)
     {
     Init(s);
@@ -1795,7 +1798,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             }
         }
     }
-
+POP_MSVC_IGNORE
 
 Utf8PrintfString FormatParsingSegment::ToText(int n)
     {
@@ -1914,72 +1917,9 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     {
     BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnit(unitName);
-    Init(input, start, unit);
-     //m_input = input;
-     //m_start = start;
-     //FormatParsingSegment fps;
-     ////Utf8CP tail = input;
-     //NumberGrabber ng;
-     //bvector<CursorScanPoint> m_symbs;
-     //bool revs = false;
-     //CursorScanPoint csp = CursorScanPoint();
-     //size_t ind = start;
-     //size_t ind0 = start;
-     //bool initVect = true;
-
-     //if (!Utf8String::IsNullOrEmpty(input))
-     //    {
-     //    ng = NumberGrabber();
-     //    while (!ng.IsEndOfLine())
-     //        {
-     //        ng.Grab(m_input, ind);
-     //        if (ng.GetLength() > 0)  // a number is detected
-     //            {
-     //            if (m_symbs.size() > 0)
-     //                {
-     //                fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-     //                m_segs.push_back(fps);
-     //                m_symbs.clear();
-     //                }
-
-     //            fps = FormatParsingSegment(ng);
-     //            m_segs.push_back(fps);
-     //            ind = ng.GetNextIndex();
-     //            initVect = true;
-     //            }
-     //        else
-     //            {
-     //            if (initVect) ind0 = ind;
-     //            initVect = false;
-     //            csp = CursorScanPoint(m_input, ind, revs);
-     //            if(csp.IsSpace())
-     //                {
-     //                if (m_symbs.size() > 0)
-     //                    {
-     //                    fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-     //                    m_segs.push_back(fps);
-     //                    m_symbs.clear();
-     //                    ind = csp.GetIndex();
-     //                    ind0 = ind;
-     //                    }
-     //                while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
-     //                ind = csp.GetIndex();
-     //                ind0 = ind;
-     //                }                 
-     //            if (csp.IsEndOfLine())
-     //                break;
-     //            m_symbs.push_back(csp);
-     //            ind = csp.GetIndex();
-     //            }
-     //        }
-     //    if (m_symbs.size() > 0)
-     //        {
-     //        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-     //        m_segs.push_back(fps);
-     //        }
-     //    }
+    Init(input, start, unit);     
     }
-
+PUSH_MSVC_IGNORE(6385 6386)
 Utf8String FormatParsingSet::GetSignature(bool distinct)
     {
     Utf8String txt = "";
@@ -2010,6 +1950,7 @@ Utf8String FormatParsingSet::GetSignature(bool distinct)
         }
     return Utf8String(buf);
     }
+POP_MSVC_IGNORE
 
 BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
     {

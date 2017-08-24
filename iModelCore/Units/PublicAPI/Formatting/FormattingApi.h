@@ -209,7 +209,7 @@ public:
     bool CheckTraitsBit(FormatTraits word, FormatTraits bit) const { return ((static_cast<int>(word) & static_cast<int>(bit)) != 0); }
     bool CheckTraitsBit(FormatTraits bit) const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(bit)) != 0); }
     //UNITS_EXPORT void SetTraitsBit(bool set, FormatTraits bit, FormatTraits* word = nullptr);
-    UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits ref, bool verbose=false) const;
+    UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
     UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
 
@@ -247,28 +247,6 @@ public:
 
     void SetUseFractSymbol(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::UseFractSymbol, m_formatTraits, use); }
     bool IsUseFractSymbol() const { return CheckTraitsBit(FormatTraits::UseFractSymbol); }
-
-   // bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
-   // UNITS_EXPORT void SetUseLeadingZeroes(bool use);
-    //bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
-    //UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
-   // bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
-    //UNITS_EXPORT void SetKeepSingleZero(bool keep);
-    //bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
-    //UNITS_EXPORT void SetExponentZero(bool keep);
-    //bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
-    //UNITS_EXPORT void SetZeroEmpty(bool empty);
-    //bool IsZeroEmpty() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
-    //UNITS_EXPORT void SetUse1000Separator(bool use);
-    //bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
-    //UNITS_EXPORT void SetApplyRounding(bool use);
-    //bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); } 
-   // bool IsAppendUnit() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::AppendUnitName)) != 0); }
-    //UNITS_EXPORT void SetAppendUnit(bool use);
-   // bool IsFractionDash() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::FractionDash)) != 0); }
-    //UNITS_EXPORT void SetUseFractionDash(bool use);
-    //bool IsUseFractSymbol() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::UseFractSymbol)) != 0); }
-    //UNITS_EXPORT void SetUseFractionSymbol(bool use);
 
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
     void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }

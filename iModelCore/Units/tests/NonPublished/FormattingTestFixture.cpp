@@ -518,6 +518,7 @@ size_t FormattingTestFixture::ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, b
     return parts->size();
     }
 
+PUSH_MSVC_IGNORE(6385 6386)
 size_t FormattingTestFixture::GetNextArguments(Utf8P buf, int bufLen, bvector<Utf8CP>* parts, Utf8Char div)
     {
 #if defined (BENTLEY_WIN32)
@@ -568,6 +569,7 @@ size_t FormattingTestFixture::GetNextArguments(Utf8P buf, int bufLen, bvector<Ut
     return 0;
 #endif
     }
+POP_MSVC_IGNORE
 
 void  FormattingTestFixture::NamedSpecToJson(Utf8CP stdName)
     {
@@ -663,6 +665,16 @@ void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFor
      Json::Value val = spec.JsonFormatTraits(verbose);
      LOG.infov("Test %s json: %s", testName, val.ToString().c_str());
     }
+
+void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Utf8CP expected)
+    {
+    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
+    Json::Value val = fmtP->ToJson(verbose);
+    LOG.infov("Format %s json: %s", stdName, val.ToString().c_str());
+    }
+
+//NamedFormatSpec::ToJson
+
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

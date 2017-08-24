@@ -63,7 +63,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_formatTraits = FormatConstant::DefaultFormatTraits();
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-    m_barType = FractionBarType::None;
+    m_barType = FractionBarType::Diagonal;
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
@@ -80,17 +80,16 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
     m_presentationType = presType;
     m_signOption = signOpt;
     m_formatTraits = formatTraits;
+    m_barType = FractionBarType::Diagonal;
     if (PresentationType::Fractional == m_presentationType)
         {
         m_decPrecision = FormatConstant::DefaultDecimalPrecision();
         m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
-        m_barType = FractionBarType::Diagonal;
         }
     else
         {
         m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-        m_barType = FractionBarType::None;
         }
 
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();

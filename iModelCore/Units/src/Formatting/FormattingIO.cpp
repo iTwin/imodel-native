@@ -118,9 +118,11 @@ FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits trai
     return  static_cast<FormatTraits>(temp);
     }
 
-void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits ref, bool verbose) const
+void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose) const
     {
-    if (verbose || FormatConstant::IsBoolEqual(CheckTraitsBit(bit), CheckTraitsBit(ref, bit)))  //.IsKeepTrailingZeroes())
+    if (ref == nullptr)
+        verbose = true;
+    if ((nullptr == ref) || !FormatConstant::IsBoolEqual(CheckTraitsBit(bit), CheckTraitsBit(*ref, bit)))  //.IsKeepTrailingZeroes())
         outValue[bitIndex] = FormatConstant::BoolText(CheckTraitsBit(bit));
     }
 
@@ -133,18 +135,18 @@ Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
     {
     Json::Value jTraits;
     FormatTraits ref = FormatConstant::DefaultFormatTraits();
-    
-    TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, ref, verbose);
-    TraitsBitToJson(jTraits, json_LeadZeroes(),  FormatTraits::LeadingZeroes, ref, verbose);
-    TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, ref, verbose);
-    TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, ref, verbose);
-    TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, ref, verbose);
-    TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, ref, verbose);
-    TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, ref, verbose);
-    TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, ref, verbose);
-    TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, ref, verbose);
-    TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, ref, verbose);
-    TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, ref, verbose);
+
+    TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
+    TraitsBitToJson(jTraits, json_LeadZeroes(),  FormatTraits::LeadingZeroes, &ref, verbose);
+    TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
+    TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
+    TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
+    TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
+    TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
+    TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
+    TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
+    TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
+    TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
     return jTraits;
     }
 
@@ -153,24 +155,31 @@ Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
 //---------------------------------------------------------------------------------------
 Json::Value NumericFormatSpec::ToJson(bool verbose)const
     {
+    NumericFormatSpec defSpec = NumericFormatSpec();
     Json::Value jNFC;
+
     jNFC[json_presentType()] = Utils::PresentationTypeName(m_presentationType);
-    jNFC[json_signOpt()] = Utils::SignOptionName(m_signOption);
-    jNFC[json_roundFactor()] = m_roundFactor;
-    jNFC[json_decPrec()] = Utils::DecimalPrecisionToInt(m_decPrecision);
-    jNFC[json_fractPrec()] = Utils::FractionallPrecisionName(m_fractPrecision);
-    jNFC[json_formatTraits()] = JsonFormatTraits(verbose);
-    if (m_barType != FractionBarType::None)
+    if(verbose || m_signOption != defSpec.m_signOption)
+        jNFC[json_signOpt()] = Utils::SignOptionName(m_signOption);
+    if (verbose || fabs(m_roundFactor - defSpec.m_roundFactor) > 0.01)
+        jNFC[json_roundFactor()] = m_roundFactor;
+    if (verbose || m_decPrecision != defSpec.m_decPrecision)
+        jNFC[json_decPrec()] = Utils::DecimalPrecisionToInt(m_decPrecision);
+    if (verbose || m_fractPrecision != defSpec.m_fractPrecision)
+        jNFC[json_fractPrec()] = Utils::FractionallPrecisionName(m_fractPrecision);
+    if (verbose || m_formatTraits != defSpec.m_formatTraits)
+        jNFC[json_formatTraits()] = JsonFormatTraits(verbose);
+    if (verbose || m_barType != defSpec.m_barType)
         jNFC[json_barType()] = Utils::FractionBarName(m_barType);
-    if (m_decimalSeparator != '\0')
+    if (verbose || m_decimalSeparator != defSpec.m_decimalSeparator)
         jNFC[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
-    if (m_thousandsSeparator != '\0')
+    if (verbose || m_thousandsSeparator != defSpec.m_thousandsSeparator)
         jNFC[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
-    if (nullptr != m_uomSeparator)
+    if (verbose || strcmp(m_uomSeparator, defSpec.m_uomSeparator) != 0)
         jNFC[json_uomSeparator()] = m_uomSeparator;
-    if (m_stopSeparator != '\0')
+    if (verbose || m_stopSeparator != defSpec.m_stopSeparator)
         jNFC[json_statSeparator()] = Utils::CharToString(m_stopSeparator);
-    if (m_minWIdth != 0)
+    if (verbose || m_minWIdth != defSpec.m_minWIdth)
         jNFC[json_minWidth()] = m_minWIdth;
     return jNFC;
     }
