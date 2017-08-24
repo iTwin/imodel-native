@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImsClientTests.h"
@@ -222,4 +222,38 @@ TEST_F(ImsClientTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
 
     auto info = StubClientInfo();
     EXPECT_STREQ(signInUrl.c_str(), ImsClient::GetFederatedSignInUrl(*info, domainName).c_str());
+    }
+
+TEST_F(ImsClientTests, GetA2PUrl)
+    {
+    GetHandler().ForFirstRequest([&](Http::RequestCR request)
+        {
+        EXPECT_STREQ((UrlProvider::Urls::ImsActiveSTSHelperService.Get() + "/json/RegisterToken").c_str(), request.GetUrl().c_str());
+        Utf8PrintfString credsPair("%s:%s", "BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
+        Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
+        EXPECT_EQ(authorization, request.GetHeaders().GetAuthorization());
+        return StubHttpResponse(HttpStatus::OK, Utf8PrintfString("\"%s\"", BeGuid(true).ToString()));
+        });
+
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    auto url = client->GetA2PUrl("https://something.bentley.com", StubSamlToken(), BeGuid(true).ToString());
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+    EXPECT_NE("https://something.bentley.com", url);
+    }
+
+TEST_F(ImsClientTests, GetA2PUrl_FailsToRegisterToken)
+    {
+    GetHandler().ForFirstRequest([&](Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::Unauthorized);
+        });
+
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    BeTest::SetFailOnAssert(false);
+    auto url = client->GetA2PUrl("https://something.bentley.com", StubSamlToken(), BeGuid(true).ToString());
+    BeTest::SetFailOnAssert(true);
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+    EXPECT_EQ("https://something.bentley.com", url);
     }
