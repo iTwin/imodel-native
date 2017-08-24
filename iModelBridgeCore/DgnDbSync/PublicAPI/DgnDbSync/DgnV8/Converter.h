@@ -2404,12 +2404,6 @@ protected:
     //! Override to make sure that all files encountered by the converter are cached in m_v8Files
     DGNDBSYNC_EXPORT SyncInfo::V8FileProvenance _GetV8FileIntoSyncInfo(DgnV8FileR, StableIdPolicy) override;
 
-    //! Look in m_v8Files for a previously opened V8 file by its full file name.
-    DgnV8FileP FindOpenV8FileByName(BeFileNameCR);
-
-    //! Calls FindOpenV8FileByName to see if the file is already open. If not, it opens the file and calls OpenAndRegisterV8FileForDrawings to make sure that it is registered in syncinfo.
-    DgnFilePtr FindOrOpenV8FileForDrawings(BentleyApi::BeFileNameCR);
-
     //! @}
 
     //! @name The RootModelConverter framework
@@ -2428,7 +2422,7 @@ protected:
     DGNDBSYNC_EXPORT virtual void _FinishConversion();
     //! override this to filter out specific DgnAttachments from the spatial model hierarchy
     virtual bool _WantAttachment(DgnAttachmentCR attach) const {return true;}
-
+    
     //! override this to control how drawing and sheet models are found
     DGNDBSYNC_EXPORT virtual void _ImportDrawingAndSheetModels(ResolvedModelMapping& rootModelMapping);
 
@@ -2441,13 +2435,15 @@ protected:
     //! @private
     void ForceAttachmentsToSpatial(Bentley::DgnAttachmentArrayR attachments);
     //! @private
-    void ImportSpatialModels(DgnV8ModelRefR, TransformCR);
+    void ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR, TransformCR);
     //! @private
     void UpdateCalculatedProperties();
 
 public:
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
+    //! This returns false if the V8 file should not be converted by the bridge.
+    DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.

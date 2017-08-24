@@ -495,6 +495,8 @@ SubjectCPtr RootModelConverterApp::_FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr RootModelConverterApp::_InitializeJob()
     {
+    BeAssert(m_converter->IsFileAssignedToBridge(*m_converter->GetRootV8File()) && "The bridge assigned to the root file/model must be the bridge that creates the root subject");
+
     auto status = m_converter->InitializeJob();
 
     //  Make sure that we really should be converting this model as our root
