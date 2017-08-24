@@ -1200,8 +1200,10 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
         return ERROR;
 
     if (stmt->Step() != BE_SQLITE_ROW)
-        return ERROR;
-
+        {
+        //If this does not return a row then ECCustomAttributeClass is already deleted and it has caused cascade delete which have deleted all the associated customAttributes
+        return SUCCESS;
+        }
     ordinal = stmt->GetValueInt(0);
 
     stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
@@ -2115,6 +2117,27 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteCustomAttributeClass(ECClassCR deletedClass)
+    {
+    Utf8StringCR schemaName = deletedClass.GetSchema().GetName();
+    if (schemaName.EqualsI("ECDbMap") || schemaName.EqualsI("ECDbSchemaPolicies"))
+        {
+        Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECCustomAttributeClass '%s' failed. Deleting ECCustomAttributeClass from system schemas are not supported.",
+                        deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    //Add Type file to ensure we are deleting customattribute class.
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM " TABLE_Class " WHERE [Type] = " SQLVAL_ECClassType_CustomAttribute " AND [Id] = ?");
+    stmt->BindId(1, deletedClass.GetId());
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR deletedClass)
@@ -2140,18 +2163,16 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
         return ERROR;
         }
 
-    if (deletedClass.IsCustomAttributeClass())
-        {
-        Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. ECCustomAttributeClass cannot be deleted",
-                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
-        return ERROR;
-        }
-
     if (IsSpecifiedInRelationshipConstraint(deletedClass))
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. A class which is specified in a relationship constraint cannot be deleted",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
+        }
+
+    if (deletedClass.IsCustomAttributeClass())
+        {
+        return DeleteCustomAttributeClass(deletedClass);
         }
 
     ClassMapCP deletedClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(deletedClass);

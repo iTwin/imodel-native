@@ -6374,6 +6374,148 @@ TEST_F(SchemaUpgradeTestFixture, ModifyCustomAttributePropertyValues)
         m_ecdb.CloseDb();
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttributeClass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'C01' appliesTo = 'Schema'>                      <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C02' appliesTo = 'EntityClass'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C03' appliesTo = 'CustomAttributeClass'>        <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C04' appliesTo = 'StructClass'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C05' appliesTo = 'RelationshipClass'>           <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C06' appliesTo = 'AnyClass'>                    <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C07' appliesTo = 'StructProperty'>              <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C08' appliesTo = 'ArrayProperty'>               <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C09' appliesTo = 'StructArrayProperty'>         <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C10' appliesTo = 'NavigationProperty'>          <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C11' appliesTo = 'AnyProperty'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C12' appliesTo = 'SourceRelationshipConstraint'><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C13' appliesTo = 'TargetRelationshipConstraint'><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C14' appliesTo = 'AnyRelationshipConstraint'>   <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C15' appliesTo = 'Any'>                         <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_customAttributes.ecdb", schemaItem));
+    std::map<Utf8String, ECClassId> caClasses;
+    for (ECClassCP ecClass : m_ecdb.Schemas().GetSchema("T")->GetClasses())
+        if (ecClass->IsCustomAttributeClass())
+            caClasses[ecClass->GetName()] = ecClass->GetId();
+
+    ReopenECDb();
+    //<ECSchemaReference name="T" version="01.00.00" alias="T" />
+    //<ECCustomAttributes><C01 xmlns='T.01.00'><S>Value</S></C01></ECCustomAttributes>
+    SchemaItem s1(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributes><C01 xmlns='T.01.00'><S>test1_c01</S></C01></ECCustomAttributes>"
+        "   <ECCustomAttributeClass typeName = 'C01' appliesTo = 'Schema'>                      <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c01</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C02' appliesTo = 'EntityClass'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c02</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C03' appliesTo = 'CustomAttributeClass'>                                                                                            <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C04' appliesTo = 'StructClass'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c04</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C05' appliesTo = 'RelationshipClass'>           <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c05</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C06' appliesTo = 'AnyClass'>                    <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c06</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C07' appliesTo = 'StructProperty'>              <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c07</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C08' appliesTo = 'ArrayProperty'>               <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c08</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C09' appliesTo = 'StructArrayProperty'>         <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c09</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C10' appliesTo = 'NavigationProperty'>          <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c10</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C11' appliesTo = 'AnyProperty'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c11</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C12' appliesTo = 'SourceRelationshipConstraint'><ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c12</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C13' appliesTo = 'TargetRelationshipConstraint'><ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c13</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C14' appliesTo = 'AnyRelationshipConstraint'>   <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c14</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C15' appliesTo = 'Any'>                         <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c15</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s1));
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_Class WHERE Id = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        }
+    }
+
+    SchemaItem s2(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T1' nameSpacePrefix='T1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='T' version='01.00.00' prefix='T' />"
+        "   <ECCustomAttributes><C01 xmlns='T.01.00'><S>test1_t1</S></C01></ECCustomAttributes>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <C02 xmlns = 'T.01.00'><S>entity_Class</S></C02>"
+        "           <C06 xmlns = 'T.01.00'><S>any_class</S></C06>"
+        "           <C15 xmlns = 'T.01.00'><S>any</S></C15>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
+        "        <ECCustomAttributes>"
+        "           <Localizable xmlns='CoreCustomAttributes.01.00'/>"
+        "           <C11 xmlns = 'T.01.00'><S>AnyProperty</S></C11>"
+        "           <C11 xmlns = 'T.01.00'><S>AnyProperty</S></C11>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s2));
+    {
+    int customAttributeInstances = 0;
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_CustomAttribute WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            customAttributeInstances++;
+        }
+    ASSERT_EQ(20, customAttributeInstances);
+    }
+
+    ReopenECDb();
+    SchemaItem s3(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>");
+    
+    ASSERT_EQ(SUCCESS, ImportSchema(s3));
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_Class WHERE Id = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+        }
+
+    stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_ClassMap WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+        }
+
+    int customAttributeInstances = 0;
+    stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_CustomAttribute WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            customAttributeInstances++;
+        }
+    ASSERT_EQ(0, customAttributeInstances);
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
