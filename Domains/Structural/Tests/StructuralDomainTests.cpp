@@ -143,12 +143,25 @@ TEST_F(StructuralDomainTestFixture, WallClassTests)
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, WALL_CODE_VALUE);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == physicalElement->SetCode(code));
 
+
+    bool bTrue = true;
+    Json::Value jsonObj1 = physicalElement->GetJsonProperties("TEST1");
+    jsonObj1["Is it true?"] = bTrue;
+    physicalElement->SetJsonProperties("TEST1", jsonObj1);
+
+    Json::Value jsonObj2 = physicalElement->GetJsonProperties("TEST2");
+    jsonObj2["Wall Thickness"] = 0.1457824578;
+    physicalElement->SetJsonProperties("TEST2", jsonObj2);
+
     Dgn::DgnDbStatus status;
     Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, WALL_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
+
+
+
     }
 
 #define BRACE_CODE_VALUE       "BRACE-001"
@@ -527,23 +540,42 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-TEST_F(StructuralDomainTestFixture, BuiltupProfileComponentClassTests)
+
+#define CONSTANTPROFILE_CODE_VALUE2       "CONSTANTPROFILE-002"
+TEST_F(StructuralDomainTestFixture, ProfileComponentUsesProfileTests)//incorrect name
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_ConstantProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, CONSTANTPROFILE_CODE_VALUE2);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, CONSTANTPROFILE_CODE_VALUE2);
+    ASSERT_TRUE(queriedElement.IsValid());
+
     ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_BuiltUpProfileComponent);
-    ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();
+    RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(*db, *aspectClass);
+    DgnElement::MultiAspect::AddAspect(*queriedElement, *aspect);
 
-    ASSERT_TRUE(aspectEnabler.IsValid());
-
-    ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
+    ASSERT_TRUE(queriedElement->Update().IsValid());
     }
 
 TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
+
+
 
     ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileZone);
     ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();

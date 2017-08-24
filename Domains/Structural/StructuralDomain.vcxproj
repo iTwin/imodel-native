@@ -27,7 +27,9 @@
     <None Include="StructuralProfiles\StructuralProfiles.prewire.mki" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml" />
+    <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="StructuralDomains.Partfile.xml">
       <SubType>Designer</SubType>
     </Xml>

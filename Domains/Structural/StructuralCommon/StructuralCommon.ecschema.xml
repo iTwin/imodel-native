@@ -2,6 +2,7 @@
 <ECSchema schemaName="StructuralCommon" alias="sc" version="01.00.00" description="Structural Common Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    
     <ECEntityClass typeName="StructuralPhysicalModel" displayLabel="Structural Physical Model">
         <BaseClass>bis:PhysicalModel</BaseClass>
         <ECCustomAttributes>
@@ -14,4 +15,63 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    
+    <ECEntityClass typeName="MaterialProperties" displayLabel="Material Properties">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="ElasticModulus" typeName="double" description="Modulus of Elasticity" displayLabel="Elastic Modulus" kindOfQuantity="M_PER_L_T2"/>
+        <ECProperty propertyName="PoissonsRatio" typeName="double" description="Poisson's Ratio" displayLabel="Poisson's Ratio" kindOfQuantity="NONE"/>
+        <ECProperty propertyName="TensileStrength" typeName="double" description="Tensile Strength" displayLabel="Tensile Strength" kindOfQuantity="M_PER_L_T2_PSI"/>
+        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" description="Thermal Expansion Coefficient (1/deg.F) " displayLabel="Thermal Expansion Coefficient" kindOfQuantity="K"/>
+    </ECEntityClass>
+    <ECEnumeration typeName="ConcretePropertyCalcType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="PerCode"/>
+        <ECEnumerator value="1" displayLabel="Specified"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="CompressiveStrengthTestType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="BritishStandardsCube"/>
+        <ECEnumerator value="1" displayLabel="StandardCylinder"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="ConcreteMaterialProperties" displayLabel="Concrete Material Properties">
+        <BaseClass>MaterialProperties</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UnitMass" typeName="double" description="True Unit Mass (kip/in^3)" displayLabel="Unit Mass"/>
+        <ECProperty propertyName="CompressiveStrength" typeName="double" description="Compressive strength (typically at 28 days)" displayLabel="Compressive Strength" kindOfQuantity="M_PER_L_T2"/>
+        <ECProperty propertyName="TestType" typeName="CompressiveStrengthTestType"/>
+        <ECProperty propertyName="ElasticModulusCalc" typeName="ConcretePropertyCalcType"/>
+        <ECProperty propertyName="TensileStrengthCalc" typeName="ConcretePropertyCalcType"/>
+        <ECProperty propertyName="UnitMassForLoads" typeName="double" description="Unit mass of concrete for use in calculating loads. Must be non-negative. " displayLabel="Unit Mass for Loads"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="SteelMaterialProperties" displayLabel="Steel Material Properties">
+        <BaseClass>MaterialProperties</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElasticModulus" typeName="double"/>
+        <ECProperty propertyName="YieldStress" typeName="double" description="Fy in AISC nomenclature" displayLabel="Yield Stress" kindOfQuantity="NONE"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="PhysicalSteelOwnsStructuralSteelProperties" displayLabel="Physical Steel Owns Structural Steel Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Physical Steel Owns Structural Steel Properties" polymorphic="true">
+            <Class class="bis:PhysicalMaterial"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Physical Steel Owns Structural Steel Properties (Reversed)" polymorphic="true">
+            <Class class="SteelMaterialProperties"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhysicalConcreteOwnsStructuralConcreteProperties" displayLabel="Physical Concrete Owns Structural Concrete Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Physical Concrete Owns Structural Concrete Properties" polymorphic="true">
+            <Class class="bis:PhysicalMaterial"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Physical Concrete Owns Structural Concrete Properties (Reversed)" polymorphic="true">
+            <Class class="ConcreteMaterialProperties"/>
+        </Target>
+    </ECRelationshipClass>
+    <KindOfQuantity typeName="M_PER_L_T2" displayLabel="M_PER_L_T2" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="NONE" displayLabel="NONE" persistenceUnit="ONE(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="M_PER_L_T2_PSI" displayLabel="M_PER_L_T2_PSI" persistenceUnit="PSI(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="K" displayLabel="K" persistenceUnit="FAHRENHEIT(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

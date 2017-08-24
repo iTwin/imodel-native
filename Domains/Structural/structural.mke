@@ -302,11 +302,11 @@ $(o)SteelMaterialProperties$(oext) : $(StructMaterial)SteelMaterialProperties.cp
     $(StructMaterialPublicAPI)MaterialProperties.h
 
 
-#$(o)VaryingProfileZone$(oext) : $(StructProfiles)VaryingProfileZone.cpp \
-#    ${MultiCompileDepends} \
-#    $(StructProfilesPublicAPI)VaryingProfileZone.h \
-#    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-#    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+$(o)VaryingProfileZone$(oext) : $(StructProfiles)VaryingProfileZone.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)VaryingProfileZone.h \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 %include MultiCppCompileGo.mki
 

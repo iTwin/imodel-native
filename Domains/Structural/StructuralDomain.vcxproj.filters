@@ -70,7 +70,7 @@
       <Filter>Schemas</Filter>
     </Xml>
     <Xml Include="StructuralMaterial\StructuralMaterial.ecschema.xml">
-      <Filter>StructuralMaterial</Filter>
+      <Filter>Schemas</Filter>
     </Xml>
   </ItemGroup>
   <ItemGroup>

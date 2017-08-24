@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralMaterials" alias="sm" version="01.00.00" description="Aspects and Relationships for Structural Physical Materials" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-
-
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
     <ECSchemaReference name="StructuralPhysical" version="01.00" alias="sp"/>
     <ECEntityClass typeName="MaterialProperties" displayLabel="Material Properties">
@@ -84,8 +82,7 @@
             <Class class="SteelMaterialProperties"/>
         </Target>
     </ECRelationshipClass>
-	
-	    <ECRelationshipClass typeName="PhysicalConcreteOwnsStructuralConcreteProperties" displayLabel="Physical Concrete Owns Structural Concrete Properties" modifier="None" strength="embedding">
+	<ECRelationshipClass typeName="PhysicalConcreteOwnsStructuralConcreteProperties" displayLabel="Physical Concrete Owns Structural Concrete Properties" modifier="None" strength="embedding">
 	<BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="Physical Concrete Owns Structural Concrete Properties" polymorphic="true">
             <Class class="bis:PhysicalMaterial"/>
@@ -94,7 +91,6 @@
             <Class class="ConcreteMaterialProperties"/>
         </Target>
     </ECRelationshipClass>
-
     <KindOfQuantity typeName="M_PER_L_T2" displayLabel="M_PER_L_T2" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="NONE" displayLabel="NONE" persistenceUnit="ONE(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="M_PER_L_T2_PSI" displayLabel="M_PER_L_T2_PSI" persistenceUnit="PSI(DefaultReal)" relativeError="0.0001"/>
