@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* patch.c                                            tmi    29-Oct-1990      */
@@ -158,8 +158,10 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
 
       if ( (npnt+k) % 2 == 0 )
       {
+        PUSH_MSVC_IGNORE(6385);
         neistkP[j+k] = neistkP[i+k];
         pntstkP[j+k+1] = pntstkP[i+k+1];
+        POP_MSVC_IGNORE;
       }
 
       npnt = ( npnt + k + 1 ) / 2 + ( npnt + k + 1 ) % 2;

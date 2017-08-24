@@ -162,8 +162,8 @@ static int aecDTM_featuresFromPointsProcess
 {
     CIVdtmsrf *srf = (CIVdtmsrf *)tmp;
     struct CIVdtmblk *blkP = NULL;
-    wchar_t baseName[DTM_C_NAMSIZ];
-    wchar_t ftrName[DTM_C_NAMSIZ];
+    wchar_t baseName[DTM_C_NAMSIZ] = L"";
+    wchar_t ftrName[DTM_C_NAMSIZ] = L"";
     long genMsg = 0;
     long index;
     int sts = SUCCESS;
@@ -244,7 +244,7 @@ void aecDTM_generateUniqueFeatureName
 
             if ( iswdigit( tmpOldName[idx] ) )
             {
-                wchar_t wcDigits[DTM_C_NAMSIZ];
+                wchar_t wcDigits[DTM_C_NAMSIZ] = L"";
                 wcscpy ( wcDigits, &tmpOldName[idx] );
                 swscanf ( wcDigits, L"%ld", &cnt );
                 cnt++;
@@ -463,11 +463,15 @@ static int aecDTM_getFeaturePoints
             {
                 if ( !aecDTM_isPointDeletedFlagSet ( &ftrP->p1[i] ) && !( ftrP->p1[i].flg & DTM_C_PNTDFY ) )
                 {
-                    DTMPOINTTODPOINT ( srfP, &ftrP->p1[i], (*pntsPP)[*numPntsP].cor );
+                    PUSH_MSVC_IGNORE(6386);
+                    DTMPOINTTODPOINT(srfP, &ftrP->p1[i], (*pntsPP)[*numPntsP].cor);
                     (*pntsPP)[*numPntsP].flg = 0;
+                    POP_MSVC_IGNORE;
 
+                    PUSH_MSVC_IGNORE(6385);
                     if ( ftrP->p1[i].flg & DTM_C_PNTPUD)
                         (*pntsPP)[*numPntsP].flg |= DTM_C_PNTPUD;
+                    POP_MSVC_IGNORE;
 
                     (*numPntsP)++;
                 }
@@ -1466,7 +1470,7 @@ int aecDTM_densifyFeaturePoints
 
         if ( *outputPntsPP )
         {
-            memcpy ( &(*outputPntsPP)[0], &inputPntsP[0], sizeof ( CIVdtmpnt ) );
+            (*outputPntsPP)[0] = inputPntsP[0];
             *numOutputPntsP = 1;
 
             for ( int i = 0; i < numInputPnts-1; i++ )

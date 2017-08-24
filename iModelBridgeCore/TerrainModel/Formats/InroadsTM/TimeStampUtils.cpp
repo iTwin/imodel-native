@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 #include "stdafx.h"
@@ -15,7 +15,7 @@ wchar_t *aecTimeStamp_getUserName
     wchar_t *szUserName           // <- Username - may be NULL
     )
     {
-    static wchar_t szName[USER_NAME_SIZE];
+    static wchar_t szName[USER_NAME_SIZE] = L"";
     unsigned long szLen = USER_NAME_SIZE;
 
     if( wcslen( szName ) == 0 )

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/bcdtmMX.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/TerrainModel.h"
@@ -207,8 +207,8 @@ template<class dtm> class TriangleToDTMHelper
     {
     private:
         dtm& m_dtm;
-        char* m_markers;
-        long* m_pointNumbers;
+        bvector<char> m_markers;
+        bvector<long> m_pointNumbers;
         BC_DTM_OBJ* m_dtmP;
     public:
         /*-------------------------------------------------------------------+
@@ -219,14 +219,8 @@ template<class dtm> class TriangleToDTMHelper
         TriangleToDTMHelper(dtm& dtmR, BC_DTM_OBJ *dtmP) : m_dtm(dtmR), m_dtmP(dtmP)
             {
             // Allocate Markers and point number temporary array.
-            m_markers = (char*)malloc(NumTriangles());
-            m_pointNumbers = (long*)malloc(sizeof(long) * NumPoints());
-
-            for(long i = 0; i < NumPoints(); i++)
-                m_pointNumbers[i] = 0;
-
-            for(long i = 0; i < NumTriangles(); i++)
-                m_markers[i] = 0;
+            m_markers.resize(NumTriangles(), 0);
+            m_pointNumbers.resize(NumPoints(), 0);
             }
         /*-------------------------------------------------------------------+
         |                                                                    |
@@ -235,8 +229,6 @@ template<class dtm> class TriangleToDTMHelper
         +-------------------------------------------------------------------*/
         ~TriangleToDTMHelper()
             {
-            if(m_markers) free(m_markers);
-            if(m_pointNumbers) free(m_pointNumbers);
             }
 
         /*-------------------------------------------------------------------+

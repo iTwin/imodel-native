@@ -2901,7 +2901,7 @@ DTMStatusInt BcDTM::AnalyzeSlope (DRange1d* tInterval, int nInterval, bool polyg
 
     if (_dtmTransformHelper.IsValid ())
         {
-        themeTable = (DRange1d *)bcMem_malloc (nInterval * sizeof (DRange1d));
+        themeTable = new DRange1d[nInterval];
         if (themeTable == nullptr)
             return DTM_ERROR;
         for (int iRange = 0; iRange < nInterval; iRange++)
@@ -2920,7 +2920,7 @@ DTMStatusInt BcDTM::AnalyzeSlope (DRange1d* tInterval, int nInterval, bool polyg
     status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 2, themeTable, nInterval,
                                                 callBackFunctP, fence.points != nullptr ? TRUE : FALSE, TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
     if (_dtmTransformHelper.IsValid () && themeTable != nullptr)
-        bcMem_free ((void*)themeTable);
+        delete [] themeTable;
 
     return status;
     }
@@ -2933,11 +2933,11 @@ DTMStatusInt BcDTM::AnalyzeSlope (DRange1d* tInterval, int nInterval, bool polyg
 DTMStatusInt BcDTM::AnalyzeAspect (DRange1d* tInterval, int nInterval, bool polygonized, const DTMFenceParams& fence, void* userP, DTMFeatureCallback callBackFunctP)
     {
     DTMStatusInt  status=DTM_SUCCESS ;
-    DRange1d   *themeTable = tInterval;
+    DRange1d   *themeTable = nullptr;
 
     BeAssert (GetTinHandle() != nullptr);
 
-    themeTable = (DRange1d *)bcMem_malloc (nInterval * sizeof (DRange1d));
+    themeTable = new DRange1d[nInterval];
     if (themeTable == nullptr)
         return DTM_ERROR;
 
@@ -2969,7 +2969,8 @@ DTMStatusInt BcDTM::AnalyzeAspect (DRange1d* tInterval, int nInterval, bool poly
     status = (DTMStatusInt)bcdtmTheme_loadThemeFromDtmObject ((BC_DTM_OBJ *)GetTinHandle (), polygonized, 4, themeTable, nInterval,
                                                 callBackFunctP, fence.points != nullptr ? TRUE : FALSE, TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);
 
-    if( themeTable != nullptr ) bcMem_free ((void*)themeTable);
+    if( themeTable != nullptr )
+        delete [] themeTable;
 
     // Return
     return status;

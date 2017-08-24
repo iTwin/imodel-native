@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMDrapedLineClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <math.h>
@@ -629,7 +629,7 @@ int    iPt;
             if (xyTabP)
             {
                 if (*xyTabP == NULL)
-                    *xyTabP = (DPoint3d*)bcMem_malloc (sizeof (DPoint3d));
+                    *xyTabP = (DPoint3d*)bcMem_malloc ((*nPtP)*sizeof (DPoint3d));
                 else
                     *xyTabP = (DPoint3d*)bcMem_realloc (*xyTabP, (*nPtP)*sizeof (DPoint3d));
                 (*xyTabP)[(*nPtP)-1] = _drapedPoints[iPt]->GetPoint ();
@@ -637,7 +637,7 @@ int    iPt;
             if (szTabP)
             {
                 if (*szTabP == NULL)
-                    *szTabP = (DPoint3d*)bcMem_malloc (sizeof (DPoint3d));
+                    *szTabP = (DPoint3d*)bcMem_malloc ((*nPtP)*sizeof (DPoint3d));
                 else
                     *szTabP = (DPoint3d*)bcMem_realloc (*szTabP, (*nPtP)*sizeof (DPoint3d));
                 (*szTabP)[(*nPtP)-1].x = _drapedPoints[iPt]->GetDistance ();
@@ -647,7 +647,7 @@ int    iPt;
             if (userTagTabP)
             {
                 if (*userTagTabP == NULL)
-                    *userTagTabP = (DTMUserTag*)bcMem_malloc (sizeof (DTMUserTag));
+                    *userTagTabP = (DTMUserTag*)bcMem_malloc ((*nPtP)*sizeof (DTMUserTag));
                 else
                     *userTagTabP = (DTMUserTag*)bcMem_realloc (*userTagTabP, (*nPtP)*sizeof (DTMUserTag));
                 (*userTagTabP)[(*nPtP)-1] = _drapedPoints[iPt]->GetBcDTMUserTag ();
@@ -655,7 +655,7 @@ int    iPt;
             if (guidTabP)
             {
                 if (*guidTabP == NULL)
-                    *guidTabP = (DTMFeatureId*)bcMem_malloc (sizeof (DTMFeatureId));
+                    *guidTabP = (DTMFeatureId*)bcMem_malloc ((*nPtP)*sizeof (DTMFeatureId));
                 else
                     *guidTabP = (DTMFeatureId*)bcMem_realloc (*guidTabP, (*nPtP)*sizeof (DTMFeatureId));
 #if (_MSC_VER < 1300)

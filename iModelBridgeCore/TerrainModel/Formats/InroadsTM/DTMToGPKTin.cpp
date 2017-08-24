@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #include "stdafx.h"
 #include "inroadstm.h"
@@ -78,7 +78,7 @@ wchar_t *gpkTinFilename,
 int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  numTinPoints, long  numTinFeatures, wchar_t  *geopakTinFileNameP, int (*setGeopakCallBackFunctionsP)()))
 {
     long numTins = 0;
-    wchar_t newGpkTinFilename[MAX_PATH+1];
+    wchar_t newGpkTinFilename[MAX_PATH+1] = L"";
     int sts = SUCCESS;
 
     wcscpy ( newGpkTinFilename, gpkTinFilename );
@@ -123,7 +123,7 @@ int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  num
             _numFeatures++;
         }
 
-        char filename[(MAX_PATH +1) * 2];
+        char filename[(MAX_PATH +1) * 2] = "";
         memset ( filename, 0, sizeof ( filename ) );
         wcstombs ( filename, newGpkTinFilename, MAX_PATH + 1 );
 
@@ -433,7 +433,9 @@ static int _getSurfacePerimeterIndices ( struct CIVdtmsrf *srfP, DPoint3d **poin
 
         for (int i = 0; i < numVrts; i++)
         {
+            PUSH_MSVC_IGNORE(6386);
             (*pointIndicesPP)[i] = vrtsP[i];
+            POP_MSVC_IGNORE;
             (*numIndicesP)++;
         }
     }

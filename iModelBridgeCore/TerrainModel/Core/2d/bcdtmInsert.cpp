@@ -2,12 +2,17 @@
 |
 ** Module Code  bcdtmInsert.c
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h"
+
+#ifndef PUSH_MSVC_IGNORE
+#define PUSH_MSVC_IGNORE(a)
+#define POP_MSVC_IGNORE
+#endif
 
 #pragma float_control(precise, on, push)
 thread_local long numPrecisionError = 0, numSnapFix = 0; // These are only used in Debug code.
@@ -5493,7 +5498,11 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullPointsIntersectionTableDtmObj
 /*
 ** Reallocate Intersection Table Memory
 */
- if( *numIntTableP != memIntTable ) *intTablePP = ( DTM_STR_INT_TAB * ) realloc ( *intTablePP, *numIntTableP * sizeof(DTM_STR_INT_TAB)) ;
+ if (*numIntTableP != memIntTable)
+     {
+     *intTablePP = (DTM_STR_INT_TAB *)realloc(*intTablePP, *numIntTableP * sizeof(DTM_STR_INT_TAB));
+     memIntTable = *numIntTableP;
+     }
 /*
 ** Order Line Coordinates In Increasing x and y Coordiante Values
 */
@@ -5511,7 +5520,10 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullPointsIntersectionTableDtmObj
 ** Sort Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
+
+ PUSH_MSVC_IGNORE(6386)
  qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
+ POP_MSVC_IGNORE
 /*
 ** Clean Up
 */
@@ -5527,7 +5539,7 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullPointsIntersectionTableDtmObj
 */
  errexit :
  *numIntTableP = 0 ;
- if( *intTablePP != NULL ) { free(*intTablePP) ; *intTablePP = NULL ; }
+ if( *intTablePP != NULL ) { free(intTablePP) ; *intTablePP = NULL ; }
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -5981,7 +5993,9 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullLinesIntersectionTableDtmObje
 ** Sort Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
- qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
+ PUSH_MSVC_IGNORE(6386)
+     qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
+ POP_MSVC_IGNORE
 /*
 ** Clean Up
 */
@@ -8331,7 +8345,11 @@ BENTLEYDTM_Private int bcdtmInsert_buildStringHullIntersectionTableDtmObject(BC_
 ** Sort Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
+
+ PUSH_MSVC_IGNORE(6386)
  qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
+ POP_MSVC_IGNORE
+
 /*
 ** Clean Up
 */
