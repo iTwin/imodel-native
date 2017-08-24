@@ -211,7 +211,7 @@ public:
     //! Restore a briefcase of an iModel for a briefcase id that was issued previously. This function should be used in cases when briefcase file was deleted,
     //! but briefcase id remained for future use. For example: briefcase was deleted to free up the space temporarilly.
     //! @param iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
-    //! @param briefcaseID Previously Acquired Briefcase Id
+    //! @param briefcaseId Previously Acquired Briefcase Id
     //! @param baseDirectory Path to a directory that will be used in callback function.
     //! @param doSync If set to true, it will download all of the changeSets that have not been merged on server and merge locally.
     //! @param fileNameCallback Callback function, that takes baseDirectory, briefcase Id and iModel info as arguments and returns full filename.
