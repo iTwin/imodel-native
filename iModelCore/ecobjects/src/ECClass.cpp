@@ -29,19 +29,16 @@ void ECClass::SetErrorHandling (bool doAssert)
     ECProperty::SetErrorHandling(doAssert);
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                 
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECClass::ECClass (ECSchemaCR schema)
-    :
-    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments(), m_propertyCountCached(false), m_propertyCount(0)
-    {
-    //
-    };
+    : m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments(), m_propertyCountCached(false), m_propertyCount(0)
+    {};
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                 
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECClass::~ECClass ()
     {
     RemoveDerivedClasses ();
@@ -76,9 +73,9 @@ ECClassId ECClass::GetId () const
     return m_ecClassId;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 Utf8CP ECClass::GetFullName () const
     {
     if (m_fullName.empty())
@@ -98,9 +95,9 @@ Utf8StringCR ECClass::GetECSqlName() const
     return m_ecsqlName;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::SetName (Utf8StringCR name)
     {
     if (!ECNameValidation::IsValidName (name.c_str()))
@@ -112,9 +109,9 @@ ECObjectsStatus ECClass::SetName (Utf8StringCR name)
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECClass::GetDescription () const
     {
     return GetSchema().GetLocalizedStrings().GetClassDescription(this, m_description);
@@ -137,9 +134,9 @@ ECObjectsStatus ECClass::SetDescription (Utf8StringCR description)
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECClass::GetDisplayLabel () const
     {
     return GetSchema().GetLocalizedStrings().GetClassDisplayLabel(this, GetInvariantDisplayLabel());
@@ -153,9 +150,9 @@ Utf8StringCR ECClass::GetInvariantDisplayLabel() const
     return m_validatedName.GetDisplayLabel();
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::SetDisplayLabel (Utf8StringCR displayLabel)
     {        
     m_validatedName.SetDisplayLabel (displayLabel.c_str());
@@ -362,9 +359,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to rename property %s:%s to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
     else
-        {
         LOG.warningv("The property %s:%s was renamed to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
-        }
 
     return status;
     }
@@ -409,12 +404,14 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     AddPropertyMapping(originalName.c_str(), newName.c_str());
 
     if (renameDerivedProperties)
-        {
         RenameDerivedProperties(newName);
-        }
+
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 void ECClass::RenameDerivedProperties(Utf8String newName)
     {
     for (ECClassP derivedClass : m_derivedClasses)
@@ -520,11 +517,11 @@ ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind ki
 
     switch (kind)
         {
-    case VALUEKIND_Primitive:   newProperty = new PrimitiveECProperty (*this); break;
-    case VALUEKIND_Array:       newProperty = new PrimitiveArrayECProperty (*this); break;
-    case VALUEKIND_Struct:      newProperty = new StructECProperty (*this); break;
-    case VALUEKIND_Navigation:  newProperty = new NavigationECProperty(*this); break;
-    default:                    return ECObjectsStatus::Error;
+        case VALUEKIND_Primitive:   newProperty = new PrimitiveECProperty (*this); break;
+        case VALUEKIND_Array:       newProperty = new PrimitiveArrayECProperty (*this); break;
+        case VALUEKIND_Struct:      newProperty = new StructECProperty (*this); break;
+        case VALUEKIND_Navigation:  newProperty = new NavigationECProperty(*this); break;
+        default:                    return ECObjectsStatus::Error;
         }
 
     m_propertyMap.erase (m_propertyMap.find (propertyToRemove.GetName().c_str()));
@@ -631,9 +628,9 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
     {
     PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
@@ -698,12 +695,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CopyProperty
-(
-ECPropertyP& destProperty, 
-ECPropertyCP sourceProperty,
-bool copyCustomAttributes
-)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes)
     {
     return CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), copyCustomAttributes);
     }
@@ -711,14 +703,7 @@ bool copyCustomAttributes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CopyProperty
-(
-ECPropertyP& destProperty, 
-ECPropertyCP sourceProperty,
-Utf8CP destPropertyName,
-bool copyCustomAttributes,
-bool andAddProperty
-)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty)
     {
     if (nullptr == sourceProperty)
         return ECObjectsStatus::NullPointerValue;
@@ -728,14 +713,10 @@ bool andAddProperty
         PrimitiveECPropertyCP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
         destPrimitive = new PrimitiveECProperty(*this);
         ECEnumerationCP enumeration = sourcePrimitive->GetEnumeration();
-        if (enumeration != nullptr)
-            {
+        if (nullptr != enumeration)
             destPrimitive->SetType(*enumeration);
-            }
         else
-            {
             destPrimitive->SetType(sourcePrimitive->GetType());
-            }
 
         destProperty = destPrimitive;
         }
@@ -804,12 +785,7 @@ bool andAddProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CopyPropertyForSupplementation
-(
-ECPropertyP& destProperty, 
-ECPropertyCP sourceProperty, 
-bool copyCustomAttributes
-)
+ECObjectsStatus ECClass::CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes)
     {
     ECObjectsStatus status = CopyProperty(destProperty, sourceProperty, copyCustomAttributes);
     if (ECObjectsStatus::Success == status)
@@ -817,20 +793,16 @@ bool copyCustomAttributes
 
     return status;
     }
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP
-(
-WCharCP propertyName,
-bool includeBaseClasses
-) const
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECPropertyP ECClass::GetPropertyP(WCharCP propertyName, bool includeBaseClasses) const
     {
     Utf8String propName;
     BeStringUtilities::WCharToUtf8(propName, propertyName);
     PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propName.c_str());
     
-    if ( propertyIterator != m_propertyMap.end() )
+    if (propertyIterator != m_propertyMap.end())
         return propertyIterator->second;
     else
         return includeBaseClasses ? GetBaseClassPropertyP (propName.c_str()) : NULL;
@@ -851,22 +823,18 @@ ECPropertyP ECClass::GetBaseClassPropertyP (Utf8CP propertyName) const
     return NULL;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP
-(
-Utf8StringCR propertyName,
-bool includeBaseClasses
-) const
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECPropertyP ECClass::GetPropertyP(Utf8StringCR propertyName, bool includeBaseClasses) const
     {
-    return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
+    return GetPropertyP(propertyName.c_str(), includeBaseClasses);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (Utf8CP name, bool includeBaseClasses) const
+ECPropertyP ECClass::GetPropertyP(Utf8CP name, bool includeBaseClasses) const
     {
     PropertyMap::const_iterator found = m_propertyMap.find(name);
     if (m_propertyMap.end() != found)
@@ -912,10 +880,7 @@ From .NET implementation:
 ///
 * @bsimethod                                    Carole.MacDonald                11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::SchemaAllowsOverridingArrays
-(
-ECSchemaCP schema
-)
+bool ECClass::SchemaAllowsOverridingArrays(ECSchemaCP schema)
     {
     Utf8Char buf[1024];
     BeStringUtilities::Snprintf(buf, "%s.%02d", schema->GetName().c_str(), schema->GetVersionRead());
@@ -1093,9 +1058,9 @@ ECObjectsStatus ECClass::FixArrayPropertyOverrides()
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECPropertyCR newProperty) const
     {
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
@@ -1123,8 +1088,8 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
 ECObjectsStatus ECClass::RemoveProperty (Utf8StringCR name)
     {
     PropertyMap::iterator  propertyIterator = m_propertyMap.find (name.c_str());
-    
-    if ( propertyIterator == m_propertyMap.end() )
+
+    if (propertyIterator == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
         
     ECPropertyP ecProperty = propertyIterator->second;
@@ -1289,7 +1254,7 @@ void    ECClass::AddDerivedClass (ECClassCR derivedClass) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
+void ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
     {
     ECDerivedClassesList::iterator derivedClassIterator;
 
@@ -1306,7 +1271,7 @@ void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECClass::RemoveDerivedClasses ()
+void ECClass::RemoveDerivedClasses ()
     {
     for (ECDerivedClassesList::iterator iter = m_derivedClasses.end(); iter != m_derivedClasses.begin(); )
         (*--iter)->RemoveBaseClass (*this);
@@ -1574,7 +1539,7 @@ ECObjectsStatus ECClass::_RemoveBaseClass (ECClassCR baseClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECClass::RemoveBaseClasses ()
+void ECClass::RemoveBaseClasses()
     {
     for (ECBaseClassesList::iterator iter = m_baseClasses.begin(); iter != m_baseClasses.end(); iter++)
         (*iter)->RemoveDerivedClass (*this);
@@ -1585,7 +1550,7 @@ void    ECClass::RemoveBaseClasses ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::Is (Utf8CP schemaname, Utf8CP classname) const
+bool ECClass::Is(Utf8CP schemaname, Utf8CP classname) const
     {
     if (0 == GetName().CompareTo (classname) && 0 == GetSchema().GetName().CompareTo (schemaname))
         return true;
@@ -1603,7 +1568,7 @@ bool ECClass::Is (Utf8CP schemaname, Utf8CP classname) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::Is (ECClassCP targetClass) const
+bool ECClass::Is(ECClassCP targetClass) const
     {
     if (NULL == targetClass)
         return false;
@@ -1617,7 +1582,8 @@ bool ECClass::Is (ECClassCP targetClass) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
+// static
+bool ECClass::ClassesAreEqualByName(ECClassCP thisClass, const void * arg)
     {
     ECClassCP thatClass = static_cast<ECClassCP> (arg);
     if (nullptr == arg)
@@ -1634,7 +1600,7 @@ bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterable ECClass::GetProperties () const
+ECPropertyIterable ECClass::GetProperties() const
     {
     return ECPropertyIterable(*this, true);
     }
@@ -1642,7 +1608,7 @@ ECPropertyIterable ECClass::GetProperties () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterable ECClass::GetProperties (bool includeBaseProperties) const
+ECPropertyIterable ECClass::GetProperties(bool includeBaseProperties) const
     {
     return ECPropertyIterable(*this, includeBaseProperties);
     }
@@ -1650,7 +1616,7 @@ ECPropertyIterable ECClass::GetProperties (bool includeBaseProperties) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool containsProperty (Utf8CP name, PropertyList const& props)
+static bool containsProperty(Utf8CP name, PropertyList const& props)
     {
     return props.end() != std::find_if (props.begin(), props.end(), [&name](ECPropertyP const& prop)
         {
@@ -1661,7 +1627,7 @@ static bool containsProperty (Utf8CP name, PropertyList const& props)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::GetProperties (bool includeBaseProperties, PropertyList* propertyList) const
+ECObjectsStatus ECClass::GetProperties(bool includeBaseProperties, PropertyList* propertyList) const
     {
     for (ECPropertyP prop: m_propertyList)
         propertyList->push_back(prop);
@@ -1675,14 +1641,14 @@ ECObjectsStatus ECClass::GetProperties (bool includeBaseProperties, PropertyList
         {
         for (ECPropertyP const& baseProp : baseClass->GetProperties (true))
             {
-            if (!containsProperty (baseProp->GetName().c_str(), *propertyList) && !containsProperty (baseProp->GetName().c_str(), inheritedProperties))
+            if (!containsProperty(baseProp->GetName().c_str(), *propertyList) && !containsProperty(baseProp->GetName().c_str(), inheritedProperties))
                 inheritedProperties.push_back (baseProp);
             }
         }
 
     // inherited properties come before this class's properties
-    propertyList->reserve (propertyList->size() + inheritedProperties.size());
-    propertyList->insert (propertyList->begin(), inheritedProperties.begin(), inheritedProperties.end());
+    propertyList->reserve(propertyList->size() + inheritedProperties.size());
+    propertyList->insert(propertyList->begin(), inheritedProperties.begin(), inheritedProperties.end());
 
     return ECObjectsStatus::Success;
     }
@@ -1748,13 +1714,11 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     {                
     Utf8String value;      // used by the macros.
     if (GetName().length() == 0)
-        {
-        READ_REQUIRED_XML_ATTRIBUTE (classNode, TYPE_NAME_ATTRIBUTE,        this, Name,     classNode.GetName())    
-        }
+        READ_REQUIRED_XML_ATTRIBUTE (classNode, TYPE_NAME_ATTRIBUTE, this, Name, classNode.GetName())
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
-    READ_OPTIONAL_XML_ATTRIBUTE (classNode, DESCRIPTION_ATTRIBUTE,         this, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE (classNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE (classNode, DESCRIPTION_ATTRIBUTE, this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE (classNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     Utf8String     modifierString;
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
@@ -1776,6 +1740,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     return SchemaReadStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments)
     {
     BeXmlNodeP currentNode = &childNode;
@@ -1787,7 +1754,6 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
         comments.push_back(comment);
         childNode = *currentNode->GetNextSibling(BEXMLNODE_Any);
         }
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1866,6 +1832,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 }
             else 
                 ecProperty = new PrimitiveArrayECProperty(*this);
+
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
@@ -2087,8 +2054,6 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
     return SchemaReadStatus::Success;
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2097,9 +2062,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     // No need to check here if comments need to be preserved. If they're not preserved m_xmlComments will be empty
     for (auto comment : m_xmlComments)
-        {
         xmlWriter.WriteComment(comment.c_str());
-        }
 
     xmlWriter.WriteElementStart(elementName);
     
@@ -2116,9 +2079,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
     else if (m_modifier != ECClassModifier::None || IsRelationshipClass())
-        {
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
-        }
 
     if (nullptr != additionalAttributes)
         {
@@ -2132,11 +2093,8 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         if (comments != m_contentXmlComments.end())
             {
             for (auto comment : comments->second)
-                {
                 xmlWriter.WriteComment(comment.c_str());
-                }
             }
-
 
         xmlWriter.WriteElementStart(EC_BASE_CLASS_ELEMENT);
         xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str());
@@ -2147,10 +2105,9 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
     if (comments != m_contentXmlComments.end())
         {
         for (auto comment : comments->second)
-            {
             xmlWriter.WriteComment(comment.c_str());
-            }
         }
+
     WriteCustomAttributes (xmlWriter);
             
     for (ECPropertyP prop: GetProperties(false))
@@ -2160,36 +2117,30 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         if (comments != m_contentXmlComments.end())
             {
             for (auto comment : comments->second)
-                {
                 xmlWriter.WriteComment(comment.c_str());
-                }
             }
-
 
         prop->_WriteXml (xmlWriter, ecXmlVersion);
         }
+
     if (doElementEnd)
         xmlWriter.WriteElementEnd();
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     return _WriteXml (xmlWriter, ecXmlVersion, EC_CLASS_ELEMENT, nullptr, true);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::ParseClassName 
-(
-Utf8StringR  alias, 
-Utf8StringR  className, 
-Utf8StringCR qualifiedClassName
-)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+ECObjectsStatus ECClass::ParseClassName(Utf8StringR alias, Utf8StringR className, Utf8StringCR qualifiedClassName)
     {
     if (0 == qualifiedClassName.length())
         {
@@ -2222,34 +2173,30 @@ Utf8StringCR qualifiedClassName
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECClass::GetQualifiedClassName
-(
-ECSchemaCR primarySchema,
-ECClassCR  ecClass
-)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+Utf8String ECClass::GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass)
     {
     Utf8String alias;
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (ecClass.GetSchema(), alias)))
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(ecClass.GetSchema(), alias)))
         {
         LOG.warningv ("warning: Cannot qualify an ECClass name with an alias unless the schema containing the ECClass is referenced by the primary schema."
             "The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.GetName().c_str(), ecClass.GetName().c_str(), ecClass.GetSchema().GetName().c_str());
         return ecClass.GetName();
         }
+
     if (alias.empty())
         return ecClass.GetName();
     else
         return alias + ":" + ecClass.GetName();
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-const ECBaseClassesList& ECClass::GetBaseClasses
-(
-) const
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+const ECBaseClassesList& ECClass::GetBaseClasses() const
     {
     return m_baseClasses;
     }
@@ -2257,10 +2204,7 @@ const ECBaseClassesList& ECClass::GetBaseClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECClass::_GetBaseContainers
-(
-bvector<IECCustomAttributeContainerP>& returnList
-) const
+void ECClass::_GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const
     {
     for (ECClassP baseClass: m_baseClasses)
         returnList.push_back(baseClass);
@@ -2269,12 +2213,11 @@ bvector<IECCustomAttributeContainerP>& returnList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECClass::_GetContainerSchema
-(
-) const
+ECSchemaCP ECClass::_GetContainerSchema() const
     {
     return &m_schema;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
@@ -2306,7 +2249,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
      * acceptable.
      */
 
-    ECPropertyP instanceLabelProperty = NULL;
+    ECPropertyP instanceLabelProperty = nullptr;
     IECInstancePtr caInstance = this->GetCustomAttribute("InstanceLabelSpecification");
     if (caInstance.IsValid())
         {
@@ -2315,7 +2258,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
             {
             Utf8CP propertyName = value.GetUtf8CP();
             instanceLabelProperty = this->GetPropertyP (propertyName);
-            if (NULL != instanceLabelProperty)
+            if (nullptr != instanceLabelProperty)
                 return instanceLabelProperty;
             }
         }
@@ -2325,18 +2268,11 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
     FOR_EACH (Utf8StringCR propName, instanceLabelPropertyNames)
         {
         instanceLabelProperty = this->GetPropertyP (propName.c_str());
-        if (NULL != instanceLabelProperty)
+        if (nullptr != instanceLabelProperty)
             return instanceLabelProperty;
         }
 
-    return NULL;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECEntityClass::ECEntityClass(ECSchemaCR schema) : ECClass(schema)
-    {
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2346,11 +2282,13 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
-
     else
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_ENTITYCLASS_ELEMENT, nullptr, true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const
     {
     bool baseIsMixin = baseAsEntity->IsMixin();
@@ -2401,6 +2339,9 @@ bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseA
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 bool ECEntityClass::Verify() const
     {
     if(!HasBaseClasses())
@@ -2422,6 +2363,9 @@ bool ECEntityClass::Verify() const
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
     if (validate)
@@ -2539,21 +2483,12 @@ bool ECEntityClass::IsOrAppliesTo(ECEntityClassCP entityClass) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECCustomAttributeClass::ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema)
-    {
-    m_containerType = CustomAttributeContainerType::Any;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
-
     else
         {
         Utf8String appliesToAttributeValue = ECXml::ContainerTypeToString(m_containerType);
@@ -2588,20 +2523,12 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECStructClass::ECStructClass(ECSchemaCR schema) : ECClass(schema)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
-
     else
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_STRUCTCLASS_ELEMENT, nullptr, true);
     }
@@ -2609,11 +2536,7 @@ SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterable::const_iterator::const_iterator
-(
-ECClassCR ecClass, 
-bool includeBaseProperties
-)
+ECPropertyIterable::const_iterator::const_iterator(ECClassCR ecClass, bool includeBaseProperties)
     {
     m_state = IteratorState::Create (ecClass, includeBaseProperties); 
     if (m_state->m_listIterator == m_state->m_properties->end())
@@ -2625,15 +2548,15 @@ bool includeBaseProperties
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterable::const_iterator  ECPropertyIterable::begin () const
+ECPropertyIterable::const_iterator ECPropertyIterable::begin() const
     {
     return ECPropertyIterable::const_iterator(m_ecClass, m_includeBaseProperties);        
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterable::const_iterator  ECPropertyIterable::end () const
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECPropertyIterable::const_iterator ECPropertyIterable::end() const
     {
     return ECPropertyIterable::const_iterator();        
     }   
@@ -2641,7 +2564,7 @@ ECPropertyIterable::const_iterator  ECPropertyIterable::end () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCP ECPropertyIterable::FindByDisplayLabel (Utf8CP label) const
+ECPropertyCP ECPropertyIterable::FindByDisplayLabel(Utf8CP label) const
     {
     for (auto const& prop : *this)
         if (prop->GetDisplayLabel().Equals (label))
@@ -2650,9 +2573,9 @@ ECPropertyCP ECPropertyIterable::FindByDisplayLabel (Utf8CP label) const
     return nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECPropertyIterable::const_iterator& ECPropertyIterable::const_iterator::operator++()
     {
     m_state->m_listIterator++;
@@ -2661,10 +2584,10 @@ ECPropertyIterable::const_iterator& ECPropertyIterable::const_iterator::operator
     return *this;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECPropertyIterable::const_iterator::operator!= (const_iterator const& rhs) const
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECPropertyIterable::const_iterator::operator!= (const_iterator const& rhs) const
     {
     if (m_isEnd && rhs.m_isEnd)
         return false;
@@ -2675,11 +2598,11 @@ bool            ECPropertyIterable::const_iterator::operator!= (const_iterator c
     return (m_state->m_listIterator != rhs.m_state->m_listIterator);
     }
 
-static const ECPropertyP s_nullPropertyPtr = NULL;
+static const ECPropertyP s_nullPropertyPtr = nullptr;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECPropertyP const& ECPropertyIterable::const_iterator::operator*() const
     {
     if (m_isEnd)
@@ -2689,17 +2612,19 @@ ECPropertyP const& ECPropertyIterable::const_iterator::operator*() const
     return ecProperty;
     }
 
-ECPropertyIterable::IteratorState::IteratorState
-(
-ECClassCR ecClass,
-bool includeBaseProperties
-)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECPropertyIterable::IteratorState::IteratorState(ECClassCR ecClass, bool includeBaseProperties)
     {
     m_properties = new PropertyList();
     ecClass.GetProperties(includeBaseProperties, m_properties);
     m_listIterator = m_properties->begin();
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECPropertyIterable::IteratorState::~IteratorState()
     {
     delete m_properties;
@@ -2723,9 +2648,7 @@ int RelationshipMultiplicity::Compare(RelationshipMultiplicity const& lhs, Relat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String RelationshipMultiplicity::ToString
-(
-) const
+Utf8String RelationshipMultiplicity::ToString() const
     {
     Utf8Char multiplicityString[32];
     
@@ -2973,8 +2896,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     }
                 else
                     LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'",
-                    (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
-
+                               (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
         }
@@ -3012,9 +2934,9 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint() const
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECClassCR constraintClass) const
     {
     ECClassCP abstractConstraint = GetAbstractConstraint();
@@ -3048,9 +2970,9 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECClassCR cons
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(bool resolveIssues) const
     {
     uint32_t lowerLimit = GetMultiplicity().GetLowerLimit();
@@ -3058,9 +2980,9 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(bool re
     return ValidateMultiplicityConstraint(lowerLimit, upperLimit, resolveIssues);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues) const
     {
     if (!m_relClass->HasBaseClasses())
@@ -3205,7 +3127,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             }
         
         ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByAliasP (alias);
-        if (NULL == resolvedSchema)
+        if (nullptr == resolvedSchema)
             {
             LOG.errorv("Invalid ECSchemaXML: %s ECRelationshipConstraint on ECRelationship %s contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
                 m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, alias.c_str());
@@ -3213,7 +3135,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             }
 
         ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
-        if (NULL == constraintClass)
+        if (nullptr == constraintClass)
             {
             LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on ECRelationship %s contains a %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
                 m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
@@ -3296,17 +3218,15 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
         xmlWriter.WriteAttribute(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint).c_str());
         xmlWriter.WriteElementEnd();
         }
+
     xmlWriter.WriteElementEnd();
     return status;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  06/2017
+// @bsimethod                                   Caleb.Shafer                  09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP abstractConstraint)
-    {
-    return SetAbstractConstraint(abstractConstraint, m_verify);
-    }
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP abstractConstraint) {return SetAbstractConstraint(abstractConstraint, m_verify);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  09/2016
@@ -3327,7 +3247,7 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP value, bo
         }
 
     ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByAliasP(alias);
-    if (NULL == resolvedSchema)
+    if (nullptr == resolvedSchema)
         {
         LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains an %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
                     ABSTRACTCONSTRAINT_ATTRIBUTE, alias.c_str());
@@ -3335,7 +3255,7 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP value, bo
         }
 
     ECClassCP constraintClass = resolvedSchema->GetClassCP(className.c_str());
-    if (NULL == constraintClass)
+    if (nullptr == constraintClass)
         {
         LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains an %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
                     ABSTRACTCONSTRAINT_ATTRIBUTE, value, className.c_str(), resolvedSchema->GetName().c_str());
@@ -3374,7 +3294,10 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECClassCR abstra
     return ECObjectsStatus::Success;
     }
 
-ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint) { return SetAbstractConstraint((ECClassCR)abstractConstraint); }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint) {return SetAbstractConstraint((ECClassCR)abstractConstraint);}
 ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipClassCR abstractConstraint) {return SetAbstractConstraint((ECClassCR)abstractConstraint);}
 
 //---------------------------------------------------------------------------------------
@@ -3390,6 +3313,12 @@ ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
 
     return nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECRelationshipClassCR classConstraint) {return AddClass((ECClassCR)classConstraint);}
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint) {return AddClass((ECClassCR)classConstraint);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  06/2017
@@ -3427,8 +3356,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     return ECObjectsStatus::Success;
     }
 
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECRelationshipClassCR classConstraint) {return AddClass((ECClassCR)classConstraint);}
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint) {return AddClass((ECClassCR)classConstraint); }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConstraint) {return RemoveClass((ECClassCR)classConstraint);}
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECRelationshipClassCR classConstraint) { return RemoveClass((ECClassCR)classConstraint);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  06/2017
@@ -3446,9 +3378,6 @@ ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECClassCR classConstraint)
     
     return ECObjectsStatus::ClassNotFound;
     }
-
-ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConstraint) {return RemoveClass((ECClassCR)classConstraint);}
-ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECRelationshipClassCR classConstraint) { return RemoveClass((ECClassCR)classConstraint); }
 
 bool classCompatibleWithConstraint(ECClassCP constraintClass, ECClassCP testClass, bool isPolymorphic)
     {
@@ -3491,22 +3420,13 @@ bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
 
     return false;
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (bool value)
-    {
-    m_isPolymorphic = value;
-    return ECObjectsStatus::Success;
-    }
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (Utf8CP isPolymorphic)
     {
-    PRECONDITION (NULL != isPolymorphic, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != isPolymorphic, ECObjectsStatus::PreconditionViolated);
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
     if (ECObjectsStatus::Success != status)
@@ -3553,10 +3473,15 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplic
 
     return SetMultiplicity(lowerLimit, upperLimit);
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Caleb.Shafer                    08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity) {return SetMultiplicity(multiplicity, m_verify);}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, bool validate)
     {
     PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
@@ -3579,20 +3504,12 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, b
     return SetMultiplicity(lowerLimit, upperLimit);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity)
-    {
-    return SetMultiplicity(multiplicity, m_verify);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
     {
-    PRECONDITION (NULL != cardinality, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != cardinality, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
     ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
@@ -3632,26 +3549,54 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint)
     {
+    ECObjectsStatus status;
+
     toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str());
-    toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
+    status = toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
+    if (ECObjectsStatus::Success != status)
+        return status;
     toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
 
-    ECObjectsStatus status;
     ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+
+    if (IsAbstractConstraintDefined())
+        {
+        ECClassP destAbstractConstraint = nullptr;
+        if (_GetContainerSchema()->GetSchemaKey() != GetAbstractConstraint()->GetSchema().GetSchemaKey())
+            destAbstractConstraint = const_cast<ECClassP>(GetAbstractConstraint());
+        else
+            {
+            destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
+            if (nullptr == destAbstractConstraint)
+                {
+                status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
+                if (ECObjectsStatus::Success != status)
+                    return status;
+                }
+            }
+
+        status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
+        if (ECObjectsStatus::Success != status)
+            return status;    
+        }
+
     for (auto constraintClass : GetConstraintClasses())
         {
-        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
-        if (NULL == destConstraintClass)
+        ECClassP destConstraintClass = nullptr;
+        if (_GetContainerSchema()->GetSchemaKey() != constraintClass->GetSchema().GetSchemaKey())
+            destConstraintClass = const_cast<ECClassP>(constraintClass);
+        else
             {
-            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
-            if (ECObjectsStatus::Success != status)
-                return status;
+            destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+            if (nullptr == destConstraintClass)
+                {
+                status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+                if (ECObjectsStatus::Success != status)
+                    return status;
+                }
             }
-        ECEntityClassP destAsEntity = destConstraintClass->GetEntityClassP();
-        if (nullptr == destAsEntity)
-            return ECObjectsStatus::DataTypeNotSupported;
 
-        status = toRelationshipConstraint.AddClass(*destAsEntity);
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
         if (ECObjectsStatus::Success != status)
             return status;
         }
@@ -3706,15 +3651,6 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
             return (OrderIdStorageMode)value.GetInteger ();
         }
     return ORDERIDSTORAGEMODE_None;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass(ECN::ECSchemaCR schema, bool verify) : ECClass(schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
-    {
-    m_source = new ECRelationshipConstraint(this, true, verify);
-    m_target = new ECRelationshipConstraint(this, false, verify);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3869,13 +3805,13 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
         return status;
 
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
-    if (NULL != sourceNode)
+    if (nullptr != sourceNode)
         status = m_source->ReadXml (*sourceNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
-    if (NULL != targetNode)
+    if (nullptr != targetNode)
         status = m_target->ReadXml (*targetNode, context);
     if (status != SchemaReadStatus::Success)
         return status;

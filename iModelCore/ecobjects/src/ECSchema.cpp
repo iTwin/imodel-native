@@ -1362,12 +1362,18 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
     // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
     for (ECClassP baseClass: sourceClass.GetBaseClasses())
         {
-        ECClassP targetBaseClass = this->GetClassP(baseClass->GetName().c_str());
-        if (nullptr == targetBaseClass)
+        ECClassP targetBaseClass = nullptr;
+        if (baseClass->GetSchema().GetSchemaKey() != sourceClass.GetSchema().GetSchemaKey())
+            targetBaseClass = baseClass;
+        else
             {
-            status = CopyClass(targetBaseClass, *baseClass);
-            if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
-                return status;
+            targetBaseClass = this->GetClassP(baseClass->GetName().c_str());
+            if (nullptr == targetBaseClass)
+                {
+                status = CopyClass(targetBaseClass, *baseClass);
+                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return status;
+                }
             }
             
         // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
@@ -1393,7 +1399,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, ECEnumerationCR sourceEnumeration)
+ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1406,6 +1412,20 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, EC
         targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel().c_str());
 
     targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription().c_str());
+    targetEnumeration->SetIsStrict(sourceEnumeration.GetIsStrict());
+
+    for (auto sourceEnumerator : sourceEnumeration.GetEnumerators())
+        {
+        ECEnumeratorP targetEnumerator;
+        if (PrimitiveType::PRIMITIVETYPE_Integer == targetEnumeration->GetType())
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetInteger());
+        else
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetString().c_str());
+
+        if (sourceEnumerator->GetIsDisplayLabelDefined())
+            targetEnumerator->SetDisplayLabel(sourceEnumerator->GetInvariantDisplayLabel().c_str());
+        }
+
     return ECObjectsStatus::Success;
     }
 

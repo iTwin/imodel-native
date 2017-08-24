@@ -25,31 +25,45 @@ struct SchemaCreationTest : ECTestFixture {};
 struct SchemaCopyTest : ECTestFixture 
     {
     ECSchemaPtr m_testSchema;
+    ECSchemaPtr m_copiedSchema;
     ECSchemaReadContextPtr   m_schemaContext;
     SearchPathSchemaFileLocaterPtr m_schemaLocater;
 
     protected:
+        void CopySchema()
+            {
+            CopySchema(m_copiedSchema);
+            }
+
         void CopySchema(ECSchemaPtr& copiedSchema)
             {
+            copiedSchema = nullptr;
             EC_ASSERT_SUCCESS(m_testSchema->CopySchema(copiedSchema));
             EXPECT_TRUE(copiedSchema.IsValid());
             EXPECT_NE(m_testSchema, copiedSchema);
+            m_testSchema = nullptr;
             }
 
     public:
-        void SetUp ()
+        void CreateTestSchema()
+            {
+            EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 1, 0, 0));
+            }
+
+        void SetUp() 
             {
             bvector<WString> searchPaths;
-            searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-            m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-            m_schemaContext = ECSchemaReadContext::CreateContext ();
-            m_schemaContext->AddSchemaLocater (*m_schemaLocater);
+            searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+            m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+            m_schemaContext = ECSchemaReadContext::CreateContext();
+            m_schemaContext->AddSchemaLocater(*m_schemaLocater);
+            }
 
-            }
-        void TearDown ()
+        void TearDown()
             {
-            m_schemaContext->RemoveSchemaLocater (*m_schemaLocater);
+            m_schemaContext->RemoveSchemaLocater(*m_schemaLocater);
             }
+
     };
 struct SchemaLocateTest : ECTestFixture {};
 struct SchemaKeyComparisonTest : ECTestFixture {};
@@ -1723,14 +1737,41 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 TEST_F(SchemaCopyTest, ExpectSuccessWhenCopyingStructs)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(m_testSchema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_TRUE(m_testSchema.IsValid());
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    ECSchemaPtr copiedSchema;
-    ECObjectsStatus status2 = schema->CopySchema(copiedSchema);
-    EXPECT_EQ(ECObjectsStatus::Success, status2);
+    CopySchema();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    EC_ASSERT_SUCCESS(m_testSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit("M");
+    koq->AddPresentationUnit("CM");
+    koq->AddPresentationUnit("MM");
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_copiedSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP copiedKoq = m_copiedSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != copiedKoq);
+    EXPECT_STREQ("Test KoQ", copiedKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", copiedKoq->GetDescription().c_str());
+    EXPECT_STREQ("CM", copiedKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
+    EXPECT_STREQ("M", copiedKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_EQ(10e-3, copiedKoq->GetRelativeError());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1738,25 +1779,39 @@ TEST_F(SchemaCopyTest, ExpectSuccessWhenCopyingStructs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
     {
-    ECSchemaPtr schema;
+    CreateTestSchema();
+
     ECEnumerationP enumeration;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECEnumeratorP enumeratorA;
+    ECEnumeratorP enumeratorB;
 
-    //Create Enumeration
-    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_String));
     ASSERT_TRUE(enumeration != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(schema.IsValid());
     enumeration->SetDisplayLabel("My Display Label");
+    enumeration->SetDescription("Test Description");
+    enumeration->SetIsStrict(false);
+    enumeration->CreateEnumerator(enumeratorA, "Value A");
+    enumeratorA->SetDisplayLabel("The value for A");
+    enumeration->CreateEnumerator(enumeratorB, "Value B");
+    enumeratorB->SetDisplayLabel("The value for B");
 
-    ECSchemaPtr copiedSchema = NULL;
-    schema->CopySchema(copiedSchema);
-    EXPECT_TRUE(copiedSchema.IsValid());
-    ECEnumerationP enumeration2 = copiedSchema->GetEnumerationP("Enumeration");
-    ASSERT_TRUE(enumeration2 != nullptr);
-    EXPECT_TRUE(enumeration2->GetType() == enumeration->GetType());
-    EXPECT_TRUE(enumeration2 != enumeration); //ensure the object was copied and not just referenced
-    EXPECT_STREQ(enumeration2->GetDisplayLabel().c_str(), enumeration->GetDisplayLabel().c_str());
+    CopySchema();
+
+    ECEnumerationP copiedEnum = m_copiedSchema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(copiedEnum != nullptr);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, copiedEnum->GetType());
+    EXPECT_STREQ("My Display Label", copiedEnum->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", copiedEnum->GetDescription().c_str());
+    EXPECT_FALSE(copiedEnum->GetIsStrict());
+    EXPECT_EQ(2, copiedEnum->GetEnumeratorCount());
+    ECEnumeratorCP copiedEnumeratorA = copiedEnum->FindEnumerator("Value A");
+    ASSERT_TRUE(nullptr != copiedEnumeratorA);
+    EXPECT_STREQ("The value for A", copiedEnumeratorA->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Value A", copiedEnumeratorA->GetString().c_str());
+    ECEnumeratorCP copiedEnumeratorB = copiedEnum->FindEnumerator("Value B");
+    ASSERT_TRUE(nullptr != copiedEnumeratorB);
+    EXPECT_STREQ("The value for B", copiedEnumeratorB->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Value B", copiedEnumeratorB->GetString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1764,29 +1819,48 @@ TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySchemaWithPropertyCategory)
     {
-    ECSchemaPtr schema;
+    CreateTestSchema();
+
     PropertyCategoryP propertyCategory;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
-    auto status = schema->CreatePropertyCategory(propertyCategory, "PropertyCategory");
-    ASSERT_TRUE(propertyCategory != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(schema.IsValid());
-    propertyCategory->SetDisplayLabel("My Display Label");
-    propertyCategory->SetDescription("My Description");
-    propertyCategory->SetPriority(3);
+    EC_ASSERT_SUCCESS(m_testSchema->CreatePropertyCategory(propertyCategory, "PropertyCategory"));
+    ASSERT_TRUE(nullptr != propertyCategory);
+    
+    EC_ASSERT_SUCCESS(propertyCategory->SetDisplayLabel("My Display Label"));
+    EC_ASSERT_SUCCESS(propertyCategory->SetDescription("My Description"));
+    EC_ASSERT_SUCCESS(propertyCategory->SetPriority(3));
 
-    ECSchemaPtr copiedSchema = nullptr;
-    status = schema->CopySchema(copiedSchema);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(copiedSchema.IsValid());
+    CopySchema();
 
-    PropertyCategoryCP copiedPropertyCategory = copiedSchema->GetPropertyCategoryCP("PropertyCategory");
-    ASSERT_TRUE(copiedPropertyCategory != nullptr);
-    EXPECT_TRUE(copiedPropertyCategory != propertyCategory); //ensure the object was copied and not just referenced
-    EXPECT_TRUE(copiedPropertyCategory->GetPriority() == propertyCategory->GetPriority());
-    EXPECT_STREQ(copiedPropertyCategory->GetDisplayLabel().c_str(), propertyCategory->GetDisplayLabel().c_str());
-    EXPECT_STREQ(copiedPropertyCategory->GetDescription().c_str(), propertyCategory->GetDescription().c_str());
+    PropertyCategoryCP copiedPropertyCategory = m_copiedSchema->GetPropertyCategoryCP("PropertyCategory");
+    ASSERT_TRUE(nullptr != copiedPropertyCategory);
+    EXPECT_EQ(3, copiedPropertyCategory->GetPriority());
+    EXPECT_STREQ("My Display Label", copiedPropertyCategory->GetDisplayLabel().c_str());
+    EXPECT_STREQ("My Description", copiedPropertyCategory->GetDescription().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClass)
+    {
+    CreateTestSchema();
+
+    ECEntityClassP entity;
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(entity, "Entity"));
+    entity->SetClassModifier(ECClassModifier::Sealed);
+    entity->SetDescription("Description of my Entity");
+    entity->SetDisplayLabel("Entity Class");
+
+    CopySchema();
+
+    ECClassCP copiedClass = m_copiedSchema->GetClassCP("Entity");
+    ASSERT_TRUE(nullptr != copiedClass);
+    ECEntityClassCP copiedEntity = copiedClass->GetEntityClassCP();
+    ASSERT_TRUE(nullptr != copiedEntity);
+    EXPECT_EQ(ECClassModifier::Sealed, copiedEntity->GetClassModifier());
+    EXPECT_STREQ("Description of my Entity", copiedEntity->GetDescription().c_str());
+    EXPECT_STREQ("Entity Class", copiedEntity->GetDisplayLabel().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1794,18 +1868,18 @@ TEST_F(SchemaCopyTest, CopySchemaWithPropertyCategory)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, TestEntityClassWithBaseClasses)
     {
+    CreateTestSchema();
+
     ECEntityClassP baseClass;
     ECEntityClassP ecClass;
-    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
     EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(baseClass, "BaseClass"));
     EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
     EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*baseClass));
 
-    ECSchemaPtr copiedSchema;
-    CopySchema(copiedSchema);
+    CopySchema();
 
-    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
-    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(2, m_copiedSchema->GetClassCount());
+    auto copiedECClass = m_copiedSchema->GetClassCP("Class");
     EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
     }
 
@@ -1814,18 +1888,18 @@ TEST_F(SchemaCopyTest, TestEntityClassWithBaseClasses)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, TestEntityClassWithMixin)
     {
+    CreateTestSchema();
+
     ECEntityClassP mixin;
     ECEntityClassP ecClass;
-    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
     EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
     EC_ASSERT_SUCCESS(m_testSchema->CreateMixinClass(mixin, "Mixin", *ecClass));
     EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*mixin));
 
-    ECSchemaPtr copiedSchema;
-    CopySchema(copiedSchema);
+    CopySchema();
 
-    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
-    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(2, m_copiedSchema->GetClassCount());
+    auto copiedECClass = m_copiedSchema->GetClassCP("Class");
     EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
     auto copiedMixin = copiedECClass->GetBaseClasses().front()->GetEntityClassCP();
     EXPECT_TRUE(copiedMixin->IsMixin());
@@ -1836,12 +1910,13 @@ TEST_F(SchemaCopyTest, TestEntityClassWithMixin)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaCopyTest, TestEntityClassWithBothBaseClassAndMixin)
     {
+    CreateTestSchema();
+
     ECEntityClassP entityBase, entityDerived;
     ECEntityClassP mixin0;
 
-    ECSchema::CreateSchema(m_testSchema, "EntityClassSchema", "ECC", 1, 1, 1);
-    m_testSchema->CreateEntityClass(entityBase, "Entity0");
-    m_testSchema->CreateEntityClass(entityDerived, "Entity1");
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(entityBase, "Entity0"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(entityDerived, "Entity1"));
     
     m_testSchema->CreateMixinClass(mixin0, "Mixin0", *entityBase);
     PrimitiveECPropertyP prop;
@@ -1851,104 +1926,241 @@ TEST_F(SchemaCopyTest, TestEntityClassWithBothBaseClassAndMixin)
 
     EXPECT_EQ(2, entityDerived->GetBaseClasses().size());
 
-    ECSchemaPtr copiedSchema;
-    CopySchema(copiedSchema);
+    CopySchema();
 
-    ECClassCP copiedClass = copiedSchema->GetClassP("Entity1");
+    ECClassCP copiedClass = m_copiedSchema->GetClassP("Entity1");
     ASSERT_TRUE(nullptr != copiedClass);
     EXPECT_EQ(2, copiedClass->GetBaseClasses().size());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClassWithBaseClassInRefSchema)
+    {
+    ECEntityClassP baseEntity;
+    ECSchemaPtr refSchema;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0));
+    EC_ASSERT_SUCCESS(refSchema->CreateEntityClass(baseEntity, "BaseEntity"));
+
+    CreateTestSchema();
+    ECEntityClassP entity;
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(entity, "Entity"));
+    EC_ASSERT_SUCCESS(m_testSchema->AddReferencedSchema(*refSchema));
+    EC_EXPECT_SUCCESS(entity->AddBaseClass(*baseEntity));
+
+    CopySchema();
+
+    ECClassCP copiedEntity = m_copiedSchema->GetClassCP("Entity");
+    ASSERT_TRUE(nullptr != copiedEntity);
+    ECClassCP baseClass = copiedEntity->GetBaseClasses().front();
+    ASSERT_TRUE(nullptr != baseClass);
+    ASSERT_EQ(baseClass, baseEntity);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestRelationshipClass)
+    {
+    CreateTestSchema();
+
+    ECEntityClassP source;
+    ECEntityClassP sourceBase;
+    ECEntityClassP target;
+    ECEntityClassP targetBase;
+    ECRelationshipClassP relClass;
+
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(sourceBase, "SourceBase"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(source, "Source"));
+    EC_ASSERT_SUCCESS(source->AddBaseClass(*sourceBase));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(targetBase, "TargetBase"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(target, "Target"));
+    EC_ASSERT_SUCCESS(target->AddBaseClass(*targetBase));
+
+    EC_ASSERT_SUCCESS(m_testSchema->CreateRelationshipClass(relClass, "RelClass"));
+    relClass->SetClassModifier(ECClassModifier::Sealed); // default is ECClassModifier::None
+    EC_ASSERT_SUCCESS(relClass->SetDescription("Description of RelClass"));
+    EC_ASSERT_SUCCESS(relClass->SetDisplayLabel("Relationship Class"));
+    EC_ASSERT_SUCCESS(relClass->SetStrength(StrengthType::Embedding)); // default is StrengthType::Referencing
+    EC_ASSERT_SUCCESS(relClass->SetStrengthDirection(ECRelatedInstanceDirection::Backward)); // default is ECRelatedInstanceDirection::Forward
+    EC_ASSERT_SUCCESS(relClass->GetSource().SetAbstractConstraint(*sourceBase));
+    EC_ASSERT_SUCCESS(relClass->GetSource().AddClass(*source));
+    EC_ASSERT_SUCCESS(relClass->GetSource().SetRoleLabel("Source Role Label"));
+    EC_ASSERT_SUCCESS(relClass->GetSource().SetIsPolymorphic(false)); // default is true
+    EC_ASSERT_SUCCESS(relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany())); // default is RelationshipMultiplicity::ZeroOne
+    EC_ASSERT_SUCCESS(relClass->GetTarget().SetAbstractConstraint(*targetBase));
+    EC_ASSERT_SUCCESS(relClass->GetTarget().AddClass(*target));
+    EC_ASSERT_SUCCESS(relClass->GetTarget().SetRoleLabel("Target Role Label"));
+    EC_ASSERT_SUCCESS(relClass->GetTarget().SetIsPolymorphic(false)); // default is true
+    EC_ASSERT_SUCCESS(relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany())); //default is RelationshipMultiplicity::ZeroOne
+
+    CopySchema();
+
+    ECClassCP copiedClass = m_copiedSchema->GetClassCP("RelClass");
+    ASSERT_TRUE(nullptr != copiedClass);
+    ECRelationshipClassCP copiedRelClass = copiedClass->GetRelationshipClassCP();
+    ASSERT_TRUE(nullptr != copiedRelClass);
+    EXPECT_EQ(ECClassModifier::Sealed, copiedRelClass->GetClassModifier());
+    EXPECT_EQ(StrengthType::Embedding, copiedRelClass->GetStrength());
+    EXPECT_EQ(ECRelatedInstanceDirection::Backward, copiedRelClass->GetStrengthDirection());
+    EXPECT_STREQ("Description of RelClass", copiedRelClass->GetDescription().c_str());
+    EXPECT_STREQ("Relationship Class", copiedRelClass->GetDisplayLabel().c_str());
+
+    
+    ECClassCP copiedSourceBase = m_copiedSchema->GetClassCP("SourceBase");
+    ECClassCP copiedSource = m_copiedSchema->GetClassCP("Source");
+    EXPECT_EQ(1, copiedRelClass->GetSource().GetConstraintClasses().size());
+    EXPECT_EQ(copiedSourceBase, copiedRelClass->GetSource().GetAbstractConstraint());
+    EXPECT_EQ(copiedSource, copiedRelClass->GetSource().GetConstraintClasses().front());
+    EXPECT_FALSE(copiedRelClass->GetSource().GetIsPolymorphic());
+    EXPECT_STREQ("Source Role Label", copiedRelClass->GetSource().GetRoleLabel().c_str());
+
+    ECClassCP copiedTargetBase = m_copiedSchema->GetClassCP("TargetBase");
+    ECClassCP copiedTarget = m_copiedSchema->GetClassCP("Target");
+    EXPECT_EQ(1, copiedRelClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_EQ(copiedTargetBase, copiedRelClass->GetTarget().GetAbstractConstraint());
+    EXPECT_EQ(copiedTarget, copiedRelClass->GetTarget().GetConstraintClasses().front());
+    EXPECT_FALSE(copiedRelClass->GetTarget().GetIsPolymorphic());
+    EXPECT_STREQ("Target Role Label", copiedRelClass->GetTarget().GetRoleLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestRelationshipClassWithConstraintClassesInRefSchema)
+    {
+    CreateTestSchema();
+
+    ECSchemaPtr refSchema;
+    ECEntityClassP sourceRef;
+    ECEntityClassP sourceBaseRef;
+    ECEntityClassP targetRef;
+    ECEntityClassP targetBaseRef;
+    ECRelationshipClassP relClass;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0));
+    EC_ASSERT_SUCCESS(refSchema->CreateEntityClass(sourceBaseRef, "SourceBase"));
+    EC_ASSERT_SUCCESS(refSchema->CreateEntityClass(sourceRef, "Source"));
+    EC_ASSERT_SUCCESS(sourceRef->AddBaseClass(*sourceBaseRef));
+    EC_ASSERT_SUCCESS(refSchema->CreateEntityClass(targetBaseRef, "TargetBase"));
+    EC_ASSERT_SUCCESS(refSchema->CreateEntityClass(targetRef, "Target"));
+    EC_ASSERT_SUCCESS(targetRef->AddBaseClass(*targetBaseRef));
+
+    EC_ASSERT_SUCCESS(m_testSchema->AddReferencedSchema(*refSchema));
+
+    EC_ASSERT_SUCCESS(m_testSchema->CreateRelationshipClass(relClass, "RelClass"));
+    EC_ASSERT_SUCCESS(relClass->GetSource().SetAbstractConstraint(*sourceBaseRef));
+    EC_ASSERT_SUCCESS(relClass->GetSource().AddClass(*sourceRef));
+    EC_ASSERT_SUCCESS(relClass->GetTarget().SetAbstractConstraint(*targetBaseRef));
+    EC_ASSERT_SUCCESS(relClass->GetTarget().AddClass(*targetRef));
+
+    CopySchema();
+
+    ECClassCP copiedClass = m_copiedSchema->GetClassCP("RelClass");
+    ASSERT_TRUE(nullptr != copiedClass);
+    ECRelationshipClassCP copiedRelClass = copiedClass->GetRelationshipClassCP();
+    ASSERT_TRUE(nullptr != copiedRelClass);
+
+    EXPECT_EQ(1, copiedRelClass->GetSource().GetConstraintClasses().size());
+    EXPECT_EQ(sourceBaseRef, copiedRelClass->GetSource().GetAbstractConstraint());
+    EXPECT_EQ(sourceRef, copiedRelClass->GetSource().GetConstraintClasses().front());
+
+    EXPECT_EQ(1, copiedRelClass->GetTarget().GetConstraintClasses().size());
+    EXPECT_EQ(targetBaseRef, copiedRelClass->GetTarget().GetAbstractConstraint());
+    EXPECT_EQ(targetRef, copiedRelClass->GetTarget().GetConstraintClasses().front());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
     {
-    SchemaKey key ("BaseSchema", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
-    EXPECT_TRUE (m_testSchema.IsValid ());
-    ECClassCP ellipseClass = m_testSchema->GetClassCP ("ellipse");
-    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    SchemaKey key("BaseSchema", 01, 00);
+    m_testSchema = m_schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE (m_testSchema.IsValid());
+    ECClassCP ellipseClass = m_testSchema->GetClassCP("ellipse");
+    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue v;
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
     ECValue out;
-    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
+    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
 
-    ECSchemaPtr CopiedSchema = NULL;
-    m_testSchema->CopySchema (CopiedSchema);
-    EXPECT_TRUE (CopiedSchema.IsValid ());
-    ellipseClass = CopiedSchema->GetClassCP ("ellipse");
-    ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECSchemaPtr copiedSchema = nullptr;
+    CopySchema(copiedSchema);
 
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
-    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    ellipseClass = copiedSchema->GetClassCP("ellipse");
+    ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
+    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
+    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
     {
-    SchemaKey key ("DuplicatePrefixes", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
-    EXPECT_TRUE (m_testSchema.IsValid ());
+    SchemaKey key("DuplicatePrefixes", 01, 00);
+    m_testSchema = m_schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE(m_testSchema.IsValid());
+
     ECClassCP ellipseClass = m_testSchema->GetClassCP ("Circle");
-    EXPECT_TRUE (ellipseClass != NULL) << "Cannot Load Ellipse Class";
-    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    EXPECT_TRUE(nullptr != ellipseClass) << "Cannot Load Ellipse Class";
+    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue v;
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
     ECValue out;
-    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
+    EXPECT_TRUE(out.Equals(ECValue("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
+    
+    ECSchemaPtr copiedSchema = nullptr;
+    CopySchema(copiedSchema);
+    ellipseClass = copiedSchema->GetClassCP("Circle");
+    ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    ECSchemaPtr CopiedSchema = NULL;
-    m_testSchema->CopySchema (CopiedSchema);
-    EXPECT_TRUE (CopiedSchema.IsValid ());
-    ellipseClass = CopiedSchema->GetClassCP ("Circle");
-    ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
     EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    EXPECT_TRUE(out.Equals(ECValue("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     {
     //create Context with legacy support
-    m_schemaContext->RemoveSchemaLocater (*m_schemaLocater);
-    m_schemaContext = ECSchemaReadContext::CreateContext (true);
-    m_schemaContext->AddSchemaLocater (*m_schemaLocater);
-    SchemaKey key ("InvalidReference", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (m_testSchema.IsValid ());
-    ECClassCP ellipseClass = m_testSchema->GetClassCP ("circle");
-    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    m_schemaContext = nullptr;
+    m_schemaContext = ECSchemaReadContext::CreateContext(true);
+    m_schemaContext->AddSchemaLocater(*m_schemaLocater);
+    SchemaKey key("InvalidReference", 01, 00);
+    m_testSchema = m_schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE (m_testSchema.IsValid());
+    ECClassCP ellipseClass = m_testSchema->GetClassCP("circle");
+    IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue v;
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
     ECValue out;
-    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
+    EXPECT_TRUE(out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
 
-    ECSchemaPtr CopiedSchema = NULL;
-    m_testSchema->CopySchema (CopiedSchema);
-    EXPECT_TRUE (CopiedSchema.IsValid ());
-    ellipseClass = CopiedSchema->GetClassCP ("circle");
+    ECSchemaPtr copiedSchema = nullptr;
+    CopySchema(copiedSchema);
+    
+    ellipseClass = copiedSchema->GetClassCP("circle");
     ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
-    v.SetUtf8CP ("test");
-    ellipseClassInstance->SetValue ("Name", v);
-    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
-    EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    v.SetUtf8CP("test");
+    ellipseClassInstance->SetValue("Name", v);
+    EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
+    EXPECT_TRUE(out.Equals(ECValue("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
     }
 
 //=======================================================================================
