@@ -425,8 +425,8 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Target))
             return nullptr;
 
-        if (!relClass->Verify())
-            return nullptr;
+        //if (!relClass->Verify())
+        //    return nullptr;
         }
 
     return ecClass;
@@ -1691,6 +1691,12 @@ BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) con
         {
         if (!navProp->Verify())
             return ERROR;
+
+        if (!const_cast<ECN::ECRelationshipClassP>(navProp->GetRelationshipClass())->GetIsVerified())
+            {
+            if (!navProp->GetRelationshipClass()->Verify())
+                return ERROR;
+            }
         }
 
     if (m_schemasToLoadCAInstancesFor.empty())
