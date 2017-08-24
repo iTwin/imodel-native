@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmFilter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -3286,7 +3286,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 /*
 ** Allocate Memory To Store Point Elevation Differences
 */
- elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
+ elevDiffP = new ElevDifference[dtmP->numPoints];
  if( elevDiffP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -3470,7 +3470,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
 */
  cleanup :
  if( planePtsP != NULL ) bcdtmObject_destroyDtmObject(&planePtsP) ;
- if( elevDiffP != NULL ) free(elevDiffP) ;
+ if( elevDiffP != NULL ) delete [] elevDiffP ;
  /*
 ** Job Completed
 */
@@ -4115,7 +4115,9 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
 **  Quick Sort Elevation Difference Structure
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Elevation Differences") ;
- qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifference),bcdtmFilter_elevationDifferenceCompareFunction) ;
+
+ if (numPointDiffs <= dtmP->numPoints) // For security analysis
+    qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifference),bcdtmFilter_elevationDifferenceCompareFunction) ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Elevation Difference = %8ld",numPointDiffs) ;
@@ -4306,7 +4308,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 /*
 ** Allocate Memory To Store Point Elevation Differences
 */
- elevDiffP = ( struct ElevDifference * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifference)) ;
+ elevDiffP = new ElevDifference[dtmP->numPoints];
  if( elevDiffP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -4492,7 +4494,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
 */
  cleanup :
  if( planePtsP != NULL ) bcdtmObject_destroyDtmObject(&planePtsP) ;
- if( elevDiffP != NULL ) free(elevDiffP) ;
+ if( elevDiffP != NULL ) delete [] elevDiffP ;
  /*
 ** Job Completed
 */
@@ -5441,7 +5443,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 /*
 ** Allocate Memory To Store Point Elevation Differences
 */
- elevDiffP = ( struct ElevDifferenceTile * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifferenceTile)) ;
+ elevDiffP = new ElevDifferenceTile[dtmP->numPoints];
  if( elevDiffP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -5671,7 +5673,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
 ** Clean Up
 */
  cleanup :
- if( elevDiffP   != NULL ) free(elevDiffP) ;
+ if( elevDiffP   != NULL ) delete [] elevDiffP ;
  if( tileNumberP != NULL ) free(tileNumberP) ;
  if( pointsP     != NULL ) free(pointsP) ;
  if( tempDtmP    != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
@@ -5818,7 +5820,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 /*
 ** Allocate Memory To Store Point Elevation Differences
 */
- elevDiffP = ( struct ElevDifferenceTile * ) malloc ( dtmP->numPoints * sizeof(struct ElevDifferenceTile)) ;
+ elevDiffP = new ElevDifferenceTile[dtmP->numPoints];
  if( elevDiffP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -5918,7 +5920,8 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 **  Quick Sort Elevation Difference Structure
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Elevation Differences") ;
-    qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifferenceTile),bcdtmFilter_elevationDifferenceKeepCompareFunction) ;
+    if (numPointDiffs <= dtmP->numPoints) // For security analysis
+        qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifferenceTile),bcdtmFilter_elevationDifferenceKeepCompareFunction) ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Elevation Difference = %8ld",numPointDiffs) ;
@@ -5942,7 +5945,8 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 ** Sort Points Into Tiles
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Points Tiles") ;
- qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifferenceTile),bcdtmFilter_elevationDifferenceTileKeepCompareFunction) ;
+ if (numPointDiffs <= dtmP->numPoints) // For security analysis
+     qsortCPP(elevDiffP,numPointDiffs,sizeof(struct ElevDifferenceTile),bcdtmFilter_elevationDifferenceTileKeepCompareFunction) ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Elevation Difference = %8ld",numPointDiffs) ;
@@ -6034,7 +6038,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 ** Clean Up
 */
  cleanup :
- if( elevDiffP   != NULL ) free(elevDiffP) ;
+ if( elevDiffP   != NULL ) delete [] elevDiffP ;
  if( tileNumberP != NULL ) free(tileNumberP) ;
  if( pointsP     != NULL ) free(pointsP) ;
  if( tempDtmP    != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP) ;

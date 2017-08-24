@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* msguti.mc                                     pr    01-Nov-1992            */
@@ -66,7 +66,7 @@ static int aecOutput_valistToString
         }
     else
         {
-        wchar_t fmt[AECMSGSIZE];
+        wchar_t fmt[AECMSGSIZE] = L"";
         memset ( fmt,  0, sizeof(fmt) );
 
         // Load the string into pstrOutput

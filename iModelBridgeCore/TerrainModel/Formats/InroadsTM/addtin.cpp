@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* addtin.c                                        tmi    17-Jan-1994         */
@@ -47,6 +47,7 @@ int aecDTM_addTriangle    /* <= TRUE if error                      */
 
   if ( tinAltMoveMethod )
   {
+    PUSH_MSVC_IGNORE(6385);
     altTinPntsP = (struct CIVdtmpnt *)alloca ( sizeof ( struct CIVdtmpnt ) * 3 );
     moveOriginP = (DPoint3d *)alloca ( sizeof ( DPoint3d ) );
 
@@ -62,6 +63,7 @@ int aecDTM_addTriangle    /* <= TRUE if error                      */
     tPnt1 = &altTinPntsP[0];
     tPnt2 = &altTinPntsP[1];
     tPnt3 = &altTinPntsP[2];
+    POP_MSVC_IGNORE;
   }
   else
   {

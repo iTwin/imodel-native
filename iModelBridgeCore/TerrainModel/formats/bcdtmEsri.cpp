@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmEsri.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -874,7 +874,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_closeEsriShapeFiles(EsriFileInfo *esriFil
 BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,uint32_t shapeType) 
 {
  int ret=DTM_SUCCESS,dbg=0 ;
- wchar_t fileName[256] ;
+ wchar_t fileName[256] = L"";
  UInt16  mask=ESRI_HDR_MASK_UPDATE_ALL ;
  DVector3d boundingCube ;
 /*

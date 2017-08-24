@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* savdtm.c                                            tmi    24-Apr-1990     */
@@ -185,11 +185,10 @@ static int aecDTM_saveOpen
   FILE **handlePP
 )
 {
-  unsigned char buf[3]; // Do not convert to unicode.
+  unsigned char buf[4] = DTM_C_DTMCOD; // Do not convert to unicode.
   int sts = SUCCESS;
 
   aecFile_checkExtension ( fil, aecParams_getFileExtension(DTMEXT) );
-  _mbsncpy ( buf, (unsigned char *)DTM_C_DTMCOD, 3 ); // Do not convert to unicode.
 
   if ( ( *handlePP = _wfopen ( fil, L"w+b" ) ) == (FILE *)0 )                     /* DO_NOT_TRANSLATE */
   {

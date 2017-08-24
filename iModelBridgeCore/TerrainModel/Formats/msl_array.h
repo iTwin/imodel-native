@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/msl_array.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,7 +58,8 @@ template <class TYPE> class ArrayClass
                     arrayPtr = new TYPE[newSize];            // Allocate new array!
                     int i;                                                            // Loop Counter.
                     for(i = 0; i <= count; i++)                    // Copy old array into new array. (Note a memcpy can't be used here because
-                        arrayPtr[i] = oldArrayPtr[i];            // the type might be a class and will delete memory which it is using.
+                        if (i < newSize)
+                            arrayPtr[i] = oldArrayPtr[i];            // the type might be a class and will delete memory which it is using.
                     delete [] oldArrayPtr;                        // Delete the old array.
                 }                                                                                                                        
                 else
@@ -728,10 +729,14 @@ template <class TYPE> class ArrayPtrClass
                     arrayPtr = new TYPE*[newSize];        // Allocate new array!
                     int i;                                                        // Loop Counter.
 
+                    if (count >= newSize) count = newSize - 1;
                     for(i = 0; i <= count; i++)                // Copy old array into new array. (Note a memcpy can't be used here because
                         arrayPtr[i] = oldArrayPtr[i];        // the type might be a class and will delete memory which it is using.
                     for(; i < newSize; i++)
                         arrayPtr[i] = new TYPE;
+
+                    if (arraySize > newSize)
+                        arraySize = newSize;
                     for(i = count + 1; i < arraySize; i++)
                         delete arrayPtr[i];
                     delete [] oldArrayPtr;                        // Delete the old array.

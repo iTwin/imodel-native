@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* delany.c                                            tmi	  10-Apr-1990 */
@@ -177,10 +177,12 @@ static int aecDTM_delaunayTriangleProcess
       memcpy ( altPntP, pntP, sizeof ( *altPntP ) );
       memcpy ( &moveOrigin, &pntP->cor, sizeof ( DPoint3d ) );
 
+      PUSH_MSVC_IGNORE(6385);
       VSUB ( altTinPntsP[0].cor, moveOrigin, altTinPntsP[0].cor );
       VSUB ( altTinPntsP[1].cor, moveOrigin, altTinPntsP[1].cor );
       VSUB ( altTinPntsP[2].cor, moveOrigin, altTinPntsP[2].cor );
       VSUB ( altPntP->cor, moveOrigin, altPntP->cor );
+      POP_MSVC_IGNORE;
 
       altTinP->p1 = &altTinPntsP[0];
       altTinP->p2 = &altTinPntsP[1];

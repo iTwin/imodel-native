@@ -212,7 +212,7 @@ static int aecDTM_loadOpen
     FILE **handlePP
     )
     {
-    unsigned char buf[3]; // Do not convert to unicode.
+    unsigned char buf[3] = ""; // Do not convert to unicode.
     int sts = SUCCESS;
 
     aecFile_checkExtension ( filP, aecParams_getFileExtension(DTMEXT) );
@@ -347,7 +347,7 @@ struct CIVdtmsrf *srf,
 
     if ( srf->version > 8 )
         {
-        wchar_t buf[DTM_C_NAMSIZ];
+        wchar_t buf[DTM_C_NAMSIZ] = L"";
 
         if ( fread ( srf->des, sizeof(wchar_t), DTM_C_NAMSIZ, handleP ) != DTM_C_NAMSIZ )
             sts = DTM_M_RDFILF;
@@ -365,8 +365,8 @@ struct CIVdtmsrf *srf,
         }
     else
         {
-        char buf[CIV_C_DESSIZ]; // Do not convert to unicode.
-        char des[CIV_C_DESSIZ];
+        char buf[CIV_C_DESSIZ] = ""; // Do not convert to unicode.
+        char des[CIV_C_DESSIZ] = "";
 
         if ( fread ( des, sizeof(char), CIV_C_DESSIZ, handleP ) != CIV_C_DESSIZ ) // Do not convert to unicode.
             sts = DTM_M_RDFILF;
@@ -374,7 +374,7 @@ struct CIVdtmsrf *srf,
             sts = DTM_M_RDFILF;
         else
             {
-            wchar_t wbuf[CIV_C_DESSIZ];
+            wchar_t wbuf[CIV_C_DESSIZ] = L"";
 
             memset ( wbuf, 0, sizeof ( wbuf ) );
             mbstowcs ( srf->des, des, CIV_C_DESSIZ );
@@ -385,7 +385,7 @@ struct CIVdtmsrf *srf,
 
             if ( srf->version > 2 )
                 {
-                char mat[CIV_C_NAMSIZ]; // Do not conver to unicode.
+                char mat[CIV_C_NAMSIZ] = ""; // Do not conver to unicode.
 
                 memset ( mat, 0, sizeof ( mat ) );
 
@@ -428,7 +428,7 @@ struct CIVdtmsrf *srf,
             }
         else
             {
-            char pref[CIV_C_NAMSIZ]; // Do not convert to wide character.
+            char pref[CIV_C_NAMSIZ] = ""; // Do not convert to wide character.
 
             if ( fread ( pref, sizeof(char), CIV_C_NAMSIZ, handleP ) != CIV_C_NAMSIZ )
                 sts = DTM_M_RDFILF;
@@ -472,7 +472,7 @@ struct CIVdtmsrf *srf,
             }
         else
             {
-            char secsym[CIV_C_NAMSIZ];  // Do not convert to wide character.
+            char secsym[CIV_C_NAMSIZ] = "";  // Do not convert to wide character.
 
             if ( fread ( secsym, sizeof(char), CIV_C_NAMSIZ, handleP ) != CIV_C_NAMSIZ )
                 sts = DTM_M_RDFILF;
@@ -516,7 +516,7 @@ struct CIVdtmsrf *srf,
             }
         else
             {
-            char prfsym[CIV_C_NAMSIZ]; // Do not convert to wide.
+            char prfsym[CIV_C_NAMSIZ] = ""; // Do not convert to wide.
 
             if ( fread ( prfsym, sizeof(char), CIV_C_NAMSIZ, handleP ) != CIV_C_NAMSIZ )
                 sts = DTM_M_RDFILF;
@@ -615,7 +615,7 @@ struct CIVdtmsrf *srf,
             }
         else
             {
-            char revby[CIV_C_NAMSIZ]; // Do not convert to wide.
+            char revby[CIV_C_NAMSIZ] = ""; // Do not convert to wide.
 
             if ( fread ( revby, sizeof(char), CIV_C_NAMSIZ, handleP ) != CIV_C_NAMSIZ )
                 sts = DTM_M_RDFILF;
@@ -1463,7 +1463,7 @@ static int aecDTM_loadCheckFormat  /* <= TRUE if error              */
     wchar_t *filP                           /* => file to check              */
     )
     {
-    unsigned char buf[3]; // Do not convert to unicode.
+    unsigned char buf[3] = ""; // Do not convert to unicode.
     FILE *fptr = (FILE *)0;
     int  sts = SUCCESS;
 
