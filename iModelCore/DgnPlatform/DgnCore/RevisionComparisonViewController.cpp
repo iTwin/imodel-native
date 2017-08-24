@@ -22,15 +22,15 @@ ComparisonSymbologyOverrides::ComparisonSymbologyOverrides()
 void ComparisonSymbologyOverrides::InitializeDefaults()
     {
     Render::OvrGraphicParams update, inserted, deleted;
-    update.SetFillColor(ColorDef::Blue());
-    inserted.SetFillColor(ColorDef::Green());
-    deleted.SetFillColor(ColorDef::Red());
+    update.SetFillColor(ColorDef::VersionCompareModified());
+    inserted.SetFillColor(ColorDef::VersionCompareInserted());
+    deleted.SetFillColor(ColorDef::VersionCompareDeleted());
 
     m_currentRevisionOverrides.Insert(DbOpcode::Update, update);
     m_currentRevisionOverrides.Insert(DbOpcode::Insert, inserted);
     m_currentRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
-    update.SetFillColor(ColorDef::Cyan());
+    update.SetFillColor(ColorDef::VersionComparePreModified());
     update.SetFillTransparency(128);
     update.SetLineTransparency(128);
     inserted.SetFillTransparency(128);
