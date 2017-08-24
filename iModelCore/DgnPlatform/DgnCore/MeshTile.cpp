@@ -2811,7 +2811,15 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
+
+            // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
+            DPoint2d sheetSize = sheetModel->GetSheetSize();
+            if (0.0 == sheetSize.x)
+                sheetSize.x = 0.1;
+            if (0.0 == sheetSize.y)
+                sheetSize.y = 0.1;
+
+            Sheet::Model::DrawBorder (context, sheetSize);
             PushCurrentGeometry();
             }
 

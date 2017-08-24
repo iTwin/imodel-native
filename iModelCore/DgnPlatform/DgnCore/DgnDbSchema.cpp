@@ -568,6 +568,9 @@ SchemaStatus DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvec
 
     for (ECSchemaCP appSchema : schemas)
         {
+        if (appSchema->GetName().EqualsIAscii("Units_Schema"))
+            continue;
+
         SchemaStatus status = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
 
         if (status == SchemaStatus::Success)
