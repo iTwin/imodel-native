@@ -656,17 +656,27 @@ static PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
     return facets;
     }
 
-static PolyfaceHeaderPtr CreateTwoPointVoronoi (DPoint3dCR point0, DPoint3dCR point1, int voronoiMetric, double sideFactor, double backFactor)
+static PolyfaceHeaderPtr CreateTwoPointVoronoi (DPoint3dCR point0, double radius0, DPoint3dCR point1, double radius1, int voronoiMetric, double sideFactor, double backFactor)
     {
         double a = sideFactor;    // make voronoi region this far out . ..
         double b = backFactor;
-        bvector<DPoint3d> points1 {
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5, point1, -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5, point1,  a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 - b, point1, -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 - b, point1,  a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 + b, point1, -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 + b, point1,  a)
+        auto splitPlane = DPlane3d::VoronoiSplitPlane (point0, radius0, point1, radius1, voronoiMetric);
+        double f = 0.5;
+        if (splitPlane.IsValid ())
+            {
+            double height0 = splitPlane.Value ().Evaluate (point0);
+            double height1 = splitPlane.Value ().Evaluate (point1);
+            auto f1 = DoubleOps::InverseInterpolate (height0, 0.0, height1);
+            if (f1.IsValid ())
+                f = DoubleOps::ClampFraction(f1.Value ());
+            }
+        bvector<DPoint3d> points {
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f, point1,  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f - b, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f - b, point1,  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f + b, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, f + b, point1,  a)
         };
         //     3----------------1-----------------5
         //     |                |                 |
@@ -680,14 +690,14 @@ static PolyfaceHeaderPtr CreateTwoPointVoronoi (DPoint3dCR point0, DPoint3dCR po
             q + 3, q + 2, q + 0, q + 1, 0,
             q + 1, q + 0, q + 4, q + 5, 0
         };
-        return PolyfaceHeader::CreateIndexedMesh (0, points1, index1);
+        return PolyfaceHeader::CreateIndexedMesh (0, points, index1);
     }
 bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
     {
     if (points.size () == 2)
         {
         delauney = nullptr;
-        voronoi = CreateTwoPointVoronoi (points[0], points[1], 0, 20.0, 20.0);
+        voronoi = CreateTwoPointVoronoi (points[0], 1.0, points[1], 1.0, 0, 20.0, 20.0);
         return true;
         }
     VuSetP graph = CreateDelauney (points);
@@ -864,7 +874,7 @@ bvector<NeighborIndices> *cellData  //!< [out] optional array giving [siteIndex=
     if (points.size () == 2)
         {
         delauney = nullptr;
-        voronoi = CreateTwoPointVoronoi (points[0], points[1], 0, 20.0, 20.0);
+        voronoi = CreateTwoPointVoronoi (points[0], radii[0],  points[1], radii[1], voronoiMetric, 20.0, 20.0);
         return true;
         }
 
