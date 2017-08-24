@@ -209,7 +209,13 @@ bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
     _KeepFileAlive(*v8model.GetDgnFileP()); 
     _OnDrawingModelFound(v8model);
 
-    return make_bpair(_GetModelForDgnV8Model(v8model, toMeters), true); // adds to m_v8ModelMappings
+    auto bimModel = _GetModelForDgnV8Model(v8model, toMeters); // adds to m_v8ModelMappings
+    if (!bimModel.IsValid())
+        return make_bpair(bimModel, false);
+    
+    BeAssert(bimModel.GetDgnModel().Is2dModel());
+
+    return make_bpair(bimModel, true); 
 
     // NB: Do not recurse! The caller handles that!
     }
@@ -501,11 +507,15 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
         }
 
     //  Transform sheet-sheet attachments into sheet->drawing attachments.
+    // Also, make sure that each attached 2d model is classified
     auto attachments = GetAttachments(sheetModel);
     if (nullptr == attachments)
         return;
     for (auto attachment : *attachments)
         {
+        if (attachment->GetDgnModelP())
+            Classify2dModelIfNormal(*attachment->GetDgnModelP(), nullptr);
+
         if (!attachment->IsSheet())
             continue;
 

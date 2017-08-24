@@ -51,6 +51,7 @@ struct DrawingViewFactory;
 struct Converter;
 struct ElementConverter;
 struct ElementAspectConverter;
+struct ModelTypeAppData;
 
 typedef RefCountedPtr<LineStyleConverter> LineStyleConverterPtr;
 
@@ -1492,6 +1493,9 @@ public:
     
     //! @private Classify the 2d Normal models as either drawing or spatial, and if they are drawing, mark them as such in the ModelInfo. It does not hurt to call this multiple times.
     void ClassifyNormal2dModels(DgnV8FileR);
+
+    void ClassifyNormal2dModel(DgnV8ModelR v8Model, ModelTypeAppData& mtAppData);
+    void Classify2dModelIfNormal(DgnV8ModelR v8Model, ModelTypeAppData* mtAppData);
 
     //! @private Copy the effective model type that was assigned by ClassifyNormal2dModels to \a oldModel to \a newModel.
     void CopyEffectiveModelType(DgnV8ModelR newModel, DgnV8ModelR oldModel);
