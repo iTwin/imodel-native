@@ -715,6 +715,7 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, WCharCP rootModelNam
     DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;    
     DgnDbSync::DgnV8::ConverterLibrary converterLib(subject.GetDgnDb(), converterLibraryParams);
     converterLib.SetJobSubject(subject);
+    converterLib.SetSpatialParentSubject(subject);
     
     DgnV8Api::DgnFileStatus v8Status;
     auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, dgnFileName);
