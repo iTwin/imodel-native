@@ -143,12 +143,12 @@ TEST(FormattingTest, Json)
     {
 
     UnitProxy prox = UnitProxy("FT", "Feet");
-    Json::Value proxV = prox.ToJson(true);
+    Json::Value proxV = prox.ToJson();
     LOG.infov("UnitProxy verbose %s ", proxV.ToString().c_str());
-    proxV = prox.ToJson(false);
+    proxV = prox.ToJson();
     LOG.infov("UnitProxy compact %s ", proxV.ToString().c_str());
     prox = UnitProxy("FT");
-    proxV = prox.ToJson(false);
+    proxV = prox.ToJson();
     LOG.infov("UnitProxy (no label) %s ", proxV.ToString().c_str());
 
     FormattingTestFixture::NamedSpecToJson("dms8");

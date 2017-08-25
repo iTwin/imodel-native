@@ -101,11 +101,109 @@ void StdFormatSet::StdInit()
 
     }
 
+
+
+
 //===================================================
 //
 // NumericFormatSpec Methods
 //
 //===================================================
+
+NumericFormatSpec::NumericFormatSpec(Json::Value jval)
+    {
+    DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
+    if (!jval.empty())
+        {
+        Utf8CP paramName;
+        Utf8String str;
+        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+            {
+            paramName = iter.memberName();
+            JsonValueCR val = *iter;
+            if (stricmp(paramName, json_roundFactor()) == 0)
+                {
+                m_roundFactor = val.asDouble();
+                }
+            else if (stricmp(paramName, json_decPrec()) == 0)
+                {
+                m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
+                }
+            else if (stricmp(paramName, json_fractPrec()) == 0)
+                {
+                m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
+                }
+            else if (stricmp(paramName, json_barType()) == 0)
+                {
+                m_barType = Utils::NameToFractionBarType(val.asCString());
+                }
+            else if (stricmp(paramName, json_decimalSeparator()) == 0)
+                {
+                str = val.asString();
+                m_decimalSeparator = str.c_str()[0];
+                }
+            else if (stricmp(paramName, json_thousandSeparator()) == 0)
+                {
+                str = val.asString();
+                m_thousandsSeparator = str.c_str()[0];
+                }
+            else if (stricmp(paramName, json_uomSeparator()) == 0)
+                {
+                m_uomSeparator = val.asString();
+                }
+            else if (stricmp(paramName, json_statSeparator()) == 0)
+                {
+                str = val.asString();
+                m_statSeparator = str.c_str()[0];
+                }
+            else if (stricmp(paramName, json_minWidth()) == 0)
+                {
+                m_minWIdth = val.asInt();
+                }
+            else if (stricmp(paramName, json_formatTraits()) == 0)
+                {
+                TraitsFromJson(val);
+                }
+            }
+        }
+    }
+
+FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
+    {
+    Utf8CP paramName;
+    Utf8String str;
+    if (jval.empty())
+        return m_formatTraits;
+
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (stricmp(paramName, json_LeadZeroes()) == 0)
+            SetUseLeadingZeroes(val.asBool());
+        else if (stricmp(paramName, json_TrailZeroes()) == 0)
+            SetKeepTrailingZeroes(val.asBool());
+        else if (stricmp(paramName, json_KeepDecPnt()) == 0)
+            SetKeepDecimalPoint(val.asBool());
+        else if (stricmp(paramName, json_KeepSingleZero()) == 0)
+            SetKeepSingleZero(val.asBool());
+        else if (stricmp(paramName, json_ExponentZero()) == 0)
+            SetExponentZero(val.asBool());
+        else if (stricmp(paramName, json_ZeroEmpty()) == 0)
+            SetZeroEmpty(val.asBool());
+        else if (stricmp(paramName, json_Use1000Separator()) == 0)
+            SetUse1000Separator(val.asBool());
+        else if (stricmp(paramName, json_ApplyRounding()) ==0)
+            SetApplyRounding(val.asBool());
+        else if (stricmp(paramName, json_FractionDash()) == 0)
+            SetFractionDash(val.asBool());
+        else if (stricmp(paramName, json_UseFractSymbol()) == 0)
+            SetUseFractSymbol(val.asBool());
+        else if (stricmp(paramName, json_AppendUnitName()) == 0)
+            SetAppendUnit(val.asBool());
+        }
+    return m_formatTraits;
+    }
 
 FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set)
     {
@@ -175,10 +273,10 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
     if (verbose || m_thousandsSeparator != defSpec.m_thousandsSeparator)
         jNFC[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
-    if (verbose || strcmp(m_uomSeparator, defSpec.m_uomSeparator) != 0)
+    if (verbose || strcmp(m_uomSeparator.c_str(), defSpec.m_uomSeparator.c_str()) != 0)
         jNFC[json_uomSeparator()] = m_uomSeparator;
-    if (verbose || m_stopSeparator != defSpec.m_stopSeparator)
-        jNFC[json_statSeparator()] = Utils::CharToString(m_stopSeparator);
+    if (verbose || m_statSeparator != defSpec.m_statSeparator)
+        jNFC[json_statSeparator()] = Utils::CharToString(m_statSeparator);
     if (verbose || m_minWIdth != defSpec.m_minWIdth)
         jNFC[json_minWidth()] = m_minWIdth;
     return jNFC;
@@ -189,22 +287,18 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
 // UnitProxy Methods
 //
 //===================================================
-Json::Value UnitProxy::ToJson(bool verbose) const
+Json::Value UnitProxy::ToJson() const
     {
     Json::Value jUP;
-    Utf8CP uN = Utils::SubstituteEmptyOrNull(m_unitName.c_str(), "");
-    Utf8CP uL = Utils::SubstituteEmptyOrNull(m_unitLabel.c_str(), "");
-    if (verbose)
-        {
-        jUP[json_unitName()] = uN;
-        jUP[json_unitLabel()] = uL;
-        }
-    else
-        {
-        jUP[0] = uN;
-        jUP[1] = uL;
-        }
 
+
+    Utf8CP uN = Utils::GetCharsOrNull(m_unitName);
+    Utf8CP uL = Utils::GetCharsOrNull(m_unitLabel);
+
+    if(nullptr != uN)
+        jUP[json_unitName()] = uN;
+    if (nullptr != uL)
+        jUP[json_unitLabel()] = uL;
     return jUP;
     }
 
@@ -213,17 +307,18 @@ Json::Value UnitProxy::ToJson(bool verbose) const
 //UnitProxySet Methods
 //
 //===================================================
-Json::Value UnitProxySet::ToJson() const
+Json::Value UnitProxySet::ToJson(bvector<Utf8CP> keyNames) const
     {
     Json::Value jUP;
 
     if(m_proxys.empty())
         return jUP;
     UnitProxy prox;
-    for(int i = 0; i < m_proxys.size(); i++)
+    size_t num = Utils::MinInt(keyNames.size(), m_proxys.size());
+
+    for(int i = 0; i < num; i++)
         {
-        prox = m_proxys[i];
-        jUP[i] = prox.ToJson(false);
+        jUP[keyNames[i]] = m_proxys[i].ToJson();
         }
     return jUP;
     }
@@ -239,17 +334,29 @@ Json::Value CompositeValueSpec::ToJson() const
     {
     Json::Value jCVS;
     bool valid = false;
+    bvector<Utf8CP> keyNames;
+    UnitProxyCP proxP;
     switch (m_type)
         {
         case CompositeSpecType::Quatro:
-            jCVS[json_SubUnit()] = m_unitProx.GetProxy(indxSub)->ToJson(false);
+            proxP = m_unitProx.GetProxy(indxSub);
+            if(!proxP->IsEmpty())
+                jCVS[json_SubUnit()] = proxP->ToJson();
         case CompositeSpecType::Triple:
-            jCVS[json_MinorUnit()] = m_unitProx.GetProxy(indxMinor)->ToJson(false);
+            proxP = m_unitProx.GetProxy(indxMinor);
+            if (!proxP->IsEmpty())
+                jCVS[json_MinorUnit()] = proxP->ToJson();
         case CompositeSpecType::Double:
-            jCVS[json_MiddleUnit()] = m_unitProx.GetProxy(indxMiddle)->ToJson(false);
+            proxP = m_unitProx.GetProxy(indxMiddle);
+            if (!proxP->IsEmpty())
+                jCVS[json_MiddleUnit()] = proxP->ToJson();
         case CompositeSpecType::Single: // smallQ already has the converted value
-            jCVS[json_MajorUnit()] = m_unitProx.GetProxy(indxMajor)->ToJson(false);
-            valid = true;
+            proxP = m_unitProx.GetProxy(indxMajor);
+            if (!proxP->IsEmpty())
+                {
+                jCVS[json_MajorUnit()] = proxP->ToJson();
+                valid = true;
+                }
             break;
         }
 
@@ -263,6 +370,47 @@ Json::Value CompositeValueSpec::ToJson() const
 
     return jCVS;
     }
+
+void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
+    {
+    Utf8CP paramName;
+    Utf8String str;
+    if (jval.empty())
+        return;
+    Utf8String major;
+    Utf8String middle;
+    Utf8String minor;
+    Utf8String sub;
+    Utf8String input;
+    
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (stricmp(paramName, json_MajorUnit()) == 0)
+            major = val.asString();
+        else if (stricmp(paramName, json_MiddleUnit()) == 0)
+            middle = val.asString();
+        else if (stricmp(paramName, json_MinorUnit()) == 0)
+            minor = val.asString();
+        else if (stricmp(paramName, json_SubUnit()) == 0)
+            sub = val.asString();
+        else if (stricmp(paramName, json_InputUnit()) == 0)
+            input = val.asString();
+        else if (stricmp(paramName, json_includeZero()) == 0)
+            m_includeZero = val.asBool();
+        else if (stricmp(paramName, json_spacer()) == 0)
+            m_spacer = val.asString();
+        }
+
+    SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
+    if (!input.empty())
+        {
+        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnit(input.c_str());
+        SetInputUnit(inputUnit);
+        }    
+    }
+
 
     //friend struct CompositeValue;
     //protected:
@@ -280,8 +428,6 @@ Json::Value CompositeValueSpec::ToJson() const
     //    CompositeSpecType m_type;
     //    bool m_includeZero;
     //    Utf8String m_spacer;
-
-
 
 
 
@@ -315,12 +461,9 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
 //----------------------------------------------------------------------------------------
 Json::Value FormatUnitSet::ToJson(bool useAlias) const
     {
-    Json::Value jval = Json::objectValue;
-    if (useAlias)
-        jval[FormatConstant::FUSJsonAlias()] = m_formatSpec->GetAlias();
-    else
-        jval[FormatConstant::FUSJsonName()] = m_formatSpec->GetName();
-    jval[FormatConstant::FUSJsonUnit()] = m_unit->GetName();
+    Json::Value jval;
+    jval[json_formatName()] = useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName();
+    jval[json_unitName()] = m_unit->GetName();
     return jval;
     }
 

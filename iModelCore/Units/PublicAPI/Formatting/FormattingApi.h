@@ -67,18 +67,26 @@ BE_JSON_NAME(SpecType)
 BE_JSON_NAME(CompositeFormat)
 BE_JSON_NAME(NumericFormat)
 
-//UnitProxy
+//UnitProxy & FUS
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
+BE_JSON_NAME(formatName)
 
 //CompositeValueSpec
 BE_JSON_NAME(MajorUnit)
 BE_JSON_NAME(MiddleUnit)
 BE_JSON_NAME(MinorUnit)
 BE_JSON_NAME(SubUnit)
+BE_JSON_NAME(InputUnit)
 BE_JSON_NAME(includeZero)
 BE_JSON_NAME(spacer)
 
+// KOQ
+BE_JSON_NAME(KOQName)
+BE_JSON_NAME(persistFUS)
+BE_JSON_NAME(presentFUS)
+BE_JSON_NAME(relativeErr)
+BE_JSON_NAME(schemaName)
 
 struct FactorPower
     {
@@ -170,8 +178,8 @@ private:
 
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
-    Utf8CP              m_uomSeparator;          // default separator between the number and UOM
-    Utf8Char            m_stopSeparator;         // default separator between parts of the stopping format
+    Utf8String          m_uomSeparator;          // default separator between the number and UOM
+    Utf8Char            m_statSeparator;         // default separator between parts of the stopping format
     int                 m_minWIdth;              // the minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
@@ -194,15 +202,15 @@ public:
         m_signOption(other->m_signOption), m_formatTraits(other->m_formatTraits), m_decPrecision(other->m_decPrecision),
         m_fractPrecision(other->m_fractPrecision), m_decimalSeparator(other->m_decimalSeparator),
         m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), m_uomSeparator(other->m_uomSeparator),
-        m_stopSeparator(other->m_stopSeparator), m_minWIdth(other->m_minWIdth){}
+        m_statSeparator(other->m_statSeparator), m_minWIdth(other->m_minWIdth){}
     NumericFormatSpec(NumericFormatSpecCR other) :
         m_roundFactor(other.m_roundFactor), m_presentationType(other.m_presentationType),
         m_signOption(other.m_signOption), m_formatTraits(other.m_formatTraits), m_decPrecision(other.m_decPrecision),
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
         m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
-        m_stopSeparator(other.m_stopSeparator), m_minWIdth(other.m_minWIdth) {}
+        m_statSeparator(other.m_statSeparator), m_minWIdth(other.m_minWIdth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
-    UNITS_EXPORT NumericFormatSpec(Json::Value);
+    UNITS_EXPORT NumericFormatSpec(Json::Value jval);
 
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }   
@@ -274,10 +282,10 @@ public:
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
     Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-    Utf8CP   SetUomSeparator(Utf8CP sep) { return m_uomSeparator = sep; }
-    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) { return (nullptr == def)?  m_uomSeparator: def; }
-    Utf8Char SetStopSeparator(Utf8Char sep) { return m_stopSeparator = sep; }
-    Utf8Char GetStopSeparator() const { return m_stopSeparator; }
+    Utf8CP   SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); return m_uomSeparator.c_str(); }
+    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
+    Utf8Char SetStopSeparator(Utf8Char sep) { return m_statSeparator = sep; }
+    Utf8Char GetStopSeparator() const { return m_statSeparator; }
     FractionBarType  GetFractionalBarType() const { return m_barType; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
@@ -317,6 +325,7 @@ public:
 
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
+    UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
     };
 
 //=======================================================================================
@@ -357,7 +366,8 @@ public:
     Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
     Utf8CP GetName() const { return m_unitName.c_str(); }
     BEU::UnitCP GetUnit() const { return m_unit; }
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    UNITS_EXPORT Json::Value ToJson() const;
+    bool IsEmpty() const { return m_unitName.empty(); }
     };
 
 
@@ -418,7 +428,7 @@ public:
     Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
     bool SetUnitName(size_t indx, Utf8CP unitName) const { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
-    UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT Json::Value ToJson(bvector<Utf8CP> keyNames) const;
 };
 
 //=======================================================================================
@@ -498,6 +508,7 @@ public:
     bool IsIncludeZero() const { return m_includeZero; }
     bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
     UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT void LoadJsonData(JsonValueCR jval);
     };
 
 struct CompositeValue

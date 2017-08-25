@@ -67,7 +67,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
-    m_stopSeparator = '+';
+    m_statSeparator = '+';
     m_minWIdth = 0;
     }
 //----------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
-    m_stopSeparator = '+';
+    m_statSeparator = '+';
     m_minWIdth = 0;
     }
 

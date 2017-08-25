@@ -373,6 +373,7 @@ struct Utils
     UNITS_EXPORT static Utf8String DecimalPrecisionName(DecimalPrecision prec);
     UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);
     UNITS_EXPORT static Utf8String FractionBarName(FractionBarType bar);
+    UNITS_EXPORT static FractionBarType NameToFractionBarType(Utf8CP name);
     UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
     static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
@@ -397,6 +398,7 @@ struct Utils
     UNITS_EXPORT static size_t NumberOfUtf8Bytes(size_t code);
     UNITS_EXPORT static Utf8String AccumulatorStateName(AccumulatorState state);
     UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
+    static Utf8CP GetCharsOrNull(Utf8StringCR str) { return str.empty() ? nullptr : str.c_str(); }
     //#endif
     };
 
