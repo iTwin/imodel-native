@@ -2313,4 +2313,17 @@ void RootModelConverter::RootModelSpatialParams::Legacy_Converter_Init(BeFileNam
     m_isUpdating = false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid)
+    {
+    for (auto& rmm : m_v8ModelMappings)
+        {
+        if (rmm.GetV8ModelSyncInfoId() == sid)
+            return rmm;
+        }
+    return ResolvedModelMapping();
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
