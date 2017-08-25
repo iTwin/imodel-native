@@ -323,7 +323,7 @@ int AnalyticRoots::SolveQuartic(double c[5], double s[4])
             else
                 return 0;
 
-            if (IsZero(v))
+            if (IsSmallRatio(v, p))
                 v = 0;
             else if (v > 0)
                 v = sqrt(v);

@@ -168,6 +168,7 @@ TEST(AnalyticRoots, Cubic1)
       }
     }
 
+// newton step to improve a root of a quartic . . .
 double NewtonStep4 (double coffs[5], double u)
     {
     double f = coffs[0] + u * (coffs[1] + u * (coffs[2] + u * (coffs[3] + u * coffs[4])));
@@ -239,6 +240,7 @@ void CheckQuartic (double u0, double u1, double u2, double u3, double tolerance)
 
 TEST(AnalyticRoots, Quartic4)
     {
+    static int s_applyFactor1 = false;
     double tightTol = 1.0e-15;
     CheckQuartic (0,1,2,3, tightTol);
     double mediumTol = 1.0e-10;
@@ -257,5 +259,11 @@ TEST(AnalyticRoots, Quartic4)
     for (auto factor : bvector<double>{1, 0.1, 3, 6, 100})
         {
         CheckQuartic (a, a + e, b, b + e/factor, looseTol);
+        if (s_applyFactor1)
+            {
+            // this has a bad tolerance problem for factor==3 with factor1 applied .. (cubic disriminant is near root.)
+            double factor1 = 1.0 / 64.0;
+            CheckQuartic (a * factor1, (a + e) * factor1, b * factor1, (b + e / factor) * factor1, looseTol);
+            }
         }
     }
