@@ -562,7 +562,7 @@ struct TextureMapping
 
         void SetMode(Mode val) {m_mapMode=val;}
         void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = *val;} //<! Set Texture 2x3 transform
+        void SetTransform(Trans2x3* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
 
         BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;

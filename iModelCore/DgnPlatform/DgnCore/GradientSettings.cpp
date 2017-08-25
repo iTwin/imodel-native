@@ -148,6 +148,10 @@ ColorDef GradientSymb::MapColor(double value) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* This code was more or less copied from QvTexture::initGradientTexture().
+* That code produces the image flipped horizontally and vertically...texture mapping
+* has identity transform...not clear how they end up rendering it correctly.
+* I modified our version to write the image in "reverse".
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
@@ -157,7 +161,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     double                  dMin, dMax;
     double                  shift = std::min(1.0, fabs(GetShift()));
     ByteStream              imageBytes(4 * width * height);
-    uint32_t*               pImage = (uint32_t*) imageBytes.data();
+    uint32_t*               pImage = reinterpret_cast<uint32_t*>(imageBytes.data()) + width*height;
 
     switch (GetMode())
         {
@@ -199,7 +203,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                         else
                             f = (double) (sin (msGeomConst_piOver2 * (1.0 - d / dMin)));
                         }
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;
@@ -217,7 +221,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     xr = 0.8f * (x * cosA + y * sinA);
                     yr = y * cosA - x * sinA;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (xr * xr + yr * yr))));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
 
@@ -235,7 +239,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     {
                     x = xs + (double) (i) / 255.0 - 0.5;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (x * x + y * y) / r)));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;
@@ -251,7 +255,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     {
                     x = (double) (i) / 255.0 - xs;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (x * x + y * y))));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;

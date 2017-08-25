@@ -304,7 +304,6 @@ void DisplayParams::Resolve(DgnDbR db, System& sys)
 
     if (m_gradient.IsValid())
         {
-        // ###TODO: UV mapping for gradient...
         m_textureMapping = TextureMapping(*sys._GetTexture(*m_gradient, db));
         }
     else if (m_materialId.IsValid())
