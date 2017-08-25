@@ -2798,6 +2798,9 @@ static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP st
     for (const auto &secondConstraint : constraintClasses)
         {
         ECClassCP secondClass = secondConstraint;
+        ECEntityClassCP asEntity = secondClass->GetEntityClassCP();
+        if (nullptr != asEntity && asEntity->IsMixin() && asEntity->GetAppliesToClass()->Is(tempCommonClass))
+            continue;
         if (secondClass->Is(tempCommonClass))
             continue;
         
