@@ -1188,4 +1188,38 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty)
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Schema with empty alias attribute was supposed to fail to deserialize.";
     }
 
+TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinition)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+
+            <ECEntityClass typeName='MyEntity'>
+                <ECCustomAttributes>
+                    <SillyCA xmlns='testSchema.01.00'>
+                        <SillyValue>42</SillyValue>
+                    </SillyCA>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECCustomAttributeClass typeName="SillyCA">
+                <ECProperty propertyName='SillyValue' typeName='double'/>
+            </ECCustomAttributeClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load schema";
+
+    ECClassCP myEntity = schema->GetClassCP("MyEntity");
+    ASSERT_NE(nullptr, myEntity);
+
+    IECInstancePtr sillyCA = myEntity->GetCustomAttribute("testSchema", "SillyCA");
+    ASSERT_TRUE(sillyCA.IsValid()) << "Couldn't find SillyCA instance";
+    ECValue value;
+    ASSERT_EQ(ECObjectsStatus::Success, sillyCA->GetValue(value, "SillyValue"));
+    ASSERT_FALSE(value.IsNull());
+    ASSERT_EQ(42, value.GetDouble());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
