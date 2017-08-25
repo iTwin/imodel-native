@@ -164,9 +164,6 @@
     <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp">
       <Filter>StructuralMaterial</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralMaterial\StructuralMaterialDomain.cpp">
-      <Filter>StructuralMaterial</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -278,9 +275,6 @@
       <Filter>StructuralMaterial</Filter>
     </ClInclude>
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDefinitions.h">
-      <Filter>StructuralMaterial</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDomain.h">
       <Filter>StructuralMaterial</Filter>
     </ClInclude>
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h">

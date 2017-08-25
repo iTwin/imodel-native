@@ -47,7 +47,6 @@
     <ClCompile Include="StructuralMaterial\ConcreteMaterialProperties.cpp" />
     <ClCompile Include="StructuralMaterial\MaterialProperties.cpp" />
     <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp" />
-    <ClCompile Include="StructuralMaterial\StructuralMaterialDomain.cpp" />
     <ClCompile Include="StructuralPhysical\Beam.cpp" />
     <ClCompile Include="StructuralPhysical\Brace.cpp" />
     <ClCompile Include="StructuralPhysical\Column.cpp" />
@@ -83,7 +82,6 @@
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\MaterialProperties.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\SteelMaterialProperties.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDefinitions.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDomain.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Brace.h" />
