@@ -166,6 +166,8 @@ bool ScalableMeshAnalysis::_InitGridFrom(ISMGridVolume& grid, double _resolution
     return bRes;
     }
 
+PUSH_MSVC_IGNORE_ANALYZE // static analyzer fails to analyze OpenMP code
+
 // Compute "Stock Pile" volume between a polygon region and this scalablemesh
 // along a direction : Z by default
 // on a grid of given resolution
@@ -366,7 +368,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
     return DTMStatusInt::DTM_SUCCESS;
     }
-    
+
+POP_MSVC_IGNORE_ANALYZE
 
 DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, IScalableMesh* diffMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
     {
