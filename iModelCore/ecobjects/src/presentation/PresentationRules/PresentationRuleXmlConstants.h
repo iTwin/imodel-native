@@ -16,6 +16,9 @@
 #define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD                        "Forward"
 #define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD                       "Backward"
 
+#define COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE                 "SameInstance"
+#define COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE              "RelatedInstance"
+
 #define COMMON_XML_ATTRIBUTE_PRIORITY                                                 "Priority"
 #define COMMON_XML_ATTRIBUTE_GROUPBYCLASS                                             "GroupByClass"
 #define COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP                                      "GroupByRelationship"
@@ -35,6 +38,7 @@
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 #define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"
 #define COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING                                    "StopFurtherProcessing"
+#define COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING                                      "RelationshipMeaning"
 
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
