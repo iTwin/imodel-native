@@ -45,7 +45,10 @@ always:
 #--------------------------------------------------------------------------------------
 threeMxSchemaDepends         = $(_MakeFileSpec)   \
                                $(ThreeMxSchemaPublicApiSrc)ThreeMxReader.h         
-                                  
+                             
+# Third-party section of this library.
+%include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
+     
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
@@ -72,11 +75,14 @@ $(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchema
 
 #$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxReaderLegacy$(oext)      : $(SrcThreeMxReaderLegacy)ThreeMxReaderLegacy.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
-
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList) 
+
+%include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
+
+$(o)ThreeMxReaderLegacy$(oext)      : $(SrcThreeMxReaderLegacy)ThreeMxReaderLegacy.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+
+objs + $(o)ThreeMxReaderLegacy$(oext)
 
 CCPchOpts =
 CPchOpts =
