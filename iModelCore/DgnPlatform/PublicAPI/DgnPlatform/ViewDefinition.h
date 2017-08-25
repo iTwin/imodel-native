@@ -568,6 +568,10 @@ public:
     //! @param[in] whereClause The optional where clause starting with WHERE
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, Utf8CP whereClause=nullptr);
 
+    //! Attempt to determine the default DgnViewId for this DgnDb.
+    //! @return An invalid DgnViewId will be returned if a default view could not be found.
+    DGNPLATFORM_EXPORT static DgnViewId QueryDefaultViewId(DgnDbR);
+
     bool IsView3d() const {return nullptr != _ToView3d();}
     bool IsOrthographicView() const {return nullptr != _ToOrthographicView();}
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}

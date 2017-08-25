@@ -998,6 +998,11 @@ public:
 
     static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //<! Bluish color used to denote unselected state
     static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state
+
+    static ColorDef VersionCompareDeleted()     {return ColorDef(0xCC,0x00,0x00);} //<! Red for deleted elements
+    static ColorDef VersionCompareInserted()    {return ColorDef(0x56,0xAA,0x1C);} //<! Green for inserted elements
+    static ColorDef VersionCompareModified()    {return ColorDef(0x00,0x8B,0xE1);} //<! Blue for modified elements
+    static ColorDef VersionComparePreModified() {return ColorDef(0x6A,0xB9,0xEC);} //<! Cyan for transient modified elements
 };
 
 END_BENTLEY_DGN_NAMESPACE
