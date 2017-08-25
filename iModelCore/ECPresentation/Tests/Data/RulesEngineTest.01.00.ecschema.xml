@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RulesEngineTest" alias="RET" version="1.0" description="Rules Engine test schema" displayLabel="Rules Engine test schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" alias="bsca"   />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" alias="beca" />
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" alias="bsm" />
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECCustomAttributes>
+        <RelatedItemsDisplaySpecifications xmlns="Bentley_Standard_CustomAttributes.01.03">
+            <Specifications>
+                
+                <RelatedItemsDisplaySpecification>
+                    <!-- Testing simple relationship specification -->
+                    <ParentClass>ClassL</ParentClass>
+                    <RelationshipPath>ClassLHasClassM:0:ClassM</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                
+                <RelatedItemsDisplaySpecification>
+                    <!-- Testing polyporphic relationship specification -->
+                    <ParentClass>ClassJ</ParentClass>
+                    <RelationshipPath>ClassJHasClassK:0:ClassK</RelationshipPath>
+                    <DerivedClasses>
+                        <!-- Use only one of the ClassK subclasses. WIP: should verify that not specifying DerivedClasses includes all subclasses -->
+                        <string>ClassM</string>
+                    </DerivedClasses>
+                </RelatedItemsDisplaySpecification>
+                
+                <RelatedItemsDisplaySpecification>
+                    <!-- Testing path of multiple relationships -->
+                    <ParentClass>ClassM</ParentClass>
+                    <RelationshipPath>ClassLHasClassM:1:ClassL.ClassJHasClassL:1:ClassJ</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                
+            </Specifications>
+        </RelatedItemsDisplaySpecifications>
+    </ECCustomAttributes>
+
+    <!-- General use -->
+    <ECEntityClass typeName="Widget">
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>MyID</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="MyID" typeName="string" />
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="BoolProperty" typeName="boolean" />
+        <ECProperty propertyName="DoubleProperty" typeName="double" />
+        <ECProperty propertyName="LongProperty" typeName="long" />
+        <ECProperty propertyName="DateProperty" typeName="dateTime" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Gadget" >
+        <ECProperty propertyName="MyID" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECNavigationProperty propertyName="Widget" relationshipName="WidgetHasGadgets" direction="Backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Sprocket" >
+        <ECCustomAttributes>
+            <ClassPriority xmlns="EditorCustomAttributes.01.02">
+                <Priority>9</Priority>
+            </ClassPriority>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>MyID</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="MyID" typeName="string" />
+        <ECNavigationProperty propertyName="Gadget" relationshipName="GadgetHasSprockets" direction="Backward" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="WidgetHasGadget"  strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="WidgetHasGadget" polymorphic="False">
+            <Class class="Widget" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="WidgetHasGadget (reversed)" polymorphic="True">
+            <Class class="Gadget" />
+        </Target>
+        <ECProperty propertyName="Priority" typeName="int" />
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WidgetHasGadgets"  strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="WidgetHasGadget" polymorphic="False">
+            <Class class="Widget" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="WidgetHasGadget (reversed)" polymorphic="True">
+            <Class class="Gadget" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WidgetsHaveGadgets"  strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="WidgetsHaveGadgets" polymorphic="False">
+            <Class class="Widget" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="WidgetsHaveGadgets (reversed)" polymorphic="False">
+            <Class class="Gadget" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WidgetsHaveGadgets2"  strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="WidgetsHaveGadgets2" polymorphic="False">
+            <Class class="Widget" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="WidgetsHaveGadgets2 (reversed)" polymorphic="False">
+            <Class class="Gadget" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GadgetHasSprockets"  strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="GadgetHasSprockets" polymorphic="True">
+            <Class class="Gadget" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="GadgetHasSprockets (reversed)" polymorphic="True">
+            <Class class="Sprocket" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- Relationship with multiple targets -->
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="MyID" typeName="string" />
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="ClassA2Base">
+        <ECProperty propertyName="PropertyA2Base" typeName="string" />
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="ClassA2">
+      <BaseClass>ClassA2Base</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="BaseOfBAndC" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MyID" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>BaseOfBAndC</BaseClass>
+        <ECNavigationProperty propertyName="A" relationshipName="ClassAHasBAndC" direction="Backward" />
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="ClassB2">
+        <ECNavigationProperty propertyName="A" relationshipName="ClassA2BaseHasB2" direction="Backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>BaseOfBAndC</BaseClass>
+        <ECNavigationProperty propertyName="A" relationshipName="ClassAHasBAndC" direction="Backward" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassAHasBAndC"  strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ClassA Has B and C" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="B and C Classes Have A" polymorphic="True" abstractConstraint="BaseOfBAndC">
+            <Class class="ClassB" />
+            <Class class="ClassC" />
+        </Target>
+    </ECRelationshipClass>
+  
+    <ECRelationshipClass typeName="ClassA2BaseHasB2"  strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ClassA2Base Has ClassB2" polymorphic="False">
+            <Class class="ClassA2Base" />
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="ClassB2 Has ClassA2Base" polymorphic="False">
+            <Class class="ClassB2" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- Inheritance -->
+    <ECEntityClass typeName="ClassD">
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassE">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ClassD" relationshipName="ClassDHasClassE" direction="Backward" />
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="LongProperty" typeName="long" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassF">
+        <BaseClass>ClassE</BaseClass>
+        <ECProperty propertyName="PropertyF" typeName="int" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassG">
+        <BaseClass>ClassE</BaseClass>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassDHasClassE" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="ClassD Has ClassE" polymorphic="True">
+            <Class class="ClassD" />
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="ClassE Has ClassD" polymorphic="True">
+            <Class class="ClassE" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassDReferencesClassE" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="ClassD References ClassE" polymorphic="True">
+            <Class class="ClassD" />
+        </Source>
+        <Target multiplicity="(1..*)" roleLabel="ClassE References ClassD" polymorphic="True">
+            <Class class="ClassE" />
+        </Target>
+        <ECProperty propertyName="Priority" typeName="int" />
+    </ECRelationshipClass>
+    
+    <!-- Point properties -->
+    <ECEntityClass typeName="ClassH">
+        <BaseClass>ClassF</BaseClass>
+        <ECProperty propertyName="PointProperty" typeName="point3d" />
+    </ECEntityClass>
+
+    <!-- Struct properties -->
+    <ECStructClass typeName="Struct1">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+
+    <ECStructClass typeName="Struct2">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECStructProperty propertyName="StructProperty" typeName="Struct1" />
+    </ECStructClass>
+
+    <ECEntityClass typeName="ClassI" >
+        <ECProperty propertyName="StringProperty" typeName="string" />
+        <ECStructProperty propertyName="StructProperty" typeName="Struct2" />
+    </ECEntityClass>
+
+    <!-- RelatedItemsDisplaySpecifications -->
+    <ECEntityClass typeName="ClassJ">
+        <ECProperty propertyName="PropertyJ" typeName="int" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassK" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="PropertyK" typeName="int" />
+        <ECNavigationProperty propertyName="J1" relationshipName="ClassJHasClassK" direction="Backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassL">
+        <BaseClass>ClassK</BaseClass>
+        <ECProperty propertyName="PropertyL" typeName="int" />
+        <ECNavigationProperty propertyName="J2" relationshipName="ClassJHasClassL" direction="Backward" />
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="ClassM">
+        <BaseClass>ClassK</BaseClass>
+        <ECProperty propertyName="PropertyM" typeName="int" />
+        <ECNavigationProperty propertyName="J3" relationshipName="ClassLHasClassM" direction="Backward" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassJHasClassK" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassJ Has ClassK" polymorphic="False">
+            <Class class="ClassJ" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassJ Has ClassK (reversed)" polymorphic="True">
+            <Class class="ClassK" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassJHasClassL" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassJ Has ClassL" polymorphic="False">
+            <Class class="ClassJ" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassJ Has ClassL (reversed)" polymorphic="False">
+            <Class class="ClassL" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassLHasClassM" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassL Has ClassM" polymorphic="False">
+            <Class class="ClassL" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassL Has ClassM (reversed)" polymorphic="False">
+            <Class class="ClassM" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- Recursive relationships -->
+    <ECEntityClass typeName="ClassN">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECNavigationProperty propertyName="N" relationshipName="ClassNGroupsClassN" direction="Backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassO">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECNavigationProperty propertyName="N" relationshipName="ClassNOwnsClassO" direction="Backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ClassP">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECNavigationProperty propertyName="O" relationshipName="ClassOHasClassP" direction="Backward" />
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="ClassNOwnsClassO" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassN owns ClassO" polymorphic="False">
+            <Class class="ClassN" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassO belongs to ClassN" polymorphic="False">
+            <Class class="ClassO" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassNGroupsClassN" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassN groups ClassN" polymorphic="False">
+            <Class class="ClassN" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassN is grouped by ClassN" polymorphic="False">
+            <Class class="ClassN" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassOHasClassP" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassP has ClassP" polymorphic="False">
+            <Class class="ClassO" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassP belongs to ClassO" polymorphic="False">
+            <Class class="ClassP" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <!-- Enums -->
+    <ECEnumeration typeName="IntegerEnum" backingTypeName="int" isStrict="True" description="" displayLabel="IntegerEnum">
+        <ECEnumerator value="1" displayLabel="Z" />
+        <ECEnumerator value="2" displayLabel="M" />
+        <ECEnumerator value="3" displayLabel="A" />
+    </ECEnumeration>
+    
+    <ECEnumeration typeName="StringEnum" backingTypeName="string" isStrict="True" description="" displayLabel="StringEnum">
+        <ECEnumerator value="One" displayLabel="3" />
+        <ECEnumerator value="Two" displayLabel="2" />
+        <ECEnumerator value="Three" displayLabel="1" />
+    </ECEnumeration>
+
+    <ECEntityClass typeName="ClassQ">
+        <ECProperty propertyName="IntEnum" typeName="IntegerEnum" />
+        <ECProperty propertyName="StrEnum" typeName="StringEnum" />
+    </ECEntityClass>
+    
+    <!-- Array Properties -->
+    <ECEntityClass typeName="ClassR">
+        <ECArrayProperty propertyName="IntsArray" typeName="int" />
+        <ECStructArrayProperty propertyName="StructsArray" typeName="Struct1" />
+    </ECEntityClass>    
+    
+    <!-- Relationships to relationships -->
+    <ECEntityClass typeName="ClassS">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="ClassT">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="ClassU">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ClassSHasClassT" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="ClassS has ClassT" polymorphic="False">
+            <Class class="ClassS" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassS belongs to ClassT" polymorphic="False">
+            <Class class="ClassT" />
+        </Target>
+        <ECNavigationProperty propertyName="InstanceU" relationshipName="STRelationshipHasClassU" direction="Backward" />
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass typeName="STRelationshipHasClassU" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="ClassU belongs to ST relationship" polymorphic="False">
+            <Class class="ClassU" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ST relationship has ClassU" polymorphic="False">
+            <Class class="ClassSHasClassT" />
+        </Target>
+    </ECRelationshipClass>
+    
+</ECSchema>

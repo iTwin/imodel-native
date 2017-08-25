@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/ECPresentation = $(_MakeFilePath)/PublicAPI/ECPresentation"

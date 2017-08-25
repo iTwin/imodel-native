@@ -1,0 +1,15 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+NavigationQueryBuilderTests.RelatedInstanceNodes_ShowEmptyGroups                                # Placeholder for a missing feature. Requires metadata queries support.
+NavigationQueryBuilderTests.InstancesOfSpecificClasses_ShowEmptyGroups                          # Placeholder for a missing feature. Requires metadata queries support.
+RulesDrivenECPresentationManagerNavigationTests.InstancesOfSpecificClassesNodes_ShowEmptyGroups # Placeholder for a missing feature. Requires metadata queries support.
+NavigationQueryBuilderTests.AllRelatedInstanceNodes_GroupByRelationship                         # Placeholder for a missing feature. Requires metadata queries support.
+NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationshipGroupingNodes   # Placeholder for a missing feature. Requires metadata queries support.
+
+RulesDrivenECPresentationManagerContentTests.LoadsArrayPropertyValues                           # WIP TFS#711829 (Grigas)
+RulesDrivenECPresentationManagerContentTests.MergesArrayPropertyValuesForWhenMergingRows        # WIP TFS#711829 (Grigas)
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------

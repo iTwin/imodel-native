@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Localization/Xliffs.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+ContextDeliveryDir  = $(OutputRootDir)BuildContexts/ECPresentation/Delivery/
+
+SQLANG_CHeader  = $(_MakeFilePath)Xliffs/ECPresentation.xliff.h
+SQLANG_Xliff    = $(OutputRootDir)build/ECPresentation/Xliffs/ECPresentation_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
+
+SQLANG_CHeader  = $(_MakeFilePath)Xliffs/RulesEngine.xliff.h
+SQLANG_Xliff    = $(OutputRootDir)build/ECPresentation/Xliffs/RulesEngine_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

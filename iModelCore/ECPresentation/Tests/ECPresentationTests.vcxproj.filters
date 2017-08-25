@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Published">
+      <UniqueIdentifier>{d8ea076c-649c-4336-93ad-93bed0c169cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{76e29d01-9b87-4d03-b546-ecd18d920ec4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BackDoor">
+      <UniqueIdentifier>{eb2356fe-ccd8-4e25-942e-5cdd5ff514a0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerTests.cpp" />
+    <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
+    <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
+    <ClCompile Include="Published\PresentationManagerMessageHandlerTests.cpp" />
+    <ClCompile Include="Published\SelectionTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentRelatedInstances.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_NestedContentField.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_SelectedNodeInstances.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomFunctionTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomizationHelperTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECDbTestProject.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECExpressionContextsProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECExpressionsToECSqlConverterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeEventSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECSchemaHelperTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ExpectedQueriesTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\JsonNavNodeTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\LocalizationTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\MultiSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_AllInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_AllRelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_GroupingRule.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_InstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_RelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_SearchNode.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_SortingRule.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodesCacheTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodesDataSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryBasedSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryExecutorTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RulesDrivenMessagingTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RuleSetLocaterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RulesPreprocessorTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\TestHelpers.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\UpdateTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\UserSettingsTests.cpp" />
+    <ClCompile Include="BackDoor\Localization.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\TestNavNode.cpp" />
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ContentProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\CustomNodesProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ECDbTestProject.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ECSchemaHelperTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ExpectedQueries.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryBasedSpecificationNodesProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryBuilderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryExecutorTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestHelpers.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestLocalizationProvider.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestNodesProvider.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\StubLocalState.h" />
+    <ClInclude Include="TestUtils\TestRuleSetLocater.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestNavNode.h" />
+    <ClInclude Include="TestUtils\TestUserSettings.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestECPresentationManager.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Data\RulesEngineTest.01.00.ecschema.xml" />
+  </ItemGroup>
+</Project>
