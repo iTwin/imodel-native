@@ -422,7 +422,7 @@ ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schema
         Utf8String conversionSchemaName(schemaName);
         conversionSchemaName += "_V3Conversion";
         SchemaKey key(conversionSchemaName.c_str(), versionRead, versionMinor);
-        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
+        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
         }
     
     return conversionSchema;
