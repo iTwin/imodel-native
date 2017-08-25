@@ -143,14 +143,14 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/AssemblyProperties.cs \
-			$(baseDir)Source/ECQueryExtensions.cs \
+            $(baseDir)Source/ECQueryExtensions.cs \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
             $(baseDir)Source/Helpers/DbConnectionCreator.cs \
             $(baseDir)Source/Helpers/DbConnectionHelper.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/DownloadReportHelper.cs \
             $(baseDir)Source/Helpers/ECQueryConverter.cs \
-			$(baseDir)Source/Helpers/IBUDDIWrapper.cs \
+            $(baseDir)Source/Helpers/IBUDDIWrapper.cs \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
             $(baseDir)Source/Helpers/ExecuteQueryHelper.cs \
             $(baseDir)Source/Helpers/IDbQuerier.cs \
@@ -162,7 +162,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/IRDSDataFetcher.cs \
             $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
             $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
-			$(baseDir)Source/Helpers/IUSGSEEDataFetcher.cs \
+            $(baseDir)Source/Helpers/IUSGSEEDataFetcher.cs \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
             $(baseDir)Source/Helpers/MimicTableWriter.cs \
             $(baseDir)Source/Helpers/Packager.cs \
@@ -180,7 +180,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/QueryProviders/SubAPIQueryProvider.cs \
             $(baseDir)Source/QueryProviders/RdsAPIQueryProvider.cs \
             $(baseDir)Source/QueryProviders/UsgsSubAPIQueryProvider.cs \
-			$(baseDir)Source/QueryProviders/UsgsEEApiQueryProvider.cs \
+            $(baseDir)Source/QueryProviders/UsgsEEApiQueryProvider.cs \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \
@@ -197,7 +197,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/JTokenExtension.cs \
             $(baseDir)Source/Log.cs \
             $(baseDir)Source/models.cs \
-			$(baseDir)Source/XmlNodeExtensions.cs
+            $(baseDir)Source/XmlNodeExtensions.cs
             
 #           $(baseDir)Source/QueryProviders/AustraliaAPIQueryProvider.cs \
 #           $(baseDir)Source/Helpers/IAustraliaDataFetcher.cs \

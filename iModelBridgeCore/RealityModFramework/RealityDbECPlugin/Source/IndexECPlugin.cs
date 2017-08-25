@@ -307,6 +307,10 @@ namespace IndexECPlugin.Source
                         {
                         queryProviderList.Add(new Tuple<DataSource, IECQueryProvider>(DataSource.RDS, new RdsAPIQueryProvider(query, querySettings, new DbQuerier(ConnectionString, dbConnCreator), schema, Convert.ToBase64String(Encoding.UTF8.GetBytes(GetToken(connection))))));
                         }
+                    if ( sourcesList.Contains(DataSource.USGSEE) /* || sources.Contains(DataSource.All)*/)
+                        {
+                        queryProviderList.Add(new Tuple<DataSource, IECQueryProvider>(DataSource.USGSEE, new UsgsEEApiQueryProvider(query, querySettings, null, schema)));
+                        }
                     return ExecuteQueryHelper.QueryMultipleSources(queryProviderList);
                     }
                 }

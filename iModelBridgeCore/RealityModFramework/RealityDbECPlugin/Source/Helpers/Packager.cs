@@ -99,7 +99,7 @@ namespace IndexECPlugin.Source.Helpers
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
 
-                if ( !SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID) )
+                if ( !SourceStringMap.IsValidId(DataSource.USGS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.RDS, requestedEntity.ID) && !SourceStringMap.IsValidId(DataSource.USGSEE, requestedEntity.ID) )
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
                         {
@@ -112,7 +112,7 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 else
                     {
-                    if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID) )
+                    if ( !subAPIRequestedEntities.Any(e => e.ID == requestedEntity.ID) )
                         {
                         subAPIRequestedEntities.Add(requestedEntity);
                         }
@@ -944,7 +944,7 @@ namespace IndexECPlugin.Source.Helpers
 
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(subAPIRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi&rds&usgsee"));
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(IndexConstants.PRExtendedDataName, true));
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
