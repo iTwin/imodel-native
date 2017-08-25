@@ -727,7 +727,7 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="polygon">The polygon</param>
         /// <param name="criteriaList">List of criteria extracted from the query</param>
-        /// <returns>The Server instance</returns>
+        /// <returns>The list of instances</returns>
         override protected List<IECInstance> QuerySpatialEntitiesWithDetailsViewByPolygon (string polygon, List<SingleWhereCriteriaHolder> criteriaList)
             {
             List<IECInstance> instanceList;

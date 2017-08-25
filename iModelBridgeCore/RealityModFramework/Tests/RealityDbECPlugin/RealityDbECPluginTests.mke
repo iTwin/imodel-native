@@ -110,6 +110,8 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/Helpers/SourceStringMapTests.cs \
             $(baseDir)Tests/Helpers/TableAliasCreatorTests.cs \
             $(baseDir)Tests/Helpers/TableDescriptorTests.cs \
+			$(baseDir)Tests/Helpers/UsgsEEApiQueryProviderTests.cs \
+            $(baseDir)Tests/Helpers/UsgsEEDataFetcherTests.cs \
             $(baseDir)Tests/SQLQueryBuilder/GenericParamNameValueMapTests.cs \
             $(baseDir)Tests/SQLQueryBuilder/SQLQueryBuilderTests.cs \
             $(baseDir)Tests/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilderTests.cs \

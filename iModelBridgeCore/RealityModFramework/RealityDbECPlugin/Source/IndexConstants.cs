@@ -29,6 +29,19 @@ namespace IndexECPlugin.Source
         public const string AUSubAPIString = "AU";
         public const string AUServerName = "ELVIS";
 
+        //Earth Explorer Constants
+        public const string EEBaseApiURL = "https://earthexplorer.usgs.gov/inventory/json/v/1.4.0/";
+        public const string EEBaseMetadataURL = "https://earthexplorer.usgs.gov/metadata/xml/";
+        public const string EELegalString = "Data available from the U.S. Geological Survey.";
+        public const string EETermsOfUse = "https://lta.cr.usgs.gov/citation";
+        public const string EEDownloadURL = "https://earthexplorer.usgs.gov/download/{0}/{1}/STANDARD/EE";
+        public const string EESubAPIString = "USGSEE";
+        public const string EERegistrationPage = "https://ers.cr.usgs.gov/register/";
+        public const string EEOrganisationPage = "https://earthexplorer.usgs.gov/";
+        public const string EELoginKey = "EarthExplorer";
+        public const string EELoginMethod = "CUSTOM";
+        public const string EEServerName = "Earth Explorer";
+        public const string EEServerURL = "https://earthexplorer.usgs.gov/";
 
         //Rds Constants
         //public const string RdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase"); // "https://s3mxcloudservice.cloudapp.net/v2.3/repositories/S3MXECPlugin--Server/S3MX/";

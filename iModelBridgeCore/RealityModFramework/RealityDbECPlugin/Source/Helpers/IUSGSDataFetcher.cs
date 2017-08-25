@@ -223,7 +223,7 @@ namespace IndexECPlugin.Source.Helpers
 
             List<USGSRequestBundle> instanceList = new List<USGSRequestBundle>();
 
-            string bbox = ExtractBboxFromQuery();
+            string bbox = DbGeometryHelpers.ExtractBboxStringFromWKTPolygon(m_query.ExtractPolygonDescriptorFromQuery().WKT);
 
             //List<string> formatList = ExtractFormatList();
             List<string> formatList = null;
@@ -410,30 +410,6 @@ namespace IndexECPlugin.Source.Helpers
             });
 
             return instanceList;
-            }
-
-        private string ExtractBboxFromQuery ()
-            {
-            if ( !m_query.ExtendedData.ContainsKey("polygon") )
-                {
-                throw new UserFriendlyException("This request must contain a \"polygon\" parameter in the form of a WKT polygon string.");
-                }
-
-            string polygonString = m_query.ExtendedData["polygon"].ToString();
-            PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
-
-            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.Points);
-
-            PolygonDescriptor polyDesc = new PolygonDescriptor
-            {
-                WKT = polygonWKT,
-                SRID = model.coordinate_system
-            };
-
-            //We should now extract a bbox from this wkt
-
-            return DbGeometryHelpers.ExtractBboxStringFromWKTPolygon(polyDesc.WKT);
-
             }
         }
 

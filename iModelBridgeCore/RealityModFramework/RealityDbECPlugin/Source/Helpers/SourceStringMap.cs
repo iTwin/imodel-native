@@ -40,6 +40,17 @@ namespace IndexECPlugin.Source.Helpers
                 //        return false;
                 //        }
                 //    return true;
+                case DataSource.USGSEE:
+                    string[] splitId = id.Split(new string[]{"__"}, StringSplitOptions.RemoveEmptyEntries);
+                    if ( splitId.Length < 3 )
+                        {
+                        return false;
+                        }
+                    if ( splitId[0] != "USGSEE" )
+                        {
+                        return false;
+                        }
+                    return true;
                 case DataSource.All:
                     return true;
                 default:
@@ -57,6 +68,8 @@ namespace IndexECPlugin.Source.Helpers
                     return "usgsapi";
                 case DataSource.RDS:
                     return "rds";
+                case DataSource.USGSEE:
+                    return "usgsee";
                 //case DataSource.AU:
                 //    return "au";
                 case DataSource.All:
@@ -78,6 +91,8 @@ namespace IndexECPlugin.Source.Helpers
                     return DataSource.RDS;
                 //case "au":
                 //    return DataSource.AU;
+                case "usgsee":
+                    return DataSource.USGSEE;
                 case "all":
                     return DataSource.All;
                 default:
@@ -95,7 +110,8 @@ namespace IndexECPlugin.Source.Helpers
             //return result.TrimEnd(' ', ',');
 
             //I hard coded it, because I feared that the commented method could throw exceptions if the map was not updated at the same time as the Source enum.
-            return "\"index\", \"usgsAPI\", \"rds\", and \"all\"";
+            //return "\"index\", \"usgsAPI\", \"rds\", and \"all\"";
+            return "\"index\", \"usgsAPI\", \"rds\", \"usgsee\" and \"all\"";
             //return "\"index\", \"usgsAPI\", \"rds\", \"au\" and \"all\"";
             }
         }
@@ -121,6 +137,10 @@ namespace IndexECPlugin.Source.Helpers
         /// The australian API datasource
         /// </summary> 
         AU,
+        /// <summary>
+        /// Usgs Earth Explorer API
+        /// </summary>
+        USGSEE,
         /// <summary>
         /// Represents all datasources
         /// </summary> 

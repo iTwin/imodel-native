@@ -80,9 +80,9 @@
       <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(SrcRoot)\RealityModFramework\RealityDbECPlugin\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(SrcRoot)\RealityModFramework\RealityDbECPlugin\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -117,6 +117,8 @@
     <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
     <Compile Include="Tests\Helpers\TableAliasCreatorTests.cs" />
     <Compile Include="Tests\Helpers\TableDescriptorTests.cs" />
+    <Compile Include="Tests\Helpers\UsgsEEApiQueryProviderTests.cs" />
+    <Compile Include="Tests\Helpers\UsgsEEDataFetcherTests.cs" />
     <Compile Include="Tests\IECInstanceExtensionTests.cs" />
     <Compile Include="Tests\IndexECPluginRDSTests.cs" />
     <Compile Include="Tests\IndexECPluginUSGSTests.cs" />
@@ -239,7 +241,7 @@
     <Content Include="$(OutRoot)\Winx64\Product\RealityModFramework\BeXmlB02.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(OutRoot)\Winx64\Product\RealityModFramework\RealityPackage.dll">
+    <Content Include="$(OutRoot)\Winx64\Product\RealityModFramework\RealityPackageB02.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

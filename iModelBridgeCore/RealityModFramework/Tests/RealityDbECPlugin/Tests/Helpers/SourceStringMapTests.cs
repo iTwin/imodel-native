@@ -68,7 +68,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
         public void GetAllSourceStringsTest ()
             {
             // TODO: change this test if the corresponding method is not hardcoded anymore
-            Assert.That(SourceStringMap.GetAllSourceStrings(), Is.EqualTo("\"index\", \"usgsAPI\", \"rds\", and \"all\""));
+            Assert.That(SourceStringMap.GetAllSourceStrings(), Is.EqualTo("\"index\", \"usgsAPI\", \"rds\", \"usgsee\" and \"all\""));
             }
         }
     }

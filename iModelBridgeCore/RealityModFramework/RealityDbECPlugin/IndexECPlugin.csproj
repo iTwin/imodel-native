@@ -111,9 +111,9 @@
       <HintPath>packages\Microsoft.WindowsAzure.ConfigurationManager.3.2.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="RealityServicesNet">
       <HintPath>$(OutRoot)\Winx64\build\RealityModFramework\RealityServicesNet\RealityServicesNet.dll</HintPath>
@@ -140,10 +140,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Source\ECQueryExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\AssemblyProperties.cs" />
     <Compile Include="Source\Helpers\ExecuteQueryHelper.cs" />
     <Compile Include="Source\Helpers\IBUDDIWrapper.cs" />
+    <Compile Include="Source\Helpers\IUSGSEEDataFetcher.cs" />
     <Compile Include="Source\Helpers\RetrievalController.cs" />
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
     <Compile Include="Source\Helpers\DbConnectionCreator.cs" />
@@ -181,6 +183,7 @@
     <Compile Include="Source\models.cs" />
     <Compile Include="Source\QueryProviders\IECQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\SubAPIQueryProvider.cs" />
+    <Compile Include="Source\QueryProviders\UsgsEEApiQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\UsgsSubAPIQueryProvider.cs" />
     <Compile Include="Source\SQLQueryBuilder\IParamNameValueMap.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLDeleteStatementBuilder.cs" />
@@ -190,6 +193,7 @@
     <Compile Include="Source\SQLQueryBuilder\SQLServerInsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLServerMergeUpsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\StandardSQLQueryBuilder.cs" />
+    <Compile Include="Source\XmlNodeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

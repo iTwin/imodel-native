@@ -869,9 +869,6 @@ namespace IndexECPlugin.Source
 
                         IEnumerable<Claim> claims =
                             ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
-                        Claim organizationClaim =
-                            claims.FirstOrDefault(
-                                    c => c.Type == "http://schemas.bentley.com/ws/2011/03/identity/claims/organizationid");
                         Claim emailClaim =
                             claims.FirstOrDefault(
                                     c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");

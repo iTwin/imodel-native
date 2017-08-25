@@ -881,6 +881,73 @@ namespace IndexECPlugin.Source
             }
         }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class UsgsEEDataset
+        {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DatasetName
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DatasetId
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DataFormat
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Classification
+            {
+            get;
+            set;
+            }
+        }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class EERequestBundle
+        {
+        /// <summary>
+        /// 
+        /// </summary>
+        public UsgsEEDataset Dataset
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<JToken> jtokenList
+            {
+            get;
+            set;
+            }
+        }
+
     //internal enum ObjectClassification
     //{
     //    None = 0,
