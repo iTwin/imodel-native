@@ -2388,7 +2388,7 @@ protected:
     DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetModelForDgnV8Model, except that caller already knows the target model
     DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
     DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
-    ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
