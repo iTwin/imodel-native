@@ -1375,7 +1375,6 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
-
     if (propertyChange.GetName().IsValid())
         {
         if (propertyChange.GetName().GetNew().IsNull())
@@ -1387,29 +1386,100 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
         sqlUpdateBuilder.AddSetExp("Name", propertyChange.GetName().GetNew().Value().c_str());
         }
+    //MinMaxValueChange:
+    if (propertyChange.GetMinimumLength().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMinLength = "PrimitiveTypeMinLength";
+        if (propertyChange.GetMinimumLength().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinLength);
+        else
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinLength, propertyChange.GetMinimumLength().GetNew().Value());
+        }
+    
+    if (propertyChange.GetMaximumLength().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMaxLength = "PrimitiveTypeMaxLength";
+        if (propertyChange.GetMaximumLength().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxLength);
+        else
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxLength, propertyChange.GetMaximumLength().GetNew().Value());
+        }
 
+    if (propertyChange.GetMinimumValue().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMinValue = "PrimitiveTypeMinValue";
+        if (propertyChange.GetMinimumValue().GetNew().IsNull() || propertyChange.GetMinimumValue().GetNew().Value().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinValue);
+        else
+            {
+            ECValueCR value = propertyChange.GetMinimumValue().GetNew().Value();
+            if (value.IsInteger())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetInteger());
+            else if (value.IsLong())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetLong());
+            else if (value.IsDouble())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetDouble());
+            else if (value.IsString())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetUtf8CP());
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMinValue' to a unsupported type.",
+                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+                return ERROR;
+                }
+            }
+        }
+
+    if (propertyChange.GetMaximumValue().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMaxValue = "PrimitiveTypeMaxValue";
+        if (propertyChange.GetMaximumValue().GetNew().IsNull() || propertyChange.GetMaximumValue().GetNew().Value().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxValue);
+        else
+            {
+            ECValueCR value = propertyChange.GetMaximumValue().GetNew().Value();
+            if (value.IsInteger())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetInteger());
+            else if (value.IsLong())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetLong());
+            else if (value.IsDouble())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetDouble());
+            else if (value.IsString())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetUtf8CP());
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMaxValue' to a unsupported type.",
+                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+                return ERROR;
+                }
+            }
+        }
+    
     if (propertyChange.GetExtendedTypeName().IsValid())
         {
+        constexpr Utf8CP kExtendedTypeName = "ExtendedTypeName";
         if (propertyChange.GetExtendedTypeName().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("ExtendedTypeName");
+            sqlUpdateBuilder.AddSetToNull(kExtendedTypeName);
         else
-            sqlUpdateBuilder.AddSetExp("ExtendedTypeName", propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
         }
 
     if (propertyChange.GetDisplayLabel().IsValid())
         {
+        constexpr Utf8CP kDisplayLabel = "DisplayLabel";
         if (propertyChange.GetDisplayLabel().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+            sqlUpdateBuilder.AddSetToNull(kDisplayLabel);
         else
-            sqlUpdateBuilder.AddSetExp("DisplayLabel", propertyChange.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDisplayLabel, propertyChange.GetDisplayLabel().GetNew().Value().c_str());
         }
 
     if (propertyChange.GetDescription().IsValid())
         {
+        constexpr Utf8CP kDescription = "Description";
         if (propertyChange.GetDescription().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("Description");
+            sqlUpdateBuilder.AddSetToNull(kDescription);
         else
-            sqlUpdateBuilder.AddSetExp("Description", propertyChange.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDescription, propertyChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (propertyChange.IsReadonly().IsValid())

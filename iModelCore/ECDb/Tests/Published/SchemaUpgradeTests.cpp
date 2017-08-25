@@ -268,6 +268,115 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingMinMax)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='long'   minimumValue  = '1'     maximumValue   = '200'    />"
+        "       <ECProperty propertyName='P2' typeName='double' minimumValue  = '1.22'  maximumValue   = '100.22' />"
+        "       <ECProperty propertyName='P3' typeName='string' minimumLength = '1'     maximumLength  = '1000'   />"
+        "       <ECProperty propertyName='P4' typeName='long'   maximumValue  = '1200'                            />"
+        "       <ECProperty propertyName='P5' typeName='double' maximumValue  = '1200.12'                         />"
+        "       <ECProperty propertyName='P6' typeName='string' maximumLength = '1000'                            />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_minMax.ecdb", schemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+
+    ECValue minV, maxV;
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+    ASSERT_EQ(1, minV.GetLong());
+    ASSERT_EQ(200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+    ASSERT_EQ(1.22, minV.GetDouble());
+    ASSERT_EQ(100.22, maxV.GetDouble());
+
+    ASSERT_EQ(1, foo->GetPropertyP("P3")->GetMinimumLength());
+    ASSERT_EQ(1000, foo->GetPropertyP("P3")->GetMaximumLength());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_EQ(1200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_EQ(1200.12, maxV.GetDouble());
+
+    ASSERT_EQ(0, foo->GetPropertyP("P6")->GetMinimumLength());
+    ASSERT_EQ(1000, foo->GetPropertyP("P6")->GetMaximumLength());
+    }
+
+    ReopenECDb();
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='long'   />"
+        "       <ECProperty propertyName='P2' typeName='double' />"
+        "       <ECProperty propertyName='P3' typeName='string' />"
+        "       <ECProperty propertyName='P4' typeName='long'   minimumValue  = '12'   maximumValue   = '2200'    />"
+        "       <ECProperty propertyName='P5' typeName='double' minimumValue  = '1.33' maximumValue   = '2200.12' />"
+        "       <ECProperty propertyName='P6' typeName='string' minimumLength = '11'    maximumLength  = '9000'    />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ReopenECDb();
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+
+    ECValue minV, maxV;
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_TRUE(maxV.IsNull());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_TRUE(maxV.IsNull());
+
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMinimumLength());
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMaximumLength());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+    ASSERT_EQ(12, minV.GetLong());
+    ASSERT_EQ(2200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+    ASSERT_EQ(1.33, minV.GetDouble());
+    ASSERT_EQ(2200.12, maxV.GetDouble());
+
+    ASSERT_EQ(11, foo->GetPropertyP("P6")->GetMinimumLength());
+    ASSERT_EQ(9000, foo->GetPropertyP("P6")->GetMaximumLength());
+    }
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority) 
     {
     SchemaItem schemaItem(
