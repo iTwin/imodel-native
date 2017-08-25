@@ -10,7 +10,7 @@
 
 #define SERVER_INFO_REFRESH_MS (30*60*1000)
 
-std::map<Utf8String, std::pair<WSInfo, uint64_t>> ServerInfoProvider::s_serverInfo = {};
+std::map<Utf8String, std::pair<WSInfo, uint64_t>> ServerInfoProvider::s_serverInfo{};
 BeMutex ServerInfoProvider::s_mutex;
 
 /*--------------------------------------------------------------------------------------+
