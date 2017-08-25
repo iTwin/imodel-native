@@ -482,6 +482,37 @@ size_t ViewDefinition::QueryCount(DgnDbR db, Utf8CP whereClause)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnViewId queryFirstPublicView(DgnDbR db, Utf8CP className)
+    {
+    Utf8PrintfString sql("SELECT ECInstanceId FROM %s WHERE IsPrivate=FALSE LIMIT 1", className);
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+    return (statement.IsValid() && (BE_SQLITE_ROW == statement->Step())) ? statement->GetValueId<DgnViewId>(0) : DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId ViewDefinition::QueryDefaultViewId(DgnDbR db)
+    {
+    DgnViewId viewId;
+    if (BeSQLite::BE_SQLITE_ROW == db.QueryProperty(&viewId, sizeof(viewId), DgnViewProperty::DefaultView()) && ViewDefinition::Get(db, viewId).IsValid())
+        return viewId;
+
+    viewId = queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition));
+    if (viewId.IsValid())
+        return viewId;
+
+    viewId = queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_SheetViewDefinition));
+    if (viewId.IsValid())
+        return viewId;
+
+    return queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_DrawingViewDefinition));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry const& entry)
