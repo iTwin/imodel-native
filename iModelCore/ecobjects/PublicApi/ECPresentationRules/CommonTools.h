@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/CommonTools.h $
+|     $Source: PublicApi/ECPresentationRules/CommonTools.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -35,6 +35,12 @@ public:
 
     //! Formats RequiredDirection string value
     static Utf8CP                     FormatRequiredDirectionString (RequiredRelationDirection direction);
+
+    //! Parses RelationshipMeaning string value
+    static RelationshipMeaning ParseRelationshipMeaningString(Utf8CP value);
+
+    //! Formats RelationshipMeaning string value
+    static Utf8CP FormatRelationshipMeaningString(RelationshipMeaning meaning);
 
     //! Copies the rules in source vector into the target vector.
     template<typename T> 
