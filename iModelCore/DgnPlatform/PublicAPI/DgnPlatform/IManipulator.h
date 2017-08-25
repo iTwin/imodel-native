@@ -175,29 +175,34 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
-#if defined (NOT_NOW)
 enum class ControlType
     {
-    Placement = 0, //!< Prefer placement controls
-    Geometry  = 1, //!< Prefer geometry/vertex controls
+    Placement   = 0, //!< Request for placement controls (if none, return nullptr for IEditManipulatorPtr and appropriate DefaultActions)
+    Geometry    = 1, //!< Prefer geometry/vertex controls (if none, return any Placement IEditManipulatorPtr or appropriate DefaultActions)
     };
 
-enum class DefaultActions
+enum class DefaultActions : uint32_t
     {
-    None      = 0,        //!< Default controls disabled
-    Translate = (1 << 0), //!< Default controls may apply translation
-    Rotate    = (1 << 1), //!< Default controls may apply rotation
-    Scale     = (1 << 2), //!< Default controls may apply scale
-    Copy      = (1 << 3), //!< Default controls may create a copy
-    Geometry  = (1 << 4), //!< Default controls may modify GeometryPrimitives
-    All       = 0xffff,   //!< Default controls unrestricted
+    None        = 0,          //!< Default controls disabled
+    TranslateXY = (1 << 0),   //!< Default controls may apply x/y translation
+    TranslateZ  = (1 << 1),   //!< Default controls may apply z translation
+    RotateXY    = (1 << 2),   //!< Default controls may apply rotation about x/y axes
+    RotateZ     = (1 << 3),   //!< Default controls may apply rotation about z axis
+    Scale       = (1 << 4),   //!< Default controls may apply scale
+    Copy        = (1 << 5),   //!< Default controls may create a copy
+    Geometry    = (1 << 6),   //!< Default controls may modify GeometryPrimitive(s)
+    All         = 0xffffffff, //!< Default controls unrestricted
+    Placement   = (TranslateXY | TranslateZ | RotateXY | RotateZ), //!< Default controls may freely change origin and angle(s) of element's Placement2d/Placement3d
+    Placement2d = (TranslateXY | RotateZ), //!< Default controls may only translate in x/y and rotate about z (for treating 3d elements as 2d)
     };
 
-virtual DefaultActions _GetAllowedActions() {return DefaultActions::All;}
-#endif
+virtual DefaultActions _GetAllowedDefaultActions() {return DefaultActions::Placement;} //!< Allowed modifications the default manipulators may apply
 
-virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR elm) = 0;
-virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0;
+virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source) = 0; //!< Return IEditManipulatorPtr for ControlType::Geometry (if any)
+virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0; //!< Return IEditManipulatorPtr for ControlType::Geometry (if any)
+
+virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(source) : nullptr;}
+virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(hit) : nullptr;}
 
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 
