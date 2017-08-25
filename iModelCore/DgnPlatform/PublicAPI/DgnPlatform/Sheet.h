@@ -64,7 +64,7 @@ public:
 
 
     //! @private
-    DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0);
+    DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0) const;
 };
 
 //=======================================================================================

@@ -663,6 +663,10 @@ void Sheet::ViewController::_LoadState()
 
     // save new list of attachment
     m_attachments = attachments;
+
+#ifdef DEBUG_SHEETS
+    model->ToSheetModel()->DumpAttachments(0);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -809,7 +813,7 @@ static Utf8String fmtAngle(double a)
 static void dumpViewDefinition2d(ViewDefinition2d const& viewDef, int indent)
     {
     printIndent(indent);
-    printf("VDef2d: [%s] (%lld) org=%s delta=%s rot=%s\n", viewDef.GetCode().GetValue().c_str(), viewDef.GetElementId().GetValueUnchecked(),
+    printf("VDef2d: [%s] (%lld) org=%s delta=%s rot=%s\n", viewDef.GetCode().GetValue().GetUtf8CP(), viewDef.GetElementId().GetValueUnchecked(),
                 fmtPoint2d(viewDef.GetOrigin2d()).c_str(),
                 fmtPoint2d((DPoint2dCR)viewDef.GetDelta2d()).c_str(),
                 fmtAngle(viewDef.GetRotAngle()).c_str());
@@ -838,7 +842,7 @@ static void dumpViewDefinition(ViewDefinition const& viewDef, int indent)
         return;
         }
     printIndent(indent);
-    printf("VDef [%s] (%lld)\n", viewDef.GetCode().GetValue().c_str(), viewDef.GetElementId().GetValueUnchecked());
+    printf("VDef [%s] (%lld)\n", viewDef.GetCode().GetValue().GetUtf8CP(), viewDef.GetElementId().GetValueUnchecked());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -847,7 +851,8 @@ static void dumpViewDefinition(ViewDefinition const& viewDef, int indent)
 static void dumpSheetAttachment(Sheet::ViewAttachment const& attachment, int indent)
     {
     printIndent(indent);
-    printf("VA: %lld\n", attachment.GetElementId().GetValueUnchecked());
+    printf("VA: %lld scale:%lf displayPriority:%d clip?:%d details:%s\n", attachment.GetElementId().GetValueUnchecked(),
+           attachment.GetScale(), attachment.GetDisplayPriority(), attachment.GetClip().IsValid(), attachment.GetDetails());
 
     auto& db = attachment.GetDgnDb();
     auto viewDef = db.Elements().Get<ViewDefinition>(attachment.GetAttachedViewId());
@@ -891,7 +896,7 @@ static void dumpSheetAttachments(Sheet::Model const& sheet, int indent)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Model::DumpAttachments(int indent)
+void Sheet::Model::DumpAttachments(int indent) const
     {
 #if defined (DEBUG_SHEETS)
     dumpSheetAttachments(*this, indent);
