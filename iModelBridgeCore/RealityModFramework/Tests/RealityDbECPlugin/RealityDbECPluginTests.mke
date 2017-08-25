@@ -233,6 +233,11 @@ ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
 
 %include assemblyResourceAppend.mki
 
+ASSEMBLY_RES_TO_ADD_FILENAME = TokenExample.txt
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
+
+%include assemblyResourceAppend.mki
+
 ASSEMBLY_RES_TO_ADD_FILENAME = USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml
 ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
 
