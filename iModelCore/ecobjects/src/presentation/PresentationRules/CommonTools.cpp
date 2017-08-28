@@ -9,6 +9,7 @@
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
+#include <ECPresentationRules/RelatedPropertiesSpecification.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -70,4 +71,28 @@ Utf8CP CommonTools::FormatRequiredDirectionString (RequiredRelationDirection dir
         return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD;
     else
         return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipMeaning CommonTools::ParseRelationshipMeaningString(Utf8CP value)
+    {
+    if (0 == strcmp(value, COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE))
+        return RelationshipMeaning::SameInstance;
+    if (0 == strcmp(value, COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE))
+        return RelationshipMeaning::RelatedInstance;
+    return RelationshipMeaning::RelatedInstance; //default
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP CommonTools::FormatRelationshipMeaningString(RelationshipMeaning meaning)
+    {
+    if (RelationshipMeaning::SameInstance == meaning)
+        return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE;
+    if (RelationshipMeaning::RelatedInstance == meaning)
+        return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
+    return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
     }

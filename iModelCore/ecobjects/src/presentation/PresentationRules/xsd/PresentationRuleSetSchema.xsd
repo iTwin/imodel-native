@@ -514,6 +514,14 @@
         <xs:attribute name="RelationshipClassNames" type="xs:string"/>
         <xs:attribute name="RelatedClassNames" type="xs:string"/>
         <xs:attribute name="PropertyNames" type="xs:string"/>
+        <xs:attribute default="RelatedInstance" name="RelationshipMeaning">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="SameInstance"/>
+                    <xs:enumeration value="RelatedInstance"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="HiddenPropertiesDef">
