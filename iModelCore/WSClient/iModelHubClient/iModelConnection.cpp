@@ -3356,27 +3356,47 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 WSQuery iModelConnection::CreateBetweenChangeSetsQuery
 (
-uint64_t fisrtchangeSetIndex,
-uint64_t secondChangeSetIndex,
+Utf8StringCR firstchangeSetId, 
+Utf8StringCR secondChangeSetId,
 BeSQLite::BeGuidCR fileId
 ) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     Utf8String queryFilter;
 
-    if (fileId.IsValid())
-        queryFilter.Sprintf("(%s+le+%u+and+%s+gt+%u)+or+(%s+le+%u+and+%s+gt+%u)+and+%s+eq+'%s'",
-                            ServerSchema::Property::Index, fisrtchangeSetIndex,
-                            ServerSchema::Property::Index, secondChangeSetIndex,
-                            ServerSchema::Property::Index, secondChangeSetIndex,
-                            ServerSchema::Property::Index, fisrtchangeSetIndex,
-                            ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+    Utf8String notNullChangeSetId = "";
+    if (Utf8String::IsNullOrEmpty(firstchangeSetId.c_str()))
+        notNullChangeSetId = secondChangeSetId;
+
+    if (Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
+        notNullChangeSetId = firstchangeSetId;
+
+    if(!Utf8String::IsNullOrEmpty(notNullChangeSetId.c_str()))
+        {
+        if (fileId.IsValid())
+            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, notNullChangeSetId,
+                                ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        else
+            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, notNullChangeSetId);
+        }
     else
-        queryFilter.Sprintf("(%s+le+%u+and+%s+gt+%u)+or+(%s+le+%u+and+%s+gt+%u)",
-                            ServerSchema::Property::Index, fisrtchangeSetIndex,
-                            ServerSchema::Property::Index, secondChangeSetIndex,
-                            ServerSchema::Property::Index, secondChangeSetIndex,
-                            ServerSchema::Property::Index, fisrtchangeSetIndex);
+        {
+        if (fileId.IsValid())
+            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId,
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId,
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId,
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId,
+                                ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        else
+            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId,
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId,
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId,
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId);
+        }
 
     query.SetFilter(queryFilter);
 
@@ -3386,41 +3406,15 @@ BeSQLite::BeGuidCR fileId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           08/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR fistChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::GetChangeSetsBetween";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
-    if (Utf8String::IsNullOrEmpty(fistChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
+    if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidChangeSet));
 
-    uint64_t changeSetIndex1 = 0, changeSetIndex2 = 0;
-
-    if (!Utf8String::IsNullOrEmpty(fistChangeSetId.c_str()))
-        {
-        auto changeSetResult = GetChangeSetById(fistChangeSetId)->GetResult();
-        if (!changeSetResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
-            return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(changeSetResult.GetError()));
-            }
-
-        changeSetIndex1 = changeSetResult.GetValue()->GetIndex();
-        }
-
-    if (!Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
-        {
-        auto changeSetResult = GetChangeSetById(secondChangeSetId)->GetResult();
-        if (!changeSetResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
-            return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(changeSetResult.GetError()));
-            }
-
-        changeSetIndex2 = changeSetResult.GetValue()->GetIndex();
-        }
-
-    return ChangeSetsFromQueryInternal(CreateBetweenChangeSetsQuery(changeSetIndex1, changeSetIndex2, fileId), false, cancellationToken);
+    return ChangeSetsFromQueryInternal(CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

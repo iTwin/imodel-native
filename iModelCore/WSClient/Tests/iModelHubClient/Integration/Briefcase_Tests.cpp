@@ -644,8 +644,8 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     {
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
     auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
-    EXPECT_EQ(8, changeSetsResult.GetValue().size());
     EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(8, changeSetsResult.GetValue().size());
     auto changeSets = changeSetsResult.GetValue();
     auto lastChangeSetId = changeSets.at(7)->GetId();
 
@@ -746,8 +746,8 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     {
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
     auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
-    EXPECT_EQ(8, changeSetsResult.GetValue().size());
     EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(8, changeSetsResult.GetValue().size());
     auto changeSets = changeSetsResult.GetValue();
     auto lastChangeSetId = changeSets.at(7)->GetId();
 
