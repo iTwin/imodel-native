@@ -267,12 +267,15 @@ protected:
         TileTree::RootP m_root;
 
         explicit Attachment(DgnElementId id=DgnElementId()) : m_id(id), m_root(nullptr) { }
+
+        void LoadRoot(DgnDbR db, Render::SystemP system);
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
 
     DPoint2d m_size;
     bvector<Attachment> m_attachments;
+    bool m_allAttachmentsLoaded = false;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;

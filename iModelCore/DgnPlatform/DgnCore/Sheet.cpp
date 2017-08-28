@@ -395,16 +395,109 @@ Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR s
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
-    auto status = T_Super::_CreateScene(context);
-#if defined(TODO_ETT_SHEETS)
-    for (auto& attach : m_attachments)
-        attach->Draw(context);
-#endif
+    if (nullptr == m_root)
+        {
+        auto model = GetViewedModel();
+        if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
+            return ERROR;
+        }
 
-    return status;
+    uint32_t waitForAllLoadsMillis = 0;
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
+
+    m_root->DrawInView(context);
+
+    if (!m_allAttachmentsLoaded)
+        {
+        // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
+        auto const& plan = context.GetUpdatePlan().GetQuery();
+        uint64_t endTime = !context.GetUpdatePlan().WantWait() && plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
+
+        // Create as many tile trees as we can within the allotted time...
+        bool timedOut = false;
+
+        size_t i = 0;
+        while (i < m_attachments.size())
+            {
+            Attachment& attach = m_attachments[i];
+            if (nullptr == attach.m_root)
+                {
+                if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+                    {
+                    DEBUG_PRINTF("CreateScene aborted");
+                    timedOut = true;
+                    break;
+                    }
+
+                attach.LoadRoot(GetDgnDb(), &context.GetTargetR().GetSystem());
+                if (nullptr == attach.m_root)
+                    m_attachments.erase(m_attachments.begin() + i);
+                else
+                    i++;
+                }
+            }
+
+        m_allAttachmentsLoaded = !timedOut;
+        }
+
+    // Always draw all the tile trees we currently have...
+    if (0 == waitForAllLoadsMillis)
+        {
+        for (auto& attach : m_attachments)
+            if (nullptr != attach.m_root)
+                attach.m_root->DrawInView(context);
+        }
+    else
+        {
+        // Enqueue any requests for missing tiles...
+        for (auto& attach : m_attachments)
+            if (nullptr != attach.m_root)
+                attach.m_root->SelectTiles(context);
+
+        // Wait for requests to complete
+        // Note we are ignoring any time spent creating tile trees above...
+        context.m_requests.RequestMissing();
+        for (auto& attach : m_attachments)
+            {
+            if (nullptr == attach.m_root)
+                continue;
+
+            uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_attachments.size()));
+            attach.m_root->WaitForAllLoadsFor(waitMillis);
+            attach.m_root->CancelAllTileLoads();
+            attach.m_root->DrawInView(context);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::Attachment::LoadRoot(DgnDbR db, Render::SystemP system)
+    {
+    if (nullptr != m_root)
+        return;
+
+    auto attachElem = db.Elements().Get<ViewAttachment>(m_id);
+    if (attachElem.IsNull())
+        return;
+
+    auto view2d = db.Elements().Get<ViewDefinition2d>(attachElem->GetAttachedViewId());
+    if (view2d.IsNull())
+        return;
+
+    auto model = db.Models().Get<GeometricModel2d>(view2d->GetBaseModelId());
+    if (model.IsNull())
+        return;
+
+    m_root = model->GetTileTree(system);
     }
 
 /*---------------------------------------------------------------------------------**//**
