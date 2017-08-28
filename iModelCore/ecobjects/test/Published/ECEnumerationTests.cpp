@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct ECEnumerationTest : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties)
     {
@@ -157,7 +157,7 @@ TEST_F(ECEnumerationTest, TestEmptyOrMissingName)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     {
@@ -302,7 +302,7 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECEnumerationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInReferencedFile)
     {
