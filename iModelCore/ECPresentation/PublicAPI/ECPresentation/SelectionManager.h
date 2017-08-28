@@ -124,12 +124,13 @@ struct ISelectionChangesListener
 friend struct SelectionManager;
 
 protected:
-    //! Virtual destructor.
-    virtual ~ISelectionChangesListener() {}
-
     //! A callback that's called when the selection changes.
     //! @param[in] evt The selection change event.
     virtual void _OnSelectionChanged(SelectionChangedEventCR evt) = 0;
+
+public:
+    //! Virtual destructor.
+    virtual ~ISelectionChangesListener() {}
 };
 
 //=======================================================================================
