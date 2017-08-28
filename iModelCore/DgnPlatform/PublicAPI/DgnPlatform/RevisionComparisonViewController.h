@@ -113,6 +113,8 @@ public:
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
     bool ContainsElement(DgnElementCP element) const;
+
+    DGNPLATFORM_EXPORT StatusInt GetDbOpcode(DgnElementId elementId, DbOpcode& opcode);
 };
 
 //=======================================================================================
@@ -141,7 +143,12 @@ protected:
     ComparisonDataCPtr              m_comparisonData;
     ComparisonSymbologyOverrides    m_symbology;
 
+    DgnElementId    m_focusedElementId;
+    Utf8String      m_labelString;
+    TextStringPtr   m_label;
+
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
+    void _DrawDecorations(DecorateContextR context) override;
 
 public:
 
@@ -155,9 +162,11 @@ public:
     //! Set flags for what's shown in the comparison
     DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }
     DGNPLATFORM_EXPORT void SetSymbology(ComparisonSymbologyOverrides overrides) { m_symbology = overrides; }
+    DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
+    DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
 
     //! Constructors
-    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags), m_visitingTransientElements(false) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags), m_visitingTransientElements(false), m_label(nullptr) { }
 };
 
 END_BENTLEY_DGN_NAMESPACE

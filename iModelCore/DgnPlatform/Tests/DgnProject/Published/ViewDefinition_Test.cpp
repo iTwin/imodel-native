@@ -12,13 +12,14 @@
 //========================================================================================
 struct ViewDefinitionTests : public DgnDbTestFixture
 {
-    OrthographicViewDefinitionPtr InsertSpatialView(SpatialModelR model, Utf8CP name);
+    OrthographicViewDefinitionPtr InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate);
+    SheetViewDefinitionCPtr InsertSheetView(Sheet::ModelR model, Utf8CP name, bool isPrivate);
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
+OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
     {
     DgnDbR db = model.GetDgnDb();
     DefinitionModelR dictionary = db.GetDictionaryModel();
@@ -31,11 +32,27 @@ OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialMode
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
+    viewDef->SetIsPrivate(isPrivate);
     viewDef->SetStandardViewRotation(StandardView::Iso);
     viewDef->LookAtVolume(model.QueryModelRange());
     viewDef->Insert();
     BeAssert(viewDef->GetViewId().IsValid());
     return viewDef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2017
+//---------------------------------------------------------------------------------------
+SheetViewDefinitionCPtr ViewDefinitionTests::InsertSheetView(Sheet::ModelR model, Utf8CP name, bool isPrivate)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+
+    SheetViewDefinition sheetView(dictionary, name, model.GetModelId(), *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary, ""));
+    sheetView.SetIsPrivate(isPrivate);
+    SheetViewDefinitionCPtr result = db.Elements().Insert<SheetViewDefinition>(sheetView);
+    BeAssert(result.IsValid());
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -68,9 +85,9 @@ TEST_F(ViewDefinitionTests, MakeIterator)
 
     PhysicalModelPtr model3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "3");
 
-    OrthographicViewDefinitionPtr view3A = InsertSpatialView(*model3, "3A");
-    OrthographicViewDefinitionPtr view3B = InsertSpatialView(*model3, "3B");
-    OrthographicViewDefinitionPtr view3C = InsertSpatialView(*model3, "3C");
+    OrthographicViewDefinitionPtr view3A = InsertSpatialView(*model3, "3A", false);
+    OrthographicViewDefinitionPtr view3B = InsertSpatialView(*model3, "3B", false);
+    OrthographicViewDefinitionPtr view3C = InsertSpatialView(*model3, "3C", false);
     ASSERT_FALSE(view3A->IsPrivate());
     ASSERT_FALSE(view3B->IsPrivate());
     ASSERT_FALSE(view3C->IsPrivate());
@@ -162,6 +179,60 @@ TEST_F(ViewDefinitionTests, MakeIterator)
     ASSERT_TRUE(view3B->IsPrivate());
     ASSERT_TRUE(view3B->GetPropertyValueBoolean("IsPrivate"));
     ASSERT_EQ(2, ViewDefinition::QueryCount(*m_db, "WHERE IsPrivate=TRUE"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Shaun.Sewall                    02/2017
+//---------------------------------------------------------------------------------------
+TEST_F(ViewDefinitionTests, QueryDefaultViewId)
+    {
+    SetupSeedProject();
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel");
+    DocumentListModelPtr documentListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DocumentList");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*documentListModel, "Drawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    Sheet::ElementPtr sheet = DgnDbTestUtils::InsertSheet(*documentListModel, 1.0, 1.0, 1.0, "Sheet");
+    Sheet::ModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
+
+    ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
+    ASSERT_FALSE(ViewDefinition::QueryDefaultViewId(*m_db).IsValid());
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateClassViewsInDb());
+
+    DrawingViewDefinitionPtr privateDrawingView = DgnDbTestUtils::InsertDrawingView(*drawingModel, "PrivateDrawingView");
+    privateDrawingView->SetIsPrivate(true);
+    ASSERT_TRUE(privateDrawingView->Update().IsValid());
+    ASSERT_EQ(1, ViewDefinition::QueryCount(*m_db));
+    ASSERT_FALSE(ViewDefinition::QueryDefaultViewId(*m_db).IsValid()); // private DrawingViews not considered
+
+    DrawingViewDefinitionPtr publicDrawingView = DgnDbTestUtils::InsertDrawingView(*drawingModel, "PublicDrawingView");
+    ASSERT_EQ(2, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicDrawingView->GetViewId());
+
+    InsertSheetView(*sheetModel, "PrivateSheetView", true);
+    ASSERT_EQ(3, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicDrawingView->GetViewId()); // private SheetViews not considered
+
+    SheetViewDefinitionCPtr publicSheetView = InsertSheetView(*sheetModel, "PublicSheetView", false);
+    ASSERT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicSheetView->GetViewId()); // public SheetViews take precendence over public DrawingViews
+
+    OrthographicViewDefinitionPtr privateSpatialView = InsertSpatialView(*physicalModel, "PrivateSpatialView", true);
+    ASSERT_EQ(5, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicSheetView->GetViewId()); // private SpatialViews not considered
+
+    OrthographicViewDefinitionPtr publicSpatialView = InsertSpatialView(*physicalModel, "PublicSpatialView", false);
+    ASSERT_EQ(6, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicSpatialView->GetViewId()); // public SpatialViews take precendence over public SheetViews
+
+    DgnViewId defaultViewId(m_db->Elements().GetRootSubjectId().GetValue()); // not a valid view
+    m_db->SaveProperty(DgnViewProperty::DefaultView(), &defaultViewId, sizeof(defaultViewId));
+    m_db->SaveSettings();
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicSpatialView->GetViewId()); // invalid default view property should be ignored
+
+    defaultViewId = privateSpatialView->GetViewId();
+    m_db->SaveProperty(DgnViewProperty::DefaultView(), &defaultViewId, sizeof(defaultViewId));
+    m_db->SaveSettings();
+    ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), privateSpatialView->GetViewId()); // valid default view property should take precedence
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,7 +358,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition3dCRUD)
         {
         PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model");
         //Insert OrthographicViewDefinition
-        OrthographicViewDefinitionPtr view = InsertSpatialView(*model, "view1");
+        OrthographicViewDefinitionPtr view = InsertSpatialView(*model, "view1", false);
         ASSERT_TRUE(view->IsView3d());
         ASSERT_TRUE(view->IsSpatialView());
         ASSERT_FALSE(view->IsSheetView());
