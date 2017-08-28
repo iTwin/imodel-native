@@ -51,7 +51,7 @@ void IssueReporter::Report(Utf8CP message, ...) const
 //----------------------------------------------------------------------------------
 // @bsimethod                                       David.Le                10/2016
 //----------------------------------------------------------------------------------
-void StandardIssueListener::_OnIssueReported(Utf8CP message) const
+void StandardIssueListener::_OnIssueReported(Utf8CP message)
     {
     printf("%s", message);
     }
@@ -68,7 +68,7 @@ NativeLoggingIssueListener::NativeLoggingIssueListener(WCharCP namespaceUsed, Na
 //----------------------------------------------------------------------------------
 // @bsimethod                                       David.Le                10/2016
 //----------------------------------------------------------------------------------
-void NativeLoggingIssueListener::_OnIssueReported(Utf8CP message) const
+void NativeLoggingIssueListener::_OnIssueReported(Utf8CP message)
     {
     NativeLogging::LoggingManager::GetLogger(m_namespace)->message(m_severity, message);
     }

@@ -48,7 +48,7 @@ struct StandardIssueListener : IIssueListener
     {
     public:
         StandardIssueListener() {};
-        virtual void _OnIssueReported(Utf8CP message) const;
+        void _OnIssueReported(Utf8CP message) override;
     };
 
 //============================================================================================
@@ -63,7 +63,7 @@ struct NativeLoggingIssueListener : IIssueListener
 
     public:
         NativeLoggingIssueListener(WCharCP namespaceUsed, NativeLogging::SEVERITY severity);
-        virtual void _OnIssueReported(Utf8CP message) const;
+        void _OnIssueReported(Utf8CP message) override;
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE
