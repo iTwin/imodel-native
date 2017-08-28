@@ -265,6 +265,166 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingMinMax)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='long'   minimumValue  = '1'     maximumValue   = '200'    />"
+        "       <ECProperty propertyName='P2' typeName='double' minimumValue  = '1.22'  maximumValue   = '100.22' />"
+        "       <ECProperty propertyName='P3' typeName='string' minimumLength = '1'     maximumLength  = '1000'   />"
+        "       <ECProperty propertyName='P4' typeName='long'   maximumValue  = '1200'                            />"
+        "       <ECProperty propertyName='P5' typeName='double' maximumValue  = '1200.12'                         />"
+        "       <ECProperty propertyName='P6' typeName='string' maximumLength = '1000'                            />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_minMax.ecdb", schemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+
+    ECValue minV, maxV;
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+    ASSERT_EQ(1, minV.GetLong());
+    ASSERT_EQ(200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+    ASSERT_EQ(1.22, minV.GetDouble());
+    ASSERT_EQ(100.22, maxV.GetDouble());
+
+    ASSERT_EQ(1, foo->GetPropertyP("P3")->GetMinimumLength());
+    ASSERT_EQ(1000, foo->GetPropertyP("P3")->GetMaximumLength());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_EQ(1200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_EQ(1200.12, maxV.GetDouble());
+
+    ASSERT_EQ(0, foo->GetPropertyP("P6")->GetMinimumLength());
+    ASSERT_EQ(1000, foo->GetPropertyP("P6")->GetMaximumLength());
+    }
+
+    ReopenECDb();
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='long'   />"
+        "       <ECProperty propertyName='P2' typeName='double' />"
+        "       <ECProperty propertyName='P3' typeName='string' />"
+        "       <ECProperty propertyName='P4' typeName='long'   minimumValue  = '12'   maximumValue   = '2200'    />"
+        "       <ECProperty propertyName='P5' typeName='double' minimumValue  = '1.33' maximumValue   = '2200.12' />"
+        "       <ECProperty propertyName='P6' typeName='string' minimumLength = '11'    maximumLength  = '9000'    />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ReopenECDb();
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+
+    ECValue minV, maxV;
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P1")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_TRUE(maxV.IsNull());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Error, foo->GetPropertyP("P2")->GetMaximumValue(maxV));
+    ASSERT_TRUE(minV.IsNull());
+    ASSERT_TRUE(maxV.IsNull());
+
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMinimumLength());
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetMaximumLength());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P4")->GetMaximumValue(maxV));
+    ASSERT_EQ(12, minV.GetLong());
+    ASSERT_EQ(2200, maxV.GetLong());
+
+    minV = maxV = ECValue();
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMinimumValue(minV));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->GetPropertyP("P5")->GetMaximumValue(maxV));
+    ASSERT_EQ(1.33, minV.GetDouble());
+    ASSERT_EQ(2200.12, maxV.GetDouble());
+
+    ASSERT_EQ(11, foo->GetPropertyP("P6")->GetMinimumLength());
+    ASSERT_EQ(9000, foo->GetPropertyP("P6")->GetMaximumLength());
+    }
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority) 
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='string' priority='1010' />"
+        "       <ECProperty propertyName='P2' typeName='string' priority='1020' />"
+        "       <ECProperty propertyName='P3' typeName='string' priority='1030' />"
+        "       <ECProperty propertyName='P4' typeName='string' />"
+        "       <ECProperty propertyName='P5' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_priority.ecdb", schemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+    ASSERT_EQ(1010, foo->GetPropertyP("P1")->GetPriority());
+    ASSERT_EQ(1020, foo->GetPropertyP("P2")->GetPriority());
+    ASSERT_EQ(1030, foo->GetPropertyP("P3")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P4")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P5")->GetPriority());
+    }
+    ReopenECDb();
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='P1' typeName='string' priority='2010' />"
+        "       <ECProperty propertyName='P2' typeName='string' priority='2020' />"
+        "       <ECProperty propertyName='P3' typeName='string'                 />"
+        "       <ECProperty propertyName='P4' typeName='string' priority='1040' />"
+        "       <ECProperty propertyName='P5' typeName='string' priority='1050' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    {
+    ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(nullptr, foo);
+    ASSERT_EQ(2010, foo->GetPropertyP("P1")->GetPriority());
+    ASSERT_EQ(2020, foo->GetPropertyP("P2")->GetPriority());
+    ASSERT_EQ(0, foo->GetPropertyP("P3")->GetPriority());
+    ASSERT_EQ(1040, foo->GetPropertyP("P4")->GetPriority());
+    ASSERT_EQ(1050, foo->GetPropertyP("P5")->GetPriority());
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
@@ -6374,11 +6534,153 @@ TEST_F(SchemaUpgradeTestFixture, ModifyCustomAttributePropertyValues)
         m_ecdb.CloseDb();
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Complex)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'C01' appliesTo = 'Schema'>                      <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C02' appliesTo = 'EntityClass'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C03' appliesTo = 'CustomAttributeClass'>        <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C04' appliesTo = 'StructClass'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C05' appliesTo = 'RelationshipClass'>           <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C06' appliesTo = 'AnyClass'>                    <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C07' appliesTo = 'StructProperty'>              <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C08' appliesTo = 'ArrayProperty'>               <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C09' appliesTo = 'StructArrayProperty'>         <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C10' appliesTo = 'NavigationProperty'>          <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C11' appliesTo = 'AnyProperty'>                 <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C12' appliesTo = 'SourceRelationshipConstraint'><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C13' appliesTo = 'TargetRelationshipConstraint'><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C14' appliesTo = 'AnyRelationshipConstraint'>   <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C15' appliesTo = 'Any'>                         <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate_customAttributes.ecdb", schemaItem));
+    std::map<Utf8String, ECClassId> caClasses;
+    for (ECClassCP ecClass : m_ecdb.Schemas().GetSchema("T")->GetClasses())
+        if (ecClass->IsCustomAttributeClass())
+            caClasses[ecClass->GetName()] = ecClass->GetId();
+
+    ReopenECDb();
+    //<ECSchemaReference name="T" version="01.00.00" alias="T" />
+    //<ECCustomAttributes><C01 xmlns='T.01.00'><S>Value</S></C01></ECCustomAttributes>
+    SchemaItem s1(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributes><C01 xmlns='T.01.00'><S>test1_c01</S></C01></ECCustomAttributes>"
+        "   <ECCustomAttributeClass typeName = 'C01' appliesTo = 'Schema'>                      <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c01</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C02' appliesTo = 'EntityClass'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c02</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C03' appliesTo = 'CustomAttributeClass'>                                                                                            <ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C04' appliesTo = 'StructClass'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c04</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C05' appliesTo = 'RelationshipClass'>           <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c05</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C06' appliesTo = 'AnyClass'>                    <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c06</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C07' appliesTo = 'StructProperty'>              <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c07</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C08' appliesTo = 'ArrayProperty'>               <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c08</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C09' appliesTo = 'StructArrayProperty'>         <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c09</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C10' appliesTo = 'NavigationProperty'>          <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c10</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C11' appliesTo = 'AnyProperty'>                 <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c11</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C12' appliesTo = 'SourceRelationshipConstraint'><ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c12</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C13' appliesTo = 'TargetRelationshipConstraint'><ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c13</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C14' appliesTo = 'AnyRelationshipConstraint'>   <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c14</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "   <ECCustomAttributeClass typeName = 'C15' appliesTo = 'Any'>                         <ECCustomAttributes><C03 xmlns='T.01.00'><S>test1_c15</S></C03></ECCustomAttributes><ECProperty propertyName = 'S' typeName = 'string' /></ECCustomAttributeClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s1));
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_Class WHERE Id = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        }
+    }
+
+    SchemaItem s2(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T1' nameSpacePrefix='T1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='T' version='01.00.00' prefix='T' />"
+        "   <ECCustomAttributes><C01 xmlns='T.01.00'><S>test1_t1</S></C01></ECCustomAttributes>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <C02 xmlns = 'T.01.00'><S>entity_Class</S></C02>"
+        "           <C06 xmlns = 'T.01.00'><S>any_class</S></C06>"
+        "           <C15 xmlns = 'T.01.00'><S>any</S></C15>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
+        "        <ECCustomAttributes>"
+        "           <Localizable xmlns='CoreCustomAttributes.01.00'/>"
+        "           <C11 xmlns = 'T.01.00'><S>AnyProperty</S></C11>"
+        "           <C11 xmlns = 'T.01.00'><S>AnyProperty</S></C11>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(s2));
+    {
+    int customAttributeInstances = 0;
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_CustomAttribute WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            customAttributeInstances++;
+        }
+    ASSERT_EQ(20, customAttributeInstances);
+    }
+
+    ReopenECDb();
+    SchemaItem s3(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='T' nameSpacePrefix='T' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>");
+    
+    ASSERT_EQ(SUCCESS, ImportSchema(s3));
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_Class WHERE Id = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+        }
+
+    stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_ClassMap WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+        }
+
+    int customAttributeInstances = 0;
+    stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_CustomAttribute WHERE ClassId = ?");
+    for (auto const& kp : caClasses)
+        {
+        stmt->ClearBindings();
+        stmt->Reset();
+        stmt->BindId(1, kp.second);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            customAttributeInstances++;
+        }
+    ASSERT_EQ(0, customAttributeInstances);
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass)
+TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Simple)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6395,7 +6697,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {false, false}, "Deleting a ECCustomAttributeClass");
+    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, true}, "Deleting a ECCustomAttributeClass");
     }
 
 //---------------------------------------------------------------------------------------

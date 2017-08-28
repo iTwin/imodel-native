@@ -65,6 +65,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus DeleteProperty(ECN::ECPropertyChange&, ECN::ECPropertyCR);
         BentleyStatus DeleteCustomAttributes(ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
         BentleyStatus DeleteInstances(ECN::ECClassCR);
+        BentleyStatus DeleteCustomAttributeClass(ECN::ECClassCR deletedClass);
 
         bool IsSpecifiedInRelationshipConstraint(ECN::ECClassCR) const;
         BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
