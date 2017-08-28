@@ -505,7 +505,7 @@ BentleyStatus TestPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR form
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksonras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TestPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR, RelatedClassPath const&) const
+BentleyStatus TestPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const
     {   
     formattedLabel = Utf8String().append("_").append(ecProperty.GetDisplayLabel()).append("_");
     return SUCCESS;

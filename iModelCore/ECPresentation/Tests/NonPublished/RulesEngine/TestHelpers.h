@@ -315,7 +315,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
     {
     ContentDescriptor::Category m_category;
     TestCategorySupplier( )
-        : m_category(ContentDescriptor::Category::GetCategory(ContentDescriptor::Category::Standard::Miscellaneous))
+        : m_category(ContentDescriptor::Category::GetDefaultCategory())
         {
         }
     TestCategorySupplier(ContentDescriptor::Category category)
@@ -325,9 +325,9 @@ struct TestCategorySupplier : IPropertyCategorySupplier
     ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR) override {return m_category;}
     ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override {return m_category;}
     ContentDescriptor::Category GetUsedCategory() const {return m_category;}
-    void SetUsedCategory(ContentDescriptor::Category::Standard standard)
+    void SetUsedCategory(ContentDescriptor::Category category)
         {
-        m_category = ContentDescriptor::Category::GetCategory(standard);
+        m_category = category;
         }
     };
 
@@ -337,7 +337,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
 struct TestPropertyFormatter : IECPropertyFormatter
     {
     BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const override;
-    BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath) const override;
+    BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
     };
 
 /*=================================================================================**//**

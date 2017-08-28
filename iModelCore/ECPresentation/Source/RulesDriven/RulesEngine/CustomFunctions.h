@@ -18,7 +18,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetECClassDisplayLabel        "GetECClassDisplayLabel"
 #define FUNCTION_NAME_GetECPropertyDisplayLabel     "GetECPropertyDisplayLabel"
 #define FUNCTION_NAME_GetSortingValue               "GetSortingValue"
-#define FUNCTION_NAME_GetECClassPriority            "GetECClassPriority"
 #define FUNCTION_NAME_GetRangeIndex                 "GetRangeIndex"
 #define FUNCTION_NAME_GetRangeImageId               "GetRangeImageId"
 #define FUNCTION_NAME_IsOfClass                     "IsOfClass"

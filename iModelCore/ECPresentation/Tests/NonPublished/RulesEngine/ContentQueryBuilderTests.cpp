@@ -30,6 +30,14 @@ void ContentQueryBuilderTests::TearDown()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentQueryCPtr ContentQueryBuilderTests::GetExpectedQuery()
+    {
+    return ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ContentQueryBuilderTests::GetECClass(Utf8CP schemaName, Utf8CP className)
@@ -38,63 +46,11 @@ ECClassCP ContentQueryBuilderTests::GetECClass(Utf8CP schemaName, Utf8CP classNa
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                11/2016
+* @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ContentQueryBuilderTests, RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClass)
+ECClassCP ContentQueryBuilderTests::GetECClass(Utf8CP className)
     {
-    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:ClassL", false);
-
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
-    ASSERT_TRUE(descriptor.IsValid());
-
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
-    ASSERT_TRUE(query.IsValid());
-
-    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClass");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
-        << "Expected: " << expected->ToString() << "\r\n"
-        << "Actual:   " << query->ToString();
-    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ContentQueryBuilderTests, RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClassPolymorphically)
-    {
-    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:ClassJ", false);
-
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
-    ASSERT_TRUE(descriptor.IsValid());
-
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
-    ASSERT_TRUE(query.IsValid());
-
-    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClassPolymorphically");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
-        << "Expected: " << expected->ToString() << "\r\n"
-        << "Actual:   " << query->ToString();
-    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ContentQueryBuilderTests, RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClassByFollowingMultipleRelationships)
-    {
-    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:ClassM", false);
-
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
-    ASSERT_TRUE(descriptor.IsValid());
-
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
-    ASSERT_TRUE(query.IsValid());
-
-    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("RelatedItemsDisplaySpecification_IncludesPropertiesOfRelatedClassByFollowingMultipleRelationships");
-    EXPECT_TRUE(expected->IsEqual(*query)) 
-        << "Expected: " << expected->ToString() << "\r\n"
-        << "Actual:   " << query->ToString();
-    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    return GetECClass(BeTest::GetNameOfCurrentTest(), className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,7 +70,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
     // create the spec
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
-        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID"));
+        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
     spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // get the query
@@ -140,7 +96,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
     // create the spec
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget,Sprocket", false);
     spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
-        "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID"));
+        "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
 
     // get the query
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
@@ -164,7 +120,8 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedPropertiesSpecificationFromConte
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Sprocket"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description"));
+    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
     // get the query
@@ -189,9 +146,11 @@ TEST_F (ContentQueryBuilderTests, DoesntApplyRelatedPropertiesSpecificationFromC
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Gadget"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "Description"));
+    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description"));
+    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets",
+        "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
         
     // get the query
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
@@ -215,7 +174,8 @@ TEST_F (ContentQueryBuilderTests, RelatedPropertiesAreAppendedCorrectlyWhenUsing
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Sprocket"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description"));
+    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
     // get the query
@@ -241,7 +201,7 @@ TEST_F (ContentQueryBuilderTests, CreatesContentFieldsForXToManyRelatedInstanceP
     // create the specs
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Gadget", false);
     spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
-        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description"));
+        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
@@ -268,9 +228,9 @@ TEST_F (ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManyRelatedIns
     // create the specs
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget", false);
     spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
-        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget", "Description"));
+        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
     spec.GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
-        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description"));
+        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);

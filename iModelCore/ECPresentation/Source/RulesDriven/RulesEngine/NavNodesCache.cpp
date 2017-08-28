@@ -23,6 +23,12 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define NAVNODES_CACHE_MEMORY_CACHE
 //#define NAVNODES_CACHE_PERSIST_ON_CHANGE
 
+#define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
+#define NAVNODES_CACHE_DB_VERSION_MAJOR 1
+#define NAVNODES_CACHE_DB_VERSION_MINOR 0
+#define NAVNODES_CACHE_MEMORY_CACHE
+//#define NAVNODES_CACHE_PERSIST_ON_CHANGE
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/

@@ -86,7 +86,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesLabelOverride)
     CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, MyID, '') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, '', '') FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
@@ -98,18 +98,17 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesLabelOverride)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
     {
-    bvector<IECInstancePtr> instances;
-    s_project->GetInstances(instances, "RulesEngineTest", "Widget");
-    instances[0]->SetValue("MyID", ECValue("CustomLabel"));
-    ECInstanceUpdater updater(GetDb(), *s_widgetClass, nullptr);
-    updater.Update(*instances[0]);
+    ECClassCP classJ = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassJ");
+    IECInstancePtr instanceJ = RulesEngineTestHelpers::InsertInstance(*s_project, *classJ, [](IECInstanceR instance) {instance.SetValue("DisplayLabel", ECValue("CustomLabel"));});
+    ECInstanceId instanceJId;
+    ECInstanceId::FromString(instanceJId, instanceJ->GetInstanceId().c_str());
     
     CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, MyID, '') FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, DisplayLabel, '') FROM RET.ClassJ"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, classJ->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, instanceJId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("CustomLabel", stmt.GetValueText(0));
     }
@@ -122,7 +121,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
     CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, MyID, '') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, '', '') FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
@@ -146,7 +145,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_Localizes)
     ctx.SetLocalizationProvider(m_localizationProvider);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, MyID, '') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, '', '') FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
@@ -180,6 +179,8 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
         localized = "LocalizedLabel";
         return true;
         });
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
     ctx.SetLocalizationProvider(m_localizationProvider);
@@ -446,39 +447,6 @@ struct CustomAttributeSetter
     CustomAttributeSetter(ECClassR ecClass, IECInstanceR attribute) : m_class(ecClass), m_attribute(attribute) {ecClass.SetCustomAttribute(attribute);}
     ~CustomAttributeSetter() {m_class.RemoveCustomAttribute(m_attribute.GetClass());}
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetECClassPriority_UsesCustomAttribute)
-    {
-    ECClassCP attributeClass = s_project->GetECDb().Schemas().GetClass("EditorCustomAttributes", "ClassPriority");
-    IECInstancePtr classPriorityAttribute = attributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    classPriorityAttribute->SetValue("Priority", ECValue(10));
-    CustomAttributeSetter setAttribute(*s_widgetClass, *classPriorityAttribute);
-    
-    CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-
-    ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassPriority(?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(10, stmt.GetValueInt(0));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetECClassPriority_UsesDefaultValue)
-    {
-    CustomFunctionsContext ctx(GetDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-
-    ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassPriority(?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_EQ(0, stmt.GetValueInt(0));
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015

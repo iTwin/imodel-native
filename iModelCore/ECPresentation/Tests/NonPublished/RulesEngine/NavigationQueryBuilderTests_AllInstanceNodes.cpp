@@ -52,7 +52,18 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_SupportedSchemas_WithSpace
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_SupportedSchemas_Excluded)
     {
-    AllInstanceNodesSpecification spec(1, false, false, false, false, false, "E:Basic1,Basic3,SchemaComplex,SchemaComplex3,ECDbFileInfo,ECDbSystem,ECDbMeta");
+    Utf8String excludeSchemasStr("E:");
+    bvector<ECSchemaCP> schemas = ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb().Schemas().GetSchemas(false);
+    for (size_t i = 0; i < schemas.size(); ++i)
+        {
+        if (schemas[i]->GetName().Equals("Basic2"))
+            continue;
+        if (i > 0)
+            excludeSchemasStr.append(",");
+        excludeSchemasStr.append(schemas[i]->GetName());
+        }
+
+    AllInstanceNodesSpecification spec(1, false, false, false, false, false, excludeSchemasStr);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 

@@ -12,6 +12,7 @@
 #include <ECPresentation/DataSource.h>
 #include <ECPresentation/ExtendedData.h>
 #include <ECPresentation/NavNode.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
 #include <ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -195,26 +196,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct Category
     {
-        //===============================================================================
-        //! Available standard categories.
-        // @bsiclass                                Grigas.Petraitis            09/2016
-        //===============================================================================
-        enum class Standard
-            {
-            Miscellaneous       =   0,
-            General             =   1,
-            Extended            =   1 << 1,
-            RawData             =   1 << 2,
-            Geometry            =   1 << 3,
-            Groups              =   1 << 4,
-            Material            =   1 << 5,
-            Relationships       =   1 << 6,
-            Favorite            =   1 << 7,
-            };
-
     private:
         Utf8String m_name;
         Utf8String m_label;
+        Utf8String m_description;
         bool m_shouldExpand;
         int m_priority;
 
@@ -223,23 +208,24 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Category() : m_shouldExpand(false), m_priority(0) {}
         
         //! Copy constructor. 
-        Category(Category const& other) : m_name(other.m_name), m_label(other.m_label), m_priority(other.m_priority), m_shouldExpand(other.m_shouldExpand) {}
+        Category(Category const& other) : m_name(other.m_name), m_label(other.m_label), m_priority(other.m_priority), m_description(other.m_description), m_shouldExpand(other.m_shouldExpand) {}
 
         //! Move constructor. 
-        Category(Category&& other) : m_name(std::move(other.m_name)), m_label(std::move(other.m_label)), m_priority(other.m_priority), m_shouldExpand(other.m_shouldExpand) {}
+        Category(Category&& other) : m_name(std::move(other.m_name)), m_label(std::move(other.m_label)), m_priority(other.m_priority), m_description(other.m_description), m_shouldExpand(other.m_shouldExpand) {}
 
         //! Constructor. 
         //! @param[in] name Name of the category.
         //! @param[in] label Label of the category.
+        //! @param[in] description Description of the category.
         //! @param[in] priority Priority of the category.
         //! @param[in] shouldExpand Should this category be auto-expanded.
-        Category(Utf8String name, Utf8String label, int priority, bool shouldExpand) : m_name(name), m_label(label), m_priority(priority), m_shouldExpand(shouldExpand) {}
+        Category(Utf8String name, Utf8String label, Utf8String description, int priority, bool shouldExpand = false) : m_name(name), m_label(label), m_priority(priority), m_description(description), m_shouldExpand(shouldExpand) {}
 
         //! Copy-assignment operator.
-        Category& operator=(Category const& other) {m_name = other.m_name; m_label = other.m_label; m_priority = other.m_priority; m_shouldExpand = other.m_shouldExpand; return *this;}
+        Category& operator=(Category const& other) {m_name = other.m_name; m_label = other.m_label; m_priority = other.m_priority; m_description = other.m_description;  m_shouldExpand = other.m_shouldExpand; return *this;}
 
         //! Is this category equal to the supplied one.
-        bool operator==(Category const& other) const {return m_name == other.m_name && m_label == other.m_label && m_priority == other.m_priority && m_shouldExpand == other.m_shouldExpand;}
+        bool operator==(Category const& other) const {return m_name == other.m_name && m_label == other.m_label && m_priority == other.m_priority && m_description == other.m_description && m_shouldExpand == other.m_shouldExpand;}
 
         //! Serialize this category to JSON.
         ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
@@ -259,13 +245,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Set the priority of the category.
         void SetPriority(int value) {m_priority = value;}
 
+        //! Get the description of the category.
+        Utf8StringCR GetDescription() const {return m_description;}
+        //! Set the description of the category.
+        void SetDescription(Utf8String value) {m_description = value;}
+
         //! Should this category be automatically expanded.
         bool ShouldExpand() const {return m_shouldExpand;}
         //! Set whether this category should be automatically expanded.
         void SetShouldExpand(bool value) {m_shouldExpand = value;}
 
     public:
-        ECPRESENTATION_EXPORT static Category const& GetCategory(Standard);
+        ECPRESENTATION_EXPORT static Category GetDefaultCategory();
+        ECPRESENTATION_EXPORT static Category GetFavoriteCategory();
     };
     
     //===================================================================================
@@ -274,7 +266,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct Property
     {
-        static int const DEFAULT_PRIORITY = 1000;
+        static int const DEFAULT_PRIORITY = 0;
     private:
         Utf8String m_prefix;
         ECN::ECClassCP m_propertyClass;
@@ -320,8 +312,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetIsRelated(RelatedClass relatedClass) {m_relatedClassPath.clear(); m_relatedClassPath.push_back(relatedClass);}
         //! Get the relationship path that describes the relationship between this property and main properties.
         RelatedClassPathCR GetRelatedClassPath() const {return m_relatedClassPath;}
-        
-        ECPRESENTATION_EXPORT int GetPriority() const;
+        //! Get the priority of this property.
+        int GetPriority() const {return m_property->GetPriority();}
     };
     
     struct DisplayLabelField;
@@ -362,6 +354,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
         virtual int _GetPriority() const = 0;
         virtual void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) {}
+        virtual bool _OnFieldRemoved(Field const&) {return false;}
 
     public:
         //! Constructor.
@@ -450,6 +443,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         
         //! Call this after related sibling fields were remapped (e.g. after copying)
         void NotifyFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) {_OnFieldsCloned(fieldsRemapInfo);}
+
+        //! Call this after a related sibling field is removed from descriptor.
+        //! @return True if this field should also be removed.
+        bool NotifyFieldRemoved(Field const& field) {return _OnFieldRemoved(field);}
     };
     
     //===================================================================================
@@ -475,7 +472,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] label The label of this field.
         //! @param[in] priority Field priority.
         DisplayLabelField(Utf8String label, int priority = Property::DEFAULT_PRIORITY) 
-            : Field(Category::GetCategory(Category::Standard::Miscellaneous), "DisplayLabel", label), m_priority(priority)
+            : Field(Category::GetDefaultCategory(), "DisplayLabel", label), m_priority(priority)
             {}
 
         //! Set the priority for this field.
@@ -510,7 +507,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
         CalculatedPropertyField(Utf8String label, Utf8String name, Utf8String valueExpression, ECN::ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
-            : Field(Category::GetCategory(Category::Standard::Miscellaneous), name, label), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
+            : Field(Category::GetDefaultCategory(), name, label), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
             {}
 
         //! Get the ECExpression used to calculate field's value.
@@ -687,6 +684,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Field* _Clone() const override {return new ECInstanceKeyField(*this);}
         Utf8String _GetTypeName() const override {return "ECInstanceKey";}
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) override;
+        ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
     public:
         ECInstanceKeyField() : SystemField("Invalid") {}
         ECPRESENTATION_EXPORT void RecalculateName();
@@ -698,24 +696,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     // @bsiclass                                    Saulius.Skliutas            08/2017
     //===================================================================================
     struct ECNavigationInstanceIdField : SystemField
-        {
-        private:
-            ECPropertiesField const* m_propertyField;
-        protected:
-            ECNavigationInstanceIdField* _AsECNavigationInstanceIdField() override {return this;}
-            ECNavigationInstanceIdField const* _AsECNavigationInstanceIdField() const override {return this;}
-            Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
-            Utf8String _GetTypeName() const override {return "ECInstanceId";}
-            ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
-        public:
-            ECNavigationInstanceIdField(ECPropertiesField const* propertiesField)
-                : SystemField(""), m_propertyField(propertiesField)
-                {}
-            ECNavigationInstanceIdField(ECNavigationInstanceIdField const& other)
-                : SystemField(other), m_propertyField(other.m_propertyField)
-                {}
-            ECPropertiesField const& GetPropertiesField() const {return *m_propertyField;}       
-        };
+    {
+    private:
+        ECPropertiesField const* m_propertyField;
+    protected:
+        ECNavigationInstanceIdField* _AsECNavigationInstanceIdField() override {return this;}
+        ECNavigationInstanceIdField const* _AsECNavigationInstanceIdField() const override {return this;}
+        Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
+        Utf8String _GetTypeName() const override {return "ECInstanceId";}
+        ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
+        ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
+    public:
+        ECNavigationInstanceIdField(ECPropertiesField const& propertiesField)
+            : SystemField(""), m_propertyField(&propertiesField)
+            {}
+        ECNavigationInstanceIdField(ECNavigationInstanceIdField const& other)
+            : SystemField(other), m_propertyField(other.m_propertyField)
+            {}
+        ECPropertiesField const& GetPropertiesField() const {return *m_propertyField;}       
+    };
 
 private:
     Utf8String m_preferredDisplayType;
@@ -1061,7 +1060,7 @@ protected:
 
     //! @see GetFormattedPropertyValue
     virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECN::ECPropertyCR, ECN::ECValueCR) const = 0;
-    virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&) const = 0;
+    virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&, RelationshipMeaning) const = 0;
 
 public:
     //! Formats the supplied ECValue.
@@ -1079,10 +1078,12 @@ public:
     //! @param[in] ecProperty The property whose label is being formatted.
     //! @param[in] propertyClass The class of ECProperty whose label is being formatted.
     //! @param[in] relatedClassPath Relationship path from the displayed ECInstance class to the supplied ECProperty class.
+    //! @param[in] relationshipMeaning Meaning of relationship between displayed ECInstace class and ECProperty class.
     //! @return SUCCESS if the label was successfully formatted.
-    BentleyStatus GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECN::ECPropertyCR ecProperty, ECN::ECClassCR propertyClass, RelatedClassPath const& relatedClassPath) const
+    BentleyStatus GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECN::ECPropertyCR ecProperty, ECN::ECClassCR propertyClass, 
+        RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const
         {
-        return _GetFormattedPropertyLabel(formattedLabel, ecProperty, propertyClass, relatedClassPath);
+        return _GetFormattedPropertyLabel(formattedLabel, ecProperty, propertyClass, relatedClassPath, relationshipMeaning);
         }
 };
 
@@ -1095,7 +1096,7 @@ struct DefaultPropertyFormatter : IECPropertyFormatter
 {
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECN::ECPropertyCR, ECN::ECValueCR) const override;
-    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&) const override;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
 };
 
 //=======================================================================================
@@ -1148,8 +1149,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySuppli
 {
 public:
     static const int NESTED_CONTENT_CATEGORY_PRIORITY = 400000; // matches Standard::General
-private:
-    static ContentDescriptor::Category CreateCategoryFromCustomAttribute(ECN::IECInstanceCR);
 protected:
     ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECPropertyCR) override;
     ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECClassCR) override;

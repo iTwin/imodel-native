@@ -232,6 +232,8 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     keys.push_back(ECInstanceNodeKey::Create(*instance));
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
     m_context->SetSelectionContext(selection);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     ContentRule rule;
@@ -393,7 +395,7 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", m_gadgetClass->GetFullName(), false);
     spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
-        rel->GetFullName(), m_sprocketClass->GetFullName(), "Description"));
+        rel->GetFullName(), m_sprocketClass->GetFullName(), "Description", RelationshipMeaning::RelatedInstance));
 
     ContentRule rule;
     rule.GetSpecificationsR().push_back(spec);

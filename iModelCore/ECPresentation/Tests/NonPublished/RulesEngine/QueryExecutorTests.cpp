@@ -216,9 +216,9 @@ TEST_F (QueryExecutorTests, GetDisplayLabelGroupingNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("AAA");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("AAA");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("BBB");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("BBB"));});
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -227,6 +227,8 @@ TEST_F (QueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
     query->Where(Utf8PrintfString("%s = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
     query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
@@ -348,9 +350,11 @@ TEST_F (QueryExecutorTests, InstanceNodesSortedAlphanumerically)
 
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("Widget10");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("Widget9A10");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("Widget9A9");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget10"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A10"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A9"));});
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
@@ -373,7 +377,7 @@ TEST_F (QueryExecutorTests, InstanceNodesSortedAlphanumerically)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByPriorityAndLabel)
+TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByLabel)
     {
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
     ECInstanceId widgetId;
@@ -390,8 +394,6 @@ TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByPriorityAndLabel)
 
     // taken from ECClassSortingQueryContext in QueryBuilder
     static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-    static Utf8PrintfString classPriority("%s(%s)", FUNCTION_NAME_GetECClassPriority, ECClassGroupingNodesQueryContract::ECClassIdFieldName);
-    static Utf8PrintfString orderByClause("%s DESC, %s", classPriority.c_str(), sortedDisplayLabel.c_str());
 
     NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create();
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -401,7 +403,7 @@ TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByPriorityAndLabel)
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(*grouped);
-    query->OrderBy(orderByClause.c_str());
+    query->OrderBy(sortedDisplayLabel.c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
@@ -411,11 +413,11 @@ TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByPriorityAndLabel)
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
-    
+    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+
     node = executor.GetNode(1);
     ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
     
     node = executor.GetNode(2);
     ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
@@ -656,6 +658,8 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel)
     grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
@@ -786,6 +790,8 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_Differe
     grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
@@ -812,11 +818,11 @@ TEST_F(QueryExecutorTests, HandlesUnionSelectionFromClassWithPointProperty)
     AddField(*descriptor, *classE, ContentDescriptor::Property("e", *classE, *classE->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
 
     ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
-    q1->SelectContract(*ContentQueryContract::Create(*descriptor, classH, *q1), "h");
+    q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, classH, *q1), "h");
     q1->From(*classH, false, "h");
 
     ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
-    q2->SelectContract(*ContentQueryContract::Create(*descriptor, classE, *q2), "e");
+    q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2), "e");
     q2->From(*classE, false, "e");
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
@@ -1115,7 +1121,7 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromOneClass)
     descriptor->AddContentFlag(ContentFlags::MergeResults);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, m_gadgetClass, *query), "gadget");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "gadget");
     query->From(*m_gadgetClass, false, "gadget");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1162,16 +1168,16 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     ContentDescriptorPtr innerDescriptor = ContentDescriptor::Create();
     AddField(*innerDescriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*innerDescriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    innerDescriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "Description", "Description"));
+    innerDescriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", "", 0), "Description", "Description"));
     innerDescriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     innerDescriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     
     ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
-    q1->SelectContract(*ContentQueryContract::Create(*innerDescriptor, m_gadgetClass, *q1), "gadget");
+    q1->SelectContract(*ContentQueryContract::Create(1, *innerDescriptor, m_gadgetClass, *q1), "gadget");
     q1->From(*m_gadgetClass, false, "gadget");
     
     ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
-    q2->SelectContract(*ContentQueryContract::Create(*innerDescriptor, m_widgetClass, *q2), "widget");
+    q2->SelectContract(*ContentQueryContract::Create(2, *innerDescriptor, m_widgetClass, *q2), "widget");
     q2->From(*m_widgetClass, false, "widget");
     
     ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor);
@@ -1183,7 +1189,7 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     outerDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*outerDescriptor, nullptr, *query));
+    query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query));
     query->From(*UnionContentQuery::Create(*q1, *q2));    
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1222,7 +1228,7 @@ TEST_F(QueryExecutorTests, HandlesStructProperties)
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, classI, *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query), "this");
     query->From(*classI, false, "this");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1285,7 +1291,7 @@ TEST_F(QueryExecutorTests, HandlesArrayProperties)
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, classR, *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query), "this");
     query->From(*classR, false, "this");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1331,7 +1337,7 @@ TEST_F(QueryExecutorTests, SelectsRelatedProperties)
     descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back().SetIsRelated(RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, m_gadgetClass, *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"), true);
 
@@ -1377,12 +1383,12 @@ TEST_F(QueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelect
     descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back().SetIsRelated(RelatedClass(classD, classE, classDHasClassERelationship, true));
 
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
-    query1->SelectContract(*ContentQueryContract::Create(*descriptor, &classE, *query1), "this");
+    query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1), "this");
     query1->From(classE, false, "this");
     query1->Join(RelatedClass(classE, classD, classDHasClassERelationship, false, "rel_RET_ClassD_0"), true);
     
     ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
-    query2->SelectContract(*ContentQueryContract::Create(*descriptor, &classF, *query2), "this");
+    query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2), "this");
     query2->From(classF, false, "this");
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -1449,7 +1455,7 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("DoubleProperty")->GetAsPrimitiveProperty()));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, m_widgetClass, *query), "widget");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
     query->From(*m_widgetClass, false, "widget");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());

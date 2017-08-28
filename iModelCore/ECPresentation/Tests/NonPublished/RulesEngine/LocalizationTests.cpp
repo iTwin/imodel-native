@@ -282,13 +282,15 @@ TEST_F(QueryExecutorTests, ECInstanceNodesLabelIsLocalized)
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("@test@");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test@"));});
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectContract(*contract);
     query->From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
@@ -348,7 +350,7 @@ TEST_F(QueryExecutorTests, ECPropertyGroupingNodesLabelIsLocalized)
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("@test@");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
     
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
 
@@ -382,14 +384,16 @@ TEST_F(QueryExecutorTests, DisplayLabelGroupingNodesLabelIsLocalized)
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("@test1@");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetDisplayLabel("@test2@");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test1@"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test2@"));});
     
     NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll().From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);

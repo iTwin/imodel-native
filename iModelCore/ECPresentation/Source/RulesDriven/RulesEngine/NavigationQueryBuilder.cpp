@@ -380,15 +380,12 @@ protected:
         if (!m_doNotSort)
             {
             static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-            Utf8PrintfString classPriority("%s(%s)", FUNCTION_NAME_GetECClassPriority, GetContract()->GetField(ECClassGroupingNodesQueryContract::ECClassIdFieldName)->GetName());
-            Utf8PrintfString orderByClause("%s DESC, %s", classPriority.c_str(), sortedDisplayLabel.c_str());
              
             bvector<Utf8CP> sortingAliases;
             sortingAliases.push_back(ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-            sortingAliases.push_back(GetContract()->GetField(ECClassGroupingNodesQueryContract::ECClassIdFieldName)->GetName());
 
             query = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*query, sortingAliases);
-            QueryBuilderHelpers::Order(*query, orderByClause.c_str());
+            QueryBuilderHelpers::Order(*query, sortedDisplayLabel.c_str());
             }
 
         return true;
@@ -564,15 +561,12 @@ protected:
         if (!m_doNotSort)
             {
             static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-            static Utf8PrintfString classPriority("%s(%s)", FUNCTION_NAME_GetECClassPriority, BaseECClassGroupingNodesQueryContract::BaseClassIdFieldName);
-            static Utf8PrintfString orderByClause("%s DESC, %s", classPriority.c_str(), sortedDisplayLabel.c_str());
              
             bvector<Utf8CP> sortingAliases;
             sortingAliases.push_back(BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-            sortingAliases.push_back(GetContract()->GetField(BaseECClassGroupingNodesQueryContract::BaseClassIdFieldName)->GetName());
 
             query = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*query, sortingAliases);
-            QueryBuilderHelpers::Order(*query, orderByClause.c_str());
+            QueryBuilderHelpers::Order(*query, sortedDisplayLabel.c_str());
             }
 
         if (!m_specification.GetCreateGroupForSingleItem())

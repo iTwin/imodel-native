@@ -88,7 +88,6 @@ private:
     +---------------+---------------+---------------+---------------+-----------+------*/
     void CollectPropertiesDisplayRules(ECClassCP ecClass, PropertiesDisplaySpecificationCR spec)
         {
-
         bset<PropertiesDisplayInfo> propertiesInfos;
         bvector<Utf8String> propertyNamesVec;
         BeStringUtilities::Split(spec.GetPropertyNames().c_str(), ",", propertyNamesVec);
@@ -212,206 +211,6 @@ private:
         return !constraint->GetMultiplicity().IsUpperLimitUnbounded() && constraint->GetMultiplicity().GetUpperLimit() <= 1;
         }
 
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2016
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    RelatedPropertiesSpecificationList CreateRelatedPropertiesSpecifications(ECClassCP& parentClass, ECSchemaCR schema, IECInstanceCR attribute) const
-        {
-        ECValue classNameValue;
-        if (ECObjectsStatus::Success != attribute.GetValue(classNameValue, "ParentClass") || !classNameValue.IsString())
-            {
-            BeAssert(false);
-            return RelatedPropertiesSpecificationList();
-            }
-        Utf8String schemaName, className;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, classNameValue.GetUtf8CP()))
-            {
-            BeAssert(false);
-            return RelatedPropertiesSpecificationList();
-            }
-        if (schemaName.empty())
-            schemaName = schema.GetName();
-        parentClass = m_helper.GetECClass(schemaName.c_str(), className.c_str());
-        if (nullptr == parentClass)
-            {
-            BeAssert(false);
-            return RelatedPropertiesSpecificationList();
-            }
-
-        ECValue relationshipPath;
-        if (ECObjectsStatus::Success != attribute.GetValue(relationshipPath, "RelationshipPath") || !relationshipPath.IsString())
-            {
-            BeAssert(false);
-            return RelatedPropertiesSpecificationList();
-            }
-
-        RelatedPropertiesSpecificationP rootSpec = nullptr;
-        RelatedPropertiesSpecificationP currentSpec = nullptr;
-        Utf8String targetRelatedClassName;
-
-        bvector<Utf8String> path;
-        BeStringUtilities::Split(relationshipPath.GetUtf8CP(), ".", path);
-        for (Utf8StringCR step : path)
-            {
-            bvector<Utf8String> parts;
-            BeStringUtilities::Split(step.c_str(), ":", parts);
-            if (parts.size() < 3)
-                {
-                BeAssert(false);
-                continue;
-                }
-            size_t directionLocation = (parts[1] == "0" || parts[1] == "1") ? 1 : 2;
-            RequiredRelationDirection direction;
-            switch (parts[directionLocation][0])
-                {
-                case '0': direction = RequiredRelationDirection_Forward; break;
-                case '1': direction = RequiredRelationDirection_Backward; break;
-                default: BeAssert(false); direction = RequiredRelationDirection_Forward;
-                }
-
-            Utf8String relationshipName;
-            if (directionLocation == 1)
-                relationshipName.append(schema.GetName()).append(":").append(parts[0]);
-            else
-                relationshipName.append(parts[0]).append(":").append(parts[1]);
-
-            Utf8String relatedClassName;
-            if (parts.size() == directionLocation + 2)
-                relatedClassName.append(schema.GetName()).append(":").append(parts[directionLocation + 1]);
-            else
-                relatedClassName.append(parts[directionLocation + 1]).append(":").append(parts[directionLocation + 2]);
-
-            ECClassCP relationship = m_helper.GetECClass(relationshipName.c_str());
-            ECClassCP relatedClass = m_helper.GetECClass(relatedClassName.c_str());
-            if (nullptr == relationship || !relationship->IsRelationshipClass() || nullptr == relatedClass || !relatedClass->IsEntityClass())
-                {
-                BeAssert(false);
-                return RelatedPropertiesSpecificationList();
-                }
-            if (!IsRelatedRelationshipAllowed(*relationship->GetRelationshipClassCP(), *relatedClass, direction))
-                return RelatedPropertiesSpecificationList();
-
-            RelatedPropertiesSpecificationP spec = new RelatedPropertiesSpecification(direction, relationshipName, relatedClassName, "");
-            if (nullptr == rootSpec)
-                rootSpec = spec;
-            if (nullptr != currentSpec)
-                {
-                currentSpec->SetPropertyNames(NO_RELATED_PROPERTIES_KEYWORD);
-                currentSpec->GetNestedRelatedPropertiesR().push_back(spec);
-                }
-            currentSpec = spec;
-            targetRelatedClassName = relatedClassName;
-            }
-
-        if (nullptr == rootSpec)
-            return RelatedPropertiesSpecificationList();
-
-        RelatedPropertiesSpecificationList list;
-        ECValue derivedClassNames;
-        if (ECObjectsStatus::Success != attribute.GetValue(derivedClassNames, "DerivedClasses") || !derivedClassNames.IsArray() || 0 == derivedClassNames.GetArrayInfo().GetCount())
-            {
-            list.push_back(rootSpec);
-            }
-        else
-            {
-            for (uint32_t i = 0; i < derivedClassNames.GetArrayInfo().GetCount(); ++i)
-                {
-                ECValue derivedClassName;
-                if (ECObjectsStatus::Success != attribute.GetValue(derivedClassName, "DerivedClasses", i) || !derivedClassName.IsString())
-                    {
-                    BeAssert(false);
-                    continue;
-                    }
-                Utf8String fullDerivedClassName(derivedClassName.GetUtf8CP());
-                if (!fullDerivedClassName.Contains(":"))
-                    fullDerivedClassName = Utf8String().append(schema.GetName()).append(":").append(derivedClassName.GetUtf8CP());
-                ECClassCP derivedClass = m_helper.GetECClass(fullDerivedClassName.c_str());
-                if (nullptr == derivedClass || !derivedClass->Is(m_helper.GetECClass(targetRelatedClassName.c_str())))
-                    {
-                    BeAssert(false);
-                    continue;
-                    }
-                // we copy the whole spec, including the nested specs (when the path consists of more than 1 relationship)
-                // and change the name of the most nested related class
-                RelatedPropertiesSpecificationP derivedSpec = new RelatedPropertiesSpecification(*rootSpec);
-                RelatedPropertiesSpecificationP mostNestedDerivedSpec = derivedSpec;
-                while (!mostNestedDerivedSpec->GetNestedRelatedProperties().empty())
-                    mostNestedDerivedSpec = mostNestedDerivedSpec->GetNestedRelatedProperties()[0];
-                mostNestedDerivedSpec->SetRelatedClassNames(derivedClass->GetFullName());
-                list.push_back(derivedSpec);
-                }
-            // rootSpec is not added to the list so it has to be deleted
-            delete rootSpec;
-            }
-        return list;
-        }
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2016
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    void InitRelatedPropertySpecifications(ECClassCR ecClass)
-        {
-        if (m_relatedPropertySpecifications.end() == m_relatedPropertySpecifications.find(&ecClass.GetSchema()))
-            {
-            IECInstancePtr specsAttribute = ecClass.GetSchema().GetCustomAttribute("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
-            if (specsAttribute.IsValid())
-                {
-                ECValue specs;
-                if (ECObjectsStatus::Success != specsAttribute->GetValue(specs, "Specifications") || !specs.IsArray() || !specs.GetArrayInfo().IsStructArray())
-                    {
-                    BeAssert(false);
-                    }
-                else
-                    {
-                    for (uint32_t i = 0; i < specs.GetArrayInfo().GetCount(); ++i)
-                        {
-                        ECValue specValue;
-                        if (ECObjectsStatus::Success != specsAttribute->GetValue(specValue, "Specifications", i) || !specValue.IsStruct())
-                            {
-                            BeAssert(false);
-                            continue;
-                            }
-                        IECInstancePtr specAttribute = specValue.GetStruct();
-                        if (!specAttribute.IsValid() || !specAttribute->GetClass().GetName().Equals("RelatedItemsDisplaySpecification"))
-                            {
-                            BeAssert(false);
-                            continue;
-                            }
-                        ECClassCP parentClass = nullptr;
-                        RelatedPropertiesSpecificationList specs = CreateRelatedPropertiesSpecifications(parentClass, ecClass.GetSchema(), *specAttribute);
-                        if (!specs.empty())
-                            {
-                            RelatedPropertiesSpecificationList& classSpecs = m_relatedPropertySpecifications[&ecClass.GetSchema()][parentClass];
-                            classSpecs.insert(classSpecs.end(), specs.begin(), specs.end());
-                            }
-                        }
-                    }
-                }
-            }
-
-        for (ECClassCP baseClass : ecClass.GetBaseClasses())
-            InitRelatedPropertySpecifications(*baseClass);
-        }
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2016
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    void AddClassRelatedPropertySpecifications(RelatedPropertiesSpecificationList& list, bset<ECClassCP>& includedClasses, ECClassCR ecClass) const
-        {
-        auto schemaIter = m_relatedPropertySpecifications.find(&ecClass.GetSchema());
-        if (m_relatedPropertySpecifications.end() != schemaIter)
-            {
-            auto classIter = schemaIter->second.find(&ecClass);
-            if (schemaIter->second.end() != classIter && includedClasses.end() == includedClasses.find(&ecClass))
-                {
-                list.insert(list.end(), classIter->second.begin(), classIter->second.end());
-                includedClasses.insert(&ecClass);
-                }
-            }
-        for (ECClassCP baseClass : ecClass.GetBaseClasses())
-            AddClassRelatedPropertySpecifications(list, includedClasses, *baseClass);
-        }
-
 public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            04/2016
@@ -424,21 +223,6 @@ public:
             {
             InitPropertiesDisplayInfo(*specification, ruleset.GetContentModifierRules());
             InitPropertyEditors(*specification, ruleset.GetContentModifierRules());
-            }
-        }
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2016
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    ~ContentDescriptorCreateContext()
-        {
-        for (auto schemaIter : m_relatedPropertySpecifications)
-            {
-            for (auto classIter : schemaIter.second)
-                {
-                for (auto spec : classIter.second)
-                    delete spec;
-                }
             }
         }
 
@@ -494,11 +278,11 @@ public:
         // schema custom attribute overrides everything
         IECInstancePtr hideCustomAttribute = prop.GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
         if (hideCustomAttribute.IsValid())
-            return false;
-
-        hideCustomAttribute = prop.GetCustomAttribute("EditorCustomAttributes", "HideProperty");
-        if (hideCustomAttribute.IsValid())
-            return false;
+            {
+            ECValue value;
+            if (ECObjectsStatus::Success == hideCustomAttribute->GetValue(value, "Show") && (value.IsNull() || (value.IsBoolean() && false == value.GetBoolean())))
+                return false;
+            }
 
         bset<PropertiesDisplayInfo> const& properties = GetPropertiesDisplayInfo(ecClass);
         if (properties.empty())
@@ -509,18 +293,6 @@ public:
             return iter->IsDisplayed();
         
         return true;
-        }
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2016
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    RelatedPropertiesSpecificationList GetRelatedPropertySpecifications(ECClassCR ecClass)
-        {
-        bset<ECClassCP> includedClasses;
-        RelatedPropertiesSpecificationList list;
-        InitRelatedPropertySpecifications(ecClass);
-        AddClassRelatedPropertySpecifications(list, includedClasses, ecClass);
-        return list;
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -605,6 +377,7 @@ private:
     ECClassCR m_actualClass;
     Utf8String m_actualClassAlias;
     RelatedClassPath const& m_relatedClassPath;
+    RelationshipMeaning m_relationshipMeaning;
     bvector<RelatedClassPath>& m_navigationPropertiesPaths;
     ContentDescriptor::ECInstanceKeyField* m_keyField;
     ContentDescriptor::NestedContentField* m_nestedContentField;
@@ -617,9 +390,9 @@ private:
         {
         Utf8String displayLabel;
         if (nullptr == m_descriptorCreateContext.GetPropertyFormatter()
-            || SUCCESS != m_descriptorCreateContext.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_relatedClassPath))
+            || SUCCESS != m_descriptorCreateContext.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_relatedClassPath, m_relationshipMeaning))
             {
-            if (!m_relatedClassPath.empty())
+            if (!m_relatedClassPath.empty() && RelationshipMeaning::SameInstance != m_relationshipMeaning)
                 displayLabel.append(m_actualClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
             else
                 displayLabel = ecProperty.GetDisplayLabel();
@@ -724,7 +497,7 @@ private:
                 m_keyField->AddKeyField(*field);
 
             if (ecProperty.GetIsNavigation())
-                m_descriptor.GetAllFields().push_back(new ContentDescriptor::ECNavigationInstanceIdField(field));
+                m_descriptor.GetAllFields().push_back(new ContentDescriptor::ECNavigationInstanceIdField(*field));
             }
 
         return field;
@@ -783,6 +556,9 @@ private:
             return false;
 
         if (!lhs.GetTypeName().Equals(rhs.GetTypeName()))
+            return false;
+
+        if (lhs.GetKindOfQuantity() != rhs.GetKindOfQuantity())
             return false;
 
         return true;
@@ -859,6 +635,7 @@ private:
         relatedClass.SetIsForwardRelationship(!relatedClass.IsForwardRelationship());
         targetAlias = GetNavigationClassAlias(*relatedClass.GetTargetClass(), m_descriptorCreateContext);
         relatedClass.SetTargetClassAlias(targetAlias);
+        relatedClass.SetRelationshipAlias(GetNavigationClassAlias(*relatedClass.GetRelationship(), m_descriptorCreateContext));
         RelatedClassPath path = {relatedClass};
         m_navigationPropertiesPaths.push_back(path);
         }
@@ -867,10 +644,10 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppender(ContentDescriptorR descriptor, ContentDescriptorCreateContext& descriptorCreateContext, 
-        ECClassCR actualClass, Utf8StringCR classAlias, RelatedClassPath const& relatedClassPath, bvector<RelatedClassPath>& navigationPropertiesPaths)
+    PropertyAppender(ContentDescriptorR descriptor, ContentDescriptorCreateContext& descriptorCreateContext, ECClassCR actualClass, Utf8StringCR classAlias,
+        RelatedClassPath const& relatedClassPath, bvector<RelatedClassPath>& navigationPropertiesPaths, RelationshipMeaning relationshipMeaning)
         : m_descriptor(descriptor), m_descriptorCreateContext(descriptorCreateContext), m_actualClassAlias(classAlias), 
-        m_relatedClassPath(relatedClassPath), m_actualClass(actualClass), m_navigationPropertiesPaths(navigationPropertiesPaths),
+        m_relatedClassPath(relatedClassPath), m_actualClass(actualClass), m_navigationPropertiesPaths(navigationPropertiesPaths), m_relationshipMeaning(relationshipMeaning),
         m_keyField(nullptr), m_nestedContentField(nullptr)
         {}
 
@@ -969,7 +746,7 @@ static bvector<RelatedClassPath> AppendRelatedProperty(ContentDescriptorR descri
         bool appendPath = false;
         if (propertyNames.empty())
             {
-            PropertyAppender appender(descriptor, context, *pathClass, pathClassAlias, propertyRelatedClassPath, navigationPropetiesPaths);
+            PropertyAppender appender(descriptor, context, *pathClass, pathClassAlias, propertyRelatedClassPath, navigationPropetiesPaths, relatedPropertySpec.GetRelationshipMeaning());
             ECPropertyIterable properties = pathClass->GetProperties(true);
             for (ECPropertyCP ecProperty : properties)
                 appendPath |= appender.Append(*ecProperty);
@@ -980,7 +757,7 @@ static bvector<RelatedClassPath> AppendRelatedProperty(ContentDescriptorR descri
             }
         else
             {
-            PropertyAppender appender(descriptor, context, *pathClass, pathClassAlias, propertyRelatedClassPath, navigationPropetiesPaths);
+            PropertyAppender appender(descriptor, context, *pathClass, pathClassAlias, propertyRelatedClassPath, navigationPropetiesPaths, relatedPropertySpec.GetRelationshipMeaning());
             for (Utf8StringCR propertyName : propertyNames)
                 {
                 ECPropertyCP ecProperty = pathClass->GetPropertyP(propertyName.c_str());
@@ -1046,10 +823,6 @@ static bvector<RelatedClassPath> AppendRelatedProperties(ContentDescriptorR desc
             if (relatedClass.Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
                 AppendRelatedPropertiesFromContentRule(paths, descriptor, context, relatedClassPath, relatedClass, relatedClassAlias, modifier->GetRelatedProperties());
             }
-
-        // appends related properties based on RelatedItemsDisplaySpecifications custom attribute
-        RelatedPropertiesSpecificationList additionalRelatedItemSpecs = context.GetRelatedPropertySpecifications(relatedClass);
-        AppendRelatedPropertiesFromContentRule(paths, descriptor, context, relatedClassPath, relatedClass, relatedClassAlias, additionalRelatedItemSpecs);
         }
 
     return paths;
@@ -1161,7 +934,7 @@ static void AppendClass(ContentDescriptorR descriptor, ContentDescriptorCreateCo
     SelectClassInfo& info = descriptor.GetSelectClasses().back();
     
     bvector<RelatedClassPath> navigationPropertiesPaths;
-    PropertyAppender appender(descriptor, context, ecClass, "this", RelatedClassPath(), navigationPropertiesPaths);
+    PropertyAppender appender(descriptor, context, ecClass, "this", RelatedClassPath(), navigationPropertiesPaths, RelationshipMeaning::SameInstance);
     ECPropertyIterable properties = ecClass.GetProperties(true);
     for (ECPropertyCP prop : properties)
         appender.Append(*prop);
@@ -1175,10 +948,29 @@ static void AppendClass(ContentDescriptorR descriptor, ContentDescriptorCreateCo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool CanMergeSelectClasses(SelectClassInfo const& lhs, SelectClassInfo const& rhs)
+    {
+    if (&lhs.GetSelectClass() != &rhs.GetSelectClass())
+        return false;
+
+    if (!lhs.GetPathToPrimaryClass().empty() && !rhs.GetPathToPrimaryClass().empty())
+        {
+        RelatedClassCR lhsRelated = lhs.GetPathToPrimaryClass().front();
+        RelatedClassCR rhsRelated = rhs.GetPathToPrimaryClass().front();
+        if (lhsRelated.IsForwardRelationship() != rhsRelated.IsForwardRelationship())
+            return false;
+        }
+        
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void AppendClassPaths(ContentDescriptorR descriptor, ContentDescriptorCreateContext& context, 
-    bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentSpecificationCR spec)
+    bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentRelatedInstancesSpecificationCR spec)
     {
     for (RelatedClassPath path : paths)
         {
@@ -1189,7 +981,7 @@ static void AppendClassPaths(ContentDescriptorR descriptor, ContentDescriptorCre
         bvector<RelatedClassPath> navigationPropertiesPaths;
         if (!context.IsClassHandled(selectClass))
             {
-            PropertyAppender appender(descriptor, context, selectClass, "this", RelatedClassPath(), navigationPropertiesPaths);
+            PropertyAppender appender(descriptor, context, selectClass, "this", RelatedClassPath(), navigationPropertiesPaths, RelationshipMeaning::SameInstance);
             ECPropertyIterable properties = selectClass.GetProperties(true);
             for (ECPropertyCP prop : properties)
                 appender.Append(*prop);
@@ -1197,10 +989,22 @@ static void AppendClassPaths(ContentDescriptorR descriptor, ContentDescriptorCre
             context.SetClassHandled(selectClass);
             }
         else
+            {
             navigationPropertiesPaths = context.GetNavigationPropertiesPaths(selectClass);
+            }
 
         SelectClassInfo appendInfo(selectClass, isSelectPolymorphic);
         appendInfo.SetPathToPrimaryClass(path);
+
+        if (spec.IsRecursive())
+            {
+            for (SelectClassInfo& selectClassInfoIter : descriptor.GetSelectClasses())
+                {
+                if (CanMergeSelectClasses(selectClassInfoIter, appendInfo))
+                    return;
+                }
+            }
+
         bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(descriptor, context, RelatedClassPath(), 
             selectClass, "this", spec.GetRelatedProperties(), true);
         relatedPropertyPaths.insert(relatedPropertyPaths.end(), navigationPropertiesPaths.begin(), navigationPropertiesPaths.end());
@@ -1251,86 +1055,6 @@ static void AddCalculatedFieldsFromContentModifiers(ContentDescriptorR descripto
         }
     }
 
-#ifdef wip_descriptor
-//=======================================================================================
-//! Terminology:
-//! - Calculated descriptor - created just looking at the presentation rules.
-//! - Custom descriptor - created by the API user by copying the calculated descriptor and
-//! modifying it. It may have different flags or other parameters, compared to the 
-//! calculated descriptor.
-//! - Aggregate descriptor - aggregated from multiple descriptors. Aggregating is necessary
-//! because single query builder is used to create queries for multiple specifications.
-//! Finally, those queries are UNIONed together, so they must use the same aggregate descriptor
-//! so make sure their selected field counts and types match.
-//! specifications; those queries are then UNIONed into a single query
-// @bsiclass                                    Grigas.Petraitis                07/2017
-//=======================================================================================
-struct DescriptorHandler
-{
-private:
-    ContentQueryBuilder& m_builder;
-    ContentDescriptorP m_aggregateDescriptor;
-
-private:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                07/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static void ApplyModifications(ContentDescriptorR target, ContentDescriptorCR source)
-        {
-        bvector<ContentDescriptor::Field*> targetFields = target.GetVisibleFields();
-        bvector<ContentDescriptor::Field*> sourceFields = source.GetVisibleFields();
-        bvector<ContentDescriptor::Field const*> erasedFields;
-        for (ContentDescriptor::Field const* tf : targetFields)
-            {
-            if (sourceFields.end() == std::find_if(sourceFields.begin(), sourceFields.end(),
-                [&](ContentDescriptor::Field const* sf){return sf->GetName().Equals(tf->GetName());}))
-                {
-                target.RemoveField(tf->GetName().c_str());
-                }
-            }
-
-        if (nullptr != source.GetSortingField())
-            target.SetSortingField(source.GetSortingField()->GetName().c_str());
-        target.SetSortDirection(source.GetSortDirection());
-        target.SetContentFlags(target.GetContentFlags() | source.GetContentFlags());
-        target.SetFilterExpression(source.GetFilterExpression());
-        }
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                07/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    DescriptorHandler(ContentQueryBuilder& builder, ContentDescriptorR calculatedDescriptor, ContentDescriptorCP customDescriptor)
-        : m_builder(builder)
-        {
-        ContentDescriptorPtr descriptor = &calculatedDescriptor;
-        if (nullptr != customDescriptor)
-            ApplyModifications(*descriptor, *customDescriptor);
-        m_aggregateDescriptor = m_builder.GetAggregateDescriptor(descriptor.get());
-        }
-    
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                07/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptorCR GetDescriptor() const {return *m_aggregateDescriptor;}
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                07/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void ApplyOverrides(ContentQueryPtr& query)
-        {
-        ContentDescriptorCP overridesDescriptor = m_aggregateDescriptor;
-        if (m_aggregateDescriptor->MergeResults())
-            {
-            query = m_builder.CreateMergedResultsQuery(*query, *m_aggregateDescriptor, *m_aggregateDescriptor);
-            overridesDescriptor = &query->GetContract()->GetDescriptor();
-            }
-    
-        QueryBuilderHelpers::ApplyDescriptorOverrides(query, *overridesDescriptor, m_builder.GetParameters().GetECExpressionsCache());
-        }
-};
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1369,18 +1093,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
     if (specificationDescriptor.IsNull())
         return nullptr;
     
-#ifdef wip_descriptor
-    // note: at this point the descriptor is completely calculated based on rules,
-    // we use DescriptorHandler to handle customizations and aggregation with other
-    // descriptors (created using different rules)
-    DescriptorHandler descriptorHandler(*this, *specificationDescriptor, &descriptor);
-#endif
-
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
@@ -1394,13 +1111,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
-    
-#ifdef wip_descriptor
-    if (query.IsValid())
-        descriptorHandler.ApplyOverrides(query);
-#else
+
     QueryBuilderHelpers::ApplyDescriptorOverrides(query, descriptor, m_params.GetECExpressionsCache());
-#endif
 
     return query;
     }
@@ -1598,7 +1310,7 @@ ContentDescriptorPtr ContentQueryBuilder::CreateDescriptor(ContentRelatedInstanc
         ProcessRelationshipPathsPolymorphically(paths, modifierClasses);
         for (RelatedClassPathCR relatedPath : paths)
             AddCalculatedFieldsFromContentModifiers(*descriptor, *relatedPath.back().GetTargetClass(), GetParameters());
-        AppendClassPaths(*descriptor, context, paths, *ecClass, specification/*, specification.IsRecursive()*/);
+        AppendClassPaths(*descriptor, context, paths, *ecClass, specification);
         }
     if (descriptor->GetSelectClasses().empty())
         return nullptr;
@@ -1617,19 +1329,13 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     if (specificationDescriptor.IsNull())
         return nullptr;
     
-#ifdef wip_descriptor
-    // note: at this point the descriptor is completely calculated based on rules,
-    // we use DescriptorHandler to handle customizations and aggregation with other
-    // descriptors (created using different rules)
-    DescriptorHandler descriptorHandler(*this, *specificationDescriptor, &descriptor);
-#endif
     RecursiveQueriesHelper recursiveQueries(*specificationDescriptor);
 
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         if (specification.IsRecursive())
@@ -1655,13 +1361,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
-    
-#ifdef wip_descriptor
-    if (query.IsValid())
-        descriptorHandler.ApplyOverrides(query);
-#else
+
     QueryBuilderHelpers::ApplyDescriptorOverrides(query, descriptor, m_params.GetECExpressionsCache());
-#endif
 
     return query;
     }
@@ -1700,19 +1401,12 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
     ContentDescriptorPtr specificationDescriptor = CreateDescriptor(specification);
     if (specificationDescriptor.IsNull())
         return nullptr;
-    
-#ifdef wip_descriptor
-    // note: at this point the descriptor is completely calculated based on rules,
-    // we use DescriptorHandler to handle customizations and aggregation with other
-    // descriptors (created using different rules)
-    DescriptorHandler descriptorHandler(*this, *specificationDescriptor, &descriptor);
-#endif
         
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
@@ -1726,12 +1420,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
     
-#ifdef wip_descriptor
-    if (query.IsValid())
-        descriptorHandler.ApplyOverrides(query);
-#else
     QueryBuilderHelpers::ApplyDescriptorOverrides(query, descriptor, m_params.GetECExpressionsCache());
-#endif
 
     return query;
     }
@@ -1755,7 +1444,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
                 continue;
 
             bvector<RelatedClassPath> navigationPropertiesPaths;
-            PropertyAppender appender(*descriptor, context, contentField.GetContentClass(), "this", RelatedClassPath(), navigationPropertiesPaths);
+            PropertyAppender appender(*descriptor, context, contentField.GetContentClass(), "this", RelatedClassPath(), navigationPropertiesPaths, RelationshipMeaning::SameInstance);
             appender.Append(propertiesField->GetProperties().front().GetProperty());
             }
         else if (field->IsNestedContentField())
@@ -1770,7 +1459,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
         }
         
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(*descriptor, &contentField.GetContentClass(), *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query), "this");
     query->From(contentField.GetContentClass(), true, "this");
 
     RelatedClassPath relationshipPath;

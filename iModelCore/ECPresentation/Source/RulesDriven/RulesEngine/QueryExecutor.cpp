@@ -303,6 +303,13 @@ static bool IsValueMerged(Utf8CP value)
 //=======================================================================================
 struct ContentValueAppender
 {
+    enum ValueToAdd
+        {
+        ADD_Value = 1,
+        ADD_DisplayValue = 2,
+        ADD_Both = ADD_Value | ADD_DisplayValue,
+        };
+
 private:
     rapidjson::Document m_values;
     rapidjson::Document m_displayValues;
@@ -322,27 +329,29 @@ public:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue)
+    void AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, int add = ADD_Both)
         {
-        m_values.AddMember(rapidjson::Value(name, m_values.GetAllocator()), value, m_values.GetAllocator());
-        m_displayValues.AddMember(rapidjson::Value(name, m_displayValues.GetAllocator()), displayValue, m_displayValues.GetAllocator());
+        if (0 != (ADD_Value & add))
+            m_values.AddMember(rapidjson::Value(name, m_values.GetAllocator()), value, m_values.GetAllocator());
+        if (0 != (ADD_DisplayValue & add))
+            m_displayValues.AddMember(rapidjson::Value(name, m_displayValues.GetAllocator()), displayValue, m_displayValues.GetAllocator());
         }
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddNull(Utf8CP name)
+    void AddNull(Utf8CP name, int add = ADD_Both)
         {
-        AddValue(name, rapidjson::Value(), rapidjson::Value());
+        AddValue(name, rapidjson::Value(), rapidjson::Value(), add);
         }
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddValue(Utf8CP name, Utf8CP value, Utf8CP displayValue, bool isMerged)
+    void AddValue(Utf8CP name, Utf8CP value, Utf8CP displayValue, bool isMerged, int add = ADD_Both)
         {
         if (nullptr == value)
-            AddNull(name);
+            AddNull(name, add);
         else
-            AddValue(name, rapidjson::Value(value, m_values.GetAllocator()), rapidjson::Value(displayValue, m_displayValues.GetAllocator()));
+            AddValue(name, rapidjson::Value(value, m_values.GetAllocator()), rapidjson::Value(displayValue, m_displayValues.GetAllocator()), add);
 
         if (isMerged)
             m_mergedFieldNames.push_back(name);
@@ -352,9 +361,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlValue const& value, IECPropertyFormatter const* propertyFormatter, bool possiblyMerged)
         {
-        if (value.IsNull() && !ecProperty.GetIsNavigation())
+        if (value.IsNull())
             {
-            AddNull(name);
+            AddNull(name, ecProperty.GetIsNavigation() ? ADD_DisplayValue : ADD_Both);
             return;
             }
 
@@ -390,10 +399,7 @@ public:
             }
         else if (ecProperty.GetIsNavigation())
             {
-            if (value.IsNull())
-                m_displayValues.AddMember(rapidjson::StringRef(name), rapidjson::Value(), m_displayValues.GetAllocator());
-            else
-                m_displayValues.AddMember(rapidjson::StringRef(name), rapidjson::Value(value.GetText(), m_displayValues.GetAllocator()), m_displayValues.GetAllocator());
+            AddValue(name, rapidjson::Value(), rapidjson::Value(value.GetText(), m_displayValues.GetAllocator()), ADD_DisplayValue);
             }
         else
             {
@@ -407,10 +413,10 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void SetNavigationPropertyValue(Utf8CP name, IECSqlValue const& value)
         {
-        if (value.IsNull())
-            m_values.AddMember(rapidjson::StringRef(name), rapidjson::Value(), m_values.GetAllocator());
-        else
-            m_values.AddMember(rapidjson::StringRef(name), rapidjson::Value(value.GetInt64()), m_values.GetAllocator());
+        rapidjson::Value jsonValue;
+        if (!value.IsNull())
+            jsonValue.SetInt64(value.GetInt64());
+        AddValue(name, std::move(jsonValue), rapidjson::Value(), ADD_Value);
         }
 };
 
@@ -549,6 +555,8 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     bool resultsMerged = (0 != ((int)ContentFlags::MergeResults & descriptor.GetContentFlags()));
     int columnIndex = 0;
 
+    uint64_t contractId = statement.GetValueUInt64(columnIndex++);
+
     bvector<ECInstanceKey> primaryRecordKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
     BeAssert(1 == primaryRecordKeys.size() || resultsMerged);
     
@@ -598,7 +606,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
                 else
                     {
                     // find the field property that's appropriate for this instance
-                    matchingProperty = m_query->GetContract(recordClass)->FindMatchingProperty(propertiesField, recordClass);
+                    matchingProperty = m_query->GetContract(contractId)->FindMatchingProperty(propertiesField, recordClass);
                     }
 
                 if (nullptr != matchingProperty)
@@ -609,7 +617,8 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
                 else
                     {
                     // if the property was not found, append NULL
-                    values.AddNull(fieldName.c_str());
+                    int addFlags = propertiesField.GetProperties().front().GetProperty().GetIsNavigation() ? ContentValueAppender::ADD_DisplayValue : ContentValueAppender::ADD_Both;
+                    values.AddNull(fieldName.c_str(), addFlags);
                     }
                 }
             else if (field->IsSystemField() && field->AsSystemField()->IsECInstanceKeyField())

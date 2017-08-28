@@ -163,7 +163,7 @@ struct RefreshHierarchyTask : IUpdateTask
 {
 private:
     HierarchyUpdater const& m_updater;
-    HierarchyUpdater::Context& m_updateContext;
+    UpdateContext& m_updateContext;
     ECDbCR m_connection;
     HierarchyLevelInfo m_hierarchyInfo;
 protected:
@@ -194,7 +194,7 @@ protected:
         return str;
         }
 public:
-    RefreshHierarchyTask(HierarchyUpdater const& updater, HierarchyUpdater::Context& updateContext, ECDbCR db, HierarchyLevelInfo info) 
+    RefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, ECDbCR db, HierarchyLevelInfo info) 
         : m_updater(updater), m_updateContext(updateContext), m_connection(db), m_hierarchyInfo(info)
         {}
 };
@@ -206,34 +206,48 @@ struct InvalidateContentTask : IUpdateTask
 {
 private:
     UpdateTasksFactoryCR m_tasksFactory;
+    UpdateContext& m_updateContext;
     ContentCache& m_contentCache;
-    ContentProviderR m_provider;
+    ContentProviderPtr m_provider;
 protected:
     uint32_t _GetPriority() const override {return TASK_PRIORITY_InvalidateContent;}
     bvector<IUpdateTaskPtr> _Perform() override
         {
+        if (1 == m_provider->GetRefCount())
+            {
+            // getting here means this task is the only one keeping a reference to the provider
+            // which in turn means the provider is already removed from content cache - no need
+            // to do anything
+            return bvector<IUpdateTaskPtr>();
+            }
+
         bvector<IUpdateTaskPtr> subTasks;
-        Utf8String rulesetId = m_provider.GetContext().GetRuleset().GetRuleSetId();
-        if (nullptr == m_provider.GetContentDescriptor())
+        Utf8StringCR rulesetId = m_provider->GetContext().GetRuleset().GetRuleSetId();
+        if (nullptr == m_provider->GetContentDescriptor())
             m_contentCache.ClearCache(rulesetId.c_str());
         else
-            m_provider.InvalidateContent();
-        subTasks.push_back(m_tasksFactory.CreateReportTask(FullUpdateRecord(rulesetId, FullUpdateRecord::UpdateTarget::Content)));
+            m_provider->InvalidateContent();
+
+        if (m_updateContext.GetReportedContentRulesetIds().end() == m_updateContext.GetReportedContentRulesetIds().find(rulesetId))
+            {
+            subTasks.push_back(m_tasksFactory.CreateReportTask(FullUpdateRecord(rulesetId, FullUpdateRecord::UpdateTarget::Content)));
+            m_updateContext.GetReportedContentRulesetIds().insert(rulesetId);
+            }
         return subTasks;
         }
     Utf8String _GetPrintStr() const override
         {
         Utf8String str = "[InvalidateContentTask]";
-        if (!DidPerform() && nullptr != m_provider.GetContentDescriptor())
+        if (!DidPerform() && nullptr != m_provider->GetContentDescriptor())
             {
-            ContentDescriptorCR descr = *m_provider.GetContentDescriptor();
+            ContentDescriptorCR descr = *m_provider->GetContentDescriptor();
             str.append(Utf8PrintfString(" DisplayType = '%s'", descr.GetPreferredDisplayType().c_str()));
             }
         return str;
         }
 public:
-    InvalidateContentTask(UpdateTasksFactoryCR factory, ContentCache& contentCache, ContentProviderR provider) 
-        : m_tasksFactory(factory), m_contentCache(contentCache), m_provider(provider)
+    InvalidateContentTask(UpdateTasksFactoryCR factory, UpdateContext& updateContext, ContentCache& contentCache, ContentProviderR provider) 
+        : m_tasksFactory(factory), m_updateContext(updateContext), m_contentCache(contentCache), m_provider(&provider)
         {}
 };
 
@@ -331,7 +345,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemoveDataSourceTask(BeGuidCR removalId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater const& updater, HierarchyUpdater::Context& updateContext, 
+IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, 
     ECDbCR db, HierarchyLevelInfo const& info) const
     {
     return new RefreshHierarchyTask(updater, updateContext, db, info);
@@ -340,9 +354,9 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateContentInvalidationTask(ContentCache& contentCache, ContentProviderR provider) const
+IUpdateTaskPtr UpdateTasksFactory::CreateContentInvalidationTask(ContentCache& contentCache, UpdateContext& updateContext, ContentProviderR provider) const
     {
-    return new InvalidateContentTask(*this, contentCache, provider);
+    return new InvalidateContentTask(*this, updateContext, contentCache, provider);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -402,7 +416,7 @@ bvector<HierarchyLevelInfo> UpdateHandler::GetAffectedHierarchyLevels(ECDbCR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Context& updateContext, ECDbCR db, 
+bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, ECDbCR db, 
     bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
     {
     bvector<IUpdateTaskPtr> tasks;
@@ -417,7 +431,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Conte
         {
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(db);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
-            AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, *provider));
+            AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
         }
 
     return tasks;
@@ -426,7 +440,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Context& updateContext, Utf8CP rulesetId, Utf8CP settingId) const
+bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, Utf8CP rulesetId, Utf8CP settingId) const
     {
     bvector<IUpdateTaskPtr> tasks;
 
@@ -440,7 +454,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Conte
         {
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(rulesetId, settingId);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
-            AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, *provider));
+            AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
         }
 
     return tasks;
@@ -449,7 +463,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(HierarchyUpdater::Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, HierarchyUpdater::Context& updateContext,
+void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext& updateContext,
     bvector<HierarchyLevelInfo> const& affectedHierarchies) const
     {
     for (HierarchyLevelInfo const& info : affectedHierarchies)
@@ -530,7 +544,7 @@ void UpdateHandler::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEve
 
     s_taskId = 1; // reset task IDs counter
 
-    HierarchyUpdater::Context updateContext;
+    UpdateContext updateContext;
     bvector<IUpdateTaskPtr> tasks = CreateUpdateTasks(updateContext, db, changes);
     ExecuteTasks(tasks);
     }
@@ -545,7 +559,7 @@ void UpdateHandler::NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId)
 
     s_taskId = 1; // reset task IDs counter
 
-    HierarchyUpdater::Context updateContext;
+    UpdateContext updateContext;
     bvector<IUpdateTaskPtr> tasks = CreateUpdateTasks(updateContext, rulesetId, settingId);
     ExecuteTasks(tasks);
     }
@@ -671,7 +685,7 @@ void HierarchyUpdater::SynchronizeLists(NavNodesDataSource const& oldDs, size_t&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Context& context, 
+void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
     NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const
     {
     NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
@@ -731,7 +745,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, Context& context, 
+void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
     JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const
     {
     CustomizeNode(&oldNode, newNode, newProvider);
@@ -747,7 +761,7 @@ void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, Context& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTasks, Context& context, 
+void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
     NavNodesProviderCR oldProvider, NavNodesProviderCR newProvider) const
     {
     NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
@@ -807,7 +821,7 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HierarchyUpdater::IsHierarchyRemoved(Context const& context, HierarchyLevelInfo const& info) const
+bool HierarchyUpdater::IsHierarchyRemoved(UpdateContext const& context, HierarchyLevelInfo const& info) const
     {
     if (nullptr == info.GetPhysicalParentNodeId())
         return false;
@@ -818,7 +832,7 @@ bool HierarchyUpdater::IsHierarchyRemoved(Context const& context, HierarchyLevel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, Context& context, ECDbCR connection, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
+void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, ECDbCR connection, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
     {
     if (context.GetHandledHierarchies().end() != context.GetHandledHierarchies().find(oldInfo))
         {
@@ -883,7 +897,7 @@ bool HierarchyUpdater::IsHierarchyExpanded(HierarchyLevelInfo const& info) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::MarkNodesAsRemoved(Context& context, NavNodesProviderCR oldProvider) const
+void HierarchyUpdater::MarkNodesAsRemoved(UpdateContext& context, NavNodesProviderCR oldProvider) const
     {
     NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
     size_t size = oldDs->GetSize();

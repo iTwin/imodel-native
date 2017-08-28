@@ -89,10 +89,10 @@ struct RelatedPropertiesSpecification
         ECPRESENTATION_EXPORT void                         SetPropertyNames(Utf8StringCR);
 
         //! Meaning of properties returned by this specification.
-        ECOBJECTS_EXPORT RelationshipMeaning          GetRelationshipMeaning(void) const;
+        ECPRESENTATION_EXPORT RelationshipMeaning          GetRelationshipMeaning(void) const;
 
         //! Set relationship meaning.
-        ECOBJECTS_EXPORT void                         SetRelationshipMeaning(RelationshipMeaning);
+        ECPRESENTATION_EXPORT void                         SetRelationshipMeaning(RelationshipMeaning);
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
         ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;

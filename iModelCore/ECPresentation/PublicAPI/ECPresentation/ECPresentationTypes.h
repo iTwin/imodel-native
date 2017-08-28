@@ -109,16 +109,7 @@ public:
         {}
 
     //! Checks whether this object is equal to the supplied one.
-    bool IsEqual(RelatedClass const& other) const
-        {
-        return m_source == other.m_source
-            && m_target == other.m_target
-            && m_targetAlias.Equals(other.m_targetAlias)
-            && m_relationship == other.m_relationship
-            && m_relationshipAlias.Equals(other.m_relationshipAlias)
-            && m_isForwardRelationship == other.m_isForwardRelationship
-            && m_isPolymorphic == other.m_isPolymorphic;
-        }
+    ECPRESENTATION_EXPORT bool IsEqual(RelatedClass const& other) const;
 
     //! Checks whether this object is equal to the supplied one.
     bool operator==(RelatedClass const& other) const {return IsEqual(other);}
@@ -127,22 +118,7 @@ public:
     bool operator!=(RelatedClass const& other) const {return !IsEqual(other);}
 
     //! Operator overload required for comparing @ref RelatedClass objects and using them in maps.
-    bool operator<(RelatedClass const& other) const
-        {
-        if (m_source->GetId() < other.m_source->GetId())
-            return true;
-        if (m_source->GetId() > other.m_source->GetId())
-            return false;
-        if (m_target->GetId() < other.m_target->GetId())
-            return true;
-        if (m_target->GetId() > other.m_target->GetId())
-            return false;
-        if (m_relationship->GetId() < other.m_relationship->GetId())
-            return true;
-        if (m_relationship->GetId() > other.m_relationship->GetId())
-            return false;
-        return !m_isForwardRelationship && other.m_isForwardRelationship;
-        }
+    ECPRESENTATION_EXPORT bool operator<(RelatedClass const& other) const;
 
     //! Is this structure valid.
     bool IsValid() const {return nullptr != m_source && nullptr != m_target && nullptr != m_relationship;}
@@ -188,6 +164,9 @@ public:
 
     //! Set whether the related class is polymorphic.
     void SetIsPolymorphic(bool value) {m_isPolymorphic = value;}
+
+    //! Get the navigation property for this relationship.
+    ECN::NavigationECPropertyCP GetNavigationProperty() const;
 };
 
 //! A stack of ECClass and ECRelationshipClass pairs representing a path of relationships.

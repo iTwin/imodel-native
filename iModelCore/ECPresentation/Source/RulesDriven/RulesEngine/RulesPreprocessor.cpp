@@ -112,9 +112,9 @@ static PresentationRuleSetPtr CreateSupplementedRuleSet(PresentationRuleSetCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(RuleSetLocaterManager const& locaters, Utf8CP rulesetId)
+PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(RuleSetLocaterManager const& locaters, ECDbCR connection, Utf8CP rulesetId)
     {
-    bvector<PresentationRuleSetPtr> rulesets = locaters.LocateRuleSets(rulesetId);
+    bvector<PresentationRuleSetPtr> rulesets = locaters.LocateRuleSets(connection, rulesetId);
 
     // find the primary ruleset
     PresentationRuleSetPtr primary;

@@ -63,9 +63,9 @@ $(o)CustomizationHelper$(oext):          $(RulesEngineSourceDirectory)Customizat
 
 $(o)QueryBuilderHelpers$(oext):          $(RulesEngineSourceDirectory)QueryBuilderHelpers.cpp $(RulesEngineDependencies)
 
-$(o)ECInstanceChangeHandlers$(oext):     $(RulesEngineSourceDirectory)ECInstanceChangeHandlers.cpp $(RulesEngineDependencies)
-
 $(o)ECInstanceChangeEvents$(oext):       $(RulesEngineSourceDirectory)ECInstanceChangeEvents.cpp $(RulesEngineDependencies)
+
+$(o)ECInstanceChangeHandlers$(oext):     $(RulesEngineSourceDirectory)ECInstanceChangeHandlers.cpp $(RulesEngineDependencies)
 
 $(o)UpdateHandler$(oext):                $(RulesEngineSourceDirectory)UpdateHandler.cpp $(RulesEngineDependencies)
 

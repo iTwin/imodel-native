@@ -21,6 +21,8 @@ $(o)ECDbBasedCache$(oext)           : $(SourceDirectory)ECDbBasedCache.cpp $(ECP
 
 $(o)ValueHelpers$(oext)             : $(SourceDirectory)ValueHelpers.cpp $(ECPresentationDependencies)
 
+$(o)RelatedClass$(oext)             : $(SourceDirectory)RelatedClass.cpp $(ECPresentationDependencies)
+
 %include MultiCppCompileGo.mki
 
 ECPresentationObjs =

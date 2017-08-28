@@ -297,8 +297,10 @@ public:
 /** @{ */
     //! Get the presentation rule set.
     //! @param[in] locaters Ruleset locater manager which holds all available ruleset locaters.
+    //! @param[in] connection The connection to check whether the ruleset is supported.
     //! @param[in] rulesetId ID of the ruleset to find. Returns the first available ruleset if nullptr.
-    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(RuleSetLocaterManager const& locaters, Utf8CP rulesetId = nullptr);
+    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(RuleSetLocaterManager const& locaters, 
+        ECDbCR connection, Utf8CP rulesetId = nullptr);
 /** @} */
 
 /** @name Navigation rules */

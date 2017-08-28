@@ -212,7 +212,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
     EXPECT_STREQ("CategoryName", fields[1]->GetCategory().GetName().c_str());
     EXPECT_STREQ("Category Label", fields[1]->GetCategory().GetLabel().c_str());
-    EXPECT_EQ(true, fields[1]->GetCategory().ShouldExpand());
+    EXPECT_STREQ("Category description", fields[1]->GetCategory().GetDescription().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

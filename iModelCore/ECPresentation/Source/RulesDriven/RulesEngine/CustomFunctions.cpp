@@ -233,7 +233,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
                         }
                     }
                 }
-            else
+            if (label.empty())
                 {
                 // otherwise, use the display label
                 label.assign(ecClass->GetDisplayLabel());
@@ -419,7 +419,7 @@ public:
                     }
                 }
             // then, in case this is a range-based grouping node, use range labels
-            else if (nullptr != GetContext().GetQueryExtendedData() && NavigationQueryExtendedData(*GetContext().GetQueryExtendedData()).HasRangesData())
+            if (label.empty() && nullptr != GetContext().GetQueryExtendedData() && NavigationQueryExtendedData(*GetContext().GetQueryExtendedData()).HasRangesData())
                 {
                 NavigationQueryExtendedData extendedData(*GetContext().GetQueryExtendedData());
                 int rangeIndex = extendedData.GetRangeIndex(args[3]);
@@ -434,7 +434,7 @@ public:
                     }
                 }
             // lastly, use the property value as label
-            else
+            if (label.empty())
                 {
                 if (SUCCESS != ValueHelpers::GetEnumPropertyDisplayValue(label, *ecProperty, args[3]))
                     {
@@ -581,54 +581,6 @@ public:
         ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
 };
-
-/*=================================================================================**//**
-* Parameters:
-* - ECClassId
-* @bsiclass                                     Grigas.Petraitis                07/2015
-+===============+===============+===============+===============+===============+======*/
-struct GetECClassPriorityScalar : CachingScalarFunction<bmap<ECClassId, int>>
-    {
-    static const int DEFAULT_PRIORITY = 0;
-
-    GetECClassPriorityScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetECClassPriority, 1, DbValueType::IntegerVal, manager) 
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        if (1 != nArgs)
-            {
-            BeAssert(false);
-            ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
-            return;
-            }
-
-        ECClassId classId = args[0].GetValueId<ECClassId>();
-        auto iter = GetCache().find(classId);
-        if (GetCache().end() == iter)
-            {
-            ECClassCP ecClass = GetContext().GetDb().Schemas().GetClass(classId);
-            if (nullptr == ecClass)
-                {
-                BeAssert(false);
-                ctx.SetResultError("Invalid ECClass ID", BE_SQLITE_ERROR);
-                return;
-                }
-
-            int priority = DEFAULT_PRIORITY;
-            IECInstancePtr classPriorityAttribute = ecClass->GetCustomAttribute("ClassPriority");
-            if (classPriorityAttribute.IsValid())
-                {
-                ECValue classPriorityValue;
-                if (ECObjectsStatus::Success == classPriorityAttribute->GetValue(classPriorityValue, "Priority") && classPriorityValue.IsInteger())
-                    priority = classPriorityValue.GetInteger();
-                }
-            iter = GetCache().Insert(classId, priority).first;
-            }
-
-        ctx.SetResultInt(iter->second);
-        }
-    };
 
 /*=================================================================================**//**
 * Parameters:
@@ -1509,7 +1461,6 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new GetECClassDisplayLabelScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetECPropertyDisplayLabelScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetSortingValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetECClassPriorityScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetRangeIndexScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetRangeImageIdScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new IsOfClassScalar(CustomFunctionsManager::GetManager()));

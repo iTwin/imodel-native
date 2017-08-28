@@ -15,6 +15,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 struct ECDbUsedClassesListenerWrapper;
 
+struct ECDbUsedClassesListenerWrapper;
+
 /*=================================================================================**//**
 * Context for NavNodesProvider implementations.
 * @bsiclass                                     Grigas.Petraitis                07/2015

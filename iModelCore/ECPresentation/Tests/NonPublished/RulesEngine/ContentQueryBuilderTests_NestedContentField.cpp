@@ -16,7 +16,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithSingleStepRelationshipP
     ECEntityClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
     ECRelationshipClassCP rel = GetECClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
-    ContentDescriptor::Category category("name", "label", 1, false);
+    ContentDescriptor::Category category("name", "label", "", 1);
     ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *sprocketClass, 
         {RelatedClass(*sprocketClass, *gadgetClass, *rel, false, "primary_instance", "rel")}, 
         {
@@ -45,7 +45,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithMultiStepRelationshipPa
     ECRelationshipClassCP relGS = GetECClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
     ECRelationshipClassCP relWG = GetECClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
 
-    ContentDescriptor::Category category("name", "label", 1, false);
+    ContentDescriptor::Category category("name", "label", "", 1);
     RelatedClassPath path = {
         RelatedClass(*sprocketClass, *gadgetClass, *relGS, false, "intermediate", "rel_gs"), 
         RelatedClass(*gadgetClass, *widgetClass, *relWG, false, "primary_instance", "rel_wg")
@@ -78,7 +78,8 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithNestedContentFields)
     ECRelationshipClassCP relGS = GetECClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
     ECRelationshipClassCP relWG = GetECClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
 
-    ContentDescriptor::Category category("name", "label", 1, true);
+    ContentDescriptor::Category category("name", "label", "", 1);
+
     ContentDescriptor::NestedContentField field(category, "gadget_field_name", "gadget_field_label", 
         *gadgetClass, 
         {RelatedClass(*gadgetClass, *widgetClass, *relWG, false, "widget_instance", "rel_wg")},

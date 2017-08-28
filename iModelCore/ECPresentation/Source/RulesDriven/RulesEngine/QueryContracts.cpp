@@ -349,6 +349,14 @@ static bool IsManyToManyRelationship(ECRelationshipClassCR rel)
         && rel.GetTarget().GetMultiplicity().GetUpperLimit() > 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool HasNavigationProperty(RelatedClassCR related)
+    {
+    return nullptr != related.GetNavigationProperty();
+    }
+
 Utf8CP NavigationQueryContract::SkippedInstanceKeysFieldName = "SkippedInstanceKeys";
 Utf8CP NavigationQueryContract::SkippedInstanceKeysInternalFieldName = NavigationQueryContract::SkippedInstanceKeysFieldName;
 /*---------------------------------------------------------------------------------**//**
@@ -365,7 +373,7 @@ bvector<PresentationQueryContractFieldCPtr> NavigationQueryContract::_GetFields(
                 {
                 RelatedClassCR related = m_relationshipPath[i];
                 Utf8String classIdClause, instanceIdClause;
-                if (IsManyToManyRelationship(*related.GetRelationship()))
+                if (IsManyToManyRelationship(*related.GetRelationship()) || !HasNavigationProperty(related))
                     {
                     BeAssert(nullptr != related.GetRelationshipAlias() && 0 != *related.GetRelationshipAlias());
                     Utf8CP sourceOrTarget = related.IsForwardRelationship() ? "Target" : "Source";
@@ -834,8 +842,8 @@ Utf8CP ContentQueryContract::DisplayLabelFieldName = "DisplayLabel";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
-    : m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo)
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
@@ -1061,6 +1069,8 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     {
     bvector<PresentationQueryContractFieldCPtr> contractFields;
     
+    contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
     contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
 

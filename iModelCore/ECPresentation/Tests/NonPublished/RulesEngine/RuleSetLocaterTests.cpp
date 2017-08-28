@@ -40,13 +40,88 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
     project.Create("RulesetLocaterManager_LocateSupportedRulesets");
     project.GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
 
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateSupportedRulesets(project.GetECDbCR());
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
     ASSERT_EQ(3, rulesets.size());
 
     // note: the order of rule sets is unknown
     EXPECT_TRUE(rulesets.end() != std::find_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr const& ruleset){return ruleset->GetRuleSetId().Equals("EmptySupportedSchemas");}));
     EXPECT_TRUE(rulesets.end() != std::find_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr const& ruleset){return ruleset->GetRuleSetId().Equals("SupportedSchema");}));
     EXPECT_TRUE(rulesets.end() != std::find_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr const& ruleset){return ruleset->GetRuleSetId().Equals("ExcludedSchemas");}));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
+    {
+    ECDbTestProject project;
+    project.Create("DisposesCachedRulesetsOnRulesetDispose");
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    RuleSetLocaterManager manager;
+    manager.RegisterLocater(*locater);
+
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+
+    // first pass:
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+
+    // add a new ruleset with a higher minor version
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
+
+    // verify we still get cached version:
+    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+
+    // tell the ruleset was disposed
+    ((IRulesetCallbacksHandler&)manager)._OnRulesetDispose(*rulesets[0]);
+    
+    // verify we get new results now:
+    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    ASSERT_EQ(2, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+    EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
+    {
+    ECDbTestProject project;
+    project.Create("DisposesCachedRulesetsOnConnectionClose");
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    RuleSetLocaterManager manager;
+    manager.RegisterLocater(*locater);
+
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+
+    // first pass:
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+
+    // add a new ruleset with a higher minor version
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
+
+    // verify we still get cached version:
+    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+
+    // simulate connection close
+    project.GetECDb().CloseDb();
+    project.Open("DisposesCachedRulesetsOnConnectionClose");
+    
+    // verify we get a fresh version:
+    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    ASSERT_EQ(2, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+    EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
     }
 
 /*---------------------------------------------------------------------------------**//**

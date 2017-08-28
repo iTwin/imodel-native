@@ -236,11 +236,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
     {
     // make sure there's only one Widget
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->GetSpecificationsR().push_back(spec);
@@ -263,11 +265,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
     {
     // make sure there's only one Widget
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
     groupingRule->GetGroupsR().push_back(new ClassGroup("", false, "", ""));
@@ -393,6 +397,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
 
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
+
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->GetSpecificationsR().push_back(spec);
     
@@ -402,16 +408,16 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
     ASSERT_EQ(0, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
     ASSERT_EQ(1, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
     ASSERT_EQ(1, provider->GetNodesCount());
 #else
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("OtherLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
     ASSERT_EQ(2, provider->GetNodesCount());
 #endif
     }
@@ -424,6 +430,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->GetSpecificationsR().push_back(spec);
@@ -435,9 +443,9 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
     RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("MyLabel");});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetDisplayLabel("OtherLabel");});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
     ASSERT_EQ(2, provider->GetNodesCount());
 
     JsonNavNodePtr myLabelNode;
@@ -647,6 +655,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->GetSpecificationsR().push_back(spec);

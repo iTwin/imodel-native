@@ -267,7 +267,7 @@ bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
+* @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceChangeResult IECPresentationManager::SaveValueChange(ECDbR connection, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
     {
@@ -281,7 +281,7 @@ ECInstanceChangeResult IECPresentationManager::SaveValueChange(ECDbR connection,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
+* @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR connection, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
     {

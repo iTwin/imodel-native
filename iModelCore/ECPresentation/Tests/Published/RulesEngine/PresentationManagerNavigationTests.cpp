@@ -194,6 +194,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("AllInstanceNodes_DoNotSort_ReturnsUnsortedNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
@@ -437,6 +438,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNod
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesLabelGroupingNodeIfOnlyOneChild", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
@@ -631,6 +633,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_SkipsSpecifiedNumberOfNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -663,6 +666,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_SkippingMoreThanExists", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -693,6 +697,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_ReturnsSpecifiedNumberOfNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -721,6 +726,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_PageSizeHigherThanTheNumberOfNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -749,6 +755,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanP
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_PageSizeHigherThanTheNumberOfNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -778,6 +785,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Paging_SkipsAndReturnsSpecifiedNumberOfNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -1181,6 +1189,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstancesOfSpecificClassesNodes_GroupedByClassAndByLabel", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, true, false, "", "RulesEngineTest:Widget,Gadget", false));
@@ -1252,6 +1261,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstancesOfSpecificClassesNodes_DoNotSort_ReturnsUnsortedNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
@@ -1677,6 +1687,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Sprocket\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
@@ -1815,6 +1826,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstancesNodes_InstanceFilter", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Sprocket\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
@@ -1864,6 +1876,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Sprocket\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
@@ -2122,6 +2135,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SearchResultInstances_DoNotSort_ReturnsUnsortedNodes", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
@@ -2573,6 +2587,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SortingRule_SortingAscending", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -2607,6 +2622,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SortingRule_SortingDescending", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -2641,6 +2657,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SortingRule_DoNotSort", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -2948,6 +2965,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -2981,6 +2999,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_PropertyGroup_CreatesGroupForSingleItem", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -3014,6 +3033,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_PropertyGroup_SetImageIdForGroupingNode", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -3293,7 +3313,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr instanceS = RulesEngineTestHelpers::InsertInstance(*s_project, *classS, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
     IECInstancePtr instanceT = RulesEngineTestHelpers::InsertInstance(*s_project, *classT, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     IECInstancePtr instanceU = RulesEngineTestHelpers::InsertInstance(*s_project, *classU, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_st, *instanceS, *instanceT, [&](IECInstanceR instance)
+	RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_st, *instanceS, *instanceT, [&](IECInstanceR instance)
         {
         instance.SetValue("InstanceU", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceU).GetInstanceId(), rel_stu));
         });
@@ -3367,7 +3387,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
     childNodeRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1,
-        "", RequiredRelationDirection_Forward, "RulesEngineTest", "", "RulesEngineTest:Sprocket"));
+        "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childNodeRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
@@ -3463,6 +3483,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_SameLabelInstanceGroup", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
 
@@ -3962,6 +3983,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GroupingChildrenByRelatedInstanceProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);

@@ -69,26 +69,35 @@ ECClassCP ECSchemaHelper::GetECClass(Utf8CP fullClassName) const
 ECClassCP ECSchemaHelper::GetECClass(ECClassId id) const {return m_db.Schemas().GetClass(id);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
+* @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool HasHiddenCustomAttribute(IECCustomAttributeContainerCR container)
+static bool IsSchemaHidden(ECSchemaCR ecSchema)
     {
-    IECInstancePtr options = container.GetCustomAttribute("DisplayOptions");
+    IECInstancePtr options = ecSchema.GetCustomAttribute("HiddenSchema");
     if (options.IsNull())
         return false;
 
     ECValue value;
-    if (ECObjectsStatus::Success == options->GetValue(value, "Hidden") && !value.IsNull() && value.IsBoolean() && true == value.GetBoolean())
-        return true;
-    
-    if (ECObjectsStatus::Success == options->GetValue(value, "HideInstances") && !value.IsNull() && value.IsBoolean() && true == value.GetBoolean())
-        return true;
+    if (ECObjectsStatus::Success == options->GetValue(value, "ShowClasses") && !value.IsNull() && value.IsBoolean() && true == value.GetBoolean())
+        return false;
 
-    /* wip
-    if (ECObjectsStatus::ECOBJECTS_STATUS_Success == options->GetValue(value, "HideRelated") && value.IsBoolean() && true == value.GetBoolean())
-        return true;*/
+    return true;
+    }
 
-    return false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsClassHidden(ECClassCR ecClass)
+    {
+    IECInstancePtr options = ecClass.GetCustomAttribute("HiddenClass");
+    if (options.IsNull())
+        return false;
+
+    ECValue value;
+    if (ECObjectsStatus::Success == options->GetValue(value, "Show") && !value.IsNull() && value.IsBoolean() && true == value.GetBoolean())
+        return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,7 +108,7 @@ static bool IsAllowed(ECClassCR ecClass)
     if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
         return false;
 
-    if (HasHiddenCustomAttribute(ecClass))
+    if (IsClassHidden(ecClass))
         return false;
 
     return true;
@@ -119,7 +128,7 @@ static bool IsAllowed(ECSchemaCR schema)
     if (schema.GetSupplementalInfo().IsValid())
         return false;
 
-    if (HasHiddenCustomAttribute(schema))
+    if (IsSchemaHidden(schema))
         return false;
 
     return true;

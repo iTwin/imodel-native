@@ -20,6 +20,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 struct UsedUserSettingsListener;
 
+struct UsedUserSettingsListener;
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/

@@ -219,10 +219,11 @@ struct ContentQueryBuilder
     
 private:
     ContentQueryBuilderParameters m_params;
+    uint64_t m_contractIdsCounter;
 
 public:
-    ContentQueryBuilder(ContentQueryBuilderParameters params) : m_params(params) {}
-    ContentQueryBuilder(ContentQueryBuilder const& other) : m_params(other.m_params) {}
+    ContentQueryBuilder(ContentQueryBuilderParameters params) : m_params(params), m_contractIdsCounter(0) {}
+    ContentQueryBuilder(ContentQueryBuilder const& other) : m_params(other.m_params), m_contractIdsCounter(0) {}
 
     ContentQueryBuilderParameters const& GetParameters() const {return m_params;}
     ContentQueryBuilderParameters& GetParameters() {return m_params;}

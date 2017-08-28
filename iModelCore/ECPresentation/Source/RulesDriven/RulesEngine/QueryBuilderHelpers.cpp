@@ -379,7 +379,7 @@ ContentQueryPtr QueryBuilderHelpers::CreateMergedResultsQuery(ContentQueryR quer
     // the merging query must clone it and make some modifications
     ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(descriptor);
     ComplexContentQueryPtr outerQuery = ComplexContentQuery::Create();
-    outerQuery->SelectContract(*ContentQueryContract::Create(*outerDescriptor, nullptr, *outerQuery));
+    outerQuery->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *outerQuery));
     outerQuery->From(query);
 
     QueryBuilderHelpers::Order(query, "");

@@ -237,7 +237,7 @@ protected:
     virtual UnionQuery* _AsUnionQuery() {return nullptr;}
     virtual ExceptQuery* _AsExceptQuery() {return nullptr;}
     virtual StringQuery* _AsStringQuery() {return nullptr;}
-    virtual Contract const* _GetContract(ECClassCP) const {return nullptr;}
+    virtual Contract const* _GetContract(uint64_t) const {return nullptr;}
     virtual Contract const* _GetGroupingContract() const {return nullptr;}
     virtual void _OnIsOuterQueryValueChanged() {}
 
@@ -261,7 +261,7 @@ public:
     StringQuery const* AsStringQuery() const {return const_cast<PresentationQuery<TBase, TContract, TResultParameters>*>(this)->AsStringQuery();}
     StringQuery* AsStringQuery() {return _AsStringQuery();}
 
-    Contract const* GetContract(ECClassCP selectClass = nullptr) const {return _GetContract(selectClass);}
+    Contract const* GetContract(uint64_t contractId = 0) const {return _GetContract(contractId);}
     Contract const* GetGroupingContract() const {return _GetGroupingContract();}
     bool IsEqual(TBase const& other) const {return _IsEqual(other);}
     ResultParameters const& GetResultParameters() const {return m_resultParameters;}
@@ -370,7 +370,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
 
@@ -438,7 +438,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
     ECPRESENTATION_EXPORT void _OnIsOuterQueryValueChanged() override;
@@ -495,7 +495,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
     ECPRESENTATION_EXPORT void _OnIsOuterQueryValueChanged() override;

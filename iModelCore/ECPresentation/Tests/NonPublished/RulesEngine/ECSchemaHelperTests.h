@@ -169,6 +169,35 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
                         "    </ECRelationshipClass>"                                                                                           \
                         "</ECSchema>"
 
+#define HIDDEN_SCHEMA "<?xml version=\"1.0\" encoding=\"utf-8\"?>"                                                                                         \
+                        "<ECSchema schemaName=\"HiddenSchema\" alias=\"hs\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"   \
+                        "   <ECSchemaReference name=\"CoreCustomAttributes\" version=\"01.00\" alias=\"CoreCA\"/>"                                          \
+                        "   <ECCustomAttributes>"                                                                                                           \
+                        "       <HiddenSchema xmlns=\"CoreCustomAttributes.01.00\"/>"                                                                       \
+                        "   </ECCustomAttributes>"                                                                                                          \
+                        "   <ECEntityClass typeName=\"Class1\">"                                                                                            \
+                        "       <ECProperty propertyName=\"StringProperty\" typeName=\"string\"/>"                                                          \
+                        "   </ECEntityClass>"                                                                                                               \
+                        "</ECSchema>"
+
+#define VISIBLE_SCHEMA "<?xml version=\"1.0\" encoding=\"utf-8\"?>"                                                                                         \
+                        "<ECSchema schemaName=\"VisibleSchema\" alias=\"vs\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"   \
+                        "   <ECSchemaReference name=\"CoreCustomAttributes\" version=\"01.00\" alias=\"CoreCA\"/>"                                          \
+                        "   <ECEntityClass typeName=\"HiddenClass\">"                                                                                       \
+                        "       <ECCustomAttributes>"                                                                                                       \
+                        "           <HiddenClass xmlns=\"CoreCustomAttributes.01.00\"/>"                                                                    \
+                        "       </ECCustomAttributes>"                                                                                                      \
+                        "   </ECEntityClass>"                                                                                                               \
+                        "   <ECEntityClass typeName=\"VisibleClass\">"                                                                                      \
+                        "       <ECProperty propertyName=\"HiddenProperty\" typeName = \"int\">"                                                            \
+                        "           <ECCustomAttributes>"                                                                                                   \
+                        "               <HiddenProperty xmlns=\"CoreCustomAttributes.01.00\"/>"                                                             \
+                        "           </ECCustomAttributes>"                                                                                                  \
+                        "       </ECProperty>"                                                                                                              \
+                        "       <ECProperty propertyName=\"VisibleProperty\" typeName=\"int\"/>"                                                            \
+                        "   </ECEntityClass>"                                                                                                               \
+                        "</ECSchema>"
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/

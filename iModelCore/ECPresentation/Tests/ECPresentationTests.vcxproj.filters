@@ -18,7 +18,6 @@
     <ClCompile Include="Published\RulesEngine\PresentationManagerTests.cpp" />
     <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
     <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
-    <ClCompile Include="Published\PresentationManagerMessageHandlerTests.cpp" />
     <ClCompile Include="Published\SelectionTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
@@ -54,7 +53,6 @@
     <ClCompile Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\QueryBasedSpecificationNodesProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\QueryExecutorTests.cpp" />
-    <ClCompile Include="NonPublished\RulesEngine\RulesDrivenMessagingTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\RuleSetLocaterTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\RulesPreprocessorTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\TestHelpers.cpp" />

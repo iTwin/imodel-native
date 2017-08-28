@@ -204,7 +204,7 @@ protected:
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
-        PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(m_manager.GetLocaters(), rulesetId);
+        PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(m_manager.GetLocaters(), connection, rulesetId);
         if (!ruleset.IsValid())
             {
             LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
@@ -505,7 +505,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
 
     // get the ruleset
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
-    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(GetLocaters(), options.GetRulesetId());
+    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(GetLocaters(), connection, options.GetRulesetId());
     if (!ruleset.IsValid())
         {
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", options.GetRulesetId()).c_str(), LOG_ERROR);
@@ -750,7 +750,7 @@ void RulesDrivenECPresentationManager::RegisterECInstanceChangeHandler(IECInstan
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2017
+* @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::UnregisterECInstanceChangeHandler(IECInstanceChangeHandler& handler)
     {
@@ -788,7 +788,7 @@ void RulesDrivenECPresentationManager::_OnNodeUnchecked(ECDbR connection, uint64
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
+* @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::_OnNodeExpanded(ECDbR connection, uint64_t nodeId)
     {

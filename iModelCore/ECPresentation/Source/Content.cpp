@@ -100,11 +100,21 @@ bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
 void ContentDescriptor::RemoveField(Field const& field)
     {
     auto iter = std::find_if(m_fields.begin(), m_fields.end(), [&field](Field const* f){return *f == field;});
-    if (m_fields.end() != iter)
+    if (m_fields.end() == iter)
+        return;
+
+    m_fields.erase(iter);
+
+    bvector<Field*> fieldsToRemove;
+    for (Field* siblingField : m_fields)
         {
-        delete *iter;
-        m_fields.erase(iter);
+        if (siblingField->NotifyFieldRemoved(field))
+            fieldsToRemove.push_back(siblingField);
         }
+    for (Field* siblingField : fieldsToRemove)
+        RemoveField(*siblingField);
+
+    delete &field;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
@@ -341,6 +351,7 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::MemoryPoolAll
     json.SetObject();
     json.AddMember("Name", rapidjson::StringRef(GetName().c_str()), json.GetAllocator());
     json.AddMember("DisplayLabel", rapidjson::StringRef(GetLabel().c_str()), json.GetAllocator());
+    json.AddMember("Description", rapidjson::StringRef(GetDescription().c_str()), json.GetAllocator());
     json.AddMember("Expand", ShouldExpand(), json.GetAllocator());
     json.AddMember("Priority", GetPriority(), json.GetAllocator());
     return json;
@@ -349,73 +360,19 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::MemoryPoolAll
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category const& ContentDescriptor::Category::GetCategory(Standard standard)
+ContentDescriptor::Category ContentDescriptor::Category::GetDefaultCategory()
     {
-    static bmap<Standard, Category> s_standardCategories;
-    auto iter = s_standardCategories.find(standard);
-    if (s_standardCategories.end() == iter)
-        {
-        Utf8String name, label;
-        int priority = 0;
-        bool expand = false;
-        switch (standard)
-            {
-            case Standard::Extended:
-                name = "Extended";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Extended());
-                priority = 200000;
-                break;
-            case Standard::General:
-                name = "General";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_General());
-                priority = 400000;
-                expand = true;
-                break;
-            case Standard::Geometry:
-                name = "Geometry";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Geometry());
-                priority = 300000;
-                break;
-            case Standard::Groups:
-                name = "Groups";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Groups());
-                priority = 200000 + 2000;
-                break;
-            case Standard::Material:
-                name = "Material";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Material());
-                priority = 200000 + 1000;
-                break;
-            case Standard::RawData:
-                name = "RawData";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_RawData());
-                priority = 0;
-                break;
-            case Standard::Relationships:
-                name = "Relationships";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Relationships());
-                priority = 200000 - 1000;
-                break;
-            case Standard::Favorite:
-                name = "Favorite";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Favorite());
-                priority = 500000;
-                expand = true;
-                break;
-            default:
-                name = "Miscellaneous";
-                label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_StandardCategory_Miscellaneous());
-                priority = 1000;
-                break;
-            }
-        if (label.empty())
-            {
-            BeAssert(false);
-            label = name;
-            }
-        iter = s_standardCategories.Insert(standard, Category(name, label, priority, expand)).first;
-        }
-    return iter->second;
+    Utf8String label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Miscellaneous());
+    return ContentDescriptor::Category("Miscellaneous", label, "", 1000);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Category ContentDescriptor::Category::GetFavoriteCategory()
+    {
+    Utf8String label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Favorite());
+    return ContentDescriptor::Category("Favorite", label, "", 500000, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,6 +407,26 @@ static rapidjson::Value GetEnumerationChoicesJson(ECEnumerationCR enumeration, r
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static rapidjson::Value CreateKindOfQuantityJson(KindOfQuantityCR koq, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    rapidjson::Value json(rapidjson::kObjectType);
+    json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
+    json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
+    json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText(true).c_str(), allocator), allocator);
+    json.AddMember("CurrentUnit", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
+
+    rapidjson::Value units(rapidjson::kArrayType);
+    for (auto unit : koq.GetPresentationUnitList())
+        units.PushBack(rapidjson::Value(unit.ToText(true).c_str(), allocator), allocator);
+
+    json.AddMember("PresentationUnits", units, allocator);
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::Property::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
@@ -472,6 +449,12 @@ rapidjson::Document ContentDescriptor::Property::AsJson(rapidjson::MemoryPoolAll
     else
         {
         propertyJson.AddMember("Type", rapidjson::Value(m_property->GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
+        }
+
+    if (nullptr != m_property->GetKindOfQuantity())
+        {
+        KindOfQuantityCP koq = m_property->GetKindOfQuantity();
+        propertyJson.AddMember("KindOfQuantity", CreateKindOfQuantityJson(*koq, json.GetAllocator()), json.GetAllocator());
         }
 
     json.AddMember("Property", propertyJson, json.GetAllocator());
@@ -571,34 +554,11 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
+* @bsimethod                                    Tautvydas.Zinys                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ContentDescriptor::ECPropertiesField::_GetTypeName() const
     {
-    ECPropertyCR prop = m_properties.front().GetProperty();
-    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
-        return "enum";
-
-    if (prop.GetIsNavigation())
-        return "navigation";
-
-    return prop.GetTypeName();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Tautvydas.Zinys                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ContentDescriptor::Property::GetPriority() const
-    {
-    IECInstancePtr priority = m_property->GetCustomAttribute("PropertyPriority");
-    if (priority.IsNull())
-        return DEFAULT_PRIORITY;
-
-    ECValue v;
-    if (ECObjectsStatus::Success != priority->GetValue(v, "Priority") || !v.IsInteger())
-        return DEFAULT_PRIORITY;
-
-    return v.GetInteger();
+    return m_properties.front().GetProperty().GetTypeName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -740,6 +700,22 @@ void ContentDescriptor::ECInstanceKeyField::_OnFieldsCloned(bmap<Field const*, F
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECInstanceKeyField::_OnFieldRemoved(ContentDescriptor::Field const& field)
+    {
+    for (size_t i = 0; i < m_keyFields.size(); ++i)
+        {
+        if (&field == m_keyFields[i])
+            {
+            m_keyFields.erase(m_keyFields.begin() + i);
+            break;
+            }
+        }
+    return m_keyFields.empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas               08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo)
@@ -757,9 +733,17 @@ void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECNavigationInstanceIdField::_OnFieldRemoved(ContentDescriptor::Field const& field)
+    {
+    return (&field == m_propertyField);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentSetItem::IsMerged(Utf8StringCR fieldName) const
     {
-    return m_mergedFieldNames.end() != std::find(m_mergedFieldNames.begin(), m_mergedFieldNames.end(), fieldName);
+    return (m_mergedFieldNames.end() != std::find(m_mergedFieldNames.begin(), m_mergedFieldNames.end(), fieldName));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -825,9 +809,9 @@ rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::MemoryPoolAlloc
                 fieldValueKeys.AddMember(rapidjson::StringRef(fieldName), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];
 
-            rapidjson::Value propertyKeys(rapidjson::kArrayType);
-            for (ECInstanceKeyCR key : pair.second)
-                propertyKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
+        rapidjson::Value propertyKeys(rapidjson::kArrayType);
+        for (ECInstanceKeyCR key : pair.second)
+            propertyKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
 
             rapidjson::Value fieldProperty(rapidjson::kObjectType);
             fieldProperty.AddMember("PropertyIndex", rapidjson::Value((uint64_t)pair.first.GetPropertyIndex()), json.GetAllocator());
@@ -982,10 +966,10 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR ecClass, RelatedClassPath const& relationshipPath) const
+BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR ecClass, RelatedClassPath const& relationshipPath, RelationshipMeaning relationshipMeaning) const
     {
     formattedLabel.clear();
-    if (!relationshipPath.empty())
+    if (!relationshipPath.empty() && RelationshipMeaning::RelatedInstance == relationshipMeaning)
         formattedLabel.append(ecClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
     else
         formattedLabel = ecProperty.GetDisplayLabel();
@@ -1037,55 +1021,11 @@ bool SelectionInfo::operator<(SelectionInfo const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR prop)
     {
-    IECInstancePtr categoryCustomAttribute = prop.GetCustomAttribute("Category");
-    if (categoryCustomAttribute.IsNull())
-        return ContentDescriptor::Category::GetCategory(ContentDescriptor::Category::Standard::Miscellaneous);
+    PropertyCategoryCP propertyCategory = prop.GetCategory();
+    if (nullptr == propertyCategory)
+        return ContentDescriptor::Category::GetDefaultCategory();
 
-    // If a category "Name" is specified, use the user defined category
-    // Note: We match the 8.11.9 logic here - even if the property has a "Standard" defined, we need
-    // to use the "Name" if that's defined - see TFS#67022
-    ECValue ecValue;
-    if (ECObjectsStatus::Success == categoryCustomAttribute->GetValue(ecValue, "Name") && !ecValue.IsNull())
-        return CreateCategoryFromCustomAttribute(*categoryCustomAttribute);
-
-    // If no standard category is defined, use the user defined category. 
-    if (ECObjectsStatus::Success != categoryCustomAttribute->GetValue(ecValue, "Standard") || ecValue.IsNull())
-        return CreateCategoryFromCustomAttribute(*categoryCustomAttribute);
-
-    // Use one of the standard categories
-    ContentDescriptor::Category::Standard standard = (ContentDescriptor::Category::Standard)ecValue.GetInteger();
-    return ContentDescriptor::Category::GetCategory(standard);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::CreateCategoryFromCustomAttribute(IECInstanceCR attr)
-    {
-    ContentDescriptor::Category category;
-
-    ECValue value;
-    if (ECObjectsStatus::Success == attr.GetValue(value, "Name") && value.IsUtf8())
-        category.SetName(value.GetUtf8CP());
-    else
-        BeAssert(false);
-
-    if (ECObjectsStatus::Success == attr.GetValue(value, "DisplayLabel") && value.IsUtf8())
-        category.SetLabel(value.GetUtf8CP());
-    else
-        category.SetLabel(category.GetName());
-
-    if (ECObjectsStatus::Success == attr.GetValue(value, "Expand") && value.IsBoolean() && !value.IsNull())
-        category.SetShouldExpand(value.GetBoolean());
-    else
-        category.SetShouldExpand(false);
-    
-    if (ECObjectsStatus::Success == attr.GetValue(value, "Priority") && value.IsInteger() && !value.IsNull())
-        category.SetPriority(value.GetInteger());
-    else
-        category.SetPriority(0);
-
-    return category;
+    return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), propertyCategory->GetDescription(), propertyCategory->GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1093,5 +1033,5 @@ ContentDescriptor::Category DefaultCategorySupplier::CreateCategoryFromCustomAtt
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR nestedContentClass)
     {
-    return ContentDescriptor::Category(nestedContentClass.GetName(), nestedContentClass.GetDisplayLabel(), NESTED_CONTENT_CATEGORY_PRIORITY, false);
+    return ContentDescriptor::Category(nestedContentClass.GetName(), nestedContentClass.GetDisplayLabel(), "", NESTED_CONTENT_CATEGORY_PRIORITY);
     }

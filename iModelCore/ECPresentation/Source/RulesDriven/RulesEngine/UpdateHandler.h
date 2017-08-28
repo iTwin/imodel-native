@@ -21,16 +21,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct HierarchyUpdater;
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2016
-+===============+===============+===============+===============+===============+======*/
-enum class TaskMergeResult
-    {
-    TakeLeft,
-    TakeRight,
-    TakeBoth,
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +===============+===============+===============+===============+===============+======*/
 enum TaskPriority
@@ -67,22 +57,27 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
+struct UpdateContext
+{
+private:
+    bmap<uint64_t, uint64_t> m_remapInfo;
+    bset<uint64_t> m_removedNodeIds;
+    bset<HierarchyLevelInfo> m_handledHierarchies;
+    bset<Utf8String> m_reportedContentRulesetIds;
+public:
+    bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
+    bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
+    bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
+    bset<HierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
+    bset<HierarchyLevelInfo> const& GetHandledHierarchies() const {return m_handledHierarchies;}
+    bset<Utf8String>& GetReportedContentRulesetIds() {return m_reportedContentRulesetIds;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                03/2017
++===============+===============+===============+===============+===============+======*/
 struct HierarchyUpdater
 {
-    struct Context
-    {
-    private:
-        bmap<uint64_t, uint64_t> m_remapInfo;
-        bset<uint64_t> m_removedNodeIds;
-        bset<HierarchyLevelInfo> m_handledHierarchies;
-    public:
-        bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
-        bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
-        bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
-        bset<HierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
-        bset<HierarchyLevelInfo> const& GetHandledHierarchies() const {return m_handledHierarchies;}
-    };
-
 private:
     UpdateTasksFactory const& m_tasksFactory;
     NodesCache& m_nodesCache;
@@ -92,19 +87,19 @@ private:
 private:
     NavNodesProviderPtr CreateProvider(BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&) const;
     void SynchronizeLists(NavNodesDataSource const& oldDs, size_t& oldIndex, NavNodesDataSource const& newDs, size_t& newIndex) const;
-    void CompareDataSources(bvector<IUpdateTaskPtr>&, Context&, NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const;
-    void CompareNodes(bvector<IUpdateTaskPtr>&, Context&, JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const;
+    void CompareDataSources(bvector<IUpdateTaskPtr>&, UpdateContext&, NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const;
+    void CompareNodes(bvector<IUpdateTaskPtr>&, UpdateContext&, JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const;
     void CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR newNode, NavNodesProviderCR newNodeProvider) const;
-    bool IsHierarchyRemoved(Context const&, HierarchyLevelInfo const&) const;
+    bool IsHierarchyRemoved(UpdateContext const&, HierarchyLevelInfo const&) const;
     bool IsHierarchyExpanded(HierarchyLevelInfo const&) const;
-    void CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>&, Context&, NavNodesProviderCR, NavNodesProviderCR) const;
-    void MarkNodesAsRemoved(Context&, NavNodesProviderCR) const;
+    void CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>&, UpdateContext&, NavNodesProviderCR, NavNodesProviderCR) const;
+    void MarkNodesAsRemoved(UpdateContext&, NavNodesProviderCR) const;
 
 public:
     HierarchyUpdater(UpdateTasksFactory const& tasksFactory, NodesCache& nodesCache, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory)
         : m_tasksFactory(tasksFactory), m_nodesCache(nodesCache), m_contextFactory(contextFactory), m_nodesProviderFactory(providerFactory)
         {}
-    void Update(bvector<IUpdateTaskPtr>&, Context&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
 };
 
 /*=================================================================================**//**
@@ -124,11 +119,11 @@ public:
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(bmap<uint64_t, uint64_t> const&) const;
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, HierarchyUpdater::Context&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveDataSourceTask(BeSQLite::BeGuidCR removalId) const;
 
     // content-related update tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateContentInvalidationTask(ContentCache&, ContentProviderR) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateContentInvalidationTask(ContentCache&, UpdateContext&, ContentProviderR) const;
 
     // reporting tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(UpdateRecord) const;
@@ -150,9 +145,9 @@ private:
     HierarchyUpdater* m_hierarchyUpdater;
 
 private:
-    bvector<IUpdateTaskPtr> CreateUpdateTasks(HierarchyUpdater::Context&, BeSQLite::EC::ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
-    bvector<IUpdateTaskPtr> CreateUpdateTasks(HierarchyUpdater::Context&, Utf8CP rulesetId, Utf8CP settingId) const;
-    void AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, HierarchyUpdater::Context&, bvector<HierarchyLevelInfo> const&) const;
+    bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, BeSQLite::EC::ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
+    bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, Utf8CP rulesetId, Utf8CP settingId) const;
+    void AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext&, bvector<HierarchyLevelInfo> const&) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, IUpdateTask& task) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, IUpdateTask& task) const;
     void ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const;

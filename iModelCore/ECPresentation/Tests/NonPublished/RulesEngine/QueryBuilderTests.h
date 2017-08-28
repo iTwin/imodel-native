@@ -127,4 +127,6 @@ struct ContentQueryBuilderTests : ::testing::Test
 
     ContentQueryBuilder& GetBuilder() {return *m_builder;}
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
+    ECClassCP GetECClass(Utf8CP className);
+    ContentQueryCPtr GetExpectedQuery();
     };

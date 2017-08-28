@@ -375,16 +375,13 @@ void ComplexPresentationQuery<TBase>::CopyBindings(ComplexPresentationQuery<TBas
 // @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-typename TBase::Contract const* ComplexPresentationQuery<TBase>::_GetContract(ECClassCP selectClass) const
+typename TBase::Contract const* ComplexPresentationQuery<TBase>::_GetContract(uint64_t contractId) const
     {
-    if (m_selectContract.IsValid()
-        && (nullptr == m_selectContract->GetSelectClass() || nullptr == selectClass || selectClass->Is(m_selectContract->GetSelectClass())))
-        {
+    if (m_selectContract.IsValid() && (0 == contractId || m_selectContract->GetId() == contractId))
         return m_selectContract.get();
-        }
 
     if (m_nestedQuery.IsValid())
-        return m_nestedQuery->GetContract(selectClass);
+        return m_nestedQuery->GetContract(contractId);
 
     return nullptr;
     }
@@ -1006,14 +1003,33 @@ static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause,
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NavigationECPropertyCP GetNavigationProperty(ECClassCR ecClass, ECRelationshipClassCR ecRelationship)
+static NavigationECPropertyCP GetNavigationProperty(ECClassCR prev, ECRelationshipClassCR usingRel, bool isForward, ECClassCR join)
     {
-    ECPropertyIterable iterable = ecClass.GetProperties(true);
-    for (ECPropertyCP prop : iterable)
+    ECClassCR src = isForward ? prev : join;
+    ECClassCR tgt = isForward ? join : prev;
+
+    ECPropertyIterable srcIterable = src.GetProperties(true);
+    for (ECPropertyCP prop : srcIterable)
         {
-        if (prop->GetIsNavigation() && prop->GetAsNavigationProperty()->GetRelationshipClass() == &ecRelationship)
+        if (prop->GetIsNavigation()
+            && prop->GetAsNavigationProperty()->GetRelationshipClass() == &usingRel
+            && ECRelatedInstanceDirection::Forward == prop->GetAsNavigationProperty()->GetDirection())
+            {
             return prop->GetAsNavigationProperty();
+            }
         }
+    
+    ECPropertyIterable tgtIterable = tgt.GetProperties(true);
+    for (ECPropertyCP prop : tgtIterable)
+        {
+        if (prop->GetIsNavigation()
+            && prop->GetAsNavigationProperty()->GetRelationshipClass() == &usingRel
+            && ECRelatedInstanceDirection::Backward == prop->GetAsNavigationProperty()->GetDirection())
+            {
+            return prop->GetAsNavigationProperty();
+            }
+        }
+
     return nullptr;
     }
 
@@ -1146,22 +1162,17 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
             if (!join.m_isPolymorphic)
                 joinClause.append("ONLY ");
 
-            bool isForward = (join.m_isForward == (join.m_using->GetStrengthDirection() == ECRelatedInstanceDirection::Forward));
-            NavigationECPropertyCP navigationProperty = nullptr;
-            if (isForward)
-                navigationProperty = GetNavigationProperty(*join.m_join, *join.m_using);
-            else
-                navigationProperty = GetNavigationProperty(*previousClass, *join.m_using);
-
+            NavigationECPropertyCP navigationProperty = GetNavigationProperty(*previousClass, *join.m_using, join.m_isForward, *join.m_join);
             if (nullptr != navigationProperty)
                 {
                 BeAssert(!join.m_joinAlias.empty());
+                bool isForward = (join.m_isForward == (ECRelatedInstanceDirection::Forward == navigationProperty->GetDirection()));
                 joinClause.append(GetECClassClause(*join.m_join));
                 joinClause.append(" ").append(join.m_joinAlias);
                 joinClause.append(" ON [").append(join.m_joinAlias).append("].");
-                joinClause.append(isForward ? GetNavigationPropertyName(*navigationProperty) : GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward));
-                joinClause.append(" = [").append(previousClassName).append("].");
                 joinClause.append(isForward ? GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward) : GetNavigationPropertyName(*navigationProperty));
+                joinClause.append(" = [").append(previousClassName).append("].");
+                joinClause.append(isForward ? GetNavigationPropertyName(*navigationProperty) : GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward));
 
                 previousClass = join.m_join;
                 previousClassName = join.m_joinAlias;
@@ -1599,13 +1610,13 @@ UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::Limit(uint64_t lim
 // @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetContract(ECClassCP selectClass) const
+typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetContract(uint64_t contractId) const
     {
-    Contract const* contract = m_first->GetContract(selectClass);
+    Contract const* contract = m_first->GetContract(contractId);
     if (nullptr != contract)
         return contract;
 
-    contract = m_second->GetContract(selectClass);
+    contract = m_second->GetContract(contractId);
     if (nullptr != contract)
         return contract;
 
@@ -1764,13 +1775,13 @@ ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::Limit(uint64_t l
 // @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetContract(ECClassCP selectClass) const
+typename TBase::Contract const* ExceptPresentationQuery<TBase>::_GetContract(uint64_t contractId) const
     {
-    Contract const* contract = m_base->GetContract(selectClass);
+    Contract const* contract = m_base->GetContract(contractId);
     if (nullptr != contract)
         return contract;
 
-    contract = m_except->GetContract(selectClass);
+    contract = m_except->GetContract(contractId);
     if (nullptr != contract)
         return contract;
 

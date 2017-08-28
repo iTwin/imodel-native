@@ -26,6 +26,8 @@ void ECSchemaHelperTests::SetUpTestCase()
     ASSERT_TRUE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_1, *schemaReadContext));
     ASSERT_TRUE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_2, *schemaReadContext));
     ASSERT_TRUE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, SCHEMA_COMPLEX_3, *schemaReadContext));
+    ASSERT_TRUE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, HIDDEN_SCHEMA, *schemaReadContext));
+    ASSERT_TRUE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, VISIBLE_SCHEMA, *schemaReadContext));
     BentleyStatus status = s_project->GetECDb().Schemas().ImportSchemas(schemaReadContext->GetCache().GetSchemas());
     ASSERT_TRUE(SUCCESS == status);
     ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_OK == s_project->GetECDb().SaveChanges());
@@ -619,4 +621,27 @@ TEST_F (ECSchemaHelperTests, GetForeignKeyClass_FindsForeignClassByNavigationPro
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex3");
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     EXPECT_EQ(&class1, m_helper->GetForeignKeyClass(*class1.GetPropertyP("Parent")).GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnHiddenClasses)
+    {
+    ECClassSet classes = m_helper->GetECClassesFromSchemaList("VisibleSchema");
+    EXPECT_EQ(1, classes.size());
+    ECClassCP visibleClass = m_helper->GetECClass("VisibleSchema:VisibleClass");
+    auto classIter = classes.find(visibleClass->GetEntityClassCP());
+    EXPECT_TRUE(classes.end() != classIter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFromHiddenSchemasWhenAskingForAllSchemas)
+    {
+    ECClassSet classes = m_helper->GetECClassesFromSchemaList("");
+    ECClassCP classFromHiddenSchema = m_helper->GetECClass("HiddenSchema:Class1");
+    auto classIter = classes.find(classFromHiddenSchema->GetEntityClassCP());
+    EXPECT_TRUE(classes.end() == classIter);
     }

@@ -170,21 +170,44 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : NonCopyableClass, IRulesetCallbacksHandler
 {
+    struct ConnectionsTracker;
+    struct CacheKey
+        {
+        BeSQLite::EC::ECDb const* m_connection;
+        Utf8String m_rulesetId;
+        CacheKey() : m_connection(nullptr) {}
+        CacheKey(BeSQLite::EC::ECDbCR connection, Utf8String rulesetId) : m_connection(&connection), m_rulesetId(rulesetId) {}
+        bool operator<(CacheKey const& other) const
+            {
+            return m_connection < other.m_connection
+                || m_connection == other.m_connection && m_rulesetId < other.m_rulesetId;
+            }
+        };
+
 private:
     IRulesetCallbacksHandler* m_rulesetCallbacksHandler;
     bvector<RuleSetLocaterPtr> m_locaters;
-    mutable bmap<Utf8String, bvector<PresentationRuleSetPtr>> m_rulesetsCache;
+    mutable bmap<CacheKey, bvector<PresentationRuleSetPtr>> m_rulesetsCache;
+    ConnectionsTracker* m_connectionsTracker;
     
+private:
+    void OnConnectionClosed(ECDbCR);
+
 protected:
     ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
     ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR ruleset) override;
 
+// __PUBLISH_SECTION_END__
 public:
     void SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler);
 
+// __PUBLISH_SECTION_START__
 public:
     //! Constructor.
-    RuleSetLocaterManager() : m_rulesetCallbacksHandler(nullptr) {}
+    ECPRESENTATION_EXPORT RuleSetLocaterManager();
+
+    //! Destructor.
+    ECPRESENTATION_EXPORT ~RuleSetLocaterManager();
 
     //! Tells each managed ruleset locater to dispose its cached rulesets.
     //! @param[in] rulesetId ID of the ruleset which should be disposed from cache. NULL means all rulesets.
@@ -198,17 +221,13 @@ public:
 
     //! Find all rulesets that are supported by the specified connection.
     //! @param[in] connection The connection to check whether the ruleset is supported.
-    //! @note A ruleset is considered supported if all its schemas are supported in the specified connection.
-    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateSupportedRulesets(ECDbCR connection) const;
-
-    //! Find matching rulesets.
     //! @param[in] rulesetId The ID of the ruleset to find. If nullptr, all available rulesets are returned.
-    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateRuleSets(Utf8CP rulesetId) const;
+    //! @note A ruleset is considered supported if all its schemas are supported in the specified connection.
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateRuleSets(ECDbCR connection, Utf8CP rulesetId) const;
 
     //! Get IDs of all available rulesets.
     ECPRESENTATION_EXPORT bvector<Utf8String> GetRuleSetIds() const;
 };
-typedef RuleSetLocaterManager const& RuleSetLocaterManagerCR;
 
 //=======================================================================================
 //! Ruleset locater that finds supplemental rulesets in the specified directory.

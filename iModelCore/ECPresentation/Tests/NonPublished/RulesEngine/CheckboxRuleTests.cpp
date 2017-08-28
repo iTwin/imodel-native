@@ -63,6 +63,8 @@ TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "BoolProperty", false, false, "");
     m_ruleset->AddPresentationRule(*rule);
 
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
+
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
@@ -106,6 +108,8 @@ TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "BoolProperty", true, false, "");
     m_ruleset->AddPresentationRule(*rule);
+
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);

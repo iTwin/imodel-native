@@ -27,32 +27,18 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
                         "    </ECEntityClass>"                                                                                                                  \
                         "    <ECEntityClass typeName=\"Class2\">"                                                                                               \
                         "        <ECProperty propertyName=\"DisplayLabel\" typeName=\"int\" />"                                                                 \
-                        "        <ECProperty propertyName=\"CategorizedProperty\" typeName=\"int\">"                                                            \
-                        "            <ECCustomAttributes>"                                                                                                      \
-                        "                <Category xmlns=\"EditorCustomAttributes.01.03\">"                                                                     \
-                        "                    <Name>CategoryName</Name>"                                                                                         \
-                        "                    <DisplayLabel>Category Label</DisplayLabel>"                                                                       \
-                        "                    <Description>Category Description</Description>"                                                                   \
-                        "                    <Expand>True</Expand>"                                                                                             \
-                        "                </Category>"                                                                                                           \
-                        "            </ECCustomAttributes>"                                                                                                     \
-                        "        </ECProperty>"                                                                                                                 \
+                        "        <ECProperty propertyName=\"CategorizedProperty\" typeName=\"int\" category=\"CategoryName\" />"                                \
                         "    </ECEntityClass>"                                                                                                                  \
+                        "    <PropertyCategory typeName=\"CategoryName\" displayLabel=\"Category Label\" description=\"Category description\" priority=\"1\" />"\
                         "</ECSchema>"
 
 #define SCHEMA_BASIC_2  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"                                                                                            \
                         "<ECSchema schemaName=\"Basic2\" alias=\"b2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"              \
                         "    <ECEntityClass typeName=\"Class2\">"                                                                                               \
-                        "       <ECProperty propertyName=\"Name\" typeName=\"string\">"                                                                         \
-                        "           <ECCustomAttributes>"                                                                                                       \
-                        "               <PropertyPriority xmlns=\"EditorCustomAttributes.01.03\">"                                                              \
-                        "                   <Priority>1200</Priority>"                                                                                          \
-                        "               </PropertyPriority>"                                                                                                    \
-                        "           </ECCustomAttributes>"                                                                                                      \
-                        "       </ECProperty>"                                                                                                                  \
+                        "       <ECProperty propertyName=\"Name\" typeName=\"string\" priority=\"1200\"/>"                                                      \
                         "       <ECProperty propertyName=\"Hidden\" typeName=\"string\">"                                                                       \
                         "           <ECCustomAttributes>"                                                                                                       \
-                        "               <HideProperty xmlns=\"EditorCustomAttributes.01.03\" />"                                                                \
+                        "               <HiddenProperty xmlns=\"CoreCustomAttributes.01.00\"/>"                                                                \
                         "           </ECCustomAttributes>"                                                                                                      \
                         "       </ECProperty>"                                                                                                                  \
                         "    </ECEntityClass>"                                                                                                                  \
@@ -144,13 +130,15 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
                                     SEARCH_QUERY_FIELD_ECInstanceId ", ECClassId AS " \
                                     SEARCH_QUERY_FIELD_ECClassId " FROM [RulesEngineTest].[Widget] WHERE [Widget].[ECInstanceId] > 0"
 
+#define TABLE_ALIAS(prefix, ecclass, counter) \
+    Utf8PrintfString("%s_%s_%s_%d", prefix, ecclass.GetSchema().GetAlias().c_str(), ecclass.GetName().c_str(), counter).c_str()
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
 struct ExpectedQueries
 {
 private:
-    static ExpectedQueries* s_instance;
     bmap<Utf8String, NavigationQueryCPtr> m_navigationQueries;
     bmap<Utf8String, ContentQueryCPtr> m_contentQueries;
     ECDbTestProject m_project;
@@ -173,14 +161,37 @@ private:
     
 public:
     static ExpectedQueries& GetInstance(BeTest::Host&);
+
+    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
+
     void RegisterQuery(Utf8CP name, NavigationQuery const&);
     void RegisterQuery(Utf8CP name, ContentQuery const&);
     NavigationQueryCPtr GetNavigationQuery(Utf8CP name, ChildNodeSpecificationCR spec) const;
     ContentQueryCPtr GetContentQuery(Utf8CP name) const;
     bmap<Utf8String, NavigationQueryCPtr> const& GetNavigationQueries() const;
     bmap<Utf8String, ContentQueryCPtr> const& GetContentQueries() const;
+
     ECClassP GetECClassP(Utf8CP schemaName, Utf8CP className);
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
     ECDbR GetDb() {return m_project.GetECDb();}
-};
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                08/2017
++===============+===============+===============+===============+===============+======*/
+struct RegisterSchemaHelper
+    {
+    RegisterSchemaHelper(Utf8String name, Utf8String schemaXml)
+        {
+        ExpectedQueries::RegisterSchemaXml(name, schemaXml);
+        }
+    };
+#define DEFINE_SCHEMA(name, schema_xml) \
+    static RegisterSchemaHelper _register_schema_##name(#name, \
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
+        "<ECSchema schemaName=\"" #name "\" alias=\"alias_" #name "\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
+            "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"1.0\" alias=\"CoreCA\"/>" \
+            "<ECSchemaReference name=\"ECDbMap\" version=\"2.0\" alias=\"ecdbmap\"/>" \
+            schema_xml \
+        "</ECSchema>")

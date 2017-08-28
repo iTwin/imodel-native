@@ -51,11 +51,11 @@ void ConnectionManager::BroadcastEvent(ConnectionEvent const& evt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectionManager::NotifyOpened(ECDbR connection, bool IsProjectPrimary)
+void ConnectionManager::NotifyOpened(ECDbR connection, bool isProjectPrimary)
     {
     BeAssert(m_activeConnections.end() == m_activeConnections.find(connection.GetDbGuid().ToString()));
     m_activeConnections[connection.GetDbGuid().ToString()] = &connection;
-    BroadcastEvent(ConnectionEvent(connection, IsProjectPrimary, ConnectionEventType::Opened));
+    BroadcastEvent(ConnectionEvent(connection, isProjectPrimary, ConnectionEventType::Opened));
     }
 
 /*---------------------------------------------------------------------------------**//**

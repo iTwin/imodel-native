@@ -13,6 +13,37 @@
 #define PRESENTATION_RULESET_EXTENSION  L".PresentationRuleSet.xml"
 #define PRESENTATION_RULESET_WILDCARD   L"*" PRESENTATION_RULESET_EXTENSION
 
+//=======================================================================================
+// @bsiclass                                    Grigas.Petraitis                08/2017
+//=======================================================================================
+struct RuleSetLocaterManager::ConnectionsTracker : ECDbBasedCache
+{
+private:
+    RuleSetLocaterManager& m_manager;
+protected:
+    void _ClearECDbCache(ECDbCR connection) override {m_manager.OnConnectionClosed(connection);}
+public:
+    ConnectionsTracker(RuleSetLocaterManager& manager) : ECDbBasedCache(true), m_manager(manager) {}
+    void OnConnection(ECDbCR connection) {ECDbBasedCache::OnConnection(connection);}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RuleSetLocaterManager::RuleSetLocaterManager()
+    : m_rulesetCallbacksHandler(nullptr)
+    {
+    m_connectionsTracker = new ConnectionsTracker(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RuleSetLocaterManager::~RuleSetLocaterManager()
+    {
+    DELETE_AND_CLEAR(m_connectionsTracker);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -55,7 +86,15 @@ void RuleSetLocaterManager::_OnRulesetDispose(PresentationRuleSetCR ruleset)
     {
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetDispose(ruleset);
-    m_rulesetsCache.erase(ruleset.GetRuleSetId());
+
+    bvector<CacheKey> toErase;
+    for (auto pair : m_rulesetsCache)
+        {
+        if (ruleset.GetRuleSetId().Equals(pair.first.m_rulesetId))
+            toErase.push_back(pair.first);
+        }
+    for (CacheKey const& key : toErase)
+        m_rulesetsCache.erase(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,6 +107,21 @@ void RuleSetLocaterManager::_OnRulesetCreated(PresentationRuleSetCR ruleset)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RuleSetLocaterManager::OnConnectionClosed(ECDbCR connection)
+    {
+    bvector<CacheKey> toErase;
+    for (auto pair : m_rulesetsCache)
+        {
+        if (pair.first.m_connection == &connection)
+            toErase.push_back(pair.first);
+        }
+    for (CacheKey const& key : toErase)
+        m_rulesetsCache.erase(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocaterManager::InvalidateCache(Utf8CP rulesetId)
@@ -75,67 +129,30 @@ void RuleSetLocaterManager::InvalidateCache(Utf8CP rulesetId)
     for (RuleSetLocaterPtr const& locater : m_locaters)
         locater->InvalidateCache(rulesetId);
 
-    if (nullptr != rulesetId)
-        m_rulesetsCache.erase(rulesetId);
-    else
-        m_rulesetsCache.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateSupportedRulesets(ECDbCR connection) const
-    {
-    RelatedPathsCache relatedPathsCache;
-    ECSchemaHelper helper(connection, relatedPathsCache, nullptr);
-
-    bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
-    std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
+    bvector<CacheKey> toErase;
+    for (auto pair : m_rulesetsCache)
         {
-        if (a->GetPriority() < b->GetPriority())
-            return -1;
-        if (a->GetPriority() > b->GetPriority())
-            return 1;
-        return 0;
-        });
-
-    bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
-    for (RuleSetLocaterPtr& locater : sortedLocaters)
-        {
-        bvector<Utf8String> ids = locater->GetRuleSetIds();
-        for (Utf8StringCR id : ids)
-            {
-            bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(id.c_str());
-            for (PresentationRuleSetPtr& ruleset : rulesets)
-                {
-                if (locatedRulesets.end() == locatedRulesets.find(ruleset->GetFullRuleSetId())
-                    && !ruleset->GetIsSupplemental()
-                    && helper.AreSchemasSupported(ruleset->GetSupportedSchemas()))
-                    {
-                    locatedRulesets[ruleset->GetFullRuleSetId()] = ruleset;
-                    }
-                }
-            }
+        if (nullptr == rulesetId || pair.first.m_rulesetId.Equals(rulesetId))
+            toErase.push_back(pair.first);
         }
-
-    bvector<PresentationRuleSetPtr> results;
-    for (auto& ruleset : locatedRulesets)
-        {
-        results.push_back(ruleset.second);
-        m_rulesetsCache[ruleset.second->GetRuleSetId()].push_back(ruleset.second);
-        }
-
-    return results;
+    for (CacheKey const& key : toErase)
+        m_rulesetsCache.erase(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(Utf8CP rulesetId) const
+bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR connection, Utf8CP rulesetId) const
     {
-    auto cacheIter = m_rulesetsCache.find(rulesetId);
-    if (m_rulesetsCache.end() != cacheIter)
-        return cacheIter->second;
+    if (nullptr != rulesetId)
+        {
+        auto cacheIter = m_rulesetsCache.find(CacheKey(connection, rulesetId));
+        if (m_rulesetsCache.end() != cacheIter)
+            return cacheIter->second;
+        }
+    
+    RelatedPathsCache relatedPathsCache;
+    ECSchemaHelper helper(connection, relatedPathsCache, nullptr);
 
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
     std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
@@ -153,6 +170,9 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(Utf8CP rul
         bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(rulesetId);
         for (PresentationRuleSetPtr& ruleset : rulesets)
             {
+            if (!helper.AreSchemasSupported(ruleset->GetSupportedSchemas()))
+                continue;
+
             if (locatedRulesets.end() == locatedRulesets.find(ruleset->GetFullRuleSetId()))
                 locatedRulesets[ruleset->GetFullRuleSetId()] = ruleset;
             }
@@ -162,7 +182,8 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(Utf8CP rul
     for (auto& ruleset : locatedRulesets)
         {
         results.push_back(ruleset.second);
-        m_rulesetsCache[ruleset.second->GetRuleSetId()].push_back(ruleset.second);
+        m_rulesetsCache[CacheKey(connection, ruleset.second->GetRuleSetId())].push_back(ruleset.second);
+        m_connectionsTracker->OnConnection(connection);
         }
 
     return results;

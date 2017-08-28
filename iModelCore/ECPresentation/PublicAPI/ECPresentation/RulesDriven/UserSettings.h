@@ -16,6 +16,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 #define USER_SETTINGS_LOCALSTATE
 
+#define USER_SETTINGS_LOCALSTATE
+
 struct ILocalizationProvider;
 struct UserSettingsManager;
 
@@ -236,7 +238,6 @@ protected:
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
 
 public:
-    ECPRESENTATION_EXPORT UserSettings& GetSettings(Utf8StringCR rulesetId) const;
     void SetLocalizationProvider(ILocalizationProvider const* provider);
 #ifdef USER_SETTINGS_DB
     BeSQLite::Db& GetSettingsDb() {return m_settingsDb;}
@@ -253,6 +254,10 @@ public:
     //! @param[in] changeListener Listener that's notified when a user setting changes.
     ECPRESENTATION_EXPORT UserSettingsManager(BeFileNameCR temporaryDirectory, IUserSettingsChangeListener const* changeListener = nullptr);
     ECPRESENTATION_EXPORT ~UserSettingsManager();
+        
+    //! Get a @ref UserSettings instance.
+    //! @param[in] rulesetId The ID of the ruleset whose settings should be returned.
+    ECPRESENTATION_EXPORT UserSettings& GetSettings(Utf8StringCR rulesetId) const;
 };
 typedef UserSettingsManager const& UserSettingsManagerCR;
 

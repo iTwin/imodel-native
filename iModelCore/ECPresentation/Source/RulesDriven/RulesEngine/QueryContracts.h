@@ -155,20 +155,22 @@ public:
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContract : RefCountedBase
-    {
+{
+private:
+    uint64_t m_id;
+
 protected:
-    PresentationQueryContract() {}
+    PresentationQueryContract(uint64_t id = 0) : m_id(id) {}
     virtual ~PresentationQueryContract() {}
     virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const = 0;
     virtual void _SetECInstanceIdFieldName(Utf8CP name){}
     virtual void _SetECClassIdFieldName(Utf8CP name){}
-    virtual ECClassCP _GetSelectClass() const {return nullptr;}
 
 public:
+    uint64_t GetId() const {return m_id;}
     ECPRESENTATION_EXPORT uint8_t GetIndex(Utf8CP fieldName) const;
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
     void SetECClassIdFieldName(Utf8CP name) {_SetECClassIdFieldName(name);}
-    ECClassCP GetSelectClass() const {return _GetSelectClass();}
     ECPRESENTATION_EXPORT bool IsAggregating() const;
     ECPRESENTATION_EXPORT bool HasInnerFields() const;
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> GetFields() const;
@@ -457,7 +459,7 @@ private:
     IQueryInfoProvider const& m_queryInfo;
 
 private:
-    ECPRESENTATION_EXPORT ContentQueryContract(ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&);
+    ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&);
     PresentationQueryContractFunctionField const& GetDisplayLabelField() const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
@@ -465,12 +467,11 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-    ECClassCP _GetSelectClass() const override {return m_class;}
 
 public:
-    static ContentQueryContractPtr Create(ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
+    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
         {
-        return new ContentQueryContract(descriptor, ecClass, queryInfo);
+        return new ContentQueryContract(id, descriptor, ecClass, queryInfo);
         }
     ContentDescriptorCR GetDescriptor() const {return *m_descriptor;}
     ContentDescriptor::Property const* FindMatchingProperty(ContentDescriptor::ECPropertiesField const&, ECClassCP) const;
