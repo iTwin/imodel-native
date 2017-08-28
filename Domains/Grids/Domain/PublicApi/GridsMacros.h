@@ -55,7 +55,7 @@
     __name__##CPtr __name__::Update    (DgnDbStatus* stat)         { return GetDgnDb().Elements().Update< __name__ >(*this, stat);}
 
 #define GRIDS_SCHEMA_NAME                                     "Grids"
-#define GRIDS_SCHEMA_PATH                                     L"ECSchemas/Domain/Grids.01.00.ecschema.xml"
+#define GRIDS_SCHEMA_PATH                                     L"ECSchemas/Domain/Grids.ecschema.xml"
 
 #define GRIDS_SCHEMA(className)                               GRIDS_SCHEMA_NAME "." className
 #define GRIDS_SCHEMA_CODE(categoryName)                       GRIDS_SCHEMA_NAME "_" categoryName

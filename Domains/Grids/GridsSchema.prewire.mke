@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)ECSchemas/Domain/Grids.01.00.ecschema.xml : $(_MakeFilePath)Grids.01.00.ecschema.xml
+$(BuildContext)ECSchemas/Domain/Grids.ecschema.xml : $(_MakeFilePath)Grids.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
     
