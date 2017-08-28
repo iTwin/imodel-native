@@ -226,7 +226,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::PokeWSG (Utf8StringCR version
         if (response.IsSuccess ())
             {
             BeVersion version(versionUrlSuffix.c_str (), "/v%d.%d/repositories");
-            WSInfo info(version, version, WSInfo::Type::Unknown);
+            WSInfo info(version, version, WSInfo::Type::BentleyWSG);
 
             return WSInfoHttpResult::Success (info);
             }
