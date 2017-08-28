@@ -662,6 +662,5 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlD
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' applies to 'Entity1' but is used on a constraint which must narrow 'Entity0', 'Entity1' derives from 'Entity0'";
     }
 
-
 END_BENTLEY_ECN_TEST_NAMESPACE
 

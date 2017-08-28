@@ -950,6 +950,32 @@ TEST_F(PropertyIndexTests, FlatteningIterator)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer            08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(InstanceTests, TestJsonAndXmlInstanceCompatibility)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECTestFixture::DeserializeSchema(schema, *context, SchemaItem::CreateForFile("BasicTest.ecschema.xml"));
+
+    StandaloneECEnablerP enabler = schema->GetClassCP("Company")->GetDefaultStandaloneEnabler();
+    IECInstancePtr testInstanceXml = enabler->CreateInstance();
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile(testInstanceXml, GetTestDataPath(L"BasicTest_Instance1.xml").c_str(), *instanceContext);
+    EXPECT_EQ(InstanceReadStatus::Success, instanceStatus);
+
+    IECInstancePtr testInstanceJson = enabler->CreateInstance();
+    Json::Value instance;
+    BeFileName instanceJson(GetTestDataPath(L"BasicTest_Instance1.json").c_str());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(instance, instanceJson));
+
+    EXPECT_EQ(BentleyStatus::SUCCESS, ECJsonUtilities::ECInstanceFromJson(*testInstanceJson.get(), instance["Company"]));
+
+    EXPECT_TRUE(ECTestUtility::CompareECInstances(*testInstanceXml, *testInstanceJson));
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 
 

@@ -1480,9 +1480,9 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
 
     if (basePrimitiveType != m_primitiveType)
         {
-        LOG.errorv("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
-                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
-                   ECXml::GetPrimitiveTypeName(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
+        LOG.errorv("The ECProperty %s:%s cannot override the base property %s:%s as they have differing types (%s vs. %s).",
+                   GetClass().GetFullName(), GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(),
+                   ECXml::GetPrimitiveTypeName(m_primitiveType), ECXml::GetPrimitiveTypeName(basePrimitiveType));
         return false;
         }
 

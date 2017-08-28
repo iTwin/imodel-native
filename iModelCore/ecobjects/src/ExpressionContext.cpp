@@ -584,6 +584,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             ecval.SetDouble (*component);
             }
 
+#ifdef WIP_CAUSES_EVALUATION_TO_FAIL
         if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack) || enforcesUnits(contextsStack))
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
@@ -592,7 +593,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance);
                 if (!context.IsValid())
                     {
-                    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Invalid IECTypeAdapterContext)");
+                    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Invalid IECTypeAdapterContext");
                     return ExpressionStatus::UnknownError;
                     }
                 context->SetEvaluationOptions(getEvaluationOptions(contextsStack));
@@ -611,6 +612,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
                     }
                 }
             }
+#endif
 
         evalResult = ecval;
         evalResult.SetUnits (units);

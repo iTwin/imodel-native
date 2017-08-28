@@ -969,162 +969,6 @@ ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& p
     return status;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyClass
-(
-ECClassP& targetClass,
-ECClassCR sourceClass
-)
-    {
-    return CopyClass(targetClass, sourceClass, sourceClass.GetName());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    // first make sure the class doesn't already exist in the schema
-    if (NULL != this->GetClassCP(targetClassName.c_str()))
-        return ECObjectsStatus::NamedItemAlreadyExists;
-
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
-    ECStructClassCP sourceAsStructClass = sourceClass.GetStructClassCP();
-    ECCustomAttributeClassCP sourceAsCAClass = sourceClass.GetCustomAttributeClassCP();
-    if (NULL != sourceAsRelationshipClass)
-        {
-        ECRelationshipClassP newRelationshipClass;
-        status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
-        newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
-
-        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource());
-        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget());
-        targetClass = newRelationshipClass;
-        }
-    else if (nullptr != sourceAsStructClass)
-        {
-        ECStructClassP newStructClass;
-        status = this->CreateStructClass(newStructClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        targetClass = newStructClass;
-        }
-    else if (nullptr != sourceAsCAClass)
-        {
-        ECCustomAttributeClassP newCAClass;
-        status = this->CreateCustomAttributeClass(newCAClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
-        targetClass = newCAClass;
-        }
-    else
-        {
-        ECEntityClassP newEntityClass;
-        status = CreateEntityClass(newEntityClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        targetClass = newEntityClass;
-        }
-
-    if (sourceClass.GetIsDisplayLabelDefined())
-        targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel());
-    targetClass->SetDescription(sourceClass.GetInvariantDescription());
-    targetClass->SetClassModifier(sourceClass.GetClassModifier());
-
-    // Set the base classes on the target class from the source class
-    // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
-    for (ECClassP baseClass: sourceClass.GetBaseClasses())
-        {
-        targetClass->AddBaseClass(*baseClass);
-        }
-
-    for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
-        {
-        if (sourceProperty->IsForSupplementation())
-            continue;
-        ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, true);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        }
-
-    return sourceClass.CopyCustomAttributesTo(*targetClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Robert.Schili                11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, ECEnumerationCR sourceEnumeration)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    ECObjectsStatus status;
-    status = CreateEnumeration(targetEnumeration, sourceEnumeration.GetName().c_str(), sourceEnumeration.GetType());
-    if (ECObjectsStatus::Success != status)
-        return status;
-
-    if (sourceEnumeration.GetIsDisplayLabelDefined())
-        targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel().c_str());
-
-    targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription().c_str());
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP & targetKOQ, KindOfQuantityCR sourceKOQ)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    ECObjectsStatus status;
-    status = CreateKindOfQuantity(targetKOQ, sourceKOQ.GetName().c_str());
-    if (ECObjectsStatus::Success != status)
-        return status;
-
-    if (sourceKOQ.GetIsDisplayLabelDefined())
-        targetKOQ->SetDisplayLabel(sourceKOQ.GetInvariantDisplayLabel().c_str());
-
-    targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
-
-    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit());
-    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit());
-    targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    ECObjectsStatus status;
-    status = CreatePropertyCategory(targetPropCategory, sourcePropCategory.GetName().c_str());
-    if (ECObjectsStatus::Success != status)
-        return status;
-
-    if (sourcePropCategory.GetIsDisplayLabelDefined())
-        targetPropCategory->SetDisplayLabel(sourcePropCategory.GetInvariantDisplayLabel().c_str());
-
-    targetPropCategory->SetDescription(sourcePropCategory.GetInvariantDescription().c_str());
-    targetPropCategory->SetPriority(sourcePropCategory.GetPriority());
-
-    return ECObjectsStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1440,13 +1284,195 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetECVersion (ecVersion)))
         {
-        schemaOut = NULL;
+        schemaOut = nullptr;
         return status;
         }
 
     return ECObjectsStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass)
+    {
+    return CopyClass(targetClass, sourceClass, sourceClass.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    // first make sure the class doesn't already exist in the schema
+    if (nullptr != this->GetClassCP(targetClassName.c_str()))
+        return ECObjectsStatus::NamedItemAlreadyExists;
+
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
+    ECStructClassCP sourceAsStructClass = sourceClass.GetStructClassCP();
+    ECCustomAttributeClassCP sourceAsCAClass = sourceClass.GetCustomAttributeClassCP();
+    if (nullptr != sourceAsRelationshipClass)
+        {
+        ECRelationshipClassP newRelationshipClass;
+        status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
+        newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
+
+        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource());
+        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget());
+        targetClass = newRelationshipClass;
+        }
+    else if (nullptr != sourceAsStructClass)
+        {
+        ECStructClassP newStructClass;
+        status = this->CreateStructClass(newStructClass, targetClassName);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        targetClass = newStructClass;
+        }
+    else if (nullptr != sourceAsCAClass)
+        {
+        ECCustomAttributeClassP newCAClass;
+        status = this->CreateCustomAttributeClass(newCAClass, targetClassName);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
+        targetClass = newCAClass;
+        }
+    else
+        {
+        ECEntityClassP newEntityClass;
+        status = CreateEntityClass(newEntityClass, targetClassName);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        targetClass = newEntityClass;
+        }
+
+    if (sourceClass.GetIsDisplayLabelDefined())
+        targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel());
+    targetClass->SetDescription(sourceClass.GetInvariantDescription());
+    targetClass->SetClassModifier(sourceClass.GetClassModifier());
+
+    // Set the base classes on the target class from the source class
+    // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
+    for (ECClassP baseClass: sourceClass.GetBaseClasses())
+        {
+        ECClassP targetBaseClass = nullptr;
+        if (baseClass->GetSchema().GetSchemaKey() != sourceClass.GetSchema().GetSchemaKey())
+            targetBaseClass = baseClass;
+        else
+            {
+            targetBaseClass = this->GetClassP(baseClass->GetName().c_str());
+            if (nullptr == targetBaseClass)
+                {
+                status = CopyClass(targetBaseClass, *baseClass);
+                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return status;
+                }
+            }
+            
+        // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
+        // for Mixins and Relationships
+        status = targetClass->_AddBaseClass(*targetBaseClass, false, false, false);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+
+    for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
+        {
+        if (sourceProperty->IsForSupplementation())
+            continue;
+        ECPropertyP destProperty;
+        status = targetClass->CopyProperty(destProperty, sourceProperty, true);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+
+    return sourceClass.CopyCustomAttributesTo(*targetClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreateEnumeration(targetEnumeration, sourceEnumeration.GetName().c_str(), sourceEnumeration.GetType());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceEnumeration.GetIsDisplayLabelDefined())
+        targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel().c_str());
+
+    targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription().c_str());
+    targetEnumeration->SetIsStrict(sourceEnumeration.GetIsStrict());
+
+    for (auto sourceEnumerator : sourceEnumeration.GetEnumerators())
+        {
+        ECEnumeratorP targetEnumerator;
+        if (PrimitiveType::PRIMITIVETYPE_Integer == targetEnumeration->GetType())
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetInteger());
+        else
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetString().c_str());
+
+        if (sourceEnumerator->GetIsDisplayLabelDefined())
+            targetEnumerator->SetDisplayLabel(sourceEnumerator->GetInvariantDisplayLabel().c_str());
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreateKindOfQuantity(targetKOQ, sourceKOQ.GetName().c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceKOQ.GetIsDisplayLabelDefined())
+        targetKOQ->SetDisplayLabel(sourceKOQ.GetInvariantDisplayLabel().c_str());
+
+    targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
+
+    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit());
+    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit());
+    targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreatePropertyCategory(targetPropCategory, sourcePropCategory.GetName().c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourcePropCategory.GetIsDisplayLabelDefined())
+        targetPropCategory->SetDisplayLabel(sourcePropCategory.GetInvariantDisplayLabel().c_str());
+
+    targetPropCategory->SetDescription(sourcePropCategory.GetInvariantDescription().c_str());
+    targetPropCategory->SetPriority(sourcePropCategory.GetPriority());
+
+    return ECObjectsStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012

@@ -856,7 +856,7 @@ struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
 struct MinMaxValueChange final :ECPrimitiveChange<ECN::ECValue>
     {
     private:
-        Utf8String _ToString(ValueId id) const override;
+        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
         MinMaxValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECValue>(state, systemId, parent, customId)

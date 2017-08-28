@@ -30,9 +30,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="logging.config.xml" />
-    <None Include="performanceCompileRules.mki" />
-    <None Include="PerformanceTests.mke" />
-  </ItemGroup>
 </Project>

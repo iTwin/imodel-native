@@ -289,7 +289,7 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) cons
         }
     else
         return &m_persistenceFUS;
-    };
+    }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      06/2016
@@ -304,32 +304,11 @@ Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAli
     else
         fusP = &m_persistenceFUS;
     return fusP->ToText(useAlias);
-    };
-
-bool KindOfQuantity::IsUnitComparable(Utf8CP unitName)
-    {
-    return Utf8String::IsNullOrEmpty(unitName)? false : m_persistenceFUS.IsUnitComparable(unitName);
     }
 
 /*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      05/2016
+@bsimethod                                David.Fox-Rabinovitz      06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-   /* Formatting::FormatUnitSetCP KindOfQuantityFormatting::GetPresentationFUS(size_t indx) const
-    {
-    if (m_presentationFUS.size() > 0)
-        {
-        return (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
-        }
-    else
-        return &m_persistenceFUS;
-    };*/
-
-//Formatting::FormatUnitSet KindOfQuantityFormatting::GetDefaultPresentationFUS() const 
-//    { 
-//    return GetPresentationFUS(0);
-//    //return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; 
-//    };
-
 Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias) const
     {
     Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);

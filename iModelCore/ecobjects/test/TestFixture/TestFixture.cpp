@@ -2,7 +2,7 @@
 |
 |     $Source: test/TestFixture/TestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -69,23 +69,221 @@ Utf8String ECTestFixture::GetDateTime ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-// static
-void ECTestUtility::ExpectSchemaDeserializationFailure(Utf8CP schemaXml, SchemaReadStatus expectedError)
+void deserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus, bool assert = false)
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    EXPECT_EQ(expectedError, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    if (SchemaItem::Type::File == schemaItem.GetType())
+        {
+        auto filePath = ECTestFixture::GetTestDataPath(schemaItem.GetFileName().c_str());
+
+        schema = ECSchema::LocateSchema(filePath.c_str(), context);
+        if (SchemaReadStatus::Success == expectedStatus)
+            ASSERT_TRUE(schema.IsValid());
+        else
+            ASSERT_FALSE(schema.IsValid());
+
+        return;
+        }
+    
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(schema, schemaItem.GetXmlString().c_str(), context);
+
+    if (assert)
+        {
+        ASSERT_EQ(expectedStatus, readStatus);
+        if (SchemaReadStatus::Success == expectedStatus)
+            ASSERT_TRUE(schema.IsValid());
+        else 
+            ASSERT_FALSE(schema.IsValid());
+        }
+    else
+        {
+        EXPECT_EQ(expectedStatus, readStatus);
+        if (SchemaReadStatus::Success == expectedStatus)
+            EXPECT_TRUE(schema.IsValid());
+        else
+            EXPECT_FALSE(schema.IsValid());
+        }    
+    }
+
+void ECTestFixture::DeserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus)
+    {
+    deserializeSchema(schema, context, schemaItem, expectedStatus, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-void ECTestUtility::AssertSchemaDeserializationFailure(Utf8CP schemaXml, SchemaReadStatus expectedError)
+void ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError)
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(expectedError, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Muhammad.Zaighum                  05/13
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+    {
+    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
+
+    Utf8String fileContent;
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(jsonFilePath, BeFileAccess::Read))
+        return ERROR;
+
+    uint64_t rawSize;
+    if (BeFileStatus::Success != file.GetSize(rawSize) || rawSize > UINT32_MAX)
+        return ERROR;
+
+    uint32_t sizeToRead = (uint32_t) rawSize;
+
+    uint32_t sizeRead;
+    ScopedArray<Byte> scopedBuffer(sizeToRead);
+    Byte* buffer = scopedBuffer.GetData();
+    if (BeFileStatus::Success != file.Read(buffer, &sizeRead, sizeToRead) || sizeRead != sizeToRead)
+        return ERROR;
+
+    if (buffer[0] != utf8BOM[0] || buffer[1] != utf8BOM[1] || buffer[2] != utf8BOM[2])
+        {
+        LOG.error("Json file is expected to be encoded in UTF-8");
+        return ERROR;
+        }
+
+    for (uint32_t ii = 3; ii < sizeRead; ii++)
+        {
+        if (buffer[ii] == '\n' || buffer[ii] == '\r')
+            continue;
+        fileContent.append(1, buffer[ii]);
+        }
+
+    file.Close();
+
+    return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CompareRelationships(IECRelationshipInstanceCR a, IECRelationshipInstanceCR b)
+    {
+    if (a.GetSource() == nullptr || b.GetSource() == nullptr || a.GetSource()->GetInstanceId() != b.GetSource()->GetInstanceId())
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing source instance ids.");
+        return false;
+        }
+
+    if (a.GetTarget() == nullptr || b.GetTarget() == nullptr || a.GetTarget()->GetInstanceId() != b.GetTarget()->GetInstanceId())
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing target instance ids.");
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                        03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
+    {
+    for (ECPropertyValueCR expectedPropertyValue : expected)
+        {
+        ECValueAccessorCR valueAccessor = expectedPropertyValue.GetValueAccessor();
+        const Utf8String propertyName = valueAccessor.GetPropertyName();
+
+        if (expectedPropertyValue.HasChildValues())
+            {
+            if (!CompareProperties(actual, *expectedPropertyValue.GetChildValues()))
+                return false;
+
+            continue;
+            }
+
+        ECValue actualValue;
+        ECObjectsStatus status = actual.GetValueUsingAccessor(actualValue, valueAccessor);
+        if (status != ECObjectsStatus::Success)
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        ECValueCR expectedValue = expectedPropertyValue.GetValue();
+        const bool expectedValueIsNull = expectedValue.IsNull();
+        const bool actualValueIsNull = actualValue.IsNull();
+
+        if (expectedValueIsNull != actualValueIsNull)
+            {
+            if (expectedValueIsNull)
+                LOG.tracev("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
+            else
+                LOG.tracev("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
+            
+            return false;
+            }
+
+        if (expectedValue.Equals(actualValue))
+            continue;
+
+        PrimitiveType actualType = actualValue.GetPrimitiveType();
+        if (actualType == PRIMITIVETYPE_DateTime)
+            {
+            int64_t expectedECTicks = expectedValue.GetDateTimeTicks();
+            int64_t actualECTicks = actualValue.GetDateTimeTicks();
+            if (expectedECTicks == actualECTicks)
+                continue;
+            }
+
+        ValueKind actualKind = actualValue.GetKind();
+        Utf8String expectedValueWStr = expectedValue.ToString();
+        Utf8String actualValueWstr = actualValue.ToString();
+        LOG.errorv("CompareECInstances> Instances are not equal: Differing property values property '%s' (%d %d): actual: %s, expected: %s", 
+                   propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                        03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECTestUtility::CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInstanceCR actual)
+    {
+    IECRelationshipInstanceCP relExpected = dynamic_cast<IECRelationshipInstanceCP> (&expected);
+    IECRelationshipInstanceCP relActual = dynamic_cast<IECRelationshipInstanceCP> (&actual);
+    if (relExpected != nullptr || relActual != nullptr)
+        {
+        if (relExpected == nullptr || relActual == nullptr)
+            {
+            LOG.trace("CompareECInstances> Instances are not equal. One is a relationship instance, the other is not.");
+            return false; // both have to be non null
+            }
+
+        if (!CompareRelationships(*relExpected, *relActual))
+            return false;
+        }
+
+    if (&expected.GetClass() == &actual.GetClass() && expected.GetClass().GetPropertyCount(true) == 0 && actual.GetClass().GetPropertyCount(true) == 0)
+        return true;
+
+    ECValuesCollectionPtr propertyValuesExpected = ECValuesCollection::Create(expected);
+    if (propertyValuesExpected.IsNull())
+        return false;
+
+    return CompareProperties(actual, *propertyValuesExpected);
     }
     
 END_BENTLEY_ECN_TEST_NAMESPACE

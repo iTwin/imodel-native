@@ -100,8 +100,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
-    <None Include="logging.config.xml" />
-    <None Include="LoggingConfig.prewire.mke" />
     <None Include="prewire.mke" />
     <None Include="SeedData.prewire.mke" />
   </ItemGroup>

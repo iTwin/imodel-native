@@ -234,6 +234,9 @@
     <ClCompile Include="presentation\PresentationRules\PropertyEditorsSpecification.cpp">
       <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SchemaComparer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -451,6 +454,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECPresentationRules\PropertyEditorsSpecification.h">
       <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
