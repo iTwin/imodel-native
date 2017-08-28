@@ -3280,7 +3280,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                         if (nullptr != fileGeocoding && fileGeocoding->IsValid())
                             fileGeocoding->GetGeoTiffKeys(&geoTiffKeys, true);
 
-                        IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
+                        GeoCoordinates::IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
 
                         if (pPageDescriptor->GeocodingHasChanged())
                             {

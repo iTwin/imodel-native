@@ -21,7 +21,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
 class HRFRasterFile;
 
-class HCPGeoTiffKeys : public HFCShareableObject<HCPGeoTiffKeys>, public IGeoTiffKeysList
+class HCPGeoTiffKeys : public HFCShareableObject<HCPGeoTiffKeys>, public GeoCoordinates::IGeoTiffKeysList
     {
 
 
