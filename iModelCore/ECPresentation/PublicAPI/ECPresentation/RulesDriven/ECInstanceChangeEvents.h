@@ -88,6 +88,13 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
         ChangedECInstance(ECClassCR ecClass, ECInstanceId instanceId, ChangeType changeType) 
             : m_class(&ecClass), m_instanceId(instanceId), m_changeType(changeType) 
             {}
+        //! Compare operator for using in sets and maps
+        bool operator<(ChangedECInstance const& other) const
+            {
+            return m_class < other.m_class
+                || m_class == other.m_class && m_instanceId < other.m_instanceId
+                || m_class == other.m_class && m_instanceId == other.m_instanceId && (int)m_changeType < (int)other.m_changeType;
+            }
         //! Is this object valid.
         bool IsValid() const {return nullptr != m_class;}
         //! Get the ECClass of the changed ECInstance.
