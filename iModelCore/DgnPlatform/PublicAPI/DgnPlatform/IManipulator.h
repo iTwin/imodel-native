@@ -178,7 +178,7 @@ public:
 enum class ControlType
     {
     Placement   = 0, //!< Request for placement controls (if none, return nullptr for IEditManipulatorPtr and appropriate DefaultActions)
-    Geometry    = 1, //!< Prefer geometry/vertex controls (if none, return any Placement IEditManipulatorPtr or appropriate DefaultActions)
+    Geometry    = 1, //!< Request for geometry/vertex controls (if none, return nullptr for IEditManipulatorPtr and appropriate DefaultActions)
     };
 
 enum class DefaultActions : uint32_t
