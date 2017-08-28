@@ -198,8 +198,8 @@ enum class DefaultActions : uint32_t
 
 virtual DefaultActions _GetAllowedDefaultActions() {return DefaultActions::Placement;} //!< Allowed modifications the default manipulators may apply
 
-virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source) = 0; //!< Return IEditManipulatorPtr for ControlType::Geometry (if any)
-virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0; //!< Return IEditManipulatorPtr for ControlType::Geometry (if any)
+virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source) = 0; //!< Return IEditManipulatorPtr preferably for ControlType::Geometry (if any). Called directly on double-click event.
+virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0; //!< Return IEditManipulatorPtr preferably for ControlType::Geometry (if any). Called directly on double-click event.
 
 virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(source) : nullptr;}
 virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(hit) : nullptr;}
