@@ -246,7 +246,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr double s_tileScreenSize = 512.0;
-constexpr double s_minToleranceRatio = s_tileScreenSize;
+constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
 constexpr uint32_t s_minElementsPerTile = 100;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
