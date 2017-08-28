@@ -512,8 +512,6 @@ public:
         DGNPLATFORM_EXPORT virtual DevelopmentPhase  _SupplyDevelopmentPhase();
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
-
-        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
 

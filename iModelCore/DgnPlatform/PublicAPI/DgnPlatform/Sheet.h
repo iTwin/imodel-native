@@ -249,68 +249,7 @@ namespace Attachment
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
     };
-
-    //=======================================================================================
-    //! TileTree for displaying raster tiles generated from a sheet's view attachment
-    // @bsiclass                                                    Keith.Bentley   11/16
-    //=======================================================================================
-    struct Tree : TileTree::QuadTree::Root
-    {
-        DEFINE_T_SUPER(TileTree::QuadTree::Root)
-        DgnElementId m_attachmentId;
-        RefCountedPtr<Viewport> m_viewport;
-        DPoint2d m_scale; // scale factors to make square tiles
-        uint32_t m_pixels;
-        bool m_sceneQueued = false;
-
-        bool Pick(PickContext&);
-        void Draw(SceneContext&);
-        void Load(Render::SystemP);
-        Utf8CP _GetName() const override {return "SheetTile";}
-        Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
-        ~Tree(){ClearAllTiles();}
-        DgnElementId GetAttachmentId() const {return m_attachmentId;}
-    };
-
-    struct Tile2dModel : TileTree::QuadTree::Tile
-    {
-        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
-        using T_Super::Tile;
-
-        bool _HasChildren() const override {return false;}
-        ChildTiles const* _GetChildren(bool create) const override {return nullptr;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return nullptr;}
-        void _DrawGraphics(TileTree::DrawArgsR args) const override;
-
-        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
-        Tree& GetTree() const {return (Tree&) m_root;}
-        Tile2dModel(TileTree::QuadTree::Root& quadRoot, TileTree::QuadTree::TileId id, Tile const* parent) : T_Super(quadRoot, id, parent) 
-            {m_range = ElementAlignedBox3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);}
-    };
-
-    struct Tile : TileTree::QuadTree::Tile
-    {
-        DEFINE_T_SUPER(TileTree::QuadTree::Tile)
-
-        struct Loader : TileTree::TileLoader
-        {
-            Render::TexturePtr m_texture;
-
-            Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
-            BentleyStatus _LoadTile() override;
-            folly::Future<BentleyStatus> _SaveToDb() override;
-            folly::Future<BentleyStatus> _ReadFromDb() override;
-            folly::Future<BentleyStatus> _GetFromSource() override;
-        };
-
-        Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
-        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
-        Tree& GetTree() const {return (Tree&) m_root;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return new Loader(GetTree()._ConstructTileResource(*this), *this, loads, renderSys);}
-    };
-
-    DEFINE_REF_COUNTED_PTR(Tree)
-};
+}
 
 //=======================================================================================
 //! A Sheet::ViewController is used to control views of Sheet::Models
@@ -322,8 +261,18 @@ struct ViewController : Dgn::ViewController2d
     friend SheetViewDefinition;
 
 protected:
+    struct Attachment
+    {
+        DgnElementId    m_id;
+        TileTree::RootP m_root;
+
+        explicit Attachment(DgnElementId id=DgnElementId()) : m_id(id), m_root(nullptr) { }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
+
     DPoint2d m_size;
-    bvector<Attachment::TreePtr> m_attachments;
+    bvector<Attachment> m_attachments;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
@@ -333,7 +282,6 @@ protected:
     void _DrawDecorations(DecorateContextR context) override;
 
     void DrawBorder(ViewContextR context) const;
-    Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
 };
 
