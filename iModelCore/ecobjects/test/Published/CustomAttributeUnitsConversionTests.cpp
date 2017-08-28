@@ -58,7 +58,7 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                        Caleb.Shafer            06/2017
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnProperty)
@@ -92,7 +92,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                        Caleb.Shafer            06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     {
