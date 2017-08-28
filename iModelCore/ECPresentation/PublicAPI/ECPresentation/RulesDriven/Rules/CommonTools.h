@@ -36,6 +36,12 @@ public:
     //! Formats RequiredDirection string value
     static Utf8CP                     FormatRequiredDirectionString (RequiredRelationDirection direction);
 
+    //! Parses RelationshipMeaning string value
+    static RelationshipMeaning ParseRelationshipMeaningString(Utf8CP value);
+
+    //! Formats RelationshipMeaning string value
+    static Utf8CP FormatRelationshipMeaningString(RelationshipMeaning meaning);
+
     //! Copies the rules in source vector into the target vector.
     template<typename T> 
     static void CopyRules(bvector<T*>& target, bvector<T*> const& source)

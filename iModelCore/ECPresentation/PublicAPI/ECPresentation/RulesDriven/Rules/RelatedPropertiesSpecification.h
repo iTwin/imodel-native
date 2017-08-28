@@ -9,10 +9,23 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#include <ECPresentation/RulesDriven/Rules/ContentSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+Specifies how should related instance properties appear in presentation controls.
+* @bsiclass                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class RelationshipMeaning
+    {
+    //! Properties belong to the same instance.
+    SameInstance = 0,
+    //! Properties belong to the related instance.
+    RelatedInstance = 1,
+    };
 
 /*---------------------------------------------------------------------------------**//**
 Related properties specification. It allow to extend a content ECQuery to include 
@@ -27,6 +40,7 @@ struct RelatedPropertiesSpecification
         Utf8String                         m_relatedClassNames;
         Utf8String                         m_propertyNames;
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
+        RelationshipMeaning                m_relationshipMeaning;
         
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -41,7 +55,8 @@ struct RelatedPropertiesSpecification
                                         RequiredRelationDirection  requiredDirection,
                                         Utf8String                 relationshipClassNames,
                                         Utf8String                 relatedClassNames,
-                                        Utf8String                 propertyNames
+                                        Utf8String                 propertyNames,
+                                        RelationshipMeaning        relationshipMeaning
                                        );
 
         //! Destructor.
@@ -72,6 +87,12 @@ struct RelatedPropertiesSpecification
         
         //! @see GetPropertyNames
         ECPRESENTATION_EXPORT void                         SetPropertyNames(Utf8StringCR);
+
+        //! Meaning of properties returned by this specification.
+        ECOBJECTS_EXPORT RelationshipMeaning          GetRelationshipMeaning(void) const;
+
+        //! Set relationship meaning.
+        ECOBJECTS_EXPORT void                         SetRelationshipMeaning(RelationshipMeaning);
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
         ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;

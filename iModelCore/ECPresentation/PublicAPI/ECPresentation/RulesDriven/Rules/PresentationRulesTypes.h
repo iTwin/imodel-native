@@ -62,6 +62,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
 
 enum RequiredRelationDirection : unsigned; 
+enum class RelationshipMeaning;
 
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;
 typedef bvector<RootNodeRuleP>                      RootNodeRuleList;

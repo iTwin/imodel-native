@@ -18,7 +18,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
-    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames (""), m_propertyNames ("")
+    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames (""), m_propertyNames (""),
+    m_relationshipMeaning(RelationshipMeaning::RelatedInstance)
     {
     }
 
@@ -30,11 +31,13 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification
 RequiredRelationDirection  requiredDirection,
 Utf8String                 relationshipClassNames,
 Utf8String                 relatedClassNames,
-Utf8String                 propertyNames
+Utf8String                 propertyNames,
+RelationshipMeaning        relationshipMeaning
 ) : m_requiredDirection (requiredDirection), 
     m_relationshipClassNames (relationshipClassNames),
     m_relatedClassNames (relatedClassNames),
-    m_propertyNames (propertyNames)
+    m_propertyNames (propertyNames),
+    m_relationshipMeaning (relationshipMeaning)
     {
     }
 
@@ -43,7 +46,7 @@ Utf8String                 propertyNames
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedPropertiesSpecification const& other)
     : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
-    m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames)
+    m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), m_relationshipMeaning(other.m_relationshipMeaning)
     {
     CommonTools::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
     }
@@ -76,6 +79,13 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
+    Utf8String relationshipMeaningString = "";
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(relationshipMeaningString, COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING))
+        relationshipMeaningString = "";
+    else
+        m_relationshipMeaning = CommonTools::ParseRelationshipMeaningString(relationshipMeaningString.c_str());
+
+
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
     return true;
@@ -92,6 +102,7 @@ void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAMES, m_propertyNames.c_str ());
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonTools::FormatRelationshipMeaningString(m_relationshipMeaning));
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
     }
@@ -135,3 +146,13 @@ RelatedPropertiesSpecificationList const& RelatedPropertiesSpecification::GetNes
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecificationList& RelatedPropertiesSpecification::GetNestedRelatedPropertiesR() { return m_nestedRelatedPropertiesSpecification; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipMeaning RelatedPropertiesSpecification::GetRelationshipMeaning() const { return m_relationshipMeaning; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedPropertiesSpecification::SetRelationshipMeaning(RelationshipMeaning value) { m_relationshipMeaning = value; }
