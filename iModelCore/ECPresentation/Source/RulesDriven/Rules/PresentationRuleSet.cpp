@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/PresentationRuleSet.cpp $
+|     $Source: Source/RulesDriven/Rules/PresentationRuleSet.cpp $
 |
 |   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include <ECPresentationPch.h>
 
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/CommonTools.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -393,7 +393,7 @@ SortingRuleList const& PresentationRuleSet::GetSortingRules (void) const      { 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifierList const& PresentationRuleSet::GetContentModifierRules (void) const { return m_contentModifiers; }
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>() {return &m_rootNodesRules;}
 template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>() {return &m_childNodesRules;}
 template<> ContentRuleList* PresentationRuleSet::GetRules<ContentRule>() {return &m_contentRules;}
@@ -407,4 +407,4 @@ template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>() {return
 template<> ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>() {return &m_contentModifiers;}
 template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>() {return &m_userSettings;}
 template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>() {return &m_localizationResourceKeyDefinitions;}
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "NavNodeProviders.h"
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
@@ -226,7 +226,7 @@ NavNodesProviderPtr NavNodesProviderContext::CreateProvider(NavNodesProviderCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetRootNodeContext(ECN::RootNodeRuleCR rootNodeRule)
+void NavNodesProviderContext::SetRootNodeContext(RootNodeRuleCR rootNodeRule)
     {
     BeAssert(!IsRootNodeContext());
     BeAssert(!IsChildNodeContext());
@@ -250,7 +250,7 @@ void NavNodesProviderContext::SetRootNodeContext(NavNodesProviderContextCR other
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetChildNodeContext(ECN::ChildNodeRuleCR childNodeRule, NavNodeCR virtualParentNode)
+void NavNodesProviderContext::SetChildNodeContext(ChildNodeRuleCR childNodeRule, NavNodeCR virtualParentNode)
     {
     BeAssert(!IsRootNodeContext());
     BeAssert(!IsChildNodeContext());

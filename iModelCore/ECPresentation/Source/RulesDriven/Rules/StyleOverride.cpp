@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/StyleOverride.cpp $
+|     $Source: Source/RulesDriven/Rules/StyleOverride.cpp $
 |
 |   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include <ECPresentationPch.h>
 
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

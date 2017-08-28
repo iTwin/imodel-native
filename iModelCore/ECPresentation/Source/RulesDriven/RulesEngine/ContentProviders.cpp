@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "ContentProviders.h"
 #include "ECExpressionContextsProvider.h"
 #include "LocalizationHelper.h"
@@ -17,7 +17,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(ECN::PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
+ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
     : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState), m_preferredDisplayType(preferredDisplayType), 
     m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier)
@@ -549,7 +549,7 @@ SpecificationContentProvider::~SpecificationContentProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ECN::ContentRuleCP, IParsedSelectionInfo const*> selectionsCache,
+static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedSelectionInfo const*> selectionsCache,
     ContentProviderContextCR context, ContentRuleSpecificationsList const& rules)
     {
     for (ContentRuleSpecification const& rule : rules)

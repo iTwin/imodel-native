@@ -9,9 +9,12 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 //=======================================================================================
 //! An interface for a class that receives ruleset-related callbacks.
@@ -25,11 +28,11 @@ struct IRulesetCallbacksHandler
 
     //! Called when a ruleset is created.
     //! @param[in] ruleset The ruleset that was created.
-    virtual void _OnRulesetCreated(ECN::PresentationRuleSetCR ruleset) {}
+    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset) {}
 
     //! Called when a ruleset is about to be disposed.
     //! @param[in] ruleset The ruleset that will be disposed.
-    virtual void _OnRulesetDispose(ECN::PresentationRuleSetCR ruleset) {}
+    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset) {}
     };
 
 //=======================================================================================
@@ -47,7 +50,7 @@ protected:
     //! Called to find matching rulesets.
     //! @param[in] rulesetId The ID of the ruleset to find. If nullptr, the implementation should return all available rulesets.
     //! @return All matching rulesets.
-    virtual bvector<ECN::PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const = 0;
+    virtual bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const = 0;
 
     //! Called to get all available ruleset IDs for this locater.
     virtual bvector<Utf8String> _GetRuleSetIds() const = 0;
@@ -59,10 +62,10 @@ protected:
     virtual void _InvalidateCache(Utf8CP rulesetId) = 0;
 
     //! Implementations should call this function before they dispose a ruleset.
-    ECPRESENTATION_EXPORT void OnRulesetDisposed(ECN::PresentationRuleSetCR ruleset) const;
+    ECPRESENTATION_EXPORT void OnRulesetDisposed(PresentationRuleSetCR ruleset) const;
 
     //! Implementations should call this function when they create a new ruleset instance.
-    ECPRESENTATION_EXPORT void OnRulesetCreated(ECN::PresentationRuleSetCR ruleset) const;
+    ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR ruleset) const;
     
 //__PUBLISH_SECTION_END__
 public:
@@ -82,7 +85,7 @@ public:
 
     //! Find all matching rulesets.
     //! @param[in] rulesetId The ID of the ruleset to find. If nullptr, all available rulesets are returned.
-    ECPRESENTATION_EXPORT bvector<ECN::PresentationRuleSetPtr> LocateRuleSets(Utf8CP rulesetId = nullptr) const;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateRuleSets(Utf8CP rulesetId = nullptr) const;
 
     //! Get IDs of all available rulesets.
     ECPRESENTATION_EXPORT bvector<Utf8String> GetRuleSetIds() const;
@@ -102,7 +105,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DirectoryRuleSetLocater : RefCounted<RuleSetLocat
 {
 private:
     Utf8String m_directoryList;
-    mutable bmap<BeFileName, ECN::PresentationRuleSetPtr> m_cache;
+    mutable bmap<BeFileName, PresentationRuleSetPtr> m_cache;
 
 protected:
     DirectoryRuleSetLocater(Utf8CP directoryList) : m_directoryList(directoryList) {}
@@ -113,7 +116,7 @@ protected:
     //! Get all ruleset filenames found in the lookup directories.
     ECPRESENTATION_EXPORT virtual bvector<BeFileName> _GetRuleSetFileNames() const;
 
-    ECPRESENTATION_EXPORT virtual bvector<ECN::PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    ECPRESENTATION_EXPORT virtual bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
     ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
     int _GetPriority() const override {return 100;}
@@ -134,14 +137,14 @@ struct EXPORT_VTABLE_ATTRIBUTE FileRuleSetLocater : RefCounted<RuleSetLocater>
 private:
     BeFileName m_path;
     mutable time_t m_cachedLastModifiedTime;
-    mutable ECN::PresentationRuleSetPtr m_cached;
+    mutable PresentationRuleSetPtr m_cached;
 
 private:
     FileRuleSetLocater() {}
     FileRuleSetLocater(BeFileNameCR path) : m_path(path) {}
 
 protected:
-    ECPRESENTATION_EXPORT bvector<ECN::PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
     ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
     int _GetPriority() const override {return 100;}
@@ -170,11 +173,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : NonCopyableClass, IRulese
 private:
     IRulesetCallbacksHandler* m_rulesetCallbacksHandler;
     bvector<RuleSetLocaterPtr> m_locaters;
-    mutable bmap<Utf8String, bvector<ECN::PresentationRuleSetPtr>> m_rulesetsCache;
+    mutable bmap<Utf8String, bvector<PresentationRuleSetPtr>> m_rulesetsCache;
     
 protected:
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(ECN::PresentationRuleSetCR ruleset) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(ECN::PresentationRuleSetCR ruleset) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
+    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR ruleset) override;
 
 public:
     void SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler);
@@ -196,11 +199,11 @@ public:
     //! Find all rulesets that are supported by the specified connection.
     //! @param[in] connection The connection to check whether the ruleset is supported.
     //! @note A ruleset is considered supported if all its schemas are supported in the specified connection.
-    ECPRESENTATION_EXPORT bvector<ECN::PresentationRuleSetPtr> LocateSupportedRulesets(BeSQLite::EC::ECDbCR connection) const;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateSupportedRulesets(ECDbCR connection) const;
 
     //! Find matching rulesets.
     //! @param[in] rulesetId The ID of the ruleset to find. If nullptr, all available rulesets are returned.
-    ECPRESENTATION_EXPORT bvector<ECN::PresentationRuleSetPtr> LocateRuleSets(Utf8CP rulesetId) const;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> LocateRuleSets(Utf8CP rulesetId) const;
 
     //! Get IDs of all available rulesets.
     ECPRESENTATION_EXPORT bvector<Utf8String> GetRuleSetIds() const;
@@ -217,7 +220,7 @@ private:
     SupplementalRuleSetLocater(BeFileNameCR directoryPath) : DirectoryRuleSetLocater(directoryPath.GetNameUtf8().c_str()) {}
 
 protected:
-    ECPRESENTATION_EXPORT bvector<ECN::PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
 
 public:
     //! Create a new locater.

@@ -88,14 +88,14 @@ typedef BoundQueryValuesList const&     BoundQueryValuesListCR;
 struct EXPORT_VTABLE_ATTRIBUTE BoundQueryECValue : BoundQueryValue
 {
 private:
-    ECN::ECValue m_value;
+    ECValue m_value;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
     BoundQueryValue* _Clone() const override {return new BoundQueryECValue(m_value);}
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
 public:
-    BoundQueryECValue(ECN::ECValue value) : m_value(value) {}
-    ECN::ECValue const& GetValue() const {return m_value;}
+    BoundQueryECValue(ECValue value) : m_value(value) {}
+    ECValue const& GetValue() const {return m_value;}
 };
 
 /*=================================================================================**//**
@@ -151,7 +151,7 @@ protected:
     BoundQueryValue* _Clone() const override { return new BoundRapidJsonValueSet(*this); }
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
 public:
-    BoundRapidJsonValueSet(RapidJsonValueCR values, ECN::PrimitiveType type);
+    BoundRapidJsonValueSet(RapidJsonValueCR values, PrimitiveType type);
     BoundRapidJsonValueSet(BoundRapidJsonValueSet const& other);
     ~BoundRapidJsonValueSet();
 };
@@ -168,7 +168,7 @@ struct EXPORT_VTABLE_ATTRIBUTE BoundQueryRecursiveChildrenIdSet : BoundQueryValu
         };
 
 private:
-    bset<ECN::ECRelationshipClassCP> m_relationships;
+    bset<ECRelationshipClassCP> m_relationships;
     bool m_isForward;
     bvector<BeSQLite::EC::ECInstanceId> m_parentIds;
     mutable BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>* m_childrenSet;
@@ -182,7 +182,7 @@ protected:
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
 
 public:
-    BoundQueryRecursiveChildrenIdSet(bset<ECN::ECRelationshipClassCP> relationships, bool isForward, bvector<BeSQLite::EC::ECInstanceId> const& parentIds)
+    BoundQueryRecursiveChildrenIdSet(bset<ECRelationshipClassCP> relationships, bool isForward, bvector<BeSQLite::EC::ECInstanceId> const& parentIds)
         : m_relationships(relationships), m_isForward(isForward), m_parentIds(std::move(parentIds)), m_childrenSet(nullptr)
         {}
     BoundQueryRecursiveChildrenIdSet(BoundQueryRecursiveChildrenIdSet const& other)
@@ -237,7 +237,7 @@ protected:
     virtual UnionQuery* _AsUnionQuery() {return nullptr;}
     virtual ExceptQuery* _AsExceptQuery() {return nullptr;}
     virtual StringQuery* _AsStringQuery() {return nullptr;}
-    virtual Contract const* _GetContract(ECN::ECClassCP) const {return nullptr;}
+    virtual Contract const* _GetContract(ECClassCP) const {return nullptr;}
     virtual Contract const* _GetGroupingContract() const {return nullptr;}
     virtual void _OnIsOuterQueryValueChanged() {}
 
@@ -261,7 +261,7 @@ public:
     StringQuery const* AsStringQuery() const {return const_cast<PresentationQuery<TBase, TContract, TResultParameters>*>(this)->AsStringQuery();}
     StringQuery* AsStringQuery() {return _AsStringQuery();}
 
-    Contract const* GetContract(ECN::ECClassCP selectClass = nullptr) const {return _GetContract(selectClass);}
+    Contract const* GetContract(ECClassCP selectClass = nullptr) const {return _GetContract(selectClass);}
     Contract const* GetGroupingContract() const {return _GetGroupingContract();}
     bool IsEqual(TBase const& other) const {return _IsEqual(other);}
     ResultParameters const& GetResultParameters() const {return m_resultParameters;}
@@ -288,12 +288,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
     +===============+===============+===============+===============+===============+==*/
     struct FromClause
         {
-        ECN::ECClassCP m_class;
+        ECClassCP m_class;
         Utf8String m_alias;
         bool m_isPolymorphic;
 
         FromClause() : m_class(nullptr), m_isPolymorphic(false) {}
-        FromClause(ECN::ECClassCR fromClass, Utf8CP alias = nullptr, bool isPolymorphic = false)
+        FromClause(ECClassCR fromClass, Utf8CP alias = nullptr, bool isPolymorphic = false)
             : m_class(&fromClass), m_alias(alias), m_isPolymorphic(isPolymorphic) 
             {}
         bool IsValid() const {return nullptr != m_class;}
@@ -304,16 +304,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
     +===============+===============+===============+===============+===============+==*/
     struct JoinUsingClause
         {
-        ECN::ECClassCP m_join;
+        ECClassCP m_join;
         Utf8String m_joinAlias;
-        ECN::ECRelationshipClassCP m_using;
+        ECRelationshipClassCP m_using;
         Utf8String m_usingAlias;
         bool m_isForward;
         bool m_isPolymorphic;
         bool m_isOuterJoin;
 
         JoinUsingClause() : m_join(nullptr), m_using(nullptr), m_isPolymorphic(false), m_isForward(false), m_isOuterJoin(false) {}
-        JoinUsingClause(ECN::ECClassCR joinClass, ECN::ECRelationshipClassCR usingRelationship, bool isForward, bool isOuter, bool isPolymorphic, Utf8CP joinAlias, Utf8CP usingAlias)
+        JoinUsingClause(ECClassCR joinClass, ECRelationshipClassCR usingRelationship, bool isForward, bool isOuter, bool isPolymorphic, Utf8CP joinAlias, Utf8CP usingAlias)
             : m_join(&joinClass), m_using(&usingRelationship), m_joinAlias(joinAlias), m_usingAlias(usingAlias), m_isPolymorphic(isPolymorphic), m_isForward(isForward), m_isOuterJoin(isOuter)
             {}
         bool IsValid() const {return nullptr != m_join && nullptr != m_using;}
@@ -344,7 +344,7 @@ private:
     static void AppendToSelectClause(Utf8StringR, Utf8CP clause);
     static void Select(Utf8StringR, Utf8CP clause, bool append);
     static void SelectString(Utf8StringR, Utf8CP str, Utf8CP alias = nullptr, bool append = true);
-    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, ECN::ECPropertyCR prop, bool distinct, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, ECPropertyCR prop, bool distinct, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, Utf8CP className, Utf8CP propertyName, bool distinct, Utf8CP alias = nullptr, bool append = true);
 
 protected:
@@ -370,7 +370,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECN::ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
 
@@ -383,7 +383,7 @@ public:
 
     ECPRESENTATION_EXPORT ThisType& SelectAll();
     ECPRESENTATION_EXPORT ThisType& SelectContract(Contract const& contract, Utf8CP prefix = nullptr);
-    ECPRESENTATION_EXPORT ThisType& From(ECN::ECClassCR fromClass, bool polymorphic, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& From(ECClassCR fromClass, bool polymorphic, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT ThisType& From(TBase& nestedQuery, Utf8CP alias = nullptr);
     ECPRESENTATION_EXPORT ThisType& Where(Utf8CP whereClause, BoundQueryValuesListCR, bool append = true);
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClass const& relatedClass, bool isOuter, bool append = true);
@@ -438,7 +438,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECN::ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
     ECPRESENTATION_EXPORT void _OnIsOuterQueryValueChanged() override;
@@ -495,7 +495,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
     ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
-    ECPRESENTATION_EXPORT Contract const* _GetContract(ECN::ECClassCP) const override;
+    ECPRESENTATION_EXPORT Contract const* _GetContract(ECClassCP) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
     ECPRESENTATION_EXPORT BoundQueryValuesList _GetBoundValues() const override;
     ECPRESENTATION_EXPORT void _OnIsOuterQueryValueChanged() override;
@@ -573,18 +573,18 @@ INSTANTIATE_QUERY_SUBCLASS(GenericQuery, extern, EXPORT_VTABLE_ATTRIBUTE)
 struct NavigationQueryResultParameters
 {
 private:
-    ECN::ChildNodeSpecificationCP m_specification;
+    ChildNodeSpecificationCP m_specification;
     NavNodeExtendedData m_navNodeExtendedData;
     NavigationQueryResultType m_resultType;
-    bset<ECN::ECClassId> m_matchingRelationshipIds;
+    bset<ECClassId> m_matchingRelationshipIds;
     bool m_hasInstanceGroups;
     
 public:
     NavNodeExtendedData& GetNavNodeExtendedDataR() {return m_navNodeExtendedData;}
     void SetResultType(NavigationQueryResultType type) {m_resultType = type;}
     void SetHasInstanceGroups(bool value) {m_hasInstanceGroups = value;}
-    void SetSpecification(ECN::ChildNodeSpecificationCP spec) {m_specification = spec;}
-    bset<ECN::ECClassId>& GetMatchingRelationshipIds() {return m_matchingRelationshipIds;}
+    void SetSpecification(ChildNodeSpecificationCP spec) {m_specification = spec;}
+    bset<ECClassId>& GetMatchingRelationshipIds() {return m_matchingRelationshipIds;}
     void OnContractSelected(NavigationQueryContractCR contract) {m_resultType = contract.GetResultType();}
     void MergeWith(NavigationQueryResultParameters const&);    
 
@@ -608,8 +608,8 @@ public:
     NavNodeExtendedData const& GetNavNodeExtendedData() const {return m_navNodeExtendedData;}
     NavigationQueryResultType GetResultType() const {return m_resultType;}
     bool HasInstanceGroups() const {return m_hasInstanceGroups;}
-    ECN::ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
-    bset<ECN::ECClassId> const& GetMatchingRelationshipIds() const {return m_matchingRelationshipIds;}
+    ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
+    bset<ECClassId> const& GetMatchingRelationshipIds() const {return m_matchingRelationshipIds;}
     };
 
 /*=================================================================================**//**
@@ -633,7 +633,7 @@ struct NavigationQueryExtendedData : RapidJsonAccessor
     int GetRangeIndex(BeSQLite::DbValue const&) const;
     Utf8String GetRangeLabel(int rangeIndex) const;
     Utf8CP GetRangeImageId(int rangeIndex) const;
-    ECPRESENTATION_EXPORT void AddRangesData(ECN::ECPropertyCR, ECN::PropertyGroupCR);
+    ECPRESENTATION_EXPORT void AddRangesData(ECPropertyCR, PropertyGroupCR);
     };
 
 /*=================================================================================**//**

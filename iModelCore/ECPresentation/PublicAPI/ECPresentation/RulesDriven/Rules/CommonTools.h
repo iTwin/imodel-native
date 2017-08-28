@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/CommonTools.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/CommonTools.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,11 +8,11 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-#include <ECPresentationRules/PresentationRulesTypes.h>
-#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 #include <BeXml/BeXml.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 Helper class for commonly used functions
@@ -140,4 +140,4 @@ public:
         }
 };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

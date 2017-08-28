@@ -65,6 +65,7 @@
     <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
     <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
     <ClCompile Include="Published\PresentationManagerMessageHandlerTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
     <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />

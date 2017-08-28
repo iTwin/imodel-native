@@ -23,7 +23,7 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
 {
 private:
     // common
-    ECN::RuleTargetTree m_targetTree;
+    RuleTargetTree m_targetTree;
     IHierarchyCache* m_nodesCache;
     INodesProviderFactoryCR m_providerFactory;
     uint64_t const* m_physicalParentNodeId;
@@ -38,11 +38,11 @@ private:
 
     // root nodes context
     bool m_isRootNodeContext;
-    ECN::RootNodeRuleCP m_rootNodeRule;
+    RootNodeRuleCP m_rootNodeRule;
 
     // child nodes context
     bool m_isChildNodeContext;
-    ECN::ChildNodeRuleCP m_childNodeRule;
+    ChildNodeRuleCP m_childNodeRule;
 
     // ECDb context
     NavigationQueryBuilder* m_queryBuilder;
@@ -53,11 +53,11 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT NavNodesProviderContext(ECN::PresentationRuleSetCR, bool, ECN::RuleTargetTree, uint64_t const*, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, uint64_t const*, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
     
 public:
-    static NavNodesProviderContextPtr Create(ECN::PresentationRuleSetCR ruleset, bool holdRuleset, ECN::RuleTargetTree targetTree, uint64_t const* physicalParentId, IUserSettings const& userSettings, 
+    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, IUserSettings const& userSettings, 
         ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
         {
         return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, physicalParentId, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, nodesCache, providerFactory, localState);
@@ -66,7 +66,7 @@ public:
     ~NavNodesProviderContext();
 
     // common
-    ECN::RuleTargetTree GetTargetTree() const {return m_targetTree;}
+    RuleTargetTree GetTargetTree() const {return m_targetTree;}
     ECPRESENTATION_EXPORT IHierarchyCacheR GetNodesCache() const;
     ECPRESENTATION_EXPORT NavNodeCPtr GetPhysicalParentNode() const;
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
@@ -92,16 +92,16 @@ public:
     bool NeedsFullLoad() const {return !IsNodesCheck() && !IsNodesCount() && !IsFullNodesLoadDisabled();}
     
     // root nodes context
-    ECPRESENTATION_EXPORT void SetRootNodeContext(ECN::RootNodeRuleCR);
+    ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCR);
     ECPRESENTATION_EXPORT void SetRootNodeContext(NavNodesProviderContextCR other);
     bool IsRootNodeContext() const {return m_isRootNodeContext;}
-    ECN::RootNodeRuleCR GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return *m_rootNodeRule;}
+    RootNodeRuleCR GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return *m_rootNodeRule;}
 
     // child nodes context
-    ECPRESENTATION_EXPORT void SetChildNodeContext(ECN::ChildNodeRuleCR, NavNodeCR virtualParentNode);
+    ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCR, NavNodeCR virtualParentNode);
     ECPRESENTATION_EXPORT void SetChildNodeContext(NavNodesProviderContextCR other);
     bool IsChildNodeContext() const {return m_isChildNodeContext;}
-    ECN::ChildNodeRuleCR GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return *m_childNodeRule;}
+    ChildNodeRuleCR GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return *m_childNodeRule;}
 
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(BeSQLite::EC::ECDbCR, BeSQLite::EC::ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);
@@ -372,11 +372,11 @@ struct CustomNodesProvider : NavNodesProvider
 
 private:
     mutable NavNodesProviderPtr m_childNodesProvider;
-    ECN::CustomNodeSpecificationCR m_specification;
+    CustomNodeSpecificationCR m_specification;
     JsonNavNodePtr m_node;
 
 private:
-    ECPRESENTATION_EXPORT CustomNodesProvider(NavNodesProviderContextCR context, ECN::CustomNodeSpecificationCR specification);
+    ECPRESENTATION_EXPORT CustomNodesProvider(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification);
     void Initialize();
 
 protected:
@@ -385,7 +385,7 @@ protected:
     size_t _GetNodesCount() const override;
 
 public:
-    static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, ECN::CustomNodeSpecificationCR specification)
+    static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
         {
         return new CustomNodesProvider(context, specification);
         }
@@ -407,13 +407,13 @@ struct QueryBasedNodesProvider : MultiNavNodesProvider
 
 private:
     NavigationQueryCPtr m_query;
-    bvector<ECN::ECClassId> m_usedClassIds;
+    bvector<ECClassId> m_usedClassIds;
     NavigationQueryExecutor m_executor;
     size_t m_executorIndex;
     mutable bool m_inProvidersRequest;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bset<ECN::ECClassId> const&);
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bset<ECClassId> const&);
     bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
     void Initialize();
     NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
@@ -427,13 +427,13 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context, 
-        NavigationQuery const& query, bset<ECN::ECClassId> const& usedClassIds = bset<ECN::ECClassId>())
+        NavigationQuery const& query, bset<ECClassId> const& usedClassIds = bset<ECClassId>())
         {
         return new QueryBasedNodesProvider(context, query, usedClassIds);
         }
     NavigationQueryExecutor const& GetExecutor() const {return m_executor;}
     NavigationQueryExecutor& GetExecutorR() {return m_executor;}
-    void SetQuery(NavigationQuery const& query, bset<ECN::ECClassId> const&);
+    void SetQuery(NavigationQuery const& query, bset<ECClassId> const&);
 };
 
 /*=================================================================================**//**
@@ -445,18 +445,18 @@ struct QueryBasedSpecificationNodesProvider : MultiNavNodesProvider
     using NavNodesProvider::GetNode;
 
 private:
-    ECN::ChildNodeSpecificationCR m_specification;
+    ChildNodeSpecificationCR m_specification;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextCR context, ECN::ChildNodeSpecificationCR specification);
-    bvector<NavigationQueryPtr> CreateQueries(ECN::ChildNodeSpecificationCR specification) const;
+    ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification);
+    bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
     void SetupNestedProviders(bool fresh);
     
 protected:
     bool _HasNodes() const override;
 
 public:
-    static RefCountedPtr<QueryBasedSpecificationNodesProvider> Create(NavNodesProviderContextCR context, ECN::ChildNodeSpecificationCR specification)
+    static RefCountedPtr<QueryBasedSpecificationNodesProvider> Create(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification)
         {
         return new QueryBasedSpecificationNodesProvider(context, specification);
         }

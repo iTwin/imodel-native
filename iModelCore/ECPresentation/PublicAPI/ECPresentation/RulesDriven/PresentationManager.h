@@ -16,12 +16,15 @@
 #include <ECPresentation/RulesDriven/ECInstanceChangeHandlers.h>
 #include <ECPresentation/RulesDriven/ECInstanceChangeEvents.h>
 #include <ECPresentation/RulesDriven/Update.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
+
 // Logger Namespaces
-#define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE                    "ECPresentation.RulesEngine"
+#define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE                    LOGGER_NAMESPACE_ECPRESENTATION ".RulesEngine"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_NAVIGATION         LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Navigation"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_NAVIGATION_CACHE   LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_NAVIGATION ".Cache"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_CONTENT            LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Content"
@@ -97,7 +100,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] ruleTargetTree The target tree.
         //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
-        NavigationOptions(Utf8CP rulesetId, ECN::RuleTargetTree ruleTargetTree, bool disableUpdates = false) : JsonCppAccessor() {SetRulesetId(rulesetId); SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree, bool disableUpdates = false) : JsonCppAccessor() {SetRulesetId(rulesetId); SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
 
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
@@ -114,9 +117,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Is rule target tree defined.
         bool HasRuleTargetTree() const {return GetJson().isMember(OPTION_NAME_RuleTargetTree);}
         //! Get the rule target tree.
-        ECN::RuleTargetTree GetRuleTargetTree() const {return GetJson().isMember(OPTION_NAME_RuleTargetTree) ? (ECN::RuleTargetTree)GetJson()[OPTION_NAME_RuleTargetTree].asInt() : ECN::RuleTargetTree::TargetTree_MainTree;}
+        RuleTargetTree GetRuleTargetTree() const {return GetJson().isMember(OPTION_NAME_RuleTargetTree) ? (RuleTargetTree)GetJson()[OPTION_NAME_RuleTargetTree].asInt() : RuleTargetTree::TargetTree_MainTree;}
         //! Set the rule target tree.
-        void SetRuleTargetTree(ECN::RuleTargetTree ruleTargetTree) {AddMember(OPTION_NAME_RuleTargetTree, (int)ruleTargetTree);}
+        void SetRuleTargetTree(RuleTargetTree ruleTargetTree) {AddMember(OPTION_NAME_RuleTargetTree, (int)ruleTargetTree);}
         };
      
     //===================================================================================
@@ -180,14 +183,14 @@ private:
     
 //__PUBLISH_SECTION_END__
 private:
-    INavNodesDataSourcePtr GetCachedDataSource(BeSQLite::EC::ECDbR, JsonValueCR);
-    INavNodesDataSourcePtr GetCachedDataSource(BeSQLite::EC::ECDbR, NavNodeCR parent, JsonValueCR);
-    SpecificationContentProviderCPtr GetContentProvider(BeSQLite::EC::ECDbR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
-    SpecificationContentProviderPtr GetContentProvider(BeSQLite::EC::ECDbR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
+    INavNodesDataSourcePtr GetCachedDataSource(ECDbR, JsonValueCR);
+    INavNodesDataSourcePtr GetCachedDataSource(ECDbR, NavNodeCR parent, JsonValueCR);
+    SpecificationContentProviderCPtr GetContentProvider(ECDbR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
+    SpecificationContentProviderPtr GetContentProvider(ECDbR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
     ECPRESENTATION_EXPORT NodesCache& GetNodesCacheR() const;
     IPropertyCategorySupplier& GetCategorySupplier() const;
     ILocalizationProvider const& GetLocalizationProvider() const;
-    void OnConnection(BeSQLite::EC::ECDbCR) const;
+    void OnConnection(ECDbCR) const;
     
 public:
     NodesCache const& GetNodesCache() const {return GetNodesCacheR();}
@@ -197,8 +200,8 @@ public:
 //__PUBLISH_SECTION_START__
 protected:
     // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(ECN::PresentationRuleSetCR) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(ECN::PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR) override;
 
     // ISelectionChangesListener
     ECPRESENTATION_EXPORT void _OnSelectionChanged(SelectionChangedEventCR) override;
@@ -207,25 +210,25 @@ protected:
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
     
     // IECPresentationManager: Navigation
-    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(BeSQLite::EC::ECDbR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetRootNodesCount(BeSQLite::EC::ECDbR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetChildren(BeSQLite::EC::ECDbR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetChildrenCount(BeSQLite::EC::ECDbR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT bool _HasChild(BeSQLite::EC::ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(BeSQLite::EC::ECDbR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(BeSQLite::EC::ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeChecked(BeSQLite::EC::ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeUnchecked(BeSQLite::EC::ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeExpanded(BeSQLite::EC::ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeCollapsed(BeSQLite::EC::ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT size_t _GetRootNodesCount(ECDbR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetChildren(ECDbR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT size_t _GetChildrenCount(ECDbR, NavNodeCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT bool _HasChild(ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(ECDbR, NavNodeCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnNodeChecked(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnNodeUnchecked(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnNodeExpanded(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnNodeCollapsed(ECDbR, uint64_t nodeId) override;
     
     // IECPresentationManager: Content
-    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(BeSQLite::EC::ECDbR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;
-    ECPRESENTATION_EXPORT ContentCPtr _GetContent(BeSQLite::EC::ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetContentSetSize(BeSQLite::EC::ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override;
+    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(ECDbR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;
+    ECPRESENTATION_EXPORT ContentCPtr _GetContent(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT size_t _GetContentSetSize(ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override;
     
     // IECPresentationManager: Updating
-    ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(BeSQLite::EC::ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECN::ECValueCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;
 
 public:
     //! Constructor.

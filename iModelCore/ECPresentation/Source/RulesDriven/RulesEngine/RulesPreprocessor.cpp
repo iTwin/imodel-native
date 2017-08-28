@@ -556,7 +556,7 @@ bvector<SortingRuleCP> RulesPreprocessor::GetSortingRules(AggregateCustomization
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::LocalizationResourceKeyDefinitionCP RulesPreprocessor::GetLocalizationResourceKeyDefinition(Utf8StringCR id, ECN::PresentationRuleSetCR ruleset)
+LocalizationResourceKeyDefinitionCP RulesPreprocessor::GetLocalizationResourceKeyDefinition(Utf8StringCR id, PresentationRuleSetCR ruleset)
     {
     LocalizationResourceKeyDefinitionList const& definitions = ruleset.GetLocalizationResourceKeyDefinitions();
     for (LocalizationResourceKeyDefinitionCP definition : definitions)

@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/CommonTools.cpp $
+|     $Source: Source/RulesDriven/Rules/CommonTools.cpp $
 |
 |   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include <ECPresentationPch.h>
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/CommonTools.h>
-#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <BeSQLite/L10N.h>
 #include "../../../Source/RulesDriven/RulesEngine/NavNodeProviders.h"
 #include "../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"

@@ -41,6 +41,11 @@
     END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
+// Define the ECPresentation logger namespace
+//-----------------------------------------------------------------------------------------
+#define LOGGER_NAMESPACE_ECPRESENTATION "ECPresentation"
+
+//-----------------------------------------------------------------------------------------
 // Use the ECPresentation namespace
 //-----------------------------------------------------------------------------------------
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -8,7 +8,7 @@
 #pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/Localization.h>
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -33,11 +33,11 @@ protected:
 struct LocalizationHelper
 {
 private:
-    ECN::PresentationRuleSetCP m_ruleset;
+    PresentationRuleSetCP m_ruleset;
     ILocalizationProvider const& m_provider;
 
 public:
-    LocalizationHelper(ILocalizationProvider const& provider, ECN::PresentationRuleSetCP ruleset = nullptr) : m_ruleset(ruleset), m_provider(provider) {}
+    LocalizationHelper(ILocalizationProvider const& provider, PresentationRuleSetCP ruleset = nullptr) : m_ruleset(ruleset), m_provider(provider) {}
     ECPRESENTATION_EXPORT bool LocalizeString(Utf8StringR str) const;
 };
 

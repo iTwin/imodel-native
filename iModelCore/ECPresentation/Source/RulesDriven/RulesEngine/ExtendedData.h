@@ -118,12 +118,12 @@ struct NavNodeExtendedData : ItemExtendedData
     void SetVirtualParentId(uint64_t id) {AddMember(NAVNODE_EXTENDEDDATA_VirtualParentId, rapidjson::Value(id));}
 
     bool HasParentECClassId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_ParentECClassId);}
-    ECN::ECClassId GetParentECClassId() const {return ECN::ECClassId(GetJson()[NAVNODE_EXTENDEDDATA_ParentECClassId].GetUint64());}
-    void SetParentECClassId(ECN::ECClassId const& id) {AddMember(NAVNODE_EXTENDEDDATA_ParentECClassId, rapidjson::Value(id.GetValue()));}
+    ECClassId GetParentECClassId() const {return ECClassId(GetJson()[NAVNODE_EXTENDEDDATA_ParentECClassId].GetUint64());}
+    void SetParentECClassId(ECClassId const& id) {AddMember(NAVNODE_EXTENDEDDATA_ParentECClassId, rapidjson::Value(id.GetValue()));}
     
     bool HasRelationshipDirection() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_RelationshipDirection);}
-    ECN::ECRelatedInstanceDirection GetRelationshipDirection() const {return (ECN::ECRelatedInstanceDirection)GetJson()[NAVNODE_EXTENDEDDATA_RelationshipDirection].GetInt();}
-    void SetRelationshipDirection(ECN::ECRelatedInstanceDirection direction) {AddMember(NAVNODE_EXTENDEDDATA_RelationshipDirection, rapidjson::Value((int)direction));}
+    ECRelatedInstanceDirection GetRelationshipDirection() const {return (ECRelatedInstanceDirection)GetJson()[NAVNODE_EXTENDEDDATA_RelationshipDirection].GetInt();}
+    void SetRelationshipDirection(ECRelatedInstanceDirection direction) {AddMember(NAVNODE_EXTENDEDDATA_RelationshipDirection, rapidjson::Value((int)direction));}
     
     bool GetAlwaysReturnsChildren() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren) ? GetJson()[NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren].GetBool() : false;}
     void SetAlwaysReturnsChildren(bool value) {AddMember(NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren, rapidjson::Value(value));}
@@ -141,8 +141,8 @@ struct NavNodeExtendedData : ItemExtendedData
     void SetHideNodesInHierarchy(bool value) {AddMember(NAVNODE_EXTENDEDDATA_HideNodesInHierarchy, rapidjson::Value(value));}
     
     bool HasECClassId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_ECClassId);}
-    ECN::ECClassId GetECClassId() const {return ECN::ECClassId(GetJson()[NAVNODE_EXTENDEDDATA_ECClassId].GetUint64());}
-    void SetECClassId(ECN::ECClassId const& id) {AddMember(NAVNODE_EXTENDEDDATA_ECClassId, rapidjson::Value(id.GetValue()));}
+    ECClassId GetECClassId() const {return ECClassId(GetJson()[NAVNODE_EXTENDEDDATA_ECClassId].GetUint64());}
+    void SetECClassId(ECClassId const& id) {AddMember(NAVNODE_EXTENDEDDATA_ECClassId, rapidjson::Value(id.GetValue()));}
 
     bool HasGroupingType() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_GroupingType);}
     int GetGroupingType() const {return HasGroupingType() ? GetJson()[NAVNODE_EXTENDEDDATA_GroupingType].GetInt() : -1;}

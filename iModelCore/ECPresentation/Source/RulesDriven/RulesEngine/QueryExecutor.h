@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <Logging/bentleylogging.h>
 #include "NavigationQuery.h"
 #include "JsonNavNode.h"

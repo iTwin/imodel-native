@@ -8,7 +8,7 @@
 #pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/UserSettings.h>
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 #include "ECExpressionContextsProvider.h"
 #include "../../ECDbBasedCache.h"
 
@@ -71,7 +71,7 @@ struct CustomFunctionsContext : IUserSettingsChangeListener
 
 private:
     BeSQLite::EC::ECDbR m_db;
-    ECN::PresentationRuleSetCR m_ruleset;
+    PresentationRuleSetCR m_ruleset;
     JsonNavNodesFactory const& m_nodesFactory;
     IUserSettings const& m_userSettings;
     IUsedUserSettingsListener* m_usedSettingsListener;
@@ -84,7 +84,7 @@ private:
     bset<ICustomFunctionsContextListener*> m_listeners;
     
 public:
-    ECPRESENTATION_EXPORT CustomFunctionsContext(BeSQLite::EC::ECDbR, ECN::PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
+    ECPRESENTATION_EXPORT CustomFunctionsContext(BeSQLite::EC::ECDbR, PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
         ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, NavNodeCP parentNode, rapidjson::Value const* queryExtendedData);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
 
@@ -93,7 +93,7 @@ public:
     void SetLocalizationProvider(ILocalizationProvider const& provider) {m_localizationProvider = &provider;}
     ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
     BeSQLite::EC::ECDbR GetDb() const {return m_db;}
-    ECN::PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+    PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     IUsedUserSettingsListener* GetUsedUserSettingsListener() const {return m_usedSettingsListener;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}

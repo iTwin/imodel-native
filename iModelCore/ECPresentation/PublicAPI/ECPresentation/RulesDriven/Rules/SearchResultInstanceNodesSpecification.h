@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/SearchResultInstanceNodesSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/SearchResultInstanceNodesSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
@@ -44,8 +44,8 @@ protected:
 
     virtual void _Accept(QuerySpecificationVisitor& visitor) const = 0;
     virtual Utf8CP _GetXmlElementName() const = 0;
-    ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode);
-    ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const;
+    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode);
+    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const;
     virtual QuerySpecification* _Clone() const = 0;
 
 public:
@@ -90,9 +90,9 @@ private:
 
 protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
-    ECOBJECTS_EXPORT virtual Utf8CP _GetXmlElementName() const override;
-    ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
+    ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
 
 public:
@@ -121,9 +121,9 @@ private:
 
 protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
-    ECOBJECTS_EXPORT virtual Utf8CP _GetXmlElementName() const override;
-    ECOBJECTS_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECOBJECTS_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
+    ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
 
 public:
@@ -156,33 +156,33 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
 
     protected:
         //! Allows the visitor to visit this specification.
-        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP               _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification ();
+        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
                                                                  bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
         
         //! Copy Constructor.
-        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (SearchResultInstanceNodesSpecification const&);
+        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (SearchResultInstanceNodesSpecification const&);
 
         //! Destructor.
-        ECOBJECTS_EXPORT ~SearchResultInstanceNodesSpecification();
+        ECPRESENTATION_EXPORT ~SearchResultInstanceNodesSpecification();
         
         //! Returns the list of query specifications that are responsible for the results of this rule.
         QuerySpecificationList const& GetQuerySpecifications() const {return m_querySpecifications;}
@@ -191,16 +191,16 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         QuerySpecificationList& GetQuerySpecificationsR() {return m_querySpecifications;}
 
         //! Returns true if grouping by class should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
+        ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;
 
         //! Sets the GroupByClass value. Can be boolean.
-        ECOBJECTS_EXPORT void                         SetGroupByClass (bool value);
+        ECPRESENTATION_EXPORT void                         SetGroupByClass (bool value);
 
         //! Returns true if grouping by label should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
+        ECPRESENTATION_EXPORT bool                         GetGroupByLabel (void) const;
 
         //! Sets the GroupByLabel value. Can be boolean.
-        ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
+        ECPRESENTATION_EXPORT void                         SetGroupByLabel (bool value);
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

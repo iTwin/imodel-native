@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/CustomNodeSpecification.cpp $
+|     $Source: Source/RulesDriven/Rules/CustomNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include <ECPresentationPch.h>
 
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/PresentationRules.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

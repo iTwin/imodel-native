@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/GroupingRule.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/GroupingRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 struct GroupSpecification;
 struct ClassGroup;
@@ -54,55 +54,55 @@ struct GroupingRule : public CustomizationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP      _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
 
         //!Accepts customization rule visitor
-        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
+        ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT GroupingRule();
+        ECPRESENTATION_EXPORT GroupingRule();
 
         //! Constructor.
-        ECOBJECTS_EXPORT GroupingRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
+        ECPRESENTATION_EXPORT GroupingRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId);
 
         //! Constructor.
-        ECOBJECTS_EXPORT GroupingRule(GroupingRuleCR);
+        ECPRESENTATION_EXPORT GroupingRule(GroupingRuleCR);
 
         //! Desctructor.
-        ECOBJECTS_EXPORT                     ~GroupingRule (void);
+        ECPRESENTATION_EXPORT                     ~GroupingRule (void);
 
         //! Acceptable schema name of ECInstances on which this grouping rule will be applied.
-        ECOBJECTS_EXPORT Utf8StringCR        GetSchemaName (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetSchemaName (void) const;
 
         //! Acceptable class name of ECInstances on which this grouping rule will be applied.
-        ECOBJECTS_EXPORT Utf8StringCR        GetClassName (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetClassName (void) const;
 
         //! ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-        ECOBJECTS_EXPORT Utf8StringCR        GetContextMenuCondition (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetContextMenuCondition (void) const;
 
         //! Sets the ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-        ECOBJECTS_EXPORT void                SetContextMenuCondition (Utf8String value);
+        ECPRESENTATION_EXPORT void                SetContextMenuCondition (Utf8String value);
 
         //! Label of the parent context menu for choosing one of the predefined ProeprtyGroups.
         //! If this parameters is not set, the default name will be used - "Group By". 
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-        ECOBJECTS_EXPORT Utf8StringCR        GetContextMenuLabel (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetContextMenuLabel (void) const;
 
         //! Id that is used to store current active group. This is used only if there are more than one Group available.
-        ECOBJECTS_EXPORT Utf8StringCR        GetSettingsId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetSettingsId (void) const;
 
         //! Returns a list of GroupSpecifications.
-        ECOBJECTS_EXPORT GroupList const&     GetGroups (void) const;
-        ECOBJECTS_EXPORT GroupList&           GetGroupsR (void);
+        ECPRESENTATION_EXPORT GroupList const&     GetGroups (void) const;
+        ECPRESENTATION_EXPORT GroupList&           GetGroupsR (void);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,10 +117,10 @@ private:
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT GroupSpecification ();
+    ECPRESENTATION_EXPORT GroupSpecification ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
+    ECPRESENTATION_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     virtual CharCP _GetXmlElementName () const = 0;
@@ -146,19 +146,19 @@ public:
     GroupSpecification* Clone() const {return _Clone();}
 
     //! Allows the visitor to visit this group specification.
-    ECOBJECTS_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
+    ECPRESENTATION_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
     
     //! Reads group specification from xml node.
-    ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+    ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes group specification to xml node.
-    ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
+    ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
-    ECOBJECTS_EXPORT Utf8StringCR             GetContextMenuLabel (void) const;
+    ECPRESENTATION_EXPORT Utf8StringCR             GetContextMenuLabel (void) const;
 
     //! Default group label to use when the grouping property is null or empty. Optional - overrides the default.
-    ECOBJECTS_EXPORT Utf8StringCR             GetDefaultLabel (void) const;
+    ECPRESENTATION_EXPORT Utf8StringCR             GetDefaultLabel (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,26 +170,26 @@ struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecificatio
     {
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
-        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT SameLabelInstanceGroup ();
+        ECPRESENTATION_EXPORT SameLabelInstanceGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SameLabelInstanceGroup (Utf8StringCR contextMenuLabel);
+        ECPRESENTATION_EXPORT SameLabelInstanceGroup (Utf8StringCR contextMenuLabel);
 
     };
 
@@ -206,35 +206,35 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
-        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ClassGroup ();
+        ECPRESENTATION_EXPORT ClassGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName);
+        ECPRESENTATION_EXPORT ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName);
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
+        ECPRESENTATION_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
 
         //! ECSchema name of base class.
-        ECOBJECTS_EXPORT Utf8StringCR             GetSchemaName (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetSchemaName (void) const;
 
         //! Base ECClass name to group ECInstances by.
-        ECOBJECTS_EXPORT Utf8StringCR             GetBaseClassName (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetBaseClassName (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,47 +265,47 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
-        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT PropertyGroup ();
+        ECPRESENTATION_EXPORT PropertyGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel = NULL);
+        ECPRESENTATION_EXPORT PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel = NULL);
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyGroup(PropertyGroupCR);
+        ECPRESENTATION_EXPORT PropertyGroup(PropertyGroupCR);
 
         //! Destructor.
-        ECOBJECTS_EXPORT                          ~PropertyGroup (void);
+        ECPRESENTATION_EXPORT                          ~PropertyGroup (void);
 
         //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT Utf8StringCR             GetImageId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetImageId (void) const;
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
+        ECPRESENTATION_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
         
         //! Idendifies whether a group should be created for unspecified (NULL) values.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForUnspecifiedValues() const;
+        ECPRESENTATION_EXPORT bool                     GetCreateGroupForUnspecifiedValues() const;
         
         //! Should a group should be created for unspecified (NULL) values.
-        ECOBJECTS_EXPORT void                     SetCreateGroupForUnspecifiedValues(bool value);
+        ECPRESENTATION_EXPORT void                     SetCreateGroupForUnspecifiedValues(bool value);
 
         //! ECProperty name to group ECInstances by.
-        ECOBJECTS_EXPORT Utf8StringCR             GetPropertyName (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetPropertyName (void) const;
 
         //! Get the property grouping value type.
         PropertyGroupingValue GetPropertyGroupingValue() const {return m_groupingValue;}
@@ -320,8 +320,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         void SetSortingValue(PropertyGroupingValue value) {m_sortingValue = value;}
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
-        ECOBJECTS_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;
-        ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRangesR (void);
+        ECPRESENTATION_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;
+        ECPRESENTATION_EXPORT PropertyRangeGroupList&  GetRangesR (void);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -339,28 +339,28 @@ struct PropertyRangeGroupSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT PropertyRangeGroupSpecification ();
+        ECPRESENTATION_EXPORT PropertyRangeGroupSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyRangeGroupSpecification (Utf8StringCR label, Utf8StringCR imageId, Utf8StringCR fromValue, Utf8StringCR toValue);
+        ECPRESENTATION_EXPORT PropertyRangeGroupSpecification (Utf8StringCR label, Utf8StringCR imageId, Utf8StringCR fromValue, Utf8StringCR toValue);
 
         //! Reads specification from xml.
-        ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.
-        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! ImageId of the grouping range node. If not set ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT Utf8StringCR             GetLabel (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetLabel (void) const;
 
         //! ImageId of the grouping node. Can be ECExpression. If not set ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT Utf8StringCR             GetImageId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetImageId (void) const;
 
         //! Property that defines the range starting point. It is string for being able to define Units.
-        ECOBJECTS_EXPORT Utf8StringCR             GetFromValue (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetFromValue (void) const;
 
         //! Property that defines the range end point. It is string for being able to define Units.
-        ECOBJECTS_EXPORT Utf8StringCR             GetToValue (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR             GetToValue (void) const;
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

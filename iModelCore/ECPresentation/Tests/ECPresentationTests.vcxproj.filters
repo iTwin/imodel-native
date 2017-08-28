@@ -67,6 +67,7 @@
     <ClCompile Include="TestHelpers\IssueReporter.cpp" />
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />

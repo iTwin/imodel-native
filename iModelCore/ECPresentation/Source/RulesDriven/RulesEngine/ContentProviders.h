@@ -35,11 +35,11 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(ECN::PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
-    static ContentProviderContextPtr Create(ECN::PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
         IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
         return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, nodesLocater, categorySupplier, settings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
@@ -132,7 +132,7 @@ private:
     ContentRuleSpecificationsList m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
     mutable ContentQueryPtr m_query;
-    mutable bmap<ECN::ContentRuleCP, IParsedSelectionInfo const*> m_parsedSelectionsCache;
+    mutable bmap<ContentRuleCP, IParsedSelectionInfo const*> m_parsedSelectionsCache;
 private:
     ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleSpecificationsList);
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);

@@ -16,10 +16,10 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ImageHelper
 {
 private:
-    static bool GetImageId(Utf8StringR imageId, ECN::IECCustomAttributeContainerCR container, bool expanded);
+    static bool GetImageId(Utf8StringR imageId, IECCustomAttributeContainerCR container, bool expanded);
 public:
-    static Utf8String GetImageId(ECN::ECClassCR ecClass, bool isInstanceImage, bool expanded);
-    static Utf8String GetImageId(ECN::ECPropertyCR ecProperty, bool expanded);
+    static Utf8String GetImageId(ECClassCR ecClass, bool isInstanceImage, bool expanded);
+    static Utf8String GetImageId(ECPropertyCR ecProperty, bool expanded);
     static Utf8String GetLabelGroupingNodeImageId(bool expanded);
 };
 

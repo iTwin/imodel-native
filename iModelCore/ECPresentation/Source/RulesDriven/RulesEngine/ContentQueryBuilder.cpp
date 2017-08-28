@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "QueryBuilder.h"
 #include "ECExpressionContextsProvider.h"
 #include "LoggingHelper.h"

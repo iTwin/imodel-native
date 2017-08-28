@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/LabelOverride.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/LabelOverride.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 Label and Description override rule implementation. This rule is used to override default 
@@ -26,35 +26,35 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public CustomizationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP   _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
 
         //! Accept nested customization rule visitor
-        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT LabelOverride ();
+        ECPRESENTATION_EXPORT LabelOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description);
+        ECPRESENTATION_EXPORT LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description);
 
         //! Label override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT Utf8StringCR        GetLabel (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetLabel (void) const;
 
         //! Set label override value. Can be ECExpression string. 
-        ECOBJECTS_EXPORT void             SetLabel (Utf8String value);
+        ECPRESENTATION_EXPORT void             SetLabel (Utf8String value);
 
         //! Description override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT Utf8StringCR        GetDescription (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetDescription (void) const;
 
         //! Set description override value. Can be ECExpression string. 
-        ECOBJECTS_EXPORT void             SetDescription (Utf8String value);
+        ECPRESENTATION_EXPORT void             SetDescription (Utf8String value);
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

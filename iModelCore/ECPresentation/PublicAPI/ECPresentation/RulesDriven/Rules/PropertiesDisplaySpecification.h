@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/PropertiesDisplaySpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PropertiesDisplaySpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * Specification for specifying single property that should be displayed or hidden.
@@ -31,10 +31,10 @@ struct PropertiesDisplaySpecification
             {}
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
         
         //! Get the property names.
         Utf8StringCR GetPropertyNames() const {return m_propertyNames;}
@@ -46,4 +46,4 @@ struct PropertiesDisplaySpecification
         bool IsDisplayed() const {return m_isDisplayed;}
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

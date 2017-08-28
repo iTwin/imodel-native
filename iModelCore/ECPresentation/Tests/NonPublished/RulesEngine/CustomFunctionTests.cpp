@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "../../../Source/RulesDriven/RulesEngine/CustomFunctions.h"
 #include "../../../Localization/Xliffs/ECPresentation.xliff.h"
 #include "TestHelpers.h"

@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/CalculatedPropertySpecification.cpp $
+|     $Source: Source/RulesDriven/Rules/CalculatedPropertySpecification.cpp $
 |
 |   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include <ECPresentationPch.h>
 
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentationRules/CommonTools.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tautvydas.Zinys                10/2016

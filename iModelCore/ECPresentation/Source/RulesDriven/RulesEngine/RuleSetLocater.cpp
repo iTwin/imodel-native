@@ -185,7 +185,7 @@ bvector<Utf8String> RuleSetLocaterManager::GetRuleSetIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECN::PresentationRuleSetPtr> RuleSetLocater::LocateRuleSets(Utf8CP rulesetId) const {return _LocateRuleSets(rulesetId);}
+bvector<PresentationRuleSetPtr> RuleSetLocater::LocateRuleSets(Utf8CP rulesetId) const {return _LocateRuleSets(rulesetId);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015

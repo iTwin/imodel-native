@@ -8,7 +8,7 @@
 #pragma once 
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/IECPresentationManager.h>
-#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
 #include "RulesEngineTypes.h"
 #include "NavNodeProviders.h"
 #include "DataSourceInfo.h"
@@ -22,11 +22,11 @@ struct DataSourceFilter
 {
     struct RelatedInstanceInfo
         {
-        bset<ECN::ECClassId> m_relationshipClassIds;
+        bset<ECClassId> m_relationshipClassIds;
         BeSQLite::EC::ECInstanceId m_instanceId;
-        ECN::RequiredRelationDirection m_direction;
+        RequiredRelationDirection m_direction;
         RelatedInstanceInfo() {}
-        RelatedInstanceInfo(bset<ECN::ECClassId> relationshipClassIds, ECN::RequiredRelationDirection direction, BeSQLite::EC::ECInstanceId id)
+        RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, BeSQLite::EC::ECInstanceId id)
             : m_relationshipClassIds(relationshipClassIds), m_direction(direction), m_instanceId(id)
             {}
         bool IsValid() const {return !m_relationshipClassIds.empty() && m_instanceId.IsValid();}

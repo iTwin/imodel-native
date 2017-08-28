@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/CustomizationRules.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/CustomizationRules.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,10 +9,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRule.h>
-#include <ECPresentationRules/PresentationRulesTypes.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE CustomizationRuleVisitor{
     friend struct GroupingRule;
     friend struct ImageIdOverride;
@@ -45,4 +45,4 @@ public:
     void Accept(CustomizationRuleVisitor& visitor) const { _Accept(visitor); }
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

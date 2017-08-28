@@ -95,10 +95,10 @@ private:
     ECExpressionContextsProvider() {};
 
 public:
-    ECPRESENTATION_EXPORT static ECN::ExpressionContextPtr GetNodeRulesContext(NodeRulesContextParameters const&);
-    ECPRESENTATION_EXPORT static ECN::ExpressionContextPtr GetContentRulesContext(ContentRulesContextParameters const&);
-    ECPRESENTATION_EXPORT static ECN::ExpressionContextPtr GetCustomizationRulesContext(CustomizationRulesContextParameters const&);
-    ECPRESENTATION_EXPORT static ECN::ExpressionContextPtr GetCalculatedPropertyContext(NavNodePtr const&, IUserSettings const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetNodeRulesContext(NodeRulesContextParameters const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetContentRulesContext(ContentRulesContextParameters const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCustomizationRulesContext(CustomizationRulesContextParameters const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCalculatedPropertyContext(NavNodePtr const&, IUserSettings const&);
 };
 
 /*=================================================================================**//**
@@ -107,12 +107,12 @@ public:
 struct ECExpressionsCache
 {
 private:
-    bmap<Utf8String, ECN::NodePtr> m_cache;
+    bmap<Utf8String, NodePtr> m_cache;
 
 public:
     ECExpressionsCache() {}
-    ECN::NodePtr Get(Utf8CP expression) const;
-    void Add(Utf8CP expression, ECN::Node&);
+    NodePtr Get(Utf8CP expression) const;
+    void Add(Utf8CP expression, Node&);
     void Clear();
 };
 
@@ -137,8 +137,8 @@ private:
     ECExpressionsCache& m_cache;
 public:
     ECExpressionsHelper(ECExpressionsCache& cache) : m_cache(cache) {}
-    bool EvaluateECExpression(ECN::ECValueR result, Utf8StringCR expression, ECN::ExpressionContextR context);
-    ECPRESENTATION_EXPORT ECN::NodePtr GetNodeFromExpression(Utf8CP expression);
+    bool EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
+    ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
     ECPRESENTATION_EXPORT Utf8String ConvertToECSql(Utf8StringCR expression);
     ECPRESENTATION_EXPORT bvector<Utf8String> GetUsedClasses(Utf8StringCR expression);
 };

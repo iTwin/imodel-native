@@ -36,11 +36,11 @@ protected:
     virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&) const = 0;
     virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const = 0;
     
-    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECN::ECClassId> const&, bvector<Utf8String> const&, bool) = 0;
+    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) = 0;
     virtual void _Cache(JsonNavNodeCR, bool) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR) = 0;
-    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECN::ECClassId> const*, bvector<Utf8String> const*) = 0;
+    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) = 0;
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
@@ -57,7 +57,7 @@ public:
     //! Get the data source the node with the supplied ID belongs to.
     NavNodesProviderPtr GetDataSource(uint64_t nodeId) const {return _GetDataSource(nodeId);}
     
-    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bvector<ECN::ECClassId> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds, 
+    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bvector<ECClassId> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds, 
         bool disableUpdates = false)
         {
         _Cache(info, filter, relatedClassIds, relatedSettingIds, disableUpdates);
@@ -65,7 +65,7 @@ public:
     void Cache(JsonNavNodeCR node, bool isVirtual) {_Cache(node, isVirtual);}
 
     void Update(uint64_t nodeId, JsonNavNodeCR node) {_Update(nodeId, node);}
-    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bvector<ECN::ECClassId> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
+    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bvector<ECClassId> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
         {
         _Update(info, filter, relatedClassIds, relatedSettingIds);
         }
@@ -107,7 +107,7 @@ private:
 
     void CacheNode(DataSourceInfo const&, NavNodeCR, bool isVirtual);
     void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
-    void CacheRelatedClassIds(uint64_t datasourceId, bvector<ECN::ECClassId> const&);
+    void CacheRelatedClassIds(uint64_t datasourceId, bvector<ECClassId> const&);
     void CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8String> const&);
     DataSourceInfo GetDataSourceInfo(BeSQLite::BeGuid const* connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const;
     DataSourceInfo GetDataSourceInfo(uint64_t nodeId) const;
@@ -137,10 +137,10 @@ protected:
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const&) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const override;
-    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECN::ECClassId> const&, bvector<Utf8String> const&, bool) override;
+    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override;
     ECPRESENTATION_EXPORT void _Cache(JsonNavNodeCR, bool) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR) override;
-    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECN::ECClassId> const*, bvector<Utf8String> const*) override;
+    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
     

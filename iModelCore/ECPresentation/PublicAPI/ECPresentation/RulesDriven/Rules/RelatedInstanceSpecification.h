@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/RelatedInstanceSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/RelatedInstanceSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRulesTypes.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
@@ -33,10 +33,10 @@ struct RelatedInstanceSpecification
             {}
 
         //! Reads specification from XML.
-        ECOBJECTS_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
         //! Writes the specification to xml node.
-        ECOBJECTS_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
 
         //! Returns direction of relationship that should be selected in the query.
         RequiredRelationDirection GetRelationshipDirection() const {return m_direction;}
@@ -57,4 +57,4 @@ struct RelatedInstanceSpecification
         void SetAlias(Utf8String alias) {m_alias = alias;}
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

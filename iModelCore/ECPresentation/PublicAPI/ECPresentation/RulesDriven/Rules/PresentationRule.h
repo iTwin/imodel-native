@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/PresentationRule.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRule.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 //! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree
@@ -33,32 +33,32 @@ private:
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT PresentationKey ();
+    ECPRESENTATION_EXPORT PresentationKey ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT PresentationKey (int priority);
+    ECPRESENTATION_EXPORT PresentationKey (int priority);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    ECOBJECTS_EXPORT virtual CharCP         _GetXmlElementName () const = 0;
+    ECPRESENTATION_EXPORT virtual CharCP         _GetXmlElementName () const = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) = 0;
+    ECPRESENTATION_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const = 0;
+    ECPRESENTATION_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
 public:
     //! Virtual destructor.
     virtual ~PresentationKey(){}
     
     //! Reads PresentationRule from xml node.
-    ECOBJECTS_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
+    ECPRESENTATION_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes PresentationRule to xml node.
-    ECOBJECTS_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode) const;
+    ECPRESENTATION_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! Priority of the rule, defines the order in which rules are evaluated and executed.
-    ECOBJECTS_EXPORT int                    GetPriority (void) const;
+    ECPRESENTATION_EXPORT int                    GetPriority (void) const;
 
     };
 
@@ -74,26 +74,26 @@ private:
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT PresentationRule ();
+    ECPRESENTATION_EXPORT PresentationRule ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
+    ECPRESENTATION_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) override;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const override;
+    ECPRESENTATION_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const override;
 
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT Utf8StringCR              GetCondition (void) const;
+    ECPRESENTATION_EXPORT Utf8StringCR              GetCondition (void) const;
 
     //! Set condition ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT void                   SetCondition (Utf8String value);
+    ECPRESENTATION_EXPORT void                   SetCondition (Utf8String value);
 
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
-    ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;
+    ECPRESENTATION_EXPORT bool                   GetOnlyIfNotHandled (void) const;
     };
 
 struct PresentationRuleSpecificationVisitor;
@@ -108,7 +108,7 @@ protected:
 
 public:
     //! Allows the visitor to visit this specification.
-    ECOBJECTS_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor) const;
+    ECPRESENTATION_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor) const;
 };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

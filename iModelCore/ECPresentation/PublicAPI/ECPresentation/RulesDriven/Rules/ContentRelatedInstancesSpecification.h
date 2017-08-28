@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/ContentRelatedInstancesSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ContentRelatedInstancesSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 Specification that creates content ECQueries for predefined relationships and/or 
@@ -30,26 +30,26 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
     protected:
         //! Allows the visitor to visit this specification.
-        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP               _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Clones this content specification.
         virtual ContentSpecification* _Clone() const override {return new ContentRelatedInstancesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ContentRelatedInstancesSpecification ();
+        ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ContentRelatedInstancesSpecification 
+        ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification 
                                              (
                                               int                        priority,
                                               int                        skipRelatedLevel,
@@ -61,10 +61,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
                                              );
 
         //! Returns level of related instances to skip.
-        ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
+        ECPRESENTATION_EXPORT int                          GetSkipRelatedLevel (void) const;
 
         //! Sets the SkipRelatedLevel of the specification.
-        ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
+        ECPRESENTATION_EXPORT void                         SetSkipRelatedLevel (int value);
 
         //! Should the relationship be followed recursively
         //! @note The followed relationship should be recursive (e.g. A to A)
@@ -76,28 +76,28 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
-        ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
         //! Sets the instance filter of the specification.
-        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8StringCR value); 
+        ECPRESENTATION_EXPORT void                         SetInstanceFilter (Utf8StringCR value); 
 
         //! Returns direction of relationship that should be selected in the query.
-        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
+        ECPRESENTATION_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Sets the required direction of the specification.
-        ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection value);
+        ECPRESENTATION_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection value);
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
 
         //! Sets the RelationshipClassNames of the specification.
-        ECOBJECTS_EXPORT void                         SetRelationshipClassNames (Utf8StringCR value);
+        ECPRESENTATION_EXPORT void                         SetRelationshipClassNames (Utf8StringCR value);
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
         //! Sets the RelatedClassNames of the specification.
-        ECOBJECTS_EXPORT void                         SetRelatedClassNames (Utf8StringCR value);
+        ECPRESENTATION_EXPORT void                         SetRelatedClassNames (Utf8StringCR value);
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

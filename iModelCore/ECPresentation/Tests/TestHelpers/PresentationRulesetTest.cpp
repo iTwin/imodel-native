@@ -12,8 +12,6 @@
 #include <json/writer.h>
 #include "PresentationRulesetTest.h"
 
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"PresentationTesting"))
-
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

@@ -825,9 +825,9 @@ rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::MemoryPoolAlloc
                 fieldValueKeys.AddMember(rapidjson::StringRef(fieldName), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];
 
-        rapidjson::Value propertyKeys(rapidjson::kArrayType);
-        for (ECInstanceKeyCR key : pair.second)
-            propertyKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
+            rapidjson::Value propertyKeys(rapidjson::kArrayType);
+            for (ECInstanceKeyCR key : pair.second)
+                propertyKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
 
             rapidjson::Value fieldProperty(rapidjson::kObjectType);
             fieldProperty.AddMember("PropertyIndex", rapidjson::Value((uint64_t)pair.first.GetPropertyIndex()), json.GetAllocator());

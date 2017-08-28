@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/GroupingRule.h>
+#include <ECPresentation/RulesDriven/Rules/GroupingRule.h>
 #include "QueryContracts.h"
 #include "CustomFunctions.h"
 #include "NavigationQuery.h"
@@ -871,7 +871,7 @@ PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyFi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Property const* ContentQueryContract::FindMatchingProperty(ContentDescriptor::ECPropertiesField const& field, ECN::ECClassCP ecClass) const
+ContentDescriptor::Property const* ContentQueryContract::FindMatchingProperty(ContentDescriptor::ECPropertiesField const& field, ECClassCP ecClass) const
     {    
     if (nullptr == ecClass)
         ecClass = m_class;

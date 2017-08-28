@@ -1,23 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/Published/PresentationRulesTests.cpp $
+|     $Source: Tests/Published/PresentationRules/PresentationRulesTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../ECObjectsTestPCH.h"
-#include "../TestFixture/TestFixture.h"
-#include <ECPresentationRules/PresentationRules.h>
+#include <Bentley/BeTest.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
-USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
-BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-
-struct PresentationRulesTests : ECTestFixture
+struct PresentationRulesTests : ::testing::Test
     {
     /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+    * @bsimethod                                    Eligijus.Mauragas               06/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
     void ValidateChildNodeRule(ChildNodeRuleCR childNodeRule, Utf8CP condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
         {
         EXPECT_STREQ(condition, childNodeRule.GetCondition().c_str());
@@ -936,4 +933,3 @@ TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationWriteToXml)
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
-END_BENTLEY_ECN_TEST_NAMESPACE

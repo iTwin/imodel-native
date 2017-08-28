@@ -11,6 +11,9 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
+
 //=======================================================================================
 //! ECInstance change type.
 //! @ingroup GROUP_RulesDrivenPresentation
@@ -38,11 +41,11 @@ protected:
     //! @param[in] connection The ECDb where the class was used.
     //! @param[in] ecClass The ECClass that was used.
     //! @param[in] polymorphically Was the class used polymorphically.
-    virtual void _OnClassUsed(BeSQLite::EC::ECDbCR connection, ECN::ECClassCR ecClass, bool polymorphically) = 0;
+    virtual void _OnClassUsed(ECDbCR connection, ECClassCR ecClass, bool polymorphically) = 0;
 
 public:
     //! @see _OnClassUsed
-    void NotifyClassUsed(BeSQLite::EC::ECDbCR connection, ECN::ECClassCR ecClass, bool polymorphically) {_OnClassUsed(connection, ecClass, polymorphically);}
+    void NotifyClassUsed(ECDbCR connection, ECClassCR ecClass, bool polymorphically) {_OnClassUsed(connection, ecClass, polymorphically);}
 };
 
 //=======================================================================================
@@ -68,8 +71,8 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
     struct ChangedECInstance
     {
     private:
-        ECN::ECClassCP m_class;
-        BeSQLite::EC::ECInstanceId m_instanceId;
+        ECClassCP m_class;
+        ECInstanceId m_instanceId;
         ChangeType m_changeType;
     public:
         //! Constructor. Creates an invalid object.
@@ -82,15 +85,15 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
         //! @param[in] ecClass The ECClass of the changed ECInstance.
         //! @param[in] instanceId The ID of the changed ECInstance.
         //! @param[in] changeType Type of the change.
-        ChangedECInstance(ECN::ECClassCR ecClass, BeSQLite::EC::ECInstanceId instanceId, ChangeType changeType) 
+        ChangedECInstance(ECClassCR ecClass, ECInstanceId instanceId, ChangeType changeType) 
             : m_class(&ecClass), m_instanceId(instanceId), m_changeType(changeType) 
             {}
         //! Is this object valid.
         bool IsValid() const {return nullptr != m_class;}
         //! Get the ECClass of the changed ECInstance.
-        ECN::ECClassCP GetClass() const {return m_class;}
+        ECClassCP GetClass() const {return m_class;}
         //! Get the ID of the changed ECInstance.
-        BeSQLite::EC::ECInstanceId GetInstanceId() const {return m_instanceId;}
+        ECInstanceId GetInstanceId() const {return m_instanceId;}
         //! Get the type of the change.
         ChangeType GetChangeType() const {return m_changeType;}
     };
@@ -109,7 +112,7 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
         //! Called by ECInstanceChangeEventSource to notify about changed ECInstances.
         //! @param[in] connection The ECDb where the change happened.
         //! @param[in] changes The list of changes that happened.
-        virtual void _OnECInstancesChanged(BeSQLite::EC::ECDbCR connection, bvector<ChangedECInstance> const& changes) = 0;
+        virtual void _OnECInstancesChanged(ECDbCR connection, bvector<ChangedECInstance> const& changes) = 0;
     };
 
 private:
@@ -120,15 +123,15 @@ protected:
     virtual ~ECInstanceChangeEventSource() {}
 
     //! @see IECDbUsedClassesListener::_OnClassUsed
-    void _OnClassUsed(BeSQLite::EC::ECDbCR, ECN::ECClassCR, bool polymorphically) override {}
+    void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override {}
 
     //! A method that subclasses should call to notify listeners about changed ECInstance.
     //! @note If more than one ECInstance changes at a time, it's recommended to call @ref NotifyECInstancesChanged
     //! instead.
-    ECPRESENTATION_EXPORT void NotifyECInstanceChanged(BeSQLite::EC::ECDbCR db, ChangedECInstance const& change) const;
+    ECPRESENTATION_EXPORT void NotifyECInstanceChanged(ECDbCR db, ChangedECInstance const& change) const;
 
     //! A method that subclasses should call to notify listeners about changed ECInstances.
-    ECPRESENTATION_EXPORT void NotifyECInstancesChanged(BeSQLite::EC::ECDbCR db, bvector<ChangedECInstance> const& changes) const;
+    ECPRESENTATION_EXPORT void NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> const& changes) const;
 
 public:
     //! Registers an event handler.

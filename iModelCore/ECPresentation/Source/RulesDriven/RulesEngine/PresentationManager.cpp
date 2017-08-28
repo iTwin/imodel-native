@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "RulesPreprocessor.h"
 #include "NavNodesCache.h"
 #include "QueryExecutor.h"
@@ -311,7 +311,7 @@ void RulesDrivenECPresentationManager::OnConnection(ECDbCR connection) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::_OnRulesetCreated(ECN::PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManager::_OnRulesetCreated(PresentationRuleSetCR ruleset)
     {
     UserSettings& settings = m_userSettings.GetSettings(ruleset.GetRuleSetId().c_str());
     settings.InitFrom(ruleset.GetUserSettings());

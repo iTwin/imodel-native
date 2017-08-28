@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/ImageIdOverride.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ImageIdOverride.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 ImageId override rule implementation. This rule is used to override default ImageId
@@ -25,29 +25,29 @@ struct ImageIdOverride : public CustomizationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT virtual CharCP   _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) const override;
 
         //! Accecpt nested customization rule visitor
-        ECOBJECTS_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const  override;
+        ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const  override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ImageIdOverride ();
+        ECPRESENTATION_EXPORT ImageIdOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression);
+        ECPRESENTATION_EXPORT ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression);
 
         //! Returns ImageId override ECExpression string.
-        ECOBJECTS_EXPORT Utf8StringCR        GetImageId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR        GetImageId (void) const;
 
         //! Set imageId override ECExpression string.
-        ECOBJECTS_EXPORT void             SetImageId (Utf8String value);
+        ECPRESENTATION_EXPORT void             SetImageId (Utf8String value);
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

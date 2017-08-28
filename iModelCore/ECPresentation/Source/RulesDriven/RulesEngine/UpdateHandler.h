@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "RulesEngineTypes.h"
 #include "NavNodesCache.h"
 #include "ContentCache.h"
@@ -167,7 +167,7 @@ public:
     ECPRESENTATION_EXPORT UpdateHandler(NodesCache*, ContentCache*, IConnectionCacheCR, INodesProviderContextFactoryCR, INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; m_tasksFactory.SetRecordsHandler(handler);}
-    void NotifyRulesetDisposed(ECN::PresentationRuleSetCR ruleset);
+    void NotifyRulesetDisposed(PresentationRuleSetCR ruleset);
     void NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId);
     void NotifyCategoriesChanged();
     UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}

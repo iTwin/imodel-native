@@ -1,63 +1,65 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/PresentationRulesTypes.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects/ECObjectsAPI.h>
+#include <ECPresentation/ECPresentation.h>
 
-EC_TYPEDEFS (SubCondition);
-EC_TYPEDEFS (ChildNodeRule);
-EC_TYPEDEFS (ContentRule);
-EC_TYPEDEFS (ImageIdOverride);
-EC_TYPEDEFS (PresentationKey);
-EC_TYPEDEFS (PresentationRule);
-EC_TYPEDEFS (PresentationRuleSet);
-EC_TYPEDEFS (CustomizationRule);
-EC_TYPEDEFS (RootNodeRule);
-EC_TYPEDEFS (LabelOverride);
-EC_TYPEDEFS (StyleOverride);
-EC_TYPEDEFS (CheckBoxRule);
-EC_TYPEDEFS (RenameNodeRule);
-EC_TYPEDEFS (SortingRule);
-EC_TYPEDEFS (DisplayRelatedItemsSpecification);
-EC_TYPEDEFS (GroupingRule);
-EC_TYPEDEFS (ContentModifier);
-EC_TYPEDEFS (GroupSpecification);
-EC_TYPEDEFS (SameLabelInstanceGroup);
-EC_TYPEDEFS (ClassGroup);
-EC_TYPEDEFS (PropertyGroup);
-EC_TYPEDEFS (PropertyRangeGroupSpecification);
-EC_TYPEDEFS (LocalizationResourceKeyDefinition);
-EC_TYPEDEFS (UserSettingsGroup);
-EC_TYPEDEFS (UserSettingsItem);
-EC_TYPEDEFS (RelatedInstanceSpecification);
-EC_TYPEDEFS (ChildNodeSpecification);
-EC_TYPEDEFS (AllInstanceNodesSpecification);
-EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
-EC_TYPEDEFS (CustomNodeSpecification);
-EC_TYPEDEFS (InstanceNodesOfSpecificClassesSpecification);
-EC_TYPEDEFS (RelatedInstanceNodesSpecification);
-EC_TYPEDEFS (SearchResultInstanceNodesSpecification);
-EC_TYPEDEFS (QuerySpecification);
-EC_TYPEDEFS (StringQuerySpecification);
-EC_TYPEDEFS (ECPropertyValueQuerySpecification);
-EC_TYPEDEFS (ContentSpecification);
-EC_TYPEDEFS (RelatedPropertiesSpecification);
-EC_TYPEDEFS (PropertiesDisplaySpecification);
-EC_TYPEDEFS (PropertyEditorsSpecification);
-EC_TYPEDEFS (CalculatedPropertiesSpecification);
-EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
-EC_TYPEDEFS (ContentRelatedInstancesSpecification);
-EC_TYPEDEFS (SelectedNodeInstancesSpecification);
-EC_TYPEDEFS (PresentationRuleSpecificationVisitor);
+ECPRESENTATION_TYPEDEFS(SubCondition);
+ECPRESENTATION_TYPEDEFS(ChildNodeRule);
+ECPRESENTATION_TYPEDEFS(ContentRule);
+ECPRESENTATION_TYPEDEFS(ImageIdOverride);
+ECPRESENTATION_TYPEDEFS(PresentationKey);
+ECPRESENTATION_TYPEDEFS(PresentationRule);
+ECPRESENTATION_TYPEDEFS(PresentationRuleSet);
+ECPRESENTATION_TYPEDEFS(CustomizationRule);
+ECPRESENTATION_TYPEDEFS(RootNodeRule);
+ECPRESENTATION_TYPEDEFS(LabelOverride);
+ECPRESENTATION_TYPEDEFS(StyleOverride);
+ECPRESENTATION_TYPEDEFS(CheckBoxRule);
+ECPRESENTATION_TYPEDEFS(RenameNodeRule);
+ECPRESENTATION_TYPEDEFS(SortingRule);
+ECPRESENTATION_TYPEDEFS(DisplayRelatedItemsSpecification);
+ECPRESENTATION_TYPEDEFS(GroupingRule);
+ECPRESENTATION_TYPEDEFS(ContentModifier);
+ECPRESENTATION_TYPEDEFS(GroupSpecification);
+ECPRESENTATION_TYPEDEFS(SameLabelInstanceGroup);
+ECPRESENTATION_TYPEDEFS(ClassGroup);
+ECPRESENTATION_TYPEDEFS(PropertyGroup);
+ECPRESENTATION_TYPEDEFS(PropertyRangeGroupSpecification);
+ECPRESENTATION_TYPEDEFS(LocalizationResourceKeyDefinition);
+ECPRESENTATION_TYPEDEFS(UserSettingsGroup);
+ECPRESENTATION_TYPEDEFS(UserSettingsItem);
+ECPRESENTATION_TYPEDEFS(RelatedInstanceSpecification);
+ECPRESENTATION_TYPEDEFS(ChildNodeSpecification);
+ECPRESENTATION_TYPEDEFS(AllInstanceNodesSpecification);
+ECPRESENTATION_TYPEDEFS(AllRelatedInstanceNodesSpecification);
+ECPRESENTATION_TYPEDEFS(CustomNodeSpecification);
+ECPRESENTATION_TYPEDEFS(InstanceNodesOfSpecificClassesSpecification);
+ECPRESENTATION_TYPEDEFS(RelatedInstanceNodesSpecification);
+ECPRESENTATION_TYPEDEFS(SearchResultInstanceNodesSpecification);
+ECPRESENTATION_TYPEDEFS(QuerySpecification);
+ECPRESENTATION_TYPEDEFS(StringQuerySpecification);
+ECPRESENTATION_TYPEDEFS(ECPropertyValueQuerySpecification);
+ECPRESENTATION_TYPEDEFS(ContentSpecification);
+ECPRESENTATION_TYPEDEFS(RelatedPropertiesSpecification);
+ECPRESENTATION_TYPEDEFS(PropertiesDisplaySpecification);
+ECPRESENTATION_TYPEDEFS(PropertyEditorsSpecification);
+ECPRESENTATION_TYPEDEFS(CalculatedPropertiesSpecification);
+ECPRESENTATION_TYPEDEFS(ContentInstancesOfSpecificClassesSpecification);
+ECPRESENTATION_TYPEDEFS(ContentRelatedInstancesSpecification);
+ECPRESENTATION_TYPEDEFS(SelectedNodeInstancesSpecification);
+ECPRESENTATION_TYPEDEFS(PresentationRuleSpecificationVisitor);
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
+#define LOGGER_NAMESPACE_ECPRESENTATION_RULES   LOGGER_NAMESPACE_ECPRESENTATION ".Rules"
+#define LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
 
 enum RequiredRelationDirection : unsigned; 
 
@@ -76,4 +78,4 @@ typedef bvector<RenameNodeRuleP>                    RenameNodeRuleList;
 typedef bvector<SortingRuleP>                       SortingRuleList;
 typedef bvector<ContentModifierP>                   ContentModifierList;
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

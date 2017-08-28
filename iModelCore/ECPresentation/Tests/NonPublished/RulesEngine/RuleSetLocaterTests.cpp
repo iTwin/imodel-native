@@ -214,19 +214,19 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSetsInSubdirectories)
 +===============+===============+===============+===============+===============+======*/
 struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
     {
-    typedef std::function<void(ECN::PresentationRuleSetCR)> CallbackHandler;
+    typedef std::function<void(PresentationRuleSetCR)> CallbackHandler;
     CallbackHandler m_onCreatedHandler;
     CallbackHandler m_onDisposedHandler;
 
     void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
     void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
 
-    virtual void _OnRulesetCreated(ECN::PresentationRuleSetCR ruleset)
+    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset)
         {
         if (nullptr != m_onCreatedHandler)
             m_onCreatedHandler(ruleset);
         }
-    virtual void _OnRulesetDispose(ECN::PresentationRuleSetCR ruleset)
+    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset)
         {
         if (nullptr != m_onDisposedHandler)
             m_onDisposedHandler(ruleset);

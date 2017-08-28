@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/PresentationRuleSet.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRuleSet.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,10 +9,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/CommonTools.h>
-#include <ECPresentationRules/PresentationRulesTypes.h>
+#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -79,7 +79,7 @@ struct PresentationRuleSet : public RefCountedBase
 
     public:
         //! Creates an instance of PresentationRuleSet.
-        ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  CreateInstance 
             (
             Utf8StringCR ruleSetId,
             int          versionMajor,
@@ -108,111 +108,111 @@ struct PresentationRuleSet : public RefCountedBase
             }
 
         //! Reads PresentationRuleSet from XmlString.
-        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
 
         //! Reads PresentationRuleSet from XmlFile.
-        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
 
         //! Writes PresentationRuleSet to XmlString.
-        ECOBJECTS_EXPORT Utf8String                     WriteToXmlString ();
+        ECPRESENTATION_EXPORT Utf8String                     WriteToXmlString ();
 
         //! Writes PresentationRuleSet to XmlFile.
-        ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
+        ECPRESENTATION_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
 
         //! PresentationRuleSet identification.
-        ECOBJECTS_EXPORT Utf8StringCR                   GetRuleSetId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetRuleSetId (void) const;
 
         //! Sets new PresentationRuleSet identification.
-        ECOBJECTS_EXPORT void                           SetRuleSetId (Utf8StringCR);
+        ECPRESENTATION_EXPORT void                           SetRuleSetId (Utf8StringCR);
 
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
-        ECOBJECTS_EXPORT Utf8String                     GetFullRuleSetId (void) const;
+        ECPRESENTATION_EXPORT Utf8String                     GetFullRuleSetId (void) const;
 
         //! Major version of the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
-        ECOBJECTS_EXPORT int                            GetVersionMajor (void) const;
+        ECPRESENTATION_EXPORT int                            GetVersionMajor (void) const;
 
         //! Minor version of the PresentationRuleSet. This can be used to identify compatible changes in the PresentationRuleSet.
-        ECOBJECTS_EXPORT int                            GetVersionMinor (void) const;
+        ECPRESENTATION_EXPORT int                            GetVersionMinor (void) const;
 
         //! Returns true if PresentationRuleSet is supplemental. This allows to add additional rules for already existing PresentationRuleSet.
-        ECOBJECTS_EXPORT bool                           GetIsSupplemental (void) const;
+        ECPRESENTATION_EXPORT bool                           GetIsSupplemental (void) const;
 
         //! Purpose of supplementation. There can be one RuleSet with the same version and same supplementation purpose.
-        ECOBJECTS_EXPORT Utf8StringCR                   GetSupplementationPurpose (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetSupplementationPurpose (void) const;
 
         //! Schemas list for which rules should be applied
-        ECOBJECTS_EXPORT Utf8StringCR                   GetSupportedSchemas (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetSupportedSchemas (void) const;
 
         //! Preferred ImageId for the tree that is configured using this presentation rule set.
-        ECOBJECTS_EXPORT Utf8StringCR                   GetPreferredImage (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetPreferredImage (void) const;
 
         //! Returns true if search should be enabled for the tree that uses this presentation rule set.
-        ECOBJECTS_EXPORT bool                           GetIsSearchEnabled (void) const;
+        ECPRESENTATION_EXPORT bool                           GetIsSearchEnabled (void) const;
 
         //! Allowed classes for the search.
-        ECOBJECTS_EXPORT Utf8StringCR                   GetSearchClasses (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetSearchClasses (void) const;
 
         //! Set allowed classes for the search.
-        ECOBJECTS_EXPORT void                           SetSearchClasses (Utf8StringCR searchClasses);
+        ECPRESENTATION_EXPORT void                           SetSearchClasses (Utf8StringCR searchClasses);
 
         //! Extended data of a rule set.
-        ECOBJECTS_EXPORT Utf8StringCR                   GetExtendedData (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                   GetExtendedData (void) const;
 
         //! Set extended data of a rule set.
-        ECOBJECTS_EXPORT void                           SetExtendedData (Utf8StringCR extendedData);
+        ECPRESENTATION_EXPORT void                           SetExtendedData (Utf8StringCR extendedData);
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
-        ECOBJECTS_EXPORT RootNodeRuleList const&        GetRootNodesRules (void) const;
+        ECPRESENTATION_EXPORT RootNodeRuleList const&        GetRootNodesRules (void) const;
 
         //! Collection of rules, which should be used when child nodes needs to be populated.
-        ECOBJECTS_EXPORT ChildNodeRuleList const&       GetChildNodesRules (void) const;
+        ECPRESENTATION_EXPORT ChildNodeRuleList const&       GetChildNodesRules (void) const;
 
         //! Collection of rules, which should be used when content for selected nodes needs to be populated.
-        ECOBJECTS_EXPORT ContentRuleList const&         GetContentRules (void) const;
+        ECPRESENTATION_EXPORT ContentRuleList const&         GetContentRules (void) const;
 
         //! Collection of rules, which should be used when default ImageId for nodes should be overridden.
-        ECOBJECTS_EXPORT ImageIdOverrideList const&     GetImageIdOverrides (void) const;
+        ECPRESENTATION_EXPORT ImageIdOverrideList const&     GetImageIdOverrides (void) const;
 
         //! Collection of rules, which should be used when default Label or Description for nodes should be overridden.
-        ECOBJECTS_EXPORT LabelOverrideList const&       GetLabelOverrides (void) const;
+        ECPRESENTATION_EXPORT LabelOverrideList const&       GetLabelOverrides (void) const;
 
         //! Collection of rules, which should be used when default style for nodes should be overridden.
-        ECOBJECTS_EXPORT StyleOverrideList const&       GetStyleOverrides (void) const;
+        ECPRESENTATION_EXPORT StyleOverrideList const&       GetStyleOverrides (void) const;
 
         //! Collection of rules, which should be used when advanced grouping should be applied for particular classes.
-        ECOBJECTS_EXPORT GroupingRuleList const&        GetGroupingRules (void) const;
+        ECPRESENTATION_EXPORT GroupingRuleList const&        GetGroupingRules (void) const;
 
         //! Collection of rules, which should be used when localization resource key definition is predefined.
-        ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList const& GetLocalizationResourceKeyDefinitions (void) const;
+        ECPRESENTATION_EXPORT LocalizationResourceKeyDefinitionList const& GetLocalizationResourceKeyDefinitions (void) const;
 
         //! Collection of user settings definitions, that can affect behavior of the hierarchy. These settings will be shown in UserSettingsDialog.
-        ECOBJECTS_EXPORT UserSettingsGroupList const&   GetUserSettings (void) const;
+        ECPRESENTATION_EXPORT UserSettingsGroupList const&   GetUserSettings (void) const;
 
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
-        ECOBJECTS_EXPORT CheckBoxRuleList const&        GetCheckBoxRules (void) const;
+        ECPRESENTATION_EXPORT CheckBoxRuleList const&        GetCheckBoxRules (void) const;
 
         //! Collection of rules, which should be used when particular nodes can be renamed.
-        ECOBJECTS_EXPORT RenameNodeRuleList const&      GetRenameNodeRules (void) const;
+        ECPRESENTATION_EXPORT RenameNodeRuleList const&      GetRenameNodeRules (void) const;
 
         //! Collection of rules, which should be used for configuring sorting of ECInstances.
-        ECOBJECTS_EXPORT SortingRuleList const&         GetSortingRules (void) const;
+        ECPRESENTATION_EXPORT SortingRuleList const&         GetSortingRules (void) const;
 
         //! Collection of rules, which should be for supplementing ruleset with additional rules
-        ECOBJECTS_EXPORT ContentModifierList const&     GetContentModifierRules(void) const;
+        ECPRESENTATION_EXPORT ContentModifierList const&     GetContentModifierRules(void) const;
     };
 
-template<> ECOBJECTS_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
-template<> ECOBJECTS_EXPORT ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
-template<> ECOBJECTS_EXPORT ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
-template<> ECOBJECTS_EXPORT ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
-template<> ECOBJECTS_EXPORT LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
-template<> ECOBJECTS_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
-template<> ECOBJECTS_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
-template<> ECOBJECTS_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
-template<> ECOBJECTS_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
-template<> ECOBJECTS_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
-template<> ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
-template<> ECOBJECTS_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();
-template<> ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
+template<> ECPRESENTATION_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
+template<> ECPRESENTATION_EXPORT ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
+template<> ECPRESENTATION_EXPORT ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
+template<> ECPRESENTATION_EXPORT ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
+template<> ECPRESENTATION_EXPORT LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
+template<> ECPRESENTATION_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
+template<> ECPRESENTATION_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
+template<> ECPRESENTATION_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
+template<> ECPRESENTATION_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
+template<> ECPRESENTATION_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
+template<> ECPRESENTATION_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
+template<> ECPRESENTATION_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();
+template<> ECPRESENTATION_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

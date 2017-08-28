@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/ContentSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ContentSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 typedef bvector<RelatedPropertiesSpecificationP>    RelatedPropertiesSpecificationList;
 typedef bvector<DisplayRelatedItemsSpecificationP>  DisplayRelatedItemsSpecificationList;
@@ -36,13 +36,13 @@ private:
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT ContentSpecification();
+    ECPRESENTATION_EXPORT ContentSpecification();
 
     //! Constructor.
-    ECOBJECTS_EXPORT ContentSpecification(int priority, bool showImages = false);
+    ECPRESENTATION_EXPORT ContentSpecification(int priority, bool showImages = false);
 
     //! Copy constructor.
-    ECOBJECTS_EXPORT ContentSpecification(ContentSpecificationCR);
+    ECPRESENTATION_EXPORT ContentSpecification(ContentSpecificationCR);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     virtual CharCP                       _GetXmlElementName () const = 0;
@@ -58,22 +58,22 @@ protected:
 
 public:
     //! Destructor.
-    ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
+    ECPRESENTATION_EXPORT virtual                              ~ContentSpecification (void);
     
     //! Clones this content specification.
     ContentSpecification*                                 Clone() const {return _Clone();}
 
     //! Reads specification from XML.
-    ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
+    ECPRESENTATION_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes specification to xml node.
-    ECOBJECTS_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode) const;
+    ECPRESENTATION_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! Priority of the specification, defines the order in which specifications are evaluated and executed.
-    ECOBJECTS_EXPORT int                                  GetPriority (void) const;
+    ECPRESENTATION_EXPORT int                                  GetPriority (void) const;
 
     //! Sets the priority of the specification.
-    ECOBJECTS_EXPORT void                                 SetPriority (int value);
+    ECPRESENTATION_EXPORT void                                 SetPriority (int value);
 
     //! Should ImageIds be determined for the content.
     bool GetShowImages() const {return m_showImages;}
@@ -82,10 +82,10 @@ public:
     void SetShowImages(bool value) {m_showImages = value;}
 
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
-    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const&   GetRelatedProperties(void) const;
+    ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const&   GetRelatedProperties(void) const;
     
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
-    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
+    ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
 
     //! Properties that will be displayed or hidden.
     PropertiesDisplaySpecificationList const& GetPropertiesDisplaySpecifications() const {return m_propertiesDisplaySpecification;}
@@ -106,10 +106,10 @@ public:
     PropertyEditorsSpecificationList& GetPropertyEditorsR() { return m_propertyEditorsSpecification; }
 
     //! Include related items with current instances when display commands are executed.
-    ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
+    ECPRESENTATION_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
 
     //! Include related items with current instances when display commands are executed.
-    ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList& GetDisplayRelatedItems (void);
+    ECPRESENTATION_EXPORT DisplayRelatedItemsSpecificationList& GetDisplayRelatedItems (void);
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "RulesPreprocessor.h"
 #include "QueryBuilder.h"
 #include "ExtendedData.h"
@@ -1017,7 +1017,7 @@ struct GroupingResolver
     /*=============================================================================**//**
     * @bsiclass                                 Grigas.Petraitis                06/2015
     +===============+===============+===============+===============+===============+==*/
-    struct GroupingSpecificationsVisitor : ECN::GroupingRuleSpecificationVisitor
+    struct GroupingSpecificationsVisitor : GroupingRuleSpecificationVisitor
     {
     private:
         ECSchemaHelper const& m_schemaHelper;

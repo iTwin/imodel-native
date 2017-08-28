@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/RelatedPropertiesSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,10 +9,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 Related properties specification. It allow to extend a content ECQuery to include 
@@ -30,13 +30,13 @@ struct RelatedPropertiesSpecification
         
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RelatedPropertiesSpecification ();
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecification ();
         
         //! Copy constructor.
-        ECOBJECTS_EXPORT RelatedPropertiesSpecification(RelatedPropertiesSpecification const&);
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecification(RelatedPropertiesSpecification const&);
 
         //! Constructor.
-        ECOBJECTS_EXPORT RelatedPropertiesSpecification 
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecification 
                                        (
                                         RequiredRelationDirection  requiredDirection,
                                         Utf8String                 relationshipClassNames,
@@ -45,39 +45,39 @@ struct RelatedPropertiesSpecification
                                        );
 
         //! Destructor.
-        ECOBJECTS_EXPORT                              ~RelatedPropertiesSpecification (void);
+        ECPRESENTATION_EXPORT                              ~RelatedPropertiesSpecification (void);
 
         //! Reads specification from XML.
-        ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes related properties to xml node.
-        ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Returns direction of relationship that should be selected in the query.
-        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
+        ECPRESENTATION_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
         //! Set related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT void                         SetRelatedClassNames(Utf8StringCR);
+        ECPRESENTATION_EXPORT void                         SetRelatedClassNames(Utf8StringCR);
 
         //! Property names separated by comma. RelatedClasses are required if related properties are specified.
         //! These properties of RelatedClasses will be selected in the ECQuery and shown next to the parent ECInstance (the same row).
         //! If PropertyNames are not specified ALL visible properties will be selected. "_none_" keyword can be used to suppress all properties.
-        ECOBJECTS_EXPORT Utf8StringCR                 GetPropertyNames (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR                 GetPropertyNames (void) const;
         
         //! @see GetPropertyNames
-        ECOBJECTS_EXPORT void                         SetPropertyNames(Utf8StringCR);
+        ECPRESENTATION_EXPORT void                         SetPropertyNames(Utf8StringCR);
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
-        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;
         
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
-        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedPropertiesR();
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedPropertiesR();
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

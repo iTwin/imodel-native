@@ -9,7 +9,7 @@
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <Logging/bentleylogging.h>
 #include "RulesEngineTypes.h"
 #include "CustomFunctions.h"
@@ -27,7 +27,7 @@ struct RulesDrivenProviderContext : RefCountedBase
 {
 private:
     // common
-    ECN::PresentationRuleSetCR m_ruleset;
+    PresentationRuleSetCR m_ruleset;
     bool m_holdsRuleset;
     IJsonLocalState const* m_localState;
     IUserSettings const& m_userSettings;
@@ -50,7 +50,7 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(ECN::PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
     ECPRESENTATION_EXPORT void SetQueryContext(BeSQLite::EC::ECDbCR, BeSQLite::EC::ECSqlStatementCache const&, CustomFunctionsInjector&);
@@ -60,7 +60,7 @@ public:
     ECPRESENTATION_EXPORT ~RulesDrivenProviderContext();
 
     // common
-    ECN::PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+    PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     IUsedUserSettingsListener& GetUsedSettingsListener() const;

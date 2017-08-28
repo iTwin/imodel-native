@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <Logging/bentleylogging.h>
 #include "JsonNavNode.h"
 #include "NavNodesCache.h"
@@ -29,7 +29,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct IUsedClassesListener
     {
     virtual ~IUsedClassesListener() {}
-    virtual void _OnClassUsed(ECN::ECClassCR, bool polymorphically) = 0;
+    virtual void _OnClassUsed(ECClassCR, bool polymorphically) = 0;
     };
 
 /*=================================================================================**//**
@@ -41,9 +41,9 @@ private:
     UsedClassesHelper() {}
 public:
     static void NotifyListenerWithUsedClasses(IUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, Utf8StringCR ecexpression);
-    static void NotifyListenerWithRulesetClasses(IUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, ECN::PresentationRuleSetCR);
+    static void NotifyListenerWithRulesetClasses(IUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, PresentationRuleSetCR);
     static void NotifyListenerWithUsedClasses(IECDbUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, Utf8StringCR ecexpression);
-    static void NotifyListenerWithRulesetClasses(IECDbUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, ECN::PresentationRuleSetCR);
+    static void NotifyListenerWithRulesetClasses(IECDbUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, PresentationRuleSetCR);
 };
 
 /*=============================================================================**//**
@@ -56,7 +56,7 @@ struct ECDbUsedClassesListenerWrapper : IUsedClassesListener
     ECDbUsedClassesListenerWrapper(BeSQLite::EC::ECDbCR db, IECDbUsedClassesListener& wrappedListener)
         : m_db(db), m_wrappedListener(wrappedListener)
         {}
-    void _OnClassUsed(ECN::ECClassCR ecClass, bool polymorphically) override {m_wrappedListener.NotifyClassUsed(m_db, ecClass, polymorphically);}
+    void _OnClassUsed(ECClassCR ecClass, bool polymorphically) override {m_wrappedListener.NotifyClassUsed(m_db, ecClass, polymorphically);}
     };
 
 /*=================================================================================**//**
@@ -66,20 +66,20 @@ struct QueryBuilderParameters
 {
 private:
     ECSchemaHelper const& m_schemaHelper;
-    ECN::PresentationRuleSetCP m_ruleset;
+    PresentationRuleSetCP m_ruleset;
     IUserSettings const& m_userSettings;
     ECExpressionsCache& m_ecexpressionsCache;
     IJsonLocalState const* m_localState;
 
 public:
-    QueryBuilderParameters(ECSchemaHelper const& schemaHelper, ECN::PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
+    QueryBuilderParameters(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
         ECExpressionsCache& ecexpressionsCache, IJsonLocalState const* localState = nullptr) 
         : m_schemaHelper(schemaHelper), m_ruleset(&ruleset), m_userSettings(userSettings), m_ecexpressionsCache(ecexpressionsCache), m_localState(localState)
         {}
-    void SetRuleset(ECN::PresentationRuleSetCR ruleset) {m_ruleset = &ruleset;}
+    void SetRuleset(PresentationRuleSetCR ruleset) {m_ruleset = &ruleset;}
     void SetLocalState(IJsonLocalState const& localState) {m_localState = &localState;}
     ECSchemaHelper const& GetSchemaHelper() const {return m_schemaHelper;}
-    ECN::PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
+    PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
@@ -95,7 +95,7 @@ private:
     IUsedClassesListener* m_usedClassesListener;
     IUsedUserSettingsListener* m_usedSettingsListener;
 public:
-    NavigationQueryBuilderParameters(ECSchemaHelper const& schemaHelper, ECN::PresentationRuleSetCR ruleset, 
+    NavigationQueryBuilderParameters(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, 
         IUserSettings const& userSettings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache, 
         IHierarchyCacheCR nodesCache, IJsonLocalState const* localState = nullptr) 
         : QueryBuilderParameters(schemaHelper, ruleset, userSettings, ecexpressionsCache, localState), m_nodesCache(nodesCache), 
@@ -124,30 +124,30 @@ private:
     template<typename SpecificationType> Utf8String GetSupportedSchemas(SpecificationType const& specification) const;
 
     // the real specification handlers
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, ECN::AllInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, ECN::InstanceNodesOfSpecificClassesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, ECN::RelatedInstanceNodesSpecification const& specification, int specificationId, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, ECN::SearchResultInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, int specificationId, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
 
     // called by SpecificationsVisitor:
-    bvector<NavigationQueryPtr> GetQueries(ECN::AllInstanceNodesSpecification const& specification, ECN::RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(ECN::AllRelatedInstanceNodesSpecification const& specification, ECN::RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(ECN::RelatedInstanceNodesSpecification const& specification, ECN::RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(ECN::InstanceNodesOfSpecificClassesSpecification const& specification, ECN::RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(ECN::SearchResultInstanceNodesSpecification const& specification, ECN::RootNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, ECN::AllInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, ECN::AllRelatedInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, ECN::RelatedInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, ECN::InstanceNodesOfSpecificClassesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, ECN::SearchResultInstanceNodesSpecification const& specification, ECN::ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(AllInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(AllRelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(RelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(InstanceNodesOfSpecificClassesSpecification const& specification, RootNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(SearchResultInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, RelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCR parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
     
 public:
     ECPRESENTATION_EXPORT NavigationQueryBuilder(NavigationQueryBuilderParameters params);
     ECPRESENTATION_EXPORT ~NavigationQueryBuilder();
     NavigationQueryBuilderParameters const& GetParameters() const {return m_params;}
     NavigationQueryBuilderParameters& GetParameters() {return m_params;}
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(ECN::RootNodeRuleCR, ECN::ChildNodeSpecificationCR) const;
-    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(ECN::ChildNodeRuleCR, ECN::ChildNodeSpecificationCR, NavNodeCR) const;
+    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(RootNodeRuleCR, ChildNodeSpecificationCR) const;
+    ECPRESENTATION_EXPORT bvector<NavigationQueryPtr> GetQueries(ChildNodeRuleCR, ChildNodeSpecificationCR, NavNodeCR) const;
 };
 
 /*=================================================================================**//**
@@ -162,7 +162,7 @@ private:
     IPropertyCategorySupplierR m_categorySupplier;
     IECPropertyFormatter const* m_formatter;
 public:
-    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, INavNodeLocaterCR nodesLocater, ECN::PresentationRuleSetCR ruleset, 
+    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, INavNodeLocaterCR nodesLocater, PresentationRuleSetCR ruleset, 
         Utf8CP preferredDisplayType, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache,
         IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, ILocalizationProvider const* localizationProvider = nullptr)
         : QueryBuilderParameters(schemaHelper, ruleset, userSettings, ecexpressionsCache, localState), m_preferredDisplayType(preferredDisplayType), 
@@ -183,12 +183,12 @@ public:
 struct IParsedSelectionInfo
 {
 protected:
-    virtual bvector<ECN::ECClassCP> const& _GetClasses() const = 0;
-    virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECN::ECClassCR) const = 0;
+    virtual bvector<ECClassCP> const& _GetClasses() const = 0;
+    virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR) const = 0;
 public:
     virtual ~IParsedSelectionInfo() {}
-    bvector<ECN::ECClassCP> const& GetClasses() const {return _GetClasses();}
-    bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECN::ECClassCR selectClass) const {return _GetInstanceIds(selectClass);}
+    bvector<ECClassCP> const& GetClasses() const {return _GetClasses();}
+    bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECClassCR selectClass) const {return _GetInstanceIds(selectClass);}
 };
 
 /*=================================================================================**//**
@@ -197,14 +197,14 @@ public:
 struct ParsedSelectionInfo : IParsedSelectionInfo
 {
 private:
-    bvector<ECN::ECClassCP> m_orderedClasses;
-    bmap<ECN::ECClassCP, bvector<BeSQLite::EC::ECInstanceId>> m_classSelection;
+    bvector<ECClassCP> m_orderedClasses;
+    bmap<ECClassCP, bvector<BeSQLite::EC::ECInstanceId>> m_classSelection;
 private:
     void GetNodeClasses(NavNodeKeyCR, INavNodeLocater const&, ECSchemaHelper const&);
     void Parse(NavNodeKeyListCR, INavNodeLocater const&, ECSchemaHelper const&);
 protected:
-    bvector<ECN::ECClassCP> const& _GetClasses() const override {return m_orderedClasses;}
-    bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECN::ECClassCR selectClass) const override;
+    bvector<ECClassCP> const& _GetClasses() const override {return m_orderedClasses;}
+    bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR selectClass) const override;
 public:
     ParsedSelectionInfo(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, ECSchemaHelper const& helper);
 };
@@ -227,13 +227,13 @@ public:
     ContentQueryBuilderParameters const& GetParameters() const {return m_params;}
     ContentQueryBuilderParameters& GetParameters() {return m_params;}
 
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ECN::SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ECN::ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ECN::ContentInstancesOfSpecificClassesSpecificationCR);
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentInstancesOfSpecificClassesSpecificationCR);
 
-    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ECN::SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ECN::ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ECN::ContentInstancesOfSpecificClassesSpecificationCR, ContentDescriptorCR);
+    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentInstancesOfSpecificClassesSpecificationCR, ContentDescriptorCR);
     ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentDescriptor::NestedContentField const&);
 };
 
@@ -244,7 +244,7 @@ struct QueryBuilderHelpers
 {
 private:
     QueryBuilderHelpers() {}
-    static void ProcessQueryClassesBasedOnCustomizationRules(ECClassSet& classes, bmap<ECN::ECClassCP, bool> const& customizationClasses);
+    static void ProcessQueryClassesBasedOnCustomizationRules(ECClassSet& classes, bmap<ECClassCP, bool> const& customizationClasses);
 
 public:
     template<typename T> static void SetOrUnion(RefCountedPtr<T>& target, T& source);
@@ -261,13 +261,13 @@ public:
     static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const&);
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
-    static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ECN::ContentSpecificationCR);
-    static void AddCalculatedFields(ContentDescriptorR, ECN::CalculatedPropertiesSpecificationList const&, ILocalizationProvider const*, ECN::PresentationRuleSetCR, ECN::ECClassCP);
+    static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);
+    static void AddCalculatedFields(ContentDescriptorR, CalculatedPropertiesSpecificationList const&, ILocalizationProvider const*, PresentationRuleSetCR, ECClassCP);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
 
     static BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> CreateIdSetFromJsonArray(RapidJsonValueCR);
-    static ECN::ECValue CreateECValueFromJson(RapidJsonValueCR);
+    static ECValue CreateECValueFromJson(RapidJsonValueCR);
 
     static void Reverse(RelatedClassPath&, Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
 };

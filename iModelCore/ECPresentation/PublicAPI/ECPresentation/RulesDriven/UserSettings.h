@@ -10,7 +10,7 @@
 
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
-#include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -112,7 +112,7 @@ private:
 
     void AddValues(JsonValueR json) const;
     Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const;
-    void InitFrom(ECN::UserSettingsGroupList const& rules, JsonValueR presentationObj);
+    void InitFrom(UserSettingsGroupList const& rules, JsonValueR presentationObj);
 
 protected:
     ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
@@ -131,7 +131,7 @@ public:
         : m_settingsDb(settingsDb), m_statements(statements), m_changeListener(changeListener), m_rulesetId(rulesetId), m_localizationProvider(nullptr), m_isInitializing(false)
         {}
     void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}
-    ECPRESENTATION_EXPORT void InitFrom(ECN::UserSettingsGroupList const& rules);
+    ECPRESENTATION_EXPORT void InitFrom(UserSettingsGroupList const& rules);
 };
 #endif
 
@@ -157,7 +157,7 @@ private:
 private:
     void AddValues(JsonValueR json) const;
     Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const;
-    void InitFrom(ECN::UserSettingsGroupList const& rules, JsonValueR presentationObj);
+    void InitFrom(UserSettingsGroupList const& rules, JsonValueR presentationObj);
     
 protected:
     ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
@@ -181,7 +181,7 @@ public:
     void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
     void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}
     void SetLogger(NativeLogging::ILogger* logger) {m_logger = logger;}
-    ECPRESENTATION_EXPORT void InitFrom(ECN::UserSettingsGroupList const& rules);
+    ECPRESENTATION_EXPORT void InitFrom(UserSettingsGroupList const& rules);
 };
 #endif
 
@@ -232,7 +232,7 @@ private:
     
 protected:
     IUserSettings& _GetSettings(Utf8StringCR rulesetId) const override {return GetSettings(rulesetId);}
-    void _OnRulesetDispose(ECN::PresentationRuleSetCR ruleset) override;
+    void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
 
 public:
@@ -240,8 +240,8 @@ public:
     void SetLocalizationProvider(ILocalizationProvider const* provider);
 #ifdef USER_SETTINGS_DB
     BeSQLite::Db& GetSettingsDb() {return m_settingsDb;}
-    void InitForConnection(BeSQLite::EC::ECDbR);
-    void TerminateForConnection(BeSQLite::EC::ECDbR);
+    void InitForConnection(ECDbR);
+    void TerminateForConnection(ECDbR);
 #endif
 #ifdef USER_SETTINGS_LOCALSTATE
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState* localState);

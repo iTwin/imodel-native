@@ -40,10 +40,10 @@ private:
     NavNodeCP m_parentNode;
     ICustomizablePropertiesSetter const& m_setter;
     BeSQLite::EC::ECDbExpressionSymbolContext const* m_ecdbSymbolsContext;
-    ECN::ExpressionContextPtr m_nodeExpressionContext;
+    ExpressionContextPtr m_nodeExpressionContext;
 
 private:
-    ECN::ExpressionContext& GetNodeExpressionContext();
+    ExpressionContext& GetNodeExpressionContext();
 
 public:
     NavNodeCustomizer(RulesDrivenProviderContextCR context, NavNodeCR node, NavNodeCP parentNode, ICustomizablePropertiesSetter const& setter);

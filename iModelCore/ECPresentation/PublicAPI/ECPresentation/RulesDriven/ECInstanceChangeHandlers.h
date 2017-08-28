@@ -12,6 +12,9 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
+
 //=======================================================================================
 //! Takes care of changing ECInstances.
 //! @ingroup GROUP_RulesDrivenPresentation
@@ -23,13 +26,13 @@ struct IECInstanceChangeHandler : RefCountedBase
 
 protected:
     virtual int _GetPriority() const {return PRIORITY_DEFAULT;}
-    virtual bool _CanHandle(BeSQLite::EC::ECDbCR, ECN::ECClassCR) const = 0;
-    virtual ECInstanceChangeResult _Change(BeSQLite::EC::ECDbR, ChangedECInstanceInfo const&, Utf8CP, ECN::ECValueCR) = 0;
+    virtual bool _CanHandle(ECDbCR, ECClassCR) const = 0;
+    virtual ECInstanceChangeResult _Change(ECDbR, ChangedECInstanceInfo const&, Utf8CP, ECValueCR) = 0;
 
 public:
     int GetPriority() const {return _GetPriority();}
-    bool CanHandle(BeSQLite::EC::ECDbCR connection, ECN::ECClassCR ecClass) const {return _CanHandle(connection, ecClass);}
-    ECInstanceChangeResult Change(BeSQLite::EC::ECDbR connection, ChangedECInstanceInfo const& changeInfo, Utf8CP propertyAccessor, ECN::ECValueCR value)
+    bool CanHandle(ECDbCR connection, ECClassCR ecClass) const {return _CanHandle(connection, ecClass);}
+    ECInstanceChangeResult Change(ECDbR connection, ChangedECInstanceInfo const& changeInfo, Utf8CP propertyAccessor, ECValueCR value)
         {
         return _Change(connection, changeInfo, propertyAccessor, value);
         }
@@ -59,8 +62,8 @@ struct DefaultECInstanceChangeHandler : IECInstanceChangeHandler
 {
 protected:
     int _GetPriority() const override {return 0;}
-    ECPRESENTATION_EXPORT bool _CanHandle(BeSQLite::EC::ECDbCR, ECN::ECClassCR) const override;
-    ECPRESENTATION_EXPORT ECInstanceChangeResult _Change(BeSQLite::EC::ECDbR, ChangedECInstanceInfo const&, Utf8CP, ECN::ECValueCR) override;
+    ECPRESENTATION_EXPORT bool _CanHandle(ECDbCR, ECClassCR) const override;
+    ECPRESENTATION_EXPORT ECInstanceChangeResult _Change(ECDbR, ChangedECInstanceInfo const&, Utf8CP, ECValueCR) override;
 public:
     static RefCountedPtr<DefaultECInstanceChangeHandler> Create() {return new DefaultECInstanceChangeHandler();}
 };

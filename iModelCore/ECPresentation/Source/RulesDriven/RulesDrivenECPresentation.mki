@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 RulesDrivenECPresentationObjs =
-#%include PresentationRules/PresentationRules.mki
+%include Rules/Rules.mki
 %include RulesEngine/RulesEngine.mki
 
 #--------------------------------------------------------------------------------------

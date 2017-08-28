@@ -1,44 +1,42 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/PresentationRules.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRules.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects/ECObjectsAPI.h>
-
-#include <ECPresentationRules/CommonTools.h>
-#include <ECPresentationRules/PresentationRule.h>
-#include <ECPresentationRules/ChildNodeRule.h>
-#include <ECPresentationRules/ChildNodeSpecification.h>
-#include <ECPresentationRules/ContentRule.h>
-#include <ECPresentationRules/ImageIdOverride.h>
-#include <ECPresentationRules/PresentationRuleSet.h>
-#include <ECPresentationRules/LabelOverride.h>
-#include <ECPresentationRules/StyleOverride.h>
-#include <ECPresentationRules/LocalizationResourceKeyDefinition.h>
-#include <ECPresentationRules/UserSettingsGroup.h>
-#include <ECPresentationRules/CheckBoxRule.h>
-#include <ECPresentationRules/RenameNodeRule.h>
-#include <ECPresentationRules/SortingRule.h>
-#include <ECPresentationRules/DisplayRelatedItemsSpecification.h>
-#include <ECPresentationRules/GroupingRule.h>
-#include <ECPresentationRules/AllInstanceNodesSpecification.h>
-#include <ECPresentationRules/AllRelatedInstanceNodesSpecification.h>
-#include <ECPresentationRules/CustomNodeSpecification.h>
-#include <ECPresentationRules/InstanceNodesOfSpecificClassesSpecification.h>
-#include <ECPresentationRules/SearchResultInstanceNodesSpecification.h>
-#include <ECPresentationRules/ContentSpecification.h>
-#include <ECPresentationRules/ContentModifier.h>
-#include <ECPresentationRules/RelatedPropertiesSpecification.h>
-#include <ECPresentationRules/PropertiesDisplaySpecification.h>
-#include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>
-#include <ECPresentationRules/ContentRelatedInstancesSpecification.h>
-#include <ECPresentationRules/SelectedNodeInstancesSpecification.h>
-#include <ECPresentationRules/CalculatedPropertySpecification.h>
-#include <ECPresentationRules/RelatedInstanceSpecification.h>
-#include <ECPresentationRules/PropertyEditorsSpecification.h>
+#include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
+#include <ECPresentation/RulesDriven/Rules/ChildNodeRule.h>
+#include <ECPresentation/RulesDriven/Rules/ChildNodeSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/ContentRule.h>
+#include <ECPresentation/RulesDriven/Rules/ImageIdOverride.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/LabelOverride.h>
+#include <ECPresentation/RulesDriven/Rules/StyleOverride.h>
+#include <ECPresentation/RulesDriven/Rules/LocalizationResourceKeyDefinition.h>
+#include <ECPresentation/RulesDriven/Rules/UserSettingsGroup.h>
+#include <ECPresentation/RulesDriven/Rules/CheckBoxRule.h>
+#include <ECPresentation/RulesDriven/Rules/RenameNodeRule.h>
+#include <ECPresentation/RulesDriven/Rules/SortingRule.h>
+#include <ECPresentation/RulesDriven/Rules/DisplayRelatedItemsSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/GroupingRule.h>
+#include <ECPresentation/RulesDriven/Rules/AllInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/AllRelatedInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/CustomNodeSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/InstanceNodesOfSpecificClassesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/SearchResultInstanceNodesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/ContentSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/ContentModifier.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertiesDisplaySpecification.h>
+#include <ECPresentation/RulesDriven/Rules/ContentInstancesOfSpecificClassesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/ContentRelatedInstancesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/SelectedNodeInstancesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/CalculatedPropertySpecification.h>
+#include <ECPresentation/RulesDriven/Rules/RelatedInstanceSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h>

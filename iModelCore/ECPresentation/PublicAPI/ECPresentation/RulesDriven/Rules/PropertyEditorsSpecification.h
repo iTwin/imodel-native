@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECPresentationRules/PropertyEditorsSpecification.h $
+|     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * Specification for specifying editor for a single property.
@@ -30,10 +30,10 @@ struct PropertyEditorsSpecification
             {}
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
 
         //! Get property name.
         Utf8StringCR GetPropertyName() const {return m_propertyName;}
@@ -42,4 +42,4 @@ struct PropertyEditorsSpecification
         Utf8StringCR GetEditorName() const {return m_editorName;}
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECPRESENTATION_NAMESPACE

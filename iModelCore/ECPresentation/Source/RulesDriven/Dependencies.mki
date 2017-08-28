@@ -21,7 +21,7 @@ RulesDrivenECPresentationHeaders            = $(RulesDrivenECPresentationPublicH
 RulesDrivenECPresentationMkis               = $(RulesDrivenSourceDirectory)Dependencies.mki $(RulesDrivenSourceDirectory)RulesDrivenECPresentation.mki
 RulesDrivenECPresentationDependencies       = $(RulesDrivenECPresentationHeaders) $(RulesDrivenECPresentationMkis) $(ECPresentationDependencies)
 
-#%include $(RulesDrivenSourceDirectory)PresentationRules/Dependencies.mki
+%include $(RulesDrivenSourceDirectory)Rules/Dependencies.mki
 %include $(RulesDrivenSourceDirectory)RulesEngine/Dependencies.mki
 
 ECPresentationMakefiles                     + $(RulesDrivenECPresentationMkis)
