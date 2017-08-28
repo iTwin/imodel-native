@@ -115,7 +115,7 @@ IECInstancePtr GetInstanceForClass(Utf8CP className, ECSchemaR schema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                  Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     {
@@ -173,7 +173,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenContainerTypesNotCompatible)
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                 Carole.MacDonald              06/2010    
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     {
@@ -195,7 +195,7 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     {
@@ -217,7 +217,7 @@ TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     {
@@ -233,7 +233,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     {
@@ -250,7 +250,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                               Carole.MacDonald              06/2010     
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectIsDefined)
     {
@@ -271,7 +271,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                               Carole.MacDonald              06/2010     
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     {
@@ -297,7 +297,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                              Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     {
@@ -322,7 +322,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     {
@@ -381,7 +381,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     {
@@ -413,7 +413,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald              06/2010 
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     {
@@ -487,7 +487,7 @@ TEST_F(CustomAttributeTest, CanRetrieveBothPrimaryAndSupplementedCustomAttribute
 
 #ifdef TEST_DEFECT_D_88458 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Carole.MacDonald            11/2011
 //+---------------+---------------+---------------+---------------+---------------+------
 // This is a nonsensical scenario, so the defect is being deferred.  But the code is
 // here if the defect ever gets reopened 
@@ -541,7 +541,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
 #endif
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Paul.Connelly              07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     {
@@ -598,7 +598,7 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Krischan.Eberle              12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     {
@@ -691,6 +691,9 @@ bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContaine
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                    04/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CustomAttributeTest, FailsToLoadSchemaWithInvalidCustomAttributes_EC3)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -725,6 +728,9 @@ TEST_F(CustomAttributeTest, FailsToLoadSchemaWithInvalidCustomAttributes_EC3)
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when custom attribute is applied but it's class cannot be found";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                    04/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CustomAttributeTest, CanLoadSchemaWithInvalidCustomAttributes_EC2)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -742,6 +748,9 @@ TEST_F(CustomAttributeTest, CanLoadSchemaWithInvalidCustomAttributes_EC2)
     ASSERT_EQ(SchemaReadStatus::Success, status) << "Expected deserialization to succeed when custom attribute is applied but it's class cannot be found";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                    04/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CustomAttributeTest, InvalidContainerTypeDeserialization)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -763,6 +772,9 @@ TEST_F(CustomAttributeTest, InvalidContainerTypeDeserialization)
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when appliesTo attribute is an empty value";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Carole.MacDonald                  11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CustomAttributeTest, ContainerTypeSerialization)
     {
     Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -817,6 +829,9 @@ TEST_F(CustomAttributeTest, ContainerTypeSerialization)
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Stefan.Apfel                       10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CustomAttributeTest, TestCustomAttributesWithSameNameInDifferentSchemas)
     {
     ECSchemaPtr schema1;
