@@ -1200,8 +1200,10 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
         return ERROR;
 
     if (stmt->Step() != BE_SQLITE_ROW)
-        return ERROR;
-
+        {
+        //If this does not return a row then ECCustomAttributeClass is already deleted and it has caused cascade delete which have deleted all the associated customAttributes
+        return SUCCESS;
+        }
     ordinal = stmt->GetValueInt(0);
 
     stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
@@ -1373,7 +1375,6 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
-
     if (propertyChange.GetName().IsValid())
         {
         if (propertyChange.GetName().GetNew().IsNull())
@@ -1385,29 +1386,100 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
         sqlUpdateBuilder.AddSetExp("Name", propertyChange.GetName().GetNew().Value().c_str());
         }
+    //MinMaxValueChange:
+    if (propertyChange.GetMinimumLength().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMinLength = "PrimitiveTypeMinLength";
+        if (propertyChange.GetMinimumLength().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinLength);
+        else
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinLength, propertyChange.GetMinimumLength().GetNew().Value());
+        }
+    
+    if (propertyChange.GetMaximumLength().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMaxLength = "PrimitiveTypeMaxLength";
+        if (propertyChange.GetMaximumLength().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxLength);
+        else
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxLength, propertyChange.GetMaximumLength().GetNew().Value());
+        }
 
+    if (propertyChange.GetMinimumValue().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMinValue = "PrimitiveTypeMinValue";
+        if (propertyChange.GetMinimumValue().GetNew().IsNull() || propertyChange.GetMinimumValue().GetNew().Value().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinValue);
+        else
+            {
+            ECValueCR value = propertyChange.GetMinimumValue().GetNew().Value();
+            if (value.IsInteger())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetInteger());
+            else if (value.IsLong())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetLong());
+            else if (value.IsDouble())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetDouble());
+            else if (value.IsString())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetUtf8CP());
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMinValue' to a unsupported type.",
+                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+                return ERROR;
+                }
+            }
+        }
+
+    if (propertyChange.GetMaximumValue().IsValid())
+        {
+        constexpr Utf8CP kPrimitiveTypeMaxValue = "PrimitiveTypeMaxValue";
+        if (propertyChange.GetMaximumValue().GetNew().IsNull() || propertyChange.GetMaximumValue().GetNew().Value().IsNull())
+            sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxValue);
+        else
+            {
+            ECValueCR value = propertyChange.GetMaximumValue().GetNew().Value();
+            if (value.IsInteger())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetInteger());
+            else if (value.IsLong())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetLong());
+            else if (value.IsDouble())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetDouble());
+            else if (value.IsString())
+                sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetUtf8CP());
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMaxValue' to a unsupported type.",
+                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+                return ERROR;
+                }
+            }
+        }
+    
     if (propertyChange.GetExtendedTypeName().IsValid())
         {
+        constexpr Utf8CP kExtendedTypeName = "ExtendedTypeName";
         if (propertyChange.GetExtendedTypeName().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("ExtendedTypeName");
+            sqlUpdateBuilder.AddSetToNull(kExtendedTypeName);
         else
-            sqlUpdateBuilder.AddSetExp("ExtendedTypeName", propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
         }
 
     if (propertyChange.GetDisplayLabel().IsValid())
         {
+        constexpr Utf8CP kDisplayLabel = "DisplayLabel";
         if (propertyChange.GetDisplayLabel().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+            sqlUpdateBuilder.AddSetToNull(kDisplayLabel);
         else
-            sqlUpdateBuilder.AddSetExp("DisplayLabel", propertyChange.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDisplayLabel, propertyChange.GetDisplayLabel().GetNew().Value().c_str());
         }
 
     if (propertyChange.GetDescription().IsValid())
         {
+        constexpr Utf8CP kDescription = "Description";
         if (propertyChange.GetDescription().GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("Description");
+            sqlUpdateBuilder.AddSetToNull(kDescription);
         else
-            sqlUpdateBuilder.AddSetExp("Description", propertyChange.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDescription, propertyChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (propertyChange.IsReadonly().IsValid())
@@ -2115,6 +2187,27 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteCustomAttributeClass(ECClassCR deletedClass)
+    {
+    Utf8StringCR schemaName = deletedClass.GetSchema().GetName();
+    if (schemaName.EqualsI("ECDbMap") || schemaName.EqualsI("ECDbSchemaPolicies"))
+        {
+        Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECCustomAttributeClass '%s' failed. Deleting ECCustomAttributeClass from system schemas are not supported.",
+                        deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    //Add Type file to ensure we are deleting customattribute class.
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM " TABLE_Class " WHERE [Type] = " SQLVAL_ECClassType_CustomAttribute " AND [Id] = ?");
+    stmt->BindId(1, deletedClass.GetId());
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR deletedClass)
@@ -2140,18 +2233,16 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
         return ERROR;
         }
 
-    if (deletedClass.IsCustomAttributeClass())
-        {
-        Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. ECCustomAttributeClass cannot be deleted",
-                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
-        return ERROR;
-        }
-
     if (IsSpecifiedInRelationshipConstraint(deletedClass))
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. A class which is specified in a relationship constraint cannot be deleted",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
+        }
+
+    if (deletedClass.IsCustomAttributeClass())
+        {
+        return DeleteCustomAttributeClass(deletedClass);
         }
 
     ClassMapCP deletedClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(deletedClass);

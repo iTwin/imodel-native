@@ -166,7 +166,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
     ddl.append(")");
 
-    if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
+    if (ecdb.ExecuteDdl(ddl.c_str()) != BE_SQLITE_OK)
         {
         ecdb.GetImpl().Issues().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
         return ERROR;
@@ -291,7 +291,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
+        if (BE_SQLITE_OK != ecdb.ExecuteDdl(ddl.c_str()))
             {
             ecdb.GetImpl().Issues().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
             return ERROR;
