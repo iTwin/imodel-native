@@ -2072,7 +2072,7 @@ TEST_F(SchemaCopyTest, TestRelationshipClassWithConstraintClassesInRefSchema)
     }
 
 //---------------------------------------------------------------------------------------
-* @bsimethod
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
     {
@@ -2101,7 +2101,7 @@ TEST_F(SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
     }
 
 //---------------------------------------------------------------------------------------
-* @bsimethod
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
     {
@@ -2131,7 +2131,7 @@ TEST_F(SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
     }
 
 //---------------------------------------------------------------------------------------
-* @bsimethod
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     {
