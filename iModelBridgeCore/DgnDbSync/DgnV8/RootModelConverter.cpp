@@ -825,17 +825,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (NULL == m_rootModelRef)
         return openStatus;
 
-    if (!ShouldConvertToPhysicalModel(*GetRootModelP()))
-        {
-        auto defaultModel = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, m_rootFile->GetDefaultModelId());
-        if (ShouldConvertToPhysicalModel(*defaultModel))
-            {
-            m_rootModelRef = defaultModel;
-            rootModelId = m_rootModelRef->GetModelId();
-            ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Compatibility(), Converter::Issue::DefaultedRootModel(), Converter::IssueReporter::FmtModel(*m_rootModelRef->GetDgnModelP()).c_str());
-            }
-        }
-
     if (DgnV8Api::DGNFILE_STATUS_Success != (openStatus = _ComputeCoordinateSystemTransform()))
         return openStatus;
 
@@ -1208,6 +1197,34 @@ void RootModelConverter::_ConvertLineStyles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
+    {
+    // try to find a spatial view in the viewgroup
+    for (uint32_t iView=0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+        {
+        ViewInfoR viewInfo = m_viewGroup->GetViewInfoR(iView);
+        Bentley::ViewPortInfoCR viewPortInfo = m_viewGroup->GetViewPortInfo(iView);
+
+        if (!viewInfo.GetViewFlags().on_off || !viewPortInfo.m_wasDefined)
+            continue;
+
+        auto modelId = viewInfo.GetRootModelId();
+        Bentley::StatusInt openStatus;    
+        auto model = m_rootFile->LoadRootModelById(&openStatus, modelId);
+        if (nullptr == model)
+            continue;
+
+        if (!ShouldConvertToPhysicalModel(*model))
+            continue;
+
+        return modelId;
+        }
+    return INVALID_MODELID;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
     {
     if (IsUpdating() && !m_params.GetRootModelChoice().IsSet())
@@ -1231,14 +1248,15 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
 
     BeAssert(RootModelChoice::Method::FromActiveViewGroup == m_params.GetRootModelChoice().m_method);
 
+    DgnV8Api::ModelId defaultModelId = m_rootFile->GetDefaultModelId(); // We'll fall back on the default model if we can't find an eligible root from the viewgroups
+
+    // Start with the root of the active viewgroup. That's what the user was looking at the last time he did save settings.
     ViewGroupCollectionR viewGroups = m_rootFile->GetViewGroupsR();
     m_viewGroup = viewGroups.FindByElementId(m_rootFile->GetActiveViewGroupId());
 
-    // the viewgroup stored in the tcb no longer exists. Use the most recently modified one instead.
+    // Problem: the viewgroup stored in the tcb no longer exists. Use the most recently modified one instead.
     if (!m_viewGroup.IsValid())
         m_viewGroup = viewGroups.FindLastModifiedMatchingModel(INVALID_ELEMENTID, INVALID_MODELID, false, -1);
-
-    DgnV8Api::ModelId defaultModelId = m_rootFile->GetDefaultModelId();
 
     if (!m_viewGroup.IsValid()) // there must not be any viewgroup in the file. 
         DgnV8Api::ViewGroup::Create(m_viewGroup, defaultModelId, *m_rootFile, false, nullptr, true);
@@ -1249,26 +1267,21 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
         return defaultModelId;
         }
 
-    // try to find a spatial view in the viewgroup
-    for (uint32_t iView=0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+    auto rootModelId = _GetRootModelIdFromViewGroup();
+    if (INVALID_MODELID == rootModelId)
         {
-        ViewInfoR viewInfo = m_viewGroup->GetViewInfoR(iView);
-        Bentley::ViewPortInfoCR viewPortInfo = m_viewGroup->GetViewPortInfo(iView);
-
-        if (!viewInfo.GetViewFlags().on_off || !viewPortInfo.m_wasDefined)
-            continue;
-
-        auto modelId = viewInfo.GetRootModelId();
-        Bentley::StatusInt openStatus;    
-        auto model = m_rootFile->LoadRootModelById(&openStatus, modelId);
-        if (nullptr == model)
-            continue;
-
-        if (!ShouldConvertToPhysicalModel(*model))
-            continue;
-
-        return modelId;
+        // The active or most recently modified ViewGroup does not have a spatial root. 
+        // See if *any* viewgroup has a spatial root.
+        for (auto vg : viewGroups)
+            {
+            m_viewGroup = vg;
+            if (INVALID_MODELID != (rootModelId = _GetRootModelIdFromViewGroup()))
+                break;
+            }    
         }
+
+    if (INVALID_MODELID != rootModelId)
+        return rootModelId;
 
     return defaultModelId;
     }
