@@ -1436,10 +1436,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedRevisionId();
-    if (currentParentRevId.empty())
-        currentParentRevId = GetParentRevisionId();
-
+    Utf8String currentParentRevId = HasReversedRevisions() ? GetReversedRevisionId() : GetParentRevisionId();
     if (currentParentRevId != revision.GetId())
         {
         BeAssert(false && "Parent of revision should match the parent revision id of the Db");
@@ -1466,10 +1463,7 @@ RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedRevisionId();
-    if (currentParentRevId.empty())
-        currentParentRevId = GetParentRevisionId();
-
+    Utf8String currentParentRevId = HasReversedRevisions() ? GetReversedRevisionId() : GetParentRevisionId();
     if (currentParentRevId != revision.GetParentId())
         {
         BeAssert(false && "Parent of revision should match the parent revision id of the Db");
