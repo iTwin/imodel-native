@@ -61,15 +61,17 @@ struct  ScalableMeshTileNode : ModelTileNode
     {
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
+    uint64_t                m_clipID;
+    bool                    m_isClipBoundary;
     //DgnModelId              m_modelId;
     //PublishTileNode(DgnModelId modelId, SceneR scene, NodeR node, TransformCR transformDbToTile, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
     //    : ModelTileNode(dgnRange, transformDbToTile, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip), m_modelId(modelId) { }
 #ifndef VANCOUVER_API
-    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, BentleyApi::Dgn::TileNodeP parent) :
-        /*m_modelId(modelId), */m_node(node), m_transform(transform), BentleyApi::Dgn::ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, BentleyApi::Dgn::TileNodeP parent, const uint64_t& clipID, bool isClipBoundary) :
+        /*m_modelId(modelId), */m_node(node), m_transform(transform), m_clipID(clipID), m_isClipBoundary(isClipBoundary), BentleyApi::Dgn::ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
 #else
-    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
-        /*m_modelId(modelId), */m_node(node), m_transform(transform), ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent, const uint64_t& clipID, bool isClipBoundary) :
+        /*m_modelId(modelId), */m_node(node), m_transform(transform), m_clipID(clipID), m_isClipBoundary(isClipBoundary), ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
 #endif
         {}
 
@@ -80,54 +82,30 @@ struct  ScalableMeshTileNode : ModelTileNode
 #endif
         {
         TileMeshList        tileMeshes;
-        //
-        //if (m_node->GetChildrenNodes().empty())
-        //    {
-        //    BeAssert(false);
-        //    return tileMeshes;
-        //    }
-        //
-        //
-        //for (auto& child : m_node->GetChildrenNodes())
-        //    {
-        //
-        auto child = m_node;
-            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
-            //bvector<bool> clips;
-            auto meshP = child->GetMesh(flags);
-            if (!meshP.IsValid() || meshP->GetNbFaces() == 0) return tileMeshes;
-            //if (!meshP.IsValid() || meshP->GetNbFaces() == 0) continue;
-            TileMeshBuilderPtr      builder;
-            TileDisplayParamsPtr    displayParams;
-        
-            if (child->IsTextured())
-                {
-                auto textureP = child->GetTextureCompressed();
-                ImageSource jpgTex(ImageSource::Format::Jpeg, ByteStream(textureP->GetData(), (uint32_t)textureP->GetSize()));
-                //memcpy(myImage.GetDataP(), textureP->GetData(), textureP->GetDimension().x* textureP->GetDimension().y * 3);
-                //Image image(textureP->GetDimension().x, textureP->GetDimension().y, std::move(myImage), Image::Format::Rgb);
-                //ImageSource jpgTex(image, ImageSource::Format::Jpeg, 100);
-                //{
-                //FILE*               file = fopen(("d:\\tmp\\texture_" + std::to_string(child->GetNodeId()) + ".jpg").c_str(), "w");
-                //
-                //fwrite(jpgTex.GetByteStream().GetData(), 1, jpgTex.GetByteStream().size(), file);
-                //fclose(file);
-                //}
-                TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
-                displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
-                }
-            else
-                {
-                TileTextureImagePtr     tileTexture = nullptr;
-                displayParams = TileDisplayParams::Create(0x007700, tileTexture, false);
-                }
-            builder = TileMeshBuilder::Create(displayParams, 0.0);
-            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
-                builder->AddTriangle(*visitor, /*DgnMaterialId(), dgnDb, m_modelId,*/ false, twoSidedTriangles);
-        
-            tileMeshes.push_back(builder->GetMesh());
-        //    }
-        //
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
+        auto meshP = m_node->GetMeshUnderClip2(flags, m_clipID, m_isClipBoundary);
+        if (!meshP.IsValid() || meshP->GetNbFaces() == 0) return tileMeshes;
+        TileMeshBuilderPtr      builder;
+        TileDisplayParamsPtr    displayParams;
+
+        if (m_node->IsTextured())
+            {
+            auto textureP = m_node->GetTextureCompressed();
+            ImageSource jpgTex(ImageSource::Format::Jpeg, ByteStream(textureP->GetData(), (uint32_t)textureP->GetSize()));
+            TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
+            displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
+            }
+        else
+            {
+            TileTextureImagePtr     tileTexture = nullptr;
+            displayParams = TileDisplayParams::Create(0x007700, tileTexture, false);
+            }
+        builder = TileMeshBuilder::Create(displayParams, 0.0);
+        builder->AddPolyface(*meshP->GetPolyfaceQuery(), false);
+        //for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
+        //    builder->AddPolyface(*visitor, /*DgnMaterialId(), dgnDb, m_modelId,*/ false, twoSidedTriangles);
+
+        tileMeshes.push_back(builder->GetMesh());
         return tileMeshes;
         }
 

@@ -17,6 +17,9 @@
 #include <ScalableMesh/IScalableMesh.h>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+typedef struct { float x, y; } FloatXY;
+typedef struct { float x, y, z; } FloatXYZ;
+
 /* This structure represents a modification made on a mesh. */
 struct DifferenceSet
     {
@@ -69,6 +72,113 @@ struct DifferenceSet
 
     uint64_t WriteToBinaryStream(void*& serialized);
     void LoadFromBinaryStream(void* serialized, uint64_t ct);
+    template <class PointType3D, class PointType2D>
+    void ApplyClipDiffSetToMesh(PointType3D*& points, size_t& nbPoints,
+                                int32_t*& faceIndexes, size_t& nbFaceIndexes,
+                                PointType2D*& pUv, const int32_t*& pUvIndex, size_t& uvCount,
+                                PointType3D const* inPoints, size_t inNbPoints,
+                                int32_t const*  inFaceIndexes, size_t inNbFaceIndexes,
+                                const DPoint2d* pInUv, const int32_t* pInUvIndex, size_t inUvCount,
+                                const DPoint3d& ptTranslation) const
+        {
+        points = new PointType3D[this->addedVertices.size() + inNbPoints];
+
+        for (size_t ind = inNbPoints; ind < this->addedVertices.size() + inNbPoints; ind++)
+            {
+            points[ind].x = (float)(this->addedVertices[ind - inNbPoints].x - ptTranslation.x);
+            points[ind].y = (float)(this->addedVertices[ind - inNbPoints].y - ptTranslation.y);
+            points[ind].z = (float)(this->addedVertices[ind - inNbPoints].z - ptTranslation.z);
+            }
+
+        if (inNbPoints > 0)
+            {
+            memcpy(points, inPoints, sizeof(PointType3D) * inNbPoints);
+            }
+
+        if (this->addedUvIndices.size() > 0)
+            {
+            pUv = new PointType2D[this->addedUvs.size() + inUvCount];
+
+            for (size_t ind = inUvCount; ind < this->addedUvs.size() + inUvCount; ind++)
+                {
+                pUv[ind].x = this->addedUvs[ind - inUvCount].x;
+                pUv[ind].y = this->addedUvs[ind - inUvCount].y;
+                }
+
+            if (inUvCount > 0)
+                {
+                for (size_t ind = 0; ind < inUvCount; ind++)
+                    {
+                    pUv[ind].x = pInUv[ind].x;
+                    pUv[ind].y = pInUv[ind].y;
+                    }
+                }
+
+            for (size_t uvI = 0; uvI < this->addedUvs.size() + inUvCount; ++uvI)
+                {
+                if (pUv[uvI].x < 0)  pUv[uvI].x = 0;
+                if (pUv[uvI].y < 0)  pUv[uvI].y = 0;
+                if (pUv[uvI].x > 1)  pUv[uvI].x = 1;
+                if (pUv[uvI].y > 1)  pUv[uvI].y = 1;
+                }
+            }
+        else if (pInUvIndex)
+            {
+            pUvIndex = 0;
+            }
+
+        if (this->addedFaces.size() >= 3 && this->addedFaces.size() < 1024 * 1024)
+            {
+            size_t newMaxNIndexes = this->addedFaces.size();
+            int32_t* newfaceIndexes = new int32_t[newMaxNIndexes];
+            size_t newNIndexes = 0;
+            int32_t* newUvIndices = this->addedUvIndices.size() > 0 ? new int32_t[newMaxNIndexes] : nullptr;
+            for (int i = 0; i + 2 < this->addedFaces.size(); i += 3)
+                {
+                if (!(this->addedFaces[i] - 1 >= 0 && this->addedFaces[i] - 1 < inNbPoints + this->addedVertices.size() && this->addedFaces[i + 1] - 1 >= 0 && this->addedFaces[i + 1] - 1 < inNbPoints + this->addedVertices.size()
+                    && this->addedFaces[i + 2] - 1 >= 0 && this->addedFaces[i + 2] - 1 < inNbPoints + this->addedVertices.size()))
+                    {
+#if SM_TRACE_CLIP_MESH
+                    std::string s;
+                    s += "INDICES " + std::to_string(this->addedFaces[i]) + " " + std::to_string(this->addedFaces[i + 1]) + " " + std::to_string(this->addedFaces[i + 2]);
+#endif
+                    continue;
+                    }
+                assert(this->addedFaces[i] - 1 >= 0 && this->addedFaces[i] - 1 < inNbPoints + this->addedVertices.size() && this->addedFaces[i + 1] - 1 >= 0 && this->addedFaces[i + 1] - 1 < inNbPoints + this->addedVertices.size()
+                    && this->addedFaces[i + 2] - 1 >= 0 && this->addedFaces[i + 2] - 1 < inNbPoints + this->addedVertices.size());
+                for (size_t j = 0; j < 3 && newNIndexes <newMaxNIndexes; ++j)
+                    {
+                    int32_t idx = (int32_t)(this->addedFaces[i + j] >= this->firstIndex ? this->addedFaces[i + j] - this->firstIndex + inNbPoints + 1 : this->addedFaces[i + j]);
+                    assert(idx > 0 && idx <= inNbPoints + this->addedVertices.size());
+                    newfaceIndexes[newNIndexes] = idx;
+
+                    if (this->addedUvIndices.size() > 0)
+                        {
+                        if (i + j > this->addedUvIndices.size()) newUvIndices[newNIndexes] = 1;
+                        newUvIndices[newNIndexes] = this->addedUvIndices[i + j] + (int32_t)inUvCount;
+                        assert(newUvIndices[newNIndexes] <= inUvCount + this->addedUvs.size());
+                        }
+                    newNIndexes++;
+                    }
+                }
+            nbFaceIndexes = newNIndexes;
+            faceIndexes = newfaceIndexes;
+            if (this->addedUvIndices.size() > 0)
+                {
+                pUvIndex = newUvIndices;
+                }
+            }
+        else
+            {
+            nbFaceIndexes = 0;
+            faceIndexes = nullptr;
+            }
+
+        nbPoints = inNbPoints + this->addedVertices.size();
+
+        if (this->addedUvIndices.size() > 0) uvCount = inUvCount + this->addedUvs.size();
+        }
+
     void ApplySet(DifferenceSet& d, int firstIndex);
     void ApplyMapped(DifferenceSet& d, const int* idxMap);
     bool ConflictsWith(DifferenceSet& d);

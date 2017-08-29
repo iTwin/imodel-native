@@ -4685,13 +4685,36 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString smFileName, cloudContainer, cloudName, server_type, result;
+    Utf8String sisterFilesDirName;
     SMCloudServerType server(SMCloudServerType::LocalDisk);
+    std::map<Utf8String, Utf8String> coverageMap;
 
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
         printf("ERROR : smFileName attribute not found\r\n");
         return;
+        }
+
+    if (pTestNode->GetAttributeStringValue(sisterFilesDirName, "extraDir") != BEXML_Success)
+        {
+        printf("No clips, no coverages... \n");
+        }
+    else
+        {
+        auto clipsNode = pTestNode->GetFirstChild();
+        if (clipsNode != nullptr)
+            {
+            auto clip = clipsNode->GetFirstChild();
+            BeXmlNodeP nextClip = clip;
+            while (nextClip != nullptr)
+                {
+                Utf8String terrainID, clipId;
+                nextClip->GetAttributeStringValue(terrainID, "terrainID");
+                nextClip->GetAttributeStringValue(clipId, "id");
+                nextClip = nextClip->GetNextSibling();
+                }
+            }
         }
 
     if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
@@ -4748,7 +4771,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr smPtr = IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status);
+    IScalableMeshPtr smPtr = sisterFilesDirName.empty() ? IScalableMesh::GetFor(smFileName.c_str(), false, true, true, status) : IScalableMesh::GetFor(smFileName.c_str(), sisterFilesDirName, false, true, true, status);
 
     if (smPtr != 0 && status == SUCCESS)
         {

@@ -1281,17 +1281,20 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
 
         //NEEDS_WORK_SM : Load graph required since removed from file?
         bool m_loadGraph;
+        bool m_loadClips;
         bool m_loadIndices;
         bool m_loadTexture;
         bool m_saveToCache;
         bool m_precomputeBoxes;
 
+        virtual bool _ShouldLoadClips() const override;
         virtual bool _ShouldLoadTexture() const override;
         virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
         virtual bool _ShouldSaveToCache() const override;
         virtual bool _ShouldPrecomputeBoxes() const override;
 
+        virtual void _SetLoadClips(bool loadClips) override;
         virtual void _SetLoadTexture(bool loadTexture) override;
         virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
@@ -1302,6 +1305,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
         ScalableMeshMeshFlags()
             {
             m_loadGraph = false;
+            m_loadClips = false;
             m_loadTexture = false;
             m_loadIndices = true;
             m_saveToCache = false;
@@ -1328,6 +1332,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clip, bool isClipBoundary) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
