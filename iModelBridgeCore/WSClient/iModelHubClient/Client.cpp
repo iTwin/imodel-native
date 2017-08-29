@@ -670,15 +670,6 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return briefcaseResult;
         }
 
-    ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
-    if (!pullChangeSetsResult.IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
-        return StatusResult::Error(pullChangeSetsResult.GetError());
-        }
-
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", fileInfo.GetMergedChangeSetId().c_str());
-
     BeSQLite::DbResult status;
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
@@ -688,6 +679,15 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return result;
         }
+
+    ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
+    if (!pullChangeSetsResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
+        return StatusResult::Error(pullChangeSetsResult.GetError());
+        }
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", fileInfo.GetMergedChangeSetId().c_str());
 
     // If seedFile and briefacase id's do not match, query new changeset's
     Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
