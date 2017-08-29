@@ -373,7 +373,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityInherit
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                                Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithKindOfQuantityInReferencedFile)
     {
@@ -403,7 +403,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenDeserializingSchemaWi
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                                 Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
     {
