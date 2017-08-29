@@ -1313,8 +1313,12 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
 
     //str.append(*ParameterValuePair(FormatConstant::FPN_FormatName(), namedFormat.GetNameAndAlias(), '\"', ""));
     // Names section
-    str.append(*ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', ""));
-    str.append(" " + *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', ""));
+    Utf8StringR strnew0 = *ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', "");
+    str.append(strnew0);
+    delete &strnew0;
+    Utf8StringR strnew1 = *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', "");
+    str.append(" " + strnew1);
+    delete &strnew1;
     NumericFormatSpecCP format = namedFormat->GetNumericSpec();
     // formating type/mode
     str.append(" " + Utils::PresentationTypeName(format->GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
