@@ -132,13 +132,13 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_id, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID))
         {
-        LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL))
         {
-        LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
         return false;
         }
 

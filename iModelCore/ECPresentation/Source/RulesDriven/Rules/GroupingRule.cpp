@@ -64,13 +64,13 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME))
         {
-        LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME))
         {
-        LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
         return false;
         }
 
@@ -415,7 +415,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
         {
-        LOG.errorv ("Invalid PropertyGroupXML: %s element must contain a %s attribute", PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyGroupXML: %s element must contain a %s attribute", PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
         return false;
         }
 
@@ -514,13 +514,13 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fromValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE))
         {
-        LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_toValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE))
         {
-        LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
         return false;
         }
 

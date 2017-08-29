@@ -101,14 +101,14 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     BeXmlNodeP ruleSetNode;
     if ( (BEXML_Success != xmlDom.SelectNode (ruleSetNode, "/" PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == ruleSetNode) )
         {
-        LOG.errorv ("Invalid PresentationRuleSetXML: Missing a top-level %s node", PRESENTATION_RULE_SET_XML_NODE_NAME);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid PresentationRuleSetXML: Missing a top-level %s node", PRESENTATION_RULE_SET_XML_NODE_NAME);
         return false;
         }
     
     //Required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
-        LOG.errorv ("Invalid PresentationRuleSetXML: %s element must contain a %s attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid PresentationRuleSetXML: %s element must contain a %s attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
         return false;
         }
 
@@ -195,7 +195,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     {
-    LOG.debugv ("About to read PrsentationRuleSet from string.");
+    ECPRENSETATION_RULES_LOG.debugv ("About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
     size_t stringSize = strlen (xmlString) * sizeof(Utf8Char);
@@ -203,7 +203,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     
     if (BEXML_Success != xmlStatus)
         {
-        LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
+        ECPRENSETATION_RULES_LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
         return NULL;
         }
     
@@ -211,7 +211,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
+    ECPRENSETATION_RULES_LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
     return NULL;
     }
 
@@ -220,13 +220,13 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath)
     {
-    LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    ECPRENSETATION_RULES_LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath);
         
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, xmlFilePath);
     if (xmlStatus != BEXML_Success || !xmlDom.IsValid ())
         {
-        LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+        ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
         return NULL;
         }
     
@@ -234,7 +234,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
     return NULL;
     }
 

@@ -64,7 +64,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
-        LOG.errorv ("Invalid InstanceNodesOfSpecificClassesSpecificationXML: %s element must contain a %s attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
+        ECPRENSETATION_RULES_LOG.errorv ("Invalid InstanceNodesOfSpecificClassesSpecificationXML: %s element must contain a %s attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
         return false;
         }
 

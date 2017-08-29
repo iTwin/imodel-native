@@ -59,7 +59,7 @@ ECPRESENTATION_TYPEDEFS(PresentationRuleSpecificationVisitor);
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULES   LOGGER_NAMESPACE_ECPRESENTATION ".Rules"
-#define LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
+#define ECPRENSETATION_RULES_LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
 
 enum RequiredRelationDirection : unsigned; 
 enum class RelationshipMeaning;
