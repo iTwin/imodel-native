@@ -1122,7 +1122,7 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+void DecorateContext::AddNormal(Render::GraphicR graphic)
     {
     if (nullptr != m_viewlet)
         {
@@ -1130,19 +1130,10 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
         return;
         }
 
-    if (!m_isFlash)
-        {
-        if (!m_decorations.m_normal.IsValid())
-            m_decorations.m_normal = new DecorationList();
+    if (m_decorations.m_normal.IsNull())
+        m_decorations.m_normal = new GraphicList();
 
-        m_decorations.m_normal->Add(graphic, ovrParams);
-        return;
-        }
-
-    if (!m_decorations.m_flashed.IsValid())
-        m_decorations.m_flashed = new DecorationList();
-
-    m_decorations.m_flashed->Add(graphic, ovrParams);
+    m_decorations.m_normal->Add(graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**

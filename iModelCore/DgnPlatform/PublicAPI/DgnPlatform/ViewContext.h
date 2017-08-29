@@ -429,17 +429,15 @@ private:
     Render::Decorations& m_decorations;
     Render::GraphicBranch* m_viewlet = nullptr;
     Render::OvrGraphicParams m_ovrParams;
-    bool    m_isFlash = false;
 
     StatusInt VisitSheetHit(HitDetailCR hit);
-    virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
-    //! Display world coordinate graphic with flash/hilite treatment.
-    DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    //! Display world coordinate graphic with scene lighting and z testing.
+    DGNPLATFORM_EXPORT void AddNormal(Render::GraphicR graphic);
 
     //! Display world coordinate graphic with smooth shading, default lighting, and z testing enabled.
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
@@ -459,8 +457,6 @@ public:
     //! Display view coordinate graphic as background with smooth shading, default lighting, and z testing disabled. e.g., a sky box.
     DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);
 
-    //! Set context to state used to flash elements.
-    void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
     void SetFlashed(DgnElementId elemId) { m_decorations.m_flashedElem = elemId; }
 };  

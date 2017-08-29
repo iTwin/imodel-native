@@ -2383,8 +2383,7 @@ public:
 struct Decorations
 {
     GraphicPtr          m_viewBackground;// drawn first, view units, with no zbuffer, smooth shading, default lighting. e.g., a skybox
-    DecorationListPtr   m_normal;       // drawn with zbuffer, with scene lighting
-    DecorationListPtr   m_flashed;      // drawn with zbuffer, with scene lighting
+    GraphicListPtr      m_normal;       // drawn with zbuffer, with scene lighting
     DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
     DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
     DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
