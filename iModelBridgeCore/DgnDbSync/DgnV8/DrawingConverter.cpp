@@ -134,7 +134,7 @@ void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& root
 
     // Pass 1: sheets and attached drawings. IMPORTANT! See "DgnModel objects and Sheet attachments" for why this MUST BE DONE FIRST.
     for (auto fileToSearch : filesToSearch)
-        ImportSheetModelsInFile(*fileToSearch);
+        ImportSheetModelsInFile(*fileToSearch, m_isRootModelSpatial);
 
     // Pass 2: drawings that are not referenced by sheets
     for (auto fileToSearch : filesToSearch)
@@ -531,7 +531,7 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ImportSheetModelsInFile(DgnV8FileR v8File)
+void Converter::ImportSheetModelsInFile(DgnV8FileR v8File, bool isRootModelSpatial)
     {
     for (DgnV8Api::ModelIndexItem const& item : v8File.GetModelIndex())
         {
@@ -562,11 +562,23 @@ void Converter::ImportSheetModelsInFile(DgnV8FileR v8File)
         //  Import direct attachments. See "DgnModel objects and Sheet attachments" comment below.
         for (auto attachment : *attachments)
             {
+            if (nullptr == attachment->GetDgnModelP())
+                continue;
+
             if (!attachment->Is3d())
                 {
                 // This is where we discover and import the drawings and other 2d models that are referenced into sheets.
                 // (We just unnested all 2d attachments above, so there are no nested attachments to follow.)
                 Import2dModel(*attachment->GetDgnModelP());
+                }
+            else
+                {
+                if (!isRootModelSpatial)
+                    {
+                    OnFatalError(IssueCategory::Compatibility(), Issue::Detected3dViaAttachment(), Converter::IssueReporter::FmtAttachment(*attachment).c_str());
+                    BeAssert(false);
+                    return;
+                    }
                 }
             }
         }
