@@ -633,6 +633,78 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Atiqa.Zafar            08/2017
+//---------------------------------------------------------------------------------------
+BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseID, BeFileNameCR baseDirectory,
+                                              bool doSync, BriefcaseFileNameCallback const& fileNameCallback,
+                                              Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::RestoreBriefcase";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::InvalidiModelId));
+        }
+
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::CredentialsNotSet));
+        }
+
+    //get iModelConnection
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to iModel %s.", iModelInfo.GetName().c_str());
+    auto connectionResult = CreateiModelConnection(iModelInfo);
+    if (!connectionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(connectionResult.GetError()));
+        }
+
+    iModelConnectionPtr connection = connectionResult.GetValue();
+
+    //get Briefcase FileInfo
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting FileInfo of Briefcase ID %d.", briefcaseID);
+    auto fileInfoResult = connection->GetBriefcaseFileInfo(briefcaseID, nullptr)->GetResult();
+    if (!fileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileInfoResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(fileInfoResult.GetError()));
+        }
+    FileInfoPtr fileInfo = fileInfoResult.GetValue();
+
+    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseID, connection->GetiModelInfo(), *fileInfo);
+    if (filePath.DoesPathExist())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::FileAlreadyExists));
+        }
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        {
+        BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
+        }
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseID);
+    StatusResult downloadResult = DownloadBriefcase(connection, filePath, briefcaseID, *fileInfo, doSync, callback, cancellationToken);
+    if (!downloadResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(downloadResult.GetError()));
+        }
+
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Download successful.");
+
+    BriefcaseInfoPtr briefcaseInfo = new BriefcaseInfo (briefcaseID);
+    briefcaseInfo->SetLocalPath(filePath);
+    return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Success(briefcaseInfo));
+    }
+
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets)
