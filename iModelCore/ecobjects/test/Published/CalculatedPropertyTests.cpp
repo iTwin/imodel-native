@@ -566,6 +566,9 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     Test (*instance, "S2", "y");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Carole.MacDonald   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
