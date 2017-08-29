@@ -184,7 +184,7 @@ FileAccessKeyPtr FileAccessKey::ParseFromRelated(WSObjectsReader::Instance insta
     {
     auto relationshipInstances = instance.GetRelationshipInstances();
     if (0 == relationshipInstances.Size())
-        return nullptr;
+        return FileAccessKeyPtr(new NotUsedFileAccessKey());
 
     for (auto relationshipInstance : relationshipInstances)
         {
@@ -198,7 +198,7 @@ FileAccessKeyPtr FileAccessKey::ParseFromRelated(WSObjectsReader::Instance insta
         return Parse(relatedInstance.GetProperties());
         }
 
-    return nullptr;
+    return FileAccessKeyPtr(new NotUsedFileAccessKey());
     }
 
 //---------------------------------------------------------------------------------------
