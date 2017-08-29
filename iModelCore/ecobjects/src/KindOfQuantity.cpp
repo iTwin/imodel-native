@@ -336,5 +336,17 @@ Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
         }
     return arrayObj;
     }
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                David.Fox-Rabinovitz      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value KindOfQuantity::ToJson(bool useAlias) const
+    {
+    Json::Value jval;
+    jval[Formatting::json_KOQName()] = m_fullName.c_str();
+    jval[Formatting::json_schemaName()] = m_schema.GetName().c_str();
+    jval[Formatting::json_persistFUS()] = m_persistenceFUS.ToJson(useAlias);
+    jval[Formatting::json_relativeErr()] = GetPresentationsJson(useAlias);
+    return jval;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
