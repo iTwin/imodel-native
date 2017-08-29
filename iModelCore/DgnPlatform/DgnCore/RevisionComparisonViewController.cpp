@@ -28,6 +28,9 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     update.SetFillColor(ColorDef::VersionCompareModified());
     inserted.SetFillColor(ColorDef::VersionCompareInserted());
     deleted.SetFillColor(ColorDef::VersionCompareDeleted());
+    update.SetMaterial(nullptr);
+    inserted.SetMaterial(nullptr);
+    deleted.SetMaterial(nullptr);
 
     m_currentRevisionOverrides.Insert(DbOpcode::Update, update);
     m_currentRevisionOverrides.Insert(DbOpcode::Insert, inserted);
@@ -44,6 +47,7 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_targetRevisionOverrides.Insert(DbOpcode::Insert, inserted);
     m_targetRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
+    m_untouchedOverride.SetMaterial(nullptr);
     m_untouchedOverride.SetFillColor(ColorDef::VersionCompareBackground());
     m_untouchedOverride.SetLineColor(ColorDef::VersionCompareBackground());
     Byte bTransparency = (Byte) s_backgroundElementTransparency;
@@ -323,4 +327,24 @@ void    RevisionComparisonViewController::_CreateTerrain(TerrainContextR context
         }
 
     m_visitingTransientElements = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RevisionComparisonViewController::_OnViewOpened (DgnViewportR vp)
+    {
+    Render::ViewFlags viewFlags = GetViewFlags();
+    if (viewFlags.GetRenderMode() != Render::RenderMode::SmoothShade)
+        viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+
+    viewFlags.SetShowVisibleEdges(false);
+    viewFlags.SetShowPatterns(false);
+    viewFlags.SetShowGrid(false);
+    viewFlags.SetShowClipVolume(false);
+    viewFlags.SetShowTransparency(true);
+    viewFlags.SetShowAcsTriad(false);  // Hide the indicator because it is work-in-progress.
+    vp.GetViewControllerR().GetViewDefinition().GetDisplayStyle().SetViewFlags(viewFlags);
+
+    T_Super::_OnViewOpened(vp);
     }

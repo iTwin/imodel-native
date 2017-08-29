@@ -149,6 +149,7 @@ protected:
 
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
     void _DrawDecorations(DecorateContextR context) override;
+    void _OnViewOpened (Dgn::DgnViewportR) override;
 
 public:
 
