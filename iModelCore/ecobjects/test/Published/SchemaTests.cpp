@@ -64,7 +64,7 @@ struct ECNameValidationTest;
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Caleb.Shafer                       11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaTest, ExpectReadOnly)
     {
@@ -676,7 +676,7 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     {
@@ -1139,7 +1139,7 @@ TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForA
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Dylan.Rush                           05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, InvalidReference)
     {
@@ -1362,7 +1362,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Dylan.Rush                           05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     {
