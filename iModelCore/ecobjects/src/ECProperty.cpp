@@ -859,11 +859,11 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
+bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errMsg) const
     {
     if (!baseProperty.GetIsPrimitive() && !baseProperty.GetIsPrimitiveArray())
         {
-        LOG.errorv("The property %s:%s cannot be overriden by PrimitiveECProperty %s:%s because it is not a PrimitiveECProperty.",
+        errMsg.Sprintf("The property %s:%s cannot be overriden by PrimitiveECProperty %s:%s because it is not a PrimitiveECProperty.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -882,7 +882,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         
     if (basePrimitiveType != m_primitiveType)
         {
-        LOG.errorv("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
+        errMsg.Sprintf("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
                    ECXml::GetPrimitiveTypeName(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
         return false;
@@ -1115,11 +1115,11 @@ SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
+bool StructECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errMsg) const
     {
     if (!baseProperty.GetIsStruct())
         {
-        LOG.errorv("The property %s:%s cannot be overriden by StructECProperty %s:%s because it is not a StructECProperty.",
+        errMsg.Sprintf("The property %s:%s cannot be overriden by StructECProperty %s:%s because it is not a StructECProperty.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -1135,7 +1135,7 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
     Utf8String baseStructName = baseProperty.GetAsStructProperty()->GetType().GetFullName();
     if (0 != strcmp(m_structType->GetFullName(), baseStructName.c_str()))
         {
-        LOG.errorv("The StructECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
+        errMsg.Sprintf("The StructECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseStructName.c_str(),
                    GetClass().GetFullName(), GetName().c_str(), m_structType->GetFullName());
         return false;
@@ -1462,11 +1462,11 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
+bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errMsg) const
     {
     if (!baseProperty.GetIsPrimitive() && !baseProperty.GetIsPrimitiveArray())
         {
-        LOG.errorv("The property %s:%s cannot be overriden by PrimitiveArrayECProperty %s:%s because it is not a PrimitiveArrayECProperty.",
+        errMsg.Sprintf("The property %s:%s cannot be overriden by PrimitiveArrayECProperty %s:%s because it is not a PrimitiveArrayECProperty.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -1480,7 +1480,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
 
     if (basePrimitiveType != m_primitiveType)
         {
-        LOG.errorv("The ECProperty %s:%s cannot override the base property %s:%s as they have differing types (%s vs. %s).",
+        errMsg.Sprintf("The ECProperty %s:%s cannot override the base property %s:%s as they have differing types (%s vs. %s).",
                    GetClass().GetFullName(), GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(),
                    ECXml::GetPrimitiveTypeName(m_primitiveType), ECXml::GetPrimitiveTypeName(basePrimitiveType));
         return false;
@@ -1642,11 +1642,11 @@ SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(BeXmlNodeR propertyNode, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
+bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errMsg) const
     {
     if (!baseProperty.GetIsStructArray())
         {
-        LOG.errorv("The property %s:%s cannot be overriden by StructArrayECProperty %s:%s because it is not a StructArrayECProperty.",
+        errMsg.Sprintf("The property %s:%s cannot be overriden by StructArrayECProperty %s:%s because it is not a StructArrayECProperty.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -1662,7 +1662,7 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     Utf8String baseStructName = baseProperty.GetAsStructArrayProperty()->GetStructElementType().GetFullName();
     if (0 != strcmp(m_structType->GetFullName(), baseStructName.c_str()))
         {
-        LOG.errorv("The StructArrayECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
+        errMsg.Sprintf("The StructArrayECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseStructName.c_str(),
                    GetClass().GetFullName(), GetName().c_str(), m_structType->GetFullName());
         return false;
@@ -1908,12 +1908,12 @@ Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimiti
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
+bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const
     {
     NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
     if (nullptr == baseNavProperty)
         {
-        LOG.errorv("The property %s:%s cannot be overridden by a NavigationECProperty %s:%s because it is not a NavigationECProperty.",
+        errMsg.Sprintf("The property %s:%s cannot be overridden by a NavigationECProperty %s:%s because it is not a NavigationECProperty.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -1921,7 +1921,7 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
     if (GetDirection() != baseDirection)
         {
-        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because they have different directions.",
+        errMsg.Sprintf("The NavigationECProperty %s:%s cannot be overridden by %s:%s because they have different directions.",
                    baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
@@ -1933,7 +1933,7 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
     if (!ECClass::ClassesAreEqualByName(m_relationshipClass, baseRelClass))
         {
-        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship was changed. A derived property cannot change the referenced relationship.",
+        errMsg.Sprintf("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship was changed. A derived property cannot change the referenced relationship.",
             baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
