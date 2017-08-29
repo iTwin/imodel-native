@@ -614,21 +614,21 @@ class ERMapperExporter
                     HUTExportProgressIndicator::GetInstance()->Restart(NbBlocks);
 
 #if 0 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
-                    IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
+                    GeoCoordinates::IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
                     if (m_rCompressReadInfo.m_pGeotiffKeys->GetFirstKey(&GeoTiffKey) == true)
                         {
                         do  {
                             switch (GeoTiffKey.KeyDataType)
                                 {
-                                    case IGeoTiffKeysList::ASCII:
+                                    case GeoCoordinates::IGeoTiffKeysList::ASCII:
                                         NCSCompressSetGeotiffKey(m_pCompressClient, (geokey_t) GeoTiffKey.KeyID, TYPE_ASCII, 1, GeoTiffKey.KeyValue.StringVal);
                                         break;
 
-                                    case IGeoTiffKeysList::DOUBLE:
+                                    case GeoCoordinates::IGeoTiffKeysList::DOUBLE:
                                         NCSCompressSetGeotiffKey(m_pCompressClient, (geokey_t) GeoTiffKey.KeyID, TYPE_DOUBLE, 1, GeoTiffKey.KeyValue.DoubleVal);
                                         break;
 
-                                    case IGeoTiffKeysList::LONG:
+                                    case GeoCoordinates::IGeoTiffKeysList::LONG:
                                         NCSCompressSetGeotiffKey(m_pCompressClient, (geokey_t) GeoTiffKey.KeyID, TYPE_SHORT, 1, (int16_t) GeoTiffKey.KeyValue.LongVal);
                                         break;
                                 }

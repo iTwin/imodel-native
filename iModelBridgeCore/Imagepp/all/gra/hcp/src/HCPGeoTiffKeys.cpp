@@ -103,7 +103,7 @@ bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, uint32_t* po_pVal) const
     GeoKeyList::const_iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::LONG == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::LONG == ((*Itr).second).KeyDataType);
 
         *po_pVal = ((*Itr).second).KeyValue.LongVal;
 
@@ -119,7 +119,7 @@ bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, double* po_pVal) const
     GeoKeyList::const_iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::DOUBLE == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::DOUBLE == ((*Itr).second).KeyDataType);
 
         *po_pVal = ((*Itr).second).KeyValue.DoubleVal;
 
@@ -133,7 +133,7 @@ bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, AStringR po_Val) const
     GeoKeyList::const_iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
 
         po_Val = ((*Itr).second).KeyValue.StringVal;
 
@@ -153,7 +153,7 @@ bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, uint32_t pi_Val)
     GeoKeyList::iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::LONG == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::LONG == ((*Itr).second).KeyDataType);
 
         ((*Itr).second).KeyValue.LongVal = pi_Val;
 
@@ -170,7 +170,7 @@ bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, double pi_Val)
     GeoKeyList::iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::DOUBLE == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::DOUBLE == ((*Itr).second).KeyDataType);
 
         ((*Itr).second).KeyValue.DoubleVal = pi_Val;
 
@@ -187,7 +187,7 @@ bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, AStringCR pi_Val)
     GeoKeyList::iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
-        HASSERT(IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
+        HASSERT(GeoCoordinates::IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
         
         ((*Itr).second).KeyValue.StringVal = pi_Val.c_str();
         
@@ -240,7 +240,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, uint32_t pi_value)
     GeoKeyItem CurKey;
 
     CurKey.KeyID = pi_KeyID;
-    CurKey.KeyDataType = IGeoTiffKeysList::LONG;
+    CurKey.KeyDataType = GeoCoordinates::IGeoTiffKeysList::LONG;
     CurKey.KeyValue.LongVal = pi_value;
 
     m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)CurKey.KeyID, CurKey));
@@ -257,7 +257,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, double pi_value)
     GeoKeyItem CurKey;
 
     CurKey.KeyID = pi_KeyID;
-    CurKey.KeyDataType = IGeoTiffKeysList::DOUBLE;
+    CurKey.KeyDataType = GeoCoordinates::IGeoTiffKeysList::DOUBLE;
     CurKey.KeyValue.DoubleVal = pi_value;
 
     m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)CurKey.KeyID, CurKey));
@@ -271,7 +271,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, const std::string& pi_value)
     GeoKeyItem CurKey;
 
     CurKey.KeyID = pi_KeyID;
-    CurKey.KeyDataType = IGeoTiffKeysList::ASCII;
+    CurKey.KeyDataType = GeoCoordinates::IGeoTiffKeysList::ASCII;
 
     char* pStr = new char[pi_value.size()+1];
     BeStringUtilities::Strncpy(pStr, pi_value.size()+1, pi_value.c_str(), pi_value.size());
