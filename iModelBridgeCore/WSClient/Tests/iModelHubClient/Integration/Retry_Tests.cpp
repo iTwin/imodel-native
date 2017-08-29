@@ -12,6 +12,7 @@
 #include <Bentley/BeTest.h>
 #include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/BackDoor.h"
 #include "MockHttpHandler.h"
+#include "../../../Client/ServerInfoProvider.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -33,6 +34,7 @@ struct RetryTests : public IntegrationTestsBase
     virtual void SetUp() override
         {
         IntegrationTestsBase::SetUp();
+        ServerInfoProvider::InvalidateAllInfo();
 
         auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
         m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
@@ -229,27 +231,23 @@ TEST_F(RetryTests, CreateChangeSetFails)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(5)
+        ExpectRequests(4)
         .ForRequest(1, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
-        ).ForRequest(3, [=](Http::RequestCR request)
+        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in the server fails
             return StubHttpResponse(HttpStatus::InternalServerError);
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        ).ForRequest(3, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
-        ).ForRequest(5, [=](Http::RequestCR request)
+        ).ForRequest(4, [=](Http::RequestCR request)
             {
             // Create changeSet in the server fails
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
@@ -260,11 +258,11 @@ TEST_F(RetryTests, CreateChangeSetFails)
     // Set other wsclient
     auto newClient = CreateWSClient(m_imodel, mockHandler);
     BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, newClient);
-    
+
     // First push should fail
     auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
     EXPECT_FALSE(pushResult.IsSuccess());
-    
+
     // Second push should succeed
     pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
     EXPECT_SUCCESS(pushResult);
@@ -366,46 +364,42 @@ TEST_F(RetryTests, InitializeiModelFails)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(9)
+        ExpectRequests(8)
         .ForRequest(1, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
-        ).ForRequest(3, [=](Http::RequestCR request)
+        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in server
             return StubHttpResponse(HttpStatus::Created);
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        ).ForRequest(3, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::OK);
             }
-        ).ForRequest(5, [=](Http::RequestCR request)
+        ).ForRequest(4, [=](Http::RequestCR request)
             {
             // Confirm and send locks/codes
             return StubHttpResponse(HttpStatus::BadRequest);
             }
-        ).ForRequest(6, [=](Http::RequestCR request)
+        ).ForRequest(5, [=](Http::RequestCR request)
             {
             return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
             }
-        ).ForRequest(7, [=](Http::RequestCR request)
+        ).ForRequest(6, [=](Http::RequestCR request)
             {
             // Create changeSet in server
             return StubHttpResponse(HttpStatus::Created);
             }
-        ).ForRequest(8, [=](Http::RequestCR request)
+        ).ForRequest(7, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::OK);
             }
-        ).ForRequest(9, [=](Http::RequestCR request)
+        ).ForRequest(8, [=](Http::RequestCR request)
             {
             // Confirm and send locks/codes
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
@@ -448,12 +442,8 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(3)
+        ExpectRequests(2)
         .ForRequest(1, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{\"instances\":"
@@ -476,7 +466,7 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
                     "\"IsUploaded\":true"
                 "}}]}");
             }
-        ).ForRequest(3, [=](Http::RequestCR request)
+        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Download changeSet
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
@@ -492,6 +482,7 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
     BeTest::SetFailOnAssert(false);
     auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
     BeTest::SetFailOnAssert(true);
+    
     EXPECT_FALSE(pushResult.IsSuccess());
     EXPECT_EQ(Error::Id::RevisionManagerError, pushResult.GetError().GetId());
 
@@ -518,14 +509,15 @@ TEST_F(RetryTests, AcquireCodesLocksFails)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(7)
+        ExpectRequests(6)
         .ForRequest(1, [=](Http::RequestCR request)
             {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
+            // Query held resources
+            return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
         ).ForRequest(2, [=](Http::RequestCR request)
             {
-            // Query held resources
+            // Query unavailable locks/codes
             return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
         ).ForRequest(3, [=](Http::RequestCR request)
@@ -540,17 +532,12 @@ TEST_F(RetryTests, AcquireCodesLocksFails)
             }
         ).ForRequest(5, [=](Http::RequestCR request)
             {
-            // Query unavailable locks/codes
-            return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
-            }
-        ).ForRequest(6, [=](Http::RequestCR request)
-            {
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(7, [=](Http::RequestCR request)
+        ).ForRequest(6, [=](Http::RequestCR request)
             {
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
@@ -648,13 +635,16 @@ TEST_F(RetryTests, AcquireCodesLocksQueryHeldResourcesFails)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(9)
+        ExpectRequests(8)
         .ForRequest(1, [=](Http::RequestCR request)
             {
-            // Plugins query
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
+            // iModelScope/MultiCode?$filter=(BriefcaseId+eq+2)
+            return StubHttpResponse(HttpStatus::ReqestTimeout,
+                "{\"errorId\": \"\", "
+                "\"errorMessage\" : \"Request timed out\", "
+                "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(2, [=](Http::RequestCR request)
+        ).ForRequest(2, [&](Http::RequestCR request)
             {
             // iModelScope/MultiCode?$filter=(BriefcaseId+eq+2)
             return StubHttpResponse(HttpStatus::ReqestTimeout,
@@ -664,7 +654,7 @@ TEST_F(RetryTests, AcquireCodesLocksQueryHeldResourcesFails)
             }
         ).ForRequest(3, [&](Http::RequestCR request)
             {
-            // iModelScope/MultiCode?$filter=(BriefcaseId+eq+2)
+            // iModelScope/MultiLock?$filter=(BriefcaseId+eq+2)
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
                 "\"errorMessage\" : \"Request timed out\", "
@@ -678,15 +668,15 @@ TEST_F(RetryTests, AcquireCodesLocksQueryHeldResourcesFails)
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(5, [&](Http::RequestCR request)
+        ).ForRequest(5, [=](Http::RequestCR request)
             {
-            // iModelScope/MultiLock?$filter=(BriefcaseId+eq+2)
+            // iModelScope/Code?$filter=BriefcaseId+ne+2
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(6, [=](Http::RequestCR request)
+        ).ForRequest(6, [&](Http::RequestCR request)
             {
             // iModelScope/Code?$filter=BriefcaseId+ne+2
             return StubHttpResponse(HttpStatus::ReqestTimeout,
@@ -696,21 +686,13 @@ TEST_F(RetryTests, AcquireCodesLocksQueryHeldResourcesFails)
             }
         ).ForRequest(7, [&](Http::RequestCR request)
             {
-            // iModelScope/Code?$filter=BriefcaseId+ne+2
-            return StubHttpResponse(HttpStatus::ReqestTimeout,
-                "{\"errorId\": \"\", "
-                "\"errorMessage\" : \"Request timed out\", "
-                "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
-            }
-        ).ForRequest(8, [&](Http::RequestCR request)
-            {
             // iModelScope/Lock?$filter=BriefcaseId+ne+2+and+(LockLevel+gt+0+or+ReleasedWithChangeSetIndex+gt+0)
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(9, [&](Http::RequestCR request)
+        ).ForRequest(8, [&](Http::RequestCR request)
             {
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
             // iModelScope/Lock?$filter=BriefcaseId+ne+2+and+(LockLevel+gt+0+or+ReleasedWithChangeSetIndex+gt+0)
@@ -750,21 +732,17 @@ TEST_F(RetryTests, DownloadSeedFileRetries)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(4)
+        ExpectRequests(3)
         .ForRequest(1, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Download seed file
             return StubHttpResponse(HttpStatus::ReqestTimeout);
             }
-        ).ForRequest(3, [=](Http::RequestCR request)
+        ).ForRequest(2, [=](Http::RequestCR request)
             {
             return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        ).ForRequest(3, [=](Http::RequestCR request)
             {
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
             // Download seed file retry
@@ -795,26 +773,21 @@ TEST_F(RetryTests, DownloadSeedFileSingleFailSucceeds)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(5)
+        ExpectRequests(4)
         .ForRequest(1, [=](Http::RequestCR request)
             {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
+            return StubHttpResponse(HttpStatus::OK, "{\"instances\":[{\"schemaName\": \"iModelScope\", \"className\": \"SeedFile\", \"instanceId\" : \"Id\", \"properties\":{}}]}");
             }
         ).ForRequest(2, [=](Http::RequestCR request)
-            {
-            // Query access key
-            return StubHttpResponse(HttpStatus::OK, "{\"instances\":[{\"schemaName\": \"iModelScope\", \"className\": \"SeedFile\", \"instanceId\" : \"Id\", \"properties\":{}}]}");
-            })
-        .ForRequest(3, [=](Http::RequestCR request)
             {
             // Download seed file
             return StubHttpResponse(HttpStatus::ReqestTimeout);
             })
-        .ForRequest(4, [=](Http::RequestCR request)
-                {
-                return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-                }
-        ).ForRequest(5, [=](Http::RequestCR request)
+        .ForRequest(3, [=](Http::RequestCR request)
+            {
+            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
+            }
+        ).ForRequest(4, [=](Http::RequestCR request)
             {
             // Second download succeeds
             return StubHttpResponse(HttpStatus::OK, "Content");

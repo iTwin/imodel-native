@@ -100,6 +100,7 @@ private:
     DateTime    m_createDate;
 
     friend struct iModelConnection;
+    friend struct Client;
 
     static Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member);
 
@@ -117,4 +118,7 @@ public:
     //! Url for download
     Utf8StringCR GetDownloadUrl() const {return m_downloadUrl;}
 };
+
+struct NotUsedFileAccessKey : FileAccessKey
+    {};
 END_BENTLEY_IMODELHUB_NAMESPACE

@@ -45,7 +45,7 @@ struct BriefcaseTests: public IntegrationTestsBase
         IntegrationTestsBase::TearDown();
         }
 
-    BriefcasePtr AcquireBriefcase()
+    BriefcasePtr AcquireBriefcaseWithoutSync()
         {
         return IntegrationTestsBase::AcquireBriefcase(*m_client, *m_imodel);
         }
@@ -304,7 +304,7 @@ TEST_F(BriefcaseTests, OpenSeedFileAsBriefcase)
 TEST_F(BriefcaseTests, PullAndMerge)
     {
     InitializeWithChangeSets();
-    BriefcasePtr briefcase = AcquireBriefcase();
+    BriefcasePtr briefcase = AcquireBriefcaseWithoutSync();
     DgnDbR db = briefcase->GetDgnDb();
     Utf8String lastChangeSetId;
  
@@ -345,7 +345,7 @@ TEST_F(BriefcaseTests, PullAndMerge)
 
 TEST_F(BriefcaseTests, Push)
     {
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     DgnDbR db = briefcase->GetDgnDb();
 
     auto model = CreateModel ("TestModel", db);
@@ -364,7 +364,7 @@ TEST_F(BriefcaseTests, Push)
 TEST_F(BriefcaseTests, PullMergeAndPush)
     {
     InitializeWithChangeSets();
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     DgnDbR db = briefcase->GetDgnDb();
 
     Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
@@ -385,7 +385,7 @@ TEST_F(BriefcaseTests, PullMergeAndPush)
 TEST_F(BriefcaseTests, TwoPulls)
     {
     InitializeWithChangeSets();
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     DgnDbR db = briefcase->GetDgnDb();
 
     Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
@@ -435,7 +435,7 @@ TEST_F(BriefcaseTests, PreDownload)
     preDownloadPath.AppendToPath(L"*");
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
 
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     InitializeWithChangeSets();
 
     // Wait max 50 sec until changeSet files are preDownloaded
@@ -465,7 +465,7 @@ TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
     preDownloadPath.AppendToPath(L"*");
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
 
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     InitializeWithChangeSets();
 
     // Wait max 20 sec until changeSet files are preDownloaded
@@ -492,7 +492,7 @@ TEST_F(BriefcaseTests, PreDownloadTurnedOff)
     preDownloadPath.AppendToPath(L"*");
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
 
-    auto briefcase = AcquireBriefcase();
+    auto briefcase = AcquireBriefcaseWithoutSync();
     InitializeWithChangeSets();
 
     BeThreadUtilities::BeSleep(1000);
@@ -506,7 +506,7 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
     bvector<BriefcasePtr> briefcases;
     for (int i = 0; i < 4; i++)
         {
-        briefcases.push_back(AcquireBriefcase());
+        briefcases.push_back(AcquireBriefcaseWithoutSync());
         }
 
     // Initialize some changeSets
@@ -527,7 +527,7 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
         }
     }
 
-TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToVersion)
+TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToVersion)
     {
     //create changeSets
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 7);
@@ -549,7 +549,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToVersion)
     versionResult = versionManager.CreateVersion(*version3)->GetResult();
     EXPECT_SUCCESS(versionResult);
 
-    auto acquireResult = m_client->DownloadLocalBriefcaseUpdatedToVersion(*m_imodel, version2->GetId(), [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+    auto acquireResult = m_client->DownloadStandaloneBriefcaseUpdatedToVersion(*m_imodel, version2->GetId(), [=] (iModelInfo imodelInfo, FileInfo fileInfo)
         {
         BeFileName filePath = m_pHost->GetOutputDirectory();
         filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
@@ -574,7 +574,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToVersion)
     EXPECT_FALSE(partition->Insert().IsValid());
     }
 
-TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToChangeSet)
+TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToChangeSet)
     {
     //create changeSets
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 4);
@@ -583,7 +583,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToChangeSet)
     auto changeSets = changeSetsResult.GetValue();
 
     auto briefcaseChangeSet = changeSets.at(1)->GetId();
-    auto acquireResult = m_client->DownloadLocalBriefcaseUpdatedToChangeSet(*m_imodel, briefcaseChangeSet, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+    auto acquireResult = m_client->DownloadStandaloneBriefcaseUpdatedToChangeSet(*m_imodel, briefcaseChangeSet, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
         {
         BeFileName filePath = m_pHost->GetOutputDirectory();
         filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
@@ -608,7 +608,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToChangeSet)
     EXPECT_FALSE(partition->Insert().IsValid());
     }
 
-TEST_F(BriefcaseTests, DownloadLocalBriefcase)
+TEST_F(BriefcaseTests, DownloadStandaloneBriefcase)
     {
     //create changeSets
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 4);
@@ -616,7 +616,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcase)
     EXPECT_SUCCESS(changeSetsResult);
     auto changeSets = changeSetsResult.GetValue();
 
-    auto acquireResult = m_client->DownloadLocalBriefcase(*m_imodel, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+    auto acquireResult = m_client->DownloadStandaloneBriefcase(*m_imodel, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
         {
         BeFileName filePath = m_pHost->GetOutputDirectory();
         filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
@@ -638,4 +638,229 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcase)
 
     PhysicalPartitionPtr partition = CreateModeledElement("TestModel", *db);
     EXPECT_FALSE(partition->Insert().IsValid());
+    }
+
+TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
+    {
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(8, changeSetsResult.GetValue().size());
+    auto changeSets = changeSetsResult.GetValue();
+    auto lastChangeSetId = changeSets.at(7)->GetId();
+
+    auto versionManager = m_imodelConnection->GetVersionsManager();
+    VersionInfoPtr version1ChangeSet2 = new VersionInfo("Version1", "Description", changeSets.at(2)->GetId());
+    version1ChangeSet2 = versionManager.CreateVersion(*version1ChangeSet2)->GetResult().GetValue();
+    VersionInfoPtr version2ChangeSet4 = new VersionInfo("Version2", "Description", changeSets.at(4)->GetId());
+    version2ChangeSet4 = versionManager.CreateVersion(*version2ChangeSet4)->GetResult().GetValue();
+    VersionInfoPtr version3ChangeSet6 = new VersionInfo("Version3", "Description", changeSets.at(6)->GetId());
+    version3ChangeSet6 = versionManager.CreateVersion(*version3ChangeSet6)->GetResult().GetValue();
+
+    //aquire briefcase without changeSets
+    auto briefcase = AcquireBriefcaseWithoutSync();
+    EXPECT_EQ("", briefcase->GetLastChangeSetPulled());
+
+    //add changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version2ChangeSet4->GetId())->GetResult());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+
+    //remove changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+
+    //add changeSets after removal
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version3ChangeSet6->GetId())->GetResult());
+    EXPECT_EQ(version3ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+
+    //pull
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+
+    CreateModel("Model1", briefcase->GetDgnDb());
+    auto dbResult = briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+
+    //pull with reverted and new changeSets
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+
+    //add schema changes
+    briefcase->GetDgnDb().CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    ASSERT_TRUE(briefcase->GetDgnDb().Txns().HasDbSchemaChanges());
+    briefcase->GetDgnDb().SaveChanges();
+    ASSERT_FALSE(briefcase->GetDgnDb().Txns().HasDbSchemaChanges());
+    CreateModel("Model2", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+
+    auto changeSetResult = briefcase->GetiModelConnection().GetChangeSetById(lastChangeSetId)->GetResult();
+    EXPECT_NE("", changeSetResult.GetValue()->GetId());
+
+    VersionInfoPtr version4SchemaChanges = new VersionInfo("Version4", "Description", lastChangeSetId);
+    version4SchemaChanges = versionManager.CreateVersion(*version4SchemaChanges)->GetResult().GetValue();
+
+    //acquire briefcase without changes
+    briefcase = AcquireBriefcaseWithoutSync();
+
+    //add changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version2ChangeSet4->GetId())->GetResult());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //remove changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //add removed changeSets and fail
+    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateToVersion(version4SchemaChanges->GetId())->GetResult().GetError().GetId());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //add changeSets with reopen
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version4SchemaChanges->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
+    auto changeSetsToMerge = m_imodelConnection->DownloadChangeSets(changeSetsResult.GetValue())->GetResult();
+    briefcase->GetDgnDb().CloseDb();
+    DbResult result;
+    auto briefcaseResult = m_client->OpenBriefcase(m_client->OpenWithSchemaUpgrade(&result, briefcase->GetDgnDb().GetFileName(), changeSetsToMerge.GetValue()))->GetResult();
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, result);
+    EXPECT_SUCCESS(briefcaseResult);
+    briefcase = briefcaseResult.GetValue();
+    EXPECT_EQ(version4SchemaChanges->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+
+    CreateModel("Model3", briefcase->GetDgnDb());
+    dbResult = briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+
+    //pull with removed ChangeSets (SchemaChanges included)
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version3ChangeSet6->GetId())->GetResult());
+    EXPECT_EQ(version3ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+    }
+
+TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
+    {
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(8, changeSetsResult.GetValue().size());
+    auto changeSets = changeSetsResult.GetValue();
+    auto lastChangeSetId = changeSets.at(7)->GetId();
+
+    Utf8String changeSet2 = changeSets.at(2)->GetId();
+    Utf8String changeSet4 = changeSets.at(4)->GetId();
+    Utf8String changeSet6 = changeSets.at(6)->GetId();
+
+    //aquire briefcase without changeSets
+    auto briefcase = AcquireBriefcaseWithoutSync();
+    EXPECT_EQ("", briefcase->GetLastChangeSetPulled());
+
+    //add changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet4)->GetResult());
+    EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
+
+    //remove changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
+    EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
+
+    //add changeSets after removal
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet6)->GetResult());
+    EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
+
+    //pull
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+
+    CreateModel("Model1", briefcase->GetDgnDb());
+    auto dbResult = briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
+    EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
+
+    //pull with reverted and new changeSets
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+
+    //add schema changes
+    briefcase->GetDgnDb().CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    ASSERT_TRUE(briefcase->GetDgnDb().Txns().HasDbSchemaChanges());
+    briefcase->GetDgnDb().SaveChanges();
+    ASSERT_FALSE(briefcase->GetDgnDb().Txns().HasDbSchemaChanges());
+    CreateModel("Model2", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+
+    auto changeSetResult = briefcase->GetiModelConnection().GetChangeSetById(lastChangeSetId)->GetResult();
+    EXPECT_NE("", changeSetResult.GetValue()->GetId());
+
+    Utf8String schemaChangeSet = lastChangeSetId;
+
+    //acquire briefcase without changes
+    briefcase = AcquireBriefcaseWithoutSync();
+
+    //add changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet4)->GetResult());
+    EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //remove changeSets
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
+    EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //add removed changeSets and fail
+    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateToChangeSet(schemaChangeSet)->GetResult().GetError().GetId());
+    EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
+    EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
+
+    //add changeSets with reopen
+    changeSetsResult = m_imodelConnection->GetChangeSetsBetween(schemaChangeSet, briefcase->GetLastChangeSetPulled())->GetResult();
+    auto changeSetsToMerge = m_imodelConnection->DownloadChangeSets(changeSetsResult.GetValue())->GetResult();
+    briefcase->GetDgnDb().CloseDb();
+    DbResult result;
+    auto briefcaseResult = m_client->OpenBriefcase(m_client->OpenWithSchemaUpgrade(&result, briefcase->GetDgnDb().GetFileName(), changeSetsToMerge.GetValue()))->GetResult();
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, result);
+    EXPECT_SUCCESS(briefcaseResult);
+    briefcase = briefcaseResult.GetValue();
+    EXPECT_EQ(schemaChangeSet, briefcase->GetLastChangeSetPulled());
+
+    CreateModel("Model3", briefcase->GetDgnDb());
+    dbResult = briefcase->GetDgnDb().SaveChanges();
+    lastChangeSetId = PushPendingChanges(*briefcase);
+
+    //pull with removed ChangeSets (SchemaChanges included)
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet6)->GetResult());
+    EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
+    EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
+    EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
+    }
+
+TEST_F(BriefcaseTests, SuccessfulRestoreBriefcase)
+    {
+    auto connectionResult = m_client->ConnectToiModel(*m_imodel)->GetResult();
+    EXPECT_SUCCESS(connectionResult);
+    auto connection = connectionResult.GetValue();
+
+    auto briefcaseResult = connection->AcquireNewBriefcase()->GetResult();
+    EXPECT_SUCCESS(briefcaseResult);
+
+    auto result = m_client->RestoreBriefcase(*m_imodel, briefcaseResult.GetValue()->GetId(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
+
+    EXPECT_SUCCESS(result);
+    auto dbPath = result.GetValue()->GetLocalPath();
+    EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
+    }
+
+TEST_F(BriefcaseTests, UnsuccessfulRestoreBriefcase)
+    {
+    //Restore briefcase that doesnt exists
+    auto result = m_client->RestoreBriefcase(*m_imodel, BeSQLite::BeBriefcaseId(100), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    CheckNoProgress();
     }

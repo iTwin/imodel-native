@@ -58,7 +58,7 @@ private:
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const { return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_customHandler); }
     IWSRepositoryClientPtr CreateProjectConnection() const;
 
-    BeFileNameTaskPtr DownloadLocalBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
+    BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
 
 
 public:
@@ -200,13 +200,28 @@ public:
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
     IMODELHUBCLIENT_EXPORT BriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Redownload briefcase file
+    //! Redownload briefcase file if original became invalid.
     //! @param[in] db Previously downloaded briefcase file. See Client::AcquireBriefcase.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if download has failed. See Briefcase.
     //! @note Should be used if briefcase file has became invalid.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Restore a briefcase of an iModel for a briefcase id that was issued previously. This function should be used in cases when briefcase file was deleted,
+    //! but briefcase id remained for future use. For example: briefcase was deleted to free up the space temporarilly.
+    //! @param iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
+    //! @param briefcaseId Previously Acquired Briefcase Id
+    //! @param baseDirectory Path to a directory that will be used in callback function.
+    //! @param doSync If set to true, it will download all of the changeSets that have not been merged on server and merge locally.
+    //! @param fileNameCallback Callback function, that takes baseDirectory, briefcase Id and iModel info as arguments and returns full filename.
+    //! @param callback Download progress callback.
+    //! @param cancellationToken
+    //! @return Asynchronous task that has briefcase info as the result.
+    //! @note Default callback will save iModel at baseDirectory\\iModelId\\briefcaseId\\fileName
+    IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseId, BeFileNameCR baseDirectory, 
+                                                                 bool doSync = true, BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
+                                                                 Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Creates iModel manager that is not managed by Client.
     //! @param[in] iModelInfo
@@ -233,7 +248,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has breifcase file path as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
                                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Dowloads local briefcase updated to specified ChangeSet. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
@@ -243,7 +258,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has breifcase file path as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
                                                                                       Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Dowloads local briefcase from server with version applied. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
@@ -252,7 +267,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase info as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const& fileNameCallBack,
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const& fileNameCallBack,
                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 

@@ -10,15 +10,15 @@
 
 #define SERVER_INFO_REFRESH_MS (30*60*1000)
 
-std::map<Utf8String, std::pair<WSInfo, uint64_t>> ServerInfoProvider::s_serverInfo = {};
+std::map<Utf8String, std::pair<WSInfo, uint64_t>> ServerInfoProvider::s_serverInfo{};
 BeMutex ServerInfoProvider::s_mutex;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ServerInfoProvider::ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration) :
-    m_configuration(configuration),
-    m_enableWsgServerHeader(false)
+m_configuration(configuration),
+m_enableWsgServerHeader(false)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -89,8 +89,8 @@ bool ServerInfoProvider::CanUseCachedInfo() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ServerInfoProvider::UpdateInfo(WSInfoCR info)
-    {
+void ServerInfoProvider::UpdateInfo(WSInfoCR info) const
+{
     Utf8String url = m_configuration->GetServerUrl();
     s_serverInfo[url].first = info;
     s_serverInfo[url].second = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -180,6 +180,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
     Utf8String url = m_configuration->GetServerUrl();
     if (!forceQuery && CanUseCachedInfo())
         return CreateCompletedAsyncTask(WSInfoResult::Success(s_serverInfo[url].first));
+        
 
     return m_getInfoExecutor.GetTask([=]
         {
@@ -192,7 +193,6 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
 
             UpdateInfo(result.GetValue());
             NotifyServerInfoUpdated(result.GetValue());
-
             return WSInfoResult::Success(s_serverInfo[url].first);
             });
         });
@@ -201,13 +201,16 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ServerInfoProvider::InvalidateInfo()
-    {
+void ServerInfoProvider::InvalidateInfo() const
+{
     BeMutexHolder lock(s_mutex);
     Utf8String url = m_configuration->GetServerUrl();
     s_serverInfo[url].second = 0;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vismantas.Stonkus    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::InvalidateAllInfo()
     {
     BeMutexHolder lock(s_mutex);

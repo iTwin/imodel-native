@@ -63,8 +63,9 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    if (fileAccessKey.IsNull())
+    if (typeid(NotUsedFileAccessKey) == typeid(*fileAccessKey))
         {
+        // This environment does not use fileAccessKey
         return ExecutionManager::ExecuteWithRetry<void>([=]() {
             return m_wsRepositoryClient->SendGetFileRequest(fileId, localFile, nullptr, callback, cancellationToken)
                 ->Then<StatusResult>([=](const WSFileResult& fileResult)
@@ -81,25 +82,23 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
                 });
             });
         }
-    else
-        {
-        return ExecutionManager::ExecuteWithRetry<void>([=]() {
-            // Download file directly from the url.
-            return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, cancellationToken)
-                ->Then<StatusResult>([=](const AzureResult& result)
-                {
-                if (!result.IsSuccess())
-                    {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                    return StatusResult::Error(Error(result.GetError()));
-                    }
 
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return StatusResult::Success();
-                });
+    // Download file directly from the url.
+    return ExecutionManager::ExecuteWithRetry<void>([=]() {
+        return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, cancellationToken)
+            ->Then<StatusResult>([=](const AzureResult& result)
+            {
+            if (!result.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return StatusResult::Error(Error(result.GetError()));
+                }
+
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            return StatusResult::Success();
             });
-        }
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -109,15 +108,20 @@ StatusTaskPtr iModelConnection::DownloadFile
 (
 BeFileName                        localFile,
 ObjectIdCR                        fileId,
+FileAccessKeyPtr                  fileAccessKey,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
     {
-    auto fileAccessKeyResult = QueryFileAccessKey(fileId, cancellationToken)->GetResult();
-    if (!fileAccessKeyResult.IsSuccess())
-        return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult.GetError()));
-    
-    auto fileAccessKey = fileAccessKeyResult.GetValue();
+    if (fileAccessKey.IsNull())
+        {
+        auto fileAccessKeyResult = QueryFileAccessKey(fileId, cancellationToken)->GetResult();
+        if (!fileAccessKeyResult.IsSuccess())
+            return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult.GetError()));
+
+        fileAccessKey = fileAccessKeyResult.GetValue();
+        }
+
     return DownloadFileInternal(localFile, fileId, fileAccessKey, callback, cancellationToken);
     }
 
@@ -456,6 +460,7 @@ StatusResult iModelConnection::DownloadBriefcaseFile
 (
 BeFileName                        localFile,
 BeBriefcaseId                     briefcaseId,
+FileAccessKeyPtr                  fileAccessKey,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
@@ -467,7 +472,8 @@ ICancellationTokenPtr             cancellationToken
     instanceId.Sprintf("%u", briefcaseId.GetValue());
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, instanceId);
 
-    auto downloadResult = DownloadFile(localFile, fileObject, callback, cancellationToken)->GetResult();
+    auto downloadResult = DownloadFile(localFile, fileObject, fileAccessKey, callback, cancellationToken)->GetResult();
+
     if (!downloadResult.IsSuccess())
         return downloadResult;
 
@@ -480,12 +486,12 @@ ICancellationTokenPtr             cancellationToken
 uint8_t DgnCodeStateToInt(DgnCodeStateCR state)
     {
     //NEEDSWORK: Make DgnCodeState::Type public
-	if (state.IsReserved())
-		return 1;
-	if (state.IsUsed())
-		return 2;
+    if (state.IsReserved())
+        return 1;
+    if (state.IsUsed())
+        return 2;
 
-	return 0;
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2144,7 +2150,7 @@ BeGuidCR              fileId
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsInternal
 (
-const bvector<ChangeSetInfoPtr>& changeSets,
+const bvector<ChangeSetInfoPtr>&       changeSets,
 Http::Request::ProgressCallbackCR      callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
@@ -2219,7 +2225,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
 //---------------------------------------------------------------------------------------
 ChangeSetTaskPtr iModelConnection::DownloadChangeSetFile
 (
-ChangeSetInfoPtr        changeSet,
+ChangeSetInfoPtr                  changeSet,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
@@ -2235,20 +2241,7 @@ ICancellationTokenPtr             cancellationToken
         return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Success(changeSetPtr));
 
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId());
-
-    if (changeSet->GetContainsFileAccessKey())
-        {
-        return DownloadFileInternal(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
-            ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
-            {
-            if (!downloadResult.IsSuccess())
-                return ChangeSetResult::Error(downloadResult.GetError());
-
-            return ChangeSetResult::Success(changeSetPtr);
-            });
-        }
-
-    return DownloadFile(changeSetFileName, fileObject, callback, cancellationToken)
+    return DownloadFile(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
         ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
         {
         if (!downloadResult.IsSuccess())
@@ -2286,9 +2279,9 @@ ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSetsInternal(bool loadAccess
 //@bsimethod                                     Karolis.Dziedzelis             03/2017
 //---------------------------------------------------------------------------------------
 bool IsInitializationFinished(InitializationState state)
-	{
-	return !(InitializationState::NotStarted == state || InitializationState::Scheduled == state);
-	}
+    {
+    return !(InitializationState::NotStarted == state || InitializationState::Scheduled == state);
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
@@ -2311,7 +2304,7 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
             }
 
         auto seedFile = seedFilesResult.GetValue();
-		initializationState = seedFile->GetInitialized();
+        initializationState = seedFile->GetInitialized();
         
         if (!IsInitializationFinished(initializationState))
             BeThreadUtilities::BeSleep(1000);
@@ -2951,7 +2944,7 @@ StatusTaskPtr iModelConnection::DownloadSeedFile(BeFileName localFile, Utf8Strin
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     ObjectId fileObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::File, fileId);
-    return DownloadFile(localFile, fileObjectId, callback, cancellationToken);
+    return DownloadFile(localFile, fileObjectId, nullptr, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3355,6 +3348,73 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     return GetChangeSetsAfterIdInternal(changeSetId, fileId, false, cancellationToken);
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           08/2017
+//---------------------------------------------------------------------------------------
+WSQuery iModelConnection::CreateBetweenChangeSetsQuery
+(
+Utf8StringCR firstchangeSetId, 
+Utf8StringCR secondChangeSetId,
+BeSQLite::BeGuidCR fileId
+) const
+    {
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
+    Utf8String queryFilter;
+
+    Utf8String notNullChangeSetId = "";
+    if (Utf8String::IsNullOrEmpty(firstchangeSetId.c_str()))
+        notNullChangeSetId = secondChangeSetId;
+
+    if (Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
+        notNullChangeSetId = firstchangeSetId;
+
+    if(!Utf8String::IsNullOrEmpty(notNullChangeSetId.c_str()))
+        {
+        if (fileId.IsValid())
+            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, notNullChangeSetId.c_str(),
+                                ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        else
+            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, notNullChangeSetId.c_str());
+        }
+    else
+        {
+        if (fileId.IsValid())
+            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
+                                ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        else
+            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
+                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str());
+        }
+
+    query.SetFilter(queryFilter);
+
+    return query;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           08/2017
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsBetween";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidChangeSet));
+
+    return ChangeSetsFromQueryInternal(CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

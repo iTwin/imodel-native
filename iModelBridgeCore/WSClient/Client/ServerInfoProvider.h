@@ -40,7 +40,7 @@ struct ServerInfoProvider
 
     private:
         bool CanUseCachedInfo() const;
-        void UpdateInfo(WSInfoCR info);
+        void UpdateInfo(WSInfoCR info) const;
         void NotifyServerInfoUpdated(WSInfoCR info) const;
 
         AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
@@ -57,7 +57,7 @@ struct ServerInfoProvider
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
         AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct);
-        void InvalidateInfo();
+        void InvalidateInfo() const;
         WSCLIENT_EXPORT static void InvalidateAllInfo();
     };
 

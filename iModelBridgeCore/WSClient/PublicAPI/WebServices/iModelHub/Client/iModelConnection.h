@@ -133,9 +133,8 @@ private:
     friend struct iModelManager;
     friend struct PredownloadManager;
     friend struct EventManager;
-	//WIP remove then relationship to get changeSets implemented
     friend struct VersionsManager;
-	
+
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
 
@@ -161,7 +160,7 @@ private:
         ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the file from the iModel.
-    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
+    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     FileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
@@ -191,7 +190,7 @@ private:
     StatusResult WriteBriefcaseIdIntoFile(BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
     //! Download a copy of the seed file from the iModel and initialize it as briefcase
-    StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId,
+    StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, FileAccessKeyPtr fileAccessKey,
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
@@ -328,6 +327,7 @@ private:
 
     WSQuery CreateChangeSetsAfterIdQuery(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
+    WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
     void SubscribeChangeSetsDownload();
 
     //! Sends a request from changeset.
@@ -348,9 +348,9 @@ private:
     //! Push this ChangeSet file to server.
     StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
-    
-	static Json::Value CreateFileJson(FileInfoCR fileInfo);
-	
+
+    static Json::Value CreateFileJson(FileInfoCR fileInfo);
+
     //! Create an instance of the connection to a iModel on the server.
     //! @param[in] iModel iModel information used to connect to a specific iModel on the server.
     //! @param[in] credentials Credentials used to authenticate on the iModel.
@@ -406,7 +406,7 @@ public:
     iModelInfoCR GetiModelInfo() const { return m_iModelInfo; }
 
     //! Gets UserInfoManager
-	//! @return UserInfo manager
+    //! @return UserInfo manager
     IMODELHUBCLIENT_EXPORT UserInfoManagerCR GetUserInfoManager() const { return m_userInfoManager; }
 
     //!< Gets RepositoryClient.
@@ -425,7 +425,7 @@ public:
         }
 
     //! Gets VersionsManager
-	//! @return Versions manager
+    //! @return Versions manager
     IMODELHUBCLIENT_EXPORT VersionsManagerCR GetVersionsManager() const { return m_versionsManager; }
 
     //! Receive Events from EventService
@@ -525,6 +525,14 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of ChangeSet information as the result.
     IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get ChangeSets between two specified ChangeSets.
+    //! @param[in] firstChangeSetId If empty gets all changeSets before secondChangeSetId
+    //! @param[in] secondChangeSetId If empty gets all changeSets before firstChangeSetId.
+    //! @param[in] fileId Id of the seed file changeSets belong to.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of ChangeSet information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
     //! @param[in] changeSets Set of changeSets to download.
