@@ -13,30 +13,36 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECEnumeration::ECEnumeration(ECSchemaCR schema)
     : m_schema(schema), m_primitiveType(PrimitiveType::PRIMITIVETYPE_Integer), m_isStrict(true), m_enumeratorList(), m_enumeratorIterable(m_enumeratorList)
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                 
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECEnumeration::~ECEnumeration()
     {
     for (ECEnumerator* entry : m_enumeratorList)
-        {
         delete entry;
-        }
 
     m_enumeratorList.clear();
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECEnumeration::SetDisplayLabel(Utf8CP displayLabel) {m_validatedName.SetDisplayLabel(displayLabel);}
+Utf8StringCR ECEnumeration::GetDescription() const {return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());}
+Utf8String ECEnumeration::GetTypeName() const {return ECXml::GetPrimitiveTypeName(m_primitiveType);}
+Utf8StringCR ECEnumeration::GetDisplayLabel() const {return GetSchema().GetLocalizedStrings().GetEnumerationDisplayLabel(*this, GetInvariantDisplayLabel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetName(Utf8CP name)
     {
     if (!ECNameValidation::IsValidName(name))
@@ -47,9 +53,9 @@ ECObjectsStatus ECEnumeration::SetName(Utf8CP name)
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECEnumeration::GetFullName () const
     {
     if (m_fullName.size() == 0)
@@ -58,14 +64,10 @@ Utf8StringCR ECEnumeration::GetFullName () const
     return m_fullName;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECEnumeration::GetQualifiedEnumerationName
-(
-ECSchemaCR primarySchema,
-ECEnumerationCR  ecEnumeration
-)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECEnumeration::GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration)
     {
     Utf8String alias;
     Utf8StringCR enumName = ecEnumeration.GetName();
@@ -75,18 +77,20 @@ ECEnumerationCR  ecEnumeration
             "The name will remain unqualified.\n  Primary ECSchema: %s\n  ECEnumeration: %s\n ECSchema containing ECEnumeration: %s", primarySchema.GetName().c_str(), enumName.c_str(), ecEnumeration.GetSchema().GetName().c_str());
         return enumName;
         }
+
     if (alias.empty())
         return enumName;
     else
         return alias + ":" + enumName;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8StringR enumName, Utf8StringCR qualifiedEnumName)
     {
     if (0 == qualifiedEnumName.length())
-        {
         return ECObjectsStatus::ParseError;
-        }
 
     Utf8String::size_type colonIndex = qualifiedEnumName.find(':');
     if (Utf8String::npos == colonIndex)
@@ -97,9 +101,7 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8Strin
         }
 
     if (qualifiedEnumName.length() == colonIndex + 1)
-        {
         return ECObjectsStatus::ParseError;
-        }
 
     if (0 == colonIndex)
         alias.clear();
@@ -111,62 +113,29 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8Strin
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
     {
     if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String)
-        {
         return ECObjectsStatus::DataTypeNotSupported;
-        }
 
     m_primitiveType = value;
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECEnumeration::GetTypeName() const
-    {
-    return ECXml::GetPrimitiveTypeName(m_primitiveType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
     {
     PrimitiveType primitiveType;
     ECObjectsStatus status = ECXml::ParsePrimitiveType(primitiveType, typeName);
     if (ECObjectsStatus::Success != status)
-        {
         return status;
-        }
 
     return SetType(primitiveType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECEnumeration::GetDisplayLabel () const
-    {
-    return GetSchema().GetLocalizedStrings().GetEnumerationDisplayLabel(*this, GetInvariantDisplayLabel());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod
--+---------------+---------------+---------------+---------------+---------------+------*/
-void ECEnumeration::SetDisplayLabel(Utf8CP displayLabel) { m_validatedName.SetDisplayLabel(displayLabel); }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECEnumeration::GetDescription () const
-    {
-    return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,10 +143,8 @@ Utf8StringCR ECEnumeration::GetDescription () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (ecXmlVersion < ECVersion::V3_0)
-        { //Enumerations will only be serialized in 3.0 and later
+    if (ecXmlVersion < ECVersion::V3_0) //Enumerations will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
-        }
 
     Utf8CP elementName = EC_ENUMERATION_ELEMENT;
     SchemaWriteStatus status = SchemaWriteStatus::Success;
@@ -200,24 +167,21 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
         if(isIntType)
             xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetInteger());
         else
-            {
             xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetString().c_str());
-            }
 
         if(enumerator->m_hasExplicitDisplayLabel)
             xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 
         xmlWriter.WriteElementEnd();
         }
-    
-    //WriteCustomAttributes (xmlWriter);
+
     xmlWriter.WriteElementEnd();
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context)
     {
     Utf8String value;      // used by the macros.
@@ -225,14 +189,10 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
         READ_REQUIRED_XML_ATTRIBUTE(enumerationNode, TYPE_NAME_ATTRIBUTE, this, Name, enumerationNode.GetName())
 
     if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
-        {
         SetDescription(value.c_str());
-        }
 
     if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DISPLAY_LABEL_ATTRIBUTE))
-        {
         SetDisplayLabel(value.c_str());
-        }
     
     // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
     if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, BACKING_TYPE_NAME_ATTRIBUTE))
@@ -250,9 +210,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
 
     bool isStrict = true;
     if (BEXML_Success == enumerationNode.GetAttributeBooleanValue(isStrict, IS_STRICT_ATTRIBUTE))
-        {
         SetIsStrict(isStrict);
-        }
 
     PrimitiveType primitiveType = GetType();
 
@@ -298,9 +256,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
 
         Utf8String displayLabel;
         if (childNode->GetAttributeStringValue(displayLabel, DISPLAY_LABEL_ATTRIBUTE) == BeXmlStatus::BEXML_Success)
-            {
             enumerator->SetDisplayLabel(displayLabel.c_str());
-            }
         }
 
     return SchemaReadStatus::Success;
@@ -312,9 +268,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
 ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8CP value)
     {
     if (GetType() != PrimitiveType::PRIMITIVETYPE_String)
-        {
         return ECObjectsStatus::DataTypeMismatch;
-        }
 
     enumerator = FindEnumerator(value);
     if (enumerator != nullptr)
@@ -334,9 +288,7 @@ ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8C
 ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, int32_t value)
     {
     if (GetType() != PrimitiveType::PRIMITIVETYPE_Integer)
-        {
         return ECObjectsStatus::DataTypeMismatch;
-        }
 
     enumerator = FindEnumerator(value);
     if (enumerator != nullptr)
@@ -356,9 +308,7 @@ ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, int32
 ECEnumeratorP ECEnumeration::FindEnumerator(int32_t value) const
     {
     if (GetType() != PrimitiveType::PRIMITIVETYPE_Integer)
-        {
         return nullptr;
-        }
 
     for (auto const& entry : m_enumeratorList)
         {
@@ -375,9 +325,7 @@ ECEnumeratorP ECEnumeration::FindEnumerator(int32_t value) const
 ECEnumeratorP ECEnumeration::FindEnumerator(Utf8CP value) const
     {
     if (GetType() != PrimitiveType::PRIMITIVETYPE_String)
-        {
         return nullptr;
-        }
 
     for (auto const& entry : m_enumeratorList)
         {
@@ -410,26 +358,13 @@ ECObjectsStatus ECEnumeration::DeleteEnumerator(ECEnumeratorCR enumerator)
 void ECEnumeration::Clear()
     {
     for (auto pEnumerator : m_enumeratorList)
-        {
         delete(pEnumerator);
-        }
-
     m_enumeratorList.clear();
     }
 
 //===========================================================================//
-//----------------------------Enumerator------------------------------------//
+//--------------------------------ECEnumerator-------------------------------//
 //===========================================================================//
-
-
-/*--------------------------------------------------------------------------------------/
-* @bsimethod                                    Robert.Schili                  12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECEnumerator::SetDisplayLabel(Utf8CP value)
-    {
-    m_hasExplicitDisplayLabel = true;
-    m_displayLabel = value;
-    }
 
 /*--------------------------------------------------------------------------------------/
 * @bsimethod                                    Robert.Schili                  12/2015
@@ -461,14 +396,10 @@ Utf8StringCR ECEnumerator::GetInvariantDisplayLabel() const
 ECObjectsStatus ECEnumerator::SetInteger(int32_t integer)
     {
     if (!IsInteger())
-        {
         return ECObjectsStatus::DataTypeMismatch;
-        }
 
     if (m_enum.FindEnumerator(integer) != nullptr)
-        {
         return ECObjectsStatus::NamedItemAlreadyExists;
-        }
 
     m_intValue = integer;
     return ECObjectsStatus::Success;
@@ -480,15 +411,10 @@ ECObjectsStatus ECEnumerator::SetInteger(int32_t integer)
 ECObjectsStatus ECEnumerator::SetString(Utf8CP string)
     {
     if (!IsInteger())
-        {
         return ECObjectsStatus::DataTypeMismatch;
-        }
 
     m_stringValue = string;
     return ECObjectsStatus::Success;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-
-

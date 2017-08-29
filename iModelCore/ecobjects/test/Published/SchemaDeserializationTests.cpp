@@ -271,7 +271,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingFile)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     {
@@ -287,7 +287,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     {
@@ -303,7 +303,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     {
@@ -319,7 +319,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     {
@@ -335,7 +335,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     {
@@ -351,7 +351,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNamespace)
     {
@@ -367,7 +367,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNames
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     {
@@ -383,7 +383,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenRelationshipEndpointNotFound)
     {
@@ -398,7 +398,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenRelationshipEndpointNotFound)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
     {
@@ -414,7 +414,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
     {
@@ -430,7 +430,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute)
     {
@@ -446,7 +446,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttri
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     {
@@ -464,7 +464,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
     {
@@ -486,7 +486,7 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip)
     {
@@ -513,7 +513,7 @@ TEST_F(SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithInvalidTypeNameInPrimitiveProperty)
     {
@@ -556,7 +556,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
     {
@@ -573,7 +573,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {
@@ -604,7 +604,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     {
@@ -618,7 +618,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString)
     {
@@ -709,7 +709,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     {
@@ -735,7 +735,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
     {
@@ -813,7 +813,7 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                         04/2016
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
     {
@@ -1186,6 +1186,40 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty)
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Schema with empty alias attribute was supposed to fail to deserialize.";
+    }
+
+TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinition)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+
+            <ECEntityClass typeName='MyEntity'>
+                <ECCustomAttributes>
+                    <SillyCA xmlns='testSchema.01.00'>
+                        <SillyValue>42</SillyValue>
+                    </SillyCA>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECCustomAttributeClass typeName="SillyCA">
+                <ECProperty propertyName='SillyValue' typeName='double'/>
+            </ECCustomAttributeClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load schema";
+
+    ECClassCP myEntity = schema->GetClassCP("MyEntity");
+    ASSERT_NE(nullptr, myEntity);
+
+    IECInstancePtr sillyCA = myEntity->GetCustomAttribute("testSchema", "SillyCA");
+    ASSERT_TRUE(sillyCA.IsValid()) << "Couldn't find SillyCA instance";
+    ECValue value;
+    ASSERT_EQ(ECObjectsStatus::Success, sillyCA->GetValue(value, "SillyValue"));
+    ASSERT_FALSE(value.IsNull());
+    ASSERT_EQ(42, value.GetDouble());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

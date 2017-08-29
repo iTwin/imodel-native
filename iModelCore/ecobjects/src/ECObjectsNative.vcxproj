@@ -107,6 +107,7 @@
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp" />
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp" />
     <ClCompile Include="PropertyCategory.cpp" />
+    <ClCompile Include="SchemaComparer.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
     <ClCompile Include="SchemaXml.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
