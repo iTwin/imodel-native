@@ -1812,7 +1812,12 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     else if (nullptr != getTileTree)
         {
+//#define SKIP_3MX
+#ifndef SKIP_3MX
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
+#else
+        return folly::makeFuture(TileGeneratorStatus::Success);
+#endif
         }
     else if (nullptr != generateMeshTiles)
         {

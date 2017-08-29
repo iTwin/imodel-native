@@ -25,7 +25,6 @@
 #include <ECObjects/ECSchema.h>
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/PresentationRulesTypes.h>
 #include <rapidjson/rapidjson.h>
 #define REQUIRE_ARGUMENT_STRING(i, var, errcode, errmsg)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
