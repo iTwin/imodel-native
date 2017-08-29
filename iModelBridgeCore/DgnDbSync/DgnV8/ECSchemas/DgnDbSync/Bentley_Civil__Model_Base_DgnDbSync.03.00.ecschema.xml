@@ -8,19 +8,7 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="NamedEntitySetEmbedding__NamedEntityEmbedded" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
-        </ECCustomAttributes>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="Entry__Entity_Holding" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
-        </ECCustomAttributes>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="NamedEntitySetReferencing__NamedEntityReferenced" isDomainClass="True" strength="holding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
         </ECCustomAttributes>
