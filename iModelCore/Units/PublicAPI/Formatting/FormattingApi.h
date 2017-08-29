@@ -31,6 +31,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitGroup)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
@@ -326,6 +327,7 @@ public:
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
     UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
+    UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
     };
 
 //=======================================================================================
@@ -368,6 +370,7 @@ public:
     BEU::UnitCP GetUnit() const { return m_unit; }
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const { return m_unitName.empty(); }
+    UNITS_EXPORT bool IsIdentical(UnitProxyCR other) const;
     };
 
 
@@ -429,6 +432,7 @@ public:
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
     bool SetUnitName(size_t indx, Utf8CP unitName) const { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
     UNITS_EXPORT Json::Value ToJson(bvector<Utf8CP> keyNames) const;
+    UNITS_EXPORT bool IsIdentical(UnitProxySetCR other) const;
 };
 
 //=======================================================================================
@@ -509,6 +513,7 @@ public:
     bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
     UNITS_EXPORT Json::Value ToJson() const;
     UNITS_EXPORT void LoadJsonData(JsonValueCR jval);
+    UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
     };
 
 struct CompositeValue
@@ -570,6 +575,7 @@ public:
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
         UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+        UNITS_EXPORT bool IsIdentical(NamedFormatSpec other) const;
     };
 
 //=======================================================================================
@@ -617,18 +623,27 @@ struct FormatUnitSet
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias) const;
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
+        UNITS_EXPORT void LoadJsonData(Json::Value jval);
+        UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
     };
 
 struct FormatUnitGroup
     {
     private:
-        bvector<FormatUnitSet> m_group;
+        Utf8String m_name;
+        bvector<FormatUnitSet> m_group;    // the first member is a persistence FUS and the following N-1 are presentation FUS's
         FormatProblemDetail m_problem;
     public:
-        UNITS_EXPORT FormatUnitGroup(Utf8CP description);
+        UNITS_EXPORT FormatUnitGroup(Utf8CP name, Utf8CP description);
+        UNITS_EXPORT FormatUnitGroup(JsonValueCR jval);
+        UNITS_EXPORT Json::Value ToJson(bool useAlias);
         UNITS_EXPORT Utf8String ToText(bool useAlias);
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+        UNITS_EXPORT FormatUnitSetCP GetPersistenceFUS();
+        UNITS_EXPORT size_t GetPresentationFUSCount();
+        UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index);
+        UNITS_EXPORT bool IsIdentical(FormatUnitGroupCR other) const;
     };
 
 struct StdFormatSet

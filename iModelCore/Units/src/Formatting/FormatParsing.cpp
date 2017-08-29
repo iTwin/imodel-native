@@ -1098,6 +1098,14 @@ bool UnitProxy::Reset() const
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     return !(nullptr == m_unit);
     }
+
+bool UnitProxy::IsIdentical(UnitProxyCR other) const
+    {
+    if(!m_unitName.Equals(other.m_unitName)) return false;
+    if (!m_unitLabel.Equals(other.m_unitLabel)) return false;
+    return true;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -1119,6 +1127,7 @@ bool UnitProxySet::IsConsistent()
         }
     return consist;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -1141,6 +1150,16 @@ size_t UnitProxySet::UnitCount()
             return n;
         }
     return 0;
+    }
+
+bool UnitProxySet::IsIdentical(UnitProxySetCR other) const
+    {
+    if (m_proxys.size() != other.m_proxys.size()) return false;
+    for (int i = 0; i < m_proxys.size(); i++)
+        {
+        if (!m_proxys[i].IsIdentical(other.m_proxys[i])) return false;
+        }
+    return true;
     }
 
 //===================================================

@@ -46,7 +46,7 @@ struct FormattingTestFixture
         static void ShowHexDump(Utf8CP str, int len);
         static void ShowFUS(Utf8CP koq);
         static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
-        static void TestFUG(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
+        static void TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space);
         static void ShowQuantityS(Utf8CP descr);
         static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt);

@@ -373,6 +373,16 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
         }
     return txt;
     }
+
+bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
+    {
+    if (!m_unitProx.IsIdentical(other.m_unitProx)) return false;
+    if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
+    if(m_type != other.m_type) return false;
+    if(m_includeZero != other.m_includeZero) return false;
+    if (!m_spacer.Equals(other.m_spacer)) return false;
+    return true;
+    }
 //===================================================
 //
 // CompositeValue Methods

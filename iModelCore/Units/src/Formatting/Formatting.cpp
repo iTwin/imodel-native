@@ -1217,6 +1217,24 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      return Utf8String(buf);
  }
 
+ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
+     {
+     if (fabs(m_roundFactor - other.m_roundFactor) > 0.01) return false;
+     if (m_presentationType != other.m_presentationType) return false;
+     if (m_signOption != other.m_signOption) return false;
+     if (m_formatTraits != other.m_formatTraits) return false;
+     if (m_decPrecision != other.m_decPrecision) return false;
+     if (m_fractPrecision != other.m_fractPrecision) return false;
+     if (m_barType != other.m_barType) return false;
+     if (m_decimalSeparator != m_decimalSeparator) return false;
+     if (m_thousandsSeparator != other.m_thousandsSeparator) return false;
+     if (!m_uomSeparator.Equals(other.m_uomSeparator)) return false;
+     if (m_statSeparator != other.m_statSeparator) return false;
+     if (m_minWIdth != other.m_minWIdth) return false;
+
+     return true;
+     }
+
  // Json Formatting
  
 //---------------------------------------------------------------------------------------

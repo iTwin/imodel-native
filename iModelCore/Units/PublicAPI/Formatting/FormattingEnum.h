@@ -356,7 +356,7 @@ struct FormatProblemDetail
         bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
         bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
 
-        FormatProblemCode const GetProblemCode() { return m_code; }
+        FormatProblemCode GetProblemCode() const { return m_code; }
         UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
         UNITS_EXPORT Utf8String GetProblemDescription() const;
     };

@@ -1185,7 +1185,14 @@ BEU::UnitCP FormatUnitSet::ResetUnit()
     return m_unit;
     }
 
-
+bool FormatUnitSet::IsIdentical(FormatUnitSetCR other) const
+    {
+     if(m_formatSpec != other.m_formatSpec) return false;
+     if(strcmp(m_unitName.c_str(), other.m_unitName.c_str()) != 0) return false;
+     if(m_unit != other.m_unit) return false;
+     if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
+     return true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
@@ -1217,10 +1224,11 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias
 //  The text string has format <unitName>(<formatName>)
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //----------------------------------------------------------------------------------------
-FormatUnitGroup::FormatUnitGroup(Utf8CP description)
+FormatUnitGroup::FormatUnitGroup(Utf8CP name, Utf8CP description)
     {
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
     m_problem = FormatProblemDetail();
+    m_name = name;
     curs.SkipBlanks();
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
@@ -1255,23 +1263,59 @@ FormatUnitGroup::FormatUnitGroup(Utf8CP description)
     }
 
 
+
 Utf8String FormatUnitGroup::ToText(bool useAlias)
     {
     if (HasProblem())
         return "";
-    Utf8String txt;
+    Utf8String txt = Utils::SubstituteEmptyOrNull(m_name.c_str(), "unnamed");
     int i = 0;
 
     for (FormatUnitSetP fus = m_group.begin(); fus != m_group.end(); ++fus)
         {
         if (0 < i++)
             txt += ",";
+        else
+            txt += " ";
         txt += fus->ToText(useAlias);
         }
 
     return txt;
     }
 
+FormatUnitSetCP FormatUnitGroup::GetPersistenceFUS()
+    {
+    return (m_group.size() == 0) ? nullptr : &m_group[0];
+    }
+
+size_t FormatUnitGroup::GetPresentationFUSCount()
+    {
+    return m_group.size()-1;
+    }
+
+FormatUnitSetCP FormatUnitGroup::GetPresentationFUS(size_t index)
+    {
+    index++;
+    if (index < 1 || index >= m_group.size())
+        return nullptr;
+    FormatUnitSetCP fusP = &m_group[index];
+    return fusP;
+    }
+
+bool FormatUnitGroup::IsIdentical(FormatUnitGroupCR other) const
+    {
+    if (strcmp(m_name.c_str(), other.m_name.c_str()) != 0) return false;
+    if (m_group.size() != other.m_group.size()) return false;
+    if (m_group.size() > 0)
+        {
+        for (size_t i = 0; i < m_group.size(); i++)
+            {
+            if (!m_group[i].IsIdentical(other.m_group[i])) return false;
+            }
+        }
+    if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
+    return true;
+    }
 
 FormattingDividers::FormattingDividers(Utf8CP div)
     {
@@ -1357,7 +1401,16 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 
-
+bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
+    {
+    if(!m_name.Equals(other.m_name)) return false; 
+    if(!!m_alias.Equals(other.m_alias)) return false;
+    if(!m_numericSpec.IsIdentical(other.m_numericSpec)) return false;
+    if(!m_compositeSpec.IsIdentical(other.m_compositeSpec)) return false;
+    if(m_specType != other.m_specType) return false;
+    if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
+    return true;
+    }
 
 
 //===================================================

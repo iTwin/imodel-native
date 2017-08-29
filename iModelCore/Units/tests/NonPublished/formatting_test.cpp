@@ -144,9 +144,7 @@ TEST(FormattingTest, Json)
 
     UnitProxy prox = UnitProxy("FT", "Feet");
     Json::Value proxV = prox.ToJson();
-    LOG.infov("UnitProxy verbose %s ", proxV.ToString().c_str());
-    proxV = prox.ToJson();
-    LOG.infov("UnitProxy compact %s ", proxV.ToString().c_str());
+    LOG.infov("UnitProxy  %s ", proxV.ToString().c_str());
     prox = UnitProxy("FT");
     proxV = prox.ToJson();
     LOG.infov("UnitProxy (no label) %s ", proxV.ToString().c_str());
@@ -321,9 +319,9 @@ TEST(FormattingTest, PhysValues)
     FormattingTestFixture::TestFUS("CUB.FT(real)", "CUB.FT(DefaultReal)", "CUB.FT(real)");
     FormattingTestFixture::TestFUS("W/(M*C)(DefaultReal)", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
 
-    FormattingTestFixture::TestFUG("FT(fract8)  IN(fract8), M(real4), MM(Real2)", 
-                                    "FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", 
-                                    "FT(fract8),IN(fract8),M(real4),MM(real2)");
+    FormattingTestFixture::TestFUG("KOQgroup", "FT(fract8)  IN(fract8), M(real4), MM(Real2)", 
+                                    "KOQgroup FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", 
+                                    "KOQgroup FT(fract8),IN(fract8),M(real4),MM(real2)");
 
 
     // preparing pointers to various Unit definitions used in the following tests

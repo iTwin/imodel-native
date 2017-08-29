@@ -273,7 +273,7 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
     if (verbose || m_thousandsSeparator != defSpec.m_thousandsSeparator)
         jNFC[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
-    if (verbose || strcmp(m_uomSeparator.c_str(), defSpec.m_uomSeparator.c_str()) != 0)
+    if (verbose || !m_uomSeparator.Equals(defSpec.m_uomSeparator.c_str()))
         jNFC[json_uomSeparator()] = m_uomSeparator;
     if (verbose || m_statSeparator != defSpec.m_statSeparator)
         jNFC[json_statSeparator()] = Utils::CharToString(m_statSeparator);
@@ -290,7 +290,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
 Json::Value UnitProxy::ToJson() const
     {
     Json::Value jUP;
-
 
     Utf8CP uN = Utils::GetCharsOrNull(m_unitName);
     Utf8CP uL = Utils::GetCharsOrNull(m_unitLabel);
@@ -446,7 +445,9 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     if (m_specType == FormatSpecType::Composite)
         jNFS[json_SpecType()] = "composite";
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
-    jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
+    Json::Value jcs = m_compositeSpec.ToJson();
+    if(!jcs.empty())
+      jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
     return jNFS;
     }
 
@@ -478,6 +479,101 @@ Utf8String FormatUnitSet::ToJsonString(bool useAlias) const
     return str;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+void FormatUnitSet::LoadJsonData(Json::Value jval)
+    {
+    if (jval.empty())
+        return;
+    Utf8CP paramName;
+    Utf8String formatName;
+    m_problem = FormatProblemDetail();
+    m_unit = nullptr;
+    m_formatSpec = nullptr;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (stricmp(paramName, json_unitName()) == 0)
+            {
+            m_unitName = val.asString();
+            m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+            if (nullptr == m_unit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            }
+        else if (stricmp(paramName, json_formatName()) == 0)
+            {
+            formatName = val.asString();
+            m_formatSpec = StdFormatSet::FindFormatSpec(formatName.c_str());
+            if (nullptr == m_formatSpec)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+            }
+        }
+    }
+
+//===================================================
+//
+// FormatUnitGroup Methods
+//
+//===================================================
+Json::Value FormatUnitGroup::ToJson(bool useAlias)
+    {
+    Json::Value jval;
+    FormatUnitSetCP fus = GetPersistenceFUS();
+    if (nullptr == fus)
+        return jval;
+    jval[json_KOQName()] = m_name.c_str();
+    jval[json_persistFUS()] = fus->ToJson(useAlias);
+    size_t num = GetPresentationFUSCount();
+    if (num == 0)
+        return jval;
+    Json::Value jarr;
+    for (size_t i = 0; i < num; i++)
+        {
+        fus = GetPresentationFUS(i);
+        jarr.append(fus->ToJson(useAlias));
+        }
+    if(!jarr.empty())
+       jval[json_presentFUS()] = jarr;
+    return jval;
+    }
+
+FormatUnitGroup::FormatUnitGroup(JsonValueCR jval)
+    {
+    m_problem = FormatProblemDetail();
+    if (!jval.empty())
+        {
+        Utf8CP paramName;
+        Utf8String formatName;
+        FormatUnitSet fus;
+        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+            {
+            paramName = iter.memberName();
+            JsonValueCR val = *iter;
+            if (stricmp(paramName, json_KOQName()) == 0)
+                {
+                m_name = val.asString();
+                }
+            else if (stricmp(paramName, json_persistFUS()) == 0)
+                {
+                fus = FormatUnitSet();
+                fus.LoadJsonData(val);
+                m_group.push_back(fus);
+                }
+            else if (stricmp(paramName, json_presentFUS()) == 0)
+                {
+                for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
+                    {
+                    fus = FormatUnitSet();
+                    JsonValueCR val = *iter;
+                    fus.LoadJsonData(val);
+                    m_group.push_back(fus);
+                    }
+                }
+            }
+        }
+    }
 
 //===================================================
 //

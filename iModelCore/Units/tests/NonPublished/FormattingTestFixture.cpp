@@ -99,11 +99,15 @@ void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     EXPECT_STREQ (aliased, fus.ToText(true).c_str());
     }
 
-void FormattingTestFixture::TestFUG(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
+void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     {
-    FormatUnitGroup fug = FormatUnitGroup(fusText);
+    FormatUnitGroup fug = FormatUnitGroup(name, fusText);
+    Json::Value jval = fug.ToJson(true);
+    LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
     EXPECT_STREQ (norm, fug.ToText(false).c_str());
     EXPECT_STREQ (aliased, fug.ToText(true).c_str());
+    FormatUnitGroup fug1 = FormatUnitGroup::FormatUnitGroup(jval);
+    LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
 
 void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
@@ -668,8 +672,9 @@ void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFor
 
 void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Utf8CP expected)
     {
-    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
-    Json::Value val = fmtP->ToJson(verbose);
+   // NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
+    NamedFormatSpecCP  nfsP = StdFormatSet::FindFormatSpec(stdName);
+    Json::Value val = nfsP->ToJson(verbose);
     LOG.infov("Format %s json: %s", stdName, val.ToString().c_str());
     }
 
