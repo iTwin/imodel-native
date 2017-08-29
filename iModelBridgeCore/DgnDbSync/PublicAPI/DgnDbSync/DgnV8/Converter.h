@@ -1526,6 +1526,9 @@ public:
     //! Compute the scale factor (as a transform) that converts the storage units of the V8 file into meters.
     DGNDBSYNC_EXPORT Transform ComputeUnitsScaleTransform(DgnV8ModelCR v8Model);
 
+    ResolvedModelMapping FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) {return _FindResolvedModelMappingBySyncId(sid);}
+    virtual ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) = 0;
+
     void CaptureModelDiscard(DgnV8ModelR);
 
     ResolvedModelMapping GetModelFromSyncInfo(DgnV8ModelRefCR, TransformCR);
@@ -2385,6 +2388,7 @@ protected:
     DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetModelForDgnV8Model, except that caller already knows the target model
     DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
     DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
@@ -2505,6 +2509,7 @@ protected:
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialViews();
     DGNDBSYNC_EXPORT virtual void _OnFileComplete(DgnV8FileR v8File);
     virtual bool _FilterTileByName(BeFileNameCR name) {return false;}
+    ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override {BeAssert(false && "TBD"); return ResolvedModelMapping();}
 
     DgnV8Api::ModelId GetDefaultModelId(DgnV8FileR v8File);
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR) override;
