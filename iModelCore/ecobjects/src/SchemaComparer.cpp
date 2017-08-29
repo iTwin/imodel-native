@@ -575,10 +575,10 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
     else if (aMaxValueDefined && !bMaxValueDefined)
         {
         ECValue aVal;
-        if (ECObjectsStatus::Success != a.GetMinimumValue(aVal))
+        if (ECObjectsStatus::Success != a.GetMaximumValue(aVal))
             return ERROR;
 
-        change.GetMinimumValue().SetValue(ValueId::Deleted, aVal);
+        change.GetMaximumValue().SetValue(ValueId::Deleted, aVal);
         }
     else if (!aMaxValueDefined && bMaxValueDefined)
         {
@@ -1839,11 +1839,12 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::VersionRead: return "VersionRead";
             case SystemId::VersionMinor: return "VersionMinor";
             case SystemId::VersionWrite: return "VersionWrite";
-
-            default:
-                BeAssert(false && "Unhandled SystemId");
-                return "";
+            case SystemId::MinimumLength: return "MinimumLength";
+            case SystemId::MaximumLength: return "MaximumLength";
         }
+
+    BeAssert(false && "Unhandled SystemId");
+    return "";
     }
 
 //======================================================================================>

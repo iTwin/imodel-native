@@ -845,7 +845,7 @@ static void  setValue(Utf8CP accessString, ECValueCR value, ECN::StandaloneECIns
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                  Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     {
@@ -919,7 +919,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                    Paul.Connelly                05/12
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(MemoryLayoutTests, PropertyLayoutBracketsTest)
     {
@@ -959,7 +959,7 @@ TEST_F(MemoryLayoutTests, PropertyLayoutBracketsTest)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                  Carole.MacDonald           06/12
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     {
