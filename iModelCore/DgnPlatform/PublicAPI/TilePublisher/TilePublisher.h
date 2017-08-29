@@ -296,7 +296,6 @@ protected:
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
-    bset<DgnCategoryId>                         m_usedCategories;
     bset<DgnSubCategoryId>                      m_usedSubCategories;
 
 
@@ -349,8 +348,8 @@ public:
     WString GetTileExtension (TileNodeCR tile);
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
-    void RecordUsage(TileDisplayParamsCR displayParams);
-    bool IsCategoryUsed(DgnCategoryId categoryId) const { return m_usedCategories.find(categoryId) != m_usedCategories.end(); }
+    void RecordUsage(FeatureAttributesMapCR attributes);
+
     bool IsSubCategoryUsed(DgnSubCategoryId subCategoryId) const { return m_usedSubCategories.find(subCategoryId) != m_usedSubCategories.end(); }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);

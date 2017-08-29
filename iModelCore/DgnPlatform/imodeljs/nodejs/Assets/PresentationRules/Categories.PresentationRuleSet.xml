@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PresentationRuleSet RuleSetId="Categories" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+
+    <!-- Label overrides -->
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='this.CodeValue' />
+
+    <!-- Grouping rules -->
+    <GroupingRule SchemaName='BisCore' ClassName='SubCategory'>
+        <PropertyGroup PropertyName='Parent' CreateGroupForSingleItem='true' />
+    </GroupingRule>
+
+    <!-- Navigation rules -->
+    <RootNodeRule AutoExpand='true'>
+        <CustomNode Type='GIST_CategoriesRootNode' Label='Categories' ImageId='ECLiteralImage://CATEGORY' />
+    </RootNodeRule>
+
+    <ChildNodeRule Condition='ParentNode.Type = "GIST_CategoriesRootNode"'>
+        <InstancesOfSpecificClasses ClassNames='BisCore:SubCategory' ArePolymorphic='true' GroupByClass="false" GroupByLabel="true" AlwaysReturnsChildren="false" />
+    </ChildNodeRule>
+
+</PresentationRuleSet>

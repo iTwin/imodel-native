@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IManipulator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,8 +175,35 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
-virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR elm) = 0;
-virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0;
+enum class ControlType
+    {
+    Placement   = 0, //!< Request for placement controls (if none, return nullptr for IEditManipulatorPtr and appropriate DefaultActions)
+    Geometry    = 1, //!< Request for geometry/vertex controls (if none, return nullptr for IEditManipulatorPtr and appropriate DefaultActions)
+    };
+
+enum class DefaultActions : uint32_t
+    {
+    None        = 0,          //!< Default controls disabled
+    TranslateXY = (1 << 0),   //!< Default controls may apply x/y translation
+    TranslateZ  = (1 << 1),   //!< Default controls may apply z translation
+    RotateXY    = (1 << 2),   //!< Default controls may apply rotation about x/y axes
+    RotateZ     = (1 << 3),   //!< Default controls may apply rotation about z axis
+    Scale       = (1 << 4),   //!< Default controls may apply scale
+    Copy        = (1 << 5),   //!< Default controls may create a copy
+    Geometry    = (1 << 6),   //!< Default controls may modify GeometryPrimitive(s)
+    All         = 0xffffffff, //!< Default controls unrestricted
+    Placement   = (TranslateXY | TranslateZ | RotateXY | RotateZ), //!< Default controls may freely change origin and angle(s) of element's Placement2d/Placement3d
+    Placement2d = (TranslateXY | RotateZ), //!< Default controls may only translate in x/y and rotate about z (for treating 3d elements as 2d)
+    };
+
+virtual DefaultActions _GetAllowedDefaultActions() {return DefaultActions::Placement;} //!< Allowed modifications the default manipulators may apply
+
+virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source) = 0; //!< Return IEditManipulatorPtr preferably for ControlType::Geometry (if any). Called directly on double-click event.
+virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit) = 0; //!< Return IEditManipulatorPtr preferably for ControlType::Geometry (if any). Called directly on double-click event.
+
+virtual IEditManipulatorPtr _GetIEditManipulator(GeometrySourceCR source, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(source) : nullptr;}
+virtual IEditManipulatorPtr _GetIEditManipulator(HitDetailCR hit, ControlType type) {return ControlType::Geometry == type ? _GetIEditManipulator(hit) : nullptr;}
+
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 
 //! @private

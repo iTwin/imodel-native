@@ -156,6 +156,7 @@ protected:
     Symbology           m_symbology;
     ComparisonDataCPtr  m_comparisonData;
     Show                m_show;
+    DgnElementId        m_focusedElementId;
     Utf8String          m_labelString;
     TextStringPtr       m_label;
     
@@ -179,6 +180,7 @@ public:
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
 
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
+    DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
 };
 
 END_REVISION_COMPARISON_NAMESPACE

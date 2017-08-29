@@ -16,16 +16,17 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Symbology::InitializeDefaults()
     {
+    static const double s_backgroundElementTransparency = 0.5 * 255;
+	// static const double s_backgroundLineTransparency = 255;
     Appearance inserted, updated, deleted;
-    updated.SetRgb(ColorDef::Blue());
-    inserted.SetRgb(ColorDef::Green());
-    deleted.SetRgb(ColorDef::Red());
+    updated.SetRgb(ColorDef::VersionCompareModified());
+    inserted.SetRgb(ColorDef::VersionCompareInserted());
+    deleted.SetRgb(ColorDef::VersionCompareDeleted());
 
     m_current.SetAppearance(DbOpcode::Insert, inserted);
     m_current.SetAppearance(DbOpcode::Update, updated);
     m_current.SetAppearance(DbOpcode::Delete, deleted);
 
-    updated.SetRgb(ColorDef::Cyan());
     updated.SetAlpha(0x80);
     inserted.SetAlpha(0x80);
     deleted.SetAlpha(0x80);
@@ -34,8 +35,9 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Update, updated);
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
-    m_untouched.SetRgb(ColorDef::MediumGrey());
-    m_untouched.SetAlpha(200);
+    m_untouched.SetRgb(ColorDef::VersionCompareBackground());
+	Byte bTransparency = (Byte) s_backgroundElementTransparency;
+	m_untouched.SetAlpha(bTransparency);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,6 +103,15 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
     if (WantShowCurrent())
+    /* ###TODO
+    // TFS#742735: Only colorize focused element if we have set this ViewController to do so
+    if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
+        {
+        m_symbology.GetUntouchedOverrides(symbologyOverrides);
+        //T_Super::_OverrideGraphicParams(symbologyOverrides, source);
+        return;
+        }
+    */
         {
         for (auto const& entry : m_comparisonData->GetPersistentStates())
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
@@ -243,3 +254,9 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
     context.AddViewOverlay(*graphic->Finish());
     }
 
+        /* ###TODO
+		// Joe doesn't want to show the transient/updated state of a modified element
+        // if we are showing them in a single view
+        if (WantShowBoth() && element.IsModified())
+            continue;
+        */

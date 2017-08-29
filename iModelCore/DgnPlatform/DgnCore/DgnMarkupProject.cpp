@@ -553,23 +553,29 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     supplyDefaultExtension(fileName, s_markupDgnDbExt);
 
     // Copy seed, or create new
+    DgnDbPtr db;
     if (!params.m_seedDb.empty())
+        {
         BeFileName::BeCopyFile(params.m_seedDb, fileName, !params.GetOverwriteExisting());
+        OpenParams oparams(OpenMode::ReadWrite);
+        db = DgnDb::OpenDgnDb(nullptr, fileName, oparams);
+        }
     else
-        DgnDb::CreateDgnDb(nullptr, fileName, params);
+        {
+        db = DgnDb::CreateDgnDb(nullptr, fileName, params);
+        }
 
-    // Ensure standalone briefcase if master
-    OpenParams oparams(OpenMode::ReadWrite);
-    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fileName, oparams);
     if (db.IsNull())
         return nullptr;
 
+    // Ensure standalone briefcase if master
     if (db->GetBriefcaseId().IsMasterId())
+        {
         db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+        db->SaveChanges();
+        db->CloseDb();
+        }
 
-    // Not clear why we need to save changes if we didn't switch to standalone above...
-    db->SaveChanges();
-    db->CloseDb();
     db = nullptr;
 
     DbResult ALLOW_NULL_OUTPUT (stat, result);
@@ -577,7 +583,7 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     DgnMarkupProjectPtr markupProject = new DgnMarkupProject();
 
     stat = markupProject->InitializeNewMarkupProject(fileName, params);
-    
+
     if (BE_SQLITE_OK != stat)
         return nullptr;
 
@@ -728,8 +734,10 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         }
 
     DefinitionModelR dictionary = db.GetDictionaryModel();
+    RefCountedPtr<DisplayStyle2d> displayStyle = new DisplayStyle2d(dictionary);
+    displayStyle->SetBackgroundColor(ColorDef::White());
     RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValueUtf8().c_str(), 
-                                                              model.GetModelId(), *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary));
+                                                              model.GetModelId(), *new CategorySelector(dictionary, ""), *displayStyle);
 
     //  The view always has the same name as the redline and its model
     DgnCode code = CreateCode(dictionary, redline->GetCode().GetValueUtf8());
