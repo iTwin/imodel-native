@@ -1003,6 +1003,7 @@ public:
     static ColorDef VersionCompareInserted()    {return ColorDef(0x56,0xAA,0x1C);} //<! Green for inserted elements
     static ColorDef VersionCompareModified()    {return ColorDef(0x00,0x8B,0xE1);} //<! Blue for modified elements
     static ColorDef VersionComparePreModified() {return ColorDef(0x6A,0xB9,0xEC);} //<! Cyan for transient modified elements
+    static ColorDef VersionCompareBackground()  {return ColorDef(0xEA,0xE4,0xE4);} //<! Grey for background elements
 };
 
 END_BENTLEY_DGN_NAMESPACE

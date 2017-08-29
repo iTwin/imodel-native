@@ -21,6 +21,9 @@ ComparisonSymbologyOverrides::ComparisonSymbologyOverrides()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComparisonSymbologyOverrides::InitializeDefaults()
     {
+    static const double s_backgroundElementTransparency = 0.5 * 255;
+    static const double s_backgroundLineTransparency = 255;
+
     Render::OvrGraphicParams update, inserted, deleted;
     update.SetFillColor(ColorDef::VersionCompareModified());
     inserted.SetFillColor(ColorDef::VersionCompareInserted());
@@ -30,7 +33,6 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_currentRevisionOverrides.Insert(DbOpcode::Insert, inserted);
     m_currentRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
-    update.SetFillColor(ColorDef::VersionComparePreModified());
     update.SetFillTransparency(128);
     update.SetLineTransparency(128);
     inserted.SetFillTransparency(128);
@@ -42,9 +44,12 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_targetRevisionOverrides.Insert(DbOpcode::Insert, inserted);
     m_targetRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
-    m_untouchedOverride.SetFillColor(ColorDef::MediumGrey());
-    m_untouchedOverride.SetFillTransparency(200);
-    m_untouchedOverride.SetLineTransparency(200);
+    m_untouchedOverride.SetFillColor(ColorDef::VersionCompareBackground());
+    m_untouchedOverride.SetLineColor(ColorDef::VersionCompareBackground());
+    Byte bTransparency = (Byte) s_backgroundElementTransparency;
+    Byte bLineTransparency = (Byte) s_backgroundLineTransparency;
+    m_untouchedOverride.SetFillTransparency(bTransparency);
+    m_untouchedOverride.SetLineTransparency(bLineTransparency);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,11 +145,13 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     if (nullptr == el)
         return;
 
+    symbologyOverrides.Clear();
+
     // TFS#742735: Only colorize focused element if we have set this ViewController to do so
     if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
         {
         m_symbology.GetUntouchedOverrides(symbologyOverrides);
-        T_Super::_OverrideGraphicParams(symbologyOverrides, source);
+        //T_Super::_OverrideGraphicParams(symbologyOverrides, source);
         return;
         }
 
@@ -178,7 +185,7 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
 
     // Provide an "untouched" override
     m_symbology.GetUntouchedOverrides(symbologyOverrides);
-    T_Super::_OverrideGraphicParams(symbologyOverrides, source);
+    //T_Super::_OverrideGraphicParams(symbologyOverrides, source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,6 +310,11 @@ void    RevisionComparisonViewController::_CreateTerrain(TerrainContextR context
     // Visit the transient elements
     for (auto& element : m_comparisonData->GetTransientStates())
         {
+        // Joe doesn't want to show the transient/updated state of a modified element
+        // if we are showing them in a single view
+        if (WantShowBoth() && element.IsModified())
+            continue;
+
         GeometrySourceCP geomElem = element.m_element->ToGeometrySource();
         if (nullptr == geomElem)
             continue;
