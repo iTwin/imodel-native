@@ -838,3 +838,29 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
     EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
     }
+
+TEST_F(BriefcaseTests, SuccessfulRestoreBriefcase)
+    {
+    auto connectionResult = m_client->ConnectToiModel(*m_imodel)->GetResult();
+    EXPECT_SUCCESS(connectionResult);
+    auto connection = connectionResult.GetValue();
+
+    auto briefcaseResult = connection->AcquireNewBriefcase()->GetResult();
+    EXPECT_SUCCESS(briefcaseResult);
+
+    auto result = m_client->RestoreBriefcase(*m_imodel, briefcaseResult.GetValue()->GetId(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
+
+    EXPECT_SUCCESS(result);
+    auto dbPath = result.GetValue()->GetLocalPath();
+    EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
+    }
+
+TEST_F(BriefcaseTests, UnsuccessfulRestoreBriefcase)
+    {
+    //Restore briefcase that doesnt exists
+    auto result = m_client->RestoreBriefcase(*m_imodel, BeSQLite::BeBriefcaseId(100), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    CheckNoProgress();
+    }
