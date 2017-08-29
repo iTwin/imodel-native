@@ -1302,6 +1302,9 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     }
 #endif
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                     07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     {
     ECSchemaPtr testSchema;
@@ -1313,6 +1316,9 @@ TEST_F(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2
     EXPECT_TRUE(testSchema->IsSupplemented());
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                     07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
     {
     ECSchemaPtr testSchema;
