@@ -982,7 +982,7 @@ TEST(Vu,CreateDelauneySkew)
                         }
                     }
                 //Check::ValidIndex (SIZE_MAX, cellData, "Verify ValidIndex logic");
-                if (Check::Size (points.size (), cellData.size ()))
+                if (Check::True (points.size () == cellData.size ()))
                     {
                     auto visitor = PolyfaceVisitor::Attach (*voronoi);
                     visitor->SetNumWrap (1);
@@ -1103,6 +1103,7 @@ TEST(Vu,TwoPoints)
         }
     Check::ClearGeometry ("Vu.TwoPoints");
     }
+
 TEST(Vu,FourPointsWeighted)
     {
     bvector<DPoint3d> points
@@ -1114,16 +1115,16 @@ TEST(Vu,FourPointsWeighted)
         };
     bvector<double> baseRadius {1.7196498565, 2.2748827835, 3.8452539636, 1.9226269818};
     double a = 20.0;
-    double b = 20.0;
+    double b = 80.0;
     for (auto factor : bvector<double>{0.2, 0.8, 1.0, 2.0, 5.0})
         {
+        SaveAndRestoreCheckTransform shifter (a, 0, 0);
         bvector<double> radius1;
         for (size_t i = 0; i < points.size (); i++)
             {
             radius1.push_back (baseRadius[i] * factor);
             }
 
-        SaveAndRestoreCheckTransform shifter (0, b, 0);
 
         for (int i = 0; i < 4; i++)
             {
@@ -1143,6 +1144,36 @@ TEST(Vu,FourPointsWeighted)
         }
     Check::ClearGeometry ("Vu.FourPointsWeighted");
     }
+
+TEST(Vu,ColinearPoints)
+    {
+    double b = 200.0;
+    double alpha = 0.2;
+    bvector<double> radii {2,3, 1, 2};
+    for (auto slope : bvector<double>{0.0, 1.0, 0.2342789123798})
+        {
+        SaveAndRestoreCheckTransform shifter (0, b, 0);
+        bvector<DPoint3d> points;
+        for (auto x : bvector<double> {1.0, 2.0, 5.0, 8.0})
+            points.push_back (DPoint3d::From (x, x * slope));
+       DPoint3d pointB = points.back ();
+       // points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (points.front (), 1.5, pointB, alpha));
+       // points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (points.front (), 1.5, pointB, -alpha));
+        for (int i = 0; i < 4; i++)
+            {
+            PolyfaceHeaderPtr delauney, voronoi;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, i, delauney, voronoi)))
+                {
+                Check::Shift (200,0,0);
+                if (voronoi.IsValid ())
+                    Check::SaveTransformed (*voronoi);
+                Check::SaveTransformedMarkers (points, -0.1);
+                }
+            }
+        }
+    Check::ClearGeometry ("Vu.ColinearPoints");
+    }
+
 
 
 //! construct delauney triangulations and voronoi diagram for given station points (e.g. room centers)
@@ -1222,6 +1253,7 @@ TEST(Vu,CreateClippedVornoi)
                 Angle::DegreesToRadians (70)
                 );
     DoClips (CreateOffsetStrip (clipArc, 18.0, 22.0, 7));
+    Check::Shift (200,0,0);
     auto clipT = CreateT (20, 20, 4,6, 4, 5);
     DPoint3dOps::Add (clipT, DVec3d::From (-10,-10, 0));
     DoClips (clipT);
@@ -1283,4 +1315,157 @@ TEST(Voronoi,Hyperbolas6)
             }
         }
     Check::ClearGeometry ("Voronoi.Hyperbolas");
+    }
+// intersect a convex polygon and a (stroked) circle.  The result is another convex polygon.
+void intersectCircleConvexPolygon (
+DPoint3dCR center,  // IN circle center
+double radius,      // IN circle readius
+bvector<DPoint3d> const &convexPolygonPoints,   // IN points of CONVEX polygon (not checked)
+int numCircleEdges,         // IN number of edges to create on circle.
+bvector<DPoint3d> &circlePoints,    // RETURNED points on circle
+bvector<DPoint3d> &intersectionPolygon         // RETURNED clipped polygon
+)
+    {
+    bvector<DPoint3d> work;
+    ConvexClipPlaneSet clipPlaneSet;
+    clipPlaneSet.ReloadSweptConvexPolygon (convexPolygonPoints, DVec3d::From (0,0,1), 0);
+    circlePoints.clear ();
+    intersectionPolygon.clear ();
+
+    double step = Angle::TwoPi () / numCircleEdges;
+    for (int i = 0; i <= numCircleEdges; i++)
+        circlePoints.push_back (DPoint3d::From (center.x + radius * cos(i * step), center.y + radius * sin (i * step), 0.0));
+    circlePoints.back () = circlePoints.front ();   // ensure bit closure
+    clipPlaneSet.ConvexPolygonClip (circlePoints, intersectionPolygon, work);
+    }
+
+
+
+
+
+TEST(ClipPlaneSet,ConvexPolygonClipCircleGon)
+    {
+    bvector<DPoint3d> polygonPoints {
+    DPoint3d::From (0,0,0),
+    DPoint3d::From (2,-6,0),
+    DPoint3d::From (10,0,0), 
+    DPoint3d::From (10,1,0), 
+    DPoint3d::From (5,3,0), 
+    DPoint3d::From (0,2,0), 
+    DPoint3d::From (0,0,0)
+    };
+#ifdef inlineClip
+    ConvexClipPlaneSet clipPlaneSet;
+    clipPlaneSet.ReloadSweptConvexPolygon (polygonPoints, DVec3d::From (0,0,1), 0);
+    double radius = 5.0;
+    bvector<DPoint3d> clipped, work;
+    for (auto numEdge : bvector<int> {8,16,24,32,64})
+        {
+        SaveAndRestoreCheckTransform shifter (4.0 * radius, 0, 0);
+        bvector<DPoint3d> ngon;
+        double step = Angle::TwoPi () / numEdge;
+        for (int i = 0; i <= numEdge; i++)
+            ngon.push_back (DPoint3d::From (radius * cos(i * step), radius * sin (i * step), 0.0));
+        ngon.back () = ngon.front ();   // ensure bit closure
+        clipPlaneSet.ConvexPolygonClip (ngon, clipped, work);
+        Check::SaveTransformed (polygonPoints);
+        Check::SaveTransformed (ngon);
+        Check::Shift (0, 2.0 * radius, 0);
+        Check::SaveTransformed (clipped);
+        }
+#else
+    double radius = 5.0;
+    DPoint3d center = DPoint3d::From (0.5, 1, 0);
+    bvector<DPoint3d> clipped;
+    for (auto numEdge : bvector<int> {8,16,24,32,64})
+        {
+        SaveAndRestoreCheckTransform shifter (4.0 * radius, 0, 0);
+        bvector<DPoint3d> circlePoints;
+        intersectCircleConvexPolygon (center, radius, polygonPoints, numEdge, circlePoints, clipped);
+        Check::SaveTransformed (polygonPoints);
+        Check::SaveTransformed (circlePoints);
+        Check::Shift (0, 3.0 * radius, 0);
+        Check::SaveTransformed (clipped);
+        }
+#endif
+    Check::ClearGeometry ("ClipPlaneSeat.ConvexPolygonClipCircleGon");
+    }
+
+
+// Construct voronoi for 
+void DoWallAndRadiusClips
+(
+bvector<DPoint3d> &stations,    // station coordinates
+bvector<double> &weightRadii,   // weight to be used in voroni
+bvector<double> &clipRadii,     // radius to be used for post-voronoi clip
+bvector<DPoint3d> &wallPoints   // (closed) area for wall clip.
+)    
+    {
+    static int s_numPerCircle = 32;
+    PolyfaceHeaderPtr voronoi;
+    PolyfaceHeaderPtr delauney;
+    bvector<NeighborIndices> cellData;
+    bvector<DPoint3d> clippedRegion;
+    bvector<DPoint3d> circlePoints;
+    PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY(stations, weightRadii, 3, delauney, voronoi, &cellData);
+    auto visitor = PolyfaceVisitor::Attach (*voronoi);
+    visitor->SetNumWrap (1);
+    // clip each voronoi region to its circle ...
+    PolyfaceHeaderPtr  voronoiClippedToCircles = PolyfaceHeader::CreateVariableSizeIndexed ();
+    for (size_t i = 0; i < cellData.size (); i++)
+        {
+        size_t readIndex = cellData[i].GetAuxIndex ();
+        size_t pointIndex = cellData[i].GetSiteIndex ();
+        if (visitor->MoveToFacetByReadIndex (readIndex))
+            {
+            intersectCircleConvexPolygon (stations[pointIndex], clipRadii[pointIndex],
+                    visitor->Point (),
+                    s_numPerCircle,
+                    circlePoints,
+                    clippedRegion);
+            voronoiClippedToCircles->AddPolygon (clippedRegion);
+            }
+        }
+
+    auto wallClipper = PolyfaceHeader::CreateVariableSizeIndexed ();
+    auto voronoiClippedToCirclesAndWalls = PolyfaceHeader::CreateVariableSizeIndexed ();
+    auto outside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    wallClipper->AddPolygon (wallPoints);
+
+    PolyfaceHeader::ComputePunchXYByPlaneSets (*wallClipper, *voronoiClippedToCircles, &voronoiClippedToCirclesAndWalls, &outside);
+    Check::SaveTransformed (*voronoi);
+    Check::SaveTransformedMarkers (stations, 0.2);
+    Check::Shift (0, 200,0);
+
+    Check::SaveTransformedMarkers (stations, 0.2);
+    Check::SaveTransformed (*voronoiClippedToCircles);
+    Check::SaveTransformed (*wallClipper);
+
+    Check::Shift (0, 40,0);
+    Check::SaveTransformed (*voronoiClippedToCirclesAndWalls);
+    Check::SaveTransformedMarkers (stations, 0.2);
+    }
+TEST(Vu, WallAndRadiusClips)
+    {
+    bvector<DPoint3d> stations
+        {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (10,0,0),
+        DPoint3d::From (10,5,0),
+        DPoint3d::From (1,8,0)
+        };
+    bvector<double> weightRadii { 5, 3, 4, 6 };
+    bvector<double> clipRadii { 5, 4, 3, 8};
+    bvector<DPoint3d> wallPoints
+        {
+        DPoint3d::From(-3,-3),
+        DPoint3d::From (8,-3),
+        DPoint3d::From (12,0),
+        DPoint3d::From (12,20),
+        DPoint3d::From (-2,10),
+        DPoint3d::From (-3, -3)
+        };
+    DoWallAndRadiusClips (stations, weightRadii, clipRadii, wallPoints);
+    Check::ClearGeometry ("Vu.WallAndRadiusClips");
+
     }

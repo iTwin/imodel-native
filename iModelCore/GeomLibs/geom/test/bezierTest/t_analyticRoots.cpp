@@ -267,3 +267,30 @@ TEST(AnalyticRoots, Quartic4)
             }
         }
     }
+
+void CompareAnalyticQuarticWithBezier (double c0, double c1, double c2, double c3, double c4)
+    {
+    double coffs[5];
+    coffs[0] = c0;
+    coffs[1] = c1;
+    coffs[2] = c2;
+    coffs[3] = c3;
+    coffs[4] = c4;
+    double roots1[4];
+    int numRoots1 = AnalyticRoots::SolveQuartic (coffs, roots1);
+    std::sort (roots1, roots1 + numRoots1);
+    double roots2[10];
+    int numRoots2;
+    bsiBezier_univariateStandardRoots (roots2, &numRoots2, coffs, 4);
+    std::sort (roots2, roots2 + numRoots2);
+    if (Check::Int (numRoots1, numRoots2, "Quartic root counts"))
+        {
+        for (int i = 0; i < numRoots1; i++)
+            Check::Near (roots1[i], roots2[i], "Compare roots");
+        }
+    }
+TEST(AnalyticRoots,QuarticFailureA)
+    {
+    CompareAnalyticQuarticWithBezier (3, -11.2, 6.279999999999999, 8.24, -3.32);
+    CompareAnalyticQuarticWithBezier (3.2125, -11.87, 7.039999999999999, 8.06, -3.6300000000000003);
+    }

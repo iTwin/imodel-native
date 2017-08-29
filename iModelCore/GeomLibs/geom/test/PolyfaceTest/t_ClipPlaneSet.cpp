@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_ClipPlaneSet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -162,3 +162,4 @@ TEST(ClipPlaneSet,Undercut2)
         }
     Check::ClearGeometry ("ClipPlaneSet.Undercut2");
     }
+

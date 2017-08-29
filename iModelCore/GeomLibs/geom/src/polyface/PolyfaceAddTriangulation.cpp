@@ -331,10 +331,14 @@ size_t &numY
     numY = (size_t)(totalAround * dy / d);
     }
 
-static void AddExpandedRangeEdges (VuSetP graph, DRange3d range, double fraction, size_t numPoints)
+static void AddExpandedRangeEdges (VuSetP graph, DRange3d range, double fraction, size_t numPoints, double minRatio = 0.25)
     {
     double xFringe = fraction * (range.high.x - range.low.x);
     double yFringe = fraction * (range.high.y - range.low.y);
+    if (xFringe < minRatio * yFringe)
+        xFringe = minRatio * yFringe;
+    if (yFringe < minRatio * xFringe)
+        yFringe = minRatio * xFringe;
     double x0 = range.low.x - xFringe;
     double x1 = range.high.x + xFringe;
     double y0 = range.low.y - yFringe;
@@ -561,8 +565,6 @@ static VuSetP CreateDelauney
 bvector<DPoint3d> const points
 )
     {
-    if (points.size () < 3)
-        return nullptr;
     VuSetP graph = vu_newVuSet (0);
     DRange3d worldRange = DRange3d::From (points);
     double localAbsTol = 1.0e-8;
@@ -575,12 +577,23 @@ bvector<DPoint3d> const points
     bvector<DPoint3d> localPoints;
     worldToLocal.Multiply (localPoints, points);
 
-    // Trivial triangulation of the convex hull.
-    bvector<DPoint3d> xyzHull (points.size () + 2);
-    int numOut;
-    bsiDPoint3dArray_convexHullXY (&xyzHull[0], &numOut, (DPoint3d*)&localPoints[0], (int)localPoints.size ());    
-    xyzHull.resize (numOut);
-    vu_addEdgesXYTol (graph, nullptr, xyzHull, true, localAbsTol, VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE);
+    static int s_boundaryMode = 0;
+    static double s_primaryExpansionFactor = 2.0;
+    static double s_relativeFactor = 0.5;
+    if (s_boundaryMode == 0)
+        {
+        // Start with outer rectangle triangulation.
+        AddExpandedRangeEdges (graph, localRange, s_primaryExpansionFactor, localPoints.size (), s_relativeFactor);
+        }
+    else
+        {
+        // Trivial triangulation of the convex hull.
+        bvector<DPoint3d> xyzHull (points.size () + 2);
+        int numOut;
+        bsiDPoint3dArray_convexHullXY (&xyzHull[0], &numOut, (DPoint3d*)&localPoints[0], (int)localPoints.size ());    
+        xyzHull.resize (numOut);
+        vu_addEdgesXYTol (graph, nullptr, xyzHull, true, localAbsTol, VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE);
+        }
 
     vu_mergeOrUnionLoops (graph, VUUNION_UNION);
     vu_regularizeGraph (graph);
@@ -592,6 +605,9 @@ bvector<DPoint3d> const points
     vu_insertAndRetriangulate (graph, &localPoints[0], (int)localPoints.size (), false);
     // this should not be needed ... but retriangulate seems wrong..
     vu_flipTrianglesForIncircle (graph);
+
+    if (s_boundaryMode == 0)
+        vu_spreadExteriorMasksToAdjacentFaces (graph, true, VU_EXTERIOR_EDGE, VU_EXTERIOR_EDGE);
 
     vu_transform (graph, &localToWorld);
     return graph;
@@ -736,13 +752,20 @@ void InstallPointIndices (VuSetP graph, bvector<DPoint3d> const &points)
             }
         }
     }
+bool check (int numBoundary, int numTotal, ptrdiff_t userData1)
+    {
+    if (numBoundary < numTotal && userData1 >= 0)
+        return true;
+    return false;
+    }
 PolyfaceHeaderPtr CreateVoronoi
 (
 VuSetP graph,
 bvector<DPoint3d> const &points,
 bvector<double> const &radii,
 int voronoiMetric,
-bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [siteIndex==pointIndex, auxIndex==facetRead, neighborIndex==array of indices of adjacent cells within cellData array]
+bvector<NeighborIndices> *cellData = nullptr,  //!< [out] optional array giving [siteIndex==pointIndex, auxIndex==facetRead, neighborIndex==array of indices of adjacent cells within cellData array]
+VuMask exteriorMask = VU_EXTERIOR_EDGE
 )
     {
     PolyfaceHeaderPtr voronoi = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -753,6 +776,7 @@ bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [
     static double s_rangeExpansionFactor = 1.0;
     double dx = range.XLength () * s_rangeExpansionFactor;
     double dy = range.YLength () * s_rangeExpansionFactor;
+    dx = dy = std::max (dx, dy);
     range.low.x -= dx;
     range.high.x += dx;
     range.low.y -= dy;
@@ -772,62 +796,69 @@ bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [
         {
         if (!visited.IsSetAtNode (vertexSeed))
             {
+            int numBoundary = vu_countMaskAroundVertex (vertexSeed, exteriorMask);
+            int numTotal = vu_countEdgesAroundVertex (vertexSeed);
+            ptrdiff_t userData1 = vertexSeed->GetUserData1 ();
+            check (numBoundary, numTotal, userData1);
             visited.SetAroundVertex (vertexSeed);
-            planes.clear ();
-            if (cellData != nullptr)
-                cellData->push_back (NeighborIndices((size_t)vertexSeed->GetUserData1 ()));
-
-
-            VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+            if (userData1 >= 0)
                 {
-                size_t indexA = (size_t)outboundEdge->GetUserData1 ();
-                size_t indexB = (size_t)outboundEdge->FSucc ()->GetUserData1 ();
-                if (indexA < points.size () && indexB < points.size ())
+                planes.clear ();
+                if (cellData != nullptr)
+                    cellData->push_back (NeighborIndices((size_t)userData1));
+
+
+                VU_VERTEX_LOOP (outboundEdge, vertexSeed)
                     {
-                    auto plane  = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexB], radii[indexB], voronoiMetric);
-                    auto plane1 = DPlane3d::VoronoiSplitPlane (points[indexB], radii[indexB], points[indexA], radii[indexA], voronoiMetric);
-                    if (!plane.Value ().origin.AlmostEqual (plane1.Value ().origin))
-                        errors++;
-                    if (plane.IsValid ())
+                    size_t indexA = (size_t)outboundEdge->GetUserData1 ();
+                    size_t indexB = (size_t)outboundEdge->FSucc ()->GetUserData1 ();
+                    if (indexA < points.size () && indexB < points.size ())
                         {
-                        DPlane3d plane1 = plane.Value ();
-                        plane1.normal = s_sign * plane1.normal;
-                        planes.push_back (ClipPlane (plane1, false, s_interior));
-                        }
-                    if (useEdgeNeighborClip)
-                        {
-                        // is there a triangle across the edge?
-                        auto nodeB = outboundEdge->FSucc ();
-                        auto nodeC0 = nodeB->EdgeMate ();
-                        auto nodeC1 = nodeC0->FSucc ();
-                        auto nodeC2 = nodeC1->FSucc ();
-                        auto nodeC3 = nodeC2->FSucc ();
-                        size_t indexC = (size_t)nodeC2->GetUserData1 ();
-                        if (nodeC3 == nodeC0 && indexC < points.size ())
+                        auto plane  = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexB], radii[indexB], voronoiMetric);
+                        auto plane1 = DPlane3d::VoronoiSplitPlane (points[indexB], radii[indexB], points[indexA], radii[indexA], voronoiMetric);
+                        if (!plane.Value ().origin.AlmostEqual (plane1.Value ().origin))
+                            errors++;
+                        if (plane.IsValid ())
                             {
-                            auto plane2 = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexC], radii[indexC], voronoiMetric);
-                            if (plane2.IsValid ())
+                            DPlane3d plane1 = plane.Value ();
+                            plane1.normal = s_sign * plane1.normal;
+                            planes.push_back (ClipPlane (plane1, false, s_interior));
+                            }
+                        if (useEdgeNeighborClip)
+                            {
+                            // is there a triangle across the edge?
+                            auto nodeB = outboundEdge->FSucc ();
+                            auto nodeC0 = nodeB->EdgeMate ();
+                            auto nodeC1 = nodeC0->FSucc ();
+                            auto nodeC2 = nodeC1->FSucc ();
+                            auto nodeC3 = nodeC2->FSucc ();
+                            size_t indexC = (size_t)nodeC2->GetUserData1 ();
+                            if (nodeC3 == nodeC0 && indexC < points.size ())
                                 {
-                                DPlane3d plane1 = plane2.Value ();
-                                plane1.normal = s_sign * plane1.normal;
-                                planes.push_back (ClipPlane (plane1, false, s_interior));
+                                auto plane2 = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexC], radii[indexC], voronoiMetric);
+                                if (plane2.IsValid ())
+                                    {
+                                    DPlane3d plane1 = plane2.Value ();
+                                    plane1.normal = s_sign * plane1.normal;
+                                    planes.push_back (ClipPlane (plane1, false, s_interior));
+                                    }
                                 }
                             }
+                        // Store the neighbor point index .. later it will become a cellData index.
+                        if (nullptr != cellData)
+                            cellData->back ().AddNeighbor (indexB, SIZE_MAX);
                         }
-                    // Store the neighbor point index .. later it will become a cellData index.
-                    if (nullptr != cellData)
-                        cellData->back ().AddNeighbor (indexB, SIZE_MAX);
                     }
-                }
-            END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
-            planes.ConvexPolygonClip (outerBox, clip1, clip2);
-            DPoint3dOps::Compress (clip1, DoubleOps::SmallMetricDistance ());
-            if (clip1.size () > 2)
-                {
-                size_t readIndex = voronoi->PointIndex().size ();
-                voronoi->AddPolygon (clip1);
-                if (nullptr != cellData)
-                    cellData->back ().SetAuxIndex (readIndex);
+                END_VU_VERTEX_LOOP (outboundEdge, vertexSeed)
+                planes.ConvexPolygonClip (outerBox, clip1, clip2);
+                DPoint3dOps::Compress (clip1, DoubleOps::SmallMetricDistance ());
+                if (clip1.size () > 2)
+                    {
+                    size_t readIndex = voronoi->PointIndex().size ();
+                    voronoi->AddPolygon (clip1);
+                    if (nullptr != cellData)
+                        cellData->back ().SetAuxIndex (readIndex);
+                    }
                 }
             }
         }
@@ -871,13 +902,14 @@ bvector<NeighborIndices> *cellData  //!< [out] optional array giving [siteIndex=
 
 )
     {
+    /* NO -- CreateVoronoi is fixed to handle n=2 case ..
     if (points.size () == 2)
         {
         delauney = nullptr;
         voronoi = CreateTwoPointVoronoi (points[0], radii[0],  points[1], radii[1], voronoiMetric, 20.0, 20.0);
         return true;
         }
-
+    */
     VuSetP graph = CreateDelauney (points);
     if (graph != nullptr)
         {
