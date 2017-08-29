@@ -754,7 +754,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
 
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const = 0;
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
@@ -975,7 +975,7 @@ protected:
     Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
-    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
     bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
     bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
@@ -1030,7 +1030,7 @@ protected:
     StructECPropertyP _GetAsStructPropertyP() override {return this;}
     Utf8String _GetTypeName() const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
-    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
 
 public:
@@ -1131,7 +1131,7 @@ protected:
     PrimitiveArrayECPropertyCP _GetAsPrimitiveArrayPropertyCP() const override {return this;}
     PrimitiveArrayECPropertyP _GetAsPrimitiveArrayPropertyP() override {return this;}
 
-    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveArrayProperty;}
 
     CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
@@ -1185,7 +1185,7 @@ protected:
     bool _IsStructArray() const override {return true;}
     StructArrayECPropertyCP _GetAsStructArrayPropertyCP() const override {return this;}
     StructArrayECPropertyP _GetAsStructArrayPropertyP() override {return this;}
-    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructArrayProperty;}
 
 public:
@@ -1232,7 +1232,7 @@ protected:
     // Not valid because type cannot be set from xml, it must be set at runtime
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override {return ECObjectsStatus::OperationNotSupported;}
 
-    bool _CanOverride(ECPropertyCR baseProperty) const override;
+    bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::NavigationProperty;}
 
 public:
@@ -1394,7 +1394,7 @@ private:
 
     static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
-    ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
+    ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     void            AddDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();

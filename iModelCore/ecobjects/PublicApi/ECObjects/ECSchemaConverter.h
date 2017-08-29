@@ -77,7 +77,7 @@ private:
 public:
     //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
-    ECOBJECTS_EXPORT static bool Convert(ECSchemaR schema);
+    ECOBJECTS_EXPORT static bool Convert(ECSchemaR schema, bool doValidate = true);
 
     //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
     //! @param[in] schemaName   The schemaName that the customattribute belongs to
