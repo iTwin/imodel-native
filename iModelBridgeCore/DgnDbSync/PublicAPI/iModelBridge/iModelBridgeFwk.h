@@ -111,6 +111,7 @@ struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
         {
+        bool m_skipAssignmentCheck = false;
         bool m_createRepositoryIfNecessary = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
@@ -243,6 +244,7 @@ public:
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}
+    bool GetSkipAssignmentCheck() const {return m_jobEnvArgs.m_skipAssignmentCheck;}
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }

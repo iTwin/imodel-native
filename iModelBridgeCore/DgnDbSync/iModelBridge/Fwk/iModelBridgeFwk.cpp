@@ -327,6 +327,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-skip-assignment-check"))//undocumented, meant for pp based atp pupose
+            {
+            m_skipAssignmentCheck = true;
+            continue;
+            }
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-create-repository-if-necessary")) // undocumented
             {
             m_createRepositoryIfNecessary = true;
@@ -944,7 +950,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
-    params.SetAssignmentChecker(*this);
+    if (!m_jobEnvArgs.m_skipAssignmentCheck)
+        params.SetAssignmentChecker(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     }
 
