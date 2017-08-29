@@ -507,27 +507,27 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble("sci", 2.0*testV, 5).c_str());
     EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
-    NumericFormatSpecP fmtP = (NumericFormatSpecP)StdFormatSet::GetNumericFormat("real");
-    fmtP =  new NumericFormatSpec(NumericFormatSpec::DefaultFormat());
-    fmtP->SetKeepTrailingZeroes(true);
-    fmtP->SetUse1000Separator(true);
+    //NumericFormatSpec fmtP = (NumericFormatSpecP)StdFormatSet::GetNumericFormat(FormatConstant::DefaultFormatAlias());
+    NumericFormatSpec fmtP = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
+    fmtP.SetKeepTrailingZeroes(true);
+    fmtP.SetUse1000Separator(true);
 
-    EXPECT_STREQ ("1,414.20000000", fmtP->FormatDouble(testV, 8, 0.05).c_str());
-    EXPECT_STREQ ("7,071.0500000", fmtP->FormatDouble(5.0*testV, 7, 0.05).c_str());
-    EXPECT_STREQ ("4,242.650000", fmtP->FormatDouble(3.0*testV, 6, 0.05).c_str());
-    EXPECT_STREQ ("9,899.50000", fmtP->FormatDouble(7.0*testV, 5, 0.05).c_str());
-    EXPECT_STREQ ("12,727.9000", fmtP->FormatDouble(9.0*testV, 4, 0.05).c_str());
-    EXPECT_STREQ ("2,828.450", fmtP->FormatDouble(2.0*testV, 3, 0.05).c_str());
+    EXPECT_STREQ ("1,414.20000000", fmtP.FormatDouble(testV, 8, 0.05).c_str());
+    EXPECT_STREQ ("7,071.0500000", fmtP.FormatDouble(5.0*testV, 7, 0.05).c_str());
+    EXPECT_STREQ ("4,242.650000", fmtP.FormatDouble(3.0*testV, 6, 0.05).c_str());
+    EXPECT_STREQ ("9,899.50000", fmtP.FormatDouble(7.0*testV, 5, 0.05).c_str());
+    EXPECT_STREQ ("12,727.9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
+    EXPECT_STREQ ("2,828.450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
 
-    fmtP->SetKeepTrailingZeroes(false);
-    fmtP->SetUse1000Separator(false);
+    fmtP.SetKeepTrailingZeroes(false);
+    fmtP.SetUse1000Separator(false);
 
-    EXPECT_STREQ ("1414.2", fmtP->FormatDouble(testV, 8, 0.05).c_str());
-    EXPECT_STREQ ("-7071.05", fmtP->FormatDouble(-5.0*testV, 7, 0.05).c_str());
-    EXPECT_STREQ ("-4242.65", fmtP->FormatDouble(-3.0*testV, 6, 0.05).c_str());
-    EXPECT_STREQ ("-9899.5", fmtP->FormatDouble(-7.0*testV, 5, 0.05).c_str());
-    EXPECT_STREQ ("-12727.9", fmtP->FormatDouble(-9.0*testV, 4, 0.05).c_str());
-    EXPECT_STREQ ("-2828.45", fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
+    EXPECT_STREQ ("1414.2", fmtP.FormatDouble(testV, 8, 0.05).c_str());
+    EXPECT_STREQ ("-7071.05", fmtP.FormatDouble(-5.0*testV, 7, 0.05).c_str());
+    EXPECT_STREQ ("-4242.65", fmtP.FormatDouble(-3.0*testV, 6, 0.05).c_str());
+    EXPECT_STREQ ("-9899.5", fmtP.FormatDouble(-7.0*testV, 5, 0.05).c_str());
+    EXPECT_STREQ ("-12727.9", fmtP.FormatDouble(-9.0*testV, 4, 0.05).c_str());
+    EXPECT_STREQ ("-2828.45", fmtP.FormatDouble(-2.0*testV, 3, 0.05).c_str());
 
     FormatDictionary fd = FormatDictionary();
     NumericFormatSpec numFmt = NumericFormatSpec();
@@ -678,7 +678,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", 2).c_str());
     EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", 2).c_str());
     EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", 2).c_str());
-    delete fmtP;
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
