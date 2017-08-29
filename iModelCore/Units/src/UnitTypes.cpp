@@ -8,6 +8,7 @@
 
 #include "UnitsPCH.h"
 #include "SymbolicExpression.h"
+#include <BeJsonCpp/BeJsonUtilities.h>
 
 using namespace std;
 
@@ -387,6 +388,38 @@ UnitSynonymMap::UnitSynonymMap(Utf8CP descr)
         Init(tokens[0].c_str(), tokens[1].c_str());
     }
 
+UnitSynonymMap::UnitSynonymMap(Json::Value jval)
+    {
+    m_unit = nullptr;
+    m_synonym.clear();
+    if (jval.empty())
+        return;
+    Utf8CP paramName;
+    Utf8String formatName;
+    Utf8String unitName;
+    Utf8String synonym;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+             unitName = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_synonym()) == 0)
+            synonym = val.asString();
+        }
+    Init(unitName.c_str(), synonym.c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+Json::Value UnitSynonymMap::ToJson()
+    {
+    Json::Value jval;
+    jval[json_unitName()] = m_unit->GetName();
+    jval[json_synonym()] = m_synonym.c_str();
+    return jval;
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -418,6 +451,9 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName)
     return nullptr;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     {
     UnitCP un = FindSynonym(synonym);
@@ -426,3 +462,4 @@ void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     UnitSynonymMap map = UnitSynonymMap(unitName, synonym);
     m_altNames.push_back(map);
     }
+

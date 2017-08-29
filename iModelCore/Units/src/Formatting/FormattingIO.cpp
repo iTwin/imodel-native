@@ -121,46 +121,46 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
             {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
-            if (stricmp(paramName, json_roundFactor()) == 0)
+            if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
                 {
                 m_roundFactor = val.asDouble();
                 }
-            else if (stricmp(paramName, json_decPrec()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
                 {
                 m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
                 }
-            else if (stricmp(paramName, json_fractPrec()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
                 {
                 m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
                 }
-            else if (stricmp(paramName, json_barType()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
                 {
                 m_barType = Utils::NameToFractionBarType(val.asCString());
                 }
-            else if (stricmp(paramName, json_decimalSeparator()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
                 {
                 str = val.asString();
                 m_decimalSeparator = str.c_str()[0];
                 }
-            else if (stricmp(paramName, json_thousandSeparator()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
                 {
                 str = val.asString();
                 m_thousandsSeparator = str.c_str()[0];
                 }
-            else if (stricmp(paramName, json_uomSeparator()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
                 {
                 m_uomSeparator = val.asString();
                 }
-            else if (stricmp(paramName, json_statSeparator()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
                 {
                 str = val.asString();
                 m_statSeparator = str.c_str()[0];
                 }
-            else if (stricmp(paramName, json_minWidth()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
                 {
                 m_minWIdth = val.asInt();
                 }
-            else if (stricmp(paramName, json_formatTraits()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
                 {
                 TraitsFromJson(val);
                 }
@@ -179,27 +179,27 @@ FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (stricmp(paramName, json_LeadZeroes()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_LeadZeroes()) == 0)
             SetUseLeadingZeroes(val.asBool());
-        else if (stricmp(paramName, json_TrailZeroes()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_TrailZeroes()) == 0)
             SetKeepTrailingZeroes(val.asBool());
-        else if (stricmp(paramName, json_KeepDecPnt()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_KeepDecPnt()) == 0)
             SetKeepDecimalPoint(val.asBool());
-        else if (stricmp(paramName, json_KeepSingleZero()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_KeepSingleZero()) == 0)
             SetKeepSingleZero(val.asBool());
-        else if (stricmp(paramName, json_ExponentZero()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ExponentZero()) == 0)
             SetExponentZero(val.asBool());
-        else if (stricmp(paramName, json_ZeroEmpty()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ZeroEmpty()) == 0)
             SetZeroEmpty(val.asBool());
-        else if (stricmp(paramName, json_Use1000Separator()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_Use1000Separator()) == 0)
             SetUse1000Separator(val.asBool());
-        else if (stricmp(paramName, json_ApplyRounding()) ==0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ApplyRounding()) ==0)
             SetApplyRounding(val.asBool());
-        else if (stricmp(paramName, json_FractionDash()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_FractionDash()) == 0)
             SetFractionDash(val.asBool());
-        else if (stricmp(paramName, json_UseFractSymbol()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_UseFractSymbol()) == 0)
             SetUseFractSymbol(val.asBool());
-        else if (stricmp(paramName, json_AppendUnitName()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_AppendUnitName()) == 0)
             SetAppendUnit(val.asBool());
         }
     return m_formatTraits;
@@ -386,19 +386,19 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (stricmp(paramName, json_MajorUnit()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_MajorUnit()) == 0)
             major = val.asString();
-        else if (stricmp(paramName, json_MiddleUnit()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_MiddleUnit()) == 0)
             middle = val.asString();
-        else if (stricmp(paramName, json_MinorUnit()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_MinorUnit()) == 0)
             minor = val.asString();
-        else if (stricmp(paramName, json_SubUnit()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_SubUnit()) == 0)
             sub = val.asString();
-        else if (stricmp(paramName, json_InputUnit()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_InputUnit()) == 0)
             input = val.asString();
-        else if (stricmp(paramName, json_includeZero()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
             m_includeZero = val.asBool();
-        else if (stricmp(paramName, json_spacer()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
             m_spacer = val.asString();
         }
 
@@ -495,14 +495,14 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (stricmp(paramName, json_unitName()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
             m_unitName = val.asString();
             m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
             if (nullptr == m_unit)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
             }
-        else if (stricmp(paramName, json_formatName()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_formatName()) == 0)
             {
             formatName = val.asString();
             m_formatSpec = StdFormatSet::FindFormatSpec(formatName.c_str());
@@ -551,17 +551,17 @@ FormatUnitGroup::FormatUnitGroup(JsonValueCR jval)
             {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
-            if (stricmp(paramName, json_KOQName()) == 0)
+            if (BeStringUtilities::StricmpAscii(paramName, json_KOQName()) == 0)
                 {
                 m_name = val.asString();
                 }
-            else if (stricmp(paramName, json_persistFUS()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_persistFUS()) == 0)
                 {
                 fus = FormatUnitSet();
                 fus.LoadJsonData(val);
                 m_group.push_back(fus);
                 }
-            else if (stricmp(paramName, json_presentFUS()) == 0)
+            else if (BeStringUtilities::StricmpAscii(paramName, json_presentFUS()) == 0)
                 {
                 for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
                     {

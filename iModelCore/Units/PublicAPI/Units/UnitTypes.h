@@ -8,6 +8,7 @@
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Units/Units.h>
 
 
@@ -19,6 +20,10 @@ UNITS_TYPEDEFS(Expression)
 UNITS_TYPEDEFS(SpecificAccuracy)
 UNITS_TYPEDEFS(UnitSynonymMap)
 BEGIN_BENTLEY_UNITS_NAMESPACE
+
+BE_JSON_NAME(unitName)
+BE_JSON_NAME(synonym)
+
 
 enum class UnitsProblemCode
     {
@@ -187,10 +192,12 @@ private:
 public:
     UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
     //! two comma separated names. The first name must be a registered Unit name.
-    UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor); 
+    UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
+    UNITS_EXPORT UnitSynonymMap(Json::Value jval);
     bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
     Utf8CP GetSynonym() { return m_synonym.c_str(); }
     UnitCP GetUnit() { return m_unit; }
+    UNITS_EXPORT Json::Value ToJson();
     };
 
 struct Phenomenon final : UnitsSymbol

@@ -72,6 +72,7 @@ BE_JSON_NAME(NumericFormat)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
 BE_JSON_NAME(formatName)
+BE_JSON_NAME(synonym)
 
 //CompositeValueSpec
 BE_JSON_NAME(MajorUnit)
