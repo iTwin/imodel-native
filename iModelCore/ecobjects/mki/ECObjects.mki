@@ -33,10 +33,7 @@ always:
 ecPublicAPISrc          = $(SrcRoot)ecobjects/PublicApi/
 ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
 ecobjectsSrc            = $(SrcRoot)ecobjects/
-
-ecpresentationPublicAPISrc      = $(ecPublicAPISrc)EcPresentation/
-ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)ECPresentationRules/
-ecunitsPublicAPISrc             = $(ecPublicAPISrc)ECUnits/
+ecunitsPublicAPISrc     = $(ecPublicAPISrc)ECUnits/
 
 #-----------------------------------------------------------------------
 # Configure Google Test macros

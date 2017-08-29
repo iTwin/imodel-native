@@ -61,41 +61,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECQuantityFormatting.h \
                                 $(ecobjectsPublicAPISrc)SchemaComparer.h
 
-ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
-                                $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
-                                $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
-                                $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
-                                $(ecpresentationRulesPublicAPISrc)ContentRule.h \
-                                $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
-                                $(ecpresentationRulesPublicAPISrc)PresentationRule.h \
-                                $(ecpresentationRulesPublicAPISrc)PresentationRuleSet.h \
-                                $(ecpresentationRulesPublicAPISrc)LabelOverride.h \
-                                $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
-                                $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
-                                $(ecpresentationRulesPublicAPISrc)UserSettingsGroup.h \
-                                $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
-                                $(ecpresentationRulesPublicAPISrc)SortingRule.h \
-                                $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)InstanceNodesOfSpecificClassesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)RelatedInstanceNodesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)SearchResultInstanceNodesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)ContentSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)ContentInstancesOfSpecificClassesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)PropertiesDisplaySpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)CalculatedPropertySpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)CustomizationRules.h \
-                                $(ecpresentationRulesPublicAPISrc)ContentModifier.h \
-                                $(ecpresentationRulesPublicAPISrc)PropertyEditorsSpecification.h \
-                                $(ECPresentationHeaders)
-
-
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
                                 $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
 
@@ -171,72 +136,6 @@ $(o)ECQuantityFormatting$(oext)                            : $(baseDir)ECQuantit
 
 $(o)SchemaComparer$(oext)                                  : $(baseDir)SchemaComparer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-# ECPresentationRules
-
-$(o)ChildNodeRule$(oext)                                   : $(baseDir)presentation/PresentationRules/ChildNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ChildNodeSpecification$(oext)                          : $(baseDir)presentation/PresentationRules/ChildNodeSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ContentRule$(oext)                                     : $(baseDir)presentation/PresentationRules/ContentRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)DisplayRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)RenameNodeRule$(oext)                                  : $(baseDir)presentation/PresentationRules/RenameNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ImageIdOverride$(oext)                                 : $(baseDir)presentation/PresentationRules/ImageIdOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)PresentationRule$(oext)                                : $(baseDir)presentation/PresentationRules/PresentationRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)PresentationRuleSet$(oext)                             : $(baseDir)presentation/PresentationRules/PresentationRuleSet.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)LabelOverride$(oext)                                   : $(baseDir)presentation/PresentationRules/LabelOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)StyleOverride$(oext)                                   : $(baseDir)presentation/PresentationRules/StyleOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)LocalizationResourceKeyDefinition$(oext)               : $(baseDir)presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)UserSettingsGroup$(oext)                               : $(baseDir)presentation/PresentationRules/UserSettingsGroup.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)GroupingRule$(oext)                                    : $(baseDir)presentation/PresentationRules/GroupingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)SortingRule$(oext)                                     : $(baseDir)presentation/PresentationRules/SortingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)AllInstanceNodesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/AllInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)AllRelatedInstanceNodesSpecification$(oext)            : $(baseDir)presentation/PresentationRules/AllRelatedInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)CustomNodeSpecification$(oext)                         : $(baseDir)presentation/PresentationRules/CustomNodeSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)InstanceNodesOfSpecificClassesSpecification$(oext)     : $(baseDir)presentation/PresentationRules/InstanceNodesOfSpecificClassesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)RelatedInstanceNodesSpecification$(oext)               : $(baseDir)presentation/PresentationRules/RelatedInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)SearchResultInstanceNodesSpecification$(oext)          : $(baseDir)presentation/PresentationRules/SearchResultInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ContentSpecification$(oext)                            : $(baseDir)presentation/PresentationRules/ContentSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)RelatedPropertiesSpecification$(oext)                  : $(baseDir)presentation/PresentationRules/RelatedPropertiesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ContentInstancesOfSpecificClassesSpecification$(oext)  : $(baseDir)presentation/PresentationRules/ContentInstancesOfSpecificClassesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ContentRelatedInstancesSpecification$(oext)            : $(baseDir)presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)SelectedNodeInstancesSpecification$(oext)              : $(baseDir)presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)PropertiesDisplaySpecification$(oext)                  : $(baseDir)presentation/PresentationRules/PropertiesDisplaySpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)CalculatedPropertySpecification$(oext)                 : $(baseDir)presentation/PresentationRules/CalculatedPropertySpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)RelatedInstanceSpecification$(oext)                    : $(baseDir)presentation/PresentationRules/RelatedInstanceSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)CommonTools$(oext)                                     : $(baseDir)presentation/PresentationRules/CommonTools.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)ContentModifier$(oext)                                 : $(baseDir)presentation/PresentationRules/ContentModifier.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
-$(o)PropertyEditorsSpecification$(oext)                    : $(baseDir)presentation/PresentationRules/PropertyEditorsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
-
 # ECUnits
 
 $(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
@@ -282,9 +181,3 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include $(sharedMki)linkLibrary.mki
-
-#----------------------------------------------------------------------
-#   Link presentation rules xsd
-#----------------------------------------------------------------------
-$(BuildContext)Delivery/PresentationRuleSetSchema.xsd : $(baseDir)presentation/PresentationRules/xsd/PresentationRuleSetSchema.xsd
-    ~linkfile $@ = $<
