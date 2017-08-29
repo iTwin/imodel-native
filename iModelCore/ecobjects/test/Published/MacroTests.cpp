@@ -50,6 +50,9 @@ void ExplicitlyDisableAssertsAndThrowException(bool assertsEnabledWhenInvoked)
     throw 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, VerifyAssertGuardScenarios)
     {
     EXPECT_TRUE (!AssertDisabler::AreAssertsDisabled());    
@@ -124,18 +127,27 @@ int UtilizePreConditionMacro (int number, void* pointer)
     return 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectErrorForPreConditionCheckWhenNumberIsOutOfRange)
     {    
     DISABLE_ASSERTS
     EXPECT_EQ (-1, UtilizePreConditionMacro (5, (void*)0xBADF));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectErrorForPreConditionCheckWhenPointerIsNull)
     {    
     DISABLE_ASSERTS
     EXPECT_EQ (-2, UtilizePreConditionMacro (50, NULL));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectSuccessForPreConditionCheck)
     {    
     EXPECT_EQ (0, UtilizePreConditionMacro (50, (void*)0xBADF));
@@ -151,6 +163,9 @@ int UtilizePostConditionMacroWithError (int number)
     return 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectErrorForPostConditionCheck)
     {    
     DISABLE_ASSERTS
@@ -164,6 +179,9 @@ int UtilizePostConditionMacroWithSuccess (int number)
     return 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectSuccessForPostConditionCheck)
     {    
     EXPECT_EQ (0, UtilizePostConditionMacroWithSuccess (5));
@@ -172,6 +190,9 @@ TEST(AssertTest, ExpectSuccessForPostConditionCheck)
 
 /********* EXPECTED_CONDITION check **********/
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectFalseForExpectedConditionCheck)
     {    
     DISABLE_ASSERTS
@@ -179,6 +200,9 @@ TEST(AssertTest, ExpectFalseForExpectedConditionCheck)
     EXPECT_FALSE (EXPECTED_CONDITION(n==10));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                  10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AssertTest, ExpectTrueForExpectedConditionCheck)
     {    
     int n = 10;
