@@ -1,20 +1,38 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: VerticalAlignmentViewDefinition.cpp $
+|     $Source: AlignmentProfileViewDefinition.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 
-HANDLER_DEFINE_MEMBERS(VerticalAlignmentViewDefinitionHandler)
+HANDLER_DEFINE_MEMBERS(AlignmentProfileViewDefinitionHandler)
 
+AlignmentProfileViewDefinition::IViewControllerFactory AlignmentProfileViewDefinition::s_factory = nullptr;
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        08/2017
+//---------------------------------------------------------------------------------------
+void AlignmentProfileViewDefinition::RegisterControllerFactory(IViewControllerFactory factory)
+    {
+    s_factory = factory;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        08/2017
+//---------------------------------------------------------------------------------------
+ViewControllerPtr AlignmentProfileViewDefinition::_SupplyController() const
+    {
+    if (nullptr != s_factory)
+        return s_factory(*this);
 
+    ROADRAILALIGNMENT_LOGE("AlignmentProfileViewDefinition - ViewControllerFactory not registered");
+    return nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // Adjusts the AspectRatio by changing the y-axis only
 //---------------------------------------------------------------------------------------
-void VerticalAlignmentViewDefinition::_AdjustAspectRatio(double windowAspect)
+void AlignmentProfileViewDefinition::_AdjustAspectRatio(double windowAspect)
     {
     static bool s_useSuper = true;
     if (s_useSuper)
@@ -49,45 +67,15 @@ void VerticalAlignmentViewDefinition::_AdjustAspectRatio(double windowAspect)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void VerticalAlignmentViewDefinition::_SetRotation(RotMatrixCR rot)
+void AlignmentProfileViewDefinition::_SetRotation(RotMatrixCR rot)
     {
     if (m_allowRotation)
         m_rotation = rot;
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus VerticalAlignmentViewDefinition::_OnInsert()
-    {
-    BeAssert(!"VerticalAlignmentViewDefinition is not expected to be inserted in db");
-    return DgnDbStatus::NotEnabled;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus VerticalAlignmentViewDefinition::_OnUpdate(DgnElementCR original)
-    {
-    BeAssert(!"VerticalAlignmentViewDefinition is not expected to be updated in db");
-    return DgnDbStatus::NotEnabled;
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        08/2017
 //---------------------------------------------------------------------------------------
-VerticalAlignmentViewDefinition::VerticalAlignmentViewDefinition(SpatialViewDefinitionR def):
-    T_Super(*def.GetDefinitionModel(), def.GetName(), def.GetCategorySelector(), def.GetDisplayStyle3d(), def.GetModelSelector()),
-    m_allowRotation(true)
+AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 
+    T_Super(T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, modelSelector))
     {
-    m_elementId = DgnElementId(static_cast<uint64_t>(1));
-    m_classId = QueryClassId(def.GetDgnDb());
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        08/2017
-//---------------------------------------------------------------------------------------
-VerticalAlignmentViewDefinitionPtr VerticalAlignmentViewDefinition::Create(Dgn::SpatialViewDefinitionCR def)
-    {
-    SpatialViewDefinitionPtr defPtr = def.MakeCopy<SpatialViewDefinition>();
-    if (!defPtr.IsValid())
-        return nullptr;
-
-    return new VerticalAlignmentViewDefinition(*defPtr);
     }
