@@ -133,7 +133,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
+DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange)
     {
     madeSchemaChanges = false;
 
@@ -141,14 +141,13 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (db.IsValid())
         {
-        bool hasDynamicSchemaChange = _UpgradeDynamicSchema(*db);
+        hasDynamicSchemaChange = _UpgradeDynamicSchema(*db);
         if (!hasDynamicSchemaChange)
             return db;// Common case
 
         db->SaveChanges();
         db->CloseDb();
         db = nullptr;
-        madeSchemaChanges = true;
         return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         }
 
@@ -162,11 +161,6 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
     if (!db.IsValid())
         return nullptr;
-
-    _UpgradeDynamicSchema(*db);
-    madeSchemaChanges = true;
-
-    //  Save the schema upgrade results and ...
     dbres = db->SaveChanges();
     if (BeSQLite::BE_SQLITE_OK != dbres)
         {
@@ -174,6 +168,8 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
         LOG.fatalv("Failed to save results of importing domain schemas");
         return nullptr;
         }
+
+    madeSchemaChanges = true;
 
     // ... close and re-open, so that the side-effects of the schema changes are reflected in the open DgnDb.
     db->CloseDb();
@@ -473,4 +469,14 @@ Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLi
 
     // no bridge string found, search platform strings
     return BeSQLite::L10N::GetString(scope, name, &hasString);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              08/17
+//---------------------------------------------------------------------------------------
+bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
+    {
+    if (nullptr == m_assignmentChecker) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
+        return true;
+    return m_assignmentChecker->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
     }

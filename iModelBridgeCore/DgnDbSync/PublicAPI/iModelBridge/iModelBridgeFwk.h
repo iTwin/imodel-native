@@ -38,7 +38,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeFwk
+struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
 {
     enum class EffectiveServerError
         {
@@ -111,6 +111,7 @@ struct iModelBridgeFwk
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
         {
+        bool m_skipAssignmentCheck = false;
         bool m_createRepositoryIfNecessary = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
@@ -202,6 +203,7 @@ protected:
     BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
     BentleyStatus ComputeBridgeAffinityToDocument(iModelBridge::BridgeAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
     BentleyStatus WriteBridgesFile();
+    bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
 
     DgnProgressMeter& GetProgressMeter() const;
 
@@ -242,6 +244,7 @@ public:
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}
+    bool GetSkipAssignmentCheck() const {return m_jobEnvArgs.m_skipAssignmentCheck;}
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
