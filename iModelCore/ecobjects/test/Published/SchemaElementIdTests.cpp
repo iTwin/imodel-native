@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct SchemaElementIdTests : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Colin.Kerr                       06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaElementIdTests, IdsAreNotSetAutomatically)
     {
