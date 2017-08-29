@@ -2883,7 +2883,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Adam.Klatzkin                 02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
