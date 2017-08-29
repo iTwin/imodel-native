@@ -1115,7 +1115,7 @@ TEST(Vu,FourPointsWeighted)
         };
     bvector<double> baseRadius {1.7196498565, 2.2748827835, 3.8452539636, 1.9226269818};
     double a = 20.0;
-    double b = 80.0;
+    //double b = 80.0;
     for (auto factor : bvector<double>{0.2, 0.8, 1.0, 2.0, 5.0})
         {
         SaveAndRestoreCheckTransform shifter (a, 0, 0);
@@ -1148,7 +1148,7 @@ TEST(Vu,FourPointsWeighted)
 TEST(Vu,ColinearPoints)
     {
     double b = 200.0;
-    double alpha = 0.2;
+    //double alpha = 0.2;
     bvector<double> radii {2,3, 1, 2};
     for (auto slope : bvector<double>{0.0, 1.0, 0.2342789123798})
         {
@@ -1156,7 +1156,7 @@ TEST(Vu,ColinearPoints)
         bvector<DPoint3d> points;
         for (auto x : bvector<double> {1.0, 2.0, 5.0, 8.0})
             points.push_back (DPoint3d::From (x, x * slope));
-       DPoint3d pointB = points.back ();
+       //DPoint3d pointB = points.back ();
        // points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (points.front (), 1.5, pointB, alpha));
        // points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (points.front (), 1.5, pointB, -alpha));
         for (int i = 0; i < 4; i++)
