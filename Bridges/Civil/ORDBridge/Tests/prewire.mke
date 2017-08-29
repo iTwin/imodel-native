@@ -8,9 +8,6 @@
 %include mdl.mki
 baseDir = $(_makeFilePath)
 
-$(BuildContext)Delivery/UnitTests/TestFiles : $(SrcRoot)Civil/iModelBridges/ORDBridge/Tests/data
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
 $(BuildContext)Delivery/UnitTests/ordbridge_ignore_list.txt : $(baseDir)ordbridge_ignore_list.txt
     $(msg)
     $(LinkFirstDepToFirstTarget)

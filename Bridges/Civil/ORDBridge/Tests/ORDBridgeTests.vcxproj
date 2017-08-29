@@ -87,7 +87,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -ax64 -p CiviliModelBridgesTested -r Civil-iModelBridges -f CiviliModelBridges b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -p Gtest-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForORDBridgeUnitTests CiviliModelBridges-Tests PrewireForORDBridgeUnitTests CiviliModelBridgesORDBridge-UnitTests-NonPublished CiviliModelBridgesORDBridge-UnitTests-Published Gtest-CiviliModelBridges-Tests CiviliModelBridges:Gtest</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p Gtest-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForORDBridgeUnitTests CivilShared-Tests PrewireForDomainUnitTests CivilSharedORDBridge-UnitTests-NonPublished CiviliModelBridgesORDBridge-UnitTests-Published Gtest-CiviliModelBridges-Tests CiviliModelBridges:Gtest -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p Gtest-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForORDBridgeUnitTests CiviliModelBridges-Tests PrewireForDomainUnitTests CiviliModelBridgesORDBridge-UnitTests-NonPublished CiviliModelBridgesORDBridge-UnitTests-Published Gtest-CiviliModelBridges-Tests CiviliModelBridges:Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\ORDBridge\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\Delivery\PublishedApi\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

@@ -32,6 +32,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("IHL\\IHL.dgn", "default", "ORDIHLTest.bim"));
+    ASSERT_TRUE(RunTestApp("IHL.dgn", "default", "ORDIHLTest.bim"));
     VerifyConvertedElements("ORDIHLTest.bim", 44, 0);
     }
