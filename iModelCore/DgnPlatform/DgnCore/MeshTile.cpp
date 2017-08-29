@@ -1838,7 +1838,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         return folly::makeFuture(TileGeneratorStatus::Success);
 #endif
         }
-    else if (nullptr != generateMeshTiles)
+    else
+#endif
+    if (nullptr != generateMeshTiles)
         {
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {

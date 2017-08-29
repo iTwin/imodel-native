@@ -102,8 +102,7 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
-    if (WantShowCurrent())
-    /* ###TODO
+    /* ###TODO: To support this we need to allow the 'overrides' for an element to specify 'don't override anything' - otherwise it gets the default overrides
     // TFS#742735: Only colorize focused element if we have set this ViewController to do so
     if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
         {
@@ -112,6 +111,8 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
         return;
         }
     */
+
+    if (WantShowCurrent())
         {
         for (auto const& entry : m_comparisonData->GetPersistentStates())
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
@@ -138,6 +139,11 @@ BentleyStatus Controller::_CreateScene(SceneContextR context)
         {
         for (auto const& entry : m_comparisonData->GetTransientStates())
             {
+            // Joe doesn't want to show the transient/updated state of a modified element
+            // if we are showing them in a single view
+            if (WantShowBoth() && entry.IsModified())
+                continue;
+
             auto geom = entry.m_element->ToGeometrySource();
             if (nullptr != geom)
                 context.VisitGeometry(*geom);
