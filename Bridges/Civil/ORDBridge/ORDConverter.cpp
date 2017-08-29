@@ -275,8 +275,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
             AlignmentBim::VerticalAlignmentModel::CreateParams(m_bimAlignmentModelPtr->GetDgnDb(), alignment.GetElementId()));
         if (DgnDbStatus::Success != verticalModelPtr->Insert())
             return BentleyStatus::ERROR;
-
-        m_converterLib.RecordModelMapping(*cifProfile.GetDgnModelP(), *verticalModelPtr);
         }
 
     auto verticalAlignmPtr = AlignmentBim::VerticalAlignment::Create(*verticalModelPtr, *bimVertGeometryPtr);
@@ -615,8 +613,6 @@ BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, iMo
         return BentleyStatus::SUCCESS;
         }
 
-    m_converterLib.RecordModelMapping(*cifCorridor.GetDgnModelP(), *m_bimPhysicalModelPtr);
-
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         return CreateNewRoadway(cifCorridor, changeDetector, change);
 
@@ -634,20 +630,20 @@ void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& g
     {    
     ORDAlignmentsConverterPtr alignmentsConvPtr;
 
-    bool modelMapped = false;
     auto alignmentsPtr = geomModel.GetAlignments();
     while (alignmentsPtr.IsValid() && alignmentsPtr->MoveNext())
         {
-        if (!modelMapped)
+        auto cifAlignmentPtr = alignmentsPtr->GetCurrent();
+        if (!cifAlignmentPtr->IsFinalElement())
+            continue;
+
+        if (alignmentsConvPtr.IsNull())
             {
-            alignmentsConvPtr = ORDAlignmentsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*geomModel.GetDgnModelP()));
-            converterLib.RecordModelMapping(*geomModel.GetDgnModelP(), alignmentsConvPtr->GetAlignmentModel());
-            modelMapped = true;
+            auto dgnModelP = cifAlignmentPtr->GetDgnModelP();
+            alignmentsConvPtr = ORDAlignmentsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*dgnModelP));
             }
 
-        auto cifAlignmentPtr = alignmentsPtr->GetCurrent();
-        if (cifAlignmentPtr->IsFinalElement())
-            alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, changeDetector);
+        alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, changeDetector);
         }
     }
 
@@ -659,20 +655,20 @@ void ORDConverter::ConvertCorridors(GeometryModel::SDK::GeometricModel const& ge
     {
     ORDCorridorsConverterPtr corridorsConvPtr;
 
-    bool modelMapped = false;
     auto corridorsPtr = geomModel.GetCorridors();
     while (corridorsPtr.IsValid() && corridorsPtr->MoveNext())
         {
-        if (!modelMapped)
+        auto corridorPtr = corridorsPtr->GetCurrent();
+        if (!corridorPtr.IsValid())
+            continue;
+
+        if (corridorsConvPtr.IsNull())
             {
-            corridorsConvPtr = ORDCorridorsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*geomModel.GetDgnModelP()));
-            converterLib.RecordModelMapping(*geomModel.GetDgnModelP(), corridorsConvPtr->GetPhysicalModel());
-            modelMapped = true;
+            auto dgnModelP = corridorPtr->GetDgnModelP();
+            corridorsConvPtr = ORDCorridorsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*dgnModelP));
             }
 
-        auto corridorPtr = corridorsPtr->GetCurrent();
-        if (corridorPtr.IsValid())
-            corridorsConvPtr->ConvertCorridor(*corridorPtr, changeDetector);
+        corridorsConvPtr->ConvertCorridor(*corridorPtr, changeDetector);
         }
     }
 
@@ -735,8 +731,6 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, WCharCP rootModelNam
     if (cifModelPtr.IsValid())
         {
         converterLib.ComputeCoordinateSystemTransform(*rootModelP);
-        //converterLib.GetRootTrans();
-
         converterLib.ConvertModelMaterials(*rootModelP);
 
         // Mapping the root-model to the BIM Repository model by default.
