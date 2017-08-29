@@ -72,8 +72,11 @@ public:
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     Utf8String  GetName() const { return m_name; }
     Type GetType() const { return (Type) m_flags.m_type; }
-    double ExpandDistance() const { return m_expandDistance; }
+    double GetExpandDistance() const { return m_expandDistance; }
     bool GetIsActive() const { return m_isActive; }
+    Display GetInsideDisplay() const { return (Display) m_flags.m_insideDisplay; }
+    Display GetOutsideDisplay() const { return (Display) m_flags.m_outsideDisplay; }
+    Display GetSelectedDisplay() const { return (Display) m_flags.m_selectedDisplay; }
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& value);
