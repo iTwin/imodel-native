@@ -336,7 +336,7 @@ struct LasVLR
 #else
 #define GEOTIFFKEYSLISTCONST
 #endif
-struct GeoTiffKeysList : IGeoTiffKeysList
+struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
     {
     struct sGeoKeys
         {
@@ -361,7 +361,7 @@ struct GeoTiffKeysList : IGeoTiffKeysList
 
         for (int i = 0; i < keys->wNumberOfKeys; i++)
             {
-            IGeoTiffKeysList::GeoKeyItem item;
+            GeoCoordinates::IGeoTiffKeysList::GeoKeyItem item;
             item.KeyID = keys->pKey[i].wKeyID;
             if (keys->pKey[i].wTIFFTagLocation == 0)
                 {
@@ -386,14 +386,14 @@ struct GeoTiffKeysList : IGeoTiffKeysList
         m_index = 0;
         }
 
-    bvector<IGeoTiffKeysList::GeoKeyItem> m_keys;
+    bvector<GeoCoordinates::IGeoTiffKeysList::GeoKeyItem> m_keys;
     mutable int m_index;
-    virtual bool            GetFirstKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
+    virtual bool            GetFirstKey (GeoCoordinates::IGeoTiffKeysList::GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         m_index = 0;
         return GetNextKey (po_Key);
         }
-    virtual bool            GetNextKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
+    virtual bool            GetNextKey (GeoCoordinates::IGeoTiffKeysList::GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         if (m_index < (int)m_keys.size())
             {
@@ -409,7 +409,7 @@ struct GeoTiffKeysList : IGeoTiffKeysList
 
     // Apparently this implementation of IGeoTiffKeyList does not support addition of keys so none can be
     // extracted from a BaseGCS using SetGeoKeys
-    virtual void            AddKey (const GeoKeyItem& key) {};
+    virtual void            AddKey (const GeoCoordinates::IGeoTiffKeysList::GeoKeyItem& key) {};
     };
 
 DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
