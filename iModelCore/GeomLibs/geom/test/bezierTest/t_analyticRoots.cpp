@@ -76,12 +76,13 @@ double ErrorAtClosestRoot (bvector<double> &target, bvector<double> &actual, dou
         }
     return e;
     }
-double NewtonStep (double coffs[4], double u)
+double NewtonStep3 (double coffs[4], double u)
     {
     double f = coffs[0] + u * (coffs[1] + u * (coffs[2] + u * coffs[3]));
     double df = coffs[1] + u * (2.0 * coffs[2] + u * 3.0 * coffs[3]);
     return f / df;
     }
+
 void CheckCubic (double u0, double u1, double u2, bool printAll)
     {
     double coffs [4];
@@ -115,19 +116,19 @@ void CheckCubic (double u0, double u1, double u2, bool printAll)
             printf ("  (known roots %#.17g %#.17g %#.17g) (eMax %#.3g) (eSafe %#.3g)\n", target[0], target[1], target[2], eMax, eSafe);
             printf ("  (computed roots %#.17g %#.17g %#.17g) \n", actual[0], actual[1], actual[2]);
             printf ("  (Correction by newton from computed root  %#.3g %#.3g %#.3g) \n",
-                    NewtonStep (coffs, actual[0]),
-                    NewtonStep (coffs, actual[1]),
-                    NewtonStep (coffs, actual[2]));
+                    NewtonStep3 (coffs, actual[0]),
+                    NewtonStep3 (coffs, actual[1]),
+                    NewtonStep3 (coffs, actual[2]));
             printf ("  (Correction by newton from known root %#.3g %#.3g %#.3g) \n",
-                    NewtonStep (coffs, target[0]),
-                    NewtonStep (coffs, target[1]),
-                    NewtonStep (coffs, target[2]));
+                    NewtonStep3 (coffs, target[0]),
+                    NewtonStep3 (coffs, target[1]),
+                    NewtonStep3 (coffs, target[2]));
             }
         }
     else if (numRoots == 1)
         {
         printf (" ** SINGLETON *** (u target %#.17g %#.17g %#.17g) (u %#17g) (spread factor %.4g)\n", u0, u1, u2, actual[0], (u1-u0) / u2);
-        printf ("       NewtonDX %#.3g\n", NewtonStep(coffs, actual[0]));
+        printf ("       NewtonDX %#.3g\n", NewtonStep3(coffs, actual[0]));
         }
     }
 
@@ -167,14 +168,32 @@ TEST(AnalyticRoots, Cubic1)
       }
     }
 
+// newton step to improve a root of a quartic . . .
+double NewtonStep4 (double coffs[5], double u)
+    {
+    double f = coffs[0] + u * (coffs[1] + u * (coffs[2] + u * (coffs[3] + u * coffs[4])));
+    double df = coffs[1] + u * (2.0 * coffs[2] + u * (3.0 * coffs[3] + u * 4.0 * coffs[4]));
+    return f / df;
+    }
 
-void CheckQuartic (double u0, double u1, double u2, double u3)
+void CheckQuartic (double u0, double u1, double u2, double u3, double tolerance)
     {
     double coffs [5];
     coffs[4] = 1.0;
-    coffs[3] = - (u0 + u1 + u2 + u3);
+    coffs[3] = - DoubleOps::PreciseSum (u0, u1, u2, u3);
+    double xx[10];
+    int numxx = 0;
+    xx[numxx++] = u0 * u1;
+    xx[numxx++] = u0 * u2;
+    xx[numxx++] = u0 * u3;
+    xx[numxx++] = u1 * u2;
+    xx[numxx++] = u1 * u3;
+    xx[numxx++] = u2 * u3;
     coffs[2] =  u0 * (u1 + u2 + u3) + u1 * (u2 + u3) + u2 * u3;
+    coffs[2] = DoubleOps::PreciseSum (xx, numxx);
+
     coffs[1] = -( u0 * u1 * u2 + u0 * u1 * u3 + u0 * u2 * u3 + u1 * u2 * u3);
+    coffs[1] = -DoubleOps::PreciseSum (u0 * u1 * u2, u0 * u1 * u3, u0 * u2 * u3, u1 * u2 *u3);
     coffs[0] = u0 * u1 * u2 * u3;
     double roots[4];
     bvector<double>target, actual;
@@ -191,31 +210,87 @@ void CheckQuartic (double u0, double u1, double u2, double u3)
         {
         double uMax = DoubleOps::MaxAbs (target);
         double eMax = MatchRoots(target, actual) / uMax;
+        bool ok = Check::True (eMax < tolerance, "Quartic Root tolerance");
 
 //        Check::True (eMax < 1.0e-14 * DoubleOps::MaxAbs (target), "root error");
-        printf ("  (actual %#.17g %#.17g %#.17g %#.17g) \n", actual[0], actual[1], actual[2], actual[3]);
-        printf ("  (target %#.17g %#.17g %#.17g %#.17g) (eMax %#.3g)\n", target[0], target[1], target[2], target[3], eMax);
-#ifdef newton4
-        printf ("  (actualDX   %#.3g %#.3g %#.3g) \n",
-                NewtonStep (coffs, actual[0]),
-                NewtonStep (coffs, actual[1]),
-                NewtonStep (coffs, actual[2]));
-        printf ("  (targetDX   %#.3g %#.3g %#.3g) \n",
-                NewtonStep (coffs, target[0]),
-                NewtonStep (coffs, target[1]),
-                NewtonStep (coffs, target[2]));
-#endif
+        bool print = !ok || s_printAll;
+        if (print)
+            {
+            printf ("\n  (target %#.17g %#.17g %#.17g %#.17g) \n", target[0], target[1], target[2], target[3]);
+            printf ("  (actual %#.17g %#.17g %#.17g %#.17g) (eMax %#.3g)\n", actual[0], actual[1], actual[2], actual[3], eMax);
+            }
+        for (int step = 0; step < 10 && eMax > 1.0e-14; step++)
+            {
+            if (print)
+                printf ("  (actualDX   %#.3g %#.3g %#.3g %#.3g) \n",
+                    NewtonStep4 (coffs, actual[0]),
+                    NewtonStep4 (coffs, actual[1]),
+                    NewtonStep4 (coffs, actual[2]),
+                    NewtonStep4 (coffs, actual[3])
+                    );
+            for (int k = 0; k < numRoots; k++)
+                actual[k] -= NewtonStep4 (coffs, actual[k]);
+            eMax = MatchRoots(target, actual) / uMax;
+            if (print)
+                printf ("  (actual %#.17g %#.17g %#.17g %#.17g)  (eMax %#.3g)\n", actual[0], actual[1], actual[2], actual[3], eMax);
+            }
         }
     }
 
 
 TEST(AnalyticRoots, Quartic4)
     {
-    CheckQuartic (0,1,2,3);
-    CheckQuartic (0,1, 100, 101);
+    static int s_applyFactor1 = false;
+    double tightTol = 1.0e-15;
+    CheckQuartic (0,1,2,3, tightTol);
+    double mediumTol = 1.0e-10;
+    for (auto delta: bvector<double>{1, 3,7,10})
+        {
+        CheckQuartic (-11, -10, 10, 10 + delta, mediumTol);
+        }
+    // symmetry with varying spread
+    for (auto delta: bvector<double>{0.1, 1,5, 10})
+        CheckQuartic (-100, -100 + delta, 100 - delta, 100, mediumTol);
 
     double a = 100.0;
     double b = 1000.0;
     double e = 1.0;
-    CheckQuartic (a, a + e, b, b + e/3);
+    double looseTol = 1.0e-5;
+    for (auto factor : bvector<double>{1, 0.1, 3, 6, 100})
+        {
+        CheckQuartic (a, a + e, b, b + e/factor, looseTol);
+        if (s_applyFactor1)
+            {
+            // this has a bad tolerance problem for factor==3 with factor1 applied .. (cubic disriminant is near root.)
+            double factor1 = 1.0 / 64.0;
+            CheckQuartic (a * factor1, (a + e) * factor1, b * factor1, (b + e / factor) * factor1, looseTol);
+            }
+        }
+    }
+
+void CompareAnalyticQuarticWithBezier (double c0, double c1, double c2, double c3, double c4)
+    {
+    double coffs[5];
+    coffs[0] = c0;
+    coffs[1] = c1;
+    coffs[2] = c2;
+    coffs[3] = c3;
+    coffs[4] = c4;
+    double roots1[4];
+    int numRoots1 = AnalyticRoots::SolveQuartic (coffs, roots1);
+    std::sort (roots1, roots1 + numRoots1);
+    double roots2[10];
+    int numRoots2;
+    bsiBezier_univariateStandardRoots (roots2, &numRoots2, coffs, 4);
+    std::sort (roots2, roots2 + numRoots2);
+    if (Check::Int (numRoots1, numRoots2, "Quartic root counts"))
+        {
+        for (int i = 0; i < numRoots1; i++)
+            Check::Near (roots1[i], roots2[i], "Compare roots");
+        }
+    }
+TEST(AnalyticRoots,QuarticFailureA)
+    {
+    CompareAnalyticQuarticWithBezier (3, -11.2, 6.279999999999999, 8.24, -3.32);
+    CompareAnalyticQuarticWithBezier (3.2125, -11.87, 7.039999999999999, 8.06, -3.6300000000000003);
     }

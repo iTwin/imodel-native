@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/analyticroots.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -56,11 +56,14 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 // TODO: merge this with the fuzz handling in GeomUtil (or at least review it).
 static double EQN_EPS = 1.0e-9;
-static double IsZero (double x)
+static bool IsZero (double x)
     {
     return fabs (x) < EQN_EPS;
     }
-
+static bool IsSmallRatio (double x, double y, double abstol = 1.0e-9,  double reltol = 8.0e-16)
+    {
+    return fabs (x) <= abstol || fabs (x) < reltol * fabs (y);
+    }
 
 
 
@@ -313,14 +316,14 @@ int AnalyticRoots::SolveQuartic(double c[5], double s[4])
             u = z * z - r;
             v = 2 * z - p;
 
-            if (IsZero(u))
+            if (IsSmallRatio (u, r))
                 u = 0;
             else if (u > 0)
                 u = sqrt(u);
             else
                 return 0;
 
-            if (IsZero(v))
+            if (IsSmallRatio(v, p))
                 v = 0;
             else if (v > 0)
                 v = sqrt(v);

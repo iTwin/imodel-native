@@ -218,6 +218,7 @@ void FixupLoops (bvector<bvector<DPoint3d>> const &loops, bvector<bvector<DPoint
 
 void TestFixupLoops (bvector<bvector<DPoint3d>> &loops, bool expectAreaMatch, bool fixupStacks = true)
     {
+    static int s_noisy = 0;
     auto range = DRange3d::From (loops);
     SaveAndRestoreCheckTransform shifter (2.0 * range.XLength (), 0,0);
     bvector<bvector<DPoint3d>> tiles;
@@ -225,7 +226,8 @@ void TestFixupLoops (bvector<bvector<DPoint3d>> &loops, bool expectAreaMatch, bo
     for (auto &loop : loops)
         {
         area0 += PolygonOps::AreaXY (loop);
-        Check::Print (loop, "LOOP");
+        if (s_noisy)
+            Check::Print (loop, "LOOP");
         Check::SaveTransformed (loop);
         }
     Check::Shift (0, 1.1 * range.YLength (), 0.0);
@@ -233,19 +235,23 @@ void TestFixupLoops (bvector<bvector<DPoint3d>> &loops, bool expectAreaMatch, bo
     for (auto &tile : tiles)
         {
         area1 += PolygonOps::AreaXY (tile);
-        Check::Print (tile, "TILE");
+        if (s_noisy)
+            Check::Print (tile, "TILE");
         auto cv = CurveVector::CreateLinear (tile, CurveVector::BOUNDARY_TYPE_Outer);
         Check::SaveTransformed (*cv);
         }
-    Check::PrintIndent (2);
-    Check::Print (area0, "loopsArea");
-    Check::Print (area1, "tileArea");
-    Check::Print (area1 - area0, "delta");
-    if (!DoubleOps::AlmostEqual (fabs (area0), fabs (area1)))
-        if (expectAreaMatch)
-            Check::Print ("Area Mismatch");
-        else
-            Check::Print ("(this is ok -- these areas are not expected to match)");
+    if (s_noisy)
+        {
+        Check::PrintIndent (2);
+        Check::Print (area0, "loopsArea");
+        Check::Print (area1, "tileArea");
+        Check::Print (area1 - area0, "delta");
+        if (!DoubleOps::AlmostEqual (fabs (area0), fabs (area1)))
+            if (expectAreaMatch)
+                Check::Print ("Area Mismatch");
+            else
+                Check::Print ("(this is ok -- these areas are not expected to match)");
+        }
     if (expectAreaMatch)
         Check::Near (fabs (area0), fabs (area1), "tiled aream matches raw");
     }

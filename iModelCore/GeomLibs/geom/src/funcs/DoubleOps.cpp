@@ -47,6 +47,15 @@ double DoubleOps::PreciseSum (double a, double b, double c)
     return DoubleOps::PreciseSum (data, 3);
     }
 
+double DoubleOps::PreciseSum (double a, double b, double c, double d)
+    {
+    double data[4];
+    data[0] = a;
+    data[1] = b;
+    data[2] = c;
+    data[3] = d;
+    return DoubleOps::PreciseSum (data, 4);
+    }
 
 double DoubleOps::Sum (double * data, int n)
     {
