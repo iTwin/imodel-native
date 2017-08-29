@@ -281,9 +281,9 @@ Utf8String  Utils::FractionBarName(FractionBarType bar)
 
 FractionBarType Utils::NameToFractionBarType(Utf8CP name)
     {
-    if (stricmp(name, "diagonal") == 0) return FractionBarType::Diagonal;
-    if (stricmp(name, "oblique") == 0) return FractionBarType::Oblique;
-    if (stricmp(name, "horizontal") == 0) return FractionBarType::Horizontal;
+    if (BeStringUtilities::StricmpAscii(name, "diagonal") == 0) return FractionBarType::Diagonal;
+    if (BeStringUtilities::StricmpAscii(name, "oblique") == 0) return FractionBarType::Oblique;
+    if (BeStringUtilities::StricmpAscii(name, "horizontal") == 0) return FractionBarType::Horizontal;
     return FractionBarType::None;
     }
 

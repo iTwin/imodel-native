@@ -187,7 +187,6 @@ private:
     UnitCP m_unit;
     Utf8String m_synonym;
 
-
     UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
 public:
     UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
@@ -195,8 +194,8 @@ public:
     UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
     UNITS_EXPORT UnitSynonymMap(Json::Value jval);
     bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
-    Utf8CP GetSynonym() { return m_synonym.c_str(); }
-    UnitCP GetUnit() { return m_unit; }
+    Utf8CP GetSynonym() const { return m_synonym.c_str(); }
+    UnitCP GetUnit() const { return m_unit; }
     UNITS_EXPORT Json::Value ToJson();
     };
 
@@ -239,6 +238,7 @@ public:
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName);
     UNITS_EXPORT UnitCP FindSynonym(Utf8CP unitName);
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
+    UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map);
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

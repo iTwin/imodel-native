@@ -463,3 +463,9 @@ void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     m_altNames.push_back(map);
     }
 
+void Phenomenon::AddSynonymMap(UnitSynonymMapCR map)
+    {
+    UnitCP un = FindSynonym(map.GetSynonym());
+    if (nullptr == un)
+        m_altNames.push_back(map);
+    }
