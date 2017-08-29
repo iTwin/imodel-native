@@ -336,7 +336,7 @@ struct LasVLR
 #else
 #define GEOTIFFKEYSLISTCONST
 #endif
-struct GeoTiffKeysList : IGeoTiffKeysList
+struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
     {
     struct sGeoKeys
         {
