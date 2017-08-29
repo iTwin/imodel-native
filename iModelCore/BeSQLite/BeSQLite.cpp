@@ -826,6 +826,28 @@ Savepoint* Db::GetSavepoint(int32_t depth) const
     return (depth<0 || depth>=GetCurrentSavepointDepth()) ? nullptr : m_dbFile->m_txns[depth];
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                       08/17
+This method is called by ECDb when ever it want to change table. Though this is temprory fix for YII
+In my view besqlite could us https://sqlite.org/c3ref/set_authorizer.html to capture ddl and filter on 
+https://sqlite.org/c3ref/c_alter_table.html
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::ExecuteDdl(Utf8CP ddl) const
+    {
+    DbResult result = ExecuteSql(ddl);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return result;
+        }
+
+    if (ChangeTracker* tracker = m_dbFile->m_tracker.get())
+        result = tracker->RecordDbSchemaChange(ddl);
+
+    return result;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
