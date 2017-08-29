@@ -1966,6 +1966,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     EXPECT_TRUE(0 == foundValues);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Carole.MacDonald                     08/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     {
     ECSchemaPtr testSchema;
@@ -2715,7 +2718,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                       Casey.Mullen              10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
@@ -2735,7 +2738,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Bill.Steinbock                 08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
@@ -2756,7 +2759,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Bill.Steinbock                       03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
@@ -2819,7 +2822,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                    Carole.MacDonald               05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
@@ -3278,6 +3281,9 @@ TEST_F(MemoryLayoutTests, TestRemovingArrayEntries)
     validateArrayCount(*instance, "ManufacturerArray", 3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Bill.Steinbock                 08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, IterateCompleClass)
     {
     ECSchemaPtr schema = CreateTestSchema();
@@ -3345,6 +3351,9 @@ TEST_F(MemoryLayoutTests, IterateCompleClass)
     //dumpPropertyValues (*collection, false, 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                       Casey.Mullen              01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
@@ -3369,7 +3378,9 @@ TEST_F(MemoryLayoutTests, ProfileSettingValues)
         instance->GetAsMemoryECInstanceP()->ClearValues();
         }
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Carole.MacDonald              03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GeometrySetGet)
     {
     ECSchemaPtr testSchema;
