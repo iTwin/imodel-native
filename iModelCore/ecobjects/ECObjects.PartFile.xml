@@ -23,7 +23,6 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
 
@@ -47,7 +46,6 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
-            <PublicAPI Domain="ECPresentationRules" />
             <PublicAPI Domain="ECUnits" />
         </Bindings>
     </Part>

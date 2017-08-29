@@ -1989,6 +1989,7 @@ public:
     //! Return Json array of allowable presentation units.
     ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     bool IsUnitComparable(Utf8CP unitName) {return Utf8String::IsNullOrEmpty(unitName) ? false : m_persistenceFUS.IsUnitComparable(unitName);}
+    ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
 };
 
 //---------------------------------------------------------------------------------------
