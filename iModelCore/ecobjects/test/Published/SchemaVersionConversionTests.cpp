@@ -121,6 +121,9 @@ void CreateExpectedWithOutAttributes(bvector<ExpectedClassMetaData>& expectedCla
     expectedClasses.push_back(ExpectedClassMetaData("RelationshipConcrete", ECClassType::Relationship, ECClassModifier::None));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_ConversionSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -137,6 +140,9 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_ConversionSchema)
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_NoConversionSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -152,6 +158,9 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_NoConversionSchema)
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -168,6 +177,9 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema)
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSchema)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
@@ -203,6 +215,9 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaVersionConversionTests, OldUnitsWithKoqNameConflicts)
     {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -234,6 +249,9 @@ TEST_F(SchemaVersionConversionTests, OldUnitsWithKoqNameConflicts)
     ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Colin.Kerr                       05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
 TEST_F(SchemaVersionConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
     {
