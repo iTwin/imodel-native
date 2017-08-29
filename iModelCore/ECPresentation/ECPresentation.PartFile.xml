@@ -41,6 +41,17 @@
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // NuGet package creation                                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="NuGetPackage" BentleyBuildMakeFile="ECPresentation.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="ECPresentation" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\ECPresentation.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Part Name="ECPresentation-Xliffs" BentleyBuildMakeFile="Localization/Xliffs.mke">
