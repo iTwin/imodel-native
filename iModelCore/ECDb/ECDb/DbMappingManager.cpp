@@ -1452,6 +1452,28 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
         return ERROR;
         }
 
+    //DEBUG Code
+    //if (navPropMap.GetClassMap().GetClass().GetName() == "LineBetweenElementsRule")
+    //    {
+    //    navPropMap.GetClassMap().GetColumnFactory().Debug();
+    //    for (auto partiton : fkRelMappingInfo.GetPartitionView()->GetPartitions())
+    //        {
+    //        auto navColumns = partiton->GetNavigationColumns();
+    //        printf("%s [Id=%s, Rel=%s]\n", 
+    //               partiton->GetTable().GetName().c_str(), 
+    //               navColumns.GetIdColumn().GetName().c_str(), 
+    //               navColumns.GetRelECClassIdColumn().GetName().c_str());
+    //        }
+
+    //    //SearchPropertyMapVisitor  visitor;
+    //    //navPropMap.GetClassMap().GetPropertyMaps().AcceptVisitor(visitor);
+    //    //for (auto propertyMap : visitor.Results())
+    //    //    {
+    //    //    if (dynamic_cast<SingleColumnDataPropertyMap const*> (propertyMap) != nullptr)
+    //    //        printf("AccessString = %s, Column = %s\n", propertyMap->GetAccessString().c_str(), propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str());
+    //    //    }
+
+    //    }
     if (auto partition = fkRelMappingInfo.GetPartitionView()->FindCompatiblePartiton(navPropMap))
         {
         auto navColumns = partition->GetNavigationColumns();
@@ -1463,7 +1485,19 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
 
         return SUCCESS;
         }
-   
+    else
+        {
+        DbColumn const* idColumn = navPropMap.GetClassMap().GetColumnFactory().FindColumn((navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId).c_str());
+        DbColumn const* relECClassIdColumn = navPropMap.GetClassMap().GetColumnFactory().FindColumn((navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropRelECClassId).c_str());
+        if (idColumn != nullptr&& relECClassIdColumn != nullptr)
+            {
+            if (navPropMap.SetMembers(*idColumn, *relECClassIdColumn, fkRelMappingInfo.GetRelationshipClass().GetId()) != SUCCESS)
+                return ERROR;
+
+            return SUCCESS;
+            }
+        }
+
     FkRelationshipMappingInfo::ForeignKeyColumnInfo fkColInfo;
     DbColumn* columnRefId = CreateForeignKeyColumn(fkColInfo, ctx, fkRelMappingInfo, const_cast<DbTable&>(navPropMap.GetClassMap().GetJoinedOrPrimaryTable()), navPropMap);
     if (columnRefId == nullptr)
