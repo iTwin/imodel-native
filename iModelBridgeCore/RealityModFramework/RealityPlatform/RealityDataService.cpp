@@ -322,11 +322,8 @@ void RealityDataAllEnterpriseStatsRequest::_PrepareHttpRequestStringAndPayload()
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/EnterpriseStat?extended=true");
-    if(!m_encodedId.empty())
-        {
-        Utf8String date = Utf8PrintfString("%d-%d-%d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
-        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
-        }
+    Utf8String date = Utf8PrintfString("&$filter=Date+eq+\'%d-%d-%d\'",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
+    m_httpRequestString.append(date);
     }
 
 //=====================================================================================

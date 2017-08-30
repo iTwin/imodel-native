@@ -110,6 +110,7 @@ private:
     void ForceMassUnlink();
     Utf8String MakeBuddiCall(int region = 0);
 
+    void DisplayStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
 private:    

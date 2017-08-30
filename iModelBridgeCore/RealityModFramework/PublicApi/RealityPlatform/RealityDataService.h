@@ -82,13 +82,13 @@ struct RealityDataAllEnterpriseStatsRequest : public RealityDataUrl
 {
 public:
     // Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest(Utf8StringCR ultimateId, DateTime date = DateTime::GetCurrentTimeUtc()) { m_validRequestString = false; m_id = ultimateId; m_date = date;}
-
+    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest(DateTime date) { m_validRequestString = false; m_date = date;}
+    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest() {m_validRequestString = false; m_date = DateTime::GetCurrentTimeUtc();}
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataAllEnterpriseStatsRequest() {}
+
     DateTime m_date;
 };
 
