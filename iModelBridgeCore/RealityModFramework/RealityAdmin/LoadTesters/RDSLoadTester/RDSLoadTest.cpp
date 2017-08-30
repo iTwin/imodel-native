@@ -332,7 +332,7 @@ bool RDSUser::WrapUp(UserManager* owner)
 
 CURL* RDSUser::ListRealityData()
     {
-    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 25);
+    RealityDataListByUltimateIdPagedRequest organizationReq = RealityDataListByUltimateIdPagedRequest("", 0, 25);
 
     organizationReq.SetFilter(RealityDataFilterCreator::FilterBySize(100, 100000));
 
