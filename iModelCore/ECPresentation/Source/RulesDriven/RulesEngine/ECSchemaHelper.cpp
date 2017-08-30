@@ -872,10 +872,12 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
         if (usedRelationships.end() != usedRelationships.find(relatedClassSpec))
             continue;
 
-        if (0 == depth || depth < 0 && MatchesPathRequest(relatedClassSpec, resolver, include))
+        bool matchesRecursiveRequest = (depth < 0 && MatchesPathRequest(relatedClassSpec, resolver, include));
+
+        if (0 == depth || matchesRecursiveRequest)
             AppendPath(paths, {relatedClassSpec}, include);
 
-        if (0 != depth)
+        if (depth > 0 || matchesRecursiveRequest)
             {
             specs.push_back(relatedClassSpec);
             usedRelationships.insert(relatedClassSpec);
