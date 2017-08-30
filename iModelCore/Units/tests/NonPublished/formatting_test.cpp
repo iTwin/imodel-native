@@ -200,6 +200,17 @@ TEST(FormattingTest, Json)
          FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
         }
     LOG.info("================  All Std formats to Json (end)");
+    NumericFormatSpecCP nfsP;
+    NamedFormatSpecCP nSpec;
+    bool stop = false;
+    for (int i = 0; i < stdNames.size(); i++)
+        {
+        nSpec = StdFormatSet::FindFormatSpec(stdNames[i]);
+        nfsP = nSpec->GetNumericSpec();
+        if (BeStringUtilities::StricmpAscii("NormalizedExp", nSpec->GetName()) == 0)
+            stop = true;
+        FormattingTestFixture::NumericFormatSpecJsonTest(*nfsP);
+        }
     }
 
 TEST(FormattingTest, Pasring)

@@ -364,11 +364,13 @@ struct FormatProblemDetail
 struct Utils
     {
     UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
+    UNITS_EXPORT static ShowSignOption NameToSignOption(Utf8CP name);
     static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
     UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
     UNITS_EXPORT static Utf8CP GetParameterCategoryName(ParameterCategory parcat);
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
+    UNITS_EXPORT static PresentationType NameToPresentationType(Utf8CP name);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
     UNITS_EXPORT static Utf8String DecimalPrecisionName(DecimalPrecision prec);
     UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);
@@ -413,14 +415,20 @@ struct FormatConstant
         static Utf8String FPN_FormatName() { return "FormatName"; }
         static Utf8String FPN_Name() { return "name"; }
         static Utf8String FPN_Alias() { return "alias"; }
+
+
         static Utf8String FPN_NoSign() { return "NoSign"; }
         static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
         static Utf8String FPN_SignAlways() { return "SignAlways"; }
         static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+
+
         static Utf8String FPN_Decimal() { return "Decimal"; }
         static Utf8String FPN_Fractional() { return "Fractional"; }
         static Utf8String FPN_Scientific() { return "Scientific"; }
         static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
+        static Utf8String FPN_Stop100() { return "Stop100"; }
+        static Utf8String FPN_Stop1000() { return "Stop1000"; }
         static Utf8String FPN_Binary() { return "Binary"; }
         static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
         static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }

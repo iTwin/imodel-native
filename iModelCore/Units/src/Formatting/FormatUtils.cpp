@@ -164,11 +164,19 @@ Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
     {
     switch (opt)
         {
-        case ShowSignOption::OnlyNegative: return "OnlyNegative";
-        case ShowSignOption::SignAlways: return "SignAlways";
-        case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
-        default: return "NoSign";
+        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
+        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
+        case ShowSignOption::NegativeParentheses: FormatConstant::FPN_NegativeParenths();
+        default: return FormatConstant::FPN_NoSign();
         }
+    }
+
+ShowSignOption Utils::NameToSignOption(Utf8CP name)
+    {
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) return ShowSignOption::OnlyNegative;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_SignAlways().c_str()) == 0) return ShowSignOption::SignAlways;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NegativeParenths().c_str()) == 0) return ShowSignOption::NegativeParentheses;
+    return ShowSignOption::NoSign;
     }
 
 Utf8String Utils::AccumulatorStateName(AccumulatorState state)
@@ -246,10 +254,22 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
         {
         case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
         case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
-        case PresentationType::ScientificNorm: return FormatConstant::FPN_Scientific();
+        case PresentationType::ScientificNorm: return FormatConstant::FPN_ScientificNorm();
+        case PresentationType::Stop100: return FormatConstant::FPN_Stop100();
+        case PresentationType::Stop1000: return FormatConstant::FPN_Stop1000();
         default:
         case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
         }
+    }
+
+PresentationType Utils::NameToPresentationType(Utf8CP name)
+    {
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Fractional().c_str()) == 0) return PresentationType::Fractional;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Scientific().c_str()) == 0) return PresentationType::Scientific;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_ScientificNorm().c_str()) == 0) return PresentationType::ScientificNorm;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Stop100().c_str()) == 0) return PresentationType::Stop100;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Stop1000().c_str()) == 0) return PresentationType::Stop1000;
+    return PresentationType::Decimal;
     }
 
 //----------------------------------------------------------------------------------------

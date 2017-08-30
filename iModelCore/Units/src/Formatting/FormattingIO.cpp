@@ -117,11 +117,16 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
         {
         Utf8CP paramName;
         Utf8String str;
+        Utf8String jStr = jval.ToString();
         for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
             {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
+            if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
+                {
+                m_presentationType = Utils::NameToPresentationType(val.asCString());
+                }
+            else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
                 {
                 m_roundFactor = val.asDouble();
                 }
@@ -132,6 +137,10 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
             else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
                 {
                 m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
+                }
+            else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
+                {
+                m_signOption = Utils::NameToSignOption(val.asCString());
                 }
             else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
                 {
@@ -164,8 +173,8 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
                 {
                 TraitsFromJson(val);
                 }
-            }
-        }
+            } // for
+        }// not empty
     }
 
 FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
@@ -264,7 +273,7 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
     if (verbose || m_decPrecision != defSpec.m_decPrecision)
         jNFC[json_decPrec()] = Utils::DecimalPrecisionToInt(m_decPrecision);
     if (verbose || m_fractPrecision != defSpec.m_fractPrecision)
-        jNFC[json_fractPrec()] = Utils::FractionallPrecisionName(m_fractPrecision);
+        jNFC[json_fractPrec()] = Utils::FractionalPrecisionDenominator(m_fractPrecision);
     if (verbose || m_formatTraits != defSpec.m_formatTraits)
         jNFC[json_formatTraits()] = JsonFormatTraits(verbose);
     if (verbose || m_barType != defSpec.m_barType)
