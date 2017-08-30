@@ -860,7 +860,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityData(timeStats& theTimeS
 StatusInt RealityDataServicePerformanceTests::GetRealityDataWithFilter(timeStats& theTimeStats)
     {
 
-    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
+    RealityDataListByUltimateIdPagedRequest organizationReq = RealityDataListByUltimateIdPagedRequest("", 0, 2500);
     organizationReq.SetQuery("ONLY");
 
     RawServerResponse organizationResponse = RawServerResponse();
@@ -913,7 +913,7 @@ StatusInt RealityDataServicePerformanceTests::GetRealityDataWithPolygon(timeStat
 
 
 
-    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
+    RealityDataListByUltimateIdPagedRequest organizationReq = RealityDataListByUltimateIdPagedRequest("", 0, 2500);
 
     bvector<RDSFilter> properties = bvector<RDSFilter>();
     properties.push_back(RealityDataFilterCreator::FilterSpatial(myFootprint, 4326));

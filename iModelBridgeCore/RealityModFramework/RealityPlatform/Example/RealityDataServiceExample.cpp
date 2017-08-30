@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving spatial entities with filter" << std::endl;
 
-    RealityDataListByOrganizationPagedRequest* organizationReq = new RealityDataListByOrganizationPagedRequest(organizationId);
+    RealityDataListByUltimateIdPagedRequest* organizationReq = new RealityDataListByUltimateIdPagedRequest(organizationId);
     RawServerResponse organizationResponse = RawServerResponse();
     bvector<RealityDataPtr> organizationVec = RealityDataService::Request(*organizationReq, organizationResponse);
 

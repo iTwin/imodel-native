@@ -234,19 +234,19 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestSetProject)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequest)
+TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequest)
 	{
-	RealityDataListByOrganizationPagedRequest requestUT("MyIdentifier",77,75);
+    RealityDataListByUltimateIdPagedRequest requestUT("MyIdentifier",77,75);
 
-	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=OrganizationId+eq+'MyIdentifier'&$skip=77&$top=75");
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=UltimateId+eq+'MyIdentifier'&$skip=77&$top=75");
 	}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestEmptyID)
+TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequestEmptyID)
 	{
-	RealityDataListByOrganizationPagedRequest requestUT("",77,75);
+    RealityDataListByUltimateIdPagedRequest requestUT("",77,75);
 
 	auto filter = RealityDataFilterCreator::FilterByName("MyName");
 	requestUT.SetFilter(filter);
@@ -257,7 +257,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestEmpty
 	auto requestString = requestUT.GetHttpRequestString();
 	//e82a584b%2D9fae%2D409f%2D9581%2Dfd154f7b9ef9 <= Bentley OrganizationId
         // OrganizationID seems to change base on the connection client channel
-	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=OrganizationId+eq+'"));
+	EXPECT_THAT(requestString.c_str(), HasSubstr("https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=UltimateId+eq+'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("+and+Name+eq+'MyName'"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$orderby=AccuracyInMeters+desc"));
 	EXPECT_THAT(requestString.c_str(), HasSubstr("&$skip=77&$top=75"));
@@ -654,15 +654,15 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestBadRequest)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestBadRequest)
+TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequestBadRequest)
 	{
-	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataListByOrganizationPagedRequest failed with response"), _)).Times(1);
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataListByUltimateIdPagedRequest failed with response"), _)).Times(1);
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::BADREQ;
 		}));
 
-	RealityDataListByOrganizationPagedRequest requestUT("RealityDataID");
+    RealityDataListByUltimateIdPagedRequest requestUT("RealityDataID");
 	RawServerResponse rawResponse{};
 
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
@@ -1131,7 +1131,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestGoodRequest)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestGoodRequest)
+TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequestGoodRequest)
 	{
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
@@ -1142,7 +1142,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByOrganizationPagedRequestGoodR
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\MultipleRealityData.json");  
 		}));
 
-	RealityDataListByOrganizationPagedRequest requestUT("RootID");
+    RealityDataListByUltimateIdPagedRequest requestUT("RootID");
 	RawServerResponse rawResponse{};
    
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);
@@ -1532,9 +1532,9 @@ TEST_F(RealityDataServiceBadComponentsFixture, RealityDataFolderByIdRequestBadCo
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceBadComponentsFixture, RealityDataListByOrganizationPagedRequestBadComponents)
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataListByUltimateIdPagedRequestBadComponents)
 	{
-	RealityDataListByOrganizationPagedRequest requestUT("RealityDataID");
+    RealityDataListByUltimateIdPagedRequest requestUT("RealityDataID");
 	RawServerResponse rawResponse{};
 
 	auto realityDataVector = s_realityDataService->Request(requestUT ,rawResponse);
