@@ -57,7 +57,6 @@
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
-STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralElement)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralMember)
 STRUCTURAL_POINTER_TYPEDEFS(SurfaceMember)

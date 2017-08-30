@@ -3,6 +3,9 @@
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
     <ECEntityClass typeName="StructuralElement" modifier="Abstract">
         <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass displayLabel = "Structural Member" typeName="StructuralMember" modifier="Abstract">
         <BaseClass>StructuralElement</BaseClass>

@@ -16,6 +16,10 @@ DOMAIN_DEFINE_MEMBERS(StructuralPhysicalDomain)
 //---------------------------------------------------------------------------------------
 StructuralPhysicalDomain::StructuralPhysicalDomain() : DgnDomain(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "Bentley Structural Physical Domain", 1)
     {
+    RegisterHandler(StructuralElementHandler::GetHandler());
+    RegisterHandler(StructuralMemberHandler::GetHandler());
+    RegisterHandler(SurfaceMemberHandler::GetHandler());
+    RegisterHandler(WallHandler::GetHandler());
     // TODO: register handlers once they are created
     /*RegisterHandler(StructuralElementHandler::GetHandler());
     RegisterHandler(StructuralMemberHandler::GetHandler());

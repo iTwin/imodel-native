@@ -52,9 +52,6 @@
     <None Include="StructuralProfiles\StructuralProfiles.prewire.mki">
       <Filter>Mke</Filter>
     </None>
-    <None Include="StructuralMaterial\StructuralMaterial.prewire.mki">
-      <Filter>Mke</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="StructuralDomains.Partfile.xml">
@@ -67,9 +64,6 @@
       <Filter>Schemas</Filter>
     </Xml>
     <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
-      <Filter>Schemas</Filter>
-    </Xml>
-    <Xml Include="StructuralMaterial\StructuralMaterial.ecschema.xml">
       <Filter>Schemas</Filter>
     </Xml>
   </ItemGroup>

@@ -8,6 +8,9 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
+
+#include <StructuralDomain/StructuralCommon/StructuralCommonDefinitions.h>
+#include <StructuralDomain/StructuralDomainApi.h>
 #include "SurfaceMember.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
@@ -30,7 +33,10 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Wall)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Wall)
 
-    STRUCTURAL_DOMAIN_EXPORT static WallPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static WallPtr Create(Structural::StructuralPhysicalModelCPtr model);
+
+    STRUCTURAL_DOMAIN_EXPORT WallCPtr Insert(Dgn::DgnDbStatus* insertStatus = nullptr);
+    STRUCTURAL_DOMAIN_EXPORT WallCPtr Update(Dgn::DgnDbStatus* updateStatus = nullptr);
     };
 
 //=======================================================================================

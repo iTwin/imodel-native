@@ -22,7 +22,6 @@
     <None Include="structural.mke" />
     <None Include="Structural.prewire.mke" />
     <None Include="StructuralCommon\StructuralCommon.prewire.mki" />
-    <None Include="StructuralMaterial\StructuralMaterial.prewire.mki" />
     <None Include="StructuralPhysical\StructuralPhysical.prewire.mki" />
     <None Include="StructuralProfiles\StructuralProfiles.prewire.mki" />
   </ItemGroup>
@@ -33,8 +32,9 @@
     <Xml Include="StructuralDomains.Partfile.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="StructuralMaterial\StructuralMaterial.ecschema.xml" />
-    <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml" />
+    <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>

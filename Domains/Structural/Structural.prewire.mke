@@ -19,6 +19,4 @@ $(targetAPIDir)StructuralDomainUtilities.h : $(_MakeFilePath)PublicAPI\Structura
 
 %include $(_MakeFilePath)StructuralCommon/StructuralCommon.prewire.mki
 %include $(_MakeFilePath)StructuralPhysical/StructuralPhysical.prewire.mki
-%include $(_MakeFilePath)StructuralProfiles/StructuralProfiles.prewire.mki
-%include $(_MakeFilePath)StructuralMaterial/StructuralMaterial.prewire.mki
-    
+%include $(_MakeFilePath)StructuralProfiles/StructuralProfiles.prewire.mki    

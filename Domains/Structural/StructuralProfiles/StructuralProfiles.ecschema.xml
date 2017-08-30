@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralProfiles" alias="StrProf" version="01.00.00" description="Structural Profile Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-  
     <ECEntityClass typeName="Profile" description="A structural cross section profile (2D shape)." modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
     </ECEntityClass>
-    
     <ECEntityClass typeName="ConstantProfile" description="A Profile that does not varying along its length (unlike Varying Profile).">
         <BaseClass>Profile</BaseClass>
         <!--<ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.ISurfaceGroup"/>
@@ -13,11 +11,9 @@
         <ECArrayProperty propertyName="AlternateShapeClassification" typeName="string" description="Alternative ways shape can be classified. See ShapeClassification for list of standard values." minOccurs="1" maxOccurs="1"/>
         <ECProperty propertyName="ShapeClassification" typeName="string" description="The primary classification of the shape. Leave unset if unknown. Standard values are&quot;BentPlate&quot;, &quot;C&quot;, &quot;DoubleL&quot;, &quot;HollowCircle&quot;, &quot;HollowRectangle&quot;, &quot;I&quot;, &quot;L&quot;, &quot;RoundedC&quot;, &quot;RoundedLippedC&quot;, &quot;RoundedLippedZ&quot;, &quot;RoundedHollowRectangle&quot;, &quot;RoundedZ&quot;, &quot;SchifflerizedL&quot;, &quot;SolidCircle&quot;, &quot;SolidRectangle&quot;, &quot;T&quot;."/>-->
     </ECEntityClass>
-    
     <ECEntityClass typeName="BuiltUpProfile" description="A Constant Profile that is built up from other Constant Profiles.">
         <BaseClass>ConstantProfile</BaseClass>
     </ECEntityClass>
-    
     <ECEntityClass typeName="BuiltUpProfileComponent">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order in which this component was added to its BuiltUpProfile."/>
@@ -30,7 +26,6 @@
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
-    
     <ECRelationshipClass typeName="BuiltUpProfileOwnsComponent" description="BuildUpProfile's ownership of BuildUpProfileComponent." modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="BuiltUpProfileOwnsComponent" polymorphic="false">
@@ -40,7 +35,6 @@
             <Class class="BuiltUpProfileComponent"/>
         </Target>
     </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ProfileComponentUsesProfile" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="ProfileComponentUsesProfile" polymorphic="false">
             <Class class="BuiltUpProfileComponent"/>
@@ -49,12 +43,10 @@
             <Class class="ConstantProfile"/>
         </Target>
     </ECRelationshipClass>
-        
     <ECEntityClass typeName="ParametricProfile" description="A Constant Profile that can be defined by a small set of dimensions and a known profile type.">
         <BaseClass>ConstantProfile</BaseClass>
         <ECProperty propertyName="InputProperties" typeName="string" description="JSON storage of input properties for the parametric shape."/>
     </ECEntityClass> 
-    
     <ECEntityClass typeName="VaryingProfileZone" description="This aspect defines a zone of a VaryingProfileByZone.">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order of zones within the VaryingProfileByZone."/>
@@ -68,7 +60,6 @@
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
-   
     <ECRelationshipClass typeName="ProfileZoneUsesEndProfile" isDomainClass="True" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="uses start profile" polymorphic="False">
             <Class class="VaryingProfileZone" />
@@ -77,7 +68,6 @@
             <Class class="ConstantProfile" />
         </Target>
     </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ProfileZoneUsesStartProfile" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="uses start profile" polymorphic="False">
             <Class class="VaryingProfileZone" />
@@ -86,22 +76,18 @@
             <Class class="ConstantProfile" />
         </Target>
     </ECRelationshipClass>
-    
     <ECEntityClass typeName="PublishedProfile" description="A Constant Profile that is defined by a standards organization or other publisher.">
         <BaseClass>ConstantProfile</BaseClass>
         <ECProperty propertyName="Publisher" typeName="string" description="Name of the organization that published this profile."/>
         <ECProperty propertyName="Document" typeName="string" description="The name of the document, catalog or standard that this profile was published in."/>
         <ECProperty propertyName="Version" typeName="string" description="The version of the document, catalog or standard that that published this profile."/>
     </ECEntityClass>
-    
     <ECEntityClass typeName="VaryingProfile" description="A Profile that varies along its length (unlike Constant Profile)." modifier="Abstract">
         <BaseClass>Profile</BaseClass>
     </ECEntityClass>
-    
     <ECEntityClass typeName="VaryingProfileByZone" description="A Varying Profile that is defined using zones along its length.">
         <BaseClass>VaryingProfile</BaseClass>
     </ECEntityClass>
-    
     <ECRelationshipClass typeName="VaryingProfileOwnsZone" description="VaryingProfileByZone's ownership of VaryingProfileZone." modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>                    
         <Source multiplicity="(1..1)" roleLabel="owns zone" polymorphic="false">

@@ -159,9 +159,119 @@ TEST_F(StructuralDomainTestFixture, WallClassTests)
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, WALL_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
+    }
 
+#define WALL_CODE_VALUE2       "WALL2-001"
 
+const double COLUMN_WIDTH = 12.0;
+const double COLUMN_DEPTH = 12.0;
+const double COLUMN_HEIGHT = 120.0;
+const double COLUMN_OFFSET = COLUMN_WIDTH / 2.0;
+const double WALL_WIDTH = 216.0;
+const double WALL_DEPTH = 120.0;
+const double WALL_THICKNESS = 8.0;
+const double WALL_OFFSET = (COLUMN_DEPTH - WALL_THICKNESS) / 2.0;
 
+TEST_F(StructuralDomainTestFixture, WallClassTests2)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    Dgn::DgnDbStatus status;
+
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, WALL_CODE_VALUE2);
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    //test geometry
+    Dgn::Placement3d placement;
+    placement.GetOriginR() = DPoint3d::From(0.0, 0.0, 0.0);
+
+    pw->SetPlacement(placement);
+
+    Transform matrixEmpty;
+    matrixEmpty.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+
+    Transform rotationMatrix;
+    Transform linearMatrix;
+
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET, WALL_THICKNESS + WALL_OFFSET, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*pw);
+    builder->Append(pw->GetCategoryId());
+
+    Dgn::Render::GeometryParams params;
+    params.SetCategoryId(pw->GetCategoryId());
+
+    Dgn::ColorDef lineColor;
+    Dgn::ColorDef fillColor;
+    lineColor.SetColors(0, 0, 255, 0);
+    fillColor.SetColors(0, 255, 255, 0);
+
+    params.SetLineColor(lineColor);
+    params.SetFillColor(fillColor);
+    builder->Append(params);
+
+    DPoint3d points[4];
+    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
+    points[1] = DPoint3d::From(100.0, 0.0, 0.0);
+    points[2] = DPoint3d::From(100.0, 50.0, 0.0);
+    points[3] = DPoint3d::From(0.0, 50.0, 0.0);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+
+    DVec3d vec = DVec3d::From(0.0, 0.0, 80.0);
+
+    // Create member
+    ISolidPrimitivePtr member = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(shape, vec, true));
+
+    member->TransformInPlace(rotationMatrix);
+    member->TransformInPlace(linearMatrix);
+
+    if (!builder->Append(*member))
+        {
+        ASSERT_TRUE(false);
+        }
+
+    builder->Finish(*pw);
+    //end test geometry
+
+    pw->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    bool bTrue = true;
+    Json::Value jsonObj1 = pw->GetJsonProperties("TEST1");
+    jsonObj1["Is it true?"] = bTrue;
+    pw->SetJsonProperties("TEST1", jsonObj1);
+
+    Json::Value jsonObj2 = pw->GetJsonProperties("TEST2");
+    jsonObj2["Wall Thickness"] = 0.1457824578;
+    pw->SetJsonProperties("TEST2", jsonObj2);
+
+    /*pw->SetThickness(5.5);
+
+    double thickness = pw->GetThickness();
+
+    ASSERT_TRUE(5.5 == thickness);*/
+
+    pw->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, WALL_CODE_VALUE2);
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    /*double queriedThickness = queriedElement->GetPropertyValueDouble("Thickness");
+
+    ASSERT_EQ(queriedThickness, thickness);*/
     }
 
 #define BRACE_CODE_VALUE       "BRACE-001"
