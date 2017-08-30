@@ -1018,6 +1018,9 @@
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
