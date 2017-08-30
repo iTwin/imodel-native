@@ -155,7 +155,7 @@ static double SmallerUnorientedRadiansTo (VectorType const &vector0, VectorType 
     {
     VectorProducts<VectorType> p (vector0, vector1);
     p.ForcePositive ();
-    return p.crossMag < p.dot ? atan2 (p.crossMag,p.dot) : atan2 (p.dot,p.crossMag);
+    return atan2 (p.crossMag,p.dot);
     }
 
 template<typename VectorType>
@@ -163,7 +163,7 @@ static double SmallerUnorientedRadiansToXY (VectorType const &vector0, VectorTyp
     {
     VectorProductsXY<VectorType> p (vector0, vector1);
     p.ForcePositive ();
-    return p.cross < p.dot ? atan2 (p.cross,p.dot) : atan2 (p.dot,p.cross);
+    return atan2 (p.cross,p.dot);
     }
 
 
