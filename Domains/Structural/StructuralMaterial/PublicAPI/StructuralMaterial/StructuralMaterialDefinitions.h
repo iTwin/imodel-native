@@ -13,8 +13,8 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_NAME                        "StructuralMaterial"
-#define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_PATH                        L"ECSchemas/Domain/StructuralMaterial.ecschema.xml"
+#define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_NAME                        BENTLEY_STRUCTURAL_COMMON_SCHEMA_NAME
+#define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_PATH                        BENTLEY_STRUCTURAL_COMMON_SCHEMA_PATH
 #define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA(className)                  BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_NAME "." className
 #define BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_CODE                        BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_NAME
 #define BENTLEY_STRUCTURAL_MATERIAL_AUTHORITY                          BENTLEY_STRUCTURAL_MATERIAL_SCHEMA_NAME
