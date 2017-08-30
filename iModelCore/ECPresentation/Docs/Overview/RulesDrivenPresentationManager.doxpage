@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: docs/overview/RulesDrivenPresentationManager.doxpage $
+|     $Source: Docs/Overview/RulesDrivenPresentationManager.doxpage $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -34,9 +34,9 @@ in @ref GROUP_UnifiedSelection "unified selection".
 /** @page PAGE_PresentationManager Presentation Manager
 @see @ref GROUP_Presentation
 
-@ref BentleyApi::DgnClientFx::Presentation::IECPresentationManager "Presentation manager" and other classes in 
+@ref BentleyApi::ECPresentation::IECPresentationManager "Presentation manager" and other classes in 
 the @ref GROUP_Presentation "EC Presentation module" provide an API to retrieve EC data in a user-friendy way. 
-The @ref BentleyApi::DgnClientFx::Presentation::IECPresentationManager "Presentation manager"
+The @ref BentleyApi::ECPresentation::IECPresentationManager "Presentation manager"
 API consists of 2 parts: @ref SECTION_PresentationManager_Navigation "Navigation-related" 
 and @ref SECTION_PresentationManager_Content "Content-related".
 
@@ -63,8 +63,8 @@ This module is responsible for presenting EC data using @ref PAGE_RulesDrivenPre
 /** @page PAGE_RulesDrivenPresentationManager Rules-Driven Presentation Manager
 @see @ref GROUP_RulesDrivenPresentation
 
-@ref BentleyApi::DgnClientFx::Presentation::RulesDrivenECPresentationManager "Rules-driven presentation manager" is a 
-concrete @ref BentleyApi::DgnClientFx::Presentation::IECPresentationManager "IECPresentationManager" implementation 
+@ref BentleyApi::ECPresentation::RulesDrivenECPresentationManager "Rules-driven presentation manager" is a 
+concrete @ref BentleyApi::ECPresentation::IECPresentationManager "IECPresentationManager" implementation 
 which uses @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRules "presentation rules" to 
 determine the hierarchy and content. 
 
@@ -72,10 +72,10 @@ determine the hierarchy and content.
 
 @section SECTION_RulesDrivenPresentationManager_LocatingRulesets Locating Rules
 RulesDrivenPresentationManager is able to find application-provided rulesets using 
-@ref BentleyApi::DgnClientFx::Presentation::RuleSetLocater "Ruleset locaters". DgnClientFx provides two locaters: 
-@ref BentleyApi::DgnClientFx::Presentation::DirectoryRuleSetLocater "DirectoryRuleSetLocater" and
-@ref BentleyApi::DgnClientFx::Presentation::FileRuleSetLocater "FileRuleSetLocater". Applications are free to create their 
-own locaters as well. The locaters must be registered in the @ref BentleyApi::DgnClientFx::Presentation::RuleSetLocaterManager "locater manager". 
+@ref BentleyApi::ECPresentation::RuleSetLocater "Ruleset locaters". Two locaters are delivered with the library: 
+@ref BentleyApi::ECPresentation::DirectoryRuleSetLocater "DirectoryRuleSetLocater" and
+@ref BentleyApi::ECPresentation::FileRuleSetLocater "FileRuleSetLocater". Applications are free to create their 
+own locaters as well. The locaters must be registered in the @ref BentleyApi::ECPresentation::RuleSetLocaterManager "locater manager". 
 See @ref SECTION_RulesDrivenPresentationManager_SettingUp "examples" for how to do that.
 
 @section SECTION_RulesDrivenPresentationManager_ECExpressions ECExpressions
@@ -86,50 +86,29 @@ rule and ECInstance filtering and value formatting.
 The presentation manager also supports localization described in @subpage PAGE_RulesDrivenPresentationManager_Localization "localization page".
 
 @section SECTION_RulesDrivenPresentationManager_SettingUp Setting Up
-Every application that wants to use rules-driven presentation manager should first make sure it's properly initialized. The 
-best place to initialize @ref BentleyApi::DgnClientFx::Presentation::RulesDrivenECPresentationManager "Rules-driven presentation manager" is
-the @ref BentleyApi::DgnClientFx::DgnClientApp::_OnDgnClientFxInitialized "DgnClientApp::_OnDgnClientFxInitialized" callback.
+Every application that wants to use rules-driven presentation manager should first make sure it's properly initialized. 
 
-The first thing the application should do is register the rules-driven @ref BentleyApi::DgnClientFx::Presentation::IECPresentationManager "IECPresentationManager"
+The first thing the application should do is create and register the rules-driven @ref BentleyApi::ECPresentation::IECPresentationManager "IECPresentationManager"
 implementation:
-$SAMPLECODE_BEGIN[RegisterIECPresentationManager, Register IECPresentationManager]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_RegisterIECPresentationManager.sampleCode
+$SAMPLECODE_BEGIN[SetUpPresentationManager, Set Up IECPresentationManager]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp.sampleCode
 $SAMPLECODE_END
 
-The next step is to register @ref SECTION_RulesDrivenPresentationManager_LocatingRulesets "rule set locaters":
-$SAMPLECODE_BEGIN[RegisterLocaters, Register rule set locaters]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_RegisterLocaters.sampleCode
-$SAMPLECODE_END
-
-If the application is using @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_UserSettings "user settings" and
-wants those settings to be carried across sessions, the local state must be set as a place to persist those settings into:
-$SAMPLECODE_BEGIN[SetLocalState, Set local state]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_SetLocalState.sampleCode
-$SAMPLECODE_END
-
-For the cached content to be correctly discarded when selection changes, the selection manager used by the application
+For the cached content to be correctly discarded when selection changes, the unified selection manager used by the application
 has to be set for rules-driven presentation manager:
 $SAMPLECODE_BEGIN[SetSelectionManager, Set SelectionManager]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_SetSelectionManager.sampleCode
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp_SelectionRelated.sampleCode
 $SAMPLECODE_END
 
-For the property values to be formatted in a user friendly way, an @ref BentleyApi::DgnClientFx::Presentation::IECPropertyFormatter
-"IECPropertyFormatter" should be registered:
-$SAMPLECODE_BEGIN[SetIECPropertyFormatter, Set IECPropertyFormatter]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_SetIECPropertyFormatter.sampleCode
+For apps which allow editing the below part is also needed:
+$SAMPLECODE_BEGIN[SetUpUpdatesHandling, Set Up Updates Handling]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp_UpdateRelated.sampleCode
 $SAMPLECODE_END
 
-For the rules-driven controls to automatically update when something changes in ECDb,
-an @ref BentleyApi::DgnClientFx::Presentation::ECInstanceChangeEventSource "ECInstanceChangeEventSource" should
-be registered to notify the presentation manager about those changes:
-$SAMPLECODE_BEGIN[RegisterECInstanceChangeEventSource, Register ECInstanceChangeEventSource]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_RegisterECInstanceChangeEventSource.sampleCode
-$SAMPLECODE_END
-
-DgnClientFx applications using the messaging system to communicate between the UI and the Work threads should
-also register a message handler:
-$SAMPLECODE_BEGIN[RegisterPresentationManagerMessageHandler, Register RulesDrivenPresentationManagerMessageHandler]
-__PUBLISH_INSERT_FILE__ SampleNavigatorApp_InitPresentation_RegisterPresentationManagerMessageHandler.sampleCode
+@section SECTION_RulesDrivenPresentationManager_CleaningUp Cleaning Up
+To clean up the presentation manager the application only has to make sure it's destroyed and unregistered:
+$SAMPLECODE_BEGIN[CleanUpPresentationManager, Clean Up Presentation Manager]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_CleanUp.sampleCode
 $SAMPLECODE_END
 */
 
@@ -2619,7 +2598,7 @@ user preferences. There are @ref SECTION_RulesDrivenPresentationManager_ECExpres
 can be used to access user settings by their ID, so PresentationRule @e Condition can check for a value and change the behavior. 
 It allows to show/hide some nodes in the hierarchy, change the grouping, etc.
 
-User setting values can be set using the @ref BentleyApi::DgnClientFx::Presentation::UserSettings "user settings API". Also, default user 
+User setting values can be set using the @ref BentleyApi::ECPresentation::UserSettings "user settings API". Also, default user 
 setting values can be specified in the rule set (see below).
 
 @section SECTION_RulesDrivenPresentationManager_ECPresentationRules_UserSettings_Specification UserSettings Specification
@@ -2796,7 +2775,7 @@ the below symbols are available:
 //=======================================================================================
 /** @page PAGE_RulesDrivenPresentationManager_Localization Localization  
 Most of the strings specified in presentation rules and visible to the end user can be localized. The presentation manager uses
-@ref GROUP_L10N "DgnClientFx Localization APIs" to localize its strings.
+@ref GROUP_L10N "BeSQLite L10N APIs" to localize its strings.
 
 Localized string format:
 @verbatim

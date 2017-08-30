@@ -3313,7 +3313,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr instanceS = RulesEngineTestHelpers::InsertInstance(*s_project, *classS, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
     IECInstancePtr instanceT = RulesEngineTestHelpers::InsertInstance(*s_project, *classT, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     IECInstancePtr instanceU = RulesEngineTestHelpers::InsertInstance(*s_project, *classU, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
-	RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_st, *instanceS, *instanceT, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_st, *instanceS, *instanceT, [&](IECInstanceR instance)
         {
         instance.SetValue("InstanceU", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceU).GetInstanceId(), rel_stu));
         });

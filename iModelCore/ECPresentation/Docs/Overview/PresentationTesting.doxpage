@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Docs/PresentationTesting.doxpage $
+|     $Source: Docs/Overview/PresentationTesting.doxpage $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,12 +15,12 @@ The first step would be to create a JSON file that shows the structure of your t
 
 @tableofcontents
 
-@see BentleyApi::DgnClientFx::Presentation
+@see BentleyApi::ECPresentation
 
 <hr>
 
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_PresentationTesting1 Recommended #include file
+@section SECTION_PresentationTesting1 Recommended #include File
 
 __PUBLISH_INSERT_FILE__ Testing_Include.sampleCode
 
@@ -28,7 +28,7 @@ __PUBLISH_INSERT_FILE__ Testing_Include.sampleCode
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_PresentationTesting2 PresentationRulesetTest Basics
 
-Configures the rules engine and can be used for any tests against that DgnDb. This should be done in your test fixture
+Configures the rules engine and can be used for any tests against that ECDb. This should be done in your test fixture
 
 __PUBLISH_INSERT_FILE__ Testing_Basics.sampleCode
 
@@ -56,8 +56,9 @@ __PUBLISH_INSERT_FILE__ Testing_UserSettings.sampleCode
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_PresentationTesting6 Example Test
 
-@ref PresentationRulesetTester or @ref PresentationRulesetTest can be used to write tests. 
-It is recommended to use @ref PresentationRulesetTest, because it's more convenient and doesn't require setting up anything. 
+@e PresentationRulesetTester or @e PresentationRulesetTest can be used to write tests. 
+It is recommended to use @e PresentationRulesetTest because it's more convenient and doesn't 
+require setting up anything. 
 
 __PUBLISH_INSERT_FILE__ Testing_Example.sampleCode
 
