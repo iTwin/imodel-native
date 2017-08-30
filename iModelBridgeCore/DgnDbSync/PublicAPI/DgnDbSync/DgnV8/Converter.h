@@ -828,7 +828,7 @@ struct Converter
         L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
         L10N_STRING(STEP_IMPORT_SCHEMAS)               // =="Importing Schemas"==
         L10N_STRING(STEP_DISCOVER_ECSCHEMAS)           // =="Detecting ECClasses"==
-        L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Creating ECClass VIews"==
+        L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Creating ECClass Views"==
         L10N_STRING(STEP_MERGING_MODELS)               // =="Merging Models"==
         L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
         L10N_STRING(TASK_CONVERTING_MODEL)             // =="Model: %s"==
