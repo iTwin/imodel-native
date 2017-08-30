@@ -9,5 +9,8 @@
 $(targetAPIDir)StructuralCommon : $(_MakeFilePath)StructuralCommon/PublicAPI/StructuralCommon
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+$(targetAPIDir)StructuralMaterial : $(_MakeFilePath)StructuralMaterial/PublicAPI/StructuralMaterial
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
 $(targetSchemasDir)StructuralCommon.ecschema.xml : $(_MakeFilePath)StructuralCommon\StructuralCommon.ecschema.xml
     $(LinkFirstDepToFirstTarget)
