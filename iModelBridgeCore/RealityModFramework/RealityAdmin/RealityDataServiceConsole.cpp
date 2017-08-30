@@ -170,6 +170,8 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
     m_realityDataProperties.push_back("OrganizationId");
+    m_realityDataProperties.push_back("UltimateId");
+    m_realityDataProperties.push_back("UltimateSite");
     //m_realityDataProperties.push_back("ContainerName");
     m_realityDataProperties.push_back("Name");
     m_realityDataProperties.push_back("Dataset");
@@ -742,7 +744,7 @@ Utf8String ShortenVisibility(Utf8String visibility)
 
 void RealityDataConsole::ListRoots()
     {
-    RealityDataListByOrganizationPagedRequest organizationReq = RealityDataListByOrganizationPagedRequest("", 0, 2500);
+    RealityDataListByUltimateIdPagedRequest ultimateReq = RealityDataListByUltimateIdPagedRequest("", 0, 2500);
 
     bvector<RDSFilter> properties = bvector<RDSFilter>();
     if (m_nameFilter.length() > 0)
@@ -754,35 +756,35 @@ void RealityDataConsole::ListRoots()
     if (m_ownerFilter.length() > 0)
         properties.push_back(RealityDataFilterCreator::FilterByOwner(m_ownerFilter));
     if (properties.size() > 0)
-        organizationReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+        ultimateReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
 
     if (m_queryFilter.length() > 0)
-        organizationReq.SetQuery(m_queryFilter);
+        ultimateReq.SetQuery(m_queryFilter);
 
     if (m_projectFilter.length() > 0)
-        organizationReq.SetProject(m_projectFilter);
+        ultimateReq.SetProject(m_projectFilter);
 
-    organizationReq.SortBy(RealityDataField::OwnedBy, true);
+    ultimateReq.SortBy(RealityDataField::OwnedBy, true);
 
-    RawServerResponse organizationResponse = RawServerResponse();
-    organizationResponse.status = RequestStatus::OK;
-    bvector<RealityDataPtr> organizationVec = bvector<RealityDataPtr>();
+    RawServerResponse ultimateResponse = RawServerResponse();
+    ultimateResponse.status = RequestStatus::OK;
+    bvector<RealityDataPtr> ultimateVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while (organizationResponse.status == RequestStatus::OK)
+    while (ultimateResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
-        partialVec = RealityDataService::Request(organizationReq, organizationResponse);
-        organizationVec.insert(organizationVec.end(), partialVec.begin(), partialVec.end());
+        partialVec = RealityDataService::Request(ultimateReq, ultimateResponse);
+        ultimateVec.insert(ultimateVec.end(), partialVec.begin(), partialVec.end());
         }
     bmap<Utf8String, bvector<Utf8String>> nodes = bmap<Utf8String, bvector<Utf8String>>();
     bvector<Utf8String> subvec = bvector<Utf8String>();
     Utf8String owner;
-    if(organizationVec.size() > 0)
-        owner = organizationVec[0]->GetOwner();
+    if(ultimateVec.size() > 0)
+        owner = ultimateVec[0]->GetOwner();
 
     Utf8String schema = RealityDataService::GetSchemaName();
     int position = 0;
-    for (RealityDataPtr rData : organizationVec)
+    for (RealityDataPtr rData : ultimateVec)
         {
         if(owner != rData->GetOwner())
             {
@@ -796,7 +798,7 @@ void RealityDataConsole::ListRoots()
         m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
 
         position++;
-        if(position == organizationVec.size())
+        if(position == ultimateVec.size())
             nodes.Insert(owner, subvec);
         }
 
@@ -1181,6 +1183,8 @@ void RealityDataConsole::Details()
 
         DisplayInfo(Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
         DisplayInfo(Utf8PrintfString(" OrganizationId     : %s\n", entity->GetOrganizationId()));
+        DisplayInfo(Utf8PrintfString(" UltimateId         : %s\n", entity->GetUltimateId()));
+        DisplayInfo(Utf8PrintfString(" UltimateSite       : %s\n", entity->GetUltimateSite()));
         DisplayInfo(Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
         DisplayInfo(Utf8PrintfString(" Data Location GUID : %s\n", entity->GetDataLocationGuid()));
         DisplayInfo(Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));

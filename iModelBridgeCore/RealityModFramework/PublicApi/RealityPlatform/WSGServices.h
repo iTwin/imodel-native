@@ -479,7 +479,8 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
 
     //! Set proxy informations
-    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; }
+    REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) { proxyUrl = m_proxyUrl; proxyCreds = m_proxyCreds; }
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}

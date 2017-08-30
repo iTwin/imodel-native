@@ -678,6 +678,8 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     bmap<RealityDataField, Utf8String> m = bmap<RealityDataField, Utf8String>();
     m.Insert(RealityDataField::Id, "Id");
     m.Insert(RealityDataField::OrganizationId, "OrganizationId");
+    m.Insert(RealityDataField::UltimateId, "UltimateId");
+    m.Insert(RealityDataField::UltimateSite, "UltimateSite");
     m.Insert(RealityDataField::ContainerName, "ContainerName");
     m.Insert(RealityDataField::DataLocationGuid, "DataLocationGuid");
     m.Insert(RealityDataField::Name, "Name");
@@ -763,23 +765,32 @@ void RealityDataPagedRequest::EncodeId() const
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
+//! DEPRECATED
 //=====================================================================================
 void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append("/RealityData?$filter=OrganizationId+eq+'");
+    assert(0 && "This function is deprecated, please use RealityDataListByUltimateIdPagedRequest");
+}
 
-    if(m_encodedId.length() == 0)
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              08/2017
+//=====================================================================================
+void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataPagedRequest::_PrepareBaseRequestString();
+    m_httpRequestString.append("/RealityData?$filter=UltimateId+eq+'");
+
+    if (m_encodedId.length() == 0)
         {
         Utf8String token = CurlConstructor().GetToken();
-        token.ReplaceAll("Authorization: Token ","");
+        token.ReplaceAll("Authorization: Token ", "");
         Utf8String decodedToken = Base64Utilities::Decode(token);
 
         const char* charstring = decodedToken.c_str();
-        Utf8String keyword = "organizationid";
+        Utf8String keyword = "ultimateid";
         const char* attributePosition = strstr(charstring, keyword.c_str());
         keyword = "<saml:AttributeValue>";
-        const char* valuePosition = strstr(attributePosition, keyword.c_str()); 
+        const char* valuePosition = strstr(attributePosition, keyword.c_str());
         valuePosition += keyword.length();
         Utf8String idString = Utf8String(valuePosition);
 
@@ -793,7 +804,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
     if (m_order.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&%s", m_order)); 
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
 
@@ -802,7 +813,7 @@ void RealityDataListByOrganizationPagedRequest::_PrepareHttpRequestStringAndPayl
 
     if (m_project.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
-}
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -2248,8 +2259,19 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
+//! DEPRECATED
 //=====================================================================================
 bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByOrganizationPagedRequest& request, RawServerResponse& rawResponse)
+    {
+    assert(0 && "This function is deprecated, please use RealityDataListByUltimateIdPagedRequest");
+    return bvector<RealityDataPtr>();
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//! DEPRECATED
+//=====================================================================================
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByUltimateIdPagedRequest& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (!RealityDataService::AreParametersSet())
@@ -2261,7 +2283,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByOrgan
     rawResponse = PagedBasicRequest(static_cast<const RealityDataPagedRequest*>(&request));
 
     if (rawResponse.status != RequestStatus::OK)
-        s_errorCallback("RealityDataListByOrganizationPagedRequest failed with response", rawResponse);
+        s_errorCallback("RealityDataListByUltimateIdPagedRequest failed with response", rawResponse);
     else
         {
         RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
