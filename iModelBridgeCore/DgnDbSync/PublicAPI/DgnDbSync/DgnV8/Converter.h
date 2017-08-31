@@ -2170,6 +2170,9 @@ public:
     //! Get the currently open root V8 file or nullptr if no root file is open.
     DgnFileP GetRootV8File() {return m_rootFile.get();}
 
+    //! Set the currently open root V8 file or nullptr if no root file is open.
+    void SetRootV8File(DgnFileP rootFile) { m_rootFile = rootFile; }
+
     //! Get the currently open root model as a modelref.
     DgnV8ModelRefP GetRootModelRefP() {return m_rootModelRef;}
 
@@ -2927,6 +2930,10 @@ public:
     //! @see SetJobSubject, SetChangeDetector, RootModelSpatialParams::AddDrawingOrSheetFile
     DGNDBSYNC_EXPORT BentleyStatus ConvertAllDrawingsAndSheets();
 
+    //! Attempts to identify the root model. The underlying logic prefers the root model of the active view group, falls back on other view groups, 
+    //! and finally considers the default model. It returns an invalid ModelId if this search yields no 3-D model. That can happen if the file 
+    //! contains only sheets and drawings as a root.
+    DgnV8Api::ModelId GetRootModelId() { return _GetRootModelId(); }
 };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
