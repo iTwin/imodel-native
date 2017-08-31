@@ -253,6 +253,35 @@ StatusInt DgnDbServerClientUtils::PullAndMerge()
     m_lastServerError = result.GetError();
     return ERROR;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
+    {
+    // Save briefcase path
+    auto briefcasePath = db->GetFileName();
+
+    // Get changeSets that should be applied during DgnDb reopen
+    auto downloadChangeSetsResult = m_briefcase->GetiModelConnection().DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId())->GetResult();
+    auto downloadedChangeSets = downloadChangeSetsResult.GetValue();
+
+    // Close briefcase, dgndb,…
+    db->CloseDb();
+
+    // Reopen dgndb with changesets that should be applied
+    BeSQLite::DbResult dbres;
+    
+    bvector<DgnRevisionCP> changeSetVector;
+    for (Dgn::DgnRevisionPtr& rev : downloadedChangeSets)
+        changeSetVector.push_back(rev.get());
+
+    Dgn::SchemaUpgradeOptions options(changeSetVector);
+    db = DgnDb::OpenDgnDb(&dbres, BeFileName(briefcasePath), Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, options));
+    if (db.IsNull())
+        return ERROR;
+
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16

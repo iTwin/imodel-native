@@ -17,6 +17,7 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include "cpl_spawn.h"
+#include "DgnDbServerClientUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1185,7 +1186,16 @@ int iModelBridgeFwk::UpdateExistingBim()
         return BentleyStatus::ERROR;
 
     if (BSISUCCESS != Briefcase_PullMergePush(""))  // *** WIP_BRIDGE: create revision comment from stored descriptions of local Txns?
-        return RETURN_STATUS_SERVER_ERROR;
+        {
+        iModel::Hub::Error const& errorVal = m_clientUtils->GetLastError();
+        if (iModel::Hub::Error::Id::MergeSchemaChangesOnOpen != errorVal.GetId())
+            return RETURN_STATUS_SERVER_ERROR;
+
+        if (SUCCESS != m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb))
+            return RETURN_STATUS_SERVER_ERROR;
+        
+        Briefcase_PullMergePush("");
+        }
 
     m_briefcaseDgnDb->SaveChanges();
     Briefcase_ReleaseSharedLocks();
