@@ -165,8 +165,6 @@ protected:
     TextStringPtr       m_label;
 #endif
     
-    Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
-
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR context) override;
     void _OnViewOpened (Dgn::DgnViewportR) override;
 

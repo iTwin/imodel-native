@@ -38,11 +38,10 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Update, updated);
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
-    m_untouchedOverride.SetMaterial(nullptr);
+    // ###TODO m_untouched.SetMaterial(nullptr);
     m_untouched.SetRgb(ColorDef::VersionCompareBackground());
-	Byte bTransparency = (Byte) s_backgroundElementTransparency;
-	// ###TODO m_untouched.SetMaterial(nullptr);
-	m_untouched.SetAlpha(bTransparency);
+    Byte bTransparency = (Byte) s_backgroundElementTransparency;
+    m_untouched.SetAlpha(bTransparency);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,7 +92,7 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
- RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, ComparisonSymbologyOverrides const & symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags), m_visitingTransientElements(false)//, m_label(TextString::Create())
+ RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
     {
     // Build the opcode cache
     for (auto state : m_comparisonData->GetPersistentStates())
