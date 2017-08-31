@@ -143,12 +143,18 @@ protected:
     ComparisonDataCPtr              m_comparisonData;
     ComparisonSymbologyOverrides    m_symbology;
 
+    bmap<DgnElementId, DbOpcode>    m_persistentOpcodeCache;
+    bmap<DgnElementId, DbOpcode>    m_transientOpcodeCache;
+
     DgnElementId    m_focusedElementId;
     Utf8String      m_labelString;
+#ifdef USE_LABEL
     TextStringPtr   m_label;
+#endif
 
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
     void _DrawDecorations(DecorateContextR context) override;
+    void _OnViewOpened (Dgn::DgnViewportR) override;
 
 public:
 
@@ -166,7 +172,7 @@ public:
     DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
 
     //! Constructors
-    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides()) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_flags(flags), m_visitingTransientElements(false), m_label(nullptr) { }
+    DGNPLATFORM_EXPORT RevisionComparisonViewController(SpatialViewDefinition const& view, ComparisonData const& data, unsigned int flags, ComparisonSymbologyOverrides const & symb=ComparisonSymbologyOverrides());
 };
 
 END_BENTLEY_DGN_NAMESPACE
