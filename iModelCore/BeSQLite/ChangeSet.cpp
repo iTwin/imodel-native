@@ -508,9 +508,7 @@ Utf8String DbValue::Format(int detailLevel) const
             return Utf8PrintfString("\"%s\"", GetValueText());
 
         case DbValueType::BlobVal:
-            if (detailLevel < 1)
-                return "...";
-            return Utf8PrintfString(hexDump((Byte*)GetValueBlob(), GetValueBytes()).c_str());
+            return "...";
 
         case DbValueType::NullVal:
             return "NULL";
@@ -561,9 +559,10 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
 
-    Byte* pcols;
-    int npcols;
+    Byte* pcols = nullptr;
+    int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
+    BeAssert(npcols == (int) columnNames.size() && "Mismatch of columns in Db and ChangeSet. Likely that a required schema change has NOT happened");
 
     Utf8PrintfString line("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 
