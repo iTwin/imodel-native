@@ -50,7 +50,11 @@ struct ColumnMaps
 
             return nullptr;
             }
-
+        void Debug() const
+            {
+            for (auto const& map : m_maps)
+                printf("[AccessSring=%s] [Column=%s]\n", map.first, map.second->GetName().c_str());
+            }
     };
 
 //======================================================================================
@@ -142,9 +146,14 @@ struct ClassMapColumnFactory : NonCopyableClass
             GetColumnMaps()->Insert(map.GetRelECClassIdPropertyMap());
             return true;
             }
+        DbColumn const* FindColumn(Utf8CP accessString) const 
+            {
+            return GetColumnMaps()->FindP(accessString);
+            }
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
+        void Debug() const { GetColumnMaps()->Debug(); }
         DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
     };
 

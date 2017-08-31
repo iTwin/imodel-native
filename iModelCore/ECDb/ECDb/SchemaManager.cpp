@@ -251,6 +251,20 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     return ViewGenerator::CreateUpdatableViews(GetECDb());
     }
 
+ void SchemaManager::Export(bvector<ECSchemaCP> const& schemas, Utf8CP outputFolder)
+    {
+
+     for (ECSchemaCP schema : schemas)
+         {
+         if (schema->IsStandardSchema())
+             continue;
+
+         BeFileName file(outputFolder);
+         file.AppendUtf8((schema->GetFullSchemaName() + ".ecschema.xml").c_str());
+         schema->WriteToXmlFile(file.GetName());
+         }
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

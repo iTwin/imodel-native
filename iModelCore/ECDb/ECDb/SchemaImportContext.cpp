@@ -100,7 +100,7 @@ BentleyStatus SchemaCompareContext::Prepare(SchemaManager const& schemaManager, 
         SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::AppendDetailLevel::Partial, SchemaComparer::AppendDetailLevel::Partial);
         if (comparer.Compare(m_changes, m_existingSchemas, m_schemasToImport, options) != SUCCESS)
             return ERROR;
-#if 1
+#if 0
         Utf8String o;
         m_changes.WriteToString(o);
         printf("%s", o.c_str());
