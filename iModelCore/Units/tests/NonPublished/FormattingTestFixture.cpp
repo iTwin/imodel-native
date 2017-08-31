@@ -104,13 +104,17 @@ void FormattingTestFixture::ShowFUS(Utf8CP koq)
     LOG.infov("JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
     }
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     {
     FormatUnitSet fus = FormatUnitSet(fusText);
     EXPECT_STREQ (norm, fus.ToText(false).c_str());
     EXPECT_STREQ (aliased, fus.ToText(true).c_str());
+    Json::Value jval = fus.ToJson(true);
+    FormatUnitSet fus1;
+    fus1.LoadJsonData(jval);
+    EXPECT_TRUE(fus.IsIdentical(fus1));
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
@@ -119,11 +123,12 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
     {
     FormatUnitGroup fug = FormatUnitGroup(name, fusText);
     Json::Value jval = fug.ToJson(true);
-    LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
+    //LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
     EXPECT_STREQ (norm, fug.ToText(false).c_str());
     EXPECT_STREQ (aliased, fug.ToText(true).c_str());
     FormatUnitGroup fug1 = FormatUnitGroup::FormatUnitGroup(jval);
-    LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
+    EXPECT_TRUE(fug.IsIdentical(fug1));
+    //LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
