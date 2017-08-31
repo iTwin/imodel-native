@@ -277,6 +277,20 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
         }
 
     auto status = m_clientUtils->PullMergeAndPush(desc);
+    bool needsSchemaMerge = false;
+    if (SUCCESS != status)
+        {
+        iModel::Hub::Error const& errorVal = m_clientUtils->GetLastError();
+        if (iModel::Hub::Error::Id::MergeSchemaChangesOnOpen == errorVal.GetId())
+            needsSchemaMerge = true;
+        }
+
+    if (needsSchemaMerge)
+        {
+        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb);
+        if (SUCCESS == status)
+            status = m_clientUtils->PullMergeAndPush(desc);
+        }
 
     m_clientUtils->CloseBriefcase();
 

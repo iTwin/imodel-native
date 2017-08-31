@@ -207,7 +207,9 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
 void ConvertScalableMeshAttachment::Register()
     {
     ConvertScalableMeshAttachment* instance = new ConvertScalableMeshAttachment();
-    RegisterExtension(ScalableMeshElementHandler::GetInstance(), *instance);
+    DgnV8Api::Handler* handler = DgnV8Api::ElementHandlerManager::FindHandler(DgnV8Api::ElementHandlerId(22899, 0));
+    if (NULL != handler)
+        RegisterExtension(*handler, *instance);
     }
 
 
