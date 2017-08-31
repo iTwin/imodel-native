@@ -100,12 +100,12 @@ FilePAth=${LogDir}/CheckStatus.txt
 
 %if defined(IgnoreFailure)
     always:
-        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure)
+        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure) $(TARGET_PLATFORM)
 		 
     %iffile $(FilePAth)
         %message $(FilePAth) found.
         always:
-	           python $(_makeFilePath)CleanAndRebuild.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure) $(exeName).exe $(_makeFilePath)
+	           python $(_makeFilePath)CleanAndRebuild.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure) $(exeName).exe $(_makeFilePath) $(TARGET_PLATFORM)
     %endif
 %else 
     always:

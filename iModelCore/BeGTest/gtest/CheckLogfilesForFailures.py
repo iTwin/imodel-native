@@ -7,8 +7,10 @@
 #--------------------------------------------------------------------------------------
 import os, sys, re
 import time
-#search path for importing symlinks python script from bentleybuild 
-searchpath=os.path.join(os.environ.get ("SrcRoot"),"BentleyBuild")
+import xml.etree.ElementTree as ET
+#search path for importing symlinks python script from bentleybuild
+srcpath=os.environ.get ("SrcRoot")
+searchpath=os.path.join(srcpath,"BentleyBuild")
 sys.path.append(searchpath)
 import bentleybuild.symlinks as symlinks
 
@@ -19,6 +21,9 @@ failedpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
 summarypat = re.compile (r"\[==========\].*ran", re.I)
 runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
 mspat = re.compile (r"ms\s*\)", re.I)
+
+RELATIVE_TREE_CONFIG_PATH = 'teamConfig' + os.sep + 'treeConfiguration.xml'
+TREE_CONFIG_PATH = os.path.join(srcpath,RELATIVE_TREE_CONFIG_PATH)
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Ridha.Malik      08/2017
@@ -37,6 +42,28 @@ def ignoreflakytest(srcpath,testListf):
                        for v in value:
                            filep.write(v+"\n")
                    filep.close()
+
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Ridha.Malik      08/2017
+#-------------------------------------------------------------------------------------------
+def FindStreamDetails():
+    Buildconfig=""
+    Stream=""
+    tree = ET.parse(TREE_CONFIG_PATH)
+    root = tree.getroot()
+    for child in root.iter('Stream'):
+        Stream=child.attrib
+    Stream=Stream['Name']
+    if(os.environ.get ("DEBUG"))!=None:
+       Buildconfig="DEBUG"
+    elif(os.environ.get ("NDEBUG"))!=None:
+       Buildconfig="NDEBUG"
+    elif "PRG" in [var.upper() for var in os.environ]:
+       Buildconfig="NDEBUG"
+    else:
+        Buildconfig="Unknown"
+    return Stream,Buildconfig
+
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Ridha.Malik      08/2017
 #-------------------------------------------------------------------------------------------
@@ -54,7 +81,8 @@ def FindFailedTestFailures(lines,failedTestsList):
             i=i+1
         i=0
         failedTestsDic.setdefault(x,[])
-        details="Stream:Bim0200, build configuration : Release, architecture: x64,"+" Date: "+time.strftime("%d/%m/%Y")
+        Stream,Buildconfig=FindStreamDetails()
+        details="Stream:"+Stream+", build configuration :"+Buildconfig+", architecture: "+Tragetplatform+", Date: "+time.strftime("%d/%m/%Y")
         failedTestsDic[x].append(details)
         for j in range(start+1,end):
             failedTestsDic[x].append(lines[j])
@@ -174,10 +202,12 @@ if __name__ == '__main__':
     dir = sys.argv[1]
     breakonfailure = False
     ignorefailure = False
+    Tragetplatform=''
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
     if len(sys.argv) >3 and str(sys.argv[3]) =="True":
         ignorefailure = True
+        Tragetplatform=sys.argv[4]
     advicestr = ''
     summarystr = ''
     exename = ''

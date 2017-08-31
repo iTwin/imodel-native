@@ -12,7 +12,7 @@ import os, sys, re
 #-------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 7:
         print 'Syntax: ' + sys.argv[0] + ' can not rerun Gtest.exe'
         exit(1)
     dir=sys.argv[1]
@@ -20,6 +20,7 @@ if __name__ == '__main__':
     ignorefailure=sys.argv[3]
     exe=sys.argv[4]
     dirpath=sys.argv[5]
+    targetplatform=sys.argv[6]
     anyFailures = True
     logfilePath=''
     path=''
@@ -36,7 +37,7 @@ if __name__ == '__main__':
                           open(logfilePath,'w').close()
                           command=exe +">"+logfilePath
                           os.system(command)
-                          command=dirpath+"CheckLogfilesForFailures.py "+dir+" "+breakonfailure+" "+ignorefailure
+                          command=dirpath+"CheckLogfilesForFailures.py "+dir+" "+breakonfailure+" "+ignorefailure+" "+targetplatform
                           os.system(command)
                        else:
                            anyFailures = False
