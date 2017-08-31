@@ -61,6 +61,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         AsyncTaskPtr<void> SyncNextChangeset();
 
         void SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
+        void SetUploadActiveForSingleInstance(CacheTransactionCR txn, ECInstanceKeyCR key, bool active);
 
         AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncNextChangeGroup();

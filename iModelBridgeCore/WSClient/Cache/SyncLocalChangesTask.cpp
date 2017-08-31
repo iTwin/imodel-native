@@ -316,7 +316,6 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
 
 AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
     {
-
     m_changeGroupIndexToSyncNext++;
     return SyncChangeGroup(m_currentChangeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
         {
@@ -326,26 +325,32 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
         });
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
     {
     auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
     auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
     auto fileKey = changeGroup.GetFileChange().GetInstanceKey();
 
-    if (objectKey.IsValid())
+    SetUploadActiveForSingleInstance(txn, objectKey, active);
+    SetUploadActiveForSingleInstance(txn, relationshipKey, active);
+    SetUploadActiveForSingleInstance(txn, fileKey, active);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncLocalChangesTask::SetUploadActiveForSingleInstance(CacheTransactionCR txn, ECInstanceKeyCR key, bool active)
+    {
+    if (key.IsValid())
         {
-        m_instancesStillInSync.erase(objectKey);
-        txn.GetCache().GetChangeManager().SetUploadActive(objectKey, active);
-        }
-    if (relationshipKey.IsValid())
-        {
-        m_instancesStillInSync.erase(relationshipKey);
-        txn.GetCache().GetChangeManager().SetUploadActive(relationshipKey, active);
-        }
-    if (fileKey.IsValid())
-        {
-        m_instancesStillInSync.erase(fileKey);
-        txn.GetCache().GetChangeManager().SetUploadActive(fileKey, active);
+        if (active)
+            m_instancesStillInSync.insert(key);
+        else
+            m_instancesStillInSync.erase(key);
+        txn.GetCache().GetChangeManager().SetUploadActive(key, active);
         }
     }
 
