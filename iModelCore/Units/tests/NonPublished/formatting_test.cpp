@@ -200,6 +200,7 @@ TEST(FormattingTest, Json)
          FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
         }
     LOG.info("================  All Std formats to Json (end)");
+
     NumericFormatSpecCP nfsP;
     NamedFormatSpecCP nSpec;
     bool stop = false;
@@ -211,6 +212,13 @@ TEST(FormattingTest, Json)
             stop = true;
         FormattingTestFixture::NumericFormatSpecJsonTest(*nfsP);
         }
+
+    FormattingTestFixture::UnitProxyJsonTest("FT", "FEET");
+    FormattingTestFixture::UnitProxyJsonTest("FT", "feet");
+    FormattingTestFixture::UnitProxyJsonTest("FT", "'");
+    FormattingTestFixture::UnitProxyJsonTest("ARC_DEG", "°");
+    FormattingTestFixture::UnitProxyJsonTest("ARC_MINUTE", "'");
+    FormattingTestFixture::UnitProxyJsonTest("ARC_SECOND", "\"");
     }
 
 TEST(FormattingTest, Pasring)

@@ -362,6 +362,7 @@ public:
             m_unitLabel = Utf8String(other->m_unitLabel.c_str());
             }
         }
+    UNITS_EXPORT UnitProxy(Json::Value jval);
     UNITS_EXPORT bool Reset() const;
     UNITS_EXPORT bool SetName(Utf8CP name);
     UNITS_EXPORT bool SetUnit(BEU::UnitCP unit);

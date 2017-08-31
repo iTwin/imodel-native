@@ -310,6 +310,30 @@ Json::Value UnitProxy::ToJson() const
     return jUP;
     }
 
+UnitProxy::UnitProxy(Json::Value jval)
+    {
+    Utf8CP paramName;
+    Utf8String str;
+    m_unitLabel = nullptr;
+    m_unitName = nullptr;
+
+    if (jval.empty())
+        return;
+
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            m_unitName = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
+            m_unitLabel = val.asString();
+        }
+    if(!m_unitName.empty())
+         m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    }
+
+
 //===================================================
 //
 //UnitProxySet Methods
