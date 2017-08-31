@@ -7,12 +7,6 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="Active3dByPlanProfileRule__ProfileEntity" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
-        </ECCustomAttributes>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="BaseCorridorRule__BaseLinEnt3dRule" isDomainClass="True" strength="holding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />

@@ -391,7 +391,10 @@ void BisClassConverter::FindCommonBaseClass(ECClassP &commonClass, ECClassP curr
 	for (const auto &secondConstraint : classes)
 		{
 		ECClassCP secondClass = secondConstraint;
-		if (secondClass->Is(tempCommonClass))
+        ECEntityClassCP asEntity = secondClass->GetEntityClassCP();
+        if (nullptr != asEntity && asEntity->IsMixin() && asEntity->GetAppliesToClass()->Is(tempCommonClass->GetEntityClassCP()))
+            continue;
+        if (secondClass->Is(tempCommonClass))
 			continue;
 
 		for (const auto baseClass : tempCommonClass->GetBaseClasses())
@@ -1247,7 +1250,7 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
         if (asEntity != nullptr && asEntity->IsMixin())
             {
             if (!asEntity->GetAppliesToClass()->Is(GetDefaultConstraintClass()))
-                return nullptr;
+            return nullptr;
             }
         else if (!constraintClass->Is(GetDefaultConstraintClass()))
             return nullptr;

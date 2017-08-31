@@ -785,8 +785,8 @@ struct Converter
         L10N_STRING(RasterCreationError)         // =="Can't create raster file: %s"==
         L10N_STRING(RasterFile)                  // =="Raster file [%s]"==
         L10N_STRING(RootModelChanged)            // =="The original root model was deleted, has changed units, or a different input-gcs has been specified."==
-        L10N_STRING(DefaultedRootModel)          // =="The chosen root model is not spatial. The default model will be used as the root spatial model instead."==
         L10N_STRING(RootModelMustBePhysical)     // =="Root model [%s] is not a 3D model. Therefore, no spatial models or elements will be converted. Drawings and sheets may be converted."==
+        L10N_STRING(Detected3dViaAttachment)     // =="An attachment to a 3D model [%s] has been detected. The root model is not a 3D model, however. This indicates that the root model is incorrect."==
         L10N_STRING(SaveError)                   // =="An error occurred when saving changes (%s)"==
         L10N_STRING(SeedFileMismatch)            // =="Seed file [%s] does not match target [%s]"==
         L10N_STRING(MissingSeedFile)             // =="Missing seed file [%s]"==
@@ -828,7 +828,7 @@ struct Converter
         L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
         L10N_STRING(STEP_IMPORT_SCHEMAS)               // =="Importing Schemas"==
         L10N_STRING(STEP_DISCOVER_ECSCHEMAS)           // =="Detecting ECClasses"==
-        L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Creating ECClass VIews"==
+        L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Creating ECClass Views"==
         L10N_STRING(STEP_MERGING_MODELS)               // =="Merging Models"==
         L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
         L10N_STRING(TASK_CONVERTING_MODEL)             // =="Model: %s"==
@@ -1349,7 +1349,10 @@ public:
     double SheetsComputeScale(DgnV8ModelCR v8SheetModel);
     
     //! Map the sheet models in the V8 file to BIM SheetModels.
-    void ImportSheetModelsInFile(DgnV8FileR);
+    //! @param v8File the V8 file to scan for sheets
+    //! @param isRootModelSpatial pass true if the root model for the output BIM is a spatial model.
+    //! @note ImportSheetModelsInFile will terminate with a fatal error if isRootModelSpatial is @a false and if it encounters a reference from a sheet to a 3D model.
+    void ImportSheetModelsInFile(DgnV8FileR v8File, bool isRootModelSpatial);
 
     //! Convert an element in a sheet model. @see DoConvertDrawingElement
     void _ConvertSheetElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
@@ -2167,6 +2170,9 @@ public:
     //! Get the currently open root V8 file or nullptr if no root file is open.
     DgnFileP GetRootV8File() {return m_rootFile.get();}
 
+    //! Set the currently open root V8 file or nullptr if no root file is open.
+    void SetRootV8File(DgnFileP rootFile) { m_rootFile = rootFile; }
+
     //! Get the currently open root model as a modelref.
     DgnV8ModelRefP GetRootModelRefP() {return m_rootModelRef;}
 
@@ -2417,6 +2423,7 @@ protected:
     //! @name The RootModelConverter framework
     //! @{
     DGNDBSYNC_EXPORT virtual DgnV8Api::ModelId _GetRootModelId();
+    DGNDBSYNC_EXPORT virtual DgnV8Api::ModelId _GetRootModelIdFromViewGroup();
     // Then call BootstrapImportJob
     DGNDBSYNC_EXPORT virtual DgnV8Api::DgnFileStatus _InitRootModel();
     DGNDBSYNC_EXPORT virtual void _BeginConversion();
@@ -2923,6 +2930,10 @@ public:
     //! @see SetJobSubject, SetChangeDetector, RootModelSpatialParams::AddDrawingOrSheetFile
     DGNDBSYNC_EXPORT BentleyStatus ConvertAllDrawingsAndSheets();
 
+    //! Attempts to identify the root model. The underlying logic prefers the root model of the active view group, falls back on other view groups, 
+    //! and finally considers the default model. It returns an invalid ModelId if this search yields no 3-D model. That can happen if the file 
+    //! contains only sheets and drawings as a root.
+    DgnV8Api::ModelId GetRootModelId() { return _GetRootModelId(); }
 };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

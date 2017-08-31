@@ -597,6 +597,34 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     };
 
+// =====================================================================================
+// Stand-in for the CifSheetExaggeratedViewHandler that is defined in Vancouver.
+// =====================================================================================
+struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
+    {
+    bool _GetAspectRatioSkew (DynamicViewSettingsCR viewSettings, double& aspectRatio) const override
+        {
+        int dataSize;
+        double* data;
+        DgnV8Api::XAttributeHandlerId hid = DgnV8Api::XAttributeHandlerId(BENTLEY_CIF_XATTRIBUTE_ID, DgnV8Api::CIF::XATTRIBUTES_SUBID_EXAGGERATEDVIEWPROPERTIES);
+
+        if (NULL == (data = (double*) (viewSettings.GetXAttributesHolderCR().GetXAttribute(&dataSize, hid, 0))) || dataSize != sizeof(double))
+            aspectRatio = 1;
+        else
+            aspectRatio = *data;
+        return true;
+        }
+
+    static void Register()
+        {
+        DgnV8Api::XAttributeHandlerId hid = DgnV8Api::XAttributeHandlerId(BENTLEY_CIF_XATTRIBUTE_ID, DgnV8Api::CIF::XATTRIBUTES_SUBID_EXAGGERATEDSHEETVIEWHANDLER);
+        DgnV8Api::XAttributeHandlerManager::RegisterHandler(hid, new CifSheetExaggeratedViewHandlerStandin());
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[])
     {
@@ -645,6 +673,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     ConvertThreeMxAttachment::Register();
     ConvertScalableMeshAttachment::Register();
     ConvertDetailingSymbolExtension::Register();
+    CifSheetExaggeratedViewHandlerStandin::Register();
 
     //Ensure tha V8i::DgnGeocoord is using the GCS library from this application admin.
     DgnV8Api::ConfigurationManager::UndefineVariable (L"MS_GEOCOORDINATE_DATA");
