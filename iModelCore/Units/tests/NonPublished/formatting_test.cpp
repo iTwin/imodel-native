@@ -120,6 +120,9 @@ TEST(FormattingTest, Preliminary)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, StdFormatting)
     {
 
@@ -139,6 +142,9 @@ TEST(FormattingTest, StdFormatting)
     EXPECT_STREQ ("+00152", numFmt.FormatIntegerToString(152, 5, false).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Json)
     {
 
@@ -220,7 +226,9 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitProxyJsonTest("ARC_MINUTE", "'");
     FormattingTestFixture::UnitProxyJsonTest("ARC_SECOND", "\"");
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Pasring)
     {
     LOG.infov("NUNFU = %d", FormatConstant::ParsingPatternCode("NUNFU"));
@@ -476,8 +484,6 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("4068.7986 OZM", NumericFormatSpec::StdFormatPhysValue("real4u", 115.3485, "KG", "OZM", nullptr, " ").c_str());
 
     //CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
-
-  
 
     }
 
@@ -786,78 +792,9 @@ TEST(FormattingTest, DictionaryValidation)
         LOG.infov("%s", serT.c_str());
         }
 
-   
-   /* NumericFormatSpecP fmtP = StdFormatSet::FindFormat("fract16");
-
-    LOG.infov("%s", serT.c_str());
-    fmtP = StdFormatSet::FindFormat("fract32");
-    serT = dict.SerializeFormatDefinition(*fmtP);
-    LOG.infov("%s", serT.c_str());*/
 
     LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
-
 END_BENTLEY_FORMATTEST_NAMESPACE
 
-//////////// To be removed
-/* LOG.info("Stopping Signatures");
-FormattingTestFixture::ShowSignature("1+52.17", 100);
-FormattingTestFixture::ShowSignature("1+152.17", 100);
-FormattingTestFixture::ShowSignature("1*52.17", 100);
-
-FormattingTestFixture::ShowSignature("1/52.17", 100);
-if(nullptr == upx)
-{
-upx = new UnitProxySet(4);
-upx->SetUnitName(0, "FT");
-upx->SetUnitName(1, "IN");
-upx->SetUnitName(2, "CUB.M");
-LOG.info("Init UPX");
-}
-repc++;
-BEU::UnitCP upFT = upx->GetUnit(0);
-BEU::UnitCP upIN = upx->GetUnit(1);
-BEU::UnitCP upCM = upx->GetUnit(2);
-BEU::UnitCP upFT1 = BEU::UnitRegistry::Instance().LookupUnit("FT");
-Utf8CP nameFT = (nullptr == upFT) ? "xxx" : upFT->GetName();
-Utf8CP nameIN = (nullptr == upIN) ? "xxx" : upIN->GetName();
-Utf8CP nameCM = (nullptr == upCM) ? "xxx" : upCM->GetName();
-LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
-LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);*/
-
-
-
-//LOG.infov("UNI: |%s|", uni);
-//LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
-
-/* int n = 0;
-for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
-{
-LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
-n++;
-}*/
-//Utf8P bufStop = (Utf8P)alloca(128);
-//FormatTraits traits = FormatConstant::DefaultFormatTraits();
-//NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-//NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-
-//nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-//nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-
-
-/*size_t nc = tc.GetNextSymbol();
-do {
-LOG.infov("Next code %d scanLen %d inferredLen %d", nc, tc.GetLastLength(), Utils::NumberOfUtf8Bytes(nc));
-nc = tc.GetNextSymbol();
-} while (nc != 0);
-*/
-/*
-LOG.infov("11100000 BitCount %d", tc.HeadBitCount(224));
-LOG.infov("11110000 BitCount %d", tc.HeadBitCount(0xF0));
-LOG.infov("11000000 BitCount %d", tc.HeadBitCount(0xC0));
-LOG.infov("11111000 BitCount %d", tc.HeadBitCount(0xF8));
-LOG.infov("11111100 BitCount %d", tc.HeadBitCount(0xFC));*/
-
-
-//////////// End of To be removed
