@@ -207,9 +207,13 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
 void ConvertScalableMeshAttachment::Register()
     {
     ConvertScalableMeshAttachment* instance = new ConvertScalableMeshAttachment();
-    DgnV8Api::Handler* handler = DgnV8Api::ElementHandlerManager::FindHandler(DgnV8Api::ElementHandlerId(22899, 0));
-    if (NULL != handler)
-        RegisterExtension(*handler, *instance);
+
+    DgnV8Api::ElementHandlerId handlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0);
+    DgnV8Api::Handler* elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
+
+    assert(elHandler != nullptr);
+    
+    RegisterExtension(*elHandler, *instance);        
     }
 
 

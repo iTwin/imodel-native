@@ -255,6 +255,10 @@ void DrawingViewHelper::SetViewGeometry(DrawingViewDefinitionR viewDef)
     RotMatrix rot = (RotMatrixCR)m_v8DgnAttachment.GetRotMatrix();
     viewDef.SetRotation(rot);
     viewDef.LookAtVolume(viewedModelRange);
+
+    double skew;
+    if (m_v8DgnAttachment.HasViewHandler() && m_v8DgnAttachment.GetDynamicViewSettingsCR().GetViewHandler().GetAspectRatioSkew(m_v8DgnAttachment.GetDynamicViewSettingsCR(), skew))
+        viewDef.SetAspectRatioSkew(skew);
     }
 
 /*---------------------------------------------------------------------------------**//**
