@@ -507,11 +507,31 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(bmap<Utf8String, bpair<DbTable 
             contextTable = &derivedClassMap.GetJoinedOrPrimaryTable();
         else
             {
-            BeAssert(visitor.GetTables().size() == 1);
-            if (visitor.GetTables().size() != 1)
-                return ERROR;
+            Utf8CP accessString = nullptr;
+            for (PropertyMap const* propertyMap : mixInClassMap.GetPropertyMaps())
+                {
+                if (propertyMap->IsSystem())
+                    continue;
 
-            contextTable = *visitor.GetTables().begin();
+                accessString = propertyMap->GetAccessString().c_str();
+                break;
+                }
+
+            if (accessString)
+                {
+                PropertyMap const* propertyMap = derivedClassMap.GetPropertyMaps().Find(accessString);
+                BeAssert(propertyMap != nullptr);
+                if (propertyMap == nullptr)
+                    return ERROR;
+
+                BeAssert(propertyMap->IsData());
+                if (!propertyMap->IsData())
+                    return ERROR;
+
+                contextTable = &propertyMap->GetAs<DataPropertyMap>().GetTable();
+                }
+            else
+                contextTable = &derivedClassMap.GetPrimaryTable();
             }
 
         if (RenderEntityClassMap(viewSql, ctx, derivedClassMap, *contextTable, &mixInClassMap) != SUCCESS)
