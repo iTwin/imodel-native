@@ -78,9 +78,7 @@ void Converter::AddAttachmentsToSelection(DgnModelIdSet& selector, DgnV8ModelRef
         if ((nullptr == attachedModel) || (!attachment->IsDisplayed())) //*** TODO || !_WantAttachment(*attachment))
             continue;
 
-        Transform refTrans;
-        attachment->GetTransformToParent((Bentley::TransformR)refTrans, false);
-        Transform thisTrans = Transform::FromProduct(trans, refTrans);
+        Transform thisTrans = ComputeAttachmentTransform(trans, *attachment);
 
         ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*attachedModel, thisTrans);
         if (!modelMapping.IsValid())
