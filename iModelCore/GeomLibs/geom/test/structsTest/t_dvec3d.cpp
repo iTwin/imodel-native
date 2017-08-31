@@ -1396,6 +1396,39 @@ TEST(DVec3d, AngleBetweenVectors)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    01/17
 //---------------------------------------------------------------------------------------
+TEST(DVec3d, SmallerUnorientedAngle)
+    {
+    DVec3d vector0 = DVec3d::From (2,1,-3);
+    DVec3d vectorX, vectorY, vectorZ;
+    vector0.GetNormalizedTriad (vectorX, vectorY, vectorZ);
+    auto factors = bvector<DPoint2d> 
+        {
+        DPoint2d::From (1,1),
+        DPoint2d::From (-1,1),
+        DPoint2d::From (1,-1),
+        DPoint2d::From (-1, -1),
+        };
+    for (auto degrees : {0, 1, 10,30,45,50, 80, 89})
+        {
+        auto theta = Angle::FromDegrees (degrees);
+        auto c = theta.Cos ();
+        auto s = theta.Sin ();
+//        auto r0 = atan2 (s, c);
+        auto r1 = theta.Radians ();
+        for (auto scale : factors)
+            {
+            auto vectorXZ = DVec3d::FromSumOf (vectorZ, scale.x * c, vectorX, scale.y * s);
+            auto r2 = vectorXZ.SmallerUnorientedAngleTo (vector0);
+            //auto r3 = vector0.AngleTo (vectorXZ);
+            //Check::Near (r3, r1);
+            Check::Near (r1,r2, "SmallerUnorientedAngle");            
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    01/17
+//---------------------------------------------------------------------------------------
 TEST(DVec3d, CheckSector)
     {
     DVec3d vecBoundary1 = DVec3d::From(-15, 16, 3);
