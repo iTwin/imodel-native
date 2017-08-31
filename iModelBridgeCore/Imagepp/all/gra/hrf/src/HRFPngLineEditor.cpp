@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngLineEditor
@@ -13,6 +13,7 @@
 #include <Imagepp/all/h/HRFPngLineEditor.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 #include <png/png.h>
+#include <png/pngstruct.h>
 
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>

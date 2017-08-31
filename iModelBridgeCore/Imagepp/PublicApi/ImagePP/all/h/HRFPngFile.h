@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPngFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,10 +19,8 @@
 #include "HRFRasterFileCapabilities.h"
 
 // Forward declare png structs because we do not want to publish png.h
-struct png_struct_def;
-typedef png_struct_def* png_structp;
-struct png_info_struct;
-typedef png_info_struct* png_infop;
+typedef struct png_struct_def * png_structp;
+typedef struct png_info_def * png_infop;
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFPngCapabilities : public HRFRasterFileCapabilities

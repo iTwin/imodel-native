@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngFile
@@ -50,6 +50,8 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <png/png.h>
+#include <png/pngstruct.h>
+#include <png/pnginfo.h>
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
@@ -327,7 +329,7 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 (pPngEndInfo = png_create_info_struct(pPngFileStruct)))
                 {
                 // Set png error handeling
-                int32_t JmpRes = setjmp(pPngFileStruct->jmpbuf);
+                int32_t JmpRes = setjmp(pPngFileStruct->jmp_buf_local);
 
                 if (JmpRes == 0)
                     {
@@ -732,7 +734,7 @@ bool HRFPngFile::Open()
            (m_pPngEndInfo     = png_create_info_struct(m_pPngFileStruct)))
             {
             // Set png error handeling
-            int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+            int32_t JmpRes = setjmp(m_pPngFileStruct->jmp_buf_local);
 
             if(JmpRes == 0)
                 {
@@ -1040,7 +1042,7 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
             if (m_pPngFileStruct->num_rows == m_pPngFileStruct->height)
                 {
                 // Set png error handeling
-                int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+                int32_t JmpRes = setjmp(m_pPngFileStruct->jmp_buf_local);
 
                 if (JmpRes == 0)
                     {
@@ -1098,7 +1100,7 @@ bool HRFPngFile::Create()
        (m_pPngInfo       = png_create_info_struct(m_pPngFileStruct)))
         {
         // Set png error handeling
-        int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+        int32_t JmpRes = setjmp(m_pPngFileStruct->jmp_buf_local);
 
         if (JmpRes == 0)
             {
@@ -1275,7 +1277,7 @@ HFCPtr<HRPPixelType> HRFPngFile::CreatePixelTypeFromFile() const
                         Value[1] = m_pPngInfo->palette[Index].green;
                         Value[2] = m_pPngInfo->palette[Index].blue;
                         if (Index < NombreEntre)
-                            Value[3] = m_pPngInfo->trans[Index];
+                            Value[3] = m_pPngInfo->trans_alpha[Index];
                         else
                             Value[3] = 255;
                         // Add the entry to the pixel palette.
@@ -1780,14 +1782,14 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     info_ptr = png_create_info_struct(png_ptr);
     if (info_ptr == NULL)
         {
-        png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+        png_destroy_read_struct(&png_ptr, NULL, NULL);
         return ERROR;
         }
 
     // Set error handling. setjmp/longjmp method (this is the normal method of doing things with libpng)
     if (setjmp(png_jmpbuf(png_ptr)))
         {
-        png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return ERROR;   // If we get here, we had a problem reading the file
         }
 
@@ -1802,7 +1804,7 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     // PNG_TRANSFORM_PACKING        >> forces 8 bit     
     // PNG_TRANSFORM_EXPAND         >> forces to expand a palette into RGB   
     // PNG_TRANSFORM_GRAY_TO_RGB    >> convert grayscale to rgb.
-    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_PACKING, png_voidp_NULL);
+    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_PACKING, NULL);
 
     png_bytepp rows_pointers = png_get_rows(png_ptr, info_ptr);
     size_t bytesPerRow = png_get_rowbytes(png_ptr, info_ptr);
@@ -1810,7 +1812,7 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     // We expect RGB or RGBA output
     if(24 != info_ptr->pixel_depth && 32 != info_ptr->pixel_depth)
         {
-        png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return ERROR;
         }
         
@@ -1824,7 +1826,7 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
         memcpy(outPixels.data() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
 
     // Clean up after the read, and free any memory allocated 
-    png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
     return SUCCESS;
     }
