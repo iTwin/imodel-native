@@ -3130,6 +3130,7 @@ TEST_F(CodesManagerTest, PlantScenario)
     DgnCode nozzle23Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N3");
     DgnCode nozzle24Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N4");
     DgnCode nozzle25Code = nozzleCodeSpec->CreateCode(equipment2Guid, "N5");
+    DgnCode nozzleNullCode = nozzleCodeSpec->CreateCode(equipment2Guid, "");
 
     DgnCodeSet codesToReserve;
     codesToReserve.insert(unitCode);
@@ -3224,6 +3225,8 @@ TEST_F(CodesManagerTest, PlantScenario)
     PhysicalElementPtr nozzle21Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle21Guid, nozzle21Code);
     PhysicalElementPtr nozzle22Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle22Guid, nozzle22Code);
     PhysicalElementPtr nozzle23Element = InsertPhysicalElement(*physicalModel, categoryId, nozzle23Guid, nozzle23Code);
+    PhysicalElementPtr nozzleElementNullCode1 = InsertPhysicalElement(*physicalModel, categoryId, BeGuid(), nozzleNullCode);
+    PhysicalElementPtr nozzleElementNullCode2 = InsertPhysicalElement(*physicalModel, categoryId, BeGuid(), nozzleNullCode);
 
     EXPECT_EQ(unitCode, unitElement->GetCode());
     EXPECT_EQ(equipment1Code, equipment1Element->GetCode());
@@ -3233,6 +3236,8 @@ TEST_F(CodesManagerTest, PlantScenario)
     EXPECT_EQ(nozzle21Code, nozzle21Element->GetCode());
     EXPECT_EQ(nozzle22Code, nozzle22Element->GetCode());
     EXPECT_EQ(nozzle23Code, nozzle23Element->GetCode());
+    EXPECT_EQ(nozzleNullCode, nozzleElementNullCode1->GetCode());
+    EXPECT_EQ(nozzleNullCode, nozzleElementNullCode2->GetCode());
 
     DgnCodeSet reservedCodes;
     reservedCodes.insert(unitElement->GetCode());
@@ -3249,6 +3254,17 @@ TEST_F(CodesManagerTest, PlantScenario)
     for (DgnCodeInfo const& codeState : reservedCodeStates)
         {
         EXPECT_TRUE(codeState.IsReserved());
+        }
+
+    DgnCodeSet nullCodes;
+    nullCodes.insert(nozzleNullCode);
+    nullCodes.insert(DgnCode::CreateEmpty());
+
+    DgnCodeInfoSet nullCodeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(nullCodeStates, nullCodes));
+    for (DgnCodeInfo const& codeState : nullCodeStates)
+        {
+        EXPECT_FALSE(codeState.IsReserved());
         }
 
     db.SaveChanges("2");

@@ -156,13 +156,19 @@ protected:
     Symbology           m_symbology;
     ComparisonDataCPtr  m_comparisonData;
     Show                m_show;
+    bmap<DgnElementId, DbOpcode>    m_persistentOpcodeCache;
+    bmap<DgnElementId, DbOpcode>    m_transientOpcodeCache;
+
     DgnElementId        m_focusedElementId;
     Utf8String          m_labelString;
+#ifdef USE_LABEL
     TextStringPtr       m_label;
+#endif
     
     Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
 
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR context) override;
+    void _OnViewOpened (Dgn::DgnViewportR) override;
 
     DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
@@ -181,6 +187,7 @@ public:
 
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
     DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
+    DGNPLATFORM_EXPORT Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show flags, SymbologyCR symb=Symbology());
 };
 
 END_REVISION_COMPARISON_NAMESPACE

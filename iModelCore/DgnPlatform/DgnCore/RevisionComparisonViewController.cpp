@@ -22,6 +22,9 @@ void Symbology::InitializeDefaults()
     updated.SetRgb(ColorDef::VersionCompareModified());
     inserted.SetRgb(ColorDef::VersionCompareInserted());
     deleted.SetRgb(ColorDef::VersionCompareDeleted());
+    // ###TODO update.SetMaterial(nullptr);
+    // ###TODO inserted.SetMaterial(nullptr);
+    // ###TODO deleted.SetMaterial(nullptr);
 
     m_current.SetAppearance(DbOpcode::Insert, inserted);
     m_current.SetAppearance(DbOpcode::Update, updated);
@@ -35,8 +38,10 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Update, updated);
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
+    m_untouchedOverride.SetMaterial(nullptr);
     m_untouched.SetRgb(ColorDef::VersionCompareBackground());
 	Byte bTransparency = (Byte) s_backgroundElementTransparency;
+	// ###TODO m_untouched.SetMaterial(nullptr);
 	m_untouched.SetAlpha(bTransparency);
     }
 
@@ -86,14 +91,25 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, ComparisonSymbologyOverrides const & symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags), m_visitingTransientElements(false)//, m_label(TextString::Create())
+    {
+    // Build the opcode cache
+    for (auto state : m_comparisonData->GetPersistentStates())
+        m_persistentOpcodeCache[state.m_elementId] = state.m_opcode;
+    for (auto state : m_comparisonData->GetTransientStates())
+        m_transientOpcodeCache[state.m_element->GetElementId()] = state.m_opcode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     // Avoid letting user pick elements that are not being compared
-    if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
-        return nullptr;
-
+    //if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
+    //    return nullptr;
     return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
@@ -102,7 +118,10 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
+#if defined(TODO_VERSION_COMPARE_MESS)
     /* ###TODO: To support this we need to allow the 'overrides' for an element to specify 'don't override anything' - otherwise it gets the default overrides
+    DgnElementId elementId = el->GetElementId();
+
     // TFS#742735: Only colorize focused element if we have set this ViewController to do so
     if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
         {
@@ -118,13 +137,19 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
         }
 
+    //bool isPersistent   =  (m_persistentOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
+    //bool isTransient    =  (m_transientOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
+    DbOpcode persistentOpcode = m_persistentOpcodeCache[elementId];
+    DbOpcode transientOpcode = m_transientOpcodeCache[elementId];
     if (WantShowTarget())
+    if (WantShowCurrent() && !m_visitingTransientElements && persistentOpcode != (DbOpcode)0)
         {
         for (auto const& entry : m_comparisonData->GetTransientStates())
-            ovrs.OverrideElement(entry.m_element->GetElementId(), m_symbology.GetTargetRevisionOverrides(entry.m_opcode));
+        m_symbology.GetCurrentRevisionOverrides(elementIdData.m_opcode, symbologyOverrides);
         }
 
     ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
+#endif
 
     T_Super::_AddFeatureOverrides(ovrs);
     }
@@ -135,13 +160,15 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
 BentleyStatus Controller::_CreateScene(SceneContextR context)
     {
     auto status = T_Super::_CreateScene(context);
+#if defined(TODO_VERSION_COMPARE_MESS)
     if (WantShowTarget())
         {
-        for (auto const& entry : m_comparisonData->GetTransientStates())
+        if (elementData.IsValid() && m_visitingTransientElements)
             {
+            m_symbology.GetTargetRevisionOverrides(elementData.m_opcode, symbologyOverrides);
             // Joe doesn't want to show the transient/updated state of a modified element
             // if we are showing them in a single view
-            if (WantShowBoth() && entry.IsModified())
+        if (!WantShowBoth() && elementIdData.IsValid())
                 continue;
 
             auto geom = entry.m_element->ToGeometrySource();
@@ -149,6 +176,7 @@ BentleyStatus Controller::_CreateScene(SceneContextR context)
                 context.VisitGeometry(*geom);
             }
         }
+#endif
 
     return status;
     }
@@ -211,6 +239,7 @@ void getViewCorners(DPoint3dR low, DPoint3dR high, int indent, DgnViewportCR vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     {
+#ifdef USE_LABEL
     m_labelString = label;
 
     TextStringStylePtr style = TextStringStyle::Create();
@@ -233,6 +262,7 @@ void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     position.x = low.x;
     m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
     m_label->SetOrientation(textMatrix);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,7 +271,7 @@ void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
 void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR context)
     {
     T_Super::_DrawDecorations(context);
-
+#ifdef USE_LABEL
     // We only display overlay of version numbers when we have two separate views
     if (WantShowBoth() || !m_label.IsValid())
         return;
@@ -258,6 +288,7 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
 
     graphic->AddTextString(*m_label);
     context.AddViewOverlay(*graphic->Finish());
+#endif
     }
 
         /* ###TODO
@@ -266,3 +297,23 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
         if (WantShowBoth() && element.IsModified())
             continue;
         */
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RevisionComparison::Controller::_OnViewOpened (DgnViewportR vp)
+    {
+    Render::ViewFlags viewFlags = GetViewFlags();
+    if (viewFlags.GetRenderMode() != Render::RenderMode::SmoothShade)
+        viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+
+    viewFlags.SetShowVisibleEdges(false);
+    viewFlags.SetShowPatterns(false);
+    viewFlags.SetShowGrid(false);
+    viewFlags.SetShowClipVolume(false);
+    viewFlags.SetShowTransparency(true);
+    viewFlags.SetShowAcsTriad(false);  // Hide the indicator because it is work-in-progress.
+    vp.GetViewControllerR().GetViewDefinitionR().GetDisplayStyle().SetViewFlags(viewFlags);
+
+    T_Super::_OnViewOpened(vp);
+    }

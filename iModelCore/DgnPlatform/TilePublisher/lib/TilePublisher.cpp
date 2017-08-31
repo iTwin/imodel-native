@@ -4193,6 +4193,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
+    json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
     
     return Status::Success;
     }
