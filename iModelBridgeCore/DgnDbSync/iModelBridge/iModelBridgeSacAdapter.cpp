@@ -111,21 +111,6 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t countTxnsInFile(DgnDbR db)
-    {
-    BeSQLite::Statement stmt;
-    stmt.Prepare(db, "SELECT COUNT(*) FROM " DGN_TABLE_Txns);
-    if (BeSQLite::BE_SQLITE_ROW != stmt.Step())
-        {
-        BeAssert(false);
-        return 0;
-        }
-    return stmt.GetValueInt64(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::CreateIModel(BeFileNameCR imodelName, BeFileNameCR bimName, Params const& saparams)
@@ -174,6 +159,60 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::ExecuteOne(iModelBridge& bridge, Params const& saparams)
+    {
+    BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
+    BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
+
+    DgnDbPtr db;
+    if (!outputFileName.DoesPathExist())
+        {
+        bvector<DgnModelId> dont_care;
+        db = bridge.DoCreateDgnDb(dont_care, saparams.GetDescription().c_str());
+        if (!db.IsValid())
+            {
+            fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(),
+                     bridge._GetParams().GetReportFileName().GetName());
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        BeSQLite::DbResult dbres;
+        bool madeSchemaChanges_dont_care, madeDynamicSchemaChange;
+        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care, madeDynamicSchemaChange);
+        if (!db.IsValid())
+            {
+            fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
+            return BSIERROR;
+            }
+
+        if (BSISUCCESS != bridge.DoConvertToExistingBim(*db))
+            {
+            fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
+                     bridge._GetParams().GetReportFileName().GetName());
+            return BSIERROR;
+            }
+        }
+
+    if (saparams.GetExpirationDate().IsValid())
+        db->SaveExpirationDate(saparams.GetExpirationDate());
+
+    auto rc = db->SaveChanges();//_GetParams().GetDescription().c_str());
+    if (BeSQLite::BE_SQLITE_OK != rc)
+        {
+        //ReportIssueV(IssueSeverity::Fatal, IssueCategory::DiskIO(), Issue::SaveError(), nullptr, m_dgndb->GetLastError().c_str());
+        LOG.fatalv("SaveChanges failed with %s", db->GetLastError().c_str());
+        db->AbandonChanges();
+        return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const& saparams)
     {
     saparams.Initialize();
@@ -191,64 +230,26 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         return ExtractFromIModel(outputFileName, inputFileName);
         }
 
-    bool wasCreated = false;
-    bool wasUpdateEmpty = false;
-
     if (!saparams.ShouldTryUpdate())
         BeFileName::BeDeleteFile(outputFileName);
 
-    DgnDbPtr db;
-    if (!outputFileName.DoesPathExist())
+    bool isNewFile = !outputFileName.DoesPathExist();
+    
+    bvector<BeFileName> inputs;
+    inputs.push_back(inputFileName);
+
+    for (auto input : inputs)
         {
-        wasCreated = true;
-        bvector<DgnModelId> dont_care;
-        db = bridge.DoCreateDgnDb(dont_care, saparams.GetDescription().c_str());
-        if (!db.IsValid())
+        bridge._GetParams().SetInputFileName(input);
+        if (BSISUCCESS != ExecuteOne(bridge, saparams))
             {
-            fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(),
-                     bridge._GetParams().GetReportFileName().GetName());
+            if (isNewFile)
+                {
+                outputFileName.BeDeleteFile();
+                bridge._DeleteSyncInfo();
+                }
             return BSIERROR;
             }
-        }
-    else
-        {
-        BeSQLite::DbResult dbres;
-        bool madeSchemaChanges_dont_care;
-        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care);
-        if (!db.IsValid())
-            {
-            fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
-            return BSIERROR;
-            }
-
-        auto txnsBefore = countTxnsInFile(*db);
-
-        if (BSISUCCESS != bridge.DoConvertToExistingBim(*db))
-            {
-            fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
-                     bridge._GetParams().GetReportFileName().GetName());
-            return BSIERROR;
-            }
-
-        wasUpdateEmpty = (countTxnsInFile(*db) > txnsBefore);
-        }
-
-    if (saparams.GetExpirationDate().IsValid())
-        db->SaveExpirationDate(saparams.GetExpirationDate());
-
-    auto rc = db->SaveChanges();//_GetParams().GetDescription().c_str());
-    if (BeSQLite::BE_SQLITE_OK != rc)
-        {
-        //ReportIssueV(IssueSeverity::Fatal, IssueCategory::DiskIO(), Issue::SaveError(), nullptr, m_dgndb->GetLastError().c_str());
-        LOG.fatalv("SaveChanges failed with %s", db->GetLastError().c_str());
-        db->AbandonChanges();
-        db = nullptr;
-        if (wasCreated)
-            {
-            outputFileName.BeDeleteFile();
-            bridge._DeleteSyncInfo();
-            }
-        return BentleyStatus::ERROR;
         }
 
     /* NEEDS WORK
@@ -259,31 +260,22 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         }
         */
 
-    if (wasCreated)
+    if (isNewFile)
         fwprintf(stdout, L"Created %ls\n", outputFileName.c_str());
-    else
-        {
-        if (wasUpdateEmpty)
-            fwprintf(stdout, L"No changes found\n");
-        else
-            fwprintf(stdout, L"Updated %ls\n", outputFileName.c_str());
-        }
 
-    db = nullptr;
+    // don't print a message regarding updates, as it is inaccurate or misleading in the case where the bim is not changetracked
 
     if (saparams.GetCreateStandalone())
         {
-        db = DgnDb::OpenDgnDb(nullptr, outputFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, outputFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         if (db.IsValid())
             {
             db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
             db->SaveChanges();
-            db->CloseDb();
-            db = nullptr;
             }
         }
 
-    if (saparams.ShouldCompress() && (wasCreated || !wasUpdateEmpty))
+    if (saparams.ShouldCompress())
         {
         BeFileName briefcaseName(outputFileName);
         BeFileName imodelName(briefcaseName);

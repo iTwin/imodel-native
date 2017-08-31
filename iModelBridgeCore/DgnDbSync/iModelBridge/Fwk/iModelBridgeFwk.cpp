@@ -327,6 +327,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-skip-assignment-check"))//undocumented, meant for pp based atp pupose
+            {
+            m_skipAssignmentCheck = true;
+            continue;
+            }
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-create-repository-if-necessary")) // undocumented
             {
             m_createRepositoryIfNecessary = true;
@@ -944,6 +950,9 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    if (!m_jobEnvArgs.m_skipAssignmentCheck)
+        params.SetAssignmentChecker(*this);
+    params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1189,20 +1198,42 @@ int iModelBridgeFwk::UpdateExistingBim()
     // Open the briefcase
     // Note that iModelBridge::_Initialize may have registered new or changed domains, so we have to permit schema changes.
     bool madeSchemaChanges = false;
-    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges);
+    bool hasDynamicSchemaChanges = false;
+    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
     if (!m_briefcaseDgnDb.IsValid())
         {
         GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
         return BentleyStatus::ERROR;
         }
 
-    if (madeSchemaChanges)
+    if (madeSchemaChanges || hasDynamicSchemaChanges)
         {
         // We must isolate schema changes in their own revision, before we let the bridge move on to making data changes.
         m_briefcaseDgnDb->SaveChanges();
         if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
             return RETURN_STATUS_SERVER_ERROR;
         Briefcase_ReleaseSharedLocks();
+        }
+
+    //If we had a schema change, we cannot process the dynamic schema change in the same transaction. So reopen the db.
+    if (madeSchemaChanges)
+        {
+        m_briefcaseDgnDb->CloseDb();
+        m_briefcaseDgnDb = nullptr;
+
+        m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
+        if (!m_briefcaseDgnDb.IsValid())
+            {
+            GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+            return BentleyStatus::ERROR;
+            }
+        if (hasDynamicSchemaChanges)
+            {
+            m_briefcaseDgnDb->SaveChanges();
+            if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
+                return RETURN_STATUS_SERVER_ERROR;
+            Briefcase_ReleaseSharedLocks();
+            }
         }
 
 #ifdef COMMENT_OUT
@@ -1418,6 +1449,8 @@ BeFileName iModelBridgeFwk::QueryBridgeLibraryPathByName(uint64_t* rowid, WStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName)
     {
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
     auto stmt = m_stateDb.GetCachedStatement("SELECT b.BridgeLibraryPath, b.Name FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (a.SourceFile=?) AND (b.ROWID = a.Bridge)");
     stmt->BindText(1, Utf8String(docName), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
@@ -1547,6 +1580,8 @@ BentleyStatus iModelBridgeFwk::SearchForBridgeToAssignToDocument(BeFileNameCR so
     QueryBridgeLibraryPathByName(&bestBridgeRowid, bestBridge.m_bridgeRegSubKey);
     BeAssert(0 != bestBridgeRowid);
 
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
     auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
     insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
     insertAssignment->BindInt64(2, bestBridgeRowid);
@@ -1555,6 +1590,20 @@ BentleyStatus iModelBridgeFwk::SearchForBridgeToAssignToDocument(BeFileNameCR so
 
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
     return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
+    {
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir
+
+    auto findBridgeForDoc = m_stateDb.GetCachedStatement("SELECT b.ROWID BridgeLibraryPath FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (a.SourceFile=?) AND (b.Name=?)");
+    findBridgeForDoc->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
+    findBridgeForDoc->BindText(2, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
+    return BE_SQLITE_ROW == findBridgeForDoc->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1571,6 +1620,8 @@ void iModelBridgeFwk::SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR topD
         {
         if (entryName.GetBaseName().EndsWithI(L".prp"))         // Filter out some control files that we know we should ignore
             continue;
+
+        // *** NEEDS WORK: Should probably store relative paths
 
         if (!isDir)
             SearchForBridgeToAssignToDocument(entryName);
@@ -1611,6 +1662,9 @@ BentleyStatus iModelBridgeFwk::WriteBridgesFile()
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
         return BSIERROR;
         }
+
+    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_jobEnvArgs.m_fwkAssetsDir - turn it back into an abs dir for .txt file?
+
     auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased, a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
     while (BE_SQLITE_ROW == stmt->Step())
         bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), WString(stmt->GetValueText(2), true).c_str(), stmt->GetValueBoolean(1));

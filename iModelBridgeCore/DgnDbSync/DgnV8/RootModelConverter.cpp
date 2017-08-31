@@ -180,8 +180,7 @@ BentleyApi::BentleyStatus Converter::SupplementV8ECSchemas()
             ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
-        // This causes horrible performance.  Commented out for now - [CGM]
-        if (!ECN::ECSchemaConverter::Convert(*primarySchema))
+        if (!ECN::ECSchemaConverter::Convert(*primarySchema, false))
             {
             Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", primarySchema->GetFullSchemaName().c_str());
             ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
@@ -321,9 +320,9 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
-                                              entry.SourceInstanceId.c_str());
+                                    entry.SourceInstanceId.c_str());
         V8ECInstanceKey v8TargetKey(ECClassName(Utf8String(entry.TargetSchemaName.c_str()).c_str(), Utf8String(entry.TargetClassName.c_str()).c_str()),
-                                          entry.TargetInstanceId.c_str());
+                                    entry.TargetInstanceId.c_str());
         ECClassName v8RelName(Utf8String(entry.RelationshipSchemaName.c_str()).c_str(), Utf8String(entry.RelationshipClassName.c_str()).c_str());
         Utf8String v8RelFullClassName = v8RelName.GetClassFullName();
 
@@ -356,15 +355,6 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
                 continue;
                 }
             }
-
-        //if (BentleyApi::SUCCESS != V8ECRelationshipInfo::Insert(dgndb, v8RelName, v8SourceKey, v8TargetKey))
-        //    {
-        //    Utf8String str;
-        //    str.Sprintf("Could not insert v8 relationship '%s' in SyncInfo.", v8RelName.GetClassFullName().c_str());
-        //    ReportIssueV(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), str.c_str());
-        //    BeAssert(false && "Could not insert v8 relationship info in SyncInfo.");
-        //    return BSIERROR;
-        //    }
         ECDiagnostics::LogV8RelationshipDiagnostics(dgndb, v8RelName, v8SourceKey, sourceInstanceKey.IsValid(), sourceInstanceIsElement, v8TargetKey, targetInstanceKey.IsValid(), targetInstanceIsElement);
 
         if (!sourceInstanceKey.IsValid() || !targetInstanceKey.IsValid())
@@ -384,17 +374,6 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             continue;
             }
 
-        //if (!sourceInstanceIsElement || !targetInstanceIsElement)
-        //    {
-        //    Utf8String errorMsg;
-        //    errorMsg.Sprintf("Ignored relationship '%s' (Source: %s|%s Target %s|%s) because at least one of the ends doesn't map to an element.",
-        //                     v8RelFullClassName.c_str(),
-        //                     v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
-        //                     v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId());
-        //    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
-        //    continue;
-        //    }
-
         ECN::ECClassCP relClass = GetDgnDb().Schemas().GetClass(v8RelName.GetSchemaName(), v8RelName.GetClassName());
         if (relClass == nullptr || !relClass->IsRelationshipClass())
             {
@@ -405,25 +384,138 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             continue;
             }
 
-        BeSQLite::EC::ECInstanceKey relKey;
-        if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
+        // If the relationship class inherits from one of the two biscore base relationship classes, then it is a link table relationship, and can use the API
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements) || relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
             {
-            Utf8String dgndbError = GetDgnDb().GetLastError();
+            BeSQLite::EC::ECInstanceKey relKey;
+            if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
+                {
+                Utf8String dgndbError = GetDgnDb().GetLastError();
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.%s%s",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str(),
+                                 dgndbError.empty() ? "" : " Reason: ",
+                                 dgndbError.empty() ? "" : dgndbError.c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                }
+            continue;
+            }
+
+        ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
+        // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
+        ECN::ECPropertyP prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+        if (nullptr == prop)
+            {
             Utf8String errorMsg;
-            errorMsg.Sprintf("Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+            errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                             "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                             "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
                              "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
-                             "Insertion into target BIM file failed.%s%s",
+                             "Insertion into target BIM file failed.",
+                             relClass->GetName().c_str(), targetClass->GetFullName(),
                              v8RelFullClassName.c_str(),
                              v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
                              v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
                              sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
                              v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
-                             targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str(),
-                             dgndbError.empty() ? "" : " Reason: ",
-                             dgndbError.empty() ? "" : dgndbError.c_str());
-
+                             targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
                         errorMsg.c_str());
+
+            continue;
+            }
+        ECN::NavigationECPropertyP navProp = prop->GetAsNavigationPropertyP();
+        if (nullptr == navProp)
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                             "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                             "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                             "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                             "Insertion into target BIM file failed.",
+                             relClass->GetName().c_str(), targetClass->GetFullName(),
+                             v8RelFullClassName.c_str(),
+                             v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                             v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                             sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                             targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+            ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                        errorMsg.c_str());
+
+            continue;
+            }
+        ECN::ECValue val;
+        val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
+
+        DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
+        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
+            {
+            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
+            if (nullptr == aspect)
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Unable to get ElementAspect."
+                                 "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+        else
+            {
+            if (DgnDbStatus::Success != element->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Target ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
             }
         }
 
@@ -635,10 +727,12 @@ BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
     if (schemas.empty())
         return BentleyApi::SUCCESS; //no schemas to import
 
-    // need to ensure there are no duplicated aliases
+    // need to ensure there are no duplicated aliases.  Also need to remove unused references
     bset<Utf8String, CompareIUtf8Ascii> prefixes;
     for (ECN::ECSchemaP schema : schemas)
         {
+        schema->RemoveUnusedSchemaReferences();
+
         auto it = prefixes.find(schema->GetAlias());
         if (it == prefixes.end())
             {
@@ -663,6 +757,9 @@ BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
         }
 
     bvector<BECN::ECSchemaCP> constSchemas = m_schemaReadContext->GetCache().GetSchemas();
+    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
+    auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
+    constSchemas.erase(removeAt, constSchemas.end());
 
 //#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
@@ -784,8 +881,7 @@ void RootModelConverter::_ConvertSpatialViews()
     if (firstView.IsValid() && !m_defaultViewId.IsValid())
         m_defaultViewId = firstView;
 
-    auto v8File = m_rootFile;
-    NamedViewCollectionCR namedViews = v8File->GetNamedViews();
+    NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
     for (DgnV8Api::NamedViewPtr namedView : namedViews)
         ConvertNamedView(*namedView, m_rootTrans, vf);
     }
@@ -820,17 +916,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId);
     if (NULL == m_rootModelRef)
         return openStatus;
-
-    if (!ShouldConvertToPhysicalModel(*GetRootModelP()))
-        {
-        auto defaultModel = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, m_rootFile->GetDefaultModelId());
-        if (ShouldConvertToPhysicalModel(*defaultModel))
-            {
-            m_rootModelRef = defaultModel;
-            rootModelId = m_rootModelRef->GetModelId();
-            ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Compatibility(), Converter::Issue::DefaultedRootModel(), Converter::IssueReporter::FmtModel(*m_rootModelRef->GetDgnModelP()).c_str());
-            }
-        }
 
     if (DgnV8Api::DGNFILE_STATUS_Success != (openStatus = _ComputeCoordinateSystemTransform()))
         return openStatus;
@@ -1053,7 +1138,8 @@ void RootModelConverter::_ConvertModels()
 
     if (nullptr != m_rootModelRef && m_isRootModelSpatial)
         {
-        ImportSpatialModels(*m_rootModelRef, m_rootTrans);
+        bool haveFoundSpatialRoot = false;
+        ImportSpatialModels(haveFoundSpatialRoot, *m_rootModelRef, m_rootTrans);
         if (WasAborted())
             return;
         }
@@ -1066,13 +1152,31 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
+bool RootModelConverter::IsFileAssignedToBridge(DgnV8FileCR v8File) const 
+    {
+    BeFileName fn(v8File.GetFileName().c_str());
+    return m_params.IsFileAssignedToBridge(fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The purpose of this function is to *discover* spatial models, not to convert their contents.
+* The outcome of this function is to a) create an (empty) BIM spatial model for each discovered V8 spatial model,
+* and b) to discover and record the spatial transform that should be applied when (later) converting
+* the elements in each model.
+* This function also has the side effect of creating or updating the job subject hierarchy.
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
     {
     // NB: Don't filter out files or models here. We need to know about the existence of all of them 
     // (e.g., so that we can infer deleted models). We will do any applicable filtering in ConvertElementsInModel.
 
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
     DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
+
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+    if (isThisMyFile)
+        haveFoundSpatialRoot = true;
 
     // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
     ClassifyNormal2dModels (thisV8File);
@@ -1092,8 +1196,12 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
         DgnV8Api::DgnAttachmentLoadOptions loadOptions;
         loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
         loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::Model);
-        if (GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) // If we know that we won't be processing graphics in this model but only attachments
-            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements); //  Then we can save a lot of time by filling only the control section
+        // If we know that we won't be processing graphics in this model but only attachments
+        // then we can save a lot of time by filling only the control section. We do that in two
+        // cases: 1) this bridge should not convert this file (but may have to convert references attached to it),
+        // or 2) this is an update and this file has not changed and so no elements in it will be converted.
+        if (!isThisMyFile || GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) 
+            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
 
         if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
             loadOptions.m_loadRasterRefs = true;
@@ -1114,6 +1222,9 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
         {                  
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
+
+        if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
+            continue; // this leads to models in another bridge's territory. Stay out.
 
         // Keep the mapping between models and the attachment that references the model
         DgnV8Api::Fd_opts fdOpts = attachment->GetFDOptsCR();
@@ -1146,7 +1257,7 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
             }
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
-        ImportSpatialModels(*attachment, refTrans);
+        ImportSpatialModels(haveFoundSpatialRoot, *attachment, refTrans);
         }
 
     if (hasPushedReferencesSubject)
@@ -1178,6 +1289,34 @@ void RootModelConverter::_ConvertLineStyles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
+    {
+    // try to find a spatial view in the viewgroup
+    for (uint32_t iView=0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+        {
+        ViewInfoR viewInfo = m_viewGroup->GetViewInfoR(iView);
+        Bentley::ViewPortInfoCR viewPortInfo = m_viewGroup->GetViewPortInfo(iView);
+
+        if (!viewInfo.GetViewFlags().on_off || !viewPortInfo.m_wasDefined)
+            continue;
+
+        auto modelId = viewInfo.GetRootModelId();
+        Bentley::StatusInt openStatus;    
+        auto model = m_rootFile->LoadRootModelById(&openStatus, modelId);
+        if (nullptr == model)
+            continue;
+
+        if (!ShouldConvertToPhysicalModel(*model))
+            continue;
+
+        return modelId;
+        }
+    return INVALID_MODELID;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
     {
     if (IsUpdating() && !m_params.GetRootModelChoice().IsSet())
@@ -1201,14 +1340,15 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
 
     BeAssert(RootModelChoice::Method::FromActiveViewGroup == m_params.GetRootModelChoice().m_method);
 
+    DgnV8Api::ModelId defaultModelId = m_rootFile->GetDefaultModelId(); // We'll fall back on the default model if we can't find an eligible root from the viewgroups
+
+    // Start with the root of the active viewgroup. That's what the user was looking at the last time he did save settings.
     ViewGroupCollectionR viewGroups = m_rootFile->GetViewGroupsR();
     m_viewGroup = viewGroups.FindByElementId(m_rootFile->GetActiveViewGroupId());
 
-    // the viewgroup stored in the tcb no longer exists. Use the most recently modified one instead.
+    // Problem: the viewgroup stored in the tcb no longer exists. Use the most recently modified one instead.
     if (!m_viewGroup.IsValid())
         m_viewGroup = viewGroups.FindLastModifiedMatchingModel(INVALID_ELEMENTID, INVALID_MODELID, false, -1);
-
-    DgnV8Api::ModelId defaultModelId = m_rootFile->GetDefaultModelId();
 
     if (!m_viewGroup.IsValid()) // there must not be any viewgroup in the file. 
         DgnV8Api::ViewGroup::Create(m_viewGroup, defaultModelId, *m_rootFile, false, nullptr, true);
@@ -1219,26 +1359,21 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
         return defaultModelId;
         }
 
-    // try to find a spatial view in the viewgroup
-    for (uint32_t iView=0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+    auto rootModelId = _GetRootModelIdFromViewGroup();
+    if (INVALID_MODELID == rootModelId)
         {
-        ViewInfoR viewInfo = m_viewGroup->GetViewInfoR(iView);
-        Bentley::ViewPortInfoCR viewPortInfo = m_viewGroup->GetViewPortInfo(iView);
-
-        if (!viewInfo.GetViewFlags().on_off || !viewPortInfo.m_wasDefined)
-            continue;
-
-        auto modelId = viewInfo.GetRootModelId();
-        Bentley::StatusInt openStatus;    
-        auto model = m_rootFile->LoadRootModelById(&openStatus, modelId);
-        if (nullptr == model)
-            continue;
-
-        if (!ShouldConvertToPhysicalModel(*model))
-            continue;
-
-        return modelId;
+        // The active or most recently modified ViewGroup does not have a spatial root. 
+        // See if *any* viewgroup has a spatial root.
+        for (auto vg : viewGroups)
+            {
+            m_viewGroup = vg;
+            if (INVALID_MODELID != (rootModelId = _GetRootModelIdFromViewGroup()))
+                break;
+            }    
         }
+
+    if (INVALID_MODELID != rootModelId)
+        return rootModelId;
 
     return defaultModelId;
     }
@@ -2281,6 +2416,19 @@ void RootModelConverter::RootModelSpatialParams::Legacy_Converter_Init(BeFileNam
     SetReportFileName();
     m_isCreatingNewDb = true;
     m_isUpdating = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid)
+    {
+    for (auto& rmm : m_v8ModelMappings)
+        {
+        if (rmm.GetV8ModelSyncInfoId() == sid)
+            return rmm;
+        }
+    return ResolvedModelMapping();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
