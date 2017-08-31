@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -13,6 +13,8 @@
 #endif
 
 #include <png/png.h>
+#include <png/pngstruct.h>
+#include <png/pnginfo.h>
 #include <BeJpeg/BeJpeg.h>
 
 BEGIN_UNNAMED_NAMESPACE
@@ -67,7 +69,7 @@ struct PngReader
         png_set_sig_bytes(m_png, 0);
         }
 
-    ~PngReader() {if (m_png) png_destroy_read_struct(&m_png, &m_info, png_infopp_NULL);}
+    ~PngReader() {if (m_png) png_destroy_read_struct(&m_png, &m_info, NULL);}
     void Read(Image::Format format) 
         {
         // PNG_TRANSFORM_STRIP_16       >> strip 16 bit/color files down to 8 bits per color.
@@ -81,7 +83,7 @@ struct PngReader
         else
             png_set_add_alpha(m_png, 0xff, PNG_FILLER_AFTER);
 
-        png_read_png(m_png, m_info, imgTransforms, png_voidp_NULL);
+        png_read_png(m_png, m_info, imgTransforms, NULL);
         }
 
     void ReadInfo()
