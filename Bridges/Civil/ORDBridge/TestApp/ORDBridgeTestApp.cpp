@@ -21,15 +21,15 @@ static int runBridge(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    ORDBridge* bridge = dynamic_cast<ORDBridge*>(iModelBridge_getInstance());
+    auto* iModelBridgeP = iModelBridge_getInstance();
 
     iModelBridgeSacAdapter::Params saparams;
-    if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*bridge, saparams, argc, argv))
+    if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))
         return BentleyStatus::ERROR;
 
-    iModelBridgeSacAdapter::InitializeHost(*bridge);
+    iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
-    if (BSISUCCESS != bridge->_Initialize(argc, argv))
+    if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
         {
         fprintf(stderr, "_Initialize failed\n");
         return BentleyStatus::ERROR;
@@ -37,7 +37,7 @@ static int runBridge(int argc, WCharCP argv[])
 
     saparams.Initialize();
 
-    return iModelBridgeSacAdapter::Execute(*bridge, saparams);
+    return iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
     }
 
 #if defined(__unix__)

@@ -675,18 +675,8 @@ void ORDConverter::ConvertCorridors(GeometryModel::SDK::GeometricModel const& ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, WCharCP rootModelName)
+Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, ModelId rootModelId)
     {
-    ModelId rootModelId = 0;
-    if (rootModelName)
-        rootModelId = dgnFile.FindModelIdByName(rootModelName);
-    else
-        {
-        auto rootModelListP = dgnFile.GetRootModelList(true);
-        if (rootModelListP->size() > 0)
-            rootModelId = rootModelListP->at(0)->GetModelId();
-        }
-
     // The Converter's initialization step sets SetProcessingDisabled = true, but
     // CIF needs backpointers to be created while "processingAffected" in order to
     // be able to find some data (e.g. Alignment's names). Setting this to false
@@ -705,8 +695,7 @@ Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, WCharCP rootModelName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, WCharCP rootModelName, SubjectCR subject, 
-    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
     {
     DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;    
     DgnDbSync::DgnV8::ConverterLibrary converterLib(subject.GetDgnDb(), converterLibraryParams);
@@ -722,20 +711,26 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, WCharCP rootModelNam
     converterLibraryParams.AddDrawingOrSheetFile(dgnFileName);    
     dgnFileSet.insert(dgnFilePtr.get());
 
-    auto rootModelP = loadDgnModel(*dgnFilePtr, rootModelName);
-    if (!rootModelP)
+    converterLib.SetRootV8File(dgnFilePtr.get());
+    auto rootSpatialModelP = loadDgnModel(*dgnFilePtr, converterLib.GetRootModelId());
+    if (!rootSpatialModelP)
         return;
 
-    auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
+    auto rootCIFModelP = loadDgnModel(*dgnFilePtr, dgnFilePtr->GetDefaultModelId());
+    if (!rootCIFModelP)
+        return;
+
+    auto cifConnPtr = ConsensusConnection::Create(*rootCIFModelP);
     auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
     if (cifModelPtr.IsValid())
         {
-        converterLib.ComputeCoordinateSystemTransform(*rootModelP);
-        converterLib.ConvertModelMaterials(*rootModelP);
+        converterLib.ComputeCoordinateSystemTransform(*rootSpatialModelP);
+        converterLib.ConvertModelMaterials(*rootSpatialModelP);
 
-        // Mapping the root-model to the BIM Repository model by default.
-        // Such mapping may be overriden later depending on where CIF data is.
-        converterLib.RecordModelMapping(*rootModelP, *subject.GetModel());
+        // Mapping the root-model to the Physical Model on the BIM side.
+        // That assumes the root-model is spatial (3D).
+        converterLib.RecordModelMapping(*rootSpatialModelP,
+            *RoadRailBim::RoadRailPhysicalDomain::GetDomain().QueryPhysicalModel(subject, ORDBRIDGE_PhysicalModelName));
 
         auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
         while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())

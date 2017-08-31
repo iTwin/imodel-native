@@ -15,12 +15,6 @@ BEGIN_ORDBRIDGE_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
-    if (argv[iArg] == wcsstr(argv[iArg], L"--root-model="))
-        {
-        m_rootModelName = iModelBridge::GetArgValueW(argv[iArg]);
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
     WString arg(argv[iArg]);
     if (arg.StartsWith(L"--DGN"))
         return iModelBridge::CmdLineArgStatus::Success;
@@ -161,7 +155,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     ORDConverter converter;
-    converter.ConvertORDData(_GetParams().GetInputFileName(), m_rootModelName.c_str(), jobSubject, *changeDetectorPtr);
+    converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
 
     auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);

@@ -24,8 +24,7 @@ private:
         Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
 
 public:
-    void ConvertORDData(BeFileNameCR dgnFileName, WCharCP rootModelName, Dgn::SubjectCR subject, 
-        Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
+    void ConvertORDData(BeFileNameCR dgnFileName, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
 }; // ORDConverter
 
 END_ORDBRIDGE_NAMESPACE

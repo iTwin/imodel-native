@@ -20,8 +20,6 @@ struct ORDBridge : Dgn::iModelBridgeWithSyncInfoBase
     DEFINE_T_SUPER(iModelBridgeBase)
 
 private:
-    WString m_rootModelName;
-
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 
 protected:
