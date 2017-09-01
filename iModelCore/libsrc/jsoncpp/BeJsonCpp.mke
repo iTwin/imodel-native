@@ -77,5 +77,10 @@ CREATE_STATIC_LIBRARIES     = 1
 
 %include $(sharedMki)linkLibrary.mki
 
+%if (" " != $[@findstring VS, $(BUILD_TOOLSET)])
+    always:
+        python $(baseDir)UpdatePdbTime.py $(o)$(CCompPDBName).pdb $(BeJsonCppObjs)
+%endif
+
 $(BuildContext)Delivery/jsoncpp-license.txt : $(_MakeFilePath)LICENSE
     $(LinkFirstDepToFirstTarget)
