@@ -1188,6 +1188,9 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty)
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Schema with empty alias attribute was supposed to fail to deserialize.";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinition)
     {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
@@ -1196,14 +1199,37 @@ TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinitio
             <ECEntityClass typeName='MyEntity'>
                 <ECCustomAttributes>
                     <SillyCA xmlns='testSchema.01.00'>
-                        <SillyValue>42</SillyValue>
+                        <SillyDouble>42</SillyDouble>
+                        <SillyStruct>
+                            <SillyStructDouble>35</SillyStructDouble>
+                        </SillyStruct>
                     </SillyCA>
                 </ECCustomAttributes>
             </ECEntityClass>
 
-            <ECCustomAttributeClass typeName="SillyCA">
-                <ECProperty propertyName='SillyValue' typeName='double'/>
+            <ECCustomAttributeClass typeName='SillyCA'>
+                <ECProperty propertyName='SillyDouble' typeName='double'>
+                    <ECCustomAttributes>
+                        <DoubleSillyCA>
+                            <DoubleSillyDouble>49</DoubleSillyDouble>
+                        </DoubleSillyCA>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECStructProperty propertyName='SillyStruct' typeName='SillyStruct' />
             </ECCustomAttributeClass>
+
+            <ECStructClass typeName='SillyStruct'>
+                <BaseClass>SillyBaseStruct</BaseClass>
+                <ECProperty propertyName='SillyStructDouble' typeName='double' />
+            </ECStructClass>
+
+            <ECCustomAttributeClass typeName='DoubleSillyCA'>
+                <ECProperty propertyName='DoubleSillyDouble' typeName='double' />
+            </ECCustomAttributeClass>
+
+            <ECStructClass typeName='SillyBaseStruct'>
+                <ECProperty propertyName='SillyBaseStructDouble' typeName='double' />
+            </ECStructClass>
         </ECSchema>)xml";
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
@@ -1215,11 +1241,27 @@ TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinitio
     ASSERT_NE(nullptr, myEntity);
 
     IECInstancePtr sillyCA = myEntity->GetCustomAttribute("testSchema", "SillyCA");
-    ASSERT_TRUE(sillyCA.IsValid()) << "Couldn't find SillyCA instance";
-    ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, sillyCA->GetValue(value, "SillyValue"));
-    ASSERT_FALSE(value.IsNull());
-    ASSERT_EQ(42, value.GetDouble());
+    ASSERT_TRUE(sillyCA.IsValid());
+    ECValue sillyDouble;
+    EXPECT_EQ(ECObjectsStatus::Success, sillyCA->GetValue(sillyDouble, "SillyDouble"));
+    EXPECT_FALSE(sillyDouble.IsNull());
+    EXPECT_EQ(42, sillyDouble.GetDouble());
+
+    ECValue sillyStructDouble;
+    EXPECT_EQ(ECObjectsStatus::Success, sillyCA->GetValue(sillyStructDouble, "SillyStruct.SillyStructDouble"));
+    EXPECT_FALSE(sillyStructDouble.IsNull());
+    EXPECT_EQ(35, sillyStructDouble.GetDouble());
+
+    ECClassCP sillyCAClass = schema->GetClassCP("SillyCA");
+    ASSERT_NE(nullptr, sillyCAClass);
+    ECPropertyCP sillyDoubleProp = sillyCAClass->GetPropertyP("SillyDouble");
+    ASSERT_NE(nullptr, sillyDoubleProp);
+
+    IECInstancePtr doubleSillyCA = sillyDoubleProp->GetCustomAttribute("testSchema", "DoubleSillyCA");
+    ASSERT_TRUE(doubleSillyCA.IsValid());
+    ECValue doubleSillyDouble;
+    EXPECT_EQ(ECObjectsStatus::Success, doubleSillyCA->GetValue(doubleSillyDouble, "DoubleSillyDouble"));
+    EXPECT_EQ(49, doubleSillyDouble.GetDouble());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
