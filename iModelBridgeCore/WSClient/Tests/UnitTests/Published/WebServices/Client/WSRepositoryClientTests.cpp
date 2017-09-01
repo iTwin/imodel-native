@@ -2163,11 +2163,11 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsOb
 struct WSRepositoryClientTests_VariousServerUrls : TestWithParam<vector<Utf8String>> {};
 INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
         // Host
-        {"http://foo.boo.com/foo/v2.5/repositories/A--B/", "http://foo.boo.com/foo/"},
-        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo/"},
+        {"http://foo.boo.com/foo/v2.5/repositories/A--B/", "http://foo.boo.com/foo"},
+        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo"},
         // Service path
-        {"https://foo.com/ws250/v2.5/repositories/A--B/", "https://foo.com/ws250/"},
-        {"https://foo.com/ws2/v2.5/repositories/A--B/", "https://foo.com/ws2/"}
+        {"https://foo.com/ws250/v2.5/repositories/A--B/", "https://foo.com/ws250"},
+        {"https://foo.com/ws2/v2.5/repositories/A--B/", "https://foo.com/ws2"}
     }));
 
 TEST_P(WSRepositoryClientTests_VariousServerUrls, ParseRepositoryUrl_RepositoryUrl_ServerUrlParsed)
@@ -2195,7 +2195,7 @@ TEST_P(WSRepositoryClientTests_ServerUrlEndings, ParseRepositoryUrl_RepositoryUr
     {
     auto param = GetParam();
     WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param);
-    EXPECT_EQ("https://foo.com/foo/", repository.GetServerUrl());
+    EXPECT_EQ("https://foo.com/foo", repository.GetServerUrl());
     EXPECT_EQ("A--B", repository.GetId());
     EXPECT_EQ("A", repository.GetPluginId());
     EXPECT_EQ("B", repository.GetLocation());
@@ -2222,7 +2222,7 @@ TEST_P(WSRepositoryClientTests_RepositoryIdAndRemainingPath, ParseRepositoryUrl_
     Utf8String remainingUrlPath;
     auto repository = WSRepositoryClient::ParseRepositoryUrl(param[0], &remainingUrlPath);
     EXPECT_EQ("Foo--Boo", repository.GetId());
-    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ("https://foo.com/boo", repository.GetServerUrl());
     EXPECT_EQ(param[1], remainingUrlPath);
     }
 
@@ -2238,7 +2238,7 @@ TEST_P(WSRepositoryClientTests_PluginId, ParseRepositoryUrl_Url_PluginIdParsed)
     auto param = GetParam();
     WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
     EXPECT_EQ(param[1], repository.GetPluginId());
-    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ("https://foo.com/boo", repository.GetServerUrl());
     EXPECT_EQ("Boo", repository.GetLocation());
     }
 
@@ -2256,7 +2256,7 @@ TEST_P(WSRepositoryClientTests_Location, ParseRepositoryUrl_Url_LocationParsed)
     auto param = GetParam();
     auto repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
     EXPECT_EQ(param[1], repository.GetLocation());
-    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ("https://foo.com/boo", repository.GetServerUrl());
     EXPECT_EQ("A", repository.GetPluginId());
     }
 #endif
