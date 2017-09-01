@@ -892,17 +892,14 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
         if (extractOption == ExtractOption::InstancesOnly && !primaryClass->IsRelationshipClass())
             {
             ExtractInstance(rowEntry);
-            rowEntry.~RowEntry();
             continue;
             }
         
         if (extractOption == ExtractOption::RelationshipInstancesOnly)
             {
             ExtractRelInstances(rowEntry);
-            rowEntry.~RowEntry();
             continue;
             }
-        rowEntry.~RowEntry();
         }
 
     return SUCCESS;
@@ -1959,9 +1956,31 @@ ChangeIterator::RowEntry ChangeIterator::end() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-ChangeIterator::RowEntry::RowEntry(ChangeIterator const& iterator, Changes::Change const& change) : m_ecdb(iterator.GetDb()), m_iterator(iterator), m_change(change)
+ChangeIterator::RowEntry::RowEntry(ChangeIterator const& iterator, Changes::Change const& change) : m_ecdb(iterator.GetDb()), m_iterator(iterator), m_change(change), m_sqlChange(nullptr), m_tableMap(nullptr)
     {
     Initialize();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     08/2017
+//---------------------------------------------------------------------------------------
+ChangeIterator::RowEntry::RowEntry(ChangeIterator::RowEntry const& other) : m_ecdb(other.m_ecdb), m_iterator(other.m_iterator), m_change(other.m_change)
+    {
+    *this = other;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     08/2017
+//---------------------------------------------------------------------------------------
+ChangeIterator::RowEntry& ChangeIterator::RowEntry::operator=(ChangeIterator::RowEntry const& other)
+    {
+    m_change = other.m_change;
+    m_tableMap = other.m_tableMap;
+    m_primaryInstanceId = other.m_primaryInstanceId;
+    m_primaryClass = other.m_primaryClass;
+    InitSqlChange();
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1977,7 +1996,7 @@ ChangeIterator::RowEntry::~RowEntry()
 //---------------------------------------------------------------------------------------
 void ChangeIterator::RowEntry::Reset()
     {
-    m_sqlChange = nullptr;
+    FreeSqlChange();
     m_tableMap = nullptr;
     m_primaryInstanceId = ECInstanceId();
     m_primaryClass = nullptr;

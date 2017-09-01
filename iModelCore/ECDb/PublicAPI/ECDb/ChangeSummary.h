@@ -59,7 +59,7 @@ struct SqlChange;
 //! @ingroup ECDbGroup
 //! @bsiclass                                               Ramanujam.Raman      12/2016
 //=======================================================================================
-struct ChangeIterator final
+struct ChangeIterator final : NonCopyableClass
 {
     struct ColumnIterator;
 
@@ -90,6 +90,10 @@ struct ChangeIterator final
         void Reset();
 
     public:
+        ECDB_EXPORT RowEntry(RowEntry const& other);
+
+        ECDB_EXPORT RowEntry& operator=(RowEntry const& other);
+
         ECDB_EXPORT ~RowEntry();
 
         //! Returns true if the entry points to a row that's mapped to a ECClass
