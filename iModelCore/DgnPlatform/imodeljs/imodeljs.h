@@ -64,7 +64,7 @@ struct IModelJs
     DGNPLATFORM_EXPORT static BentleyStatus OpenDgnDb(BeSQLite::DbResult&, Utf8StringR errmsg, DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
     DGNPLATFORM_EXPORT static BentleyStatus GetECClassMetaData(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     DGNPLATFORM_EXPORT static BentleyStatus GetElement(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& inOpts);
-    DGNPLATFORM_EXPORT static BentleyStatus InsertElement(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& props);
+    DGNPLATFORM_EXPORT static DgnDbStatus InsertElement(Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value& props);
     DGNPLATFORM_EXPORT static BentleyStatus GetModel(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static BentleyStatus GetElementPropertiesForDisplay(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Utf8CP id);
     

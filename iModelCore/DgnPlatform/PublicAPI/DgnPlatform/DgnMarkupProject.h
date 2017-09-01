@@ -449,8 +449,11 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
 
 public:
+    BE_JSON_NAME(linkedElementId)
+
     //! Constructor
     explicit MarkupExternalLink(CreateParams const& params) : T_Super(params), m_linkedElementId(params.m_linkedElementId) {}
 

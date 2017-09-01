@@ -507,12 +507,10 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_jsonInstance);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_jsonInstance.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };
-
 
     struct DeleteInstanceWorker : WorkerBase<DbResult>
         {
@@ -632,8 +630,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_rowsJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_rowsJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };
@@ -921,8 +918,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_metaDataJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_metaDataJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };
@@ -963,8 +959,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_elementJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_elementJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };
@@ -1005,8 +1000,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_modelJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_modelJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };
@@ -1041,19 +1035,19 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             return;
             }
 
-        if (BSISUCCESS != IModelJs::InsertElement(m_status, m_errmsg, m_out, GetDgnDb(), m_props))
+        m_status = IModelJs::InsertElement(m_errmsg, m_out, GetDgnDb(), m_props);
+        if (m_status != DgnDbStatus::Success)
             SetupErrorReturn();
         }
 
     bool _GetResult(v8::Local<v8::Value>& result) override
         {
-        Utf8String resultStr = Json::FastWriter::ToString(m_out);
-        result = Nan::New(resultStr.c_str()).ToLocalChecked();
+        result = Nan::New(m_out.ToString().c_str()).ToLocalChecked();
         return true;
         }
     };
 
-//=======================================================================================
+    //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1206,8 +1200,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_rowsJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_rowsJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
         };

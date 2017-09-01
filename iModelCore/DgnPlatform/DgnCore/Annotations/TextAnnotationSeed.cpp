@@ -81,6 +81,16 @@ void TextAnnotationSeed::_ToJson(JsonValueR out, JsonValueCR opts) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
+void TextAnnotationSeed::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+#if defined (TOFROM_JSON)
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, TextAnnotationSeedCR style)
     {
     bvector<Byte> data;

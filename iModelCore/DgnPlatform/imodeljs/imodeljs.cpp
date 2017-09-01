@@ -224,10 +224,7 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
             continue;
 
         if (value.IsNull())
-            {
-            rowJson[name] = Json::Value();
-            continue;
-            }
+            continue; // if the value is null, just skip it
 
         ECN::ECTypeDescriptor typedesc = info.GetDataType();
         if (typedesc.IsNavigation())

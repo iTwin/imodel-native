@@ -242,15 +242,43 @@ BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, Json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IModelJs::InsertElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR props)
+DgnDbStatus IModelJs::InsertElement(Utf8StringR errmsg, JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
     {
-    DgnElement::CreateParams params(dgndb, props);
+    DgnElement::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
-        return ERROR;
+        return DgnDbStatus::WrongClass;
 
-    return BSISUCCESS;
+    ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(dgndb, params.m_classId);
+    if (nullptr == elHandler)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
+    DgnElementPtr el = elHandler->Create(params);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadArg;
+        }
+
+    el->FromJson(inJson);
+
+#if defined (TOFROM_JSON)
+    auto ecclass = dgndb.Schemas().GetClass(ECN::ECClassId(m_classId.GetValue()));
+    for (auto prop : AutoHandledPropertiesCollection(eclass, db, ECSqlClassParams::StatementType::InsertUpdate, false))
+        {
+        autoHandledProperties.push_back(prop);
+        }
+#endif
+
+    DgnDbStatus status;
+    auto newEl = el->Insert(&status);
+    if (newEl.IsValid())
+        outJson[json_id()] = newEl->GetElementId().ToHexStr();
+
+    return status;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
