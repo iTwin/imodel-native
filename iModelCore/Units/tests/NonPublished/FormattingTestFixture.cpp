@@ -747,10 +747,15 @@ void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFor
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Utf8CP expected)
     {
-   // NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
     NamedFormatSpecCP  nfsP = StdFormatSet::FindFormatSpec(stdName);
-    Json::Value val = nfsP->ToJson(verbose);
-    LOG.infov("Format %s json: %s", stdName, val.ToString().c_str());
+    Json::Value jval = nfsP->ToJson(verbose);
+    LOG.infov("Format %s json: %s", stdName, jval.ToString().c_str());
+    bool equ; 
+
+    NamedFormatSpec nfs1 = NamedFormatSpec(jval);
+
+    equ = nfsP->IsIdentical(nfs1);
+    EXPECT_TRUE(equ);
     }
 
 //----------------------------------------------------------------------------------------

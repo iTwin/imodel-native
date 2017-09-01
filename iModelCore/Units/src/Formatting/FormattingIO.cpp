@@ -334,6 +334,29 @@ UnitProxy::UnitProxy(Json::Value jval)
     }
 
 
+void UnitProxy::LoadJson(Json::Value jval) const
+    {
+    Utf8CP paramName;
+    Utf8String str;
+    m_unitLabel = nullptr;
+    m_unitName = nullptr;
+
+    if (jval.empty())
+        return;
+
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            m_unitName = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
+            m_unitLabel = val.asString();
+        }
+    if (!m_unitName.empty())
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    }
+
 //===================================================
 //
 //UnitProxySet Methods
@@ -394,8 +417,7 @@ Json::Value CompositeValueSpec::ToJson() const
 
     if (valid)
         {
-        if (IsIncludeZero())
-            jCVS[json_includeZero()] = true;
+        jCVS[json_includeZero()] = IsIncludeZero();
         if (m_spacer.length() > 0)
             jCVS[json_spacer()] = m_spacer.c_str();
         }
@@ -414,19 +436,37 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     Utf8String minor;
     Utf8String sub;
     Utf8String input;
-    
+    UnitProxyCP upp;  
+    int typeCount = 0;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
+        str = val.ToString();
         if (BeStringUtilities::StricmpAscii(paramName, json_MajorUnit()) == 0)
-            major = val.asString();
+            {
+            upp = m_unitProx.GetProxy(indxMajor);
+            upp->LoadJson(val);
+            typeCount++;
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_MiddleUnit()) == 0)
-            middle = val.asString();
+            {
+            upp = m_unitProx.GetProxy(indxMiddle);
+            upp->LoadJson(val);
+            typeCount++;
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_MinorUnit()) == 0)
-            minor = val.asString();
+            {
+            upp = m_unitProx.GetProxy(indxMinor);
+            upp->LoadJson(val);
+            typeCount++;
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_SubUnit()) == 0)
-            sub = val.asString();
+            {
+            upp = m_unitProx.GetProxy(indxSub);
+            upp->LoadJson(val);
+            typeCount++;
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_InputUnit()) == 0)
             input = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
@@ -435,7 +475,16 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
             m_spacer = val.asString();
         }
 
-    SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
+    if (typeCount == 1)
+        m_type = CompositeSpecType::Single;
+    else if (typeCount == 2)
+        m_type = CompositeSpecType::Double;
+    else if (typeCount == 3)
+        m_type = CompositeSpecType::Triple;
+    else if (typeCount == 4)
+        m_type = CompositeSpecType::Quatro;
+
+    //SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
     if (!input.empty())
         {
         BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnit(input.c_str());
@@ -462,7 +511,6 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     //    Utf8String m_spacer;
 
 
-
 //===================================================
 //
 // NamedFormatSpec Methods
@@ -473,15 +521,39 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     Json::Value jNFS;
     jNFS[json_SpecName()] = m_name;
     jNFS[json_SpecAlias()] = m_alias;
-    if (m_specType == FormatSpecType::Numeric)
-        jNFS[json_SpecType()] = "numeric";
-    if (m_specType == FormatSpecType::Composite)
-        jNFS[json_SpecType()] = "composite";
+    jNFS[json_SpecType()] = Utils::FormatSpecTypeToName(m_specType);
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
     if(!jcs.empty())
       jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
     return jNFS;
+    }
+
+NamedFormatSpec::NamedFormatSpec(Json::Value jval)
+    {
+    Utf8CP paramName;
+    Utf8String str;
+    if (jval.empty())
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
+        return;
+        }
+    str = jval.ToString();
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
+            m_name = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecAlias()) == 0)
+            m_alias = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
+            m_specType = Utils::NameToFormatSpecType(val.asCString());
+        else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
+            m_numericSpec = NumericFormatSpec(val);
+        else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
+            m_compositeSpec.LoadJsonData(val);
+        }
     }
 
 //===================================================

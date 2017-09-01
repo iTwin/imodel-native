@@ -202,20 +202,20 @@ TEST(FormattingTest, Json)
     bvector<Utf8CP> stdNames = StdFormatSet::StdFormatNames(true);
     for (int i = 0; i < stdNames.size(); i++)
         {
-         FormattingTestFixture::NamedFormatJsonTest(stdNames[i], true, "");
-         FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
+        FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
+        }
+    for (int i = 0; i < stdNames.size(); i++)
+        {
+        FormattingTestFixture::NamedFormatJsonTest(stdNames[i], true, "");
         }
     LOG.info("================  All Std formats to Json (end)");
 
     NumericFormatSpecCP nfsP;
     NamedFormatSpecCP nSpec;
-    bool stop = false;
     for (int i = 0; i < stdNames.size(); i++)
         {
         nSpec = StdFormatSet::FindFormatSpec(stdNames[i]);
         nfsP = nSpec->GetNumericSpec();
-        if (BeStringUtilities::StricmpAscii("NormalizedExp", nSpec->GetName()) == 0)
-            stop = true;
         FormattingTestFixture::NumericFormatSpecJsonTest(*nfsP);
         }
 
@@ -248,6 +248,8 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("3_FT 1/2IN", 0, "IN");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "ARC_DEG");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "RAD");
+    FormattingTestFixture::ParseToQuantity("5' 0\"", 0, "FT");
+
 
     //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
     FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");

@@ -179,6 +179,23 @@ ShowSignOption Utils::NameToSignOption(Utf8CP name)
     return ShowSignOption::NoSign;
     }
 
+Utf8String Utils::FormatSpecTypeToName(FormatSpecType type)
+    {
+    switch (type)
+        {
+        case FormatSpecType::Numeric: return FormatConstant::FPN_Numeric();
+        case FormatSpecType::Composite: return FormatConstant::FPN_Composite();
+        default: return FormatConstant::FPN_Undefined();
+        }
+    }
+FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
+    {
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Numeric().c_str()) == 0) return FormatSpecType::Numeric;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Composite().c_str()) == 0) return FormatSpecType::Composite;
+    return FormatSpecType::Undefined;
+    }
+
+
 Utf8String Utils::AccumulatorStateName(AccumulatorState state)
     {
     switch (state)
@@ -1424,7 +1441,7 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
 bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
     {
     if(!m_name.Equals(other.m_name)) return false; 
-    if(!!m_alias.Equals(other.m_alias)) return false;
+    if(!m_alias.Equals(other.m_alias)) return false;
     if(!m_numericSpec.IsIdentical(other.m_numericSpec)) return false;
     if(!m_compositeSpec.IsIdentical(other.m_compositeSpec)) return false;
     if(m_specType != other.m_specType) return false;

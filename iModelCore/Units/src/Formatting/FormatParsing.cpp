@@ -1142,7 +1142,7 @@ int UnitProxySet::Validate() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-size_t UnitProxySet::UnitCount()
+size_t UnitProxySet::UnitCount() const
     {
     for (size_t n = 0; IsIndexCorrect(n); ++n)
         {
@@ -1154,8 +1154,10 @@ size_t UnitProxySet::UnitCount()
 
 bool UnitProxySet::IsIdentical(UnitProxySetCR other) const
     {
-    if (m_proxys.size() != other.m_proxys.size()) return false;
-    for (int i = 0; i < m_proxys.size(); i++)
+    size_t n1 = UnitCount();
+    size_t n2 = other.UnitCount();
+    if (n1 != n2) return false;
+    for (int i = 0; i < n1; i++)
         {
         if (!m_proxys[i].IsIdentical(other.m_proxys[i])) return false;
         }

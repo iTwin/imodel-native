@@ -338,8 +338,8 @@ struct UnitProxy
     {
 private:
     BEU::UnitCP mutable m_unit;
-    Utf8String m_unitName;
-    Utf8String m_unitLabel;
+    Utf8String mutable m_unitName;
+    Utf8String mutable m_unitLabel;
 
 public:
     void Clear() { m_unit = nullptr; m_unitName = Utf8String((Utf8CP)nullptr); m_unitLabel = Utf8String((Utf8CP)nullptr); }
@@ -363,6 +363,7 @@ public:
             }
         }
     UNITS_EXPORT UnitProxy(Json::Value jval);
+    UNITS_EXPORT void LoadJson(Json::Value jval) const;
     UNITS_EXPORT bool Reset() const;
     UNITS_EXPORT bool SetName(Utf8CP name);
     UNITS_EXPORT bool SetUnit(BEU::UnitCP unit);
@@ -388,7 +389,7 @@ private:
 
     UNITS_EXPORT int Validate() const;
     bool IsConsistent();
-    UNITS_EXPORT size_t UnitCount();
+    UNITS_EXPORT size_t UnitCount() const;
     size_t GetSize() const { return m_proxys.size(); }
 
 public:
@@ -563,6 +564,7 @@ public:
         //UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
+        UNITS_EXPORT NamedFormatSpec(Json::Value jval);
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         bool HasName(Utf8CP name) const { return 0 == BeStringUtilities::StricmpAscii(name, m_name.c_str()); }
@@ -669,7 +671,7 @@ public:
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
-    UNITS_EXPORT bvector<Json::Value> ToJson();
+   // UNITS_EXPORT bvector<Json::Value> ToJson();
     };
 
 //=======================================================================================

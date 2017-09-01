@@ -246,6 +246,7 @@ enum class FormatProblemCode
     FUS_InvalidSyntax = 20151,
     NFS_InvalidSpecName = 20161,
     NFS_DuplicateSpecName = 20162,
+    NFS_InvalidJsonObject = 20163,
     DIV_UnknownDivider = 25001,
     NA_InvalidSign = 25101,             // Numeric Accumulator problems
     NA_InvalidPoint = 25102,
@@ -400,6 +401,8 @@ struct Utils
     UNITS_EXPORT static size_t NumberOfUtf8Bytes(size_t code);
     UNITS_EXPORT static Utf8String AccumulatorStateName(AccumulatorState state);
     UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
+    UNITS_EXPORT static Utf8String FormatSpecTypeToName(FormatSpecType type);
+    UNITS_EXPORT static FormatSpecType NameToFormatSpecType(Utf8CP name);
     static Utf8CP GetCharsOrNull(Utf8StringCR str) { return str.empty() ? nullptr : str.c_str(); }
     //#endif
     };
@@ -422,6 +425,9 @@ struct FormatConstant
         static Utf8String FPN_SignAlways() { return "SignAlways"; }
         static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
 
+        static Utf8String FPN_Composite() { return "composite"; }
+        static Utf8String FPN_Numeric() { return "numeric"; }
+        static Utf8String FPN_Undefined() { return "undefined"; }
 
         static Utf8String FPN_Decimal() { return "Decimal"; }
         static Utf8String FPN_Fractional() { return "Fractional"; }
