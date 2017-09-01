@@ -317,7 +317,7 @@ WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8String
     //     \.\d+ - "." and then one or more digits
     // \/repositories\/ - "/repositories/"
 
-    std::regex regex(R"((https?:\/\/.+\/)v\d+\.\d+\/repositories\/)", std::regex_constants::icase);
+    std::regex regex(R"((https?:\/\/.+)\/v\d+\.\d+\/repositories\/)", std::regex_constants::icase);
     std::cmatch matches;
     std::regex_search(url.c_str(), matches, regex);
     if (matches.empty() && matches.size() != 1)
@@ -382,4 +382,3 @@ Utf8String WSRepositoryClient::UrlDecode(Utf8String url)
 
     return decodedUrl;
     }
-
