@@ -360,11 +360,14 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
                 m_convertedOK = false;
                 }
             else    
-                LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
+                LOG.debugv("Succeeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
         else if (IsCustomAttributeFromOldStandardSchemas(*attr))
             {
-            m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
+            if (container.IsDefinedLocal(attr->GetClass()))
+                m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
+            else 
+                m_convertedOK = container.RemoveSupplementedCustomAttribute(attr->GetClass());
             }
         }
     }
