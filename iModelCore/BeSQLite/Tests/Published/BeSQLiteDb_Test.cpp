@@ -995,6 +995,42 @@ TEST_F(BeSQLiteDbTests, RealUpdateTest)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   10/16
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
+    {
+    SetupDb(L"MismatchedColumnsTest.db");
+
+    // Create a change set with 3 columns
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE TestTable ([Column1] INTEGER PRIMARY KEY, [Column2] INTEGER, [Column3] INTEGER)"));
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable Values(1, 2, 3)"));
+
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    int size = changeSet.GetSize();
+    ASSERT_TRUE(size > 0);
+    changeTracker.EndTracking();
+
+    // Add a column, and attempt to apply the change set
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("ALTER TABLE TestTable ADD COLUMN [Column4]"));
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("DELETE FROM TestTable"));
+
+    DbResult result = changeSet.ApplyChanges(m_db);
+    EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite seems to let this through, but it's OK
+
+    // Drop a column, and attempt to apply the change set
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("DROP TABLE TestTable"));
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE TestTable ([Column1] INTEGER PRIMARY KEY, [Column2] INTEGER)"));
+
+    result = changeSet.ApplyChanges(m_db);
+    EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Taslim.Murad                   05/17
 //---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteDbTests, GetColumn)
