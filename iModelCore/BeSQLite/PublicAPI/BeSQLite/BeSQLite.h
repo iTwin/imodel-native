@@ -284,8 +284,6 @@ public:
 struct BeBriefcaseBasedId : BeInt64Id
 {
     BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId,BeInt64Id)
-    BE_JSON_NAME(b)
-    BE_JSON_NAME(l)
 
 public:
     static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeBriefcaseId, lower 40 bits are local id
@@ -309,7 +307,8 @@ public:
     //! this value will be invalid on return.
     BE_SQLITE_EXPORT BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
 
-    static BeBriefcaseBasedId FromJson(Json::Value val) {return BeBriefcaseBasedId(val.asUInt64());}
+    static BeBriefcaseBasedId CreateFromJson(Json::Value val) {return BeBriefcaseBasedId(val.asUInt64());}
+    void FromJson(Json::Value val) {m_id = val.asUInt64();}
 };
 
 #define BEBRIEFCASEBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \

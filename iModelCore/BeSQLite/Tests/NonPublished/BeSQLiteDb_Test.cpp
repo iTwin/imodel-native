@@ -47,7 +47,7 @@ TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
     Utf8String val=id1.ToHexStr();
     EXPECT_TRUE(val == "0X1030108D7DE7E");
 
-    BeBriefcaseBasedId id2 = BeBriefcaseBasedId::FromJson(Json::Value(val));
+    BeBriefcaseBasedId id2 = BeBriefcaseBasedId::CreateFromJson(Json::Value(val));
     EXPECT_TRUE(id2 == id1);
     }
 
@@ -89,16 +89,13 @@ TEST(BeSQLiteDb, CheckProfileVersion)
         bool m_fileIsAutoUpgradable;
 
         ExpectedResult()
-            : m_statInReadWriteMode(BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite), m_statInReadOnlyMode(BE_SQLITE_ERROR_ProfileUpgradeFailed), m_fileIsAutoUpgradable(false)
-            {}
+            : m_statInReadWriteMode(BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite), m_statInReadOnlyMode(BE_SQLITE_ERROR_ProfileUpgradeFailed), m_fileIsAutoUpgradable(false) {}
 
         ExpectedResult(DbResult stat, bool fileIsAutoUpgradable)
-            : m_statInReadWriteMode(stat), m_statInReadOnlyMode(stat), m_fileIsAutoUpgradable(fileIsAutoUpgradable)
-            {}
+            : m_statInReadWriteMode(stat), m_statInReadOnlyMode(stat), m_fileIsAutoUpgradable(fileIsAutoUpgradable) {}
 
         ExpectedResult(DbResult statInReadWriteMode, DbResult statInReadOnlyMode, bool fileIsAutoUpgradable)
-            : m_statInReadWriteMode(statInReadWriteMode), m_statInReadOnlyMode(statInReadOnlyMode), m_fileIsAutoUpgradable(fileIsAutoUpgradable)
-            {}
+            : m_statInReadWriteMode(statInReadWriteMode), m_statInReadOnlyMode(statInReadOnlyMode), m_fileIsAutoUpgradable(fileIsAutoUpgradable) {}
         };
 
     ProfileVersion expectedProfileVersion(2, 4, 5, 3);
