@@ -100,9 +100,11 @@ BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
         return SUCCESS;
         }
 
-    m_unit->Convert(value, m_magnitude, unit);
-    if (value == 0.0)
+    UnitsProblemCode prob = m_unit->Convert(value, m_magnitude, unit);
+    if (prob != UnitsProblemCode::NoProblem)
         return ERROR;
+   /* if (value == 0.0)
+        return ERROR;*/
 
     return SUCCESS;
     }
