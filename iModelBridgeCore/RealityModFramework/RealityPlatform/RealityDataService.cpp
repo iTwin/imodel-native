@@ -436,20 +436,20 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         {
         m_httpRequestString = m_azureServer;
         bvector<Utf8String> parts;
-        BeStringUtilities::Split(m_id.c_str(), "~", parts);
+        m_id.ReplaceAll("~2F", "/");
+        BeStringUtilities::Split(m_id.c_str(), "/", parts);
         Utf8String Guid = parts[0];
-        Guid.append("~2F");
         m_id.ReplaceAll(Guid.c_str(), "");
-        m_httpRequestString.append("/");
-        m_httpRequestString.append(m_id);
+        EncodeId();
+        m_httpRequestString.append(m_encodedId);
         m_httpRequestString.append("\?");
         m_httpRequestString.append(m_azureToken);
-        m_httpRequestString.ReplaceAll("~2F", "/");
 
         m_validRequestString = true;
         }
     else
         {
+        EncodeId();
         RealityDataUrl::_PrepareHttpRequestStringAndPayload();
         m_httpRequestString.append("/Document/");
         m_httpRequestString.append(m_encodedId);
@@ -1274,7 +1274,10 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
         field = it.key();
         if(propertyString.length() > 0)
             propertyString.append(",");
-        propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field], properties[field]));
+        if(field == RealityDataField::Streamed || field == RealityDataField::Listable || field == RealityDataField::Footprint)
+            propertyString.append(Utf8PrintfString("\"%s\" : %s", s_propertyMap[field], properties[field]));
+        else
+            propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field], properties[field]));
         }
     
     return propertyString;
