@@ -142,6 +142,8 @@ protected:
     DGNPLATFORM_EXPORT ScanCriteria::Stop _OnRangeElementFound(DgnElementId) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
+    DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageCR image) const;
+    DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -173,6 +175,9 @@ public:
         { return _CreateGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), tf, GetViewport())); }
     Render::GraphicBuilderPtr CreateViewGraphic(TransformCR tf=Transform::FromIdentity())
         { return _CreateGraphic(Render::GraphicBuilder::CreateParams::View(GetDgnDb(), tf, GetViewport())); }
+    Render::TexturePtr CreateTexture(Render::ImageCR image) const { return _CreateTexture(image); }
+    Render::TexturePtr CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp=Render::Image::BottomUp::No) const
+        { return _CreateTexture(source, bottomUp); }
 
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, db, tf, clips);}
     void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}

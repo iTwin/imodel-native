@@ -567,6 +567,24 @@ protected:
         Render::SystemP system = m_loadContext.GetRenderSystem();
         return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;
         }
+    TexturePtr _CreateTexture(ImageCR image) const override
+        {
+        Render::TexturePtr tx;
+        auto sys = m_loadContext.GetRenderSystem();
+        if (nullptr != sys)
+            tx = sys->_CreateTexture(image);
+
+        return tx;
+        }
+    TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp) const override
+        {
+        Render::TexturePtr tx;
+        auto sys = m_loadContext.GetRenderSystem();
+        if (nullptr != sys)
+            tx = sys->_CreateTexture(source, bottomUp);
+
+        return tx;
+        }
 
     static Render::ViewFlags GetDefaultViewFlags();
 public:

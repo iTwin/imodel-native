@@ -16,17 +16,39 @@
 
 using namespace flatbuffers;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
+    {
+    Render::TexturePtr tx;
+    auto vp = GetViewport();
+    if (nullptr != vp)
+        tx = vp->GetRenderTarget()->CreateTexture(image);
+
+    return tx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const
+    {
+    Render::TexturePtr tx;
+    auto vp = GetViewport();
+    if (nullptr != vp)
+        tx = vp->GetRenderTarget()->CreateTexture(source, bottomUp);
+
+    return tx;
+    }
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageGraphic::CreateTexture(ViewContextR context)
     {
-    if (!m_texture.IsValid())
-        {
-        DgnViewportP vp = context.GetViewport(); // NEEDSWORK: For mesh tiles, ask context for render target...
-
-        m_texture = (nullptr != vp ? vp->GetRenderTarget()->CreateTexture(m_image) : nullptr);
-        }
+    if (m_texture.IsNull())
+        m_texture = context.CreateTexture(m_image);
 
     return m_texture.IsValid();
     };
