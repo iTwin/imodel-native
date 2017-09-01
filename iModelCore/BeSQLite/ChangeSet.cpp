@@ -397,97 +397,6 @@ Changes::Change& Changes::Change::operator++()
     return  *this;
     }
 
-BEGIN_UNNAMED_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String toHex(Byte* buf, size_t nb, size_t w)
-    {
-    Utf8String hd;
-    size_t i, n = std::min(nb, w);
-    unsigned char c;
-    static Utf8Char hxdg[] = "0123456789abcdef";
-
-    if (!buf)
-        return "<null>";
-
-    for (i=0; i<n; ++i)
-        {
-        if (i && i%4==0)
-            hd.append(" ");
-
-        c = buf[i];
-        hd.append(1, hxdg[c>>4]);
-        hd.append(1, hxdg[0xf&c]);
-        }
-
-    for (   ; i<w; ++i)
-        {
-        if (i && i%4==0)
-            hd.append(" ");
-
-        hd.append(" ");
-        hd.append(" ");
-        }
-
-    return hd;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String toAsc(Byte* buf, size_t nb, size_t w)
-    {
-    Utf8String ad;
-    size_t i, n = std::min(nb, w);
-    for (i=0; i<n; ++i)
-        if (isprint((int)buf[i]))
-            ad.append(1, (Utf8Char)buf[i]);
-        else
-            ad.append(".");
-
-    ad.append((w-i), ' ');
-    return ad;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String hexDump(Byte* bytes, size_t nbytes)
-    {
-    Utf8String output;
-    size_t const nperline = 32;
-
-    Byte* nextBytes = bytes;
-    Byte* bytesX    = bytes + nbytes;
-
-    size_t nlines = nbytes/nperline;
-    for (size_t i=0; i<nlines; ++i)
-        {
-        output.append("\n");
-        output.append(toHex(nextBytes, nperline, nperline));
-        output.append(" |");
-        output.append(toAsc(nextBytes, nperline, nperline));
-        output.append(" |");
-        nextBytes += nperline;
-        }
-
-    int nrem = static_cast<int>(bytesX - nextBytes);
-    if (0 != nrem)
-        {
-        output.append("\n");
-        output.append(toHex(nextBytes, nrem, nperline));
-        output.append(" |");
-        output.append(toAsc(nextBytes, nrem, nperline));
-        output.append(" |");
-        }
-
-    output.append("\n");
-
-    return output;
-    }
-END_UNNAMED_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -508,9 +417,7 @@ Utf8String DbValue::Format(int detailLevel) const
             return Utf8PrintfString("\"%s\"", GetValueText());
 
         case DbValueType::BlobVal:
-            if (detailLevel < 1)
-                return "...";
-            return Utf8PrintfString(hexDump((Byte*)GetValueBlob(), GetValueBytes()).c_str());
+            return "...";
 
         case DbValueType::NullVal:
             return "NULL";
@@ -561,9 +468,10 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
 
-    Byte* pcols;
-    int npcols;
+    Byte* pcols = nullptr;
+    int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
+    BeAssert(npcols == (int) columnNames.size() && "Mismatch of columns in Db and ChangeSet. Likely that a required schema change has NOT happened");
 
     Utf8PrintfString line("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 

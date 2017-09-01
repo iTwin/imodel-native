@@ -2475,6 +2475,9 @@ public:
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
     BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
 
+    //! Execute tracked DDL which is captured by changetracker. 
+    BE_SQLITE_EXPORT DbResult ExecuteDdl(Utf8CP ddl) const;
+
     //! Create a new table in this Db.
     //! @param[in] tableName The name for the new table.
     //! @param[in] ddl The column definition sql for this table (should not include parentheses).
