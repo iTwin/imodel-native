@@ -134,7 +134,7 @@ struct ExtendedTypeTests : ECTestFixture
     };
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 
+* @bsimethod                               Stefan.Apfel                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedTypeTests, ReadSchemaWithExtendedTypes)
     {
@@ -165,7 +165,7 @@ TEST_F(ExtendedTypeTests, ReadSchemaWithExtendedTypes)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Stefan.Apfel                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
     {
@@ -203,7 +203,7 @@ TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Stefan.Apfel                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedTypeTests, GetKnownExtendedType)
     {
@@ -215,7 +215,7 @@ TEST_F(ExtendedTypeTests, GetKnownExtendedType)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Stefan.Apfel                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
     {
@@ -239,6 +239,9 @@ TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
     VerifyExtendedTypeOnProperty("array", "arrayProperty", classPtr, "Verify array extended type after set.  ");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                               Colin.Kerr                  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     {
     ECSchemaPtr testSchema;

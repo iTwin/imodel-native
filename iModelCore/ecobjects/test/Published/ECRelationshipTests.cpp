@@ -488,7 +488,7 @@ TEST_F (ECRelationshipInstanceTest, DumpToString)
 // ECRelationshipClassTest
 //************************************************************************************
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
+* @bsimethod                                    Stefan.Apfel               03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECRelationshipClassTest, TestsRelationshipStrengthAndDirectionConstraints)
     {
@@ -529,7 +529,7 @@ TEST_F (ECRelationshipClassTest, TestsRelationshipStrengthAndDirectionConstraint
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
+* @bsimethod                                    Stefan.Apfel                 03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECRelationshipClassTest, TestsRelationshipConstraints)
     {
@@ -586,7 +586,7 @@ TEST_F (ECRelationshipClassTest, TestsRelationshipConstraints)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
+* @bsimethod                                     Caleb.Shafer                  08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECRelationshipClassTest, TestRelationshipMultiplicityConstraint)
     {
@@ -628,7 +628,7 @@ TEST_F (ECRelationshipClassTest, TestRelationshipMultiplicityConstraint)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
+* @bsimethod                                    Caleb.Shafer                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECRelationshipClassTest, TestBaseClassRules)
     {

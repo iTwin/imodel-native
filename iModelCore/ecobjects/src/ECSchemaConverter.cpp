@@ -158,7 +158,7 @@ struct UnitSpecification
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchemaConverter::Convert(ECSchemaR schema)
+bool ECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
     {
     ECSchemaConverterP ecSchemaConverter = GetSingleton();
     ecSchemaConverter->m_convertedOK = true;
@@ -174,7 +174,7 @@ bool ECSchemaConverter::Convert(ECSchemaR schema)
 
     schema.RemoveUnusedSchemaReferences();
 
-    if (ecSchemaConverter->m_convertedOK)
+    if (ecSchemaConverter->m_convertedOK && doValidate)
         schema.Validate(true);
 
     return ecSchemaConverter->m_convertedOK;
@@ -360,11 +360,14 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
                 m_convertedOK = false;
                 }
             else    
-                LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
+                LOG.debugv("Succeeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
         else if (IsCustomAttributeFromOldStandardSchemas(*attr))
             {
-            m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
+            if (container.IsDefinedLocal(attr->GetClass()))
+                m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
+            else 
+                m_convertedOK = container.RemoveSupplementedCustomAttribute(attr->GetClass());
             }
         }
     }

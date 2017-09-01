@@ -15,6 +15,9 @@ namespace BEF = BentleyApi::Formatting;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             David.Fox-Rabinovitz                    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECQuantityFormattingTests, Preliminary)
     {
     LOG.infov("================  Quantity Formatting Log ===========================");

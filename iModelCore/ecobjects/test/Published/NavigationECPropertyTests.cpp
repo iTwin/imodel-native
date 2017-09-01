@@ -95,7 +95,7 @@ void NavigationECPropertyTests::VerifyFailedToDeserialize(Utf8StringCR invalidSc
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                               Colin.Kerr                         12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     {
@@ -147,7 +147,7 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, NavPropUsingRelationshipWithMultipleConstraintClasses)
     {
@@ -185,7 +185,7 @@ TEST_F(NavigationECPropertyTests, NavPropUsingRelationshipWithMultipleConstraint
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, InvalidNavigationProperties)
     {
@@ -211,7 +211,7 @@ TEST_F(NavigationECPropertyTests, InvalidNavigationProperties)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, InvalidReferencedRelationshipWithBaseClasses)
     {
@@ -276,7 +276,7 @@ TEST_F(NavigationECPropertyTests, InvalidReferencedRelationshipWithBaseClasses)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
     {
@@ -450,7 +450,7 @@ TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, MustPointToSingularEndpoint)
     {
@@ -533,7 +533,7 @@ TEST_F(NavigationECPropertyTests, MustPointToSingularEndpoint)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
     {
@@ -588,7 +588,7 @@ TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, EndpointsWithRelationshipsCannotBeUsed)
     {
@@ -670,7 +670,7 @@ TEST_F(NavigationECPropertyTests, RelationshipPointsToEntity)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, InvalidXml)
     {
@@ -724,7 +724,7 @@ TEST_F(NavigationECPropertyTests, InvalidXml)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     {
@@ -1065,7 +1065,7 @@ void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_Long)
     {
@@ -1073,7 +1073,7 @@ TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_Long)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Colin.Kerr                         01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_String)
     {
@@ -1081,7 +1081,7 @@ TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_String)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         11/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, ValueCopyTest)
     {
@@ -1102,7 +1102,7 @@ TEST_F(NavigationPropertyValueTests, ValueCopyTest)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, TestNavigationValueEquality)
     {
@@ -1166,7 +1166,7 @@ TEST_F(NavigationPropertyValueTests, TestNavigationValueEquality)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
+//@bsimethod                                Caleb.Shafer                         12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, TestNullNavigationValue)
     {

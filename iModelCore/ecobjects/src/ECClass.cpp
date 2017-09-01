@@ -613,13 +613,18 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
         // have priority over that one based on the order of base class declarations?
         else if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
             {
-            if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
-                derivedProperty->SetBaseProperty (&baseProperty);
+            Utf8String errMsg;
+            if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden(baseProperty, *derivedProperty, errMsg)))
+                derivedProperty->SetBaseProperty(&baseProperty);
             else if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                 {
+                if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                    LOG.warning(errMsg.c_str());
                 if (ECObjectsStatus::Success != RenameConflictProperty(derivedProperty, true))
                     return status;
                 }
+            else if (ECObjectsStatus::DataTypeMismatch == status)
+                LOG.error(errMsg.c_str());
             }
         }
     for (ECClassP derivedClass : m_derivedClasses)
@@ -651,7 +656,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
     ECPropertyP baseProperty = GetPropertyP(pProperty->GetName());
     if (NULL != baseProperty)
         {
-        ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
+        Utf8String errMsg;
+        ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty, errMsg);
         if (ECObjectsStatus::Success != status)
             {
             if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
@@ -666,7 +672,11 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 AddPropertyMapping(originalName.c_str(), newName.c_str());
                 }
             else
+                {
+                if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                    LOG.error(errMsg.c_str());
                 return status;
+                }
             }
         else if (!baseProperty->GetName().Equals(pProperty->GetName()))
             {
@@ -1061,7 +1071,7 @@ ECObjectsStatus ECClass::FixArrayPropertyOverrides()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECPropertyCR newProperty) const
+ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const
     {
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
@@ -1076,7 +1086,7 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
             }
         }
     
-    if (!newProperty._CanOverride(baseProperty))
+    if (!newProperty._CanOverride(baseProperty, errMsg))
         return ECObjectsStatus::DataTypeMismatch;
 
     return ECObjectsStatus::Success; 
@@ -1398,7 +1408,8 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         // This is a case-insensitive search
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
-            status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty);
+            Utf8String errMsg;
+            status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty, errMsg);
 
             // If the property names do not have the same case, this is an error
             if (!prop->GetName().Equals(thisProperty->GetName()))
@@ -1423,13 +1434,19 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
                 {
                 if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                     {
+                    if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                        LOG.warning(errMsg.c_str());
                     LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
                     ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
                     if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true))
                         return status;
                     }
                 else
+                    {
+                    if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                        LOG.error(errMsg.c_str());
                     return status;
+                    }
                 }
             }
         }
@@ -2798,6 +2815,9 @@ static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP st
     for (const auto &secondConstraint : constraintClasses)
         {
         ECClassCP secondClass = secondConstraint;
+        ECEntityClassCP asEntity = secondClass->GetEntityClassCP();
+        if (nullptr != asEntity && asEntity->IsMixin() && asEntity->GetAppliesToClass()->Is(tempCommonClass))
+            continue;
         if (secondClass->Is(tempCommonClass))
             continue;
         
@@ -2870,12 +2890,29 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
         ECRelationshipConstraintR baseConstraint = (m_isSource) ? baseRelClass->GetSource() : baseRelClass->GetTarget();
         if (!baseConstraint.SupportsClass(*abstractConstraint))
             {
-            LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
-                         "Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
-                         abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                         baseConstraint.GetRelationshipClass().GetFullName());
+            if (resolveIssues)
+                {
+                ECEntityClassCP commonClass = nullptr;
+                FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), baseConstraint.GetConstraintClasses());
+                if (nullptr != commonClass)
+                    {
+                    if (!baseConstraint.IsAbstractConstraintDefined())
+                        baseConstraint.SetAbstractConstraint(*commonClass);
+                    baseConstraint.AddClass(*commonClass);
+                    }
+                
+                if (!baseConstraint.SupportsClass(*abstractConstraint))
+                    valid = false;
+                }
+            else
+                {
+                LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                             "Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
+                             abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                             baseConstraint.GetRelationshipClass().GetFullName());
 
-            valid = false;
+                valid = false;
+                }
             }
         for (const auto &constraint : m_constraintClasses)
             {

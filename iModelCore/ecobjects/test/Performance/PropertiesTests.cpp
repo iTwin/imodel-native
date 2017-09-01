@@ -47,6 +47,9 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Carole.MacDonald                    10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformancePropertiesTest, AddArrayElements)
     {
     ECSchemaPtr schemaA;

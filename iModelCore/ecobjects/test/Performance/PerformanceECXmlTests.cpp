@@ -112,7 +112,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Muhammad.hassan                 09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PerformanceTestsECXml, ReadingAndWritingSchema)
     {
@@ -125,6 +125,9 @@ TEST_F (PerformanceTestsECXml, ReadingAndWritingSchema)
     TimeSchema(L"CustomAttributeTest.01.00.ecschema.xml", schemaContext, TEST_DETAILS);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                               Muhammad.hassan                 09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PerformanceTestsECXml, ReadingAndWritingInstance)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();

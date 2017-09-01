@@ -50,6 +50,9 @@ void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaRea
     schema->RemoveReferencedSchema(*refSchema);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     {
     // Test failure if not latest EC Version schema
@@ -133,6 +136,9 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     {
     // Test uncessful validation of reference to standard schema
@@ -176,6 +182,9 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     {
     // Test that a mixin class may not override an inherited property
@@ -199,6 +208,9 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, BisCoreAspectTests)
     {
     // Element Aspect Relationship Tests
@@ -587,6 +599,9 @@ TEST_F(SchemaValidatorTests, BisCoreAspectTests)
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema14)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     {
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
@@ -639,6 +654,9 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema4)) << "Schema implements only ISubModeledElement so validation should succeed.";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     {
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -738,6 +756,9 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'iD' not 'Id'";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)
     {
     // Test that an entity class may not inherit a property from multiple base classes
@@ -763,6 +784,9 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseCla
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     {
     // Test that an entity class may not override a property inherited from mixin class
@@ -782,6 +806,9 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOneConcreteConstraint)
     {
     Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -853,6 +880,9 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema2)) << "Abstract constraints are defined locally in source and target so validation should succeed";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     {
     Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -892,6 +922,9 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should pass validation as strength attribute is set to 'embedding'";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     {
     // Test forward direction
@@ -1080,6 +1113,9 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as direction is assumed to be forward, with multiplicity equal to 1";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Carole.MacDonald                    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassName)
     {
     Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -1119,6 +1155,9 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema2)) << "Should succeed validation as relationship is 'referncing', not 'embedding'";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Dan.Perlman                          06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     {
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>

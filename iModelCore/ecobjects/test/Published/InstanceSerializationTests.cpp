@@ -251,7 +251,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         }
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                  Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef NOT_NOW
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance)
@@ -446,7 +446,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
@@ -491,7 +491,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                  Caleb.Shafer                   01/2017  
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromString)
     {
@@ -616,7 +616,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                    Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
@@ -640,7 +640,7 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                     Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     {
@@ -687,7 +687,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                    Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlString)
     {
@@ -730,7 +730,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                     Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString)
     {
@@ -808,6 +808,9 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
     EXPECT_TRUE (v.IsNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
     {
     ECSchemaPtr testSchema;

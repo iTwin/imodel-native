@@ -38,7 +38,7 @@ struct ClassTest : ECTestFixture
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                              Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     {
@@ -149,7 +149,7 @@ bool IsClassInList(bvector<ECClassP> const& classList, ECClassR searchClass)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                               Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddAndRemoveBaseClass)
     {
@@ -175,7 +175,7 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddBaseClassWithProperties)
     {
@@ -204,7 +204,7 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, BaseClassOrder)
     {
@@ -241,7 +241,7 @@ TEST_F(ClassTest, BaseClassOrder)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, IsTests)
     {
@@ -261,7 +261,7 @@ TEST_F(ClassTest, IsTests)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, CanOverrideBaseProperties)
     {
@@ -427,7 +427,7 @@ TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     {
@@ -458,7 +458,7 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectPropertiesInOrder)
     {
@@ -492,7 +492,7 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectProperties)
     {
@@ -531,7 +531,7 @@ TEST_F(ClassTest, ExpectProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     {
@@ -675,7 +675,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     {
@@ -704,7 +704,7 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Caleb.Shafer                          01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     {

@@ -78,7 +78,7 @@ struct ECNameValidationTest;
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Caleb.Shafer                       11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaTest, ExpectReadOnly)
     {
@@ -124,7 +124,7 @@ TEST_F(SchemaTest, ExpectReadOnly)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Robert.Schili                       11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaTest, AddAndRemoveEnumerations)
     {
@@ -175,7 +175,7 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Robert.Schili                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaTest, TestPrimitiveEnumerationProperty)
     {
@@ -671,7 +671,7 @@ static void ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8C
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                            Josh.Schifter                       10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
     {
@@ -690,7 +690,7 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     {
@@ -747,7 +747,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Robert.Schili                       12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     {
@@ -907,7 +907,7 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                           Robert.Schili                          01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
 TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
@@ -923,7 +923,7 @@ TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                            Caleb.Shafer                           09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     {
@@ -1028,7 +1028,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                        Carole.MacDonald                        01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     {
@@ -1055,7 +1055,7 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod                                   Robert.Schili                   11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
     {
@@ -1126,7 +1126,7 @@ TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReference
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                               Colin.Kerr                           04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType)
     {
@@ -1153,7 +1153,7 @@ TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForA
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Dylan.Rush                           05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, InvalidReference)
     {
@@ -1174,7 +1174,7 @@ TEST_F(SchemaReferenceTest, InvalidReference)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     {
@@ -1251,7 +1251,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                            Caleb.Shafer                            11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUseWithCustomAttributes)
     {
@@ -1376,7 +1376,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                             Dylan.Rush                           05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     {
@@ -1449,7 +1449,7 @@ TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself)
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                       Carole.MacDonald           08/2011
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     {
@@ -1497,7 +1497,7 @@ TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                       Carole.MacDonald           08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
     {
@@ -1518,7 +1518,7 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
 //=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                    Carole.MacDonald                 02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     {
@@ -1775,7 +1775,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                Robert.Schili                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
     {

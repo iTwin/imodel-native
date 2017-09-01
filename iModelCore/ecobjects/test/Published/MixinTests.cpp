@@ -481,6 +481,9 @@ TEST_F(MixinTest, TestFailureWhenMixinClassHasCircular)
     EXPECT_FALSE(appliesTo->CanApply(*mixinClass)) << "This should be false since the mixin class '" << mixinClass->GetFullName() << "' already references the schema " << refSchema->GetFullSchemaName().c_str() << " and adding the class as a mixin to the '" << appliesTo->GetFullName() << "' class would create a circular reference.";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
     {
     ECSchemaPtr maceSchema;
@@ -528,6 +531,9 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
     //    "Should not have been able to add base rel because source constraint is a mixin whose applies to constraint narrows the base constraint";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance)
     {
     ECSchemaPtr maceSchema;
