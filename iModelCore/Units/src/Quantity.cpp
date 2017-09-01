@@ -94,14 +94,14 @@ Quantity::Quantity(QuantityCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
     {
-    if (m_unit == unit)
+    if (m_unit == unit || m_magnitude == 0.0)
         {
         value = m_magnitude;
         return SUCCESS;
         }
 
     m_unit->Convert(value, m_magnitude, unit);
-    if (value == 0.0 && m_magnitude != 0.0)
+    if (value == 0.0)
         return ERROR;
 
     return SUCCESS;
