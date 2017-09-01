@@ -83,19 +83,26 @@ private:
     struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
     struct AssemInfo { uint32_t m_index; uint32_t m_catIndex; };
     struct Assembly { DgnElementId m_elemId; DgnCategoryId m_catId; };
+
+    static constexpr uint32_t InvalidIndex = 0xffffffff;
+
+    // An entity label designated by an EC property can be displayed without
+    // property server as tool tip.
     struct LabelInfo
         {
-        static constexpr uint32_t InvalidIndex = 0xffffffff;
 
-        uint32_t m_index;
-        Utf8String m_label; 
+        uint32_t    m_index;
+        Utf8String  m_label; 
 
         LabelInfo() { }
         LabelInfo(uint32_t index, Utf8StringCR label) : m_index(index), m_label(label) {}
         };
+                            
+
+
 
     enum ClassIndex
-    {
+        {
         kClass_Primary,
         kClass_Construction,
         kClass_Dimension,
@@ -106,14 +113,15 @@ private:
         kClass_SubCategory,
         kClass_Category,
         kClass_Label,
+        kClass_Symbology,
 
         kClass_COUNT,
         kClass_FEATURE_COUNT = kClass_Classifier+1,
-    };
+        };
 
     static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category", "Label"
+        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category", "Label", "Symbology",
         };
 
     Json::Value                         m_json; // "HIERARCHY": object
@@ -125,6 +133,8 @@ private:
     bmap<DgnCategoryId, uint32_t>       m_cats;
     bmap<DgnElementId, LabelInfo>       m_labels;
     DgnCategoryId                       m_uncategorized;
+    bvector<uint32_t>                   m_colors;
+    bmap<DgnElementId, uint32_t>        m_colorMap;
     bool                                m_is3d;
     bool                                m_isClassifier;
 
@@ -169,18 +179,21 @@ private:
     void MapSubCategories(uint32_t offset);
     void MapCategories(uint32_t offset);
     void MapLabels(uint32_t offset);
-
+    void MapSymbology(uint32_t colors);
 
     void Build();
     void InitUncategorizedCategory();
     bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
 public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, bmap<DgnElementId, Utf8String>* labels = nullptr)
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* colors = nullptr)
         : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier)
         {
         InitUncategorizedCategory();
-        if (nullptr != labels)
-            AddLabels(*labels);
+        if (nullptr != labelProperty)
+            AddLabels(labelProperty);
+
+        if (nullptr != colors)
+            AddColors(*colors);
 
         Build();
         }
@@ -192,13 +205,41 @@ public:
         json["HIERARCHY"] = GetHierarchy();
         return getJsonString(json);
         }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
+*  Used only for classifiers as these use vector tiles that do not have any 
+*  material/symbology support.
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AddColors(bmap<DgnElementId, uint32_t>& colors)
+    {
+    bmap<uint32_t, uint32_t>      uniqueColors;
+   
+    for (auto& kvp : colors)
+        {
+        auto        insertPair = uniqueColors.Insert(kvp.second, uniqueColors.size());
+
+        if(insertPair.second)
+            m_colors.push_back(kvp.second);
+        
+        m_colorMap[kvp.first] = insertPair.first->second;
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     AddLabels(bmap<DgnElementId, Utf8String> const& labels)
+void     AddLabels(Utf8CP labelProperty)
     {
-    for (auto& label : labels)
-        m_labels[label.first] = LabelInfo(m_labels.size(), label.second);
+    for (auto& featureAttribute : m_attrs)
+        {
+        ECN::ECValue    value;
+
+        auto element = m_db.Elements().Get<DgnElement> (featureAttribute.first.GetElementId());
+        if (element.IsValid() &&
+            DgnDbStatus::Success == element->GetPropertyValue(value, labelProperty))
+            m_labels[featureAttribute.first.GetElementId()] = LabelInfo(m_labels.size(), value.GetUtf8CP());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,7 +249,17 @@ uint32_t   GetLabelIndex(DgnElementId elementId)
     {
     auto   found = m_labels.find(elementId);
 
-    return (found == m_labels.end()) ? LabelInfo::InvalidIndex : found->second.m_index;
+    return (found == m_labels.end()) ? InvalidIndex : found->second.m_index;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t   GetColorIndex(DgnElementId elementId)
+    {
+    auto   found = m_colorMap.find(elementId);
+
+    return (found == m_colorMap.end()) ? InvalidIndex : found->second;
     }
 
 };
@@ -319,14 +370,13 @@ void BatchTableBuilder::MapCategories(uint32_t offset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchTableBuilder::MapLabels(uint32_t offset)
     {
-    Json::Value& labels = GetClass(kClass_Label);
-    labels["length"] = m_labels.size();
-
-    Json::Value &instances = (labels["instances"] = Json::objectValue),
+    Json::Value &labels = GetClass(kClass_Label),
+                &instances = (labels["instances"] = Json::objectValue),
                 &label = (instances["label"] = Json::arrayValue),
                 &classIds = m_json["classIds"],
                 &parentCounts = m_json["parentCounts"];
 
+    labels["length"] = m_labels.size();
     for (auto const& kvp : m_labels)
         {
         Json::Value::ArrayIndex index = kvp.second.m_index;
@@ -336,8 +386,37 @@ void BatchTableBuilder::MapLabels(uint32_t offset)
         label[index] = kvp.second.m_label;
         }
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapSymbology(uint32_t offset)
+    {
+    Json::Value &symbologies = GetClass(kClass_Symbology),
+                &classIds = m_json["classIds"],
+                &parentCounts = m_json["parentCounts"];
 
-                                                                                                                                                                                                                  
+    Json::Value reds   = Json::arrayValue,
+                greens = Json::arrayValue,
+                blues  = Json::arrayValue;
+
+    symbologies["length"] = m_colors.size();
+    for (uint32_t index=0; index < m_colors.size(); index++)
+        {
+        classIds[offset + index] = kClass_Symbology;
+        parentCounts[offset + index] = 0;
+
+        ColorDef        color(m_colors[index]);
+        reds.append(color.GetRed());
+        greens.append(color.GetGreen());
+        blues.append(color.GetBlue());
+        }
+    symbologies["instances"]["red"]    = reds;
+    symbologies["instances"]["green"]  = greens;
+    symbologies["instances"]["blue"]   = blues;
+    }
+
+                                                                                                                                                                                                              
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,24 +476,35 @@ void BatchTableBuilder::MapParents()
     uint32_t subcatsOffset = assembliesOffset + static_cast<uint32_t>(m_assemblies.size());
     uint32_t catsOffset = subcatsOffset + static_cast<uint32_t>(m_subcats.size());
     uint32_t labelsOffset = catsOffset + static_cast<uint32_t>(m_cats.size());
-    uint32_t totalInstances = labelsOffset + static_cast<uint32_t>(m_labels.size());
+    uint32_t colorsOffset = labelsOffset + static_cast<uint32_t>(m_labels.size());
+    uint32_t totalInstances = colorsOffset + static_cast<uint32_t>(m_colorMap.size());
 
     m_json["instancesLength"] = totalInstances;
 
     // Now that every instance of every class has an index into "classIds", we can map parent IDs
     Json::Value& parentIds = m_json["parentIds"];
 
-    uint32_t            index = 0;
+    // Traverse in index order so that we can get parent counts/ids correct.
+
+    bmap<uint16_t, FeatureAttributes const*>   attrsByIndex;
     for (auto const& kvp : m_attrs)
+        attrsByIndex[kvp.second] = &kvp.first;
+
+    uint32_t            index = 0;
+    for (auto const& kvp : attrsByIndex)
         {
-        FeatureAttributesCR attr = kvp.first;
+        FeatureAttributesCR attr = *kvp.second;
 
         parentIds[index++] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
         parentIds[index++] = subcatsOffset + GetSubCategoryIndex(attr.GetSubCategoryId());
 
         uint32_t      labelIndex = GetLabelIndex(attr.GetElementId());
-        if (LabelInfo::InvalidIndex != labelIndex)
+        if (InvalidIndex != labelIndex)
             parentIds[index++] = labelsOffset + labelIndex;
+
+        uint32_t      colorIndex = GetColorIndex(attr.GetElementId());
+        if (InvalidIndex != colorIndex)
+            parentIds[index++] = colorsOffset + colorIndex;
         }
 
     // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
@@ -425,6 +515,7 @@ void BatchTableBuilder::MapParents()
     MapSubCategories(subcatsOffset);
     MapCategories(catsOffset);
     MapLabels(labelsOffset);
+    MapSymbology(colorsOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -444,7 +535,15 @@ void BatchTableBuilder::MapFeatures()
         ClassIndex classIndex = GetFeatureClassIndex(attr.GetClass());
 
         classIds[index] = classIndex;
-        parentCounts[index] = 2 + (LabelInfo::InvalidIndex != GetLabelIndex(attr.GetElementId()) ? 1 : 0);   // element, subcategory, possibly label.
+        uint32_t    parentCount = 2;
+    
+        if(InvalidIndex != GetLabelIndex(attr.GetElementId()))
+            parentCount++;
+
+        if(InvalidIndex != GetColorIndex(attr.GetElementId()))
+            parentCount++;
+
+        parentCounts[index] = parentCount;
 
         ++instanceCounts[classIndex];
 
@@ -676,20 +775,6 @@ void PublisherContext::PublisherContext::Statistics::RecordPointCloud (size_t nP
         m_pointCloudMaxPoints = nPoints;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::RecordUsage(TileDisplayParamsCR displayParams)
-    {
-    if (displayParams.GetCategoryId().IsValid())                              
-        m_usedCategories.insert (displayParams.GetCategoryId());
-
-    if (displayParams.GetSubCategoryId().IsValid())
-        m_usedSubCategories.insert (displayParams.GetSubCategoryId());
-
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -806,6 +891,17 @@ WString     PublisherContext::GetTileExtension (TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Ray.Bentley      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::RecordUsage(FeatureAttributesMapCR attributes)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    for (auto& attribute : attributes)
+        m_usedSubCategories.insert (attribute.first.GetSubCategoryId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName  TilePublisher::GetBinaryDataFileName() const
@@ -863,6 +959,7 @@ PublisherContext::Status TilePublisher::Publish()
         BeAssert (false && "Unable to open output file");
         return PublisherContext::Status::CantOpenOutputFile;
         }
+    m_context.RecordUsage (m_tile.GetAttributes());
     
     if (m_context.DoPublishAsClassifier())
         {
@@ -916,8 +1013,6 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
 
     for (auto& tileMesh : tileMeshes)
         {
-        m_context.RecordUsage(tileMesh->GetDisplayParams());
-
         if (!tileMesh->Triangles().empty())
             AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
@@ -1177,7 +1272,8 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d());
+        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name");
+
         batchTableStr = batchTableBuilder.ToString();
         }
 
@@ -1233,24 +1329,26 @@ struct ClassifierTileWriter
 {
     typedef bmap<DPoint3d, uint32_t, TileUtil::PointComparator> T_PointMap;
 
-    Json::Value                 m_featureTable;
-    bvector<uint32_t>           m_meshIndices;
-    bvector<FPoint3d>           m_meshPositions;
-    bvector<uint32_t>           m_meshIndexCountBuffer;
-    bvector<uint32_t>           m_meshIndexOffsetBuffer;
-    ByteStream                  m_featureBinary;
-    ByteStream                  m_batchIdsBuffer;
-    VectorPosition              m_lastPosition;
-    DRange3d                    m_range;
-    uint32_t                    m_nextMeshPointIndex;
-    T_PointMap                  m_meshPointMap;
+    Json::Value                     m_featureTable;
+    bvector<uint32_t>               m_meshIndices;
+    bvector<FPoint3d>               m_meshPositions;
+    bvector<uint32_t>               m_meshIndexCountBuffer;
+    bvector<uint32_t>               m_meshIndexOffsetBuffer;
+    ByteStream                      m_featureBinary;
+    ByteStream                      m_batchIdsBuffer;
+    VectorPosition                  m_lastPosition;
+    DRange3d                        m_range;
+    uint32_t                        m_nextMeshPointIndex;
+    T_PointMap                      m_meshPointMap;
+    ModelSpatialClassifierCR        m_classifier;
+    bmap<DgnElementId, uint32_t>    m_elementColors;
 
-    static constexpr double     s_pointTolerance = 1.0E-6;
+    static constexpr double         s_pointTolerance = 1.0E-6;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassifierTileWriter(DRange3dCR range) : m_range(range), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
+ClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier) : m_range(range), m_classifier(classifier), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
     { 
     m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
     m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
@@ -1458,11 +1556,11 @@ void    AddExtrudedPolygon(PolyfaceHeaderR polyface, DVec3d normal, DRange3dCR c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange, double expandDistance)
+void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange)
     {
     // Need to process all triangles that have the same attribute value as a single "mesh".
     bmap <uint16_t, bvector<TileTriangle>> triangleMap;
-    
+
     for (auto& triangle : triangles)
         {
         bvector<TileTriangle>   triangleVector(1, triangle);
@@ -1482,9 +1580,9 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
         m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
 
         if (IsSolid(curr.second))
-            AddClosedMesh(*polyface, expandDistance, batchId);
+            AddClosedMesh(*polyface, m_classifier.GetExpandDistance(), batchId);
         else if (IsPolygon(polygonNormal, curr.second, mesh))
-            AddExtrudedPolygon(*polyface, polygonNormal, classifiedRange, expandDistance, batchId);
+            AddExtrudedPolygon(*polyface, polygonNormal, classifiedRange, m_classifier.GetExpandDistance(), batchId);
         else
             BeAssert (false && "invalid classifier geometry");
         }
@@ -1493,7 +1591,7 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR classifiedRange, double expandDistance)
+void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR classifiedRange)
     {
     // Need to process all polylines that have the same attribute value as a single "mesh".
     bmap <uint16_t, bvector<TilePolyline>> polylineMap;
@@ -1512,11 +1610,42 @@ void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRan
         {
         uint16_t                batchId = curr.first;
         DVec3d                  polylineNormal;
-        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromPolylines(polylineNormal, mesh.Points(), curr.second, expandDistance);
+        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromPolylines(polylineNormal, mesh.Points(), curr.second, m_classifier.GetExpandDistance());
 
         m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
 
         AddExtrudedPolygon(*polyface, polylineNormal, classifiedRange, 0.0, batchId);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, FeatureAttributesMapCR attributes)
+    {
+
+    for (auto& mesh : geometry.Meshes())
+        {
+        if (!mesh->Triangles().empty())
+            AddMeshes(*mesh, mesh->Triangles(), classifiedRange);
+
+        if (!mesh->Polylines().empty())
+            AddPolylines(*mesh, mesh->Polylines(), classifiedRange);
+
+        if (m_classifier.GetInsideDisplay() == ModelSpatialClassifier::DISPLAY_ElementColor)
+            {
+            bmap<uint16_t, DgnElementId>    attributeIndexToElementId;
+            bmap<uint16_t, uint32_t>        colorIndexToColor;
+                         
+            for (auto& curr : attributes)
+                attributeIndexToElementId[curr.second] = curr.first.GetElementId();
+
+            for (auto& curr :  mesh->GetColorIndexMap())
+                colorIndexToColor[curr.second] = curr.first;
+
+            for (size_t i=0; i<mesh->Colors().size(); i++)
+                m_elementColors[attributeIndexToElementId[mesh->Attributes()[i]]] = colorIndexToColor[mesh->Colors()[i]];
+            }
         }
     }
 
@@ -1539,23 +1668,9 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     m_featureBinary.Append(m_batchIdsBuffer.data(), m_batchIdsBuffer.size());
     
     padTo4ByteBoundary(m_featureBinary);
-
     featureAttributes.RemoveUndefined();
 
-#define LABEL_TEST 
-#ifdef LABEL_TEST
-    bmap<DgnElementId, Utf8String>  labels;
-    uint32_t                        testIndex = 0;
-
-    for (auto& featureAttribute : featureAttributes)
-        labels[featureAttribute.first.GetElementId()] = Utf8PrintfString("Label %d", testIndex++);
-
-    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, &labels);
-
-#else
-    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, nullptr);
-#endif    
-
+    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, "Name", m_elementColors.empty() ? nullptr : &m_elementColors);
     Utf8String          batchTableStr = batchTableBuilder.ToString(), 
                         featureTableStr = getJsonString(m_featureTable);
 
@@ -1588,7 +1703,7 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   06/2017                                                                                                                                                    d
+* @bsimethod                                                    Ray.Bentley   06/2017                                                                                                                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry, ModelSpatialClassifierCR classifier, DRange3dCR classifiedRange)
     {
@@ -1597,16 +1712,9 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     for (auto& mesh : geometry.Meshes())
         contentRange.Extend(mesh->Points());
 
-    ClassifierTileWriter      writer(contentRange);
+    ClassifierTileWriter      writer(contentRange, classifier);
 
-    for (auto& mesh : geometry.Meshes())
-        {
-        if (!mesh->Triangles().empty())
-            writer.AddMeshes(*mesh, mesh->Triangles(), classifiedRange, classifier.ExpandDistance());
-
-        if (!mesh->Polylines().empty())
-            writer.AddPolylines(*mesh, mesh->Polylines(), classifiedRange, classifier.ExpandDistance());
-        }
+    writer.AddGeometry(geometry, classifiedRange, m_tile.GetAttributes());
     writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
     m_tile.SetPublishedRange (contentRange);
@@ -4077,6 +4185,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
+    json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
     
     return Status::Success;
     }
@@ -4182,8 +4291,9 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
         if (selector.IsValid())
             {
             auto                cats = selector->GetCategories();
+#define USAGE_TEST
 #ifdef USAGE_TEST
-            DgnCategoryIdSet     onInAnyViewCats;
+            DgnCategoryIdSet    onInAnyViewCats;
 
             for (auto const& cat : cats)
                 if (CategoryOnInAnyView(cat, selectorId.second))

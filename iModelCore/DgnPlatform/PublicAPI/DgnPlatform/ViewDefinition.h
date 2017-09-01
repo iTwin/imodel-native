@@ -468,7 +468,7 @@ public:
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
-    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
+    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValueUnchecked());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} //!< Get the name of this ViewDefinition
 
     /** @name ViewDefinition Details */
