@@ -730,15 +730,8 @@ void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileBuilder::_AddTile(TextureCR tx, TileCorners const& corners)
     {
-    // ###TODO_ELEMENT_TILE: tri mesh w/ texture...
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
-    shapePoints[1] = corners.m_pts[1];
-    shapePoints[2] = corners.m_pts[2];
-    shapePoints[3] = corners.m_pts[3];
-
-    _AddShape(5, shapePoints, true);
+    auto dp = DisplayParams::CreateForTile(GetGraphicParams(), GetGeometryParams(), tx);
+    AddTile(corners, *dp);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -160,6 +160,8 @@ public:
         dp->Resolve(db, sys);
         return dp;
         }
+    DGNPLATFORM_EXPORT static DisplayParamsCPtr CreateForTile(GraphicParamsCR gf, GeometryParamsCP geom, TextureCR texture);
+
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
         {
         return new DisplayParams(Type::Linear, gf, geom, false);
@@ -1094,6 +1096,7 @@ protected:
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform()); }
+    void AddTile(TileCorners const& corners, DisplayParamsCR params);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }

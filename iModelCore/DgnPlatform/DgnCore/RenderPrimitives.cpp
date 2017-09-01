@@ -241,6 +241,19 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CreateForTile(GraphicParamsCR gf, GeometryParamsCP geom, TextureCR texture)
+    {
+    // This is for Graphic::_AddTile() - a simple quad with an image texture.
+    DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom, true);
+    dp->m_fillFlags |= (FillFlags::Always);
+    dp->m_textureMapping = TextureMapping(texture, TextureMapping::Params());
+    dp->m_resolved = true;
+    return dp.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part, DisplayParamsCR inst)
@@ -2070,6 +2083,24 @@ void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool fille
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
     m_accum.Add(*curve, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::AddTile(TileCorners const& corners, DisplayParamsCR params)
+    {
+    DPoint3d shapePoints[5] =
+        {
+        corners.m_pts[0],
+        corners.m_pts[1],
+        corners.m_pts[3],
+        corners.m_pts[2],
+        corners.m_pts[0]
+        };
+
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(shapePoints, 5));
+    m_accum.Add(*curve, false, params, GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
