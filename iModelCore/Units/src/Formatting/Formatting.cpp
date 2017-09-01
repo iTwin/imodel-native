@@ -1365,6 +1365,12 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias)
     {
     NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS, alias);
+    if (nullptr == nfs || nfs->IsProblem())
+        {
+        if (nullptr != nfs)
+            delete nfs;
+        return nullptr;
+        }
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
@@ -1372,6 +1378,26 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
     {
     NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias);
+    if (nullptr == nfs || nfs->IsProblem())
+        {
+        if (nullptr != nfs)
+            delete nfs;
+        return nullptr;
+        }
+    m_formatSet.push_back(nfs);
+    return nfs->GetNumericSpec();
+    }
+
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+    {
+    Json::Value jval = jsonString;
+    NamedFormatSpecP nfs = new NamedFormatSpec(jval);
+    if (nullptr == nfs || nfs->IsProblem())
+        {
+        if (nullptr != nfs)
+            delete nfs;
+        return nullptr;
+        }
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }

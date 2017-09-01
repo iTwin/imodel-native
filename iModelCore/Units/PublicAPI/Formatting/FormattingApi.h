@@ -574,7 +574,7 @@ public:
         bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
         NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
         CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
-        bool IsProblem() { return m_problem.IsProblem(); }
+        bool IsProblem() const { return m_problem.IsProblem(); }
         Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
@@ -654,10 +654,14 @@ struct StdFormatSet
     {
 private:
     bvector<NamedFormatSpecCP> m_formatSet;
- 
+    bvector<NamedFormatSpecCP> m_customSet;
+
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr);
+    NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+
     void StdInit();
+    void CustomInit();
     StdFormatSet() { StdInit(); }
     static StdFormatSet& Set() { static StdFormatSet set; return set; }
     

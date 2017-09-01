@@ -15,6 +15,8 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 void StdFormatSet::StdInit()
     {
+    m_formatSet.clear();
+    m_customSet.clear();
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
     //AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
@@ -101,8 +103,17 @@ void StdFormatSet::StdInit()
 
     }
 
-
-
+//void StdFormatSet::CustomInit()
+//    {
+//    m_customSet.clear();
+//
+//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");
+//    AddFormat{"{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
+//    AddFormat{"{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
+//    AddFormat{"{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}");
+//
+//    
+//    }
 
 //===================================================
 //
