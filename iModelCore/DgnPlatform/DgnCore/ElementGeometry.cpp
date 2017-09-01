@@ -3438,7 +3438,7 @@ static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElemen
     if (nullptr == cache)
         return nullptr;
 
-    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetIndex());
+    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
 
     if (found == cache->m_map.end())
         return nullptr;
@@ -3460,7 +3460,7 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 
     BRepCache* cache = BRepCache::Get(*element, true);
 
-    cache->m_map[entryId.GetIndex()] = &entity;
+    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
     }
 
 }; // DrawHelper

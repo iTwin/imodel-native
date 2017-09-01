@@ -745,6 +745,9 @@ public:
     //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space".
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
 
+    //! Get the union of the ranges of all elements in the iModel.
+    DGNPLATFORM_EXPORT AxisAlignedBox3d QueryRTreeExtents() const;
+
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outXyz The output XYZ point
     //! @param[in] inLatLong The input GeoPoint
