@@ -5028,7 +5028,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             }
        
-        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex, are3dPoints, isRegularGrid);
+        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex - startPointIndex, are3dPoints, isRegularGrid);
 
 
         if (endPointIndex < countPoints)
