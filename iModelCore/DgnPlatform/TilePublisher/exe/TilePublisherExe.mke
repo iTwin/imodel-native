@@ -68,7 +68,8 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \
                       user32.lib                          \
-
+                      $(SubpartLibs)RealityPlatform.lib   \
+                      $(SubpartLibs)ConnectClientWrapperNative.VC120.lib
 %endif
 
 %include $(SharedMki)linktool.mki
