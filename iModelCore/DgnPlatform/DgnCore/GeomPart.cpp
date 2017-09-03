@@ -43,6 +43,19 @@ void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryPart::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_geometryStream()))
+        m_geometry.FromBase64(val[json_geometryStream()].asString().c_str());
+
+    if (val.isMember(json_bbox()))
+        JsonUtils::DRange3dFromJson(m_bbox, val[json_bbox()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)

@@ -770,7 +770,7 @@
 
     <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot"/>
     <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-	
+
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
@@ -787,7 +787,7 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
         Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node
       </Files>
-	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
       </Files>
     </Bindings>
@@ -802,7 +802,7 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
         Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node
       </Files>
-	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
       </Files>
     </Bindings>  </Part>
@@ -825,7 +825,7 @@
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-	<SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+    <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
     <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
   </Part>

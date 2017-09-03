@@ -40,6 +40,14 @@ static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+static AngleInDegrees AngleInDegreesFromJson(JsonValueCR val)
+    {
+    return AngleInDegrees::FromDegrees(val[json_degrees()].asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
 static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
     {
     Json::Value val;
@@ -54,10 +62,10 @@ static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static YawPitchRollAngles YawPitchRollFromJson(JsonValueCR val)
     {
-    double yaw = val[json_yaw()].asDouble();
-    double pitch = val[json_pitch()].asDouble();
-    double roll = val[json_roll()].asDouble();
-    return YawPitchRollAngles::FromDegrees(yaw, pitch, roll);
+    auto yaw = AngleInDegreesFromJson(val[json_yaw()]);
+    auto pitch = AngleInDegreesFromJson(val[json_pitch()]);
+    auto roll = AngleInDegreesFromJson(val[json_roll()]);
+    return YawPitchRollAngles::FromDegrees(yaw.Degrees(), pitch.Degrees(), roll.Degrees());
     }
 
 //---------------------------------------------------------------------------------------

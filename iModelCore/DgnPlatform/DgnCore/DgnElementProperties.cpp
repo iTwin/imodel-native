@@ -537,7 +537,6 @@ void ElementAutoHandledPropertiesECInstanceAdapter::Init(bool loadProperties, si
         LoadProperties();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
