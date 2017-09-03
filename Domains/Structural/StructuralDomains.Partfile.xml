@@ -43,10 +43,10 @@
             <Assemblies>
                 Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
             </Assemblies>
-            <Files ProductDirectoryName="Libs" >
+            <!-- <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)StructuralDomain$(libext)
                 Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
-            </Files>
+            </Files> -->
         </Bindings>
     </Part>
 
