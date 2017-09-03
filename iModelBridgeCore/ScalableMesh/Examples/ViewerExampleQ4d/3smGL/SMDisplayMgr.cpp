@@ -1,5 +1,7 @@
+#include <gl/glew.h>
 #include "SMDisplayMgr.h"
 #include <mutex>
+
 
 using namespace ScalableMesh;
 std::mutex elemMutex;
@@ -34,6 +36,7 @@ BentleyStatus SMDisplayMgr::_CreateCachedMesh(
     cachedDisplayMesh->nbPoints = nbVertices;
     cachedDisplayMesh->nbTriangles = nbTriangles;
     cachedDisplayMesh->meshId = smId;
+	cachedDisplayMesh->nodeId = nodeId;
     cachedDisplayMesh->cachedTexture = cachedTexture; // just store the pointer
 
     // Get UVs information
@@ -62,23 +65,47 @@ BentleyStatus SMDisplayMgr::_CreateCachedMesh(
     cachedDisplayMesh->indices = new int[nbTriangles * 3];
     memcpy(cachedDisplayMesh->indices, indices, 3 * nbTriangles * sizeof(int));
  
+	cachedDisplayMesh->displayIndexIBO = -1;
     return BentleyStatus::SUCCESS;
     }
 
 //Called when node is unloaded or data becomes invalidated
 BentleyStatus SMDisplayMgr::_DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh)
     {
+
+	if (s_useVBO)
+	{
+		if (cachedDisplayMesh->displayIndexIBO != -1)
+		{
+			glDeleteBuffers(1, (unsigned int*)&cachedDisplayMesh->displayIndexIBO);
+			return BentleyStatus::SUCCESS;
+		}
+	}
     // Drawing cache update
     glDeleteLists(cachedDisplayMesh->displayIndex, 1); // delete it if it is not used any more
 
     // Data part
-    delete[] cachedDisplayMesh->points;
-    cachedDisplayMesh->points = NULL;
-    delete[] cachedDisplayMesh->indices;
-    cachedDisplayMesh->indices = NULL;
+	if (!s_dontkeepIntermediateDisplayData || cachedDisplayMesh->points != nullptr)
+	{
+		delete[] cachedDisplayMesh->points;
+		cachedDisplayMesh->points = NULL;
+	}
 
-    if (cachedDisplayMesh->uvs)
-        delete [] cachedDisplayMesh->uvs;
+	if (!s_dontkeepIntermediateDisplayData || cachedDisplayMesh->positions != nullptr)
+	{
+		delete[] cachedDisplayMesh->positions;
+		cachedDisplayMesh->positions = NULL;
+	}
+
+	if (!s_dontkeepIntermediateDisplayData || cachedDisplayMesh->indices != nullptr)
+	{
+		delete[] cachedDisplayMesh->indices;
+		cachedDisplayMesh->indices = NULL;
+	}
+
+	if (cachedDisplayMesh->uvs)
+		delete[] cachedDisplayMesh->uvs;
+	
 
     delete cachedDisplayMesh;
     cachedDisplayMesh = NULL;
@@ -121,8 +148,11 @@ BentleyStatus SMDisplayMgr::_DestroyCachedTexture(SmCachedDisplayTexture* cached
     glDeleteTextures(1 , (GLuint*)&cachedDisplayTexture->m_textureId); // delete it if it is not used any more
 
     // data part release
-    delete[] cachedDisplayTexture->texels;
-    cachedDisplayTexture->texels = NULL;
+	if (!s_dontkeepIntermediateDisplayData || cachedDisplayTexture->texels != nullptr)
+	{
+		delete[] cachedDisplayTexture->texels;
+		cachedDisplayTexture->texels = NULL;
+	}
 
     delete cachedDisplayTexture;
     cachedDisplayTexture = NULL;

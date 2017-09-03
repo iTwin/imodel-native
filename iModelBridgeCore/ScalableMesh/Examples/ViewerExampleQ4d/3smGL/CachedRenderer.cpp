@@ -8,6 +8,9 @@
 #include <GL/GLU.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+bool ScalableMesh::s_dontkeepIntermediateDisplayData = false;
+bool ScalableMesh::s_useVBO = false;
 //-------------------------------------------------------------------------------------------------
 CachedRenderer::CachedRenderer()
 //-------------------------------------------------------------------------------------------------
@@ -242,6 +245,12 @@ void CachedRenderer::createTexture(SmCachedDisplayTexture * cacheTex)
 	// Filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	if (ScalableMesh::s_dontkeepIntermediateDisplayData)
+	{
+		delete[] cacheTex->texels;
+		cacheTex->texels = nullptr;
+	}
 }
 //-------------------------------------------------------------------------------------------------
 void CachedRenderer::drawMeshNodes(Bentley::bvector<IScalableMeshCachedDisplayNodePtr>& _meshNodes, int displayElement, bool bWire, int texUnitUniform)
@@ -308,13 +317,68 @@ void CachedRenderer::drawMeshNodes(Bentley::bvector<IScalableMeshCachedDisplayNo
 				}
 
 				//DrawMeshPart(mesh);
-				drawMeshArray(mesh); // draw one mesh node
+				if (!ScalableMesh::s_useVBO)
+					drawMeshArray(mesh); // draw one mesh node
+				else
+					drawOrTransferMeshData(mesh);
 			}
 		}
 	}
 	m_avLevel /= (float)_meshNodes.size();
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);//GL_LINE);// 
+}
+
+//-------------------------------------------------------------------------------------------------
+void CachedRenderer::drawOrTransferMeshData(SmCachedDisplayMesh * aNodeMesh)
+//-------------------------------------------------------------------------------------------------
+{
+	if (aNodeMesh->displayIndexIBO == -1)
+	{
+		glGenBuffers(1, (unsigned int*)&aNodeMesh->displayIndex);
+		glBindBuffer(GL_ARRAY_BUFFER, aNodeMesh->displayIndex);
+		float * interleaved = new float[5 * aNodeMesh->nbPoints];
+		for (size_t i = 0, j=0; i < aNodeMesh->nbPoints; ++i,j+=5)
+		{
+			interleaved[j] = aNodeMesh->positions[i*3];
+			interleaved[j+1] = aNodeMesh->positions[i * 3+1];
+			interleaved[j + 2] = aNodeMesh->positions[i * 3 + 2];
+			interleaved[j + 3] = aNodeMesh->uvs[i * 2];
+			interleaved[j + 4] = aNodeMesh->uvs[i * 2+1];
+		}
+
+		glBufferData(GL_ARRAY_BUFFER, aNodeMesh->nbPoints*5*sizeof(GLfloat), interleaved, GL_STATIC_DRAW);
+		delete[] interleaved;
+
+		delete[] aNodeMesh->positions;
+		aNodeMesh->positions = nullptr;
+		delete[] aNodeMesh->uvs;
+
+		aNodeMesh->uvs = nullptr;
+
+		glGenBuffers(1, (unsigned int*)&aNodeMesh->displayIndexIBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, aNodeMesh->displayIndexIBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, aNodeMesh->nbTriangles * 3 * sizeof(GLuint), aNodeMesh->indices, GL_STATIC_DRAW);
+
+		delete[] aNodeMesh->indices;
+		aNodeMesh->indices = nullptr;
+	}
+	glPushMatrix();
+	glTranslated(aNodeMesh->localCenter.x, aNodeMesh->localCenter.y, aNodeMesh->localCenter.z); // vertices are stored relative to a node center
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, aNodeMesh->displayIndex); 
+	glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), 0);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, 5*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, aNodeMesh->displayIndexIBO);
+	glDrawElements(GL_TRIANGLES, 3*aNodeMesh->nbTriangles, GL_UNSIGNED_INT, 0);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glPopMatrix();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -328,6 +392,11 @@ void CachedRenderer::drawMeshArray(SmCachedDisplayMesh * aNodeMesh)
 		return;
 	}
 
+	if (s_dontkeepIntermediateDisplayData)
+	{
+		aNodeMesh->displayIndex = (int)aNodeMesh->nodeId;
+		glNewList(aNodeMesh->displayIndex, GL_COMPILE);
+	}
 	glPushMatrix();
 	glTranslated(aNodeMesh->localCenter.x, aNodeMesh->localCenter.y, aNodeMesh->localCenter.z); // vertices are stored relative to a node center
 
@@ -345,7 +414,21 @@ void CachedRenderer::drawMeshArray(SmCachedDisplayMesh * aNodeMesh)
 
 	glEndList();
 
+
 	glCallList(aNodeMesh->displayIndex); // draw
+
+	if (s_dontkeepIntermediateDisplayData)
+	{
+		delete[] aNodeMesh->positions;
+		aNodeMesh->positions = nullptr;
+		delete[] aNodeMesh->indices;
+		aNodeMesh->indices = nullptr;
+
+		if (aNodeMesh->uvs)
+			delete[] aNodeMesh->uvs;
+		aNodeMesh->uvs = nullptr;
+	}
+
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -410,7 +410,8 @@ bool ExampleApp::setupGL(int argc, char* argv[])
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
 		std::cout << "GLEW FAILED" << std::endl;
-
+	if (!GLEW_VERSION_2_0)
+		std::cout << " Wrong version " << std::endl;
 	// gl options
 	glEnable(GL_DEPTH_TEST);
 	

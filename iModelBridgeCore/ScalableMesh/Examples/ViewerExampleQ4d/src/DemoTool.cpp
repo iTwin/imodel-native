@@ -373,7 +373,7 @@ void SM_DemoTool::drawPostDisplay()
 {	
 	for (int i = 0; i < m_buttons.size(); i++)
 	{
-		m_buttons[i]->loaded = false;
+		//m_buttons[i]->loaded = false;
 		m_buttons[i]->loadResource();
 
 		m_buttons[i]->draw(m_uiscale);

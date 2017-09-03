@@ -21,6 +21,9 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+extern bool s_dontkeepIntermediateDisplayData;
+extern bool s_useVBO;
+
 struct SmCachedDisplayTexture
     {
     //This serves as the reference Scalable Mesh will hold to your texture data for this tile
@@ -49,6 +52,8 @@ struct SmCachedDisplayMesh
     // display list info - filled at first drawing
     int                     displayIndex;
     DPoint3d                localCenter;
+	uint64_t nodeId;
+	int                     displayIndexIBO;
 
     SmCachedDisplayMesh() { cachedTexture = nullptr; displayIndex = -1; }
     };

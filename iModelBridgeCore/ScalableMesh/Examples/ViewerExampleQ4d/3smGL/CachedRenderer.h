@@ -23,6 +23,8 @@ public:
 	void drawMeshArray(SmCachedDisplayMesh* aNodeMesh);
 	void createCameraFrustumClips(bvector<ClipPlane>& clipPlanes, Camera *camera);
 
+	void drawOrTransferMeshData(SmCachedDisplayMesh* aNodeMesh);
+
 	float averageLevel() const;
 
 	bool m_bDrawFaces;
