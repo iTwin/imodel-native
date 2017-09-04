@@ -9,9 +9,10 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 
-#define BEGIN_GRIDS_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Grids {
+#define GRIDS_NAMESPACE_NAME  Grids
+#define BEGIN_GRIDS_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace GRIDS_NAMESPACE_NAME {
 #define END_GRIDS_NAMESPACE } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_GRIDS using namespace BentleyApi::Grids;
+#define USING_NAMESPACE_GRIDS using namespace BENTLEY_NAMESPACE_NAME::GRIDS_NAMESPACE_NAME;
 
 #define DECLARE_GRIDS_QUERYCLASS_METHODS(__name__) \
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_CLASS_##__name__)); } \
