@@ -34,7 +34,6 @@ private:
 
 protected:
     void AssertSchemaDefs();
-    void VerifyECDbPropertyInheritance(ECClassCP);
     };
 
 //---------------------------------------------------------------------------------
@@ -1131,128 +1130,242 @@ and which is 4th overall in override priority... it can override properties from
 </scenario>
 @bsimethod                              Zakary.Olyarnik                         08/16
 -------------+---------------+---------------+---------------+---------------+---------*/
-TEST_F(ECDbMetaSchemaECSqlTestFixture, TestPropertyOverrides)
+TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
     {
-    // helper method: inserts a pre-defined schema into ECDb
-    auto importSchema = [](ECDbCR db, ECN::ECSchemaCR schemaIn)
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_propertyoverrides.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                    <ECEntityClass typeName="AB">
+                        <ECProperty propertyName="a" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="ICD" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="c" typeName="double" />
+                        <ECProperty propertyName="d" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="EF">
+                        <BaseClass>AB</BaseClass>
+                        <BaseClass>ICD</BaseClass>
+                        <ECProperty propertyName="e" typeName="double" />
+                        <ECProperty propertyName="f" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IGH" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="g" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IIJ" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="i" typeName="double" />
+                        <ECProperty propertyName="j" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IKL" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <BaseClass>IGH</BaseClass>
+                        <ECProperty propertyName="k" typeName="double" />
+                        <ECProperty propertyName="l" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="MN">
+                        <BaseClass>EF</BaseClass>
+                        <BaseClass>IIJ</BaseClass>
+                        <BaseClass>IKL</BaseClass>
+                        <ECProperty propertyName="m" typeName="double" />
+                        <ECProperty propertyName="n" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+    auto verifyPropertyOverride = [] (ECDbCR ecdb, ECClassCP ecClass)
         {
-        ECN::ECSchemaPtr imported = nullptr;
-        ASSERT_EQ(ECObjectsStatus::Success, schemaIn.CopySchema(imported));
-        ASSERT_EQ(ECObjectsStatus::Success, imported->SetName(schemaIn.GetName()));
-        ASSERT_EQ(ECObjectsStatus::Success, imported->SetAlias(schemaIn.GetAlias()));
-        ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
-        ASSERT_EQ(ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
-        ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(contextPtr->GetCache().GetSchemas()));
+        ASSERT_TRUE(ecClass != nullptr);
+        // retrieve all local, inherited, and overridden properties from a given class
+        ECSqlStatement propertyStatement;
+        ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(ecdb, "SELECT ECInstanceId, PrimitiveType FROM meta.ECPropertyDef WHERE Class.Id=? AND Name=?"));
+
+        // iterate through properties using ECObjects' GetProperties() and compare to ECSql-retrieved properties
+        for (ECPropertyCP prop : ecClass->GetProperties(true))
+            {
+            ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindId(1, prop->GetClass().GetId())) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindText(2, prop->GetName().c_str(), IECSqlBinder::MakeCopy::No)) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            ASSERT_EQ(BE_SQLITE_ROW, propertyStatement.Step()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            
+            ASSERT_EQ(prop->GetId().GetValue(), propertyStatement.GetValueId<ECPropertyId>(0).GetValue()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            ASSERT_TRUE(prop->GetIsPrimitive()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            ASSERT_EQ(PRIMITIVETYPE_Double, prop->GetAsPrimitiveProperty()->GetType()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            ASSERT_EQ(prop->GetId().GetValue(), propertyStatement.GetValueId<ECPropertyId>(0).GetValue()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            
+            ASSERT_EQ(BE_SQLITE_DONE, propertyStatement.Step()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
+            propertyStatement.Reset();
+            propertyStatement.ClearBindings();
+            }
         };
 
-    // create schema
-    ECSchemaPtr testSchema;
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0));
-
-    ECEntityClassP ab = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ab, "AB"));
-    ECEntityClassP cd = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(cd, "CD"));
-    ECEntityClassP ef = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ef, "EF"));
-    ECEntityClassP gh = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(gh, "GH"));
-    ECEntityClassP ij = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ij, "IJ"));
-    ECEntityClassP kl = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(kl, "KL"));
-    ECEntityClassP mn = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(mn, "MN"));
-
-    // add base classes
-    ef->AddBaseClass(*ab);
-    ef->AddBaseClass(*cd);
-    kl->AddBaseClass(*gh);
-    kl->AddBaseClass(*ij);
-    mn->AddBaseClass(*ef);
-    mn->AddBaseClass(*kl);
-
-    // add properties to classes
-    PrimitiveECPropertyP primitiveProperty = nullptr;
-    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "c", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "d", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "e", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "f", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "i", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "j", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "k", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "l", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "m", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "n", PRIMITIVETYPE_String));
-    
-    // create ECDb with test schema, then read it back out to update local copy
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("PropertyOverrides.ecdb"));
-    importSchema(m_ecdb, *testSchema);
-    ECSchemaCP readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
-    ECClassCP readOutmn = readOutSchema->GetClassCP("MN");
-
     // compare local copy properties with ECSql-retrieved properties
-    VerifyECDbPropertyInheritance(readOutmn);
+    verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
 
-    // add some duplicate properties to mn, overriding those from the base classes 
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "d", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "f", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "j", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "k", PRIMITIVETYPE_String));
+    // add some duplicate properties to MN, overriding those from the base classes 
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                  <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                  <ECEntityClass typeName="AB">
+                        <ECProperty propertyName="a" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="ICD" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="c" typeName="double" />
+                        <ECProperty propertyName="d" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="EF">
+                        <BaseClass>AB</BaseClass>
+                        <BaseClass>ICD</BaseClass>
+                        <ECProperty propertyName="e" typeName="double" />
+                        <ECProperty propertyName="f" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IGH" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="g" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IIJ" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="i" typeName="double" />
+                        <ECProperty propertyName="j" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IKL" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <BaseClass>IGH</BaseClass>
+                        <ECProperty propertyName="k" typeName="double" />
+                        <ECProperty propertyName="l" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="MN">
+                        <BaseClass>EF</BaseClass>
+                        <BaseClass>IIJ</BaseClass>
+                        <BaseClass>IKL</BaseClass>
+                        <ECProperty propertyName="m" typeName="double" />
+                        <ECProperty propertyName="n" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                        <ECProperty propertyName="d" typeName="double" />
+                        <ECProperty propertyName="f" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                        <ECProperty propertyName="j" typeName="double" />
+                        <ECProperty propertyName="k" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
 
-    // re-import and read out schema, then validate through ECSql
-    importSchema(m_ecdb, *testSchema);
-    readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
-    readOutmn = readOutSchema->GetClassCP("MN");
-    VerifyECDbPropertyInheritance(readOutmn);
+    verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
 
     // override more properties of base classes (add eacg to kl, iab to gh, l to ef, g to ij and gh to ab)
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "e", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "c", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "i", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "l", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
-
-    // re-import and read out schema, then validate through ECSql
-    importSchema(m_ecdb, *testSchema);
-    readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
-    readOutmn = readOutSchema->GetClassCP("MN");
-    VerifyECDbPropertyInheritance(readOutmn);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Zakary.Olyarnik                     08/16
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecClass)
-    {
-    // retrieve all local, inherited, and overridden properties from a given class
-    ECSqlStatement propertyStatement;
-    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(m_ecdb, "SELECT p.ECInstanceId FROM meta.ECClassDef c1 "
-        "JOIN meta.ClassHasAllBaseClasses rel ON rel.SourceECInstanceId = c1.ECInstanceId "
-        "JOIN meta.ECClassDef c2 ON c2.ECInstanceId = rel.TargetECInstanceId "
-        "INNER JOIN meta.ECPropertyDef p ON p.Class.Id = c2.ECInstanceId "
-        "WHERE c1.ECInstanceId=? "
-        "ORDER BY rel.ECInstanceId"));
-    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindId(1, ecClass->GetId()));
-
-    // iterate through properties using ECObjects' GetProperties() and compare to ECSql-retrieved properties
-    for (ECPropertyCP prop : ecClass->GetProperties(true))
-        {
-        ASSERT_EQ(propertyStatement.Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(propertyStatement.GetValueId<ECPropertyId>(0), prop->GetId());
-        }
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                      <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                 <ECEntityClass typeName="AB">
+                        <ECProperty propertyName="a" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                        <ECProperty propertyName="g" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="ICD" modifier="Abstract">
+                         <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="c" typeName="double" />
+                        <ECProperty propertyName="d" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="EF">
+                        <BaseClass>AB</BaseClass>
+                        <BaseClass>ICD</BaseClass>
+                        <ECProperty propertyName="e" typeName="double" />
+                        <ECProperty propertyName="f" typeName="double" />
+                        <ECProperty propertyName="l" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IGH" modifier="Abstract">
+                          <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="g" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                        <ECProperty propertyName="a" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                        <ECProperty propertyName="i" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IIJ" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="i" typeName="double" />
+                        <ECProperty propertyName="j" typeName="double" />
+                        <ECProperty propertyName="g" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IKL" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>AB</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <BaseClass>IGH</BaseClass>
+                        <ECProperty propertyName="k" typeName="double" />
+                        <ECProperty propertyName="l" typeName="double" />
+                        <ECProperty propertyName="e" typeName="double" />
+                        <ECProperty propertyName="a" typeName="double" />
+                        <ECProperty propertyName="c" typeName="double" />
+                        <ECProperty propertyName="g" typeName="double" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="MN">
+                        <BaseClass>EF</BaseClass>
+                        <BaseClass>IIJ</BaseClass>
+                        <BaseClass>IKL</BaseClass>
+                        <ECProperty propertyName="m" typeName="double" />
+                        <ECProperty propertyName="n" typeName="double" />
+                        <ECProperty propertyName="b" typeName="double" />
+                        <ECProperty propertyName="d" typeName="double" />
+                        <ECProperty propertyName="f" typeName="double" />
+                        <ECProperty propertyName="h" typeName="double" />
+                        <ECProperty propertyName="j" typeName="double" />
+                        <ECProperty propertyName="k" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+    verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
