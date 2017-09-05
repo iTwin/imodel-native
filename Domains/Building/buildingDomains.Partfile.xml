@@ -111,8 +111,8 @@
     </Product>
 
     <ProductDirectoryList ListName="DesignModelingDomainsSDK">
-        <ProductDirectory Name="PublicAPI"                               Deliver="false" Path="PublicAPI"/>
-        <ProductDirectory Name="VendorAPI"                               Deliver="false" Path="VendorAPI"/>
+        <ProductDirectory Name="PublicAPI"                               Deliver="true" Path="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"                               Deliver="true" Path="VendorAPI"/>
         <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices"/>
         <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets"/>
         <ProductDirectory Name="ComponentAssets"                         Deliver="true" Path="Assets"/>
