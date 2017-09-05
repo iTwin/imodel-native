@@ -784,6 +784,11 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
 
+    // Ensure image graphic has low priority so that annotations are rendered in front of it...
+    Render::GeometryParams geomParams(cat);
+    geomParams.SetDisplayPriority(-1);
+    builder->Append(geomParams);
+
     GraphicBuilder::TileCorners corners;
     corners.m_pts[0] = DPoint3d::From(origin.x,           origin.y);            // lowerLeft
     corners.m_pts[1] = DPoint3d::From(origin.x + size.x,  origin.y);            // lowerRight

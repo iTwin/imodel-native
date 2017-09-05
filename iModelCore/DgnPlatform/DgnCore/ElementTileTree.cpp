@@ -33,6 +33,10 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
+// For YII - redline models contain ImageGraphic geoemtric primitives - the texture currently cannot be stored in the tile cache because we have
+// no access to its image data in _AddTile().
+#define DISABLE_TILE_CACHE_2D_YII
+
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
@@ -1005,6 +1009,11 @@ bool Loader::IsCacheable() const
     if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
         return false;
 
+#if defined(DISABLE_TILE_CACHE_2D_YII)
+    if (tile.GetElementRoot().Is2d())
+        return false;
+#endif
+
     return true;
 #endif
     }
@@ -1198,6 +1207,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
             {
             // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
+            }
+        else
+            {
+            // ###TODO_ELEMENT_TILE: Redlining workflow creates a 2d model then annotates in the margins.
+            // For YII demos only, expand the range to work around current failure to update model range when new elements added
+            range.ScaleAboutCenter(range, 2.0);
+            range.high.z = Render::Target::Get2dFrustumDepth();
+            range.low.z = -Render::Target::Get2dFrustumDepth();
             }
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
