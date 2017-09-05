@@ -230,6 +230,8 @@ public:
     BentleyStatus FromString(Utf8CP jsonStr) {return Json::Reader::Parse(jsonStr, *this) ? SUCCESS : ERROR;}
 
     Utf8String ToString() const {return Json::FastWriter::ToString(*this);}
+
+    void From(Json::Value&& other) {*((Json::Value*)this) = other;}
 };
 
 typedef AdHocJsonValue& AdHocJsonValueR;
