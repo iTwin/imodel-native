@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/Annotations/TextAnnotation.cpp $ 
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $ 
-//-------------------------------------------------------------------------------------- 
- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Annotations/TextAnnotation.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h>

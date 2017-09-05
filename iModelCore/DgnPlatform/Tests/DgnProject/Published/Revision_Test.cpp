@@ -20,6 +20,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
+USING_NAMESPACE_BENTLEY_EC
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
 
@@ -1552,9 +1553,152 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=2", 2));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    08/2017
+//---------------------------------------------------------------------------------------
+int GetColumnCount(DgnDb const& dgndb, Utf8CP tableName)
+    {
+    Statement statement;
+    DbResult status = statement.TryPrepare(dgndb, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
+    BeAssert(status == BE_SQLITE_OK);
+
+    return statement.GetColumnCount();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, TableAndColumnAdditions)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"TableAndColumnAdditions.bim");
+    DgnRevisionPtr revision0 = CreateRevision();
+    ASSERT_TRUE(revision0.IsValid());
+    BackupTestFile();
+
+    // Get the BisCore.DefinitionElement
+    ECSchemaCP bisCoreSchema = m_db->Schemas().GetSchema(Utf8String("BisCore"));
+    ASSERT_TRUE(bisCoreSchema != nullptr);
+    ECClassCP definitionElement = m_db->Schemas().GetClass(Utf8String("BisCore"), Utf8String("DefinitionElement"));
+    ASSERT_TRUE(definitionElement != nullptr);
+
+    // Create a schema with a sub-class of definition element that will cause a new overflow table. 
+    ECSchemaPtr testSchema;
+    ECObjectsStatus status = ECSchema::CreateSchema(testSchema, Utf8String("TableAndColumnAdditionTest"), Utf8String("tcat"), 1, 0, 0);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    testSchema->AddReferencedSchema(*(const_cast<ECSchemaP>(bisCoreSchema)));
+
+    ECEntityClassP testClass = nullptr;
+    status = testSchema->CreateEntityClass(testClass, "TestElement");
+    ASSERT_TRUE(status == ECObjectsStatus::Success && testClass != nullptr);
+    status = testClass->AddBaseClass(*definitionElement);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+
+    for (int ii = 0; ii < 40; ii++)
+        {
+        Utf8PrintfString propName("Property%d", ii);
+        PrimitiveECPropertyP prop = nullptr;
+        status = testClass->CreatePrimitiveProperty(prop, propName);
+        ASSERT_TRUE(status == ECObjectsStatus::Success);
+        }
+
+    int beforeCount = GetColumnCount(*m_db, "bis_DefinitionElement");
+    ASSERT_FALSE(m_db->TableExists("bis_DefinitionElement_Overflow"));
+
+    // Import schema with table/column additions, and create a revision with it
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(testSchema.get());
+    SchemaStatus schemaStatus = m_db->ImportSchemas(schemas);
+    ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
+    m_db->SaveChanges("Imported Test schema");
+
+    DgnRevisionPtr revision1 = CreateRevision();
+    ASSERT_TRUE(revision1.IsValid());
+    DumpRevision(*revision1, "Revision with TestSchema import:");
+
+    int afterCount = GetColumnCount(*m_db, "bis_DefinitionElement");
+    ASSERT_TRUE(afterCount > beforeCount);
+    ASSERT_TRUE(m_db->TableExists("bis_DefinitionElement_Overflow"));
+
+    /* Restore baseline, make data changes, and merge revision with schema changes */
+    RestoreTestFile();
+
+    ASSERT_EQ(beforeCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
+    ASSERT_FALSE(m_db->TableExists("bis_DefinitionElement_Overflow"));
+
+    MergeSchemaRevision(*revision1);
+    
+    ASSERT_EQ(afterCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
+    ASSERT_TRUE(m_db->TableExists("bis_DefinitionElement_Overflow"));
+    }
+
 #ifdef DEBUG_REVISION_TEST_MANUAL
 // Tests that are useful for one off testing and performance. These aren't included
 // as part of the build, but used whenever necessary
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
+    {
+    BeFileName seedFile("D:\\temp\\Defects\\YII\\Oakland_west_Station.bim", true);
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"Oakland_west_Station.bim");
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    Utf8CP changeSetIds[4] =
+        {
+        "bd2644fc8fd0dc71d58b815e7dd805ba37b10641",
+        "dffacfacf27056105c055e9ba573e0f45dcb7e10",
+        "5113eff64bab7c12f04a30ec4f6da932751fd8d2",
+        "5f1296bfaf45eb8da29dd00c10199795c64015d2"
+        };
+
+    bvector<BeFileName> csPathnames;
+    BeFileName basePath(L"D:\\temp\\Defects\\YII\\");
+    for (int ii = 0; ii < 4; ii++)
+        {
+        BeFileName csFileName(changeSetIds[ii], true);
+        csFileName.AppendExtension(L"cs");
+
+        BeFileName csPathname = basePath;
+        csPathname.AppendToPath(csFileName);
+        csPathnames.push_back(csPathname);
+        }
+
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+    for (int ii = 0; ii < 4; ii++)
+        {
+        Utf8String changeSetId = changeSetIds[ii];
+        Utf8String parentChangeSetId = (ii > 0) ? changeSetIds[ii - 1] : "";
+
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        //if (ii == 3)
+        //    rev->Dump(*m_db);
+
+        revisionPtrs.push_back(rev);
+        revisions.push_back(rev.get());
+        }
+
+    m_db->CloseDb();
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
@@ -1622,21 +1766,6 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
 
     LOG.infov("Time taken to generate revisions is %f", generateRevTime);
     LOG.infov("Time taken to merge revisions is %f", mergeRevTime);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    11/2016
-//---------------------------------------------------------------------------------------
-uint64_t GetFileLastModifiedTime(BeFileNameCR pathname)
-    {
-    time_t mtime;
-    if (BeFileNameStatus::Success != pathname.GetFileTime(nullptr, nullptr, &mtime, pathname.c_str()))
-        {
-        BeAssert(false);
-        return 0;
-        }
-
-    return (uint64_t) mtime;
     }
 
 //---------------------------------------------------------------------------------------

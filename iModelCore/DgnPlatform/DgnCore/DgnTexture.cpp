@@ -79,6 +79,32 @@ void DgnTexture::_ToJson(JsonValueR out, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnTexture::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.isMember(json_description()))
+        m_descr = props[json_description()].asString();
+
+    if (props.isMember(json_data()))
+        m_data.GetByteStreamR().FromBase64(props[json_data()].asString());
+
+    if (props.isMember(json_format()))
+        m_data.SetFormat((ImageSource::Format)props[json_format()].asUInt());
+
+    if (props.isMember(json_width()))
+        m_width = props[json_width()].asUInt();
+
+    if (props.isMember(json_height()))
+        m_height = props[json_height()].asUInt();
+
+    if (props.isMember(json_height()))
+        m_flags = (Flags) props[json_flags()].asUInt();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnTexture::_CopyFrom(DgnElementCR src)

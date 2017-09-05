@@ -299,6 +299,19 @@ void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void UrlLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_url()))
+        m_url = val[json_url()].asString();
+
+    if (val.isMember(json_description()))
+        m_description = val[json_description()].asString();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
 void UrlLink::_CopyFrom(DgnElementCR other)
@@ -470,6 +483,19 @@ void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     T_Super::_ToJson(out, opts);
     out[json_name()] = m_name;
     out[json_description()] = m_description;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void EmbeddedFileLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_name()))
+        m_name = val[json_name()].asString();
+
+    if (val.isMember(json_description()))
+        m_description = val[json_description()].asString();
     }
 
 //---------------------------------------------------------------------------------------
