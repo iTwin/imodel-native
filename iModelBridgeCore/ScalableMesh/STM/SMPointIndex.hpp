@@ -896,6 +896,18 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
+//=======================================================================================
+// @bsimethod                                                 Elenie.Godzaridis 09/17
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData()
+{
+	if (GetBlockID().IsValid())
+	{
+		SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
+		m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+	}
+}
+
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
     {

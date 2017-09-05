@@ -526,6 +526,8 @@ public:
 
     virtual void OnPushNodeDown() {};
 
+	virtual void RemoveNonDisplayPoolData();
+
 
     /**----------------------------------------------------------------------------
      Returns the filter used for filtering the points when promoting them to upper levels.
