@@ -146,7 +146,7 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
+    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp; m_featureOverridesDirty=m_selectionSetDirty=true;}
     virtual GeometricModelP _GetTargetModel() const = 0;
     virtual BentleyStatus _CreateScene(SceneContextR context) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
