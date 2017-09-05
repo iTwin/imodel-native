@@ -858,7 +858,7 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
 
         Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
         m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECInstanceDisplayLabel,
-            CreateList("ECClassId", "ECInstanceId", labelClause, "NULL"));
+            CreateList("ECClassId", "ECInstanceId", labelClause, "NULL"), true, m_descriptor->OnlyDistinctValues());
         }
 
     return *m_displayLabelField;
@@ -867,13 +867,13 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, bool isDistinct) const
     {
     Utf8String value = "'";
     value += calculatedPropertyValue;
     value += "'";
     return PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateList("ECClassId", "ECInstanceId", value));
+        CreateList("ECClassId", "ECInstanceId", value), true, isDistinct);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -924,7 +924,7 @@ static Utf8String GetPropertySelectClauseFromAccessString(Utf8StringCR accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, ECPropertyCR prop)
+static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, ECPropertyCR prop, bool isDistinct)
     {
     if (prop.GetIsPrimitive())
         {
@@ -957,7 +957,7 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         field->SetPrefixOverride(prefix);
         return field;
         }
-    PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str());
+    PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true, isDistinct);
     field->SetPrefixOverride(prefix);
     return field;
     }
@@ -1069,10 +1069,12 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     {
     bvector<PresentationQueryContractFieldCPtr> contractFields;
     
-    contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
-
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
-    contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
+    if (!m_descriptor->OnlyDistinctValues())
+        {
+        contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+        contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
+        }
 
     if (0 == ((int)ContentFlags::KeysOnly & m_descriptor->GetContentFlags()))
         {
@@ -1096,7 +1098,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                     Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
                     ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
                     contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), 
-                        fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty);
+                        fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
                     }
                 else
                     {
@@ -1107,7 +1109,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             else if (descriptorField->IsCalculatedPropertyField())
                 {
                 if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || m_class->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
-                    contractField = GetCalculatedPropertyField(descriptorField->GetName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression());
+                    contractField = GetCalculatedPropertyField(descriptorField->GetName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), m_descriptor->OnlyDistinctValues());
                 else
                     contractField = PresentationQueryContractSimpleField::Create(descriptorField->GetName().c_str(), "CAST(null AS TEXT)", false);
                 }

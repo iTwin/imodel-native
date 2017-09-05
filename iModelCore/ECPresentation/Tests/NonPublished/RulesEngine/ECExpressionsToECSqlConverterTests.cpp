@@ -59,8 +59,8 @@ TEST_F(ECExpressionsToECSqlConverterTests, Parens)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("Label ~ \"Test\"");
-    ASSERT_STREQ("[Label] LIKE 'Test'", ecsql.c_str());
+    Utf8String ecsql = m_helper.ConvertToECSql("Test ~ \"aaa\" OR Label ~ \"Test\"");
+    ASSERT_STREQ("CAST([Test] AS TEXT) LIKE 'aaa' OR CAST([Label] AS TEXT) LIKE 'Test'", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

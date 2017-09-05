@@ -543,7 +543,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression("IntProperty > 1 or DoubleProperty < 0");
+    ovr->SetFilterExpression("Widget_IntProperty > 1 or Widget_DoubleProperty < 0");
 
     // get the content with descriptor override
     content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
@@ -5428,4 +5428,123 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 
     EXPECT_STREQ("ClassK_LengthProperty", descriptor->GetAllFields()[0]->GetName().c_str());
     EXPECT_STREQ("ClassL_LengthProperty", descriptor->GetAllFields()[1]->GetName().c_str());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
+    {
+    // set up the dataset
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDistinctValues", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
+    contentRule->GetSpecificationsR().push_back(spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+
+    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
+    bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
+    // hide all fields except Widget_MyID
+    for (ContentDescriptor::Field const* field : fieldVectorCopy)
+        {
+        if (!field->GetName().Equals("Widget_MyID"))
+            overridenDescriptor->RemoveField(field->GetName().c_str());
+        }
+    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    // validate descriptor
+    EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size()); // Widget_MyID
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    RapidJsonValueCR values1 = contentSet.Get(0)->AsJson()["Values"];
+    ASSERT_EQ(1, values1.MemberCount());
+    EXPECT_STREQ("Test1", values1["Widget_MyID"].GetString());
+    RapidJsonValueCR values2 = contentSet.Get(1)->AsJson()["Values"];
+    ASSERT_EQ(1, values2.MemberCount());
+    EXPECT_STREQ("Test2", values2["Widget_MyID"].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMergedField)
+    {
+    // insert some widget & gadget instances
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+
+    // set up selection
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(*instance1));
+    keys.push_back(ECInstanceNodeKey::Create(*instance2));
+    keys.push_back(ECInstanceNodeKey::Create(*instance3));
+    keys.push_back(ECInstanceNodeKey::Create(*instance4));
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDistinctValuesFromMergedField", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
+    contentRule->GetSpecificationsR().push_back(spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date
+    
+    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
+    bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
+    // hide all fields except Widget_MyID
+    for (ContentDescriptor::Field const* field : fieldVectorCopy)
+        {
+        if (!field->GetName().Equals("Gadget_Widget_MyID"))
+            overridenDescriptor->RemoveField(field->GetName().c_str());
+        }
+    ASSERT_EQ(1, overridenDescriptor->GetVisibleFields().size());
+    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+        
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->AsJson()["Values"];
+    EXPECT_STREQ("GadgetID", jsonValues["Gadget_Widget_MyID"].GetString());
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
+    EXPECT_STREQ("WidgetID", jsonValues2["Gadget_Widget_MyID"].GetString());
     }

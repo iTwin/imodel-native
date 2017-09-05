@@ -1480,3 +1480,161 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(json["DisplayValues"]);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryExecutorTests, GetDistinctValuesFromPropertyField)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    query->From(*m_widgetClass, false, "widget");
+
+    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ASSERT_EQ(2, executor.GetRecordsCount());  
+
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({"Widget_MyID": "Test1"})");
+    ContentSetItemPtr record1 = executor.GetRecord(0);
+    ASSERT_TRUE(record1.IsValid());
+    EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
+
+    expectedValues.Parse(R"({"Widget_MyID": "Test2"})");
+    ContentSetItemPtr record2 = executor.GetRecord(1);
+    ASSERT_TRUE(record2.IsValid());
+    EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+
+    descriptor->GetAllFields().push_back(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    query->From(*m_widgetClass, false, "widget");
+
+    CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ASSERT_EQ(2, executor.GetRecordsCount());  
+
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({"MyID": "Test1"})");
+    ContentSetItemPtr record1 = executor.GetRecord(0);
+    ASSERT_TRUE(record1.IsValid());
+    EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
+
+    expectedValues.Parse(R"({"MyID": "Test2"})");
+    ContentSetItemPtr record2 = executor.GetRecord(1);
+    ASSERT_TRUE(record2.IsValid());
+    EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryExecutorTests, GetDistinctValuesFromECPropertyField)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID"));
+    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    query->From(*m_widgetClass, false, "widget");
+
+    CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ASSERT_EQ(2, executor.GetRecordsCount());  
+
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({"MyID": "Test1"})");
+    ContentSetItemPtr record1 = executor.GetRecord(0);
+    ASSERT_TRUE(record1.IsValid());
+    EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
+
+    expectedValues.Parse(R"({"MyID": "Test2"})");
+    ContentSetItemPtr record2 = executor.GetRecord(1);
+    ASSERT_TRUE(record2.IsValid());
+    EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryExecutorTests, GetDistinctValuesFromMergedECPropertyField)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID"));
+    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+    query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query1), "gadget");
+    query1->From(*m_gadgetClass, false, "gadget");
+    
+    ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+    query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, m_widgetClass, *query2), "widget");
+    query2->From(*m_widgetClass, false, "widget");
+
+    UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+
+    CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ASSERT_EQ(2, executor.GetRecordsCount());  
+
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({"MyID": "Gadget1"})");
+    ContentSetItemPtr record1 = executor.GetRecord(0);
+    ASSERT_TRUE(record1.IsValid());
+    EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
+
+    expectedValues.Parse(R"({"MyID": "Widget1"})");
+    ContentSetItemPtr record2 = executor.GetRecord(1);
+    ASSERT_TRUE(record2.IsValid());
+    EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
+    }

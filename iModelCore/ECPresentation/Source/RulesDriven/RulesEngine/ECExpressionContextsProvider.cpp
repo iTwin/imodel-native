@@ -685,6 +685,7 @@ private:
     bool m_ignoreArguments;
     bool m_inStructProperty;
     ExpressionToken m_previousToken;
+    Utf8String m_previousNode;
 
 private:
     /*-----------------------------------------------------------------------------**//**
@@ -730,7 +731,15 @@ private:
     void Append(Utf8StringCR value)
         {
         if (!m_ecsql.empty() && NeedsSpaceAfter(m_ecsql) && NeedsSpaceBefore(value))
+            {
             m_ecsql.append(" ");
+            m_previousNode.append(" ");
+            }
+
+        if (m_inStructProperty)
+            m_previousNode.append(value);
+        else
+            m_previousNode = value;
         m_ecsql.append(value);
         }
     
@@ -740,10 +749,31 @@ private:
     void Append(Utf8StringCR value, bool prependSpace)
         {
         if (!m_ecsql.empty() && prependSpace)
+            {
             m_ecsql.append(" ");
+            m_previousNode.append(" ");
+            }
+
+        if (m_inStructProperty)
+            m_previousNode.append(value);
+        else
+            m_previousNode = value;
         m_ecsql.append(value);
         }
     
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Aidas.Vaiksnoras            08/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleLikeToken(NodeCR node)
+        {
+        Utf8String::size_type previousNode= m_ecsql.rfind(m_previousNode);
+        if (previousNode == Utf8String::npos)
+            return;
+        m_ecsql.insert(previousNode, "CAST(");
+        Append("AS TEXT)");
+        Append("LIKE");
+        }
+   
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1149,7 +1179,7 @@ public:
                 Append("TRUE");
                 break;
             case TOKEN_Like:
-                Append("LIKE");
+                HandleLikeToken(node);
                 break;
             case TOKEN_Concatenate:
                 Append("||");

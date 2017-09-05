@@ -12,6 +12,28 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                08/2017
++===============+===============+===============+===============+===============+======*/
+struct TestDataSource : IDataSource<ContentSetItemCPtr> 
+{
+private:
+    bvector<ContentSetItemCPtr> m_vector;
+
+protected:
+    size_t _GetSize() const override {return m_vector.size();}
+
+    ContentSetItemCPtr _Get(size_t index) const override
+        {
+        ContentSetItemCPtr item;
+        if (m_vector.size() <= 0)
+            return nullptr;
+        return m_vector[index];
+        }
+public:
+    static RefCountedPtr<TestDataSource> Create() {return new TestDataSource();}
+    void AddContentSetItem(ContentSetItemCPtr item) {m_vector.push_back(item);}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2016
@@ -50,6 +72,8 @@ private:
     bmap<NavNodeCP, NavNodeCP> m_parentship;
     std::function<bool(ECDbR, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
     std::function<bvector<ECInstanceChangeResult>(ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
+    std::function<ContentDescriptorCPtr(ECDbR, Utf8CP, SelectionInfo const&, JsonValueCR)> m_contentDescriptorHandler;
+    std::function<ContentCPtr(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> m_contentHandler;
     std::function<void(ECDbR, uint64_t)> m_onNodeCheckedHandler;
     std::function<void(ECDbR, uint64_t)> m_onNodeUncheckedHandler;
     std::function<void(ECDbR, uint64_t)> m_onNodeExpandedHandler;
@@ -106,8 +130,20 @@ protected:
     void _OnNodeCollapsed(ECDbR db, uint64_t nodeId) override {if (nullptr != m_onNodeCollapsedHandler) m_onNodeCollapsedHandler(db, nodeId);}
 
     // Content
-    ContentDescriptorCPtr _GetContentDescriptor(ECDbR, Utf8CP, SelectionInfo const&, JsonValueCR) override {return nullptr;}
-    ContentCPtr _GetContent(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override {return nullptr;}
+    ContentDescriptorCPtr _GetContentDescriptor(ECDbR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options) override 
+        {
+        if (nullptr != m_contentDescriptorHandler)
+            return m_contentDescriptorHandler(db, preferredDisplayType, selectionInfo, options);
+        return ContentDescriptor::Create();
+        }
+
+    ContentCPtr _GetContent(ECDbR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options) override 
+        {
+        if (nullptr != m_contentHandler)
+            return m_contentHandler(db, descriptor, selectionInfo, pageOptions, options);
+        return Content::Create(descriptor, *TestDataSource::Create());
+        }
+
     size_t _GetContentSetSize(ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override {return 0;}
 
     // Updating
@@ -135,6 +171,8 @@ public:
     
     void SetHasChildHandler(std::function<bool(ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
     void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
+    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(ECDbR, Utf8CP, SelectionInfo const&, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
+    void SetContentHandler(std::function<ContentCPtr(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> handler){m_contentHandler = handler;}
     void SetOnNodeCheckedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeCheckedHandler = handler;}
     void SetOnNodeUncheckedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeUncheckedHandler = handler;}
     void SetOnNodeExpandedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeExpandedHandler = handler;}
