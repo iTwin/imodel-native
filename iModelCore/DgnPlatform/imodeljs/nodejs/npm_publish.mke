@@ -20,5 +20,10 @@ o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
     %error iModelJsNodeAddon is not available for this platform
 %endif
 
+# NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
+
 always:
+    -$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
+
+%include $(o)npm_publish.mki

@@ -11,21 +11,9 @@
 # specified product.
 
 import os
-import fnmatch
 import sys
 import re
-import errno
 import shutil
-
-def mkdir_if_necesssary(outdir):
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
-
-def makedirs_if_necessary(outdir):
-    try:
-        os.makedirs(outdir)
-    except OSError:
-        pass
 
 def setMacros(packagefile, versionCode, platform):
     str = ''
@@ -105,6 +93,15 @@ if __name__ == '__main__':
         print '*** ' + productdir + ' does not appear to be the path to an iModelJsNodeAddon product directory';
         exit(1)
 
+    if os.path.exists(outdirParent):
+        print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script';
+        exit(1)
+
+    os.makedirs(outdirParent)
+
+    mkiFilepath = os.path.join(outdirParent, 'npm_publish.mki')
+    mkiFile = open(mkiFilepath, 'w')
+
     for versionsubdir in os.listdir(addonDir):    
 
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
@@ -114,15 +111,18 @@ if __name__ == '__main__':
 
         # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
         # The real name of the package is inside the package.json file.
-        localpackagename = 'imodeljs-' + versionsubdir.replace('_', '-') + '-' + platformandarch
+        localpackagename = 'imodeljs-' + versionsubdir + '-' + platformandarch
 
-        packagedir = os.path.join(outdirParent, localpackagename)
+        localpackagedir = os.path.join(outdirParent, localpackagename)
 
-        print 'Creating ' + packagedir + ' ...'
+        print 'Creating ' + localpackagedir + ' ...'
 
-        if os.path.exists(packagedir):
-            shutil.rmtree(packagedir)
+        if os.path.exists(localpackagedir):
+            shutil.rmtree(localpackagedir)
 
-        doCopy(productdir, packagedir, versionsubdir, platformandarch)
+        doCopy(productdir, localpackagedir, versionsubdir, platformandarch)
+
+        mkiFile.write('always:\n')
+        mkiFile.write('    npm publish ' + localpackagedir + '\n\n')
 
     exit(0)
