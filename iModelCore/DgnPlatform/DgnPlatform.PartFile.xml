@@ -742,6 +742,10 @@
   <!-- // iModelJsNode_node_module - the node-specific wrapper around imodeljs   // -->
   <!-- //////////////////////////////////////////////////////////////////////////// -->
 
+  <Part Name="Npm-Publish-iModelJsNodeAddon" BentleyBuildMakeFile="imodeljs/nodejs/npm_publish.mke" >
+    <SubProduct ProductName="iModelJsNodeAddon"/>
+  </Part>
+
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
     <SubProduct ProductName="iModelJsNodeAddon-Linux" />
@@ -785,7 +789,8 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
-        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node
+        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_2_1/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -800,7 +805,8 @@
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of the imodeljs-dgnplatform/addon subdirectory, and that must match the version of electron node that is running. -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
-        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node
+        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node,
+        Delivery/iModelJsNodeAddon/E_1_6_11/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -812,7 +818,8 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
-        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node
+        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_7_10_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
