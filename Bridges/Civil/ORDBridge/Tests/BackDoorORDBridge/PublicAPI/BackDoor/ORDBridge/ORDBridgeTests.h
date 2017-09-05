@@ -46,7 +46,7 @@ protected:
     //! Called after each test
     void TearDown() {}
 
-    static bool RunTestApp(Utf8CP input, Utf8CP modelName, Utf8CP bimFileName);
+    static bool RunTestApp(Utf8CP input, Utf8CP bimFileName);
     static Dgn::DgnDbPtr VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t roadwayCount);
 
 public:

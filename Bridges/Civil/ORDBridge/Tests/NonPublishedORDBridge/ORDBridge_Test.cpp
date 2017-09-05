@@ -5,7 +5,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Geometry.dgn", "default", "ORDGeometryTest.bim"));
+    ASSERT_TRUE(RunTestApp("Geometry.dgn", "ORDGeometryTest.bim"));
     VerifyConvertedElements("ORDGeometryTest.bim", 1, 0);
     }
 
@@ -14,7 +14,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Corridor.dgn", "default", "ORDCorridorTest.bim"));
+    ASSERT_TRUE(RunTestApp("Corridor.dgn", "ORDCorridorTest.bim"));
     VerifyConvertedElements("ORDCorridorTest.bim", 16, 1);
     }
 
@@ -23,8 +23,8 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Fully Federated\\container 2.dgn", "default", "ORDFullyFederatedTest.bim"));
-    VerifyConvertedElements("ORDFullyFederatedTest.bim", 4, 0);
+    ASSERT_TRUE(RunTestApp("Fully Federated\\container 2.dgn", "ORDFullyFederatedTest.bim"));
+    VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -32,6 +32,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("IHL.dgn", "default", "ORDIHLTest.bim"));
-    VerifyConvertedElements("ORDIHLTest.bim", 44, 0);
+    ASSERT_TRUE(RunTestApp("IHL.dgn", "ORDIHLTest.bim"));
+    VerifyConvertedElements("ORDIHLTest.bim", 11, 0);
     }

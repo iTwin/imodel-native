@@ -158,7 +158,7 @@ void CiviliModelBridgesORDBridgeTestsFixture::TearDownTestCase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP modelName, Utf8CP bimFileName)
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bimFileName)
     {
     char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
@@ -171,11 +171,10 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP mo
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
 
-    Utf8PrintfString cmd("%s -i=\"%s\" -o=\"%s\" --root-model=\"%s\"", 
+    Utf8PrintfString cmd("%s -i=\"%s\" -o=\"%s\"", 
         Utf8String(testAppPath.c_str()).c_str(), 
         Utf8String(inputPath.c_str()).c_str(), 
-        Utf8String(outputPath.c_str()).c_str(),
-        modelName);
+        Utf8String(outputPath.c_str()).c_str());
 
     int errcode = system(cmd.c_str());
     bool retVal = (0 == errcode);

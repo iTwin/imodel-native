@@ -30,25 +30,37 @@ public:
 struct ORDConverterUtils
 {
 public:
+    static BeSQLite::BeGuid CifSyncIdToBeGuid(Bentley::WStringCR cifSyncId);
     static bool AssignFederationGuid(DgnElementR bimElement, Bentley::WStringCR cifSyncId);
 }; // ORDConverterUtils
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::BeGuid ORDConverterUtils::CifSyncIdToBeGuid(Bentley::WStringCR cifSyncId)
+    {
+    BeSQLite::BeGuid federationGuid;
+
+    if (!WString::IsNullOrEmpty(cifSyncId.c_str()))
+        {
+        Utf8String syncId;
+        if (cifSyncId.StartsWith(L"{"))
+            syncId = Utf8String(cifSyncId.substr(1, cifSyncId.size() - 2).c_str());
+        else
+            syncId = Utf8String(cifSyncId.c_str());
+
+        federationGuid.FromString(syncId.c_str());
+        }
+
+    return federationGuid;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ORDConverterUtils::AssignFederationGuid(DgnElementR bimElement, Bentley::WStringCR cifSyncId)
     {
-    if (WString::IsNullOrEmpty(cifSyncId.c_str()))
-        return false;
-
-    Utf8String syncId;
-    if (cifSyncId.StartsWith(L"{"))
-        syncId = Utf8String(cifSyncId.substr(1, cifSyncId.size() - 2).c_str());
-    else
-        syncId = Utf8String(cifSyncId.c_str());
-
-    BeSQLite::BeGuid federationGuid;
-    federationGuid.FromString(syncId.c_str());
+    BeSQLite::BeGuid federationGuid = CifSyncIdToBeGuid(cifSyncId);
 
     if (federationGuid.IsValid())
         {
@@ -186,22 +198,50 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         return BentleyStatus::SUCCESS;
 
     Utf8String cifAlignmentName(cifAlignment.GetName().c_str());
-    Utf8String bimAlignmentName;
+    Bentley::WString cifSyncId = cifAlignment.GetSyncId();
+    auto bimGuid = ORDConverterUtils::CifSyncIdToBeGuid(cifSyncId);
+    
+    DgnCode bimCode;
+    
+    // Identifying alignments appearing more than once in a single bridge-run.
+    // For unnamed alignments, SyncId is used to differentiate them.
+    // For named alignments, if a name (code) is already used, differentiate them with full file-name + modelname.
+    if (Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
+        {        
+        auto existingCPtr = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementByFederationGuid(bimGuid);
+        if (existingCPtr.IsValid())
+            return BentleyStatus::ERROR;
+        }
+    else
+        {
+        Utf8String bimAlignmentName = cifAlignmentName;
+        bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+        auto existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
+        if (existingId.IsValid())
+            {
+            auto existingAlgCPtr = AlignmentBim::Alignment::Get(m_bimAlignmentModelPtr->GetDgnDb(), existingId);
+
+            if (existingAlgCPtr.IsValid() && existingAlgCPtr->GetFederationGuid() == bimGuid)
+                return BentleyStatus::ERROR;
+            else
+                {
+                BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
+                bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
+                bimAlignmentName += "\\";
+                bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
+                bimAlignmentName += "\\";
+                bimAlignmentName += cifAlignmentName;
+                bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+                }
+            }
+        }    
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
-    if (!Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
-        {
-        BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
-        bimAlignmentName += Utf8String(fileName.GetFileNameAndExtension().c_str());
-        bimAlignmentName += "\\";
-        bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
-        bimAlignmentName += "\\";
-        bimAlignmentName += cifAlignmentName;
-        bimAlignmentPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName));
-        }
+    if (bimCode.IsValid())
+        bimAlignmentPtr->SetCode(bimCode);
     
-    ORDConverterUtils::AssignFederationGuid(*bimAlignmentPtr, cifAlignment.GetSyncId());
+    ORDConverterUtils::AssignFederationGuid(*bimAlignmentPtr, cifSyncId);
 
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = bimAlignmentPtr;
@@ -216,8 +256,8 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     // Create Horizontal Alignment
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
-    if (!Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
-        bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimAlignmentName));
+    if (bimCode.IsValid())
+        bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
 
     bimHorizAlignmPtr->GenerateElementGeom();
     if (bimHorizAlignmPtr->Insert().IsNull())
@@ -723,7 +763,7 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
     auto cifConnPtr = ConsensusConnection::Create(*rootCIFModelP);
     auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
     if (cifModelPtr.IsValid())
-        {
+        {        
         converterLib.ComputeCoordinateSystemTransform(*rootSpatialModelP);
         converterLib.ConvertModelMaterials(*rootSpatialModelP);
 
