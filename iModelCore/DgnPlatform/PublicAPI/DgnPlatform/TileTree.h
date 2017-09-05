@@ -248,6 +248,9 @@ public:
     //! Returns whether this tile has graphics.
     virtual bool _HasGraphics() const = 0;
 
+    //! Returns whether this tile has back-up graphics.
+    virtual bool _HasBackupGraphics() const { return false; }
+
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;

@@ -1110,6 +1110,8 @@ BentleyStatus Loader::_LoadTile()
 
         }
 
+    tile.ClearBackupGraphic();
+
     tile.SetIsReady();
     return SUCCESS;
     }
@@ -1597,6 +1599,10 @@ Utf8String Tile::_GetTileCacheKey() const
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     T_Super::_DrawGraphics(args);
+
+    if (m_backupGraphic.IsValid())
+        args.m_graphics.Add(*m_backupGraphic);
+
     auto debugGraphic = GetDebugGraphics(GetElementRoot().GetDebugOptions());
     if (debugGraphic.IsValid())
         args.m_graphics.Add(*debugGraphic);
@@ -1644,6 +1650,7 @@ void Tile::InitTolerance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_Invalidate()
     {
+    m_backupGraphic = m_graphic;
     m_graphic = nullptr;
     m_contentRange = ElementAlignedBox3d();
     InitTolerance();

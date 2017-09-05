@@ -853,14 +853,21 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     bool tooCoarse = Visibility::TooCoarse == vis;
     bool ready = IsReady();
-    if (!ready)
-        args.InsertMissing(*this);
+
+    // ###TODO_ELEMENT_TILE: Revisit this post-YII. See below
+    ///if (!ready)
+    ///    args.InsertMissing(*this);
 
     // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
     // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
     // The IsParentDisplayable() test below allows us to skip intermediate tiles, but never the first displayable tiles in the tree.
     bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
     auto children = skipThisTile ? _GetChildren(true) : nullptr;
+
+    // ###TODO_ELEMENT_TILE: Revisit this post-YII. See above. Don't want to queue tile if we're skipping it!
+    if (!ready && !skipThisTile)
+        args.InsertMissing(*this);
+
     if (nullptr != children)
         {
         m_childrenLastUsed = args.m_now;
@@ -893,6 +900,12 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         if (_HasGraphics())
             selected.push_back(this);
 
+        return SelectParent::No;
+        }
+    else if (_HasBackupGraphics())
+        {
+        // ###TODO_ELEMENT_TILE: Revisit post-YII. Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
+        selected.push_back(this);
         return SelectParent::No;
         }
 

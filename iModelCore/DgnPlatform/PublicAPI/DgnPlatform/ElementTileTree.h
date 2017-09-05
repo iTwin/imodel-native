@@ -212,6 +212,7 @@ private:
     bool                        m_hasZoomFactor = false;
     bool                        m_displayable = true;
     uint64_t                    m_debugId;
+    Render::GraphicPtr          m_backupGraphic;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
@@ -252,6 +253,9 @@ public:
     double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
     void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
+
+    bool _HasBackupGraphics() const override { return m_backupGraphic.IsValid(); }
+    void ClearBackupGraphic() { m_backupGraphic = nullptr; }
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
