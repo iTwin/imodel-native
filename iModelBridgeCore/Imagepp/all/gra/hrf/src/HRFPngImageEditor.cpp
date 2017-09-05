@@ -13,6 +13,7 @@
 #include <ImagePP/all/h/HRFPngImageEditor.h>
 #include <ImagePP/all/h/HRFPngFile.h>
 #include <png/png.h>
+#include <png/pngstruct.h>
 #include <ImagePP/all/h/HCDPacket.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 
