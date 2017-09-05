@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <VersionedDgnV8Api/DgnPlatform/ScalableMeshBaseElementHandler.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
@@ -213,7 +214,9 @@ void ConvertScalableMeshAttachment::Register()
 
     assert(elHandler != nullptr);
     
-    RegisterExtension(*elHandler, *instance);        
+    RegisterExtension(*elHandler, *instance);
+
+    RegisterExtension(DgnV8Api::ScalableMeshBaseElementHandler::GetInstance(), *instance);
     }
 
 
