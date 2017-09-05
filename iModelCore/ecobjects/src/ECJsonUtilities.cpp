@@ -1264,7 +1264,7 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
     {
     Utf8String    structName = structProperty.GetName();
 
-    auto& structObj = valueToPopulate[structName.c_str()] = Json::objectValue;
+    Json::Value structObj = Json::objectValue;
 
     Utf8String    thisAccessString;
     if (NULL != baseAccessString)
@@ -1275,6 +1275,9 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
 
     ECClassCR   structClass = structProperty.GetType();
     WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, &thisAccessString, writeFormattedQuanties, serializeNullValues);
+
+    if (!structObj.empty() || serializeNullValues)
+        valueToPopulate[structName.c_str()] = structObj;
 
     return BSISUCCESS;
     }
