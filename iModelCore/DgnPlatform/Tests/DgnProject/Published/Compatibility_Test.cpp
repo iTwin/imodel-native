@@ -1495,7 +1495,7 @@ TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, ReadInstances)
     {
-    SetUpDbFromBaselineCopy("2-0-1-62", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-60", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db= GetDgnDb();
 
@@ -1522,7 +1522,7 @@ TEST_F(ECInstancesCompatibility, ReadInstances)
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, UpdateInstances)
     {
-    SetUpDbFromBaselineCopy("2-0-1-62", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-60", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
 
