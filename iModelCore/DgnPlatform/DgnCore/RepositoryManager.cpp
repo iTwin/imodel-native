@@ -857,6 +857,9 @@ void BriefcaseManagerBase::Cull(DgnLockSet& locks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, RequestPurpose purpose)
     {
+    if (req.IsEmpty())
+        return Response(purpose, req.Options(), RepositoryStatus::Success);
+
     RepositoryStatus stat;
     if (!Validate(&stat))
         return Response(purpose, req.Options(), stat);

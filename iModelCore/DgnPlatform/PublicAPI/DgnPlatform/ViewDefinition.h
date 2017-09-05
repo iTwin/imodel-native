@@ -408,6 +408,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
@@ -467,7 +468,7 @@ public:
     Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
-    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
+    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValueUnchecked());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} //!< Get the name of this ViewDefinition
 
     /** @name ViewDefinition Details */
@@ -892,6 +893,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
@@ -1091,6 +1093,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -1168,6 +1171,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
