@@ -117,6 +117,16 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
+    if (WantShowCurrent())
+        {
+        for (auto const& entry : m_comparisonData->GetPersistentStates())
+            ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
+        }
+
+    ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
+
+    T_Super::_AddFeatureOverrides(ovrs);
+
 #if defined(TODO_VERSION_COMPARE_MESS)
     /* ###TODO: To support this we need to allow the 'overrides' for an element to specify 'don't override anything' - otherwise it gets the default overrides
     DgnElementId elementId = el->GetElementId();
@@ -148,9 +158,9 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
         }
 
     ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
-#endif
 
     T_Super::_AddFeatureOverrides(ovrs);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
