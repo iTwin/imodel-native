@@ -72,7 +72,6 @@
     <Part Name="Docs-BuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECPresentation/Docs/Samples -dBUILD_SAMPLE_CODE_SUB_DIR=ECPresentationSamples">
         <SubPart PartName="ECPresentation-PublishedAPI" />
         <SubPart PartName="ECPresentation-Library" />
-        <SubPart PartName="TestHelpers" />
     </Part>
     
     <!-- //////////////////////////////////////////////////////////////////////////// -->
