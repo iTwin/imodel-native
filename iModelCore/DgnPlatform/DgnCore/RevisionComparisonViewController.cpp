@@ -138,6 +138,14 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
 
     ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
 
+    if (WantShowOnlyTarget())
+        {
+        // In 'target' view, hide persistent state of modified and inserted elements
+        for (auto const& entry : m_comparisonData->GetTransientStates())
+            if (entry.IsValid() && (entry.IsModified() || entry.IsInsertion()))
+                ovrs.m_neverDrawn.insert(entry.GetElementId());
+        }
+
     T_Super::_AddFeatureOverrides(ovrs);
 
 #if defined(TODO_VERSION_COMPARE_MESS)

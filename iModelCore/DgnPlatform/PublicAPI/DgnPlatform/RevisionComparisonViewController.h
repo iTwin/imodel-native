@@ -112,6 +112,7 @@ struct TransientState : State
     bool operator<(TransientState const& rhs) const { return m_element.get() < rhs.m_element.get(); }
 
     Render::GraphicP GetGraphic(ViewContextR context) const;
+    DgnElementId GetElementId() const { return m_element.IsValid() ? m_element->GetElementId() : DgnElementId(); }
 };
 
 //=======================================================================================
@@ -185,6 +186,8 @@ public:
     bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
+    bool WantShowOnlyCurrent() const { return kShowCurrent == m_show; }
+    bool WantShowOnlyTarget() const { return kShowTarget == m_show; }
 
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
     DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; SetFeatureOverridesDirty(); }
