@@ -742,7 +742,7 @@
   <!-- // iModelJsNode_node_module - the node-specific wrapper around imodeljs   // -->
   <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-  <Part Name="Npm-Publish-iModelJsNodeAddon" BentleyBuildMakeFile="imodeljs/nodejs/npm_publish.mke" >
+  <Part Name="MakeImodelJsAddonPackages" BentleyBuildMakeFile="imodeljs/nodejs/makeImodelJsAddonPackages.mke" >
     <SubProduct ProductName="iModelJsNodeAddon"/>
   </Part>
 
