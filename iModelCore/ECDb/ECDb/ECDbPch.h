@@ -23,6 +23,7 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
+#include "JsonPersistenceHelper.h"
 
 #include "ECDbImpl.h"
 

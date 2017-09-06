@@ -105,6 +105,7 @@
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
     <ClCompile Include="IssueReporter.cpp" />
+    <ClCompile Include="JsonPersistenceHelper.cpp" />
     <ClCompile Include="LightweightCache.cpp" />
     <ClCompile Include="MapStrategy.cpp" />
     <ClCompile Include="PolicyManager.cpp" />
@@ -113,7 +114,6 @@
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="PropertyMapVisitor.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
-    <ClCompile Include="SchemaComparer.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
     <ClCompile Include="SchemaManager.cpp" />
     <ClCompile Include="SchemaPersistenceHelper.cpp" />
@@ -212,6 +212,7 @@
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
     <ClInclude Include="IssueReporter.h" />
+    <ClInclude Include="JsonPersistenceHelper.h" />
     <ClInclude Include="LightweightCache.h" />
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PolicyManager.h" />
@@ -220,7 +221,6 @@
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="PropertyMapVisitor.h" />
     <ClInclude Include="RelationshipClassMap.h" />
-    <ClInclude Include="SchemaComparer.h" />
     <ClInclude Include="SchemaImportContext.h" />
     <ClInclude Include="SchemaPersistenceHelper.h" />
     <ClInclude Include="SchemaReader.h" />
