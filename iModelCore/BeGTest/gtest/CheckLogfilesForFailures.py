@@ -10,7 +10,7 @@ import time
 import xml.etree.ElementTree as ET
 #search path for importing symlinks python script from bentleybuild
 srcpath=os.environ.get ("SrcRoot")
-searchpath=os.path.join(srcpath,"BentleyBuild")
+searchpath=os.path.join(srcpath,"bentleybuild")
 sys.path.append(searchpath)
 import bentleybuild.symlinks as symlinks
 
