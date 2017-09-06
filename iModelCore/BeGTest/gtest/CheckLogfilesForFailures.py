@@ -40,7 +40,7 @@ def ignoreflakytest(srcpath,testListf):
                    for key,value in failedTestsDic.items():
                        filep.write("\n"+key+"\n")
                        for v in value:
-                           filep.write(v+"\n")
+                           filep.write("    # "+v+"\n")
                    filep.close()
 
 #-------------------------------------------------------------------------------------------
@@ -82,10 +82,11 @@ def FindFailedTestFailures(lines,failedTestsList):
         i=0
         failedTestsDic.setdefault(x,[])
         Stream,Buildconfig=FindStreamDetails()
-        details="Stream:"+Stream+", build configuration :"+Buildconfig+", architecture: "+Tragetplatform+", Date: "+time.strftime("%d/%m/%Y")
+        details="Stream:"+Stream+", build configuration :"+Buildconfig+", architecture: "+Targetplatform+", Date: "+time.strftime("%d/%m/%Y")
         failedTestsDic[x].append(details)
         for j in range(start+1,end):
-            failedTestsDic[x].append(lines[j])
+            if not lines[j].strip():continue
+            failedTestsDic[x].append(lines[j].strip())
     return failedTestsDic
 
 #-------------------------------------------------------------------------------------------
@@ -202,12 +203,12 @@ if __name__ == '__main__':
     dir = sys.argv[1]
     breakonfailure = False
     ignorefailure = False
-    Tragetplatform=''
+    Targetplatform=''
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
     if len(sys.argv) >3 and str(sys.argv[3]) =="True":
         ignorefailure = True
-        Tragetplatform=sys.argv[4]
+        Targetplatform=sys.argv[4]
     advicestr = ''
     summarystr = ''
     exename = ''
