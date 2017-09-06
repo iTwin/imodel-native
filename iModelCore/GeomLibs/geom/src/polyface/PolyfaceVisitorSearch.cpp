@@ -548,6 +548,8 @@ DPoint2d uvParam,
 FacetLocationDetailR detail
 )
     {
+    if (Param().size () == 0)
+        return false;
     size_t numEdgesThisFace = (size_t)NumEdgesThisFace ();
     if (numEdgesThisFace == 3)
         {
