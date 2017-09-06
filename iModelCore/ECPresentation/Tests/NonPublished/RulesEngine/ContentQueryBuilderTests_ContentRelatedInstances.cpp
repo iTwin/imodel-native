@@ -215,6 +215,9 @@ DEFINE_SCHEMA(ContentRelatedInstances_CreatesRecursiveQuery, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
     {
     ECClassCP rel = GetECClass("ElementOwnsChildElements");
@@ -261,6 +264,10 @@ DEFINE_SCHEMA(ContentRelatedInstances_CreatesRecursiveQueryWhenRelationshipIsOnB
         </Target>
     </ECRelationshipClass>
 )*");
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryWhenRelationshipIsOnBaseClass)
     {
     ECClassCP baseClass = GetECClass("Element");
