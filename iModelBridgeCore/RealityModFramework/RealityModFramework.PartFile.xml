@@ -255,14 +255,14 @@
         </Bindings>
     </Part>
 
-  <!--<Part Name="AustraliaUploader" BentleyBuildMakeFile="RealityAdmin\AustraliaUploader\AustraliaUploader.mke">
+  <Part Name="AustraliaUploader" BentleyBuildMakeFile="RealityAdmin\AustraliaUploader\AustraliaUploader.mke">
     <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
     <SubPart PartName="RealityPackage"/>
     <SubPart PartName="RealityAdmin"/>
     <Bindings>
       <Assemblies>Delivery/AustraliaUploader.exe</Assemblies>
     </Bindings>
-  </Part>-->
+  </Part>
     
     <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityAdmin\Example\DataHandlerTool.mke">
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
@@ -294,7 +294,7 @@
     
     <Part Name="RealityAdmin-Applications">
         <SubPart PartName="ConversionToolsTester"/>
-        <!--<SubPart PartName="AustraliaUploader"/>-->
+        <SubPart PartName="AustraliaUploader"/>
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="GCSLoadTest"/>
