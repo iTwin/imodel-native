@@ -163,7 +163,7 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(document["pi"].IsDouble());
     ASSERT_EQ(3.1416, document["pi"].GetDouble());
 
-    if (true)
+    
         {
         const rapidjson::Value& a = document["a"];
         ASSERT_TRUE(a.IsArray());
@@ -185,7 +185,7 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(document["i"].IsInt64());
 
     // Adding values to array.
-    if (true)
+    
         {
         rapidjson::Value& a = document["a"];
         rapidjson::Document::AllocatorType& allocator = document.GetAllocator();

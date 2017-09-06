@@ -382,9 +382,6 @@
     <ClInclude Include="SchemaPersistenceHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="SchemaComparer.h">
-      <Filter>SchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="SchemaValidator.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
@@ -403,6 +400,9 @@
     </ClInclude>
     <ClInclude Include="DbMappingManager.h">
       <Filter>DbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonPersistenceHelper.h">
+      <Filter>SchemaManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -719,9 +719,6 @@
     <ClCompile Include="SchemaPersistenceHelper.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
-    <ClCompile Include="SchemaComparer.cpp">
-      <Filter>SchemaManager</Filter>
-    </ClCompile>
     <ClCompile Include="SchemaValidator.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
@@ -740,6 +737,9 @@
     </ClCompile>
     <ClCompile Include="DbMappingManager.cpp">
       <Filter>DbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonPersistenceHelper.cpp">
+      <Filter>SchemaManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

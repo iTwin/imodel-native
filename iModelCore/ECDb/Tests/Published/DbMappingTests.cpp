@@ -58,7 +58,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
     ECInstanceId instanceGrandchildBId(UINT64_C(3));
     ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)",
@@ -66,7 +65,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
@@ -75,7 +73,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
@@ -84,7 +81,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
@@ -92,7 +88,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
@@ -114,7 +109,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
         const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
@@ -191,7 +185,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
     ECInstanceId instanceGrandchildBId(UINT64_C(3));
     ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)",
@@ -199,7 +192,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
@@ -208,7 +200,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
@@ -217,7 +208,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
@@ -225,7 +215,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
@@ -247,7 +236,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
         {
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
         const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
@@ -325,7 +313,6 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
     ECInstanceId instanceGrandchildBId(UINT64_C(3));
     ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
-    if (true)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)", 
@@ -333,7 +320,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }   
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
@@ -342,7 +329,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
@@ -351,7 +338,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
@@ -359,7 +346,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
+    
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
@@ -381,7 +368,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
-    if (true)
+    
         {
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
         const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
@@ -2406,97 +2393,6 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                           Maha Nasir                         03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, RelationshipMappingTests)
-    {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='Price' typeName='double'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "        <ECProperty propertyName='Name' typeName='string'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>OwnTable</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
-        "       <BaseClass>AHasB</BaseClass>"
-        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "</ECSchema>"))) << "BaseRelationshipClass having OwnTable mapping strategy is not supported in ECRelationshipClassHeirarchy.";
-
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='Price' typeName='double'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "        <ECProperty propertyName='Name' typeName='string'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
-        "       <BaseClass>AHasB</BaseClass>"
-        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "</ECSchema>"))) << "BaseRelationshipClass having TablePerHeirarchy mapping strategy is expected to be supported in ECRelationshipClassHeirarchy.";
-
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A' modifier='Abstract'>"
-        "        <ECProperty propertyName='Price' typeName='double'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "        <ECProperty propertyName='Name' typeName='string'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
-        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "</ECSchema>"))) << "Source or target constraint classes are abstract without subclasses. Apply the MapStrategy 'TablePerHierarchy' to the abstract constraint class";
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotMappedCATests)
@@ -2967,6 +2863,48 @@ TEST_F(DbMappingTestFixture, JoinedTableCATests)
                                                      "    </ECEntityClass>"
                                                      "</ECSchema>"))) << "JoinedTable on a class without any property is expected to be successful";
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle                 09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, PropertyOverriding)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("propertyoverriding.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='Base'>"
+        "        <ECProperty propertyName='prim' typeName='double'/>"
+        "        <ECArrayProperty propertyName='array' typeName='Point3d'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='prim' typeName='double'/>"
+        "       <ECArrayProperty propertyName='array' typeName='Point3d'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+
+    ECClassCP baseClass = m_ecdb.Schemas().GetClass("TestSchema", "Base");
+    ASSERT_TRUE(baseClass != nullptr);
+
+    ECPropertyCP basePrimProp = baseClass->GetPropertyP("prim");
+    ASSERT_TRUE(basePrimProp != nullptr && basePrimProp->GetIsPrimitive());
+    ASSERT_EQ((int) PRIMITIVETYPE_Double, (int) basePrimProp->GetAsPrimitiveProperty()->GetType());
+
+    ECPropertyCP baseArrayProp = baseClass->GetPropertyP("array");
+    ASSERT_TRUE(baseArrayProp != nullptr && baseArrayProp->GetIsPrimitiveArray());
+    ASSERT_EQ((int) PRIMITIVETYPE_Point3d, (int) baseArrayProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
+
+    ECClassCP subClass = m_ecdb.Schemas().GetClass("TestSchema", "Sub");
+    ASSERT_TRUE(subClass != nullptr);
+
+    ECPropertyCP subPrimProp = baseClass->GetPropertyP("prim");
+    ASSERT_TRUE(subPrimProp != nullptr && subPrimProp->GetIsPrimitive());
+    ASSERT_EQ((int) PRIMITIVETYPE_Double, (int) subPrimProp->GetAsPrimitiveProperty()->GetType());
+
+    ECPropertyCP subArrayProp = baseClass->GetPropertyP("array");
+    ASSERT_TRUE(subArrayProp != nullptr && subArrayProp->GetIsPrimitiveArray());
+    ASSERT_EQ((int) PRIMITIVETYPE_Point3d, (int) subArrayProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
     }
 
 //---------------------------------------------------------------------------------------

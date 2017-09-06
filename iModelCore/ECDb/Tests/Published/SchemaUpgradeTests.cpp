@@ -7385,7 +7385,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdateDelete)
         </ECSchema>)xml");
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    if (true)
+    
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
         KindOfQuantityCP k1 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K1");
@@ -7426,7 +7426,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdateDelete)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    if (true)
+    
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
@@ -8675,7 +8675,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                     </ECSchema>)xml")));
 
 
-    if (true)
+    
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
@@ -8737,7 +8737,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                         </ECEntityClass>
                                     </ECSchema>)xml")));
         
-    if (true)
+    
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
@@ -8862,7 +8862,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -8870,7 +8870,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -8878,7 +8878,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -8887,13 +8887,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         }
 
     //L2=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -8901,7 +8901,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -8910,20 +8910,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         }
 
     //L3=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
@@ -8991,7 +8991,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -8999,7 +8999,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -9007,7 +9007,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -9016,13 +9016,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         }
 
     //L2=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -9030,7 +9030,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -9039,20 +9039,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         }
 
     //L3=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
@@ -9118,7 +9118,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -9126,7 +9126,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -9134,7 +9134,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -9143,13 +9143,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         }
 
     //L2=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -9157,7 +9157,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -9166,20 +9166,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         }
 
     //L3=====================================================
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    if (true)
+    
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",

@@ -26,10 +26,7 @@ ECSqlStatus IECSqlBinder::BindNull() { return _BindNull(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    return _BindBlob(value, blobSize, makeCopy);
-    }
+ECSqlStatus IECSqlBinder::BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) { return _BindBlob(value, blobSize, makeCopy); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2016
