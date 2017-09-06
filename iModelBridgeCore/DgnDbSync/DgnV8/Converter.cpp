@@ -1643,6 +1643,12 @@ void Converter::OnUpdateComplete()
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
         GenerateThumbnails();
+
+    // Update the project extents ... but only if it gets bigger.
+    auto rtreeBox = m_dgndb->GeoLocation().QueryRTreeExtents();
+    auto extents = m_dgndb->GeoLocation().GetProjectExtents();
+    extents.Extend(rtreeBox);
+    m_dgndb->GeoLocation().SetProjectExtents(extents);
     }
 
 /*---------------------------------------------------------------------------------**//**

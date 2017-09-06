@@ -590,7 +590,16 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
             //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
 
-            RealityDataService::SetProjectId(Utf8String("95b8160c-8df9-437b-a9bf-22ad01fecc6b"));
+            Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+            Bentley::WString projectGUIDw;
+
+            if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                {
+                projectGUID.Assign(projectGUIDw.c_str());
+                }                            
+            
+            RealityDataService::SetProjectId(projectGUID);
 
             return SUCCESS;
             }

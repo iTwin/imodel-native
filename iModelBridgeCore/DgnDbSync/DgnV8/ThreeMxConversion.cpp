@@ -9,6 +9,7 @@
 
 static bool isHttp(WCharCP str){return (0 == wcsncmp(L"http:", str, 5) || 0 == wcsncmp(L"https:", str, 6));}
 
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -317,7 +318,13 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 void ConvertThreeMxAttachment::Register()
     {
     ConvertThreeMxAttachment* instance = new ConvertThreeMxAttachment();
-    RegisterExtension(ThreeMxElementHandler::GetInstance(), *instance);
+    
+    DgnV8Api::ElementHandlerId handlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0);
+    DgnV8Api::Handler* elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
+	
+    assert(elHandler != nullptr);
+	
+    RegisterExtension(*elHandler, *instance);
     }
 
 
