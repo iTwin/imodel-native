@@ -1075,11 +1075,6 @@ BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelation
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut)
     {
-    if (nullptr == relClass || !source.IsValid())
-        {
-        return ERROR;
-        }
-
     Utf8PrintfString ecsql(
         "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
         "FROM ONLY %s rel "
@@ -1087,21 +1082,49 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
         relClass->GetECSqlName().c_str()
         );
 
+    return GetRelatedKeys(relClass, source, ecsql, keysOut);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::GetRelatedSourceKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR target, ECInstanceKeyMultiMap& keysOut)
+    {
+    Utf8PrintfString ecsql(
+        "SELECT rel.SourceECClassId, rel.SourceECInstanceId "
+        "FROM ONLY %s rel "
+        "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ?",
+        relClass->GetECSqlName().c_str()
+        );
+
+    return GetRelatedKeys(relClass, target, ecsql, keysOut);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::GetRelatedKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR instance, Utf8PrintfString ecsql, ECInstanceKeyMultiMap& keysOut)
+    {
+    if (nullptr == relClass || !instance.IsValid())
+        {
+        return ERROR;
+        }
+
     ECSqlStatement statement;
     if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
 
-    statement.BindId(1, source.GetClassId());
-    statement.BindId(2, source.GetInstanceId());
+    statement.BindId(1, instance.GetClassId());
+    statement.BindId(2, instance.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
-        ECClassId targetClassId = statement.GetValueId<ECClassId>(0);
-        ECInstanceId targetInstanceId = statement.GetValueId<ECInstanceId>(1);
-        keysOut.insert({targetClassId, targetInstanceId});
+        ECClassId relatedClassId = statement.GetValueId<ECClassId>(0);
+        ECInstanceId relatedInstanceId = statement.GetValueId<ECInstanceId>(1);
+        keysOut.insert({relatedClassId, relatedInstanceId});
         }
 
     if (BE_SQLITE_DONE != status)

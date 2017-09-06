@@ -232,6 +232,97 @@ bool HierarchyManager::IsInstanceHeldByOtherInstances(ECInstanceKeyCR instance)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::DeleteForOneOneRelate
+(
+ECInstanceKeyCR source,
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+bset<ECInstanceKey>& deletedInstancesSetOut
+)
+    {
+    auto deleteFunction = static_cast<BentleyStatus(HierarchyManager::*)(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR)>
+        (&HierarchyManager::DeleteRelationshipOnly);
+
+    ECInstanceKey deletedInstanceOut;
+    //Prepare the source instance for one one relate
+    auto status = DeleteForOneOneRelate
+        (
+        relationshipClass,
+        relationshipClass->GetSource(),
+        source,
+        //Function to find related instance keys with regards to given instance
+        std::bind(&ECDbAdapter::GetRelatedTargetKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+        std::bind(deleteFunction, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4),
+        target,
+        deletedInstanceOut
+        );
+
+    if (SUCCESS != status)
+        return status;
+
+    if (deletedInstanceOut.IsValid())
+        deletedInstancesSetOut.insert(deletedInstanceOut);
+
+    //Prepare the target instance for one one relate
+    status = DeleteForOneOneRelate
+        (relationshipClass,
+        relationshipClass->GetTarget(),
+        target,
+        std::bind(&ECDbAdapter::GetRelatedSourceKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+        //Reverse deletion function to correctly delete found source instance and given target instance
+        std::bind(deleteFunction, this, std::placeholders::_2, std::placeholders::_1, std::placeholders::_3, std::placeholders::_4),
+        source,
+        deletedInstanceOut
+        );
+
+    if (deletedInstanceOut.IsValid())
+        deletedInstancesSetOut.insert(deletedInstanceOut);
+
+    return status;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::DeleteForOneOneRelate
+(
+ECRelationshipClassCP relationshipClass,
+ECRelationshipConstraintR relathionshipConstrain,
+ECInstanceKeyCR instance,
+std::function<BentleyStatus(ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&)> getRelatedKeysFunction,
+std::function<BentleyStatus(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR)> deleteRelathionshipFunction,
+ECInstanceKeyCR newRelatedInstance,
+ECInstanceKeyR deletedInstanceOut
+)
+    {
+    //Check if there is one to one relathioniship
+    //Note: Becouse of the schema adjustments, have to check upper limit
+    if (1 != relathionshipConstrain.GetMultiplicity().GetUpperLimit())
+        return SUCCESS;
+
+    ECInstanceKeyMultiMap keysOut;
+    if (SUCCESS != getRelatedKeysFunction(relationshipClass, instance, keysOut))
+        return ERROR;
+
+    if (1 < keysOut.size())
+        return ERROR;
+
+    if (0 == keysOut.size())
+        return SUCCESS;
+
+    ECInstanceKey resultKey(keysOut.begin()->first, keysOut.begin()->second);
+    if (resultKey == newRelatedInstance)
+        return SUCCESS;
+
+    if (SUCCESS != deleteRelathionshipFunction(instance, resultKey, relationshipClass, deletedInstanceOut))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey HierarchyManager::RelateInstances
@@ -254,6 +345,65 @@ ECInstanceKeyCR instanceTo,
 ECRelationshipClassCP relationshipClass
 )
     {
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::DeleteRelationshipOnly
+(
+ECInstanceKeyCR source,
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+ECInstanceKeyR deletedRelathionshipInstanceOut
+)
+    {
+    // TODO: not optmized, deletes not direclty
+    ECInstanceKey relationship = m_dbAdapter.FindRelationship(relationshipClass, source, target);
+    if (!relationship.IsValid())
+        {
+        // Nothing to delete
+        return SUCCESS;
+        }
+
+     auto statement = m_statementCache.GetPreparedStatement("GetNavigationProperty", [&]
+            {
+            return "SELECT Name FROM meta.ECPropertyDef WHERE NavigationRelationshipClass.Id = ?";
+            });
+
+        Utf8String navPropertyName;
+        statement->BindId(1, relationshipClass->GetId());
+        DbResult result = statement->Step();
+
+        if (BE_SQLITE_DONE != result)
+            return ERROR;
+
+        if (BE_SQLITE_ROW == result)
+            navPropertyName = statement->GetValueText(0);
+
+    Utf8PrintfString key("DeleteRelationshipInstanceUsingECSQL:%llu", relationshipClass->GetId().GetValue());
+    if (!navPropertyName.empty())
+        {
+        statement = m_statementCache.GetPreparedStatement(key, [&]
+            {
+            return "UPDATE " + relationshipClass->GetECSqlName() + " SET " + navPropertyName + " = NULL WHERE ECInstanceId = ?";
+            });
+        }
+    else
+        {
+        statement = m_statementCache.GetPreparedStatement(key, [&]
+            {
+            return "DELETE FROM ONLY " + relationshipClass->GetECSqlName() + " WHERE ECInstanceId = ?";
+            });
+        }
+
+    statement->BindId(1, relationship.GetInstanceId());
+    result = statement->Step();
+    if (BE_SQLITE_DONE != result)
+        return ERROR;
+
+    deletedRelathionshipInstanceOut = relationship;
     return SUCCESS;
     }
 
