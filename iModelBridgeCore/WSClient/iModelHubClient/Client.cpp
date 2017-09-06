@@ -130,12 +130,22 @@ iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", m_projectId.c_str());
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult const& result)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return iModelsResult::Error(result.GetError());
+            // TODO: This check should be removed after UserInfo will be available in PROD.
+            if (WSError::Id::ClassNotFound == result.GetError().GetId())
+                {
+                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
+                }
+
+            if (!result.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return iModelsResult::Error(result.GetError());
+                }
             }
 
         bvector<iModelInfoPtr> iModels;
@@ -182,13 +192,25 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
     query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return iModelResult::Error(result.GetError());
+            // TODO: This check should be removed after UserInfo will be available in PROD.
+            if (WSError::Id::ClassNotFound == result.GetError().GetId())
+                {
+                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+                query.SetFilter(filter);
+                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
+                }
+
+            if (!result.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return iModelResult::Error(result.GetError());
+                }
             }
+
         auto iModelInfoInstances = result.GetValue().GetInstances();
         if (iModelInfoInstances.Size() == 0)
             {
@@ -235,13 +257,25 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr
     query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return iModelResult::Error(result.GetError());
+            // TODO: This check should be removed after UserInfo will be available in PROD.
+            if (WSError::Id::ClassNotFound == result.GetError().GetId())
+                {
+                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+                query.SetFilter(filter);
+                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
+                }
+
+            if (!result.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return iModelResult::Error(result.GetError());
+                }
             }
+
         auto iModelInfoInstances = result.GetValue().GetInstances();
         if (iModelInfoInstances.Size() == 0)
             {
@@ -396,7 +430,7 @@ iModelTaskPtr Client::CreateNewiModel(Dgn::DgnDbCR db, Utf8StringCR iModelName, 
 
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Successfully created iModel instance. Instance ID: %s.", iModelInfo->GetId().c_str());
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to created iModel.");
-        ConnectToiModel(iModelInfo->GetId(), cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
+        ConnectToiModel(*iModelInfo, cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
             {
             if (!connectionResult.IsSuccess())
                 {

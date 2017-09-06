@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -32,7 +32,24 @@ struct HierarchyManager
 
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
-
+        BentleyStatus DeleteForOneOneRelate
+            (
+            ECRelationshipClassCP relationshipClass,
+            ECRelationshipConstraintR relathionshipConstrain,
+            ECInstanceKeyCR instance,
+            std::function <BentleyStatus (ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&) > getRelatedKeysFunction,
+            std::function <BentleyStatus (ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR) > deleteRelathionshipFunction,
+            ECInstanceKeyCR newRelatedInstance,
+            ECInstanceKeyR deletedInstanceOut
+            );
+        //! Will only delete relationship without affecting source or target
+        BentleyStatus DeleteRelationshipOnly
+            (
+            ECInstanceKeyCR source,
+            ECInstanceKeyCR target,
+            ECRelationshipClassCP relationshipClass,
+            ECInstanceKeyR deletedRelathionshipInstanceOut
+            );
     public:
         HierarchyManager
             (
@@ -58,9 +75,7 @@ struct HierarchyManager
             const bset<CachedInstanceKey>& cachedInstances
             );
 
-        //! Will only delete relationship without affecting source or target
         BentleyStatus DeleteRelationship(ECInstanceKeyCR source, ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass);
-        //! Will only delete relationship without affecting source or target
         BentleyStatus DeleteRelationship(ECInstanceKeyCR relationship);
 
         //! Check if any holding or embedding relationships exists to this instance
@@ -89,6 +104,15 @@ struct HierarchyManager
 
         BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, bvector<ECInstanceKey>& sourcesOut);
         BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, ECInstanceKeyMultiMap& sourcesOut);
-    };
+
+        //! For one to one relathionsip deletes constraining relathionships
+        BentleyStatus DeleteForOneOneRelate
+            (
+            ECInstanceKeyCR source,
+            ECInstanceKeyCR target,
+            ECRelationshipClassCP relationshipClass,
+            bset<ECInstanceKey>& deletedInstancesSetOut
+            );
+        };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
