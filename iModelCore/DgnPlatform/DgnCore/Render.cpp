@@ -698,6 +698,34 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+OvrGraphicParams FeatureSymbologyOverrides::Appearance::ToOvrGraphicParams() const
+    {
+    OvrGraphicParams ovr;
+
+    if (OverridesAlpha())
+        {
+        ovr.SetLineTransparency(GetAlpha());
+        ovr.SetFillTransparency(GetAlpha());
+        }
+
+    if (OverridesRgb())
+        {
+        ovr.SetLineColor(GetRgb());
+        ovr.SetFillColor(GetRgb());
+        }
+
+    if (OverridesWeight())
+        ovr.SetWidth(GetWeight());
+
+    if (OverridesLinePixels())
+        ovr.SetLinePixels(GetLinePixels());
+
+    return ovr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const

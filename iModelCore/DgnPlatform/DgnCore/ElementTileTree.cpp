@@ -1598,10 +1598,16 @@ Utf8String Tile::_GetTileCacheKey() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
-    T_Super::_DrawGraphics(args);
-
-    if (m_backupGraphic.IsValid())
+    if (IsReady())
+        {
+        BeAssert(_HasGraphics());
+        if (_HasGraphics())
+            args.m_graphics.Add(*m_graphic);
+        }
+    else if (m_backupGraphic.IsValid())
+        {
         args.m_graphics.Add(*m_backupGraphic);
+        }
 
     auto debugGraphic = GetDebugGraphics(GetElementRoot().GetDebugOptions());
     if (debugGraphic.IsValid())

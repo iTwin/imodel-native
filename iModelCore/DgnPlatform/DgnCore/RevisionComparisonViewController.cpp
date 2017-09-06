@@ -117,7 +117,20 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
-    if (WantShowCurrent())
+    // Feature overrides are applied to the persistent elements.
+    // For the 'current revision' view, this renders inserted+updated elements with meaningful symbology, and everything else in a uniform symbology.
+    // For the 'target revision' view, this renders every persistent element in a uniform symbology.
+    // Updated+deleted elements are rendered as decorations in 'target revision' -- see Controller::_DrawDecorations()
+
+    if (m_focusedElementId.IsValid())
+        {
+        // TFS#742735: If we've set the focused element, apply special symbology only to it - draw everything else in uniform ('untouched') symbology
+        PersistentState lookupKey(m_focusedElementId, DbOpcode::Insert); // operator< only compares element IDs...
+        auto iter = m_comparisonData->GetPersistentStates().find(lookupKey);
+        if (m_comparisonData->GetPersistentStates().end() != iter)
+            ovrs.OverrideElement(m_focusedElementId, m_symbology.GetCurrentRevisionOverrides(iter->m_opcode));
+        }
+    else if (WantShowCurrent())
         {
         for (auto const& entry : m_comparisonData->GetPersistentStates())
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
@@ -275,11 +288,47 @@ void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicP TransientState::GetGraphic(ViewContextR context) const
+    {
+    if (m_graphic.IsValid())
+        return m_graphic.get();
+
+    auto geomElem = m_element->ToGeometrySource();
+    if (nullptr != geomElem)
+        m_graphic = geomElem->Stroke(context, 0.0);
+
+    return m_graphic.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR context)
     {
     T_Super::_DrawDecorations(context);
+
+    if (!WantShowTarget())
+        return;
+
+    for (auto& element : m_comparisonData->GetTransientStates())
+        {
+        // Joe doesn't want to show the transient/updated state of a modified element
+        // if we are showing them in a single view
+        if (WantShowBoth() && element.IsModified())
+            continue;
+
+        Render::GraphicP graphic = element.GetGraphic(context);
+        if (nullptr == graphic)
+            continue;
+
+        bool useUntouched = m_focusedElementId.IsValid() && m_focusedElementId != element.m_element->GetElementId();
+        Symbology::Appearance app = useUntouched ? m_symbology.GetUntouchedOverrides() : m_symbology.GetTargetRevisionOverrides(element.m_opcode);
+        OvrGraphicParams ovrs = app.ToOvrGraphicParams();
+        context.AddWorldDecoration(*graphic, app.OverridesSymbology() ? &ovrs : nullptr);
+        }
+
 #ifdef USE_LABEL
     // We only display overlay of version numbers when we have two separate views
     if (WantShowBoth() || !m_label.IsValid())
@@ -291,6 +340,7 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
     DPoint3d position   = DPoint3d::FromZero();
     if (nullptr != m_vp)
         getViewCorners(low, position, 30, *m_vp);
+
     position.z = 0;
     position.x = low.x;
     m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
@@ -299,13 +349,6 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
     context.AddViewOverlay(*graphic->Finish());
 #endif
     }
-
-        /* ###TODO
-		// Joe doesn't want to show the transient/updated state of a modified element
-        // if we are showing them in a single view
-        if (WantShowBoth() && element.IsModified())
-            continue;
-        */
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17

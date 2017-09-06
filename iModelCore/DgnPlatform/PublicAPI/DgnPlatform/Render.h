@@ -2687,6 +2687,8 @@ struct FeatureSymbologyOverrides
 
         //! Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
         Appearance Extend(Appearance const& base) const;
+
+        OvrGraphicParams ToOvrGraphicParams() const;
     };
 
     DgnElementIdSet                     m_alwaysDrawn;

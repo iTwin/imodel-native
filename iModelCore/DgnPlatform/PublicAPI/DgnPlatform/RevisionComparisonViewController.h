@@ -101,7 +101,8 @@ struct PersistentState : State
 //=======================================================================================
 struct TransientState : State
 {
-    DgnElementCPtr   m_element;
+    DgnElementCPtr m_element;
+    mutable Render::GraphicPtr m_graphic;
 
     TransientState() = default;
     TransientState(DgnElementCPtr el, DbOpcode opcode) : State(opcode), m_element(el) { }
@@ -109,6 +110,8 @@ struct TransientState : State
     bool IsValid() const { return m_element.IsValid(); }
 
     bool operator<(TransientState const& rhs) const { return m_element.get() < rhs.m_element.get(); }
+
+    Render::GraphicP GetGraphic(ViewContextR context) const;
 };
 
 //=======================================================================================
@@ -184,7 +187,7 @@ public:
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
 
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
-    DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; }
+    DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; SetFeatureOverridesDirty(); }
     DGNPLATFORM_EXPORT Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show flags, SymbologyCR symb=Symbology());
 };
 
