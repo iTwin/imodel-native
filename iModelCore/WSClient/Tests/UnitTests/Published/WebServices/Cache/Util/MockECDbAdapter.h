@@ -106,6 +106,8 @@ struct MockECDbAdapter : public IECDbAdapter
             BentleyStatus (JsonValueR, ECRelationshipClassCP, ECClassCP, ECInstanceKeyCR, Utf8CP));
         MOCK_METHOD3 (GetRelatedTargetKeys,
             BentleyStatus (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut));
+        MOCK_METHOD3(GetRelatedSourceKeys,
+                     BentleyStatus(ECRelationshipClassCP relClass, ECInstanceKeyCR target, ECInstanceKeyMultiMap& keysOut));
         MOCK_METHOD3 (FindRelationship,
             ECInstanceKey (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target));
         MOCK_METHOD3 (HasRelationship,

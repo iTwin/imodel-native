@@ -257,6 +257,17 @@ CachedInstances& cachedInstancesInOut
         }
 
     // TODO: insert/update whole relationship with properties at once?
+    bset<ECInstanceKey> deletedRelathionshipsOut;
+    if (SUCCESS != m_hierarchyManager.DeleteForOneOneRelate(*source, *target, relClass, deletedRelathionshipsOut))
+        return ERROR;
+
+    // Deleted oneToOne relathionship should not been casched in the same response
+    for (auto deletedInstance : deletedRelathionshipsOut)
+        {
+        if (cachedInstancesInOut.HasCachedInstance(m_relationshipInfoManager.ReadCachedRelationshipKey(deletedInstance)))
+            return ERROR;
+        }
+
     ECInstanceKey relationshipKey = m_hierarchyManager.RelateInstances(*source, *target, relClass);
     if (!relationshipKey.IsValid())
         {
@@ -423,6 +434,14 @@ void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, Cach
 bool InstanceCacheHelper::CachedInstances::HasCachedInstance(ObjectIdCR objectId) const
     {
     return m_cachedInstancesByObjectId.find(objectId) != m_cachedInstancesByObjectId.end();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                   julius.cepukenas  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::CachedInstances::HasCachedInstance(CachedInstanceKeyCR instanceKey) const
+    {
+    return m_cachedInstances.find(instanceKey) != m_cachedInstances.end();
     }
 
 /*--------------------------------------------------------------------------------------+
