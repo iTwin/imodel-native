@@ -421,7 +421,9 @@ static UiOrientation s_lastUi;
 
 //---------------------------------------------------------------------------------------
 // Gyro vector convention:
-// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
+// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE (when the tablet is in
+// landscape mode with the home button to the left).  Y is always from home to the opposite end
+// of the tablet.  Z is always towards the eye.
 // (gyrospace vectors are in the absolute system of the device.  But it is not important what that is --
 // just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
 // @bsimethod                                                   Earlin.Lutz     12/2015

@@ -127,8 +127,15 @@ $(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENT
     $(LinkFirstDepToFirstTarget)
 	
 #----------------------------------------------------------------------
+# Deliver package.json. That contains the package version number.
+#----------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
+    
+#----------------------------------------------------------------------
 # Deliver Presentation Rules
 #----------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
+
 	

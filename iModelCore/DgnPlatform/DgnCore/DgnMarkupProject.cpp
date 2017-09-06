@@ -96,8 +96,18 @@ DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void MarkupExternalLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
     {
     T_Super::_ToJson(out, opts);
-#if defined (TOFROM_JSON)
-#endif
+    if (m_linkedElementId.IsValid())
+        out[json_linkedElementId()] = m_linkedElementId.ToHexStr();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_linkedElementId()))
+        m_linkedElementId.FromJson(val[json_linkedElementId()]);
     }
 
 //---------------------------------------------------------------------------------------

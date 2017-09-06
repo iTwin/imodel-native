@@ -411,6 +411,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
@@ -895,6 +896,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
@@ -1094,6 +1096,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -1171,6 +1174,7 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;

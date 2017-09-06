@@ -1,0 +1,13 @@
+{
+  "name": "@bentley/imodeljs-${VERSION_CODE}-${PLATFORM}",
+  "license": "UNLICENSED",
+  "version": "1.0.44",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  }
+}

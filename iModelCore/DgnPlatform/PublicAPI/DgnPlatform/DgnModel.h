@@ -216,6 +216,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     BE_JSON_NAME(modeledElement)
     BE_JSON_NAME(jsonProperties)
     BE_JSON_NAME(UserProps)
+    BE_JSON_NAME(isPrivate)
+    BE_JSON_NAME(isTemplate)
 
 private:
     template<class T> void CallAppData(T const& caller) const;
@@ -269,6 +271,7 @@ protected:
     //! Convert this DgnModel to a Json::Value.
     //! @note If you override this method, you @em must call T_Super::_ToJson()
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
+    DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
     //! Invoked on saving the JsonProperties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties.
