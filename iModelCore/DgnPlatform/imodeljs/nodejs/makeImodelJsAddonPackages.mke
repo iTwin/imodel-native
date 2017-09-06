@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: imodeljs/nodejs/npm_publish.mke $
+#     $Source: imodeljs/nodejs/makeImodelJsAddonPackages.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -25,5 +25,3 @@ o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
 always:
     -$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
-
-%include $(o)npm_publish.mki
