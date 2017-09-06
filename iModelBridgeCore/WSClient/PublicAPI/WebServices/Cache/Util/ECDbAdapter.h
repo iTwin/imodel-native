@@ -51,6 +51,8 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             );
         size_t CountHoldingParents(ECInstanceKeyCR instanceKey, const bset<ECInstanceKey>* parentsToIgnore);
 
+        BentleyStatus GetRelatedKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR instance, Utf8PrintfString ecsql, ECInstanceKeyMultiMap& keysOut);
+
         BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
         BentleyStatus DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
         BentleyStatus DeleteInstancesUsingECSQL(ECClassCP ecClass, const ECInstanceIdSet& ids);
@@ -151,6 +153,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT BentleyStatus GetJsonRelatedTargets(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP orderBy = nullptr) override;
 
         WSCACHE_EXPORT BentleyStatus GetRelatedTargetKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut) override;
+        WSCACHE_EXPORT BentleyStatus GetRelatedSourceKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR target, ECInstanceKeyMultiMap& keysOut) override;
 
         WSCACHE_EXPORT ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
         WSCACHE_EXPORT bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;

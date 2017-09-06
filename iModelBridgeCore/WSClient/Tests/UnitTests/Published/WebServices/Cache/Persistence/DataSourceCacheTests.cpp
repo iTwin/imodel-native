@@ -3183,7 +3183,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingSourceCardinality_Error)
     {
     auto cache = GetTestCache();
 
@@ -3191,6 +3191,21 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     auto instance = instances.Add({"TestSchema.TestClassA", "A"});
     instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
     instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"}); // Second related instance should not be allowed
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingTargetCardinality_Error)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    auto instance = instances.Add({"TestSchema.TestClassA", "A"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassA", "C"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
 
     BeTest::SetFailOnAssert(false);
     EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
@@ -3216,6 +3231,114 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     // Assert
     EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "C"}));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationshipWithUnusedInstances_RemovesUnusedInstancesFromCashe)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneRelationshipClass");
+    //Prepare cache with A -> B and C -> D instances and relathionships
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassB", "C"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassA", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassA", "D"}));
+
+    //Update cache with A -> D relathionship thus removing B C and their relathionships from server
+    instances.Clear();
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassA", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassA", "D"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassA", "D"}));
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClassB", "C"}).IsInCache());
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClassB", "B"}).IsInCache());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_DoesNotLooseChildrenData)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneRelationshipClass");
+    //Prepare cache with A -> B and C -> D instances and relathionships
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassB", "C"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassA", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassA", "D"}));
+    //Change the children relathionships with each other, and dont loose any data
+    instances.Clear();
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassA", "D"});
+    instances.Add({"TestSchema.TestClassB", "C"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassA", "D"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassA", "D"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassB", "B"}));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData2)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneHoldingRelationshipClass");
+    //Prepare the cache with A -> B and C instances and holding relathionships
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestOneToOneHoldingRelationshipClass", ""}, {"TestSchema.TestClass", "B"});
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
+    //Change parent instance of the relathionship, do not lose the data ( A and C -> B )
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "C"})
+        .AddRelated({"TestSchema.TestOneToOneHoldingRelationshipClass", ""}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "C"}, {"TestSchema.TestClass", "B"}));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData3)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneHoldingRelationshipClass");
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    auto child = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
+    CachedResponseKey responseKeyChild(parent, "Foo2");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestOneToOneHoldingRelationshipClass", ""}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
+    //Swap relathionship of not a root response. Do not lose any data
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"})
+        .AddRelated({"TestSchema.TestOneToOneHoldingRelationshipClass", ""}, {"TestSchema.TestClass", "C"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKeyChild, instances.ToWSObjectsResponse()));
+
+    instances.Add({"TestSchema.TestClass", "D"})
+        .AddRelated({"TestSchema.TestOneToOneHoldingRelationshipClass", ""}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "D"}, {"TestSchema.TestClass", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "B"}, {"TestSchema.TestClass", "C"}));
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "C"}).IsFullyCached());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
