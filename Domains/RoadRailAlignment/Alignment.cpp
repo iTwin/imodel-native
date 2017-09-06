@@ -538,6 +538,16 @@ HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source)
+    {
+    T_Super::_CopyFrom(source);
+
+    m_geometry = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalAlignmentPtr VerticalAlignment::Create(VerticalAlignmentModelCR breakDownModel, CurveVectorR verticalGeometry)
