@@ -22,6 +22,9 @@ void Symbology::InitializeDefaults()
     updated.SetRgb(ColorDef::VersionCompareModified());
     inserted.SetRgb(ColorDef::VersionCompareInserted());
     deleted.SetRgb(ColorDef::VersionCompareDeleted());
+    updated.SetAlpha(0);
+    inserted.SetAlpha(0);
+    deleted.SetAlpha(0);
     // ###TODO update.SetMaterial(nullptr);
     // ###TODO inserted.SetMaterial(nullptr);
     // ###TODO deleted.SetMaterial(nullptr);
