@@ -1061,7 +1061,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
 				"properties": 
 					{
 					"Name": "myName",
-					"Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+					"Url": "https://redirected.server.com/72adad30-c07c-465d-a1fe-2f2dfac950a9?myToken&se=2013-03-01T16%3A20%3A00Z"
 					}
 				}
 				]
@@ -1072,7 +1072,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
 
     EXPECT_CALL(*s_mockWSGInstance, PerformAzureRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://redirected.server.com//72adad30-c07c-465d-a1fe-2f2dfac950a9/RootDocument.s3mx?myToken&se=2013-03-01T16%3A20%3A00Z");
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://redirected.server.com/72adad30-c07c-465d-a1fe-2f2dfac950a9%2FRootDocument%2Es3mx?myToken&se=2013-03-01T16%3A20%3A00Z");
 		response.status = ::OK;
         response.responseCode = 200;
         response.curlCode = CURLE_OK;
