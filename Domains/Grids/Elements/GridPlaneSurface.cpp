@@ -75,6 +75,9 @@ DPlane3d                        GridPlaneSurface::GetPlane
     {
     GeometryCollection geomData = *ToGeometrySource ();
 
+    if (geomData.begin () == geomData.end ())
+        return DPlane3d ();
+
     ISolidPrimitivePtr solidPrimitive = (*geomData.begin ()).GetGeometryPtr ()->GetAsISolidPrimitive ();
     if (!solidPrimitive.IsValid ())
         {
@@ -110,6 +113,35 @@ DPlane3d                        GridPlaneSurface::GetPlane
     return DPlane3d::From3Points (baseShapePoints[0][0], baseShapePoints[0][1], point3);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                        GridPlaneSurface::SetCurveVector
+(
+CurveVectorR newShape
+)
+    {
+    //clean the existing geometry
+    GetGeometryStreamR ().Clear ();
+
+
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    newShape.IsPlanar (localToWorld, worldToLocal, range);
+    DPlane3d retPlane;
+    bsiTransform_getOriginAndVectors (&localToWorld, &retPlane.origin, NULL, NULL, &retPlane.normal);
+
+    Placement3d newPlacement (retPlane.origin, GetPlacement ().GetAngles ());
+    SetPlacement (newPlacement);
+
+    GeometrySource3dP pGeomElem = DgnElement::ToGeometrySource3dP ();
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*pGeomElem);
+
+    builder->Append (newShape, Dgn::GeometryBuilder::CoordSystem::World);
+    builder->Finish (*pGeomElem);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              04/2017
