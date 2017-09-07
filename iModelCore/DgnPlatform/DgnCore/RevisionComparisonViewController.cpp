@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Symbology::InitializeDefaults()
     {
-    static const double s_backgroundElementTransparency = 0.5 * 255;
+    static const double s_backgroundElementTransparency = 0.8 * 255;
 	// static const double s_backgroundLineTransparency = 255;
     Appearance inserted, updated, deleted;
     updated.SetRgb(ColorDef::VersionCompareModified());
