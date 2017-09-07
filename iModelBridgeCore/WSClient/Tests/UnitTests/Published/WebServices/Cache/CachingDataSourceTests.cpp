@@ -445,8 +445,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "B"), objectId);
         Utf8String schemaXml;
         StubSchema("CustomSchema", "CS")->WriteToXmlString(schemaXml);
-        SimpleWriteToFile(schemaXml, filePath);
-        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile(schemaXml)));
         }));
 
     auto result = ds->UpdateSchemas(nullptr)->GetResult();
@@ -470,8 +469,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsE
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("Not-a-schema", filePath);
-        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile("Not-a-schema")));
         }));
 
     BeTest::SetFailOnAssert(false);
@@ -501,15 +499,13 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySc
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile(StubSchemaXml("A"), filePath);
-        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("A"))));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile(StubSchemaXml("B"), filePath);
-        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("B"))));
         }));
 
     // Act
@@ -554,15 +550,13 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile(StubSchemaXml("A"), filePath);
-        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("A"))));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile(StubSchemaXml("B"), filePath);
-        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("B"))));
         }));
 
     // Act
@@ -670,13 +664,10 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
-
-    StubInstances fileInstances;
-    fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
-
     auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    std::map<Utf8String, Json::Value> properties = {{"TestSize", "42"}, {"TestName", "TestFileName"}};
+    StubInstanceInCache(txn.GetCache(), fileId, properties);
     txn.Commit();
 
     // Act & Assert
@@ -718,9 +709,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
     BeFileName filePath;
     auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
         {
-        SimpleWriteToFile("TestContent", filePath);
-
-        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        return StubWSFileResult(StubFile("TestContent"));
         });
 
     AsyncTestCheckpoint check1;
@@ -804,9 +793,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     BeFileName filePath;
     auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
         {
-        SimpleWriteToFile("TestContent", filePath);
-
-        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        return StubWSFileResult(StubFile("TestContent"));
         });
 
     bool downloadStarted = false;
@@ -877,9 +864,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
     BeFileName filePath;
     auto downloadTask = std::make_shared<PackagedAsyncTask<WSFileResult>>([&]
         {
-        SimpleWriteToFile("TestContent", filePath);
-
-        return WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, ""));
+        return StubWSFileResult(StubFile("TestContent"));
         });
 
     bool downloadStarted = false;
@@ -980,8 +965,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("TestContent", filePath);
-        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile("TestContent")));
         }));
 
     auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
@@ -1060,8 +1044,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndServ
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("Foo", filePath);
-        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(filePath)));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile("Foo")));
         }));
 
     auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
@@ -1105,8 +1088,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerR
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("NewFile", filePath);
-        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(filePath)));
+        return CreateCompletedAsyncTask(StubWSFileResult(StubFile("NewFile")));
         }));
 
     auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
@@ -1183,8 +1165,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("", fileName);
-        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
+        return CreateCompletedAsyncTask(StubWSFileResult());
         }));
 
     auto result = ds->CacheFiles(files, true, FileCache::Persistent, nullptr, nullptr)->GetResult();
@@ -1212,8 +1193,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(2)
         .WillRepeatedly(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        SimpleWriteToFile("", fileName);
-        return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
+        return CreateCompletedAsyncTask(StubWSFileResult());
         }));
 
     auto result = ds->CacheFiles(files, false, FileCache::Persistent, nullptr, nullptr)->GetResult();
