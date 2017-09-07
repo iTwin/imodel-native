@@ -10,12 +10,12 @@
 #include "ElementECInstanceAdapter.h"
 
 /*---------------------------------------------------------------------------------**//**
-* get the class id from a string in the form "Schema.ClassName"
+* get the class id from a string in the form "Schema:ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
     {
-    auto dot = name.find('.');
+    auto dot = name.find(':');
     if (Utf8String::npos == dot || name.length() <= dot + 1)
         return DgnClassId();
 
@@ -1251,7 +1251,7 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     val[json_id()] = m_elementId.ToHexStr();
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
