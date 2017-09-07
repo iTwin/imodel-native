@@ -151,15 +151,27 @@ ISolidPrimitivePtr surface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr                  DrivingSurface::GetSurfaceVector
+CurveVectorPtr DrivingSurface::GetSurfaceVector
 (
 ) const
     {
     GeometryCollection geomData = *ToGeometrySource ();
-    CurveVectorPtr curveVec = (*(geomData.begin ())).GetGeometryPtr ()->GetAsCurveVector ();
-    curveVec->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+    ISolidPrimitivePtr solidPrimitivePtr = (*(geomData.begin())).GetGeometryPtr()->GetAsISolidPrimitive();
+    if (!solidPrimitivePtr.IsValid ())
+        {
+        return nullptr;
+        }
 
-    return curveVec;
+    DgnExtrusionDetail extrDetail;
+    if (!solidPrimitivePtr->TryGetDgnExtrusionDetail(extrDetail))
+        {
+        return nullptr;
+        }
+
+    CurveVectorPtr curve = extrDetail.m_baseCurve;
+    curve->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+
+    return curve;
     }
 
 /*---------------------------------------------------------------------------------**//**
