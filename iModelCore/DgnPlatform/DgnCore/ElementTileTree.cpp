@@ -1305,7 +1305,8 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
 
     // NB: Mark as "cached" even if cache disabled - waiting threads may end up using it too
-    part->SetInCache(true);
+    if (part.IsValid())
+        part->SetInCache(true);
 
     m_mutex.lock(); // << LOCK
 
