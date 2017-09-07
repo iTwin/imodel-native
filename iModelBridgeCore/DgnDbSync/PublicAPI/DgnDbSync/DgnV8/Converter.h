@@ -925,6 +925,7 @@ protected:
     bool                 m_hasLoadedWorkspaceFonts = false;
     bool                 m_skipECContent = true;
     bool                 m_addDebugDgnCodes = false;
+    bool                 m_needReimportSchemas = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -2031,6 +2032,9 @@ struct ChangeDetector : IChangeDetector
     bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSeen;
     bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSkipped;
     bset<SyncInfo::V8ModelSyncInfoId> m_newlyDiscoveredModels; // models created during this run
+
+    void ReleaseIterators() { DELETE_AND_CLEAR(m_byIdIter); DELETE_AND_CLEAR(m_byHashIter); }
+    void PrepareIterators(DgnDbCR db);
 
     DGNDBSYNC_EXPORT bool _ShouldSkipFile(Converter&, DgnV8FileCR) override;
     void _OnElementSeen(Converter&, DgnElementId id) override {if (id.IsValid()) m_elementsSeen.insert(id);}

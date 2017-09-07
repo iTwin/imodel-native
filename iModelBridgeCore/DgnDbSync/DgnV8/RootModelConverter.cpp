@@ -1396,7 +1396,10 @@ void RootModelConverter::_ConvertSchemas()
     if (IsUpdating())
         {
         CheckNoECSchemaChanges();
-        return;
+        if (!m_needReimportSchemas)
+            return;
+        if (WasAborted())
+            return;
         }
 
     SetStepName(Converter::ProgressMessage::STEP_DISCOVER_ECSCHEMAS());
@@ -1460,12 +1463,22 @@ void RootModelConverter::_ConvertSchemas()
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Upgrade V8 ECSchemas");
 
     timer.Start();
+    ChangeDetector* changeDetector = nullptr;
+    if (IsUpdating())
+        {
+        changeDetector = dynamic_cast<ChangeDetector*> (m_changeDetector.get());
+        if (nullptr != changeDetector)
+            changeDetector->ReleaseIterators();
+        }
     //The schema import is wrapped into transaction management so that in case of a failed
     //schema import the DB can be set into a clean state again. This also means
     //* any previous changes to the file are committed
     //* in case of a successful schema import, changes are committed again
     if (BentleyApi::SUCCESS != ImportTargetECSchemas())
         return;
+
+    if (IsUpdating() && nullptr != changeDetector)
+        changeDetector->PrepareIterators(GetDgnDb());
 
     ReportProgress();
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Import ECSchemas");

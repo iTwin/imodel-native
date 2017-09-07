@@ -38,6 +38,14 @@ void ChangeDetector::_Cleanup(Converter& c)
     c.GetRangePartIdMap().clear();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::PrepareIterators(DgnDbCR db)
+    {
+    m_byIdIter = new SyncInfo::ByV8ElementIdIter(db);
+    m_byHashIter = new SyncInfo::ByHashIter(db);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -77,12 +85,11 @@ void Converter::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Utf8String, uin
     for (auto& v8SchemaInfo : v8SchemaInfos)
         {
         bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(Utf8String(v8SchemaInfo.GetSchemaName()));
+        // If schema was not in the original DgnDb, we need to import it
         if (syncEntry == syncInfoChecksums.end())
             {
-            Utf8PrintfString msg("v8 schema '%s' not found in original DgnDb", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-            ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::InconsistentData(), Issue::Error(), msg.c_str());
-            OnFatalError(IssueCategory::InconsistentData());
-            return;
+            m_needReimportSchemas = true;
+            continue;
             }
 
         Bentley::Utf8String schemaXml;
