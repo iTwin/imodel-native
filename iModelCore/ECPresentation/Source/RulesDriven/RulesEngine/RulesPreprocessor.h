@@ -10,6 +10,7 @@
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
 #include <ECPresentation/RulesDriven/UserSettings.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include "ECExpressionContextsProvider.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -284,7 +285,7 @@ struct RulesPreprocessor
 
 private:
     RulesPreprocessor() {}
-    static bool VerifyCondition(Utf8CP condition, ExpressionContextR, ECExpressionsCache&);
+    static bool VerifyCondition(Utf8CP condition, ExpressionContextR, ECExpressionsCache&, OptimizedExpressionsParameters const*);
     static void AddSpecificationsByHierarchy(PresentationRuleSetCR, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, ChildNodeRuleSpecificationsList& specs, bool& handled, bool& stopProcessing);
     template<typename RuleType> static bool AddSpecificationsByHierarchy(bvector<RuleType*> const& rules, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
     template<typename RuleType> static bool AddMatchingSpecifications(bvector<RuleType*> const& rules, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled);

@@ -77,6 +77,8 @@ $(o)ContentCache$(oext):                 $(RulesEngineSourceDirectory)ContentCac
 
 $(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionSyncHandler.cpp $(RulesEngineDependencies)
 
+$(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =
