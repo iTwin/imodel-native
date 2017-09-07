@@ -28,7 +28,8 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
 BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeAssert(false);
-        return *(BeJsEnvironmentP)(nullptr);
+    static volatile BeJsEnvironmentP s_dummy;
+    return *s_dummy;
     }
 
 //---------------------------------------------------------------------------------------
