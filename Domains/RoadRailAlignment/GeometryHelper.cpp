@@ -2,10 +2,11 @@
 |
 |     $Source: GeometryHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/GeometryHelper.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     07/2015

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/AlignmentXSViewDefinition.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentXSViewDefinitionHandler)
 

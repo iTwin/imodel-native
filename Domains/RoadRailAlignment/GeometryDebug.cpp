@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/GeometryDebug.h>
 
 #if defined(BENTLEY_WIN32)
 // for debugging with VS. Might have to check for Windows platform at compile time if we go cross platform

@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/RoadAlignmentPairEditor.h>
 
 //! Divided alignments must NOT be tangential at their start/end points.
 //! We cheat by adding a small segment at the beginning and end of their geometry with a small angle

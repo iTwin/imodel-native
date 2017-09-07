@@ -2,16 +2,20 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/GeometryDebug.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
-#include "RoadRailAlignmentApi.h"
+
+#include "RoadRailAlignment.h"
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
 // Static methods to present geometry to debugger . .
+//=======================================================================================
 struct GeometryDebug
     {
     // 0==> no output

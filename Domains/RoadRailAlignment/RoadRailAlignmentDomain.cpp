@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 

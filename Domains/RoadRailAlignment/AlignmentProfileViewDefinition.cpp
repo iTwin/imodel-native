@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentProfileViewDefinitionHandler)
 

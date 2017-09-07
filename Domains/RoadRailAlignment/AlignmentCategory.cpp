@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/AlignmentCategory.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentCategoryModelHandler)
 

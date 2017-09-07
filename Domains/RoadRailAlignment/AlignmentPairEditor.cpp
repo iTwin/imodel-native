@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/AlignmentPairEditor.h>
 
 #define BASEGRADEDIFFERENTIAL 1.0
 // limit intersection/ramp approach lengths to a factor of the total alignment length

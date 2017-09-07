@@ -5,8 +5,9 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
+
+#include "RoadRailAlignment.h"
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

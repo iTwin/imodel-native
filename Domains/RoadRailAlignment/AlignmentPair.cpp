@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/AlignmentPair.h>
 
 #define STROKE_PERCENTAGE_OF_LENGTH 0.03
 #define HIGHZ 1e+10

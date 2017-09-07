@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
+#include <RoadRailAlignment/Alignment.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentHandler)
 HANDLER_DEFINE_MEMBERS(HorizontalAlignmentsPortionHandler)
