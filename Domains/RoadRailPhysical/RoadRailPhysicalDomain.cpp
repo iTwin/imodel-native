@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailPhysicalInternal.h>
+#include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/RoadRailPhysicalDomain.h>
 
 DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 

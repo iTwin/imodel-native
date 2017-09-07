@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailPhysicalInternal.h>
+#include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/Pathway.h>
 
 HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
 HANDLER_DEFINE_MEMBERS(RailwayHandler)

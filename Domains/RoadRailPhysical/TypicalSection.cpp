@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailPhysicalInternal.h>
+#include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/TypicalSection.h>
 
 HANDLER_DEFINE_MEMBERS(BufferComponentHandler)
 HANDLER_DEFINE_MEMBERS(BufferDefinitionHandler)

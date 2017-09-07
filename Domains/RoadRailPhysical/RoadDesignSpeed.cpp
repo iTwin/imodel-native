@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailPhysicalInternal.h>
+#include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/RoadDesignSpeed.h>
 
 HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionElementHandler)
 HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionModelHandler)

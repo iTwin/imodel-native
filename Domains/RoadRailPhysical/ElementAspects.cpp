@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailPhysicalInternal.h>
+#include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/ElementAspects.h>
 
 HANDLER_DEFINE_MEMBERS(LinearlyLocatedStatusHandler)
 HANDLER_DEFINE_MEMBERS(StatusAspectHandler)
