@@ -3616,7 +3616,90 @@ TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
         "    </ECEntityClass>"
         "</ECSchema>"))) << "ShareColumns with MapStrategy ExistingTable is not supported";
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, OverflowIssue)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowIssue.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Element" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="code" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="GeometricElement"  modifier="Abstract">
+                    <BaseClass>Element</BaseClass>
+                    <ECCustomAttributes>
+                        <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="GeometricElement3d"  modifier="Abstract">
+                    <BaseClass>GeometricElement</BaseClass>
+                    <ECCustomAttributes>
+                        <ShareColumns xmlns="ECDbMap.02.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="x" typeName="long"/>
+                    <ECProperty propertyName="y" typeName="long"/>
+                    <ECProperty propertyName="z" typeName="long"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="SpatialElement" modifier="Abstract">
+                    <BaseClass>GeometricElement3d</BaseClass>
+                </ECEntityClass>
+                <ECEntityClass typeName="PhysicalElement" modifier="Abstract">
+                    <BaseClass>SpatialElement</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml")));
 
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="DomainSchema" alias="ds" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SmallElement">
+                    <BaseClass>ts:PhysicalElement</BaseClass>
+                    <ECProperty propertyName="p1" typeName="long"/>
+                    <ECProperty propertyName="p2" typeName="long"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="LargeElement">
+                    <BaseClass>ts:PhysicalElement</BaseClass>
+                    <ECProperty propertyName="p1" typeName="long"/>
+                    <ECProperty propertyName="p2" typeName="long"/>
+                    <ECProperty propertyName="p3" typeName="long"/>
+                    <ECProperty propertyName="p4" typeName="long"/>
+                    <ECProperty propertyName="p5" typeName="long"/>
+                    <ECProperty propertyName="p6" typeName="long"/>
+                    <ECProperty propertyName="p7" typeName="long"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    m_ecdb.SaveChanges();
+    ReopenECDb();
+    {
+        ECSqlStatement stmt; 
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO DomainSchema.SmallElement(code,z,y,z,p1,p2) VALUES (1,2,3,4,5,6)"));
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains("ts_GeometricElement3d_Overflow"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); 
+    }
+    {
+        ECSqlStatement stmt; 
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO DomainSchema.LargeElement(code,z,y,z,p1,p2,p3,p4,p5,p6,p7) VALUES (1,2,3,4,5,6,7,8,9,10,11)"));
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains("ts_GeometricElement3d_Overflow"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); 
+    }
+    m_ecdb.SaveChanges();
+
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------

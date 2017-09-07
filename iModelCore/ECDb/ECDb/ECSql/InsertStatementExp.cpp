@@ -110,7 +110,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
     ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
-        ctx.Issues().Report("Mismatching number of items in VALUES clause.");
+        ctx.Issues().Report("Mismatching number of items in VALUES clause. For %d properties there are %d values.", expectedValueCount, valuesExp->GetChildrenCount());
         return FinalizeParseStatus::Error;
         }
 
