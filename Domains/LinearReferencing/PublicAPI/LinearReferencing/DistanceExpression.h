@@ -2,24 +2,15 @@
 |
 |     $Source: PublicAPI/LinearReferencing/DistanceExpression.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "LinearReferencingApi.h"
+#include "LinearReferencing.h"
 
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
-
-typedef Nullable<double> NullableDouble;
-
-inline bool Compare(const NullableDouble& lhs, const NullableDouble& rhs)
-    {
-    return (lhs.IsNull() == rhs.IsNull() ||
-        (lhs.IsValid() && rhs.IsValid() && fabs(lhs.Value() - rhs.Value()) < DBL_EPSILON));
-    }
 
 //=======================================================================================
 //! Data structure used as a data-holder of a measured value which defines 
@@ -56,6 +47,14 @@ public:
     void SetDistanceAlongFromReferent(NullableDouble newVal) { m_distanceAlongFromReferent = newVal; }    
     LINEARREFERENCING_EXPORT void SetFromReferent(IReferentCP fromReferent);
 }; // DistanceExpression
+
+BEGIN_UNNAMED_NAMESPACE
+inline bool Compare(const NullableDouble& lhs, const NullableDouble& rhs)
+    {
+    return (lhs.IsNull() == rhs.IsNull() ||
+            (lhs.IsValid() && rhs.IsValid() && fabs(lhs.Value() - rhs.Value()) < DBL_EPSILON));
+    }
+END_UNNAMED_NAMESPACE
 
 inline bool operator==(const DistanceExpression& lhs, const DistanceExpression& rhs) 
     {

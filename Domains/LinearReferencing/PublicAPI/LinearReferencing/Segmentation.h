@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "LinearReferencingApi.h"
+#include "LinearReferencing.h"
+#include "ILinearElement.h"
 
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 

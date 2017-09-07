@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "LinearReferencingInternal.h"
+#include <LinearReferencing/Segmentation.h>
 
 enum class LinearlyReferencedLocationType : int
     {

@@ -2,10 +2,12 @@
 |
 |     $Source: DistanceExpression.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <LinearReferencingInternal.h>
+#include "LinearReferencingInternal.h"
+#include <LinearReferencing/DistanceExpression.h>
+#include <LinearReferencing/ILinearElement.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016

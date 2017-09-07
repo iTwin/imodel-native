@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <LinearReferencingInternal.h>
+#include "LinearReferencingInternal.h"
+#include <LinearReferencing/LinearReferencingDomain.h>
 
 DOMAIN_DEFINE_MEMBERS(LinearReferencingDomain)
 
