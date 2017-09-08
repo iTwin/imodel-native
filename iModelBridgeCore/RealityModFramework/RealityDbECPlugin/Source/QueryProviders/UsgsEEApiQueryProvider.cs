@@ -134,7 +134,7 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["DataProviderName"].StringValue = IndexConstants.UsgsDataProviderNameString;
 
             instance["Dataset"].StringValue = dataset.DatasetName;
-            instance["MetadataURL"].StringValue = IndexConstants.EEBaseMetadataURL + datasetId + "/" + entityId;
+            instance["MetadataURL"].StringValue = String.Format(IndexConstants.EEFgdcMetadataURL, datasetId, entityId);
             instance["SubAPI"].StringValue = IndexConstants.EESubAPIString;
 
             return instance;
@@ -273,7 +273,7 @@ namespace IndexECPlugin.Source.QueryProviders
             instance.InstanceId = sourceId;
             instance["Id"].StringValue = sourceId;
 
-            instance["MetadataURL"].StringValue = IndexConstants.EEBaseMetadataURL + datasetId + "/" + entityId;
+            instance["MetadataURL"].StringValue = String.Format(IndexConstants.EEFgdcMetadataURL, datasetId, entityId);
             instance["Legal"].StringValue = IndexConstants.EELegalString;
             instance["TermsOfUse"].StringValue = IndexConstants.EETermsOfUse;
 
@@ -374,7 +374,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     instance.InitializePropertiesToNull();
 
                     string sceneBounds = token.TryToGetString("sceneBounds");
-                    string[] coords = sceneBounds.Split('\'');
+                    string[] coords = sceneBounds.Split(',');
                     double minX;
                     double minY;
                     double maxX;
@@ -388,7 +388,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         string entityId = token.TryToGetString("entityId");
                         instance.InstanceId = "USGSEE__" + requestBundle.Dataset.DatasetId + "__" + entityId;
                         instance["Id"].StringValue = instance.InstanceId;
-                        instance["MetadataURL"].StringValue = IndexConstants.EEBaseMetadataURL + requestBundle.Dataset.DatasetId + "/" + entityId;
+                        instance["MetadataURL"].StringValue = String.Format(IndexConstants.EEFgdcMetadataURL, requestBundle.Dataset.DatasetId, entityId);
                         }
 
                     instance["Name"].StringValue = token.TryToGetString("entityId");

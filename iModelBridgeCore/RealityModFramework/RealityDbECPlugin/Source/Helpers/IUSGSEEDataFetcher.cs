@@ -98,6 +98,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 apiKey = GetEEApiKey();
 
+                //TODO: Parallelize this foreach
                 foreach ( var dataset in m_datasetList )
                     {
                     try
@@ -133,7 +134,7 @@ namespace IndexECPlugin.Source.Helpers
                         {
                         //Request timed out. We return our empty list
                         //return instanceList;
-                        throw new Bentley.Exceptions.EnvironmentalException("Earth explorer request timed out");
+                        throw new Bentley.Exceptions.EnvironmentalException("Earth Explorer request timed out");
                         }
                     catch ( System.AggregateException ex )
                         {
@@ -180,21 +181,21 @@ namespace IndexECPlugin.Source.Helpers
 
         private void LogOutApiKey(string apiKey)
             {
-                try
+            try
                 {
-                if(!String.IsNullOrWhiteSpace(apiKey))
-                {
-                string jsonRequest = "{\"apiKey\":\"" + apiKey +"\"}";
+                if ( !String.IsNullOrWhiteSpace(apiKey) )
+                    {
+                    string jsonRequest = "{\"apiKey\":\"" + apiKey + "\"}";
 
-                //This call's response is not important. Only calling it should destroy the Api Key
-                m_httpResponseGetter.GetHttpResponse(IndexConstants.EEBaseApiURL + "logout?jsonRequest=" + Uri.EscapeUriString(jsonRequest));
+                    //This call's response is not important. Only calling it should destroy the Api Key
+                    m_httpResponseGetter.GetHttpResponse(IndexConstants.EEBaseApiURL + "logout?jsonRequest=" + Uri.EscapeUriString(jsonRequest));
 
+                    }
                 }
-                    }   
-                catch (Exception e)
+            catch ( Exception e )
                 {
-                    Console.WriteLine(e);
-                    throw;
+                Log.Logger.error("Usgs Earth Explorer Logout call problem: " + e.Message);
+                throw;
                 }
             }
 
@@ -206,12 +207,20 @@ namespace IndexECPlugin.Source.Helpers
         /// <returns>The Xml metadata document obtained from EE</returns>
         public XmlDocument GetXmlDocForInstance (string entityId, string datasetId)
             {
-            string url = IndexConstants.EEBaseMetadataURL + datasetId + "/" + entityId;
-            string xmlString = m_httpResponseGetter.GetHttpResponse(url);
+            try
+                {
+                string url = IndexConstants.EEBaseMetadataURL + datasetId + "/" + entityId;
+                string xmlString = m_httpResponseGetter.GetHttpResponse(url);
 
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlString);
-            return xmlDoc;
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(xmlString);
+                return xmlDoc;
+                }
+            catch ( Exception e )
+                {
+                Log.Logger.error("Usgs Earth Explorer single entity call problem: " + e.Message);
+                throw;
+                }
             }
         }
 
