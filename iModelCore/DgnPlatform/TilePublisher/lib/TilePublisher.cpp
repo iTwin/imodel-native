@@ -3793,6 +3793,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels, classifierModels;
 
+#ifdef PUBLISH_SCHEDULES
+    PublishScheduleSimulations();
+#endif
+
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);
 
@@ -4291,8 +4295,6 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
         if (selector.IsValid())
             {
             auto                cats = selector->GetCategories();
-#define USAGE_TEST
-#ifdef USAGE_TEST
             DgnCategoryIdSet    onInAnyViewCats;
 
             for (auto const& cat : cats)
@@ -4300,9 +4302,6 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
                     onInAnyViewCats.insert(cat);
 
             selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);
-#else
-            selectorsJson[selectorId.first.ToString()] = IdSetToJson(cats);
-#endif
             allCategories.insert(cats.begin(), cats.end());
             }
         }

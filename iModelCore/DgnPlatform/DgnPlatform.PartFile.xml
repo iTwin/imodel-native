@@ -649,6 +649,8 @@
         <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
@@ -673,7 +675,7 @@
     </Part>
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
-        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="TilePublisherLib" />																																							                                                             
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>

@@ -25,6 +25,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h ${MultiCompileDepends}
 
+$(o)SchedulePublisher$(oext) : $(SrcDir)SchedulePublisher.cpp $(SrcDir)Constants.h ${MultiCompileDepends}
+
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
@@ -41,6 +43,7 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BaseGeoCoord.lib      \
                       $(SubpartLibs)ThreeMx.lib           \
                       $(SubpartLibs)PointCloud.lib        \
+                      $(SubpartLibs)$(libprefix)Planning.lib \
                       $(SubpartLibs)BeFolly.lib           
 %if TEXTURE_COMPRESSION_SUPPORT
                       $(SubpartLibs)Crunch.lib            
