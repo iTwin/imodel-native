@@ -2725,7 +2725,7 @@ struct  InstanceXmlReader
             ECPropertyP ecProperty;
             if (NULL == (ecProperty = ecClass.GetPropertyP(propertyName)))
                 {
-                LOG.errorv("No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
+                LOG.errorv("No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName.c_str(), ecClass.GetFullName());
                 return InstanceReadStatus::PropertyNotFound;
                 }
 
