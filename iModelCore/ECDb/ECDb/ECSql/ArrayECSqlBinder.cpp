@@ -143,7 +143,7 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindBlob(void const* value, int 
         return stat;
 
     Byte const* blob = static_cast<Byte const*> (value);
-    return SUCCESS == ECRapidJsonUtilities::BinaryToJson(*m_json, blob, binarySize, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
+    return SUCCESS == JsonPersistenceHelper::BinaryToJson(*m_json, blob, binarySize, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindPoint2d(DPoint2dCR value)
     if (!stat.IsSuccess())
         return stat;
 
-    return SUCCESS == ECRapidJsonUtilities::Point2dToJson(*m_json, value, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
+    return SUCCESS == JsonPersistenceHelper::Point2dToJson(*m_json, value, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -254,7 +254,7 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindPoint3d(DPoint3dCR value)
     if (!stat.IsSuccess())
         return stat;
 
-    return SUCCESS == ECRapidJsonUtilities::Point3dToJson(*m_json, value, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
+    return SUCCESS == JsonPersistenceHelper::Point3dToJson(*m_json, value, *m_jsonAllocator) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------

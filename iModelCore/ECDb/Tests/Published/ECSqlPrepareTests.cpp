@@ -28,6 +28,144 @@ struct ECSqlPrepareTestFixture : public ECDbTestFixture
             }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                    09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
+    {
+    //Class names with reserved tokens
+    std::vector<SchemaItem> schemas;
+    schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="SELECT" />
+                    <ECEntityClass typeName="FROM" />
+                    <ECEntityClass typeName="WHERE" />
+                    <ECEntityClass typeName="AND" />
+                    <ECEntityClass typeName="OR" />
+                    <ECEntityClass typeName="NOT" />
+                    <ECEntityClass typeName="LIKE" />
+                    <ECEntityClass typeName="ORDER" />
+                    <ECEntityClass typeName="BY" />
+                    <ECEntityClass typeName="GROUP" />
+                    <ECEntityClass typeName="HAVING" />
+                    <ECEntityClass typeName="LIMIT" />
+                    <ECEntityClass typeName="OFFSET" />
+                    <ECEntityClass typeName="INSERT" />
+                    <ECEntityClass typeName="INTO" />
+                    <ECEntityClass typeName="VALUES" />
+                    <ECEntityClass typeName="UPDATE" />
+                    <ECEntityClass typeName="SET" />
+                    <ECEntityClass typeName="DELETE" />
+                  </ECSchema>)xml"));
+
+    schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="select" />
+                    <ECEntityClass typeName="from" />
+                    <ECEntityClass typeName="where" />
+                    <ECEntityClass typeName="and" />
+                    <ECEntityClass typeName="or" />
+                    <ECEntityClass typeName="not" />
+                    <ECEntityClass typeName="like" />
+                    <ECEntityClass typeName="order" />
+                    <ECEntityClass typeName="by" />
+                    <ECEntityClass typeName="group" />
+                    <ECEntityClass typeName="having" />
+                    <ECEntityClass typeName="limit" />
+                    <ECEntityClass typeName="offset" />
+                    <ECEntityClass typeName="insert" />
+                    <ECEntityClass typeName="into" />
+                    <ECEntityClass typeName="values" />
+                    <ECEntityClass typeName="update" />
+                    <ECEntityClass typeName="set" />
+                    <ECEntityClass typeName="delete" />
+                  </ECSchema>)xml"));
+
+    
+    for (SchemaItem const& schemaItem : schemas)
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
+        ECN::ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_TRUE(schema != nullptr);
+
+        for (ECN::ECClassCP cl : schema->GetClasses())
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("SELECT * FROM ts.%s", cl->GetName().c_str());
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+            }
+        }
+
+    //Property names with reserved tokens
+    schemas.clear();
+    schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="SELECT" typeName="int"/>
+                    <ECProperty propertyName="FROM" typeName="int"/>
+                    <ECProperty propertyName="WHERE" typeName="int"/>
+                    <ECProperty propertyName="AND" typeName="int"/>
+                    <ECProperty propertyName="OR" typeName="int"/>
+                    <ECProperty propertyName="NOT" typeName="int"/>
+                    <ECProperty propertyName="LIKE" typeName="int"/>
+                    <ECProperty propertyName="ORDER" typeName="int"/>
+                    <ECProperty propertyName="BY" typeName="int"/>
+                    <ECProperty propertyName="GROUP" typeName="int"/>
+                    <ECProperty propertyName="HAVING" typeName="int"/>
+                    <ECProperty propertyName="LIMIT" typeName="int"/>
+                    <ECProperty propertyName="OFFSET" typeName="int"/>
+                    <ECProperty propertyName="INSERT" typeName="int"/>
+                    <ECProperty propertyName="INTO" typeName="int"/>
+                    <ECProperty propertyName="VALUES" typeName="int"/>
+                    <ECProperty propertyName="UPDATE" typeName="int"/>
+                    <ECProperty propertyName="SET" typeName="int"/>
+                    <ECProperty propertyName="DELETE" typeName="int"/>
+                    </ECEntityClass>
+                  </ECSchema>)xml"));
+
+    schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="select" typeName="int"/>
+                    <ECProperty propertyName="from" typeName="int"/>
+                    <ECProperty propertyName="where" typeName="int"/>
+                    <ECProperty propertyName="and" typeName="int"/>
+                    <ECProperty propertyName="or" typeName="int"/>
+                    <ECProperty propertyName="not" typeName="int"/>
+                    <ECProperty propertyName="like" typeName="int"/>
+                    <ECProperty propertyName="order" typeName="int"/>
+                    <ECProperty propertyName="by" typeName="int"/>
+                    <ECProperty propertyName="group" typeName="int"/>
+                    <ECProperty propertyName="having" typeName="int"/>
+                    <ECProperty propertyName="limit" typeName="int"/>
+                    <ECProperty propertyName="offset" typeName="int"/>
+                    <ECProperty propertyName="insert" typeName="int"/>
+                    <ECProperty propertyName="into" typeName="int"/>
+                    <ECProperty propertyName="values" typeName="int"/>
+                    <ECProperty propertyName="update" typeName="int"/>
+                    <ECProperty propertyName="set" typeName="int"/>
+                    <ECProperty propertyName="delete" typeName="int"/>
+                    </ECEntityClass>
+                  </ECSchema>)xml"));
+
+    for (SchemaItem const& schema : schemas)
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schema));
+        ECN::ECClassCP cl = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+        ASSERT_TRUE(cl != nullptr);
+
+        for (ECN::ECPropertyCP prop : cl->GetProperties())
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("SELECT %s FROM ts.%s", prop->GetName().c_str(), cl->GetName().c_str());
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+            }
+        }
+    }
+
+
 struct ECSqlSelectPrepareTests : ECSqlPrepareTestFixture {};
 
 //---------------------------------------------------------------------------------------
@@ -37,7 +175,9 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     {
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, PStructProp A11 FROM ecsql.PSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.ECInstanceId FROM ecsql.PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.ECInstanceId FROM ecsql:PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.S FROM ecsql.PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.S FROM ecsql:PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM ecsql.PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM ecsql.PSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.I FROM ecsql.PSA S"));
@@ -439,7 +579,9 @@ TEST_F(ECSqlSelectPrepareTests, ECInstanceId)
 TEST_F(ECSqlSelectPrepareTests, From)
     {
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql.PSAHasPSA"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql:PSAHasPSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ecsql.PSAHasPSA"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ecsql:PSAHasPSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ONLY ecsql.PSAHasPSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ecsql.PSAHasPSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql.PSAHasP"));
@@ -604,6 +746,7 @@ TEST_F(ECSqlSelectPrepareTests, Join)
     //JOIN USING
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("select ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA BACKWARD"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM ecsql:PSA parent JOIN ecsql:PSA child USING ecsql:PSAHasPSA BACKWARD"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA FORWARD"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("select PSA.*, P.* FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP"));

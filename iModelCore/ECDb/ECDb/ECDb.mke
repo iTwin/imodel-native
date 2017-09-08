@@ -35,6 +35,7 @@ ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
+                $(baseDir)JsonPersistenceHelper.h \
                 $(baseDir)IssueReporter.h \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
@@ -150,6 +151,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 # Build objects
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -10,6 +10,7 @@
 #include <Bentley/BeTextFile.h>
 #include <Bentley/BeNumerical.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -77,6 +78,854 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 
         static BeFileName GetBenchmarkFolder();
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("primitivedatatypesformatfileformatcompatibility.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="Types" modifier="Sealed">
+                        <ECProperty propertyName="bl" typeName="binary" />
+                        <ECProperty propertyName="b" typeName="boolean" />
+                        <ECProperty propertyName="dt" typeName="datetime" />
+                        <ECProperty propertyName="d" typeName="double" />
+                        <ECProperty propertyName="g" typeName="Bentley.Geometry.Common.IGeometry" />
+                        <ECProperty propertyName="i" typeName="int" />
+                        <ECProperty propertyName="l" typeName="long" />
+                        <ECProperty propertyName="pt2d" typeName="point2d" />
+                        <ECProperty propertyName="pt3d" typeName="point3d" />
+                        <ECProperty propertyName="s" typeName="string" />
+                        <ECArrayProperty propertyName="bl_array" typeName="binary" />
+                        <ECArrayProperty propertyName="b_array" typeName="boolean" />
+                        <ECArrayProperty propertyName="dt_array" typeName="datetime" />
+                        <ECArrayProperty propertyName="d_array" typeName="double" />
+                        <ECArrayProperty propertyName="g_array" typeName="Bentley.Geometry.Common.IGeometry" />
+                        <ECArrayProperty propertyName="i_array" typeName="int" />
+                        <ECArrayProperty propertyName="l_array" typeName="long" />
+                        <ECArrayProperty propertyName="pt2d_array" typeName="point2d" />
+                        <ECArrayProperty propertyName="pt3d_array" typeName="point3d" />
+                        <ECArrayProperty propertyName="s_array" typeName="string" />
+                    </ECStructClass>
+                    <ECEntityClass typeName="MyClass" modifier="Sealed">
+                        <ECProperty propertyName="bl" typeName="binary" />
+                        <ECProperty propertyName="b" typeName="boolean" />
+                        <ECProperty propertyName="dt" typeName="datetime" />
+                        <ECProperty propertyName="d" typeName="double" />
+                        <ECProperty propertyName="g" typeName="Bentley.Geometry.Common.IGeometry" />
+                        <ECProperty propertyName="i" typeName="int" />
+                        <ECProperty propertyName="l" typeName="long" />
+                        <ECProperty propertyName="pt2d" typeName="point2d" />
+                        <ECProperty propertyName="pt3d" typeName="point3d" />
+                        <ECProperty propertyName="s" typeName="string" />
+                        <ECArrayProperty propertyName="bl_array" typeName="binary" />
+                        <ECArrayProperty propertyName="b_array" typeName="boolean" />
+                        <ECArrayProperty propertyName="dt_array" typeName="datetime" />
+                        <ECArrayProperty propertyName="d_array" typeName="double" />
+                        <ECArrayProperty propertyName="g_array" typeName="Bentley.Geometry.Common.IGeometry" />
+                        <ECArrayProperty propertyName="i_array" typeName="int" />
+                        <ECArrayProperty propertyName="l_array" typeName="long" />
+                        <ECArrayProperty propertyName="pt2d_array" typeName="point2d" />
+                        <ECArrayProperty propertyName="pt3d_array" typeName="point3d" />
+                        <ECArrayProperty propertyName="s_array" typeName="string" />
+                        <ECStructProperty propertyName="struct" typeName="Types"/>
+                        <ECStructArrayProperty propertyName="struct_array" typeName="Types"/>
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+    const bool boolVal = true;
+    const double doubleVal = -3.14151617;
+    const DateTime dtVal = DateTime(DateTime::Kind::Unspecified, 2017, 9, 6, 12, 7);
+    double jdVal = -1.0;
+    ASSERT_EQ(SUCCESS, dtVal.ToJulianDay(jdVal));
+
+    const IGeometryPtr geomVal = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.1324, 0.98432, 0.0, 231.453, 22.99, 1.0)));
+    bvector<Byte> geometryBlobVec;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*geomVal, geometryBlobVec);
+    ASSERT_FALSE(geometryBlobVec.empty());
+    const void* geometryBlobVal = geometryBlobVec.data();
+    const int geometryBlobSize = (int) geometryBlobVec.size();
+    Utf8String geomBlobBase64Str;
+    Base64Utilities::Encode(geomBlobBase64Str, static_cast<Byte const*> (geometryBlobVal), (size_t) geometryBlobSize);
+
+    const int intVal = 314;
+    const int64_t int64Val = INT64_C(12314234234);
+    void const* blobVal = &int64Val;
+    const int blobSize = (int) sizeof(int64Val);
+    Utf8String blobBase64Str;
+    Base64Utilities::Encode(blobBase64Str, static_cast<Byte const*> (blobVal), (size_t) blobSize);
+
+    const Utf8CP stringVal = "Hello, world!!";
+    const DPoint2d pt2dVal = DPoint2d::From(-3123.55435345, 1112.567);
+    const DPoint3d pt3dVal = DPoint3d::From(1.0, -2.567, 14324.43223);
+
+    {
+    //insert row with NULLs
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(ECInstanceId) VALUES(NULL)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT * FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    const int colCount = verifyStmt.GetColumnCount();
+    ASSERT_EQ(48, colCount);
+
+    for (int i = 0; i < colCount; i++)
+        {
+        if (BeStringUtilities::StricmpAscii("Id", verifyStmt.GetColumnName(i)) == 0)
+            {
+            ASSERT_EQ(key.GetInstanceId(), verifyStmt.GetValueId<ECInstanceId>(i));
+            continue;
+            }
+
+        ASSERT_TRUE(verifyStmt.IsColumnNull(i)) << "Column is expected to be NULL when binding NULL to all parameters";
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+
+    {
+    //insert row with prim values
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(bl,b,dt,d,g,i,l,pt2d,pt3d,s) VALUES(?,?,?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(1, blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(2, boolVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(3, dtVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(4, doubleVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(5, *geomVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(6, intVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(7, int64Val));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(8, pt2dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(9, pt3dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(10, stringVal, IECSqlBinder::MakeCopy::No));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT * FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    const int colCount = verifyStmt.GetColumnCount();
+    ASSERT_EQ(48, colCount);
+    for (int i = 0; i < colCount; i++)
+        {
+        Utf8CP colName = verifyStmt.GetColumnName(i);
+        if (BeStringUtilities::StricmpAscii("Id", colName) == 0)
+            ASSERT_EQ(key.GetInstanceId(), verifyStmt.GetValueId<ECInstanceId>(i));
+        else if (BeStringUtilities::StricmpAscii("bl", colName) == 0)
+            ASSERT_EQ(0, memcmp(blobVal, verifyStmt.GetValueBlob(i), (size_t) blobSize)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("b", colName) == 0)
+            ASSERT_EQ(boolVal, verifyStmt.GetValueBoolean(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("dt", colName) == 0)
+            ASSERT_DOUBLE_EQ(jdVal, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("d", colName) == 0)
+            ASSERT_DOUBLE_EQ(doubleVal, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("g", colName) == 0)
+            ASSERT_EQ(0, memcmp(geometryBlobVal, verifyStmt.GetValueBlob(i), (size_t) geometryBlobSize)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("i", colName) == 0)
+            ASSERT_EQ(intVal, verifyStmt.GetValueInt(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("l", colName) == 0)
+            ASSERT_EQ(int64Val, verifyStmt.GetValueInt64(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("pt2d_x", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt2dVal.x, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("pt2d_y", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt2dVal.y, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("pt3d_x", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.x, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("pt3d_y", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.y, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("pt3d_z", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.z, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("s", colName) == 0)
+            ASSERT_STREQ(stringVal, verifyStmt.GetValueText(i)) << "Column: " << colName;
+        else
+            ASSERT_TRUE(verifyStmt.IsColumnNull(i)) << "Column: " << colName;
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+
+    {
+    //insert row with prim array values
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(bl_array,b_array,dt_array,d_array,g_array,i_array,l_array,pt2d_array,pt3d_array,s_array) VALUES(?,?,?,?,?,?,?,?,?,?)"));
+    IECSqlBinder& blArrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, blArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, blArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+
+    IECSqlBinder& bArrayBinder = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bArrayBinder.AddArrayElement().BindBoolean(boolVal));
+    ASSERT_EQ(ECSqlStatus::Success, bArrayBinder.AddArrayElement().BindBoolean(boolVal));
+
+    IECSqlBinder& dtArrayBinder = stmt.GetBinder(3);
+    ASSERT_EQ(ECSqlStatus::Success, dtArrayBinder.AddArrayElement().BindDateTime(dtVal));
+    ASSERT_EQ(ECSqlStatus::Success, dtArrayBinder.AddArrayElement().BindDateTime(dtVal));
+
+    IECSqlBinder& dArrayBinder = stmt.GetBinder(4);
+    ASSERT_EQ(ECSqlStatus::Success, dArrayBinder.AddArrayElement().BindDouble(doubleVal));
+    ASSERT_EQ(ECSqlStatus::Success, dArrayBinder.AddArrayElement().BindDouble(doubleVal));
+
+    IECSqlBinder& gArrayBinder = stmt.GetBinder(5);
+    ASSERT_EQ(ECSqlStatus::Success, gArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+    ASSERT_EQ(ECSqlStatus::Success, gArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+
+    IECSqlBinder& iArrayBinder = stmt.GetBinder(6);
+    ASSERT_EQ(ECSqlStatus::Success, iArrayBinder.AddArrayElement().BindInt(intVal));
+    ASSERT_EQ(ECSqlStatus::Success, iArrayBinder.AddArrayElement().BindInt(intVal));
+
+    IECSqlBinder& lArrayBinder = stmt.GetBinder(7);
+    ASSERT_EQ(ECSqlStatus::Success, lArrayBinder.AddArrayElement().BindInt64(int64Val));
+    ASSERT_EQ(ECSqlStatus::Success, lArrayBinder.AddArrayElement().BindInt64(int64Val));
+
+    IECSqlBinder& pt2dArrayBinder = stmt.GetBinder(8);
+    ASSERT_EQ(ECSqlStatus::Success, pt2dArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+    ASSERT_EQ(ECSqlStatus::Success, pt2dArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+
+    IECSqlBinder& pt3dArrayBinder = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, pt3dArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+    ASSERT_EQ(ECSqlStatus::Success, pt3dArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+
+    IECSqlBinder& sArrayBinder = stmt.GetBinder(10);
+    ASSERT_EQ(ECSqlStatus::Success, sArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, sArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT * FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    const int colCount = verifyStmt.GetColumnCount();
+    ASSERT_EQ(48, colCount);
+    for (int i = 0; i < colCount; i++)
+        {
+        Utf8CP colName = verifyStmt.GetColumnName(i);
+        if (BeStringUtilities::StricmpAscii("Id", colName) == 0)
+            ASSERT_EQ(key.GetInstanceId(), verifyStmt.GetValueId<ECInstanceId>(i));
+        else if (BeStringUtilities::StricmpAscii("bl_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_STREQ(blobBase64Str.c_str(), arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("b_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(boolVal, arrayElementJson.GetBool()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("dt_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_DOUBLE_EQ(jdVal, arrayElementJson.GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_DOUBLE_EQ(doubleVal, arrayElementJson.GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("g_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_STREQ(geomBlobBase64Str.c_str(), arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("i_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(intVal, arrayElementJson.GetInt()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("l_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(int64Val, arrayElementJson.GetInt64()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("pt2d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_TRUE(arrayElementJson.IsObject()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("x")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt2dVal.x, arrayElementJson["x"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("y")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt2dVal.y, arrayElementJson["y"].GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("pt3d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_TRUE(arrayElementJson.IsObject()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("x")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.x, arrayElementJson["x"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("y")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.y, arrayElementJson["y"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("z")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.z, arrayElementJson["z"].GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("s_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_STREQ(stringVal, arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else
+            ASSERT_TRUE(verifyStmt.IsColumnNull(i)) << "Column: " << colName;
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+
+    {
+    //insert row with prim values in struct
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(struct.bl,struct.b,struct.dt,struct.d,struct.g,struct.i,struct.l,struct.pt2d,struct.pt3d,struct.s) VALUES(?,?,?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(1, blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(2, boolVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(3, dtVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(4, doubleVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(5, *geomVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(6, intVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(7, int64Val));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(8, pt2dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(9, pt3dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(10, stringVal, IECSqlBinder::MakeCopy::No));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT * FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    const int colCount = verifyStmt.GetColumnCount();
+    ASSERT_EQ(48, colCount);
+    for (int i = 0; i < colCount; i++)
+        {
+        Utf8CP colName = verifyStmt.GetColumnName(i);
+        if (BeStringUtilities::StricmpAscii("Id", colName) == 0)
+            ASSERT_EQ(key.GetInstanceId(), verifyStmt.GetValueId<ECInstanceId>(i));
+        else if (BeStringUtilities::StricmpAscii("struct_bl", colName) == 0)
+            ASSERT_EQ(0, memcmp(blobVal, verifyStmt.GetValueBlob(i), (size_t) blobSize)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_b", colName) == 0)
+            ASSERT_EQ(boolVal, verifyStmt.GetValueBoolean(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_dt", colName) == 0)
+            ASSERT_DOUBLE_EQ(jdVal, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_d", colName) == 0)
+            ASSERT_DOUBLE_EQ(doubleVal, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_g", colName) == 0)
+            ASSERT_EQ(0, memcmp(geometryBlobVal, verifyStmt.GetValueBlob(i), (size_t) geometryBlobSize)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_i", colName) == 0)
+            ASSERT_EQ(intVal, verifyStmt.GetValueInt(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_l", colName) == 0)
+            ASSERT_EQ(int64Val, verifyStmt.GetValueInt64(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_pt2d_x", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt2dVal.x, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_pt2d_y", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt2dVal.y, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_pt3d_x", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.x, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_pt3d_y", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.y, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_pt3d_z", colName) == 0)
+            ASSERT_DOUBLE_EQ(pt3dVal.z, verifyStmt.GetValueDouble(i)) << "Column: " << colName;
+        else if (BeStringUtilities::StricmpAscii("struct_s", colName) == 0)
+            ASSERT_STREQ(stringVal, verifyStmt.GetValueText(i)) << "Column: " << colName;
+        else
+            ASSERT_TRUE(verifyStmt.IsColumnNull(i)) << "Column: " << colName;
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+
+    {
+    //insert row with prim array values in struct
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(struct.bl_array,struct.b_array,struct.dt_array,struct.d_array,struct.g_array,struct.i_array,struct.l_array,struct.pt2d_array,struct.pt3d_array,struct.s_array) VALUES(?,?,?,?,?,?,?,?,?,?)"));
+    IECSqlBinder& blArrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, blArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, blArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+
+    IECSqlBinder& bArrayBinder = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bArrayBinder.AddArrayElement().BindBoolean(boolVal));
+    ASSERT_EQ(ECSqlStatus::Success, bArrayBinder.AddArrayElement().BindBoolean(boolVal));
+
+    IECSqlBinder& dtArrayBinder = stmt.GetBinder(3);
+    ASSERT_EQ(ECSqlStatus::Success, dtArrayBinder.AddArrayElement().BindDateTime(dtVal));
+    ASSERT_EQ(ECSqlStatus::Success, dtArrayBinder.AddArrayElement().BindDateTime(dtVal));
+
+    IECSqlBinder& dArrayBinder = stmt.GetBinder(4);
+    ASSERT_EQ(ECSqlStatus::Success, dArrayBinder.AddArrayElement().BindDouble(doubleVal));
+    ASSERT_EQ(ECSqlStatus::Success, dArrayBinder.AddArrayElement().BindDouble(doubleVal));
+
+    IECSqlBinder& gArrayBinder = stmt.GetBinder(5);
+    ASSERT_EQ(ECSqlStatus::Success, gArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+    ASSERT_EQ(ECSqlStatus::Success, gArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+
+    IECSqlBinder& iArrayBinder = stmt.GetBinder(6);
+    ASSERT_EQ(ECSqlStatus::Success, iArrayBinder.AddArrayElement().BindInt(intVal));
+    ASSERT_EQ(ECSqlStatus::Success, iArrayBinder.AddArrayElement().BindInt(intVal));
+
+    IECSqlBinder& lArrayBinder = stmt.GetBinder(7);
+    ASSERT_EQ(ECSqlStatus::Success, lArrayBinder.AddArrayElement().BindInt64(int64Val));
+    ASSERT_EQ(ECSqlStatus::Success, lArrayBinder.AddArrayElement().BindInt64(int64Val));
+
+    IECSqlBinder& pt2dArrayBinder = stmt.GetBinder(8);
+    ASSERT_EQ(ECSqlStatus::Success, pt2dArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+    ASSERT_EQ(ECSqlStatus::Success, pt2dArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+
+    IECSqlBinder& pt3dArrayBinder = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, pt3dArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+    ASSERT_EQ(ECSqlStatus::Success, pt3dArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+
+    IECSqlBinder& sArrayBinder = stmt.GetBinder(10);
+    ASSERT_EQ(ECSqlStatus::Success, sArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, sArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT * FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    const int colCount = verifyStmt.GetColumnCount();
+    ASSERT_EQ(48, colCount);
+    for (int i = 0; i < colCount; i++)
+        {
+        Utf8CP colName = verifyStmt.GetColumnName(i);
+        if (BeStringUtilities::StricmpAscii("Id", colName) == 0)
+            ASSERT_EQ(key.GetInstanceId(), verifyStmt.GetValueId<ECInstanceId>(i));
+        else if (BeStringUtilities::StricmpAscii("struct_bl_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_STREQ(blobBase64Str.c_str(), arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_b_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(boolVal, arrayElementJson.GetBool()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_dt_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_DOUBLE_EQ(jdVal, arrayElementJson.GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_DOUBLE_EQ(doubleVal, arrayElementJson.GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_g_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_STREQ(geomBlobBase64Str.c_str(), arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_i_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(intVal, arrayElementJson.GetInt()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_l_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_EQ(int64Val, arrayElementJson.GetInt64()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_pt2d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_TRUE(arrayElementJson.IsObject()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("x")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt2dVal.x, arrayElementJson["x"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("y")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt2dVal.y, arrayElementJson["y"].GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_pt3d_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_TRUE(arrayElementJson.IsObject()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("x")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.x, arrayElementJson["x"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("y")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.y, arrayElementJson["y"].GetDouble()) << "Column: " << colName;
+                ASSERT_TRUE(arrayElementJson.HasMember("z")) << "Column: " << colName;
+                ASSERT_DOUBLE_EQ(pt3dVal.z, arrayElementJson["z"].GetDouble()) << "Column: " << colName;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii("struct_s_array", colName) == 0)
+            {
+            rapidjson::Document actualJson;
+            ASSERT_TRUE(!actualJson.Parse<0>(verifyStmt.GetValueText(i)).HasParseError()) << "Column: " << colName;
+            ASSERT_TRUE(actualJson.IsArray()) << "Column: " << colName;
+            ASSERT_EQ(2, (int) actualJson.GetArray().Size()) << "Column: " << colName;
+            for (RapidJsonValueCR arrayElementJson : actualJson.GetArray())
+                {
+                ASSERT_TRUE(arrayElementJson.IsString()) << "Column: " << colName;
+                ASSERT_STREQ(stringVal, arrayElementJson.GetString()) << "Column: " << colName;
+                }
+            }
+        else
+            ASSERT_TRUE(verifyStmt.IsColumnNull(i)) << "Column: " << colName;
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+
+    {
+    //insert row with struct array values
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MyClass(struct_array) VALUES(?)"));
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    for (int i = 0; i < 2; i++)
+        {
+        IECSqlBinder& structElementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["bl"].BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["b"].BindBoolean(boolVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["dt"].BindDateTime(dtVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["d"].BindDouble(doubleVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["g"].BindGeometry(*geomVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["i"].BindInt(intVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["l"].BindInt64(int64Val));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["pt2d"].BindPoint2d(pt2dVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["pt3d"].BindPoint3d(pt3dVal));
+        ASSERT_EQ(ECSqlStatus::Success, structElementBinder["s"].BindText(stringVal, IECSqlBinder::MakeCopy::No));
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["bl_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindBlob(blobVal, blobSize, IECSqlBinder::MakeCopy::No));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["b_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindBoolean(boolVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindBoolean(boolVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["dt_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindDateTime(dtVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindDateTime(dtVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["d_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindDouble(doubleVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindDouble(doubleVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["g_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindGeometry(*geomVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["i_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindInt(intVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindInt(intVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["l_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindInt64(int64Val));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindInt64(int64Val));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["pt2d_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindPoint2d(pt2dVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["pt3d_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindPoint3d(pt3dVal));
+        }
+
+        {
+        IECSqlBinder& primArrayBinder = structElementBinder["s_array"];
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, primArrayBinder.AddArrayElement().BindText(stringVal, IECSqlBinder::MakeCopy::No));
+        }
+
+        }
+
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(m_ecdb, "SELECT struct_array FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+
+    rapidjson::Document actualStructArrayJson;
+    ASSERT_TRUE(!actualStructArrayJson.Parse<0>(verifyStmt.GetValueText(0)).HasParseError()) << "Column: struct_array";
+    ASSERT_TRUE(actualStructArrayJson.IsArray()) << "Column: struct_array";
+    ASSERT_EQ(2, (int) actualStructArrayJson.GetArray().Size()) << "Column: struct_array";
+    for (RapidJsonValueCR structArrayElementJson : actualStructArrayJson.GetArray())
+        {
+        ASSERT_TRUE(structArrayElementJson.HasMember("bl"));
+        ASSERT_STREQ(blobBase64Str.c_str(), structArrayElementJson["bl"].GetString());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("b"));
+        ASSERT_EQ(boolVal, structArrayElementJson["b"].GetBool());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("dt"));
+        ASSERT_DOUBLE_EQ(jdVal, structArrayElementJson["dt"].GetDouble());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("d"));
+        ASSERT_DOUBLE_EQ(doubleVal, structArrayElementJson["d"].GetDouble());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("g"));
+        ASSERT_STREQ(geomBlobBase64Str.c_str(), structArrayElementJson["g"].GetString());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("i"));
+        ASSERT_EQ(intVal, structArrayElementJson["i"].GetInt());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("l"));
+        ASSERT_EQ(int64Val, structArrayElementJson["l"].GetInt64());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("pt2d"));
+        ASSERT_TRUE(structArrayElementJson["pt2d"].IsObject());
+        ASSERT_TRUE(structArrayElementJson["pt2d"].HasMember("x"));
+        ASSERT_DOUBLE_EQ(pt2dVal.x, structArrayElementJson["pt2d"]["x"].GetDouble());
+        ASSERT_TRUE(structArrayElementJson["pt2d"].HasMember("y"));
+        ASSERT_DOUBLE_EQ(pt2dVal.y, structArrayElementJson["pt2d"]["y"].GetDouble());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("pt3d"));
+        ASSERT_TRUE(structArrayElementJson["pt3d"].IsObject());
+        ASSERT_TRUE(structArrayElementJson["pt3d"].HasMember("x"));
+        ASSERT_DOUBLE_EQ(pt3dVal.x, structArrayElementJson["pt3d"]["x"].GetDouble());
+        ASSERT_TRUE(structArrayElementJson["pt3d"].HasMember("y"));
+        ASSERT_DOUBLE_EQ(pt3dVal.y, structArrayElementJson["pt3d"]["y"].GetDouble());
+        ASSERT_TRUE(structArrayElementJson["pt3d"].HasMember("z"));
+        ASSERT_DOUBLE_EQ(pt3dVal.z, structArrayElementJson["pt3d"]["z"].GetDouble());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("s"));
+        ASSERT_STREQ(stringVal, structArrayElementJson["s"].GetString());
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("bl_array"));
+        ASSERT_TRUE(structArrayElementJson["bl_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["bl_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["bl_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsString()) << "bl_array";
+            ASSERT_STREQ(blobBase64Str.c_str(), primArrayElemJson.GetString()) << "bl_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("b_array"));
+        ASSERT_TRUE(structArrayElementJson["b_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["b_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["b_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsBool()) << "b_array";
+            ASSERT_EQ(boolVal, primArrayElemJson.GetBool()) << "b_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("dt_array"));
+        ASSERT_TRUE(structArrayElementJson["dt_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["dt_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["dt_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsDouble()) << "dt_array";
+            ASSERT_DOUBLE_EQ(jdVal, primArrayElemJson.GetDouble()) << "dt_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("d_array"));
+        ASSERT_TRUE(structArrayElementJson["d_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["d_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["d_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsDouble()) << "d_array";
+            ASSERT_DOUBLE_EQ(doubleVal, primArrayElemJson.GetDouble()) << "d_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("g_array"));
+        ASSERT_TRUE(structArrayElementJson["g_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["g_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["g_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsString()) << "g_array";
+            ASSERT_STREQ(geomBlobBase64Str.c_str(), primArrayElemJson.GetString()) << "g_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("i_array"));
+        ASSERT_TRUE(structArrayElementJson["i_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["i_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["i_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsInt()) << "i_array";
+            ASSERT_EQ(intVal, primArrayElemJson.GetInt()) << "i_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("l_array"));
+        ASSERT_TRUE(structArrayElementJson["l_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["l_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["l_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsInt64()) << "l_array";
+            ASSERT_EQ(int64Val, primArrayElemJson.GetInt64()) << "l_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("pt2d_array"));
+        ASSERT_TRUE(structArrayElementJson["pt2d_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["pt2d_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["pt2d_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsObject()) << "pt2d_array";
+            ASSERT_TRUE(primArrayElemJson.HasMember("x")) << "pt2d_array";
+            ASSERT_DOUBLE_EQ(pt2dVal.x, primArrayElemJson["x"].GetDouble()) << "pt2d_array";
+            ASSERT_TRUE(primArrayElemJson.HasMember("y")) << "pt2d_array";
+            ASSERT_DOUBLE_EQ(pt2dVal.y, primArrayElemJson["y"].GetDouble()) << "pt2d_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("pt3d_array"));
+        ASSERT_TRUE(structArrayElementJson["pt3d_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["pt3d_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["pt3d_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsObject()) << "pt3d_array";
+            ASSERT_TRUE(primArrayElemJson.HasMember("x")) << "pt3d_array";
+            ASSERT_DOUBLE_EQ(pt3dVal.x, primArrayElemJson["x"].GetDouble()) << "pt3d_array";
+            ASSERT_TRUE(primArrayElemJson.HasMember("y")) << "pt3d_array";
+            ASSERT_DOUBLE_EQ(pt3dVal.y, primArrayElemJson["y"].GetDouble()) << "pt3d_array";
+            ASSERT_TRUE(primArrayElemJson.HasMember("z")) << "pt3d_array";
+            ASSERT_DOUBLE_EQ(pt3dVal.z, primArrayElemJson["z"].GetDouble()) << "pt3d_array";
+            }
+
+        ASSERT_TRUE(structArrayElementJson.HasMember("s_array"));
+        ASSERT_TRUE(structArrayElementJson["s_array"].IsArray());
+        ASSERT_EQ(2, (int) structArrayElementJson["s_array"].GetArray().Size());
+        for (RapidJsonValueCR primArrayElemJson : structArrayElementJson["s_array"].GetArray())
+            {
+            ASSERT_TRUE(primArrayElemJson.IsString()) << "s_array";
+            ASSERT_STREQ(stringVal, primArrayElemJson.GetString()) << "s_array";
+            }
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step());
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17

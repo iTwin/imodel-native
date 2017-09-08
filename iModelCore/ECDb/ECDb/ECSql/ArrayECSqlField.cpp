@@ -108,7 +108,7 @@ void const* ArrayECSqlField::JsonECSqlValue::_GetBlob(int* blobSize) const
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
 
     m_blobCache.Resize(0);
-    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(m_blobCache, m_json))
+    if (SUCCESS != JsonPersistenceHelper::JsonToBinary(m_blobCache, m_json))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetBlob failed for '%s'. Invalid JSON format for Blob.", m_columnInfo.GetPropertyPath().ToString().c_str());
@@ -209,7 +209,7 @@ DPoint2d ArrayECSqlField::JsonECSqlValue::_GetPoint2d() const
         return NoopECSqlValue::GetSingleton().GetPoint2d();
 
     DPoint2d pt;
-    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, m_json))
+    if (SUCCESS != JsonPersistenceHelper::JsonToPoint2d(pt, m_json))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.", m_columnInfo.GetPropertyPath().ToString().c_str());
@@ -229,7 +229,7 @@ DPoint3d ArrayECSqlField::JsonECSqlValue::_GetPoint3d() const
         return NoopECSqlValue::GetSingleton().GetPoint3d();
 
     DPoint3d pt;
-    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, m_json))
+    if (SUCCESS != JsonPersistenceHelper::JsonToPoint3d(pt, m_json))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             LOG.errorv("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.", m_columnInfo.GetPropertyPath().ToString().c_str());
