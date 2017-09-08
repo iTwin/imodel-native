@@ -325,10 +325,6 @@
 
     Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified if they affected the mapping of the ECSchemas and 
     therefore the layout of the database schema.
-
-    #### DbIndex ECStructClass
-    - @b Modify: 
-        - ECProperty @em Name
         
     @see @ref ECDbOverview
     */

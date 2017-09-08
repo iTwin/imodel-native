@@ -81,7 +81,6 @@ struct SchemaWriter final : NonCopyableClass
     public:
         explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)
             {
-            m_schemaUpgradeCustomAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
             m_schemaUpgradeCustomAttributeValidator.Reject("CoreCustomAttributes:IsMixin.*");
             m_schemaUpgradeCustomAttributeValidator.Reject("ECDbMap:*");
             }
