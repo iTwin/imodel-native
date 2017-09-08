@@ -295,6 +295,7 @@ protected:
     bmap<DgnModelId, Utf8String>                m_directUrls;
     AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
+    bool                                        m_isGeoLocated;
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
     bset<DgnSubCategoryId>                      m_usedSubCategories;

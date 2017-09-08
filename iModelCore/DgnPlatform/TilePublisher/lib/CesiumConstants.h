@@ -24,6 +24,7 @@ R"HTML(
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <link href="scripts/Bimium/bimium.css" rel="stylesheet" />
 <script src="scripts/Bimium/bimium.js"></script>
+<script src="scripts/lib/browser.js"></script>
 <style>
 
 html, body, #cesiumContainer {
@@ -46,9 +47,29 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-var viewer = new Bentley.TileSetViewer({ bimiumPath: './scripts/Bimium'});
+var viewer = new Bentley.TileSetViewer({
+    bimiumPath: './scripts/Bimium',
+    propertyDataService: {
+        object: {
+            getPropertyData: function (bimName, elemId) {
+                var promise = Cesium.when.defer();
+                getProperties(promise, bimName, elemId);
+                return promise.then(function(result)
+                    {
+                    var displayJson = {};
+                    result.Descriptor.Fields.forEach((entry) => { 
+                        if(!Cesium.defined(displayJson[entry.Category.DisplayLabel])) displayJson[entry.Category.DisplayLabel] = [];
+                        displayJson[entry.Category.DisplayLabel].push({ label: entry.DisplayLabel, value: result.ContentSet[0].DisplayValues[entry.Name] });
+                    });
+                    var propertyPaneData = [];
+                    for(var category in displayJson) propertyPaneData.push({ category: category, properties: displayJson[category] });
+                    return propertyPaneData;
+                    })																																								                                                                                                                                  
+            }
+        }
+    }
+}, document.getElementsByTagName('body')[0]);
 viewer.activate(viewJsonUrl);
-
 </script>
 </body>
 </html>

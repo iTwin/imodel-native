@@ -504,6 +504,26 @@ bool RegionGraphicsContext::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, 
 
     RegionData& data = static_cast<RegionData&> (*m_regionData);
 
+    if (IsPerspectiveRegion())
+        {
+        bvector<DPoint3d> points;
+        IFacetOptionsPtr options = IFacetOptions::CreateForCurves();
+
+        if (!primitive.AddStrokes(points, *options))
+            return true;
+
+        placementTrans.Multiply(&points[0], (int) points.size());
+        GetViewport()->GetWorldToViewMap()->M0.MultiplyAndRenormalize(points);
+
+        for (DPoint3dR pt : points)
+            pt.z = 0.0;
+
+        graphic.GetViewContext().GetViewport()->GetWorldToViewMap()->M1.MultiplyAndRenormalize(points);
+
+        jmdlRG_addLinear(data.m_pRG, &points[0], (int) points.size(), false, jmdlRIMSBS_addDataCarrier(data.m_pCurves, m_currentGeomMarkerId, userDataP));
+        return true;
+        }
+
     switch (primitive.GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
@@ -801,6 +821,7 @@ void RegionGraphicsContext::SetFloodParams(RegionLoops regionLoops, double gapTo
 void RegionGraphicsContext::SetFlattenBoundary(TransformCR flattenTrans)
     {
     m_forcePlanar = true;
+    m_applyPerspective = false;
     m_flattenTrans = flattenTrans;
     }
 
@@ -810,7 +831,27 @@ void RegionGraphicsContext::SetFlattenBoundary(TransformCR flattenTrans)
 void RegionGraphicsContext::SetFlattenBoundary(DVec3dCR flattenDir)
     {
     m_forcePlanar = true;
+    m_applyPerspective = false;
     m_flattenDir = flattenDir;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RegionGraphicsContext::SetPerspectiveFlatten(bool applyPerspective)
+    {
+    m_applyPerspective = applyPerspective;
+
+    if (applyPerspective)
+        m_forcePlanar = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RegionGraphicsContext::IsPerspectiveRegion()
+    {
+    return (m_applyPerspective && GetViewport() && GetViewport()->IsCameraOn());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,7 +939,7 @@ bool RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR se
     m_dynamicFaceSeed = floodSeed;
 
     data.GetFaceLoops(region, floodSeed.m_faceNodeIds);
-    
+
     return region.IsValid(); // Return true when a new face is identified...
     }
 
@@ -911,6 +952,87 @@ bool RegionGraphicsContext::GetActiveFaces(CurveVectorPtr& region)
         region = nullptr;
 
     return region.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr RegionGraphicsContext::GetFromPerspectiveRegion(CurveVectorCR region, bool isDynamic)
+    {
+    if (!IsPerspectiveRegion())
+        return nullptr;
+
+    if (!isDynamic && m_floodSeeds.empty())
+        return nullptr;
+
+    bvector<Dgn::DgnElementId> roots;
+
+    if (SUCCESS != GetRoots(roots, region))
+        return nullptr;
+
+    DgnElementCPtrVec elements;
+
+    for (DgnElementId elemId : roots)
+        {
+        DgnElementCPtr element = GetDgnDb().Elements().GetElement(elemId);
+
+        if (!element.IsValid())
+            continue;
+
+        elements.push_back(element);
+        }
+
+    if (elements.empty())
+        return nullptr;
+
+    RegionGraphicsContextPtr tmpRegionContext = RegionGraphicsContext::Create();
+
+    tmpRegionContext->SetFloodParams(m_regionLoops, m_gapTolerance, m_stepOutOfHoles);
+
+    if (SUCCESS != tmpRegionContext->PopulateGraph(elements))
+        return nullptr;
+
+    RegionData& tmpData = static_cast<RegionData&> (*tmpRegionContext->m_regionData);
+    DPoint3d    facePoint = DPoint3d::FromZero();
+    DVec3d      faceNormal = DVec3d::UnitZ();
+
+    tmpData.m_viewToWorldTrans.Multiply(facePoint);
+    tmpData.m_viewToWorldTrans.MultiplyMatrixOnly(faceNormal);
+
+    CurveVectorPtr resultRegion;
+
+    if (isDynamic)
+        {
+        DPoint3d tmpPt = m_dynamicFaceSeed.m_pt;
+        DVec3d   viewZRoot;
+
+        viewZRoot.DifferenceOf(tmpPt, *(&GetViewport()->GetCamera().GetEyePoint()));
+        LegacyMath::Vec::LinePlaneIntersect(&tmpPt, &tmpPt, &viewZRoot, &facePoint, &faceNormal, false);
+
+        if (!tmpRegionContext->GetFaceAtPoint(resultRegion, tmpPt))
+            return nullptr;
+
+        return resultRegion;
+        }
+
+    bvector<DPoint3d> seedPoints;
+
+    for (size_t iSeed = 0; iSeed < m_floodSeeds.size(); iSeed++)
+        {
+        DPoint3d tmpPt = m_floodSeeds[iSeed].m_pt;
+        DVec3d   viewZRoot;
+
+        viewZRoot.DifferenceOf(tmpPt, *(&GetViewport()->GetCamera().GetEyePoint()));
+        LegacyMath::Vec::LinePlaneIntersect(&tmpPt, &tmpPt, &viewZRoot, &facePoint, &faceNormal, false);
+        seedPoints.push_back(tmpPt);
+        }
+
+    tmpRegionContext->AddFaceLoopsAtPoints(&seedPoints[0], seedPoints.size());
+
+    if (!tmpRegionContext->GetActiveFaces(resultRegion))
+        return nullptr;
+
+    return resultRegion;
     }
 
 /*---------------------------------------------------------------------------------**//**

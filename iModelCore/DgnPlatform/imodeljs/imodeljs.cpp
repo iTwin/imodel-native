@@ -190,92 +190,10 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, BeFileNameCR fn, DgnDb::OpenMode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-Json::Value IModelJs::GetRowAsRawJson(ECSqlStatement& stmt)
-    {
-    Json::Value rowAsJson;
-    JsonECSqlSelectAdapter adapter(stmt);
-    adapter.GetRowAsIs(rowAsJson);
-    return rowAsJson;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
 void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
-    int cols = stmt.GetColumnCount();
-
-    for (int i = 0; i < cols; ++i)
-        {
-        IECSqlValue const& value = stmt.GetValue(i);
-        ECSqlColumnInfoCR info = value.GetColumnInfo();
-        BeAssert(info.IsValid());
-    
-        Utf8String name = info.GetProperty()->GetName();
-        name[0] = tolower(name[0]);
-        
-        if (rowJson.isMember(name)) // we already added this member, skip it.
-            continue;
-
-        if (value.IsNull())
-            continue; // if the value is null, just skip it
-
-        ECN::ECTypeDescriptor typedesc = info.GetDataType();
-        if (typedesc.IsNavigation())
-            {
-            ECN::ECClassId relClassId;
-            auto eid = value.GetNavigation<DgnElementId>(&relClassId);
-            ECN::ECValue value(eid, relClassId);
-            JsonUtils::NavigationPropertyToJson(rowJson[name], value.GetNavigationInfo());
-            continue;
-            }
-
-        if (!typedesc.IsPrimitive())
-            {
-            rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
-            continue;
-            }
-
-        switch (typedesc.GetPrimitiveType())
-            {
-            case ECN::PRIMITIVETYPE_Boolean:
-                rowJson[name] = value.GetBoolean();
-                break;
-            case ECN::PRIMITIVETYPE_Long:
-                rowJson[name] = BeInt64Id(value.GetInt64()).ToHexStr();
-                break;
-            case ECN::PRIMITIVETYPE_Integer:
-                rowJson[name] = value.GetInt();
-                break;
-            case ECN::PRIMITIVETYPE_Double:
-                rowJson[name] = value.GetDouble();
-                break;
-            case ECN::PRIMITIVETYPE_String: 
-                rowJson[name] = value.GetText();
-                break;
-            case ECN::PRIMITIVETYPE_Binary:
-                {
-                int length;
-                void const* blob = value.GetBlob(&length);
-                ECJsonUtilities::BinaryToJson(rowJson[name], (Byte const*) blob, length);
-                }
-                break;
-            case ECN::PRIMITIVETYPE_Point2d: 
-                JsonUtils::DPoint2dToJson(rowJson[name], value.GetPoint2d());
-                break;
-            case ECN::PRIMITIVETYPE_Point3d:
-                JsonUtils::DPoint3dToJson(rowJson[name], value.GetPoint3d());
-                break;
-            case ECN::PRIMITIVETYPE_DateTime:
-                rowJson[name] = value.GetDateTime().ToString();
-                break;
-
-            default: 
-                {
-                rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
-                }
-            }
-        }
+    JsonECSqlSelectAdapter adapter(stmt);
+    adapter.GetRowForImodelJs(rowJson);
     }
 
 //---------------------------------------------------------------------------------------

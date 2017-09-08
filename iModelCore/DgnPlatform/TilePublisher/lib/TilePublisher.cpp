@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                                                                                                                          class
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -3383,7 +3383,7 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
     {
-    return nullptr != GetDgnDb().GeoLocation().GetDgnGCS();
+    return m_isGeoLocated;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3415,7 +3415,9 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
-    if (nullptr == dgnGCS)
+    // Some user might want to override the DgnGCS by specifying a geolocation on cmd line...
+    m_isGeoLocated = nullptr != dgnGCS || nullptr != geoLocation;
+    if (nullptr == dgnGCS || nullptr != geoLocation)
         {
         double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
 
