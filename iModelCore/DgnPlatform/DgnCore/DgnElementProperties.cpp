@@ -1742,45 +1742,4 @@ void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonUtils::NavigationPropertyToJson(JsonValueR json, ECValue::NavigationInfo const& navValue)
-    {
-    json = Json::objectValue;
-    
-    JsonUtils::IdToJson(json["ecinstanceid"], navValue.GetId<DgnElementId>());
-    
-    auto relClass = navValue.GetRelationshipClass();
-    if (nullptr != relClass)
-        {
-        json["ecclass"] = relClass->GetName();
-        json["ecschema"] = relClass->GetSchema().GetName();
-        }
-
-#ifndef NDEBUG
-    auto ee = JsonUtils::IdFromJson<DgnElementId>(json["ecinstanceid"]);
-    BeAssert(ee == navValue.GetId<DgnElementId>());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonUtils::NavigationPropertyFromJson(ECN::ECValue& navValue, JsonValueCR json, DgnDbR db)
-    {
-    if (!json.isMember("ecinstanceid"))
-        {
-        BeDataAssert(false);
-        navValue.SetToNull();
-        return;
-        }
-    auto eid = IdFromJson<DgnElementId>(json["ecinstanceid"]);
-    
-    DgnClassId relClassId;
-    if (json.isMember("ecclass") && json.isMember("eschema"))
-        relClassId = db.Schemas().GetClassId(json["eschema"].asCString(), json["ecclass"].asCString());
-
-    navValue = ECValue(eid, relClassId);
-    }
 
