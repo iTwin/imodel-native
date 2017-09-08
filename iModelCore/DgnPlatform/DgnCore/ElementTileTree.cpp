@@ -1860,20 +1860,21 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     Transform invTransform = Transform::FromIdentity();
     for (GeometryCP instance : instances)
         {
+        bool isContained = instance->GetTileRange().IsContained(m_tileRange);
         Transform instanceTransform = Transform::FromProduct(instance->GetTransform(), invTransform);
         invTransform.InverseOf(instance->GetTransform());
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
             DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
-            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, true);
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, isContained);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
             DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, true);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, isContained);
             }
         }
     }
