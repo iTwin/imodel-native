@@ -209,7 +209,6 @@ DgnDbStatus IModelJs::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValue
             }
         }
 
-    //  Look up the element
     if (!elem.IsValid())
         elem = dgndb.Elements().GetElement(eid);
 
@@ -217,22 +216,6 @@ DgnDbStatus IModelJs::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValue
         return DgnDbStatus::NotFound;
 
     elementJson = elem->ToJson(inOpts);
-
-    auto eclass = elem->GetElementClass();
-
-    // Auto-handled properties
-    auto autoHandledProps = dgndb.Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
-    if (autoHandledProps.empty())
-        return DgnDbStatus::Success;
-
-    auto stmt = dgndb.GetPreparedECSqlStatement(autoHandledProps.c_str());
-    if (!stmt.IsValid())
-        return DgnDbStatus::WrongClass;
-
-    stmt->BindId(1, eid);
-
-    if (BE_SQLITE_ROW == stmt->Step())
-        GetRowAsJson(elementJson, *stmt);
 
     return DgnDbStatus::Success;
     }

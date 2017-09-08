@@ -1243,6 +1243,36 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         m_relClassId = getClassId(db, val[json_relClass()].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
+    {
+    auto eclass = elem.GetElementClass();
+    
+    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
+    if (autoHandledProps.empty())
+        return;
+
+    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindId(1, elem.GetElementId());
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return;
+        }
+        
+    JsonECSqlSelectAdapter adapter(*stmt);
+    adapter.GetRowForImodelJs(elementJson);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1266,6 +1296,8 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+
+    autoHandlePropertiesToJson(val, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
