@@ -166,8 +166,8 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNode& paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter::FormatOptions::FormatOptions(ECValueFormat format /* = ECValueFormat::FormattedStrings */, ECPropertyFormatterP propertyFormatter /* = nullptr */) 
-    : m_format(format), m_propertyFormatter(propertyFormatter)
+JsonECSqlSelectAdapter::FormatOptions::FormatOptions(ECValueFormat format /* = ECValueFormat::FormattedStrings */, ECPropertyFormatterP propertyFormatter /* = nullptr */, bool li) 
+    : m_format(format), m_propertyFormatter(propertyFormatter), m_longsAreIds(li)
     {
     if (m_format == ECValueFormat::FormattedStrings && m_propertyFormatter.IsNull())
         m_propertyFormatter = ECPropertyFormatter::Create();
@@ -689,7 +689,10 @@ bool JsonECSqlSelectAdapter::JsonFromInt64(JsonValueR jsonValue, IECSqlValue con
     int64_t value = ecsqlValue.GetInt64();
     if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
         {
-        jsonValue = BeJsonUtilities::StringValueFromInt64(value); // Javascript has issues with holding Int64 values!!!
+        if (!m_formatOptions.m_longsAreIds)
+            jsonValue = BeJsonUtilities::StringValueFromInt64(value); // Javascript has issues with holding Int64 values!!!
+        else
+            jsonValue = BeInt64Id(value).ToHexStr();
         return true;
         }
 
@@ -1136,6 +1139,38 @@ bool JsonECSqlSelectAdapter::GetRow(JsonValueR currentRow) const
             status = false;
         }
 
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsonECSqlSelectAdapter::GetRowForImodelJs(JsonValueR jsonResult)
+    {
+    if (!m_formatOptions.m_longsAreIds || (m_formatOptions.m_format != ECValueFormat::RawNativeValues))
+        m_formatOptions = FormatOptions(ECValueFormat::RawNativeValues, nullptr, /*longsAreIds*/true);
+
+	int cols = m_ecsqlStatement.GetColumnCount();
+
+    bool status = true;
+    for (int i = 0; i < cols; ++i)
+        {
+        IECSqlValue const& value = m_ecsqlStatement.GetValue(i);
+        ECSqlColumnInfoCR info = value.GetColumnInfo();
+        BeAssert(info.IsValid());
+    
+        Utf8String name = info.GetProperty()->GetName();
+        name[0] = (char)tolower(name[0]);
+        
+        if (jsonResult.isMember(name)) // if we already added this member, skip it.
+            continue;
+
+        if (value.IsNull())
+            continue; // if the value is null, just skip it
+
+        if (!JsonFromPropertyValue(jsonResult[name], value))
+            status = false;
+        }
     return status;
     }
 

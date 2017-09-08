@@ -119,14 +119,16 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
             private:
                 ECValueFormat m_format;
                 ECPropertyFormatterPtr m_propertyFormatter;
+                bool m_longsAreIds;
 
             public:
                 //! Construct the options to control the format of the JSON returned by methods in the @ref JsonECSqlSelectAdapter.
                 //! @param[in] format Specifies the format of the property values. @see ECValueFormat. 
                 //! @param[in] propertyFormatter (Optional) Provides more control over the formatting of properties
+                //! @param[in] longsAreIds (Optional) If true, assume that every long-valued property is an Id and will therefore be formatted using the hex ID formatting rules.
                 //! Normally the DgnPlatform layer provides formatters that use the dgn specific context to provide additional
                 //! formatting including specification of units, property categorization, etc. 
-                ECDB_EXPORT FormatOptions(ECValueFormat format = ECValueFormat::FormattedStrings, ECPropertyFormatterP propertyFormatter = nullptr);
+                ECDB_EXPORT FormatOptions(ECValueFormat format = ECValueFormat::FormattedStrings, ECPropertyFormatterP propertyFormatter = nullptr, bool longsAreIds = false);
             };
 
     private:
@@ -343,6 +345,11 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @param [out] ecJsonRow JSON representation of the row as an ordered array of values
         //! @return false if there was an error in retrieving/formatting values. true otherwise.
         ECDB_EXPORT bool GetRowAsIs(JsonValueR ecJsonRow) const;
+
+        //! Gets the current row in the ImodelJs JSON wire format.
+        //! @param [out] ecJson ImodelJs JSON wire format representation of value
+        //! @return false if there was an error in retrieving/formatting values. true otherwise.
+        ECDB_EXPORT bool GetRowForImodelJs(JsonValueR jsonResult);
 
         //! Tell the adapter to set the value of struct array properties as a string representation of the Json array value.
         void SetStructArrayAsString(bool flag) { m_structArrayAsString = flag; }
