@@ -25,6 +25,7 @@ friend struct AlignmentProfileViewDefinitionHandler;
 public:
     typedef Dgn::ViewControllerPtr(*IViewControllerFactory)(AlignmentProfileViewDefinitionCR);
     ROADRAILALIGNMENT_EXPORT static void RegisterControllerFactory(IViewControllerFactory);
+    static constexpr Utf8CP SYSTEM_VIEW_NAME = "AlignmentProfileViewDefinition";
 
 private:
     static IViewControllerFactory s_factory;
@@ -52,6 +53,7 @@ public:
     //! Construct a SpatialViewDefinition in the specified DefinitionModel
     ROADRAILALIGNMENT_EXPORT AlignmentProfileViewDefinition(Dgn::DefinitionModelR model, Utf8StringCR name, Dgn::CategorySelectorR categories, Dgn::DisplayStyle3dR displayStyle, Dgn::ModelSelectorR modelSelector);
 
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnViewId QuerySystemViewId(Dgn::DgnDbR db);
 }; // AlignmentProfileViewDefinition
 
 //=======================================================================================

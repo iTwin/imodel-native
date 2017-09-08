@@ -80,3 +80,13 @@ AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(DefinitionModelR 
     T_Super(T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, modelSelector))
     {
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        09/2017
+//---------------------------------------------------------------------------------------
+DgnViewId AlignmentProfileViewDefinition::QuerySystemViewId(DgnDbR db)
+    {
+    DictionaryModelCR dictionary = db.GetDictionaryModel();
+    const DgnElementId eid = db.Elements().QueryElementIdByCode(CreateCode(dictionary, SYSTEM_VIEW_NAME));
+    return DgnViewId(eid.GetValueUnchecked());
+    }
