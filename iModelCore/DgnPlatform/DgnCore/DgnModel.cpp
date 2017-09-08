@@ -690,7 +690,7 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
 
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     if (m_parentModelId.IsValid())
         val[json_parentModel()] = m_parentModelId.ToHexStr();
 
