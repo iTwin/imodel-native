@@ -220,17 +220,26 @@ BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry co
     }
 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value createScheduleJson(Schedule const& schedule, TimeSpanCR timeSpan)
+    {
+    Json::Value scheduleJson;
+                  
+    return scheduleJson;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR db, Utf8CP dateType)
     {
-    bvector<Schedule>       rawSchedules;
+    schedules = Json::arrayValue;
 
     for (auto const& planEntry : Planning::Plan::MakePlanIterator(markupDb))
         {
-        PlanCPtr    plan = Planning::Plan::Get(markupDb, planEntry.GetId());
+        PlanCPtr        plan = Planning::Plan::Get(markupDb, planEntry.GetId());
 
         if (!plan.IsValid())
             {
@@ -239,23 +248,16 @@ BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR
             }
         for (auto& baseline : plan->MakeBaselineIterator())
             {
-            Schedule rawSchedule;
+            Schedule        rawSchedule;
+            TimeSpanCP      timeSpan;
 
-            if (SUCCESS == extractRawSchedule(rawSchedule, planEntry, *plan, baseline, markupDb, db, dateType))
-                rawSchedules.push_back(rawSchedule);
+            if (nullptr != (timeSpan = plan->GetTimeSpan()) &&
+                SUCCESS == extractRawSchedule(rawSchedule, planEntry, *plan, baseline, markupDb, db, dateType))
+                schedules.append(createScheduleJson(rawSchedule, *timeSpan));
             }
         }
-    if (rawSchedules.empty())
-        return ERROR;
 
-#ifdef WIP
-    // TODO - Collate and share raw schedules among elements - for now create a seperate schedule for each.
-    schedules = Json::arrayValue;
-    for (auto& rawSchedule : rawSchedules)
-        schedules.append(extractScheduleJson(rawSchedule));
-#endif
-
-    return SUCCESS;
+    return 0 == schedules.size() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
