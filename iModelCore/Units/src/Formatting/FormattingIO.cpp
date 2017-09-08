@@ -10,10 +10,21 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+//StdFormatSet() { StdInit(); CustomInit(); }
+StdFormatSetP StdFormatSet::Set() 
+    { 
+    static StdFormatSetP set = nullptr; 
+    if (nullptr == set)
+        {
+        set = new StdFormatSet();
+        }
+    return set; 
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void StdFormatSet::StdInit()
+size_t StdFormatSet::StdInit()
     {
     m_formatSet.clear();
     m_customSet.clear();
@@ -100,20 +111,60 @@ void StdFormatSet::StdInit()
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
     AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
-
+    size_t s = m_formatSet.size();
+    return s;
     }
 
-//void StdFormatSet::CustomInit()
-//    {
-//    m_customSet.clear();
-//
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");
-//    AddFormat{"{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
-//    AddFormat{"{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
-//    AddFormat{"{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}");
-//
-//    
-//    }
+
+size_t StdFormatSet::CustomInit()
+    {
+    m_customSet.clear();
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); 
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4\", \"SpecName\" : \"Real4\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2u\", \"SpecName\" : \"Real2U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3u\", \"SpecName\" : \"Real3U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4u\", \"SpecName\" : \"Real4U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real6u\", \"SpecName\" : \"Real6U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2u\", \"SpecName\" : \"Stop100-2u\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4u\", \"SpecName\" : \"Stop100-2-4u\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2u\", \"SpecName\" : \"Stop1000-2u\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2\", \"SpecName\" : \"Stop100-2\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4\", \"SpecName\" : \"Stop100-2-4\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4\", \"SpecName\" : \"Stop1000-2-4\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2\", \"SpecName\" : \"Stop1000-2\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"realSign\", \"SpecName\" : \"SignedReal\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"NegativeParenths\"}, \"SpecAlias\" : \"realPth\", \"SpecName\" : \"ParenthsReal\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\"}, \"SpecAlias\" : \"fract\", \"SpecName\" : \"DefaultFractional\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fractu\", \"SpecName\" : \"DefaultFractionalU\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"fractSign\", \"SpecName\" : \"SignedFractional\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\"}, \"SpecAlias\" : \"sci\", \"SpecName\" : \"DefaultExp\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"sciSign\", \"SpecName\" : \"SignedExp\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"ScientificNorm\"}, \"SpecAlias\" : \"sciN\", \"SpecName\" : \"NormalizedExp\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"int\", \"SpecName\" : \"DefaultInt\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4\", \"SpecName\" : \"Fractional4\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8\", \"SpecName\" : \"Fractional8\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16\", \"SpecName\" : \"Fractional16\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32\", \"SpecName\" : \"Fractional32\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128\", \"SpecName\" : \"Fractional128\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4u\", \"SpecName\" : \"Fractional4U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8u\", \"SpecName\" : \"Fractional8U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16u\", \"SpecName\" : \"Fractional16U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32u\", \"SpecName\" : \"Fractional32U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128u\", \"SpecName\" : \"Fractional128U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"°\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dms\", \"SpecName\" : \"AngleDMS\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"°\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dms8\", \"SpecName\" : \"AngleDMS8\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"°\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dm8\", \"SpecName\" : \"AngleDM8\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
+    size_t s = m_customSet.size();
+    return s;
+    }
 
 //===================================================
 //

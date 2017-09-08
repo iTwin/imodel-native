@@ -189,6 +189,7 @@ private:
 
     UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
 public:
+    UnitSynonymMap() { m_unit = nullptr; m_synonym.clear(); }
     UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
     //! two comma separated names. The first name must be a registered Unit name.
     UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
@@ -196,6 +197,7 @@ public:
     bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
     Utf8CP GetSynonym() const { return m_synonym.c_str(); }
     UnitCP GetUnit() const { return m_unit; }
+    PhenomenonCP GetPhenomenon() const{ return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
     UNITS_EXPORT Json::Value ToJson();
     };
 
@@ -208,11 +210,11 @@ friend struct Expression;
 
 private:
     bvector<UnitCP> m_units;
-    bvector<UnitSynonymMap> m_altNames;
+    mutable bvector<UnitSynonymMap> m_altNames;
 
     void AddUnit(UnitCR unit);
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
-
+    void AddMap(UnitSynonymMapCR map);
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
@@ -236,9 +238,10 @@ public:
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName);
-    UNITS_EXPORT UnitCP FindSynonym(Utf8CP unitName);
+    UNITS_EXPORT UnitCP FindSynonym(Utf8CP synonym) const;
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
-    UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map);
+    UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
+    UNITS_EXPORT void AddSynonymMap(Json::Value jval) const;
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

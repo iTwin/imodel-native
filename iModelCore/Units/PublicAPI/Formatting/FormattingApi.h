@@ -658,22 +658,29 @@ private:
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr);
-    NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+  
 
-    void StdInit();
-    void CustomInit();
-    StdFormatSet() { StdInit(); }
-    static StdFormatSet& Set() { static StdFormatSet set; return set; }
-    
+    UNITS_EXPORT size_t StdInit();
+    UNITS_EXPORT size_t CustomInit();
+    StdFormatSet() { StdInit(); CustomInit(); }
+    static StdFormatSetP Set();
+
 public:
-
+    NumericFormatSpecCP AddCustomFormat(Utf8CP jsonString);
+    //static StdFormatSetP GetStdSet() { return Set(); }
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
     static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
-    static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
+    static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
     UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
+    UNITS_EXPORT static Utf8String CustomNameList(bool useAlias);
+    UNITS_EXPORT static bool AreSetsIdentical();
+    UNITS_EXPORT size_t GetFormatCount() { return m_formatSet.size(); }
+    UNITS_EXPORT size_t GetCustomCount() { return m_customSet.size(); }
+    UNITS_EXPORT static size_t AddFormatDef(bvector<NamedFormatSpecCP> *vec, NamedFormatSpecCP fmtP);
+
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
    // UNITS_EXPORT bvector<Json::Value> ToJson();
     };

@@ -1388,18 +1388,41 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
     return nfs->GetNumericSpec();
     }
 
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+NumericFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
     {
-    Json::Value jval = jsonString;
+    //Json::Value* jval = new Json::Value();
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+
+    //Json::Reader().Parse(jsonString, *jval);
+    //Json::Value jval(jsonString);
     NamedFormatSpecP nfs = new NamedFormatSpec(jval);
-    if (nullptr == nfs || nfs->IsProblem())
+    if (nullptr == nfs)
+        return nullptr;
+    if(nfs->IsProblem())
         {
-        if (nullptr != nfs)
-            delete nfs;
+        delete nfs;
         return nullptr;
         }
-    m_formatSet.push_back(nfs);
+    m_customSet.push_back(nfs);
     return nfs->GetNumericSpec();
+    }
+
+bool StdFormatSet::AreSetsIdentical()
+    {
+    size_t num = Set()->GetFormatCount();
+    size_t cust = Set()->GetCustomCount();
+    NamedFormatSpecCP s1, s2;
+    if(num == 0 || cust == 0 || num != cust)
+        return false;
+    for (size_t i = 0; i < num; i++)
+        {
+        s1 = Set()->m_formatSet[i];
+        s2 = Set()->m_customSet[i];
+        if (!s1->IsIdentical(*s2))
+            return false;
+        }
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1409,7 +1432,7 @@ NumericFormatSpecCP StdFormatSet::DefaultDecimal()
     {
     NamedFormatSpecCP fmtP;
 
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (PresentationType::Decimal == fmtP->GetPresentationType())
@@ -1423,8 +1446,8 @@ NumericFormatSpecCP StdFormatSet::DefaultDecimal()
 //----------------------------------------------------------------------------------------
 NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
     {
-    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (fmtP->HasName(name) || fmtP->HasAlias(name))
@@ -1437,9 +1460,9 @@ NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
 
 NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
     {
-    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
 
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (fmtP->HasName(name) || fmtP->HasAlias(name))
@@ -1453,10 +1476,10 @@ NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {
     bvector<Utf8CP> vec;
-    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
     Utf8CP name;
 
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (useAlias)
@@ -1471,8 +1494,8 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
 //bvector<Json::Value> StdFormatSet::ToJson()
 //    {
 //    bvector<Json::Value> vec;
-//    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
-//    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+//    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
+//    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
 //        {
 //        fmtP = *itr;
 //        if (useAlias)
@@ -1488,10 +1511,10 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
 Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
     {
     Utf8String  txt;
-    NamedFormatSpecCP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
     Utf8CP name;
     int i = 0;
-    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (useAlias)
@@ -1506,7 +1529,26 @@ Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
     return txt;
     }
 
-
+Utf8String StdFormatSet::CustomNameList(bool useAlias)
+    {
+    Utf8String  txt;
+    NamedFormatSpecCP fmtP = *Set()->m_customSet.begin();
+    Utf8CP name;
+    int i = 0;
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+        {
+        fmtP = *itr;
+        if (useAlias)
+            name = fmtP->GetName();
+        else
+            name = fmtP->GetAlias();
+        if (i > 0)
+            txt += " ";
+        txt += name;
+        i++;
+        }
+    return txt;
+    }
 
 void FormattingToken::Init()
     {

@@ -764,7 +764,7 @@ void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Ut
 void FormattingTestFixture::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
     Json::Value jval = nfs.ToJson(true);
-    //Utf8String str = jval.ToString();
+    Utf8String str = jval.ToString();
     NumericFormatSpec nfs1 = NumericFormatSpec(jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
     jval = nfs.ToJson(false);

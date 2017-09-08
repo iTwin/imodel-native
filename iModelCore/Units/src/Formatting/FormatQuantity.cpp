@@ -25,6 +25,8 @@ void CompositeValueSpec::Init()
     m_unitProx.Clear();
     m_problem = FormatProblemDetail();
     m_type = CompositeSpecType::Undefined;
+    m_includeZero = true;
+    m_spacer = "";
     }
 
 //---------------------------------------------------------------------------------------
@@ -376,12 +378,18 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
 
 bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
     {
-    if (!m_unitProx.IsIdentical(other.m_unitProx)) return false;
-    if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
-    if(m_type != other.m_type) return false;
-    if(m_includeZero != other.m_includeZero) return false;
-    if (!m_spacer.Equals(other.m_spacer)) return false;
-    return true;
+    int cod = 0;
+    while (cod == 0)
+        {
+        if (!m_unitProx.IsIdentical(other.m_unitProx)) { cod = 1; break;}
+        if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) { cod = 2; break; }
+        if (m_type != other.m_type) { cod = 3; break; }
+        if (m_includeZero != other.m_includeZero) { cod = 4; break; }
+        if (!m_spacer.Equals(other.m_spacer)) { cod = 5; break; }
+        break;
+        }
+    if (cod == 0) return true;
+    return false;
     }
 //===================================================
 //

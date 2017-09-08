@@ -567,4 +567,29 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
         }
     return nullptr;
     }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 
+size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
+    {
+    size_t num = 0;
+    UnitSynonymMap map;
+    //UnitSynonymMapCR mapP = map;
+    PhenomenonCP phP;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        JsonValueCR val = *iter;
+        map = UnitSynonymMap(val);
+        if (!map.IsMapEmpty())
+            {
+            phP = map.GetPhenomenon();
+            if (phP != nullptr)
+                {
+                phP->AddSynonymMap(map);
+                ++num;
+                }
+            }
+        }
+    return num;
+    }

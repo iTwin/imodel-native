@@ -423,13 +423,13 @@ Json::Value UnitSynonymMap::ToJson()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-UnitCP Phenomenon::FindSynonym(Utf8CP unitName)
+UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
     {
     if (m_altNames.size() > 0)  // there are some alternative names
         {
-        for (UnitSynonymMap* syn = m_altNames.begin(); syn != m_altNames.end(); syn++)
+        for (const UnitSynonymMap* syn = m_altNames.begin(); syn != m_altNames.end(); syn++)
             {
-            if (0 == strcmp(unitName, syn->GetSynonym()))
+            if (0 == BeStringUtilities::StricmpAscii(synonym, syn->GetSynonym()))
                 return syn->GetUnit();
             }
         }
@@ -451,6 +451,7 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName)
     return nullptr;
     }
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -462,10 +463,20 @@ void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     UnitSynonymMap map = UnitSynonymMap(unitName, synonym);
     m_altNames.push_back(map);
     }
-
-void Phenomenon::AddSynonymMap(UnitSynonymMapCR map)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+void Phenomenon::AddSynonymMap(UnitSynonymMapCR map) const
     {
     UnitCP un = FindSynonym(map.GetSynonym());
     if (nullptr == un)
         m_altNames.push_back(map);
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
+void AddSynonymMap(Json::Value jval)
+    {
+    UnitSynonymMap map = UnitSynonymMap(jval);
+
     }

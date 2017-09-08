@@ -1440,13 +1440,20 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
 
 bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
     {
-    if(!m_name.Equals(other.m_name)) return false; 
-    if(!m_alias.Equals(other.m_alias)) return false;
-    if(!m_numericSpec.IsIdentical(other.m_numericSpec)) return false;
-    if(!m_compositeSpec.IsIdentical(other.m_compositeSpec)) return false;
-    if(m_specType != other.m_specType) return false;
-    if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
-    return true;
+    int cod = 0;
+    while (cod = 0)
+        {
+        if (!m_name.Equals(other.m_name)) { cod = 1; break; }
+        if (!m_alias.Equals(other.m_alias)) { cod = 2; break; }
+        if (!m_numericSpec.IsIdentical(other.m_numericSpec)) { cod = 3; break; }
+        if (!m_compositeSpec.IsIdentical(other.m_compositeSpec)) { cod = 4; break; }
+        if (m_specType != other.m_specType) { cod = 5; break; }
+        if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) { cod = 6; break; }
+        break;
+        }
+    if(cod ==0)
+       return true;
+    return false;
     }
 
 
