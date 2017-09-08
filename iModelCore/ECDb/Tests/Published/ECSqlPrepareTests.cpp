@@ -82,9 +82,9 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
                   </ECSchema>)xml"));
 
     
-    for (SchemaItem const& schema : schemas)
+    for (SchemaItem const& schemaItem : schemas)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schema));
+        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
         ECN::ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(schema != nullptr);
 
