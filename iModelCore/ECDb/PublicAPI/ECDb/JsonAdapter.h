@@ -347,7 +347,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         ECDB_EXPORT bool GetRowAsIs(JsonValueR ecJsonRow) const;
 
         //! Gets the current row in the ImodelJs JSON wire format.
-        //! @param [out] ecJson ImodelJs JSON wire format representation of value
+        //! @param [out] jsonResult ImodelJs JSON wire format representation of value
         //! @return false if there was an error in retrieving/formatting values. true otherwise.
         ECDB_EXPORT bool GetRowForImodelJs(JsonValueR jsonResult);
 
