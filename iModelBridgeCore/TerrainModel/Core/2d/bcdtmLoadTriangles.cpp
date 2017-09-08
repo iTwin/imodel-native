@@ -854,7 +854,7 @@ int bcdtmInterruptLoad_trianglesDtmObjectOld
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long            n,p1,p2,p3,clPtr,numTriangles,numClipArrays,clipResult;
- long            startPnt,lastPnt,startTime,loadTime,leftMostPnt,numMarked,pointMark ;
+ long            startPnt,lastPnt,startTime,loadTime,leftMostPnt,numMarked,pointMark = 0 ;
  bool voidFlag, voidsInDtm = false;
  long            findType,trgPnt1,trgPnt2,trgPnt3 ;
  DPoint3d             trgPts[4] ;

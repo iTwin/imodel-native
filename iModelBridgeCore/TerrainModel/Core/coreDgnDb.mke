@@ -248,6 +248,8 @@ $(o)bcdtmDrainageTrace$(oext)     : $(coreDir)..\Drainage\bcdtmDrainageTrace.cpp
 
 $(o)bcdtmDrainageUtility$(oext)   : $(coreDir)..\Drainage\bcdtmDrainageUtility.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
+$(o)WaterAnalysis$(oext)            : $(baseDir)..\Drainage\WaterAnalysis.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(baseDir)..\Drainage\PublicApi\WaterAnalysis.h ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 
