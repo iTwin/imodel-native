@@ -675,7 +675,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
             }
         }
 
-    if (inputClass.GetBaseClasses().size() == 0 && inputClass.GetSource().GetMultiplicity().GetUpperLimit() == 1)
+    if (inputClass.GetBaseClasses().size() == 0 && inputClass.GetSource().GetMultiplicity().GetUpperLimit() == 1 && 0 == inputClass.GetPropertyCount(false))
         {
         // If there is no BisCore base class, then ECDb reports this error: It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema BisCore
         // The solution is: The only way it can be converted to a Logical FK relationship is to add a navigation property to this relationship on Target side. Navigation property is prerequisite for EndTable relationship.
