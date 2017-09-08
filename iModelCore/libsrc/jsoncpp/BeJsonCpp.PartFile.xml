@@ -19,7 +19,7 @@
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BeJsonCpp$(stlibext)</Libs>
-            <Libs>Delivery/$(libprefix)BeJsonCpp$(stlibdebugext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
             <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>
         </Bindings>
     </Part>

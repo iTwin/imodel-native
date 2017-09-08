@@ -11,6 +11,11 @@ GCC_DEFAULT_VISIBILITY=default
 # Ignore warnings in third-party code.
 IS_THIRD_PARTY_LIBRARY = 1
 
+# We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
+# Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.
+# This must be defined /before/ including mdl.mki.
+DEBUG_INFO_IN_OBJ = 1
+
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
@@ -19,7 +24,6 @@ JsonCppInclude      = $(baseDir)include/json/
 BeJsonCppSrc        = $(baseDir)
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
 appName             = BeJsonCpp
-CCompPDBName        = $(appName)
 o                   = $(OutputRootDir)build/$(appName)/
 
 always:
@@ -76,11 +80,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 CREATE_STATIC_LIBRARIES     = 1
 
 %include $(sharedMki)linkLibrary.mki
-
-%if (" " != $[@findstring VS, $(BUILD_TOOLSET)])
-    always:
-        python $(baseDir)UpdatePdbTime.py $(o)$(CCompPDBName).pdb $(BeJsonCppObjs)
-%endif
 
 $(BuildContext)Delivery/jsoncpp-license.txt : $(_MakeFilePath)LICENSE
     $(LinkFirstDepToFirstTarget)
