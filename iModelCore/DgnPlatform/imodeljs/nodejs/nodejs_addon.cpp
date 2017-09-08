@@ -849,10 +849,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
             GetECClassMetaData worker(db, *s, *c);
             worker.Execute();
-            if (worker._HadError())
-                info.GetReturnValue().Set(worker.CreateErrorObject());
-            else
-                info.GetReturnValue().Set(worker.CreateSuccessObject());
+            info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
             }
 
         void Execute() override
@@ -866,11 +863,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             m_status = IModelJs::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
             }
 
-        bool _GetResult(v8::Local<v8::Value>& result) override
-            {
-            result = Nan::New(m_metaDataJson.ToString().c_str()).ToLocalChecked();
-            return true;
-            }
+        bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_metaDataJson.ToString().c_str()).ToLocalChecked(); return true;}
         bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
 
@@ -977,14 +970,11 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         REQUIRE_ARGUMENT_STRING(0, props, DgnDbStatus::BadRequest);
 
         InsertElementWorker worker(db, props);
-
         worker.Execute();
-        if (worker._HadError())
-            info.GetReturnValue().Set(worker.CreateErrorObject());
-        else
-            info.GetReturnValue().Set(worker.CreateSuccessObject());
+        info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
         }
 
+    bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_out.ToString().c_str()).ToLocalChecked(); return true;}
     void Execute() override {m_status = IModelJs::InsertElement(m_out, GetDgnDb(), m_props);}
     bool _HadError() override {return m_status != DgnDbStatus::Success;}
     };

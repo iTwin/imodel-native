@@ -99,8 +99,8 @@ if __name__ == '__main__':
 
     os.makedirs(outdirParent)
 
-    mkiFilepath = os.path.join(outdirParent, 'npm_publish.mki')
-    mkiFile = open(mkiFilepath, 'w')
+    #mkiFilepath = os.path.join(outdirParent, 'npm_publish.mki')
+    #mkiFile = open(mkiFilepath, 'w')
 
     for versionsubdir in os.listdir(addonDir):    
 
@@ -115,14 +115,13 @@ if __name__ == '__main__':
 
         localpackagedir = os.path.join(outdirParent, localpackagename)
 
-        print 'Creating ' + localpackagedir + ' ...'
-
         if os.path.exists(localpackagedir):
             shutil.rmtree(localpackagedir)
 
         doCopy(productdir, localpackagedir, versionsubdir, platformandarch)
 
-        mkiFile.write('always:\n')
-        mkiFile.write('    npm publish ' + localpackagedir + '\n\n')
+        #mkiFile.write('always:\n')
+        #mkiFile.write('    npm publish ' + localpackagedir + '\n\n')
+        print 'npm publish ' + localpackagedir;
 
     exit(0)

@@ -10,12 +10,12 @@
 #include "ElementECInstanceAdapter.h"
 
 /*---------------------------------------------------------------------------------**//**
-* get the class id from a string in the form "Schema.ClassName"
+* get the class id from a string in the form "Schema:ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
     {
-    auto dot = name.find('.');
+    auto dot = name.find(':');
     if (Utf8String::npos == dot || name.length() <= dot + 1)
         return DgnClassId();
 
@@ -1243,6 +1243,36 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         m_relClassId = getClassId(db, val[json_relClass()].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
+    {
+    auto eclass = elem.GetElementClass();
+    
+    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
+    if (autoHandledProps.empty())
+        return;
+
+    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindId(1, elem.GetElementId());
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return;
+        }
+        
+    JsonECSqlSelectAdapter adapter(*stmt);
+    adapter.GetRowForImodelJs(elementJson);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1251,7 +1281,7 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     val[json_id()] = m_elementId.ToHexStr();
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
@@ -1266,6 +1296,8 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+
+    autoHandlePropertiesToJson(val, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
