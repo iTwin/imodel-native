@@ -1623,7 +1623,6 @@ void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, FeatureAttributesMapCR attributes)
     {
-
     for (auto& mesh : geometry.Meshes())
         {
         if (!mesh->Triangles().empty())
@@ -3793,6 +3792,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels, classifierModels;
 
+//#define PUBLISH_SCHEDULES
 #ifdef PUBLISH_SCHEDULES
     PublishScheduleSimulations();
 #endif
