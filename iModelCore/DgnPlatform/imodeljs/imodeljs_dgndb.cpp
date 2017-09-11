@@ -138,9 +138,7 @@ DgnDbStatus IModelJs::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP 
 
     auto& basesjson = mjson[json_baseClasses()] = Json::arrayValue;
     for (auto base: ecclass->GetBaseClasses())
-        {
         basesjson.append(base->GetFullName());
-        }
 
     customAttributesToJson(mjson[json_customAttributes()], *ecclass);
 
