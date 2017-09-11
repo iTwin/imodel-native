@@ -360,6 +360,7 @@ void RealityDataConsole::Usage()
     DisplayInfo("  ListAll             List every file beneath the current location (paged)\n");
     DisplayInfo("  Details             show the details for the location\n");
     DisplayInfo("  Stat                show enterprise statistics\n");
+    DisplayInfo("  AllStats            shows enterprise statistics, for all enterprises, for a given date\n");
     DisplayInfo("  Download            Download files from the current location on the server\n");
     DisplayInfo("  Upload              Upload files to the server\n");
     DisplayInfo("  FileAccess <opt>    Prints the URL to use if you wish to request an azure file access (option \"w\" for write access or \"r\" for read access)\n");

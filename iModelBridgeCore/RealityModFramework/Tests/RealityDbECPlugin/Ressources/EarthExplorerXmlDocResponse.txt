@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<eemetadata:scene link="https://earthexplorer.usgs.gov/metadata/3411/946127_A9/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:eemetadata="http://earthexplorer.usgs.gov/eemetadata.xsd">
+    <eemetadata:metadataFields>
+        <eemetadata:metadataField name="Entity ID" link="https://lta.cr.usgs.gov/high_res_ortho.html#entity_id_hro">
+            <eemetadata:metadataValue xsi:type="xsd:string">946127_A9</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Beginning  Date" link="https://lta.cr.usgs.gov/high_res_ortho.html#begin_date">
+            <eemetadata:metadataValue xsi:type="xsd:string">2000/03/01</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Ending Date" link="https://lta.cr.usgs.gov/high_res_ortho.html#end_date">
+            <eemetadata:metadataValue xsi:type="xsd:string">2000/03/01</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="EPSG" link="https://lta.cr.usgs.gov/high_res_ortho.html#map_projection">
+            <eemetadata:metadataValue xsi:type="xsd:string">3735</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Map Projection Description" link="https://lta.cr.usgs.gov/high_res_ortho.html#map_projection_description">
+            <eemetadata:metadataValue xsi:type="xsd:string">NAD83 / Ohio South (ftUS)</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="State/Province/Country" link="https://lta.cr.usgs.gov/high_res_ortho.html#state">
+            <eemetadata:metadataValue xsi:type="xsd:string">OH</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Datum" link="https://lta.cr.usgs.gov/high_res_ortho.html#datum">
+            <eemetadata:metadataValue xsi:type="xsd:string">NAD83</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Dataset" link="https://lta.cr.usgs.gov/high_res_ortho.html#dataset_name">
+            <eemetadata:metadataValue xsi:type="xsd:string">200003_dayton_oh_2ft_sp_clr</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Projection Zone" link="https://lta.cr.usgs.gov/high_res_ortho.html#projection_zone">
+            <eemetadata:metadataValue xsi:type="xsd:string">3402</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Sensor" link="https://lta.cr.usgs.gov/high_res_ortho.html#sensor">
+            <eemetadata:metadataValue xsi:type="xsd:string">UNKNOWN</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Sensor Type" link="https://lta.cr.usgs.gov/high_res_ortho.html#sensor_type">
+            <eemetadata:metadataValue xsi:type="xsd:string">Color</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Number of Bands" link="https://lta.cr.usgs.gov/high_res_ortho.html#num_bands">
+            <eemetadata:metadataValue xsi:type="xsd:string">3</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Vendor" link="https://lta.cr.usgs.gov/high_res_ortho.html#vendor">
+            <eemetadata:metadataValue xsi:type="xsd:string">UNKNOWN</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Resolution" link="https://lta.cr.usgs.gov/high_res_ortho.html#resolution">
+            <eemetadata:metadataValue xsi:type="xsd:string">2</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Units of Resolution" link="https://lta.cr.usgs.gov/high_res_ortho.html#units">
+            <eemetadata:metadataValue xsi:type="xsd:string">FEET</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Image Name" link="https://lta.cr.usgs.gov/high_res_ortho.html#image_name">
+            <eemetadata:metadataValue xsi:type="xsd:string">a-9</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Agency" link="https://lta.cr.usgs.gov/high_res_ortho.html#agency">
+            <eemetadata:metadataValue xsi:type="xsd:string">UNKNOWN</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Dataset Size" link="https://lta.cr.usgs.gov/high_res_ortho.html#dataset_size">
+            <eemetadata:metadataValue xsi:type="xsd:string">10178</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Center Latitude" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">39&amp;amp;deg;46'51.84&amp;quot;N</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Center Longitude" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">84&amp;amp;deg;20'42.12&amp;quot;W</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NW Corner Lat" link="https://lta.cr.usgs.gov/lidar.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">39&amp;amp;deg;47'11.00&amp;quot;N</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NW Corner Long" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">84&amp;amp;deg;21'21.06&amp;quot;W</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NE Corner Lat" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">39&amp;amp;deg;47'12.21&amp;quot;N</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NE Corner Long" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">84&amp;amp;deg;20'04.22&amp;quot;W</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SE Corner Lat" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">39&amp;amp;deg;46'32.69&amp;quot;N</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SE Corner Long" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">84&amp;amp;deg;20'03.18&amp;quot;W</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SW Corner Lat" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">39&amp;amp;deg;46'31.48&amp;quot;N</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SW Corner Long" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_degrees">
+            <eemetadata:metadataValue xsi:type="xsd:string">84&amp;amp;deg;21'20.01&amp;quot;W</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Center Latitude dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">39.7810677183931</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="Center Longitude dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">-84.345033411078</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NW Corner Lat dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">39.786388893851871</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NW Corner Long dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">-84.355851048266658</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NE Corner Lat dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">39.786725461382638</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="NE Corner Long dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">-84.334504883972897</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SE Corner Lat dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">39.775746490984744</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SE Corner Long dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">-84.334215773889412</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SW Corner Lat dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">39.775409975403505</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+        <eemetadata:metadataField name="SW Corner Long dec" link="https://lta.cr.usgs.gov/high_res_ortho.html#coordinates_decimal">
+            <eemetadata:metadataValue xsi:type="xsd:string">-84.355558576002977</eemetadata:metadataValue>
+        </eemetadata:metadataField>
+    </eemetadata:metadataFields>
+    <eemetadata:browseLinks>
+        <eemetadata:browse id="BROWSE_STANDARD_PATH" caption="Standard Browse" thumbLink="https://earthexplorer.usgs.gov/browse/thumbnails/hro/OH/2000/200003_dayton_oh_2ft_sp_clr/vol001/a-9.jpg">
+            <eemetadata:browseLink>https://earthexplorer.usgs.gov/browse/hro/OH/2000/200003_dayton_oh_2ft_sp_clr/vol001/a-9.jpg</eemetadata:browseLink>
+        </eemetadata:browse>
+    </eemetadata:browseLinks>
+    <eemetadata:overlayLinks>
+        <eemetadata:overlay id="BROWSE_STANDARD_PATH" caption="Standard Browse" type="image" thumbLink="https://earthexplorer.usgs.gov/browse/thumbnails/hro/OH/2000/200003_dayton_oh_2ft_sp_clr/vol001/a-9.jpg">
+            <eemetadata:overlayLink>https://earthexplorer.usgs.gov/browse/hro/OH/2000/200003_dayton_oh_2ft_sp_clr/vol001/a-9.jpg</eemetadata:overlayLink>
+        </eemetadata:overlay>
+    </eemetadata:overlayLinks>
+</eemetadata:scene>
