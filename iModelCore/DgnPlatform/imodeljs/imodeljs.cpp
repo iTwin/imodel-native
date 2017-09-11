@@ -633,8 +633,10 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
         return BE_SQLITE_ERROR;
 
     JsonReader reader(ecdb, ecClass->GetId());
-    BentleyStatus status = reader.ReadInstance(jsonInstance, instanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    if (status != BentleyStatus::SUCCESS)
+    if (!reader.IsValid())
+        return BE_SQLITE_ERROR;
+
+    if (SUCCESS != reader.Read(jsonInstance, instanceId))
         return BE_SQLITE_ERROR;
 
     jsonInstance["$ECInstanceId"] = BeInt64Id((int64_t) instanceId.GetValueUnchecked()).ToHexStr();
