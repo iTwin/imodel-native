@@ -983,11 +983,11 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
     BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
     if (ecProperty->GetIsPrimitive())
         return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
-    else if (ecProperty->GetIsStruct())
+    if (ecProperty->GetIsStruct())
         return JsonFromStruct(jsonValue, ecsqlValue);
-    else if (ecProperty->GetIsNavigation())
+    if (ecProperty->GetIsNavigation())
         return JsonFromNavigation(jsonValue, ecsqlValue);
-    else if (ecProperty->GetIsArray())
+    if (ecProperty->GetIsArray())
         return JsonFromArray(jsonValue, ecsqlValue, *ecProperty);
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
@@ -1025,8 +1025,8 @@ bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue cons
 
     if (isInstanceIdColumn)
         return JsonFromInstanceId(*currentCell, ecsqlValue);
-    else
-        return JsonFromPropertyValue(*currentCell, ecsqlValue);
+
+    return JsonFromPropertyValue(*currentCell, ecsqlValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1149,7 +1149,7 @@ bool JsonECSqlSelectAdapter::GetRowForImodelJs(JsonValueR jsonResult)
     if (!m_formatOptions.m_longsAreIds || (m_formatOptions.m_format != ECValueFormat::RawNativeValues))
         m_formatOptions = FormatOptions(ECValueFormat::RawNativeValues, nullptr, /*longsAreIds*/true);
 
-	int cols = m_ecsqlStatement.GetColumnCount();
+    int cols = m_ecsqlStatement.GetColumnCount();
 
     bool status = true;
     for (int i = 0; i < cols; ++i)
