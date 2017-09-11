@@ -1913,16 +1913,26 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
 
                 if (m_namedGroupOwnsMembers)
                     {
-                    DgnElementPtr childEdit = child->CopyForEdit();
-                    DgnClassId parentRelClassId = m_converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-                    childEdit->SetParentId(m_parentId, parentRelClassId);
-                    elementTable.Update(*childEdit);
+                    if (child->GetParentId() != m_parentId)
+                        {
+                        DgnElementPtr childEdit = child->CopyForEdit();
+                        DgnClassId parentRelClassId = m_converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+                        childEdit->SetParentId(m_parentId, parentRelClassId);
+                        elementTable.Update(*childEdit);
+                        }
                     return DgnV8Api::MemberTraverseStatus::Continue;
                     }
 
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
-                if (group.IsValid())
-                    ElementGroupsMembers::Insert(*group, *child, 0);
+                if (group.IsValid() && !ElementGroupsMembers::HasMember(*group, *child))
+                    {
+                    if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
+                        {
+                        Utf8String error;
+                        error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
+                        m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                        }
+                    }
 
                 return DgnV8Api::MemberTraverseStatus::Continue;
                 }
