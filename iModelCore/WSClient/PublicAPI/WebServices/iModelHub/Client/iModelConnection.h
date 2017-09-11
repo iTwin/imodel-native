@@ -321,7 +321,7 @@ private:
 
     WSQuery CreateChangeSetsAfterIdQuery(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
-    WSQuery CreateBetweenChangeSetsQuery(uint64_t fisrtchangeSetindex, uint64_t secondChangeSetIndex, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
     void SubscribeChangeSetsDownload();
 
     //! Sends a request from changeset.
@@ -521,12 +521,12 @@ public:
     IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get ChangeSets between two specified ChangeSets.
-    //! @param[in] fistChangeSetId If empty gets all changeSets before secondChangeSetId
+    //! @param[in] firstChangeSetId If empty gets all changeSets before secondChangeSetId
     //! @param[in] secondChangeSetId If empty gets all changeSets before firstChangeSetId.
     //! @param[in] fileId Id of the seed file changeSets belong to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of ChangeSet information as the result.
-    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetween(Utf8StringCR fistChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
     //! @param[in] changeSets Set of changeSets to download.
