@@ -743,7 +743,7 @@ static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP prefix)
     {
     if (nullptr != m_foreignKeyClass)
         {
@@ -761,7 +761,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP prefix)
     {
     if (nullptr != prefix && !m_groupingPropertyClassAlias.empty())
         prefix = m_groupingPropertyClassAlias.c_str();
@@ -777,7 +777,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix)
     {
     if (m_specification.GetRanges().empty())
         {
@@ -793,7 +793,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP prefix)
     {
     if (m_specification.GetRanges().empty())
         return Utf8PrintfString("group_concat(DISTINCT %s)", GroupingValueFieldName);
