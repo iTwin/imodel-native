@@ -16,6 +16,15 @@ struct BasicGeometryTests : public GeomTestFixture
 {
     DEFINE_T_SUPER(GeomTestFixture);
     DgnV8Api::MultilineStylePtr CreateSimpleStyle(WCharCP styleName, DgnFileR dgnFile) const;
+    virtual void SetUp() 
+        {
+        BentleyApi::BeFileName seedRepo;
+        BentleyApi::BeTest::GetHost().GetTempDir(seedRepo);
+        seedRepo.AppendToPath(L"BasicGeometryTests");
+        if (seedRepo.DoesPathExist())
+            BentleyApi::BeFileName::EmptyAndRemoveDirectory(seedRepo.GetName());
+        ConverterTestBaseFixture::SetUp();
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
