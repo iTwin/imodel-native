@@ -18,7 +18,7 @@ always:
     !~@mkdir $(o)
 
 #----------------------------------------------------------------------
-$(o)BeJpeg$(oext) : $(_MakeFilePath)BeJpeg.cpp $(_MakeFilePath)BeJpeg.h
+$(o)BeJpeg$(oext) : $(_MakeFilePath)BeJpeg.cpp $(_MakeFilePath)PublicAPI/BeJpeg/BeJpeg.h
 
 #----------------------------------------------------------------------
 LIB_NAME = $(AppName)

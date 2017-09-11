@@ -6,11 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "turbojpeg.h"
+#include "libjpeg-turbo/turbojpeg.h"
 
 #include <stdlib.h>
 
-#include "BeJpeg.h"
+#include "BeJpeg/BeJpeg.h"
 
 #include <Bentley/bvector.h>
 
@@ -55,7 +55,7 @@ BentleyStatus BeJpegDecompressor::ReadHeader(uint32_t& width, uint32_t& height, 
     {
     int tjWidth, tjHeight, tjjpegSubsamp;
 
-    if (0 == tjDecompressHeader2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), jpegBufferSize, &tjWidth, &tjHeight, &tjjpegSubsamp))
+    if (0 == tjDecompressHeader2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), (unsigned long)jpegBufferSize, &tjWidth, &tjHeight, &tjjpegSubsamp))
         {
         width = (uint32_t)tjWidth;
         height = (uint32_t)tjHeight;
@@ -74,7 +74,7 @@ BentleyStatus BeJpegDecompressor::Decompress(Byte* pOutBuffer, size_t outBufferS
     if (-1 == tjPixeltype)
         return ERROR;
 
-    return tjDecompress2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), jpegBufferSize, pOutBuffer, 0, 0, 0, tjPixeltype, BeJpegBottomUp::No==bottomUp ? 0 : TJFLAG_BOTTOMUP) ? ERROR : SUCCESS;
+    return tjDecompress2(m_jpegImpl, const_cast<Byte*>(jpegBuffer), (unsigned long)jpegBufferSize, pOutBuffer, 0, 0, 0, tjPixeltype, BeJpegBottomUp::No==bottomUp ? 0 : TJFLAG_BOTTOMUP) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,7 +120,7 @@ BentleyStatus BeJpegCompressor::Compress(ByteStream& outBuf, uint8_t const* srcB
     unsigned long jpegSize = 0;
     Byte* jpegBuf = nullptr;
 
-    if (0 != tjCompress2(m_jpegImpl, const_cast<Byte*>(srcBuffer), width, pitch, height, tjPixeltype, &jpegBuf, &jpegSize, subsamp, quality, flags) || nullptr == jpegBuf)
+    if (0 != tjCompress2(m_jpegImpl, const_cast<Byte*>(srcBuffer), width, (unsigned long)pitch, height, tjPixeltype, &jpegBuf, &jpegSize, subsamp, quality, flags) || nullptr == jpegBuf)
         return BSIERROR;
 
     outBuf.SaveData(jpegBuf, jpegSize);
