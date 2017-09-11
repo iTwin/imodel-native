@@ -654,8 +654,152 @@ TEST_F(ECConversionTests, UpdateWithNewSchema)
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
     v8editor.Save();
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid);
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+    v8editor.Save();
 
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    EXPECT_EQ(1, m_count);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingOldSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaReferencingOldSchemas.ibim", L"Test3d.dgn", false);
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Foo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+            <ECClass typeName="Child" isDomainClass="True">
+                <BaseClass>ts:Foo</BaseClass>
+                <ECProperty propertyName="Bar" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
+
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingNewSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaReferencingNewSchemas.ibim", L"Test3d.dgn", false);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Foo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+            <ECClass typeName="Child" isDomainClass="True">
+                <BaseClass>ts:Foo</BaseClass>
+                <ECProperty propertyName="Bar" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
+
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
+    {
+    LineUpFiles(L"UpdateWithNewSchemaAndChangedOldSchemas.ibim", L"Test3d.dgn", false);
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Foo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    Utf8CP testSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="RefSchema" version="1.1" prefix="ts" />
+            <ECClass typeName="Child" isDomainClass="True">
+                <BaseClass>ts:Foo</BaseClass>
+                <ECProperty propertyName="Bar" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECObjectsV8::ECSchemaPtr schema2;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema2, testSchema, *schemaContext));
+
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    v8editor.Save();
+
+    {
+    ECObjectsV8::ECClassP newClass;
+    refSchema->CreateClass(newClass, L"NewClass");
+    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*refSchema, *(v8editor.m_file)));
+    v8editor.Save();
+    }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
     }
 
 //---------------------------------------------------------------------------------------

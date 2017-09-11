@@ -599,8 +599,10 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
     ProcessConstraints(inputClass, context.GetDefaultConstraintClass(), context);
 
     bool ignoreBisBase = false;
-    ECN::SchemaKey conversionKey(Utf8String(inputClass.GetSchema().GetName().c_str()).append("_DgnDbSync").c_str(), 1, 0);
-    ECN::ECSchemaPtr conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
+    ECN::SchemaKey conversionKey(Utf8String(inputClass.GetSchema().GetName().c_str()).append("_DgnDbSync").c_str(), inputClass.GetSchema().GetVersionRead(), inputClass.GetSchema().GetVersionMinor());
+    ECN::ECSchemaPtr conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::LatestReadCompatible);
+    if (!conversionSchema.IsValid())
+        conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
 
     if (conversionSchema.IsValid())
         {
