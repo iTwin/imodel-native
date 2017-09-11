@@ -95,10 +95,11 @@ public:
 //=======================================================================================
 enum class ContentFlags
     {
-    KeysOnly =      1,      //!< Each content record has only ECInstanceKey and no data
-    ShowImages =    1 << 1, //!< Each content record additionally has an image id
-    ShowLabels =    1 << 2, //!< Each content record additionally has a label
-    MergeResults =  1 << 3, //!< All content records are merged into a single record
+    KeysOnly =       1,      //!< Each content record has only ECInstanceKey and no data
+    ShowImages =     1 << 1, //!< Each content record additionally has an image id
+    ShowLabels =     1 << 2, //!< Each content record additionally has a label
+    MergeResults =   1 << 3, //!< All content records are merged into a single record
+    DistinctValues = 1 << 4, //!< Content has only distinct values
     };
 
 //=======================================================================================
@@ -816,6 +817,8 @@ public:
     bool ShowLabels() const {return HasContentFlag(ContentFlags::ShowLabels);}
     //! Should the content be merged into a single record.
     bool MergeResults() const {return HasContentFlag(ContentFlags::MergeResults);}
+    //! Should only distinct values be returned
+    bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
 };
 
 //=======================================================================================
@@ -888,7 +891,9 @@ private:
     
 //__PUBLISH_SECTION_END__
 public:
+    rapidjson::Document const& GetValues() const {return m_values;}
     rapidjson::Document& GetValues() {return m_values;}
+    rapidjson::Document const& GetDisplayValues() const {return m_displayValues;}
     rapidjson::Document& GetDisplayValues() {return m_displayValues;}
     bvector<Utf8String>& GetMergedFieldNames() {return m_mergedFieldNames;}
     FieldPropertyInstanceKeyMap& GetFieldInstanceKeys() {return m_fieldPropertyInstanceKeys;}

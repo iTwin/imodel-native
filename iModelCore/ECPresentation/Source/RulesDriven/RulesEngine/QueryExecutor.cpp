@@ -554,11 +554,15 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     ContentDescriptorCR descriptor = m_query->GetContract()->GetDescriptor();
     bool resultsMerged = (0 != ((int)ContentFlags::MergeResults & descriptor.GetContentFlags()));
     int columnIndex = 0;
+    uint64_t contractId = 0;
 
-    uint64_t contractId = statement.GetValueUInt64(columnIndex++);
-
-    bvector<ECInstanceKey> primaryRecordKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
-    BeAssert(1 == primaryRecordKeys.size() || resultsMerged);
+    bvector<ECInstanceKey> primaryRecordKeys;
+    if (!descriptor.OnlyDistinctValues())
+        {
+        contractId = statement.GetValueUInt64(columnIndex++);
+        primaryRecordKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
+        BeAssert(1 == primaryRecordKeys.size() || resultsMerged);
+        }
     
     ContentValueAppender values;
     FieldValueInstanceKeyReader fieldValueInstanceKeyReader(primaryRecordKeys);

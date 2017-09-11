@@ -227,6 +227,7 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
     // filtering
     if (!ovr.GetFilterExpression().empty())
         {
+        query = CreateNestedQuery(*query);
         Utf8String ecsqlExpression = "(";
         ecsqlExpression.append(ECExpressionsHelper(ecexpressionsCache).ConvertToECSql(ovr.GetFilterExpression()));
         ecsqlExpression.append(")");

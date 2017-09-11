@@ -9,6 +9,7 @@
 #include <ECObjects/ECExpressions.h>
 #include <ECPresentation/NavNode.h>
 #include <ECDb/ECDbTypes.h>
+#include "ECExpressionOptimizer.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -108,11 +109,15 @@ struct ECExpressionsCache
 {
 private:
     bmap<Utf8String, NodePtr> m_cache;
+    bmap<Utf8String, OptimizedExpressionPtr> m_optimizedCache;
 
 public:
     ECExpressionsCache() {}
     NodePtr Get(Utf8CP expression) const;
+    OptimizedExpressionPtr GetOptimized(Utf8CP expression) const;
+    bool HasOptimizedExpression(Utf8CP expression) const;
     void Add(Utf8CP expression, Node&);
+    void Add(Utf8CP expression, OptimizedExpression&);
     void Clear();
 };
 
@@ -141,6 +146,19 @@ public:
     ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
     ECPRESENTATION_EXPORT Utf8String ConvertToECSql(Utf8StringCR expression);
     ECPRESENTATION_EXPORT bvector<Utf8String> GetUsedClasses(Utf8StringCR expression);
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                08/2017
++===============+===============+===============+===============+===============+======*/
+struct ECExpressionOptimizer
+{
+private:
+    ECExpressionsCache& m_expressionsCache;
+public:
+    ECExpressionOptimizer(ECExpressionsCache& cache) : m_expressionsCache(cache)
+        {}
+    ECPRESENTATION_EXPORT OptimizedExpressionPtr GetOptimizedExpression(Utf8CP expression);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

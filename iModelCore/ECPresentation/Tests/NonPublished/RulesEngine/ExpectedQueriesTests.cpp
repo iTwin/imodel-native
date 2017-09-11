@@ -1536,13 +1536,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery1->Where("[this].[Description] LIKE 'Test'", BoundQueryValuesList(), true);
+        nestedQuery1->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
         nestedQuery2->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
-        nestedQuery2->Where("[this].[Description] LIKE 'Test'", BoundQueryValuesList(), true);
+        nestedQuery2->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1756,7 +1756,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b2_Class2, false, "this");
-        nestedQuery->Where("[this].[Name] LIKE 'Test'", BoundQueryValuesList());
+        nestedQuery->Where("CAST([this].[Name] AS TEXT) LIKE 'Test'", BoundQueryValuesList());
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -4915,6 +4915,30 @@ void ExpectedQueries::RegisterExpectedQueries()
 #endif
 
         RegisterQuery("CreatesNestedContentFieldsForXToManyRelatedInstanceProperties", *query);
+        }
+
+    // FilterExpressionQueryTest
+        {
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("BoolProperty")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("DoubleProperty")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("LongProperty")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("DateProperty")));
+
+        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        nestedQuery->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *nestedQuery), "this");
+        nestedQuery->From(ret_Widget, false, "this");
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectAll();
+        query->From(*nestedQuery, "");
+        query->Where("([Widget_MyID] = 'WidgetId')", BoundQueryValuesList());
+        RegisterQuery("FilterExpressionQueryTest", *query);
         }
     }
 

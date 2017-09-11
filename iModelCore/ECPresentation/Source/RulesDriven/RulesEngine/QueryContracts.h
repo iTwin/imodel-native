@@ -351,7 +351,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT BaseECClassGroupingNodesQueryContract(ECClassId baseClassId);
-    Utf8String GetDisplayLabelClause(Utf8CP) const;
+    Utf8String GetDisplayLabelClause(Utf8CP);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::BaseClassGroupingNodes;}
@@ -403,10 +403,10 @@ private:
 private:
     ECPRESENTATION_EXPORT ECPropertyGroupingNodesQueryContract(ECClassCR, ECPropertyCR, Utf8String, PropertyGroupCR, ECClassCP);
     static Utf8String GetGroupingValueClause(ECPropertyCR);
-    Utf8String GetDisplayLabelClause(Utf8CP) const;
-    Utf8String GetImageIdClause(Utf8CP) const;
-    Utf8String GetGroupingValuesClause(Utf8CP) const;
-    Utf8String GetPropertyValueClause(Utf8CP) const;
+    Utf8String GetDisplayLabelClause(Utf8CP);
+    Utf8String GetImageIdClause(Utf8CP);
+    Utf8String GetGroupingValuesClause(Utf8CP);
+    Utf8String GetPropertyValueClause(Utf8CP);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::PropertyGroupingNodes;}
@@ -461,7 +461,7 @@ private:
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&);
     PresentationQueryContractFunctionField const& GetDisplayLabelField() const;
-    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&) const;
+    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(ContentDescriptor::ECInstanceKeyField const&, bool isMerging) const;
 

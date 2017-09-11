@@ -348,8 +348,9 @@ private:
     ECDbCR m_connection;
     INavNodeLocaterCR m_locater;
     NavNodeKeyCP m_key;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key) 
-        : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key) 
+    SymbolExpressionContextPtr m_context;
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
+        : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
@@ -358,6 +359,9 @@ public:
         }
     virtual ExpressionContextPtr _GetContext() override
         {
+        if (m_context.IsValid())
+            return m_context;
+
         NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(*m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
@@ -366,9 +370,9 @@ public:
             }
 
         NodeSymbolsProvider nodeSymbols(m_rootContext.AddContext(*new NodeSymbolsProvider::Context(m_connection, node.get())));
-        SymbolExpressionContextPtr context = SymbolExpressionContext::Create(nullptr);
-        nodeSymbols.PublishSymbols(*context, bvector<Utf8String>());
-        return context;
+        m_context = SymbolExpressionContext::Create(nullptr);
+        nodeSymbols.PublishSymbols(*m_context, bvector<Utf8String>());
+        return m_context;
         }
 };
 
@@ -685,6 +689,7 @@ private:
     bool m_ignoreArguments;
     bool m_inStructProperty;
     ExpressionToken m_previousToken;
+    Utf8String m_previousNode;
 
 private:
     /*-----------------------------------------------------------------------------**//**
@@ -730,7 +735,15 @@ private:
     void Append(Utf8StringCR value)
         {
         if (!m_ecsql.empty() && NeedsSpaceAfter(m_ecsql) && NeedsSpaceBefore(value))
+            {
             m_ecsql.append(" ");
+            m_previousNode.append(" ");
+            }
+
+        if (m_inStructProperty)
+            m_previousNode.append(value);
+        else
+            m_previousNode = value;
         m_ecsql.append(value);
         }
     
@@ -740,10 +753,31 @@ private:
     void Append(Utf8StringCR value, bool prependSpace)
         {
         if (!m_ecsql.empty() && prependSpace)
+            {
             m_ecsql.append(" ");
+            m_previousNode.append(" ");
+            }
+
+        if (m_inStructProperty)
+            m_previousNode.append(value);
+        else
+            m_previousNode = value;
         m_ecsql.append(value);
         }
     
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Aidas.Vaiksnoras            08/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleLikeToken(NodeCR node)
+        {
+        Utf8String::size_type previousNode= m_ecsql.rfind(m_previousNode);
+        if (previousNode == Utf8String::npos)
+            return;
+        m_ecsql.insert(previousNode, "CAST(");
+        Append("AS TEXT)");
+        Append("LIKE");
+        }
+   
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1149,7 +1183,7 @@ public:
                 Append("TRUE");
                 break;
             case TOKEN_Like:
-                Append("LIKE");
+                HandleLikeToken(node);
                 break;
             case TOKEN_Concatenate:
                 Append("||");
@@ -1311,9 +1345,30 @@ NodePtr ECExpressionsCache::Get(Utf8CP expression) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OptimizedExpressionPtr ECExpressionsCache::GetOptimized(Utf8CP expression) const
+    {
+    auto iter = m_optimizedCache.find(expression);
+    if (m_optimizedCache.end() == iter)
+        return nullptr;
+    return iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return m_optimizedCache.end() != m_optimizedCache.find(expression);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECExpressionsCache::Add(Utf8CP expression, Node& node) {m_cache.Insert(expression, &node);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) { m_optimizedCache.Insert(expression, &node); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017

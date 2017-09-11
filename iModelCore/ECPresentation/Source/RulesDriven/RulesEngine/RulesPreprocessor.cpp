@@ -9,7 +9,6 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "RulesPreprocessor.h"
 #include "ExtendedData.h"
-#include "ECExpressionContextsProvider.h"
 #include "LoggingHelper.h"
 
 //This constant is used to identify what latest major version is supported by this particular
@@ -155,10 +154,17 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(RuleSetLocaterM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RulesPreprocessor::VerifyCondition(Utf8CP condition, ExpressionContextR context, ECExpressionsCache& expressionsCache)
+bool RulesPreprocessor::VerifyCondition(Utf8CP condition, ExpressionContextR context, ECExpressionsCache& expressionsCache, OptimizedExpressionsParameters const* optimizedParams = nullptr)
     {
     if (nullptr == condition || 0 == *condition)
         return true;
+
+    if (nullptr != optimizedParams)
+        {
+        OptimizedExpressionPtr optimizedExp = ECExpressionOptimizer(expressionsCache).GetOptimizedExpression(condition);
+        if (optimizedExp.IsValid())
+            return optimizedExp->Value(*optimizedParams);
+        }
 
     NodePtr node = ECExpressionsHelper(expressionsCache).GetNodeFromExpression(condition);
 
@@ -650,13 +656,14 @@ ContentRuleSpecificationsList RulesPreprocessor::GetContentSpecifications(Conten
             ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName().c_str(),
                 params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), selectedNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
             ExpressionContextPtr context = ECExpressionContextsProvider::GetContentRulesContext(contextParams);
+            OptimizedExpressionsParameters optimizedParams(params.GetConnection(), selectedNodeKey.get(), params.GetPreferredDisplayType().c_str());
 
             for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
                 {
                 if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(selectedNodeKey.get()))
                     continue;
 
-                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), *context, params.GetECExpressionsCache()))
+                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), *context, params.GetECExpressionsCache(), &optimizedParams))
                     {
                     auto iter = specs.find(*rule);
                     if (specs.end() == iter)

@@ -122,7 +122,7 @@ void ContentDescriptor::RemoveField(Field const& field)
 void ContentDescriptor::RemoveField(Utf8CP name)
     {
     int index = GetFieldIndex(name);
-    if (index > 0)
+    if (index >= 0)
         RemoveField((size_t)index);
     }
 /*---------------------------------------------------------------------------------**//**
