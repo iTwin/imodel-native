@@ -16,6 +16,7 @@ USING_NAMESPACE_BENTLEY_DGN
 static int s_parasolidInitialized = 0;
 static bool s_usingExternalFrustrum = false;
 
+#define PARTITION_ROLLBACK_REQUIRED     // Using parasolid from multiple threads (as in tilepublishing) requires partitioned rollback for error handling.
 #if defined (PARTITION_ROLLBACK_REQUIRED)
 
 #define PPI_DELTA_DATA_BLOCK_SIZE 10240

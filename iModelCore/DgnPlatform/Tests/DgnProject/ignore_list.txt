@@ -428,19 +428,6 @@ DgnDbTest.CreateTrackedDgnDb
     # 
     # [  FAILED  ] ECInstancesCompatibility.ModifyPreservedBim (581 ms)
 
-#DgnMarkupProjectTest.CreateDgnMarkupProject
-    # bim0200holdouts, x64, DEBUG
-    # [ RUN      ] DgnMarkupProjectTest.CreateDgnMarkupProject
-    # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb F:\Bim0200Holdouts\out\Winx64\Product\DgnPlatform-Gtest\run\Output\CreateDgnMarkupProject.markupdb
-    # 2017-06-05 14:25:04,083 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\PropertyMap.cpp(107): ASSERTION FAILURE (0): false && "PropertyMap with same name or may be different case already exist" 
-    # 
-    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\PropertyMap.cpp(107): ASSERTION FAILURE (0): false && "PropertyMap with same name or may be different case already exist" 
-    # F:\Bim0200Holdouts\src\DgnPlatform\Tests\DgnProject\Published\MarkupProject_Test.cpp(42): error: Value of: status == BE_SQLITE_OK
-    # Actual: false
-    # Expected: true
-    # [  FAILED  ] DgnMarkupProjectTest.CreateDgnMarkupProject (3680 ms)
-
 #SchemaVersionTestFixture.ImportDomainSchemas
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] SchemaVersionTestFixture.ImportDomainSchemas

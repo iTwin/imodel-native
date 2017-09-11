@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                                                                                                                          class
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -1623,7 +1623,6 @@ void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, FeatureAttributesMapCR attributes)
     {
-
     for (auto& mesh : geometry.Meshes())
         {
         if (!mesh->Triangles().empty())
@@ -3384,7 +3383,7 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
     {
-    return nullptr != GetDgnDb().GeoLocation().GetDgnGCS();
+    return m_isGeoLocated;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3416,7 +3415,9 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
-    if (nullptr == dgnGCS)
+    // Some user might want to override the DgnGCS by specifying a geolocation on cmd line...
+    m_isGeoLocated = nullptr != dgnGCS || nullptr != geoLocation;
+    if (nullptr == dgnGCS || nullptr != geoLocation)
         {
         double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
 
@@ -3793,6 +3794,11 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels, classifierModels;
 
+//#define PUBLISH_SCHEDULES
+#ifdef PUBLISH_SCHEDULES
+    PublishScheduleSimulations();
+#endif
+
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);
 
@@ -3927,7 +3933,8 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
         }
 
     WString         modelRootName = GetRootName(modelId, classifier);
-    BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
+    WString         modelDir      = L"TileSets\\" + m_rootName;
+    BeFileName      tilesetFileName (nullptr, modelDir.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();
 
     utf8FileName.ReplaceAll("\\", "//");
@@ -4291,8 +4298,6 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
         if (selector.IsValid())
             {
             auto                cats = selector->GetCategories();
-#define USAGE_TEST
-#ifdef USAGE_TEST
             DgnCategoryIdSet    onInAnyViewCats;
 
             for (auto const& cat : cats)
@@ -4300,9 +4305,6 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
                     onInAnyViewCats.insert(cat);
 
             selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);
-#else
-            selectorsJson[selectorId.first.ToString()] = IdSetToJson(cats);
-#endif
             allCategories.insert(cats.begin(), cats.end());
             }
         }

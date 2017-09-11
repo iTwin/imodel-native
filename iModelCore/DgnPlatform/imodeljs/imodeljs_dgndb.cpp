@@ -12,18 +12,30 @@
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
 
-BE_JSON_NAME(id)
+BE_JSON_NAME(baseClasses)
 BE_JSON_NAME(code)
+BE_JSON_NAME(customAttributes)
+BE_JSON_NAME(description)
+BE_JSON_NAME(direction)
+BE_JSON_NAME(displayLabel)
+BE_JSON_NAME(ecclass)
+BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-static void ecclassToJson(JsonValueR json, ECN::ECClassCR ecclass)
-    {
-    json["name"]   = ecclass.GetName();
-    json["schema"] = ecclass.GetSchema().GetName();
-    }
+BE_JSON_NAME(id)
+BE_JSON_NAME(isCustomHandled)
+BE_JSON_NAME(kindOfQuantity)
+BE_JSON_NAME(maxOccurs)
+BE_JSON_NAME(maximumLength)
+BE_JSON_NAME(maximumValue)
+BE_JSON_NAME(minOccurs)
+BE_JSON_NAME(minimumLength)
+BE_JSON_NAME(minimumValue)
+BE_JSON_NAME(modifier)
+BE_JSON_NAME(primitiveType)
+BE_JSON_NAME(properties)
+BE_JSON_NAME(readOnly)
+BE_JSON_NAME(relationshipClass)
+BE_JSON_NAME(structName)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
@@ -41,33 +53,29 @@ static Utf8CP modifierToString(ECN::ECClassModifier m)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static void getPrimitiveECPropertyMetaData(JsonValueR parentJson, ECN::PrimitiveECPropertyCR prop)
+static void getPrimitiveECPropertyMetaData(JsonValueR json, ECN::PrimitiveECPropertyCR prop)
     {
-    auto& json = parentJson["primitiveECProperty"];
-    json["type"] = prop.GetTypeName();
-    SET_IF_NOT_EMPTY_STR(json["extendedType"], prop.GetExtendedTypeName());
+    json[json_primitiveType()] = prop.GetType();
+    SET_IF_NOT_EMPTY_STR(json[json_extendedType()], prop.GetExtendedTypeName());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static void getNavigationECPropertyMetaData(JsonValueR parentJson, ECN::NavigationECPropertyCR navProp)
+static void getNavigationECPropertyMetaData(JsonValueR json, ECN::NavigationECPropertyCR navProp)
     {
-    auto& json = parentJson["navigationECProperty"];
-    json["type"] = navProp.GetTypeName();
-    json["direction"] = (ECN::ECRelatedInstanceDirection::Forward == navProp.GetDirection())? "Forward": "Backward";
+    json[json_direction()] = (ECN::ECRelatedInstanceDirection::Forward == navProp.GetDirection())? "Forward": "Backward";
     auto rc = navProp.GetRelationshipClass();
     if (nullptr != rc)
-        ecclassToJson(json["relationshipClass"], *rc);
+        json[json_relationshipClass()] = rc->GetFullName();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static void getStructECPropertyMetaData(JsonValueR parentJson, ECN::StructECPropertyCR structProp)
+static void getStructECPropertyMetaData(JsonValueR json, ECN::StructECPropertyCR structProp)
     {
-    auto& json = parentJson["structECProperty"];
-    json["type"] = structProp.GetTypeName();
+    json[json_structName()] = structProp.GetType().GetFullName();
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,30 +83,28 @@ static void getStructECPropertyMetaData(JsonValueR parentJson, ECN::StructECProp
 //---------------------------------------------------------------------------------------
 static void getArrayECPropertyMetaData(JsonValueR json, ECN::ArrayECPropertyCR arrayProp)
     {
-    json["minOccurs"] = arrayProp.GetMinOccurs();
+    json[json_minOccurs()] = arrayProp.GetMinOccurs();
     if (!arrayProp.IsStoredMaxOccursUnbounded())
-        json["maxOccurs"] = arrayProp.GetStoredMaxOccurs();
+        json[json_maxOccurs()] = arrayProp.GetStoredMaxOccurs();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static void getPrimitiveArrayECPropertyMetaData(JsonValueR parentJson, ECN::PrimitiveArrayECPropertyCR arrayProp)
+static void getPrimitiveArrayECPropertyMetaData(JsonValueR json, ECN::PrimitiveArrayECPropertyCR arrayProp)
     {
-    auto& json = parentJson["primitiveArrayECProperty"];
     getArrayECPropertyMetaData(json, arrayProp);
-    json["type"] = arrayProp.GetTypeName();
-    SET_IF_NOT_EMPTY_STR(json["extendedType"], arrayProp.GetExtendedTypeName());
+    json[json_primitiveType()] = arrayProp.GetPrimitiveElementType();
+    SET_IF_NOT_EMPTY_STR(json[json_extendedType()], arrayProp.GetExtendedTypeName());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static void getStructArrayECPropertyMetaData(JsonValueR parentJson, ECN::StructArrayECPropertyCR arrayProp)
+static void getStructArrayECPropertyMetaData(JsonValueR json, ECN::StructArrayECPropertyCR arrayProp)
     {
-    auto& json = parentJson["structArrayECProperty"];
+    json[json_structName()] = arrayProp.GetStructElementType().GetFullName();
     getArrayECPropertyMetaData(json, arrayProp);
-    json["type"] = arrayProp.GetTypeName();
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,8 +116,8 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
         {
         Json::Value jca(Json::objectValue);
         ECN::ECValuesCollection caProps(*ca);
-        IModelJs::GetECValuesCollectionAsJson(jca["properties"], caProps);
-        ecclassToJson(jca["ecclass"], ca->GetClass());
+        IModelJs::GetECValuesCollectionAsJson(jca[json_properties()], caProps);
+        jca[json_ecclass()] = ca->GetClass().GetFullName();
         jcas.append(jca);
         }
     }
@@ -119,28 +125,26 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
+DgnDbStatus IModelJs::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
     {
     auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName);
     if (nullptr == ecclass)
-        return BSISUCCESS;      // This is not an exception. It just returns an empty result.
+        return DgnDbStatus::Success;    // This is not an exception. It just returns an empty result.
 
-    ecclassToJson(mjson, *ecclass);
-    SET_IF_NOT_EMPTY_STR(mjson["description"], ecclass->GetDescription());
-    SET_IF_NOT_NULL_STR (mjson["modifier"], modifierToString(ecclass->GetClassModifier()));
-    SET_IF_NOT_EMPTY_STR(mjson["displayLabel"], ecclass->GetDisplayLabel());
+    mjson[json_ecclass()] = ecclass->GetFullName();
+    SET_IF_NOT_EMPTY_STR(mjson[json_description()], ecclass->GetDescription());
+    SET_IF_NOT_NULL_STR (mjson[json_modifier()], modifierToString(ecclass->GetClassModifier()));
+    SET_IF_NOT_EMPTY_STR(mjson[json_displayLabel()], ecclass->GetDisplayLabel());
 
-    auto& basesjson = mjson["baseClasses"] = Json::arrayValue;
+    auto& basesjson = mjson[json_baseClasses()] = Json::arrayValue;
     for (auto base: ecclass->GetBaseClasses())
         {
-        Json::Value basejson(Json::objectValue);
-        ecclassToJson(basejson, *base);
-        basesjson.append(basejson);
+        basesjson.append(base->GetFullName());
         }
 
-    customAttributesToJson(mjson["customAttributes"], *ecclass);
+    customAttributesToJson(mjson[json_customAttributes()], *ecclass);
 
-    auto& propsjson = mjson["properties"] = Json::objectValue;
+    auto& propsjson = mjson[json_properties()] = Json::objectValue;
 
     auto customHandledProperty = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
 
@@ -149,23 +153,24 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
         Utf8String pname(ecprop->GetName());
         pname[0] = tolower(pname[0]);
         auto& propjson = propsjson[pname];
-        SET_IF_NOT_EMPTY_STR(propjson["description"], ecprop->GetDescription());
-        SET_IF_NOT_EMPTY_STR(propjson["displayLabel"], ecprop->GetDisplayLabel());
+
+        SET_IF_NOT_EMPTY_STR(propjson[json_description()], ecprop->GetDescription());
+        SET_IF_NOT_EMPTY_STR(propjson[json_displayLabel()], ecprop->GetDisplayLabel());
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success == ecprop->GetMinimumValue(v))
-            ECUtils::ConvertECValueToJson(propjson["minimumValue"], v);
+            ECUtils::ConvertECValueToJson(propjson[json_minimumValue()], v);
         if (ECN::ECObjectsStatus::Success == ecprop->GetMaximumValue(v))
-            ECUtils::ConvertECValueToJson(propjson["maximumValue"], v);
+            ECUtils::ConvertECValueToJson(propjson[json_maximumValue()], v);
         if (ecprop->IsMaximumLengthDefined())
-            propjson["maximumLength"] = ecprop->GetMaximumLength();
+            propjson[json_maximumLength()] = ecprop->GetMaximumLength();
         if (ecprop->IsMinimumLengthDefined())
-            propjson["minimumLength"] = ecprop->GetMinimumLength();
+            propjson[json_minimumLength()] = ecprop->GetMinimumLength();
         if (ecprop->GetIsReadOnly())
-            propjson["readOnly"] = true;
-        SET_IF_NOT_NULL_STR(propjson["kindOfQuantity"], ecprop->GetKindOfQuantity());
-        
-        propjson["isCustomHandled"] = ecprop->IsDefined(*customHandledProperty);
-        customAttributesToJson(propjson["customAttributes"], *ecprop);
+            propjson[json_readOnly()] = true;
+        SET_IF_NOT_NULL_STR(propjson[json_kindOfQuantity()], ecprop->GetKindOfQuantity());
+
+        propjson[json_isCustomHandled()] = ecprop->IsDefined(*customHandledProperty);
+        customAttributesToJson(propjson[json_customAttributes()], *ecprop);
 
         if (ecprop->GetAsPrimitiveProperty())
             getPrimitiveECPropertyMetaData(propjson, *ecprop->GetAsPrimitiveProperty());
@@ -179,13 +184,13 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
             getStructArrayECPropertyMetaData(propjson, *ecprop->GetAsStructArrayProperty());
         }
 
-    return BSISUCCESS;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
+DgnDbStatus IModelJs::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
     DgnElementCPtr elem;
     DgnElementId eid(inOpts[json_id()].asUInt64());
@@ -204,69 +209,70 @@ BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, Json
             }
         }
 
-    //  Look up the element
     if (!elem.IsValid())
         elem = dgndb.Elements().GetElement(eid);
 
     if (!elem.IsValid())
-        {
-        status = DgnDbStatus::NotFound;
-        return BSISUCCESS;      // This is not an exception. It just returns an empty result.
-        }
+        return DgnDbStatus::NotFound;
 
     elementJson = elem->ToJson(inOpts);
 
-    auto eclass = elem->GetElementClass();
-        
-    // Auto-handled properties
-    auto autoHandledProps = dgndb.Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
-    if (autoHandledProps.empty())
-        return BSISUCCESS;
-
-    auto stmt = dgndb.GetPreparedECSqlStatement(autoHandledProps.c_str());
-    if (!stmt.IsValid())
-        {
-        errmsg = IModelJs::GetLastEcdbIssue();
-        status = DgnDbStatus::WrongClass;
-        return BSIERROR;
-        }
-
-    stmt->BindId(1, eid);
-
-    if (BE_SQLITE_ROW == stmt->Step())
-        GetRowAsJson(elementJson, *stmt);
-
-    return BSISUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IModelJs::InsertElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR props)
+DgnDbStatus IModelJs::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
     {
-    DgnElement::CreateParams params(dgndb, props);
+    DgnElement::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
-        return ERROR;
+        return DgnDbStatus::WrongClass;
 
-    return BSISUCCESS;
+    ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(dgndb, params.m_classId);
+    if (nullptr == elHandler)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
+    DgnElementPtr el = elHandler->Create(params);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadArg;
+        }
+
+    el->FromJson(inJson);
+
+#if defined (TOFROM_JSON)
+    auto ecclass = dgndb.Schemas().GetClass(ECN::ECClassId(m_classId.GetValue()));
+    for (auto prop : AutoHandledPropertiesCollection(eclass, db, ECSqlClassParams::StatementType::InsertUpdate, false))
+        {
+        autoHandledProperties.push_back(prop);
+        }
+#endif
+
+    DgnDbStatus status;
+    auto newEl = el->Insert(&status);
+    if (newEl.IsValid())
+        outJson[json_id()] = newEl->GetElementId().ToHexStr();
+
+    return status;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IModelJs::GetModel(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
+DgnDbStatus IModelJs::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
     {
     DgnModelId modelId(inOpts[json_id()].asUInt64());
     if (!modelId.IsValid())
         {
         auto codeVal = inOpts[json_code()];
         if (!codeVal)
-            {
-            errmsg = "DgnDbStatus::NotFound";
-            status = DgnDbStatus::NotFound;
-            return BSIERROR;
-            }
+            return DgnDbStatus::NotFound;
+
         modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson2(codeVal));
         }
 
@@ -274,34 +280,29 @@ BentleyStatus IModelJs::GetModel(DgnDbStatus& status, Utf8StringR errmsg, JsonVa
     auto model = dgndb.Models().GetModel(modelId);
 
     if (!model.IsValid())
-        return BSISUCCESS;      // This is not an exception. It just returns an empty result.
+        return DgnDbStatus::NotFound;
 
     modelJson = model->ToJson(inOpts);
 
     auto stmt = dgndb.Models().GetSelectStmt(*model);
     if (!stmt.IsValid())
-        {
-        errmsg = IModelJs::GetLastEcdbIssue();
-        status = DgnDbStatus::WrongClass;
-        return BSIERROR;
-        }
+        return DgnDbStatus::WrongClass;
 
     if (BE_SQLITE_ROW == stmt->Step())
         GetRowAsJson(modelJson, *stmt);
 
-    return BSISUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR result, DgnDbR dgndb, Utf8CP eidstr)
+BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, JsonValueR result, DgnDbR dgndb, Utf8CP eidstr)
     {
     DgnElementId elemId(DgnElementId::FromString(eidstr).GetValueUnchecked());
     if (!elemId.IsValid())
         {
         status = DgnDbStatus::InvalidId;
-        errmsg = "DgnDbStatus::InvalidId";
         return BSIERROR;
         }
 
@@ -375,9 +376,10 @@ BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::OpenDgnDb(BeSQLite::DbResult& result, Utf8StringR errmsg, DgnDbPtr& db, BeFileNameCR dbname, DgnDb::OpenMode mode)
+DbResult IModelJs::OpenDgnDb(DgnDbPtr& db, BeFileNameCR dbname, DgnDb::OpenMode mode)
     {
-    db = IModelJs::GetDbByName(result, errmsg, dbname, mode);
-    return db.IsValid()? BSISUCCESS: BSIERROR;
+    DbResult result;
+    db = IModelJs::GetDbByName(result, dbname, mode);
+    return result;
     }
 

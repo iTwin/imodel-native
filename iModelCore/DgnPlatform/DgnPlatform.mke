@@ -393,6 +393,8 @@ $(CoreObjs)PSolidModify$(oext) :                    $(DgnBRepSrc)PSolidModify.cp
 
 $(CoreObjs)PSolidPolyface$(oext) :                  $(DgnBRepSrc)PSolidPolyface.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
+$(CoreObjs)PSolidThreadUtil$(oext) :                $(DgnBRepSrc)PSolidThreadUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
+
 $(CoreObjs)PSolidTopo$(oext) :                      $(DgnBRepSrc)PSolidTopo.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
 
 $(CoreObjs)PSolidTopoId$(oext) :                    $(DgnBRepSrc)PSolidTopoId.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}

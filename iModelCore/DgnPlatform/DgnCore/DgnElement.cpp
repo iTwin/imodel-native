@@ -10,12 +10,12 @@
 #include "ElementECInstanceAdapter.h"
 
 /*---------------------------------------------------------------------------------**//**
-* get the class id from a string in the form "Schema.ClassName"
+* get the class id from a string in the form "Schema:ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
     {
-    auto dot = name.find('.');
+    auto dot = name.find(':');
     if (Utf8String::npos == dot || name.length() <= dot + 1)
         return DgnClassId();
 
@@ -355,6 +355,16 @@ void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_isPrivate()] = m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_isPrivate()))
+        m_isPrivate = val[json_isPrivate()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1126,12 +1136,19 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     _BindWriteParams(*statement, ForInsert::Yes);
  
-    auto stmtResult = statement->Step();
-    if (BE_SQLITE_DONE != stmtResult)
+    switch (statement->Step())
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
-        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-        return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+        case BE_SQLITE_DONE:
+            break;
+
+        case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
+            return DgnDbStatus::ForeignKeyConstraint;
+
+        case BE_SQLITE_CONSTRAINT_UNIQUE:
+            return DgnDbStatus::ConstraintNotUnique;
+
+        default:
+            return DgnDbStatus::WriteError;
         }
 
     if (PropState::Dirty == m_flags.m_propState)
@@ -1226,6 +1243,36 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         m_relClassId = getClassId(db, val[json_relClass()].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
+    {
+    auto eclass = elem.GetElementClass();
+    
+    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
+    if (autoHandledProps.empty())
+        return;
+
+    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindId(1, elem.GetElementId());
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return;
+        }
+        
+    JsonECSqlSelectAdapter adapter(*stmt);
+    adapter.GetRowForImodelJs(elementJson);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1234,7 +1281,7 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     val[json_id()] = m_elementId.ToHexStr();
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
@@ -1249,18 +1296,35 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+
+    autoHandlePropertiesToJson(val, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_UpdateFromJson(JsonValueCR props) 
+void DgnElement::_FromJson(JsonValueR props) 
     {
-    m_modelId.FromJson(props[DgnElement::json_model()]);
-    m_code.FromJson(props[DgnElement::json_code()]);
-    m_federationGuid.FromString(props[DgnElement::json_federationGuid()].asString().c_str());
-    m_userLabel = props[DgnElement::json_userLabel()].asString();
-    m_parent.FromJson(m_dgndb, props[json_parent()]);
+    if (props.isMember(json_model()))
+        m_modelId.FromJson(props[json_model()]);
+
+    if (props.isMember(json_code()))
+        m_code.FromJson(props[json_code()]);
+
+    if (props.isMember(json_federationGuid()))
+        m_federationGuid.FromString(props[json_federationGuid()].asString().c_str());
+
+    if (props.isMember(json_userLabel()))
+        m_userLabel = props[json_userLabel()].asString();
+
+    if (props.isMember(json_parent()))
+        m_parent.FromJson(m_dgndb, props[json_parent()]);
+
+    if (props.isMember(json_jsonProperties()))
+        {
+        m_jsonProperties.From(std::move(props[json_jsonProperties()]));
+        _OnLoadedJsonProperties();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1843,6 +1907,16 @@ Json::Value Placement3d::ToJson() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Placement3d::FromJson(JsonValueCR val)
+    {
+    JsonUtils::DPoint3dFromJson(m_origin, val[json_origin()]);
+    m_angles = JsonUtils::YawPitchRollFromJson(val[json_angles()]);
+    JsonUtils::DRange3dFromJson(m_boundingBox, val[json_bbox()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d Placement2d::CalculateRange() const
@@ -1875,6 +1949,15 @@ Json::Value Placement2d::ToJson() const
     return val;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Placement2d::FromJson(JsonValueCR val)
+    {
+    JsonUtils::DPoint2dFromJson(m_origin, val[json_origin()]);
+    m_angle = JsonUtils::AngleInDegreesFromJson(val[json_angle()]);
+    JsonUtils::DRange2dFromJson(m_boundingBox, val[json_bbox()]);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -3596,6 +3679,19 @@ void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+    if (props.isMember(json_category()))
+        m_categoryId.FromJson(props[json_category()]);
+    
+    if (props.isMember(json_geom()))
+        m_geom.FromBase64(props[json_geom()].asString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -3808,6 +3904,20 @@ void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.isMember(json_placement()))
+        m_placement.FromJson(props[json_placement()]);
+
+    if (props.isMember(json_typeDefinition()))
+        m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3846,6 +3956,18 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (m_typeDefinition.IsValid())
         val[json_typeDefinition()] = m_typeDefinition.ToJson(GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+    if (props.isMember(json_placement()))
+        m_placement.FromJson(props[json_placement()]);
+    if (props.isMember(json_typeDefinition()))
+        m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -23,198 +23,6 @@ BEGIN_UNNAMED_NAMESPACE
 constexpr double s_half2dDepthRange = 10.0;
 // unused - static size_t s_maxFacetDensity;
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-
-// The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
-// by all threads.
-
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>       ThreadedParasolidErrorHandlerInnerMarkPtr;
-
-class   ParasolidException {};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Called from the main thread to register Thread Local Storage used by
-*  all threads for Parasolid error handling.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedLocalParasolidHandlerStorageMark
-{
-    BeThreadLocalStorage*       m_previousLocalStorage;
-
-    ThreadedLocalParasolidHandlerStorageMark ();
-    ~ThreadedLocalParasolidHandlerStorageMark ();
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Inner mark.   Included around code sections that should be rolled back in case
-*                Of serious error.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerInnerMark : RefCountedBase
-{
-    static ThreadedParasolidErrorHandlerInnerMarkPtr Create () { return new ThreadedParasolidErrorHandlerInnerMark(); }                                                 
-
-protected:
-
-    ThreadedParasolidErrorHandlerInnerMark();
-    ~ThreadedParasolidErrorHandlerInnerMark();
-};
-      
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerOuterMark>     ThreadedParasolidErrorHandlerOuterMarkPtr;
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2015
-*  Outer mark.   Included once to set up Parasolid error handling for a single thread.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerOuterMark  : RefCountedBase 
-{
-    PK_ERROR_frustrum_t     m_previousErrorFrustum;
-
-    static ThreadedParasolidErrorHandlerOuterMarkPtr Create () { return new ThreadedParasolidErrorHandlerOuterMark(); }
-
-protected:
-
-    ThreadedParasolidErrorHandlerOuterMark();
-    ~ThreadedParasolidErrorHandlerOuterMark();
-};
-    
-static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015                                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMark ()
-    {
-    if (nullptr == (m_previousLocalStorage = s_threadLocalParasolidHandlerStorage))
-        s_threadLocalParasolidHandlerStorage = new BeThreadLocalStorage;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
-    { 
-    if (nullptr == m_previousLocalStorage) 
-        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
-
-    }
-
-typedef bvector<PK_MARK_t>  T_RollbackMarks;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static T_RollbackMarks*  getRollbackMarks () 
-    { 
-    static T_RollbackMarks      s_unthreadedMarks;
-
-    return nullptr == s_threadLocalParasolidHandlerStorage ? &s_unthreadedMarks : reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());   
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearRollbackMarks () 
-    {    
-    T_RollbackMarks*    rollbackMarks;
-             
-    if (nullptr != s_threadLocalParasolidHandlerStorage &&
-        nullptr != (rollbackMarks = reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer())))
-        {
-        delete rollbackMarks;
-        s_threadLocalParasolidHandlerStorage->SetValueAsPointer(nullptr);
-        } 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearExclusions()
-    {
-    PK_THREAD_exclusion_t       clearedExclusion;
-    PK_LOGICAL_t                clearedThisThread;
-
-    PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
-    {
-    if (errorSf->severity > PK_ERROR_mild)
-        {
-        switch (errorSf->code)
-            {
-            case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
-            case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
-            case 1083:        // Degenerate trim loop.
-                break;
-
-            default:
-                printf ("Error %d caught in parasolid error handler\n", errorSf->code);
-                BeAssert (false && "Severe error during threaded processing");
-                break;
-            }
-        PK_MARK_goto (getRollbackMarks()->back());
-        clearExclusions ();
-        
-        PK_THREAD_tidy();
-
-        throw ParasolidException();
-        }
-    
-    return 0; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    BeAssert (nullptr == getRollbackMarks());      // The outer mark is not nestable.
-
-    PK_THREAD_ask_error_cbs (&m_previousErrorFrustum);
-
-    PK_ERROR_frustrum_t     errorFrustum;
-
-    errorFrustum.handler_fn = threadedParasolidErrorHandler;
-    PK_THREAD_register_error_cbs (errorFrustum);
-
-    s_threadLocalParasolidHandlerStorage->SetValueAsPointer (new T_RollbackMarks());
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    PK_THREAD_register_error_cbs (m_previousErrorFrustum);
-    clearRollbackMarks(); 
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_t       mark;
-
-    PK_MARK_create (&mark);
-    getRollbackMarks()->push_back (mark);
-    }
-      
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_delete (getRollbackMarks()->back());
-    getRollbackMarks()->pop_back();
-    }
-
-#endif
 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
@@ -1567,6 +1375,10 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
 TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
+    // We need to generate facets in this threads parasolid partition so that we
+    // can roll them back correctly in the event of a server parasolid error.
+    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -1683,47 +1495,6 @@ TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileG
 #endif
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     08/2009
-+===============+===============+===============+===============+===============+========*/
-struct PSolidPartitionMark
-{
-    PK_PARTITION_t                      m_originalPartition;
-    PK_PARTITION_t                      m_lightweightPartition;
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-PSolidPartitionMark ()
-    {
-    PK_SESSION_ask_curr_partition (&m_originalPartition);
-
-    if (SUCCESS == PK_PARTITION_create_empty(&m_lightweightPartition))
-        {
-        PK_PARTITION_set_type(m_lightweightPartition, PK_PARTITION_type_light_c);
-        PK_PARTITION_set_current(m_lightweightPartition);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-~PSolidPartitionMark ()
-    {
-    PK_PARTITION_delete_o_t options;
-
-    PK_PARTITION_delete_o_m (options);
-
-    options.delete_non_empty = true;
-    /* unused - StatusInt   status = */PK_PARTITION_delete (m_lightweightPartition, &options);
-
-    PK_PARTITION_set_current (m_originalPartition);
-    }
-};
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1736,9 +1507,8 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
     // unused - auto nCompletedModels = 0;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    PSolidPartitionMark     partitionMark;
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
     PSolidKernelManager::StartSession();
+    PSolidThreadUtil::MainThreadMark    psolidMainThreadMark;
 #endif
 
     StopWatch timer(true);
@@ -1812,7 +1582,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     else if (nullptr != getTileTree)
         {
-//#define SKIP_3MX
 #ifndef SKIP_3MX
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
 #else
@@ -1935,8 +1704,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
     #if defined (BENTLEYCONFIG_PARASOLID) 
-        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+        PSolidThreadUtil::WorkerThreadOuterMark     psolidWorkerThreadOuterMark;
     #endif
 
         auto& tile = *parent;
@@ -2018,11 +1786,6 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureGenerateTileResult TileGenerator::ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
     auto root = static_cast<ElementTileNodeP>(parent->GetRoot());
     if (parent->GetChildren().empty() || TileGeneratorStatus::Success != status)
         return folly::makeFuture(GenerateTileResult(status, root));
@@ -2547,6 +2310,13 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
         bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
         if (!haveCached)
             {
+            // The proces of visiting the element can potentially generate parasolid bodies.
+            // We need to generate these in this threads parasolid partition so that we 
+            // can roll them back correctly in the event of a server parasolid error.
+#if defined (BENTLEYCONFIG_PARASOLID)    
+            PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+#endif
+
             m_curElemId = elemId;
             context.VisitElement(elemId, false);
             FlushPolyfaceCache();
@@ -2557,7 +2327,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
         }
     catch (...)
         {
-        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
+        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. 
         }
     }
 
@@ -2723,6 +2493,12 @@ void TileGeometryProcessor::FlushPolyfaceCache ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
+    // We need to generate these in this threads parasolid partition so that we 
+    // can roll them back correctly in the event of a server parasolid error.
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+#endif
+
     IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
     DRange3d        range = clone->GetEntityRange();
     Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
@@ -2894,7 +2670,7 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
 
     if (!geomPart.IsValid())
         {
-        BeAssert(false);
+//      BeAssert(false);
         return nullptr;
         }
 

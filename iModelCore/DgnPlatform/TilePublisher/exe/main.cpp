@@ -12,12 +12,17 @@
 #include <Raster/RasterApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <RealityPlatform/RealityDataService.h>
+#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
 #endif
 
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
@@ -346,43 +351,164 @@ public:
     Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
 };
 
-//=======================================================================================
-// Do-nothing boilerplate...
-// @bsistruct                                                   Paul.Connelly   08/17
-//=======================================================================================
-struct SMHost : ScalableMesh::ScalableMeshLib::Host
-{
-    template<typename T> static T GetUselessValue() { T t; return t; }
-    static Utf8String GetUselessString() { return GetUselessValue<Utf8String>(); }
-    template<typename T, typename F> static T& GetUselessAdmin(F f) { return *new T(f); }
 
-    SMHost() { }
-    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin() override
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  SMHost : ScalableMesh::ScalableMeshLib::Host
+    {
+    SMHost()
         {
-        struct SMAdmin : public ScalableMesh::ScalableMeshAdmin
+        }
+
+    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
-            IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override { return GetUselessValue<IScalableMeshTextureGeneratorPtr>(); }
-            bool _CanImportPODfile() const override { return false; }
+        struct CsScalableMeshAdmin : public ScalableMesh::ScalableMeshAdmin
+            {
+            virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
+                {
+                IScalableMeshTextureGeneratorPtr generator;
+                return generator;
+                }
+
+            virtual bool _CanImportPODfile() const override
+                {
+                return false;
+                }
+            };
+        return *new CsScalableMeshAdmin;
         };
 
-        return *new SMAdmin;
+
+    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin()
+        {
+
+        auto getTokenFunction = []() -> Utf8String
+            {
+            Utf8String emptyToken;
+            return emptyToken;
+            };
+        return *new ScalableMesh::WsgTokenAdmin(getTokenFunction);
         }
 
-    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin() override
-        {
-        return GetUselessAdmin<ScalableMesh::WsgTokenAdmin>([]() { return GetUselessString(); });
-        }
 
     ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
         {
-        return GetUselessAdmin<ScalableMesh::SASTokenAdmin>([](Utf8StringCR) { return GetUselessString(); });
+        auto getTokenFunction = [this](const Utf8String& realityDataGuid) -> Utf8String
+            {
+            SMHost::initializeRealityDataService();
+            if (m_sasConnections.find(realityDataGuid) == m_sasConnections.end())
+                {
+                SASConnection newConnection;
+                newConnection.m_handshake = new AzureHandshake(realityDataGuid, false /*writeable*/);
+                m_sasConnections[realityDataGuid] = newConnection;
+                }
+            assert(m_sasConnections.find(realityDataGuid) != m_sasConnections.end());
+            auto& sasConnection = m_sasConnections[realityDataGuid];
+            assert(sasConnection.m_handshake != nullptr);
+            int64_t currentTime;
+            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+            if ((sasConnection.m_azureTokenTimer - currentTime) < 0)
+                {
+                // Request Azure URL of the reality data
+                RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)sasConnection.m_handshake);
+                if (rawResponse.status != RequestStatus::BADREQ)
+                    {
+                    // The handshake status with Azure need not be checked, if the request fails the current token will be used until it expires (or return an empty token)
+                    /*BentleyStatus handshakeStatus = */
+                    sasConnection.m_handshake->ParseResponse(rawResponse.body, sasConnection.m_azureServer, sasConnection.m_azureToken, sasConnection.m_azureTokenTimer);
+                    }
+                else
+                    {
+                    // Try again after 50 minutes...
+                    sasConnection.m_azureTokenTimer = currentTime + 1000 * 60 * 50;
+                    assert(!"Problem with the handshake");
+                    }
+                }
+            return sasConnection.m_azureToken;
+            };
+        return *new ScalableMesh::SASTokenAdmin(getTokenFunction);
         }
 
-    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin() override
+
+    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
         {
-        return GetUselessAdmin<ScalableMesh::SSLCertificateAdmin>([]() { return GetUselessString(); });
+        auto getSSLCertificatePath = []() -> Utf8String
+            {
+            Utf8String certificatePath;
+            return certificatePath;
+            };
+
+        return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
         }
-};
+
+
+private:
+
+    struct SASConnection
+        {
+        int64_t m_azureTokenTimer = 0;
+        Utf8String m_azureToken;
+        Utf8String m_azureServer;
+        AzureHandshake* m_handshake;
+        };
+
+    bmap<Utf8String, SASConnection> m_sasConnections;
+
+    static StatusInt initializeRealityDataService()
+        {
+        if (RealityDataService::AreParametersSet()) return SUCCESS;
+
+        WString serverUrl;
+
+#if 0 
+        //WString serverUrl = L"connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
+        serverUrl = L"qa-connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
+#endif
+
+        try     {
+            Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
+            std::wstring buddiUrl;
+            connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
+
+            serverUrl.assign(buddiUrl.c_str());
+            }
+        catch (...)
+            {
+            }
+
+        serverUrl.ReplaceI(L"https://", L"");  // remove scheme prefix 
+
+        if (0 == serverUrl.size())
+            return ERROR;
+
+
+        RealityDataService::SetServerComponents(Utf8String(serverUrl.c_str()),
+            RealityDataService::GetWSGProtocol(),
+            RealityDataService::GetRepoName(),
+            RealityDataService::GetSchemaName());
+
+        //hardcoded the one for RM Internal for now. Need a UI of some sort to pick the project if
+        //user has multiples, etc
+        //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
+        //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
+        //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
+
+        Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+        WString projectGUIDw;
+
+        if (BSISUCCESS == ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+            {
+            projectGUID.Assign(projectGUIDw.c_str());
+            }
+
+        RealityDataService::SetProjectId(projectGUID);
+
+        return SUCCESS;
+        }
+
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16

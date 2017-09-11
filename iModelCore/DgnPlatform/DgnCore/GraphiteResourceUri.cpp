@@ -676,9 +676,12 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
     Utf8String value = propvalue.GetString();
 
     auto stmt = db.GetPreparedECSqlStatement(ecSql.c_str());
-    stmt->BindText(1, value.c_str(), EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW == stmt->Step())
-        return stmt->GetValueId<DgnElementId>(0);
+    if (stmt.IsValid())
+        {
+        stmt->BindText(1, value.c_str(), EC::IECSqlBinder::MakeCopy::No);
+        if (BE_SQLITE_ROW == stmt->Step())
+            return stmt->GetValueId<DgnElementId>(0);
+        }
 
     if (fallBackOnCode)
         {
@@ -956,6 +959,8 @@ static Utf8String getPropertyAsString (DgnElementCR el, Utf8StringCR propName)
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE(ECInstanceId=?)", 
                                                                          propName.c_str(), 
                                                                          el.GetElementClass()->GetECSqlName().c_str()).c_str());
+    if (!stmt.IsValid())
+        return "";
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return "";
@@ -973,6 +978,8 @@ static bool isValidUniqueKey(DgnDbR db, ECN::ECClassCR ecClass, Utf8StringCR key
     auto stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE([%s]=?)", 
                                                               ecClass.GetECSqlName().c_str(), 
                                                               keyname.c_str()).c_str());
+    if (!stmt.IsValid())
+        return false;
     stmt->BindText(1, keyvalue.c_str(), EC::IECSqlBinder::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
