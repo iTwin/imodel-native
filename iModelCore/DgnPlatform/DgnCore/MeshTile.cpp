@@ -2313,7 +2313,9 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             // The proces of visiting the element can potentially generate parasolid bodies.
             // We need to generate these in this threads parasolid partition so that we 
             // can roll them back correctly in the event of a server parasolid error.
+#if defined (BENTLEYCONFIG_PARASOLID)    
             PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+#endif
 
             m_curElemId = elemId;
             context.VisitElement(elemId, false);
