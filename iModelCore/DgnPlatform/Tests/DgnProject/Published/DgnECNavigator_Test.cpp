@@ -8,7 +8,6 @@
 #include "DgnHandlersTests.h"
 #include <ECDb/ECDbApi.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-#include <DgnPlatform/DgnECPersistence.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 //#if defined (_MSC_VER)
 //#pragma warning (disable:4702)
@@ -28,7 +27,7 @@ extern bool ReadJsonFromFile (Json::Value& jsonValue, WCharCP path);
 //=======================================================================================   
 struct DgnECNavigatorTest :public DgnDbTestFixture
 {
-
+    /* DgnECPersistence is deprecated. Adjust test.
     BentleyStatus GetElementInfo(Json::Value& elementInfo, DgnElementId selectedElementId)
         {
         Json::Value jsonInstances, jsonDisplayInfo; // Note: Cannot just pass actualElemtnInfo["ecInstances"], actualElementInfo["ecDisplayInfo"] here. 
@@ -43,6 +42,7 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
         elementInfo["ecDisplayInfo"] = jsonDisplayInfo;
         return SUCCESS;
         }
+        */
 
     static void ValidateElementInfo(JsonValueR actualElementInfo, WCharCP expectedFileName)
         {
@@ -94,18 +94,14 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
         }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ridha.Malik                   11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+/* DgnECPersistence was deprecated -> Rewrite this test or remove it if no longer applicable 
+//---------------------------------------------------------------------------------
+// @bsimethod                                   Ridha.Malik                   11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DgnECNavigatorTest, GetElementInfo)
     {
     // Test need to be enhance when the issue of ElemtmentInfo get resolved 
     SetupSeedProject();
-    /*
-    BeFileName  expectedFileName;
-    expectedFileName.AppendToPath(m_db->GetFileName().GetDirectoryName());
-    expectedFileName.AppendToPath(L"ElementInfo.json");
-    */
     // Inserts element
     DgnElementPtr ele = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
     DgnElementCPtr id=ele->Insert();
@@ -119,7 +115,7 @@ TEST_F(DgnECNavigatorTest, GetElementInfo)
     ASSERT_TRUE(actualElementInfoStatus == SUCCESS);
    // ValidateElementInfo(actualElementInfo, expectedFileName);
     }
-
+    */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/

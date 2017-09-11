@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include "imodeljs.h"
-#include <DgnPlatform/DgnECPersistence.h>
+//DgnECPersistence is deprecated -> use PresentationRules instead
+//#include <DgnPlatform/DgnECPersistence.h>
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -306,6 +307,9 @@ BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Json
         return BSIERROR;
         }
 
+    //DgnECPersistence is deprecated -> use PresentationRules instead
+    return BSIERROR;
+    /*
     Json::Value jsonInstances, jsonDisplayInfo;
     if (SUCCESS != DgnECPersistence::GetElementInfo(jsonInstances, jsonDisplayInfo, elemId, dgndb))
         return BSISUCCESS;  // Don't throw an exception. Just return an empty result.
@@ -371,6 +375,7 @@ BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Json
 #endif
 
     return BSISUCCESS;
+    */
     }
 
 //---------------------------------------------------------------------------------------
