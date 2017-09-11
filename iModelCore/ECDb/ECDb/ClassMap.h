@@ -114,7 +114,7 @@ struct ClassMap : RefCountedBase
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
         ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
-
+        BentleyStatus AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded);
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
 
     protected:

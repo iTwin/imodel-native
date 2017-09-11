@@ -108,6 +108,24 @@ BentleyStatus PropertyMapContainer::Insert(RefCountedPtr<PropertyMap> propertyMa
         return ERROR;
         }
 
+#ifndef NDEBUG
+    //Ensure ClassMap::GetTables() point it.
+    if (!m_classMap.IsRelationshipClassMap())
+        {
+        GetTablesPropertyMapVisitor visitor;
+        propertyMap->AcceptVisitor(visitor);
+        std::set<DbTable const*> classMapTables(m_classMap.GetTables().begin(), m_classMap.GetTables().end());
+        for (DbTable const* table : visitor.GetTables())
+            {
+            if (classMapTables.find(table) == classMapTables.end())
+                {
+                BeAssert(false && "PropertyMap pointing to table that is not register in ClassMap::GetTables()");
+                return ERROR;
+                }
+            }
+        }
+#endif
+
     auto positionIt = position > m_topLevelPropMapsOrdered.size() ? m_topLevelPropMapsOrdered.end() : m_topLevelPropMapsOrdered.begin() + position;
     m_byAccessString[propertyMap->GetAccessString().c_str()] = propertyMap;
     if (propertyMap->GetParent() == nullptr)
@@ -148,7 +166,10 @@ PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 DbTable const& CompoundDataPropertyMap::_GetTable() const
     {
-    BeAssert(!m_memberPropertyMaps.empty());
+    if (m_memberPropertyMaps.empty())
+        {
+        BeAssert(!m_memberPropertyMaps.empty());
+        }
     return m_memberPropertyMaps[0]->GetTable();
     }
 

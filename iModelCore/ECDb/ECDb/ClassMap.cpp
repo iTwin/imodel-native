@@ -222,6 +222,30 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan           06/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded)
+    {
+    if (propertyThatIsNotYetAdded.GetType() == PropertyMap::Type::Navigation)
+        {
+        NavigationPropertyMap const& navPropertyMap = propertyThatIsNotYetAdded.GetAs<NavigationPropertyMap>();
+        if (!navPropertyMap.IsComplete())
+            return SUCCESS;
+        }
+
+    DbTable& propertyTable = const_cast< DbTable&>(propertyThatIsNotYetAdded.GetTable());
+    if (std::find(m_tables.begin(), m_tables.end(), &propertyTable) == m_tables.end())
+        {
+        if (propertyTable.GetType() == DbTable::Type::Overflow)
+            return SetOverflowTable(propertyTable);
+
+        AddTable(propertyTable);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
@@ -272,6 +296,12 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             //Property is inherited, but not from a TPH base class, so we have to map the property from scratch
             propertiesToMap.push_back(property);
             continue;
+            }
+
+        if (baseClassPropMap->IsData())
+            {
+            if (AddOrUpdateTableList(baseClassPropMap->GetAs<DataPropertyMap>()) != SUCCESS)
+                return ClassMappingStatus::Error;
             }
 
         RefCountedPtr<DataPropertyMap> propertyMap = PropertyMapCopier::CreateCopy(*baseClassPropMap, *this);        
