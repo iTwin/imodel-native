@@ -95,5 +95,21 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == mproject->SaveChanges());
 
+    // set up a second markup project, using the first as a seed. 
+    // verify that the second gets its own unique GUID
+    if (true)
+        {
+        auto markup2Name = DgnDbTestDgnManager::GetOutputFilePath(L"CreateDgnMarkupProject2");
+
+        CreateDgnMarkupProjectParams cparms (*m_db);
+        cparms.SetOverwriteExisting(true);
+        cparms.SetRootSubjectName("CreateDgnMarkupProject");
+        cparms.SetSeedDb(mproject->GetFileName());
+        DbResult status;
+        DgnMarkupProjectPtr mproject2 = DgnMarkupProject::CreateDgnDb (&status, markup2Name, cparms);
+        ASSERT_TRUE( status == BE_SQLITE_OK );
+        ASSERT_TRUE( mproject2.get() != NULL );
+        ASSERT_TRUE( mproject2->GetDbGuid() != mproject->GetDbGuid() );
+        }
 
     }

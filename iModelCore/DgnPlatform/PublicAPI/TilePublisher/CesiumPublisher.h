@@ -132,7 +132,7 @@ public:
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
-        m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+        m_dataDir.AppendSeparator().AppendToPath(L"TileSets").AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
         }
 
     TilesetPublisher(DgnDbR db, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
