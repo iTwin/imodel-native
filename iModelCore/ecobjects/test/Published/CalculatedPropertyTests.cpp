@@ -590,4 +590,40 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
     Test (*instance, "RIGHT_TEXT", "r");
     }
 
+//--------------------------------------------------------------------------------------//
+// @bsimethod                                                Colin.Kerr         09/17
+//+---------------+---------------+---------------+---------------+---------------+-----//
+TEST_F(CalculatedPropertyTests, EmptyParserRegExSameAsNoParserRegEx)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca" />
+        <ECEntityClass typeName="RoundDuct">
+            <ECProperty propertyName="DisplayLabel" typeName="string">
+                <ECCustomAttributes>
+                    <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <ECExpression>this.willFailToEvaluate</ECExpression>
+                        <ParserRegularExpression/>
+                        <IsDefaultValueOnly>False</IsDefaultValueOnly>
+                        <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>
+                    </CalculatedECPropertySpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassCP ecClass = schema->GetClassCP("RoundDuct");
+    ASSERT_NE(nullptr, ecClass) << "Couldn't find RoundDuct class";
+    StandaloneECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    struct ::ECN::ECValue displayLabel;
+    instance->GetValue(displayLabel, "DisplayLabel");
+    EXPECT_EQ(BentleyStatus::SUCCESS, displayLabel.SetUtf8CP("Silly"));
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("DisplayLabel", displayLabel));
+    instance->GetValue(displayLabel, "DisplayLabel");
+    EXPECT_STREQ("Silly", displayLabel.GetUtf8CP());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -274,22 +274,14 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PropertyIsExempt(ECPropertyP prop, ECClassCR ecClass)
-    {
-    return (prop->GetName().Equals(LinkedElementId) && ecClass.GetSchema().GetName().Equals(MarkupSchema));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
-        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id") && !PropertyIsExempt(prop, ecClass))
+        if (prop->GetTypeName() == "long" && !prop->GetIsNavigation())
             {
-            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", ecClass.GetFullName(), prop->GetName().c_str());
+            LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed.  Use int, double or if this represents a FK use a navigiation property", ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
             }
         }
