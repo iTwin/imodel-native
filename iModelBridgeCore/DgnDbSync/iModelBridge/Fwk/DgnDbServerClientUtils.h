@@ -53,6 +53,7 @@ public:
     StatusInt OpenBriefcase(Dgn::DgnDbR db);
     StatusInt PullMergeAndPush(Utf8CP);
     StatusInt PullAndMerge();
+    StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db);
     iModel::Hub::Error const& GetLastError() const {return m_lastServerError;}
     IRepositoryManagerP GetRepositoryManager(DgnDbR db);
     void CloseBriefcase() {m_briefcase = nullptr;}

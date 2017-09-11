@@ -60,6 +60,57 @@ TEST_F(BasicGeometryTests, LineUpdateWithoutAnyChange)
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     // *** TBD: Check that m_count == 0
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicGeometryTests, EnlargeProjectExtents)
+    {
+    LineUpFiles(L"LineUpdateWithoutAnyChange.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+
+    //  Do the initial conversion on a file containing a single line that starts at 0,0,0 and extends 1 meter to the right.
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    DgnV8Api::ElementId eid1;
+    v8editor.AddLine(&eid1, v8editor.m_defaultModel, DPoint3d::FromZero());
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    BentleyApi::DRange3d projectExtents;
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+        projectExtents = db->GeoLocation().GetProjectExtents();
+        }
+
+    // Add another line that is 1 meter above and update
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid2, v8editor.m_defaultModel, DPoint3d::From(0, 1000, 0));
+    v8editor.Save();
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    BentleyApi::DRange3d updatedProjectExtents;
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+        updatedProjectExtents = db->GeoLocation().GetProjectExtents();
+        }
+    // Check that the project's extents were expanded
+    EXPECT_TRUE(projectExtents.IsContained(updatedProjectExtents)) << " original project extents should be contained IN the updated extents (updated is bigger)";
+    EXPECT_FALSE(updatedProjectExtents.IsContained(projectExtents)) << " updated project extents should NOT be contained in the original extents (original is smaller)";
+
+    // Delete the second line 
+    DgnV8Api::EditElementHandle l2eh(eid2, v8editor.m_defaultModel);
+    ASSERT_TRUE(l2eh.IsValid());
+    ASSERT_EQ(0, l2eh.DeleteFromModel());
+    v8editor.Save();
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    BentleyApi::DRange3d updatedProjectExtents2;
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+        updatedProjectExtents2 = db->GeoLocation().GetProjectExtents();
+        }
+    // Check that the project's extents did NOT shrink
+    EXPECT_TRUE(updatedProjectExtents.IsEqual(updatedProjectExtents2));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

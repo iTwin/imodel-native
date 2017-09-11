@@ -57,6 +57,7 @@
 #include <VersionedDgnV8Api/Rastercore/msrastercore.h>
 #include <VersionedDgnV8Api/DgnPlatform/ClipUtil.h>
 #include <VersionedDgnV8Api/DgnPlatform/DgnPlatform.r.h>
+#include <VersionedDgnV8Api/DgnPlatform/CIF/PersistentAppIDs.h>
 
 #define NO_USING_NAMESPACE_BENTLEY 1
 

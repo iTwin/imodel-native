@@ -594,6 +594,14 @@ public:
         delete this;
         }
 
+    static ModelTypeAppData& Get(DgnV8FileR v8DgnFile)
+        {
+        ModelTypeAppData* mtAppData = dynamic_cast <ModelTypeAppData*> (v8DgnFile.FindAppData (ModelTypeAppData::GetKey()));
+        if (nullptr == mtAppData)
+            v8DgnFile.AddAppData (ModelTypeAppData::GetKey(), (mtAppData = new ModelTypeAppData ()));
+        return *mtAppData;
+        }
+
     static DgnV8Api::DgnModelType GetEffectiveModelType (DgnV8FileR v8DgnFile, DgnV8Api::ModelId modelId, DgnV8Api::DgnModelType defaultModelType)
         {
         ModelTypeAppData*    mtAppData;
@@ -649,6 +657,44 @@ void     Converter::SetEffectiveModelType(DgnV8ModelR newModel, DgnV8Api::DgnMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void     Converter::ClassifyNormal2dModel(DgnV8ModelR v8Model, ModelTypeAppData& mtAppData)
+    {
+    // We consider the presence of a GCS to be evidence that it is a spatial model, so get the model so we can see if it has a GCS.
+
+    // need the control elements filled to find the GCS.
+    v8Model.FillCache(DgnV8Api::DgnModelSections::ControlElements);
+
+    // This is the only case where we are making a change: A 2d Normal model without a GCS is considered to be DgnModelType::Drawing.
+    if (nullptr == Bentley::GeoCoordinates::DgnGCS::FromModel (&v8Model, true))
+        mtAppData.SetEffectiveModelType (v8Model.GetModelId(), DgnV8Api::DgnModelType::Drawing);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void     Converter::Classify2dModelIfNormal(DgnV8ModelR v8Model, ModelTypeAppData* mtAppData)
+    {
+    // if normal models are considered spatial, we consider all Normal models to be Normal.
+    if (_ConsiderNormal2dModelsSpatial())
+        return;
+
+    // we are only concerned with 2d models of DgnModelType::Normal.
+    if ( v8Model.Is3D() || (DgnV8Api::DgnModelType::Normal != v8Model.GetModelType()) )
+        return;
+
+    if (nullptr == mtAppData)
+        mtAppData = &ModelTypeAppData::Get(*v8Model.GetDgnFileP());
+
+    // if a conversion type was already forced in because the model was referenced from the root model, don't consider.
+    if (mtAppData->HasEffectiveModelType (v8Model.GetModelId()))
+        return;
+
+    ClassifyNormal2dModel(v8Model, *mtAppData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void     Converter::ClassifyNormal2dModels (DgnV8FileR v8DgnFile)
     {
     // The reason for this method is that some V8 files have 2d models that should be considered to be Drawing models, but they 
@@ -659,14 +705,12 @@ void     Converter::ClassifyNormal2dModels (DgnV8FileR v8DgnFile)
     // this method traverses the models and changes 2d models of DgnModelType::Normal to DgnModelType::Drawing if that shouldn't happen.
 
     // If we have already considered this file, skip it.
-    ModelTypeAppData*    mtAppData;
-    if (nullptr == (mtAppData = dynamic_cast <ModelTypeAppData*> (v8DgnFile.FindAppData (ModelTypeAppData::GetKey()))))
-        v8DgnFile.AddAppData (ModelTypeAppData::GetKey(), (mtAppData = new ModelTypeAppData ()));
-    else if (mtAppData->m_modelsScanned)
+    ModelTypeAppData& mtAppData = ModelTypeAppData::Get(v8DgnFile);
+    if (mtAppData.m_modelsScanned)
         return;
 
     // set it to scanned.
-    mtAppData->m_modelsScanned = true;
+    mtAppData.m_modelsScanned = true;
 
     // if normal models are considered spatial, we don't really need to scan - we consider all Normal models to be Normal.
     if (_ConsiderNormal2dModelsSpatial())
@@ -680,10 +724,12 @@ void     Converter::ClassifyNormal2dModels (DgnV8FileR v8DgnFile)
         if (nullptr == model)
             return;
         if (!model->Is3D())
-            mtAppData->SetEffectiveModelType (model->GetModelId(), DgnV8Api::DgnModelType::Drawing);
+            mtAppData.SetEffectiveModelType (model->GetModelId(), DgnV8Api::DgnModelType::Drawing);
         return;
         }
 
+    // Note that this loop only classifies models that are in the model index. The converter will classify non-indexed models
+    // when it encounters them as reference attachments to other drawings and sheets.
     for (DgnV8Api::ModelIndexItem const& item : v8DgnFile.GetModelIndex())
         {
         // we are only concerned with 2d models of DgnModelType::Normal.
@@ -691,22 +737,15 @@ void     Converter::ClassifyNormal2dModels (DgnV8FileR v8DgnFile)
             continue;
 
         // if a conversion type was already forced in because the model was referenced from the root model, don't consider.
-        if (mtAppData->HasEffectiveModelType (item.GetModelId()))
+        if (mtAppData.HasEffectiveModelType (item.GetModelId()))
             continue;
 
-        // We consider the presence of a GCS to be evidence that it is a spatial model, so get the model so we can see if it has a GCS.
-        DgnV8Api::ModelId   modelId = item.GetModelId();
-        Bentley::DgnModelPtr v8Model = v8DgnFile.LoadModelById(modelId);
+        Bentley::DgnModelPtr v8Model = v8DgnFile.LoadModelById(item.GetModelId());
 
         if (!v8Model.IsValid())
             continue;
 
-        // need the control elements filled to find the GCS.
-        v8Model->FillCache(DgnV8Api::DgnModelSections::ControlElements);
-
-        // This is the only case where we are making a change: A 2d Normal model without a GCS is considered to be DgnModelType::Drawing.
-        if (nullptr == Bentley::GeoCoordinates::DgnGCS::FromModel (v8Model.get(), true))
-            mtAppData->SetEffectiveModelType (modelId, DgnV8Api::DgnModelType::Drawing);
+        ClassifyNormal2dModel(*v8Model, mtAppData);
         }
     }
 
@@ -1603,6 +1642,12 @@ void Converter::OnUpdateComplete()
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
         GenerateThumbnails();
+
+    // Update the project extents ... but only if it gets bigger.
+    auto rtreeBox = m_dgndb->GeoLocation().QueryRTreeExtents();
+    auto extents = m_dgndb->GeoLocation().GetProjectExtents();
+    extents.Extend(rtreeBox);
+    m_dgndb->GeoLocation().SetProjectExtents(extents);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3412,6 +3457,8 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model)
     {
     m_rootModelRef = &rootV8Model;
+    m_isRootModelSpatial = ShouldConvertToPhysicalModel(rootV8Model);
+    m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
     }
 

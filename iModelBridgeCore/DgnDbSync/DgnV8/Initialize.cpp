@@ -566,6 +566,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
                 std::wstring buddiUrl;
                 connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
+
                 serverUrl.assign(buddiUrl.c_str());
                 }
             catch (...)
@@ -587,13 +588,52 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             //user has multiples, etc
             //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
             //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-            RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
+            //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
+
+            Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+            Bentley::WString projectGUIDw;
+
+            if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                {
+                projectGUID.Assign(projectGUIDw.c_str());
+                }                            
+            
+            RealityDataService::SetProjectId(projectGUID);
 
             return SUCCESS;
             }
 
     };
 
+// =====================================================================================
+// Stand-in for the CifSheetExaggeratedViewHandler that is defined in Vancouver.
+// =====================================================================================
+struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
+    {
+    bool _GetAspectRatioSkew (DynamicViewSettingsCR viewSettings, double& aspectRatio) const override
+        {
+        int dataSize;
+        double* data;
+        DgnV8Api::XAttributeHandlerId hid = DgnV8Api::XAttributeHandlerId(BENTLEY_CIF_XATTRIBUTE_ID, DgnV8Api::CIF::XATTRIBUTES_SUBID_EXAGGERATEDVIEWPROPERTIES);
+
+        if (NULL == (data = (double*) (viewSettings.GetXAttributesHolderCR().GetXAttribute(&dataSize, hid, 0))) || dataSize != sizeof(double))
+            aspectRatio = 1;
+        else
+            aspectRatio = *data;
+        return true;
+        }
+
+    static void Register()
+        {
+        DgnV8Api::XAttributeHandlerId hid = DgnV8Api::XAttributeHandlerId(BENTLEY_CIF_XATTRIBUTE_ID, DgnV8Api::CIF::XATTRIBUTES_SUBID_EXAGGERATEDSHEETVIEWHANDLER);
+        DgnV8Api::XAttributeHandlerManager::RegisterHandler(hid, new CifSheetExaggeratedViewHandlerStandin());
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[])
     {
@@ -642,6 +682,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     ConvertThreeMxAttachment::Register();
     ConvertScalableMeshAttachment::Register();
     ConvertDetailingSymbolExtension::Register();
+    CifSheetExaggeratedViewHandlerStandin::Register();
 
     //Ensure tha V8i::DgnGeocoord is using the GCS library from this application admin.
     DgnV8Api::ConfigurationManager::UndefineVariable (L"MS_GEOCOORDINATE_DATA");

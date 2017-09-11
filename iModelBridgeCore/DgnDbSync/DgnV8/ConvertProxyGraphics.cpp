@@ -421,6 +421,8 @@ DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentM
             continue;
 
         DgnV8Api::EditElementHandle v8eh(attachment->GetElementId(), &parentModel.GetV8Model());
+        if (!v8eh.IsValid())
+            continue;
         ChangeDetector::SearchResults searchRes;
         if (!GetChangeDetector()._IsElementChanged(searchRes, *this, v8eh, parentModel))
             continue;
@@ -797,15 +799,21 @@ static DgnECInstanceCreateOptionsCR getCreateOptions()
     return s_opts;
     }
 
+struct TargetDrawingBoundary
+    {
+    ResolvedModelMapping m_modelMapping;
+    DgnV8Api::ElementId m_eid = 0;
+    };
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                                   Sam.Wilson      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnV8Api::ElementHandle getTargetDrawingBoundary(DgnV8EhCR viewEH)
+static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converter& cvt)
     {
     DgnV8Api::DgnLinkTreeSpecPtr treeSpec = DgnV8Api::DgnLinkManager::CreateTreeSpec (viewEH);
     DgnV8Api::DgnLinkTreePtr annotationTree = DgnV8Api::DgnLinkManager::GetManager ().ReadLinkTree (*treeSpec, false);
     if (!annotationTree.IsValid ())
-        return DgnV8Api::ElementHandle();
+        return TargetDrawingBoundary();
 
     DgnLinkTreeBranchCR root = annotationTree->GetRoot ();
 
@@ -840,7 +848,15 @@ static DgnV8Api::ElementHandle getTargetDrawingBoundary(DgnV8EhCR viewEH)
                 if (host.IsElement())
                     {
                     //printf(" ==>> %s\n", Converter::IssueReporter::FmtElement(*host.GetElementHandle()).c_str());
-                    return *host.GetElementHandle();
+                    TargetDrawingBoundary tdb;
+                    auto dbEh = host.GetElementHandle();
+                    if (dbEh != nullptr)
+                        {
+                        // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
+                        tdb.m_modelMapping = cvt.FindFirstModelMappedTo(*dbEh->GetDgnModelP());
+                        tdb.m_eid = dbEh->GetElementId();
+                        return tdb;
+                        }
                     }
 
                 //else if (host.IsModel())
@@ -862,7 +878,7 @@ static DgnV8Api::ElementHandle getTargetDrawingBoundary(DgnV8EhCR viewEH)
 
         }
 
-    return DgnV8Api::ElementHandle();
+    return TargetDrawingBoundary();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1072,7 +1088,7 @@ void ConvertDetailingSymbolExtension::Initialize(Converter& converter)
         return;
     s_initialized = true;
 
-    DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceV8ModelSyncInfoId INT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetV8ModelSyncInfoId INT NOT NULL, TargetV8ElementId BIGINT NOT NULL, DetType INT");
+    DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceV8ModelSyncInfoId INT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetV8ModelSyncInfoId INT, TargetV8ElementId BIGINT, DetType INT");
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
@@ -1109,19 +1125,15 @@ BeSQLite::CachedStatementPtr ConvertDetailingSymbolExtension::GetSelectStatement
 //---------------------------------------------------------------------------------------
 void ConvertDetailingSymbolExtension::RecordCalloutDependency(Converter& converter, DgnV8EhCR v8Eh, ResolvedModelMapping const& v8mm)
     {
-    auto dbEh = getTargetDrawingBoundary(v8Eh);
-    if (!dbEh.IsValid())
-        return;
-
-    auto dbmm = converter.FindFirstModelMappedTo(*dbEh.GetDgnModelP());
-    if (!dbmm.IsValid())
-        return;
+    //auto tdb = getTargetDrawingBoundary(v8Eh, converter);
+    //if (!tdb.m_modelMapping.IsValid() || 0 == tdb.m_eid)
+    //    return;
 
     auto stmt = GetInsertStatement(converter.GetDgnDb(), DetType::Callout);
     stmt->BindInt   (1, v8mm.GetV8ModelSyncInfoId().GetValue());
     stmt->BindInt64 (2, v8Eh.GetElementId());
-    stmt->BindInt   (3, dbmm.GetV8ModelSyncInfoId().GetValue());
-    stmt->BindInt64 (4, dbEh.GetElementId());
+    //stmt->BindInt   (3, tdb.m_modelMapping.GetV8ModelSyncInfoId().GetValue());
+    //stmt->BindInt64 (4, tdb.m_eid);
     auto status = stmt->Step();
     BeAssert(BE_SQLITE_DONE == status);
     UNUSED_VARIABLE(status);
@@ -1204,8 +1216,19 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
     // Read back what RecordCalloutDependency stored:
     SyncInfo::V8ModelSyncInfoId v8CalloutModelId          (select.GetValueInt  (0));      // Source=Callout
     DgnV8Api::ElementId         v8CalloutElementId       = select.GetValueInt64(1);
-    SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId    (select.GetValueInt  (2));      // Target=DrawingBoundary
-    DgnV8Api::ElementId         drawingBoundaryElementId = select.GetValueInt64(3);
+    //SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId    (select.GetValueInt  (2));      // Target=DrawingBoundary
+    //DgnV8Api::ElementId         drawingBoundaryElementId = select.GetValueInt64(3);
+    auto rmm = converter.FindResolvedModelMappingBySyncId(v8CalloutModelId);
+    if (!rmm.IsValid())
+        return;
+    DgnV8Api::ElementHandle v8Eh(v8CalloutElementId, &rmm.GetV8Model());
+    if (!v8Eh.IsValid())
+        return;
+    auto tdb = getTargetDrawingBoundary(v8Eh, converter);
+    if (!tdb.m_modelMapping.IsValid() || 0 == tdb.m_eid)
+        return;
+    SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId = tdb.m_modelMapping.GetV8ModelSyncInfoId();      // Target=DrawingBoundary
+    DgnV8Api::ElementId         drawingBoundaryElementId = tdb.m_eid;
 
     //  Find the BIM Callout to which the V8 Callout was converted
     //  I'm confident that there is only one syncinfo mapping for a given V8 Callout element, so there's no need for a filter

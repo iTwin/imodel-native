@@ -9,6 +9,7 @@
 
 static bool isHttp(WCharCP str){return (0 == wcsncmp(L"http:", str, 5) || 0 == wcsncmp(L"https:", str, 6));}
 
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -167,6 +168,17 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         }
 
     // Classifiers.
+    uint32_t                                    activeLinkId = 0xffff;
+    DgnV8Api::ElementHandle::XAttributeIter     activeClassifierXai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_ClassifierId), 0);
+
+
+    if (activeClassifierXai.IsValid())
+        {
+        Bentley::DataInternalizer    source ((byte*) activeClassifierXai.PeekData(), activeClassifierXai.GetSize());
+
+        source.get (&activeLinkId);
+        }
+
     ModelSpatialClassifiers                 classifiers;
     DgnV8Api::ElementHandle::XAttributeIter classifierXai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_Classifier), DgnV8Api::XAttributeHandle::MATCH_ANY_ID);
 
@@ -248,8 +260,10 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
             classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), classifierMM.GetV8FileSyncInfoId(), SyncInfo::Level::Type::Spatial);
             }
         
-        classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP())));
+        classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP()), activeLinkId == classifierXai.GetId()));
         }
+
+
     clipVector->TransformInPlace(v8mm.GetTransform());
 
     Bentley::WString monikerString;
@@ -304,7 +318,13 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 void ConvertThreeMxAttachment::Register()
     {
     ConvertThreeMxAttachment* instance = new ConvertThreeMxAttachment();
-    RegisterExtension(ThreeMxElementHandler::GetInstance(), *instance);
+    
+    DgnV8Api::ElementHandlerId handlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0);
+    DgnV8Api::Handler* elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
+	
+    assert(elHandler != nullptr);
+	
+    RegisterExtension(*elHandler, *instance);
     }
 
 
