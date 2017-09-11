@@ -203,13 +203,23 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke">
+    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll"/>
         <SubPart PartName="BeLibJpegTurbo" PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <Bindings>
             <PublicAPI Domain="BeJpeg"/>
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibext)</Libs>
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/BeXml.mke" ApiNumber="B02">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart PartName="libxml2" PartFile="BeLibxml2" Repository="Libsrc-libxml2"/>
+        <Bindings>
+            <PublicAPI Domain="BeXml"/>
+            <Assemblies>Delivery/$(shlibprefix)BeXml$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BeXml$(libext)</Libs>
         </Bindings>
     </Part>
 	
