@@ -30,7 +30,7 @@
         <SubPart PartName="ECPresentation-PublicAPI" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
-        <SubPart PartName="BeXml"               PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ECObjects" />
         <Bindings>
