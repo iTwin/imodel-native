@@ -18,6 +18,36 @@ USING_NAMESPACE_BENTLEY_PLANNING
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+#ifdef WIP  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getStartAndEnd(double& start, double& end, TimeSpanCR timeSpan, DateType dateType)
+    {
+    switch (dateType)
+        {
+        default:
+        case DateType::Planned:
+            timeSpan.GetPlannedStart().ToJulianDay(start);
+            timeSpan.GetPlannedFinish().ToJulianDay(end);
+            break;
+
+        case DateType::Actual:
+            timeSpan.GetActualStart().ToJulianDay(start);
+            timeSpan.GetActualFinish().ToJulianDay(end);
+            break;
+        case DateType::Early:
+            timeSpan.GetEarlyStart().ToJulianDay(start);
+            timeSpan.GetEarlyFinish().ToJulianDay(end);
+            break;
+        case DateType::Late:
+            timeSpan.GetLateStart().ToJulianDay(start);
+            timeSpan.GetLateFinish().ToJulianDay(end);
+            break;
+        }
+    }
+#endif
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
 //=======================================================================================
@@ -145,6 +175,13 @@ private:
 public:
     ElementSchedule (ElementScheduleEntry const& entry)     { AddEntry(entry); }
     void AddEntry (ElementScheduleEntry const& entry)       { m_entries.insert(entry); }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     GetJson(DgnElementId id, double start, double end)
+    {
+    }
 
  };  // ElementSchedule
 
@@ -169,12 +206,31 @@ void    AddEntry (DgnElementId elementId, ElementScheduleEntry const& entry)
         found->second->AddEntry(entry);
     }
     
+    
+/*---------------------------------------------------------------------------------**//**                                                                                                                                                 
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     GetJson(TimeSpanCR timeSpan, DateType dateType)
+    {
+    Json::Value scheduleJson = Json::objectValue;
+#ifdef WIP
+    double      start, end;
+
+    getStartAndEnd (start, end, timeSpan, dateType);
+
+    for (auto const& curr : m_elementSchedules)
+        scheduleJson.append(curr.send.GetJson(curr.first, start, end));
+          
+#endif                  
+    return scheduleJson;
+    }
+
 };  // Schedule
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Planning::Baseline::Entry const& baselineEntry, DgnDbCR markupDb, DgnDbCR db, Utf8CP dateType)
+static BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Planning::Baseline::Entry const& baselineEntry, DgnDbCR markupDb, DgnDbCR db, DateType dateType)
     {
     Utf8CP              ecSqlFormatStr =
         "SELECT Activity.ECInstanceId, TimeSpan.%sStart, TimeSpan.%sFinish " \
@@ -183,8 +239,8 @@ BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry co
         "WHERE Activity.Plan.Id = :planId AND TimeSpan.Baseline.Id = :baselineId " \
         "ORDER BY TimeSpan.%sStart, TimeSpan.%sFinish";
 
-    Utf8String          dateTypeStr = "Planned"; // PlanningUtility::ConvertDateTypeToString(m_channelSettings.GetDateType());
-    Utf8PrintfString    readECSql(ecSqlFormatStr, dateType, dateType, dateType, dateType);
+    Utf8String          dateTypeStr = PlanningUtility::ConvertDateTypeToString(dateType);
+    Utf8PrintfString    readECSql(ecSqlFormatStr, dateTypeStr, dateTypeStr, dateTypeStr, dateTypeStr);
 
     ECSqlStatement      readStmt;
     ECSqlStatus         ecSqlStatus = readStmt.Prepare(markupDb, readECSql.c_str());
@@ -219,21 +275,11 @@ BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry co
     return SUCCESS;
     }
 
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value createScheduleJson(Schedule const& schedule, TimeSpanCR timeSpan)
-    {
-    Json::Value scheduleJson;
-                  
-    return scheduleJson;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR db, Utf8CP dateType)
+BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR db, DateType dateType)
     {
     schedules = Json::arrayValue;
 
@@ -251,9 +297,9 @@ BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR
             Schedule        rawSchedule;
             TimeSpanCP      timeSpan;
 
-            if (nullptr != (timeSpan = plan->GetTimeSpan()) &&
+            if (nullptr != (timeSpan = plan->GetTimeSpan(baseline.GetId())) &&
                 SUCCESS == extractRawSchedule(rawSchedule, planEntry, *plan, baseline, markupDb, db, dateType))
-                schedules.append(createScheduleJson(rawSchedule, *timeSpan));
+                schedules.append(rawSchedule.GetJson(*timeSpan, dateType));
             }
         }
 
@@ -282,10 +328,9 @@ void   PublisherContext::PublishScheduleSimulations()
         return;
 
     Json::Value     scheduleJson;
+    DateType        scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
 
-    if (SUCCESS != extractSchedules(scheduleJson, *markupDb, GetDgnDb(), "Planned"))
-        return;
-
-    
+    for (auto& scheduleType : scheduleTypes)
+        extractSchedules(scheduleJson, *markupDb, GetDgnDb(), scheduleType);
     }
 
