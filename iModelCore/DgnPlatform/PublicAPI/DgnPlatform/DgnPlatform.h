@@ -958,6 +958,7 @@ public:
     void SetGreen(Byte v) {m_green=v;}
     void SetBlue(Byte v) {m_blue=v;}
     void SetAlpha(Byte v) {m_alpha=v;}
+    void SetColorNoAlpha(ColorDefCR color) { m_red = color.GetRed(), m_green=color.GetGreen(), m_blue = color.GetBlue(); }
     Byte GetRed() const {return m_red;}
     Byte GetGreen() const {return m_green;}
     Byte GetBlue() const {return m_blue;}

@@ -304,5 +304,87 @@ DGNPLATFORM_EXPORT static bool SetExternalFrustrum(bool isActive); // Frustrum r
 
 }; // PSolidKernelManager
 
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      09/2017
+*
+*  Utilities for managing error handling when using Parasolid from more than one thread.
+*  A single lightweight partition is created for each thread.  The error handler is 
+*  replaced with a handler that will clear exclusions and rollback to the pMark when 
+*  a sever error occurs.  Without this error handling, a sever error in a thread using
+*  parasolid will deadlock all thread.
+*
++===============+===============+===============+===============+===============+======*/
+struct  PSolidThreadUtil
+{
+//
+//! Exception thrown when a Parasolid method produces a severe error.
+class   ParasolidException {};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      09/2017
+*
+*  The MainThreadMark object should be included once in the main thread.  It handles setting 
+*  up the thread local storage used by all threads and replaces the error handler with
+*  one that handles severe errors back to the most recent inner thread mark and
+*  clearing exclusions.
+*
++===============+===============+===============+===============+===============+======*/
+struct  MainThreadMark : RefCountedBase
+    {
+    private:
+    BeThreadLocalStorage*       m_previousLocalStorage;
+    PK_ERROR_frustrum_t         m_previousErrorFrustum;
+
+    public:
+    DGNPLATFORM_EXPORT MainThreadMark ();
+    DGNPLATFORM_EXPORT ~MainThreadMark ();
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      09/2017
+*
+*  The WorkerThreadOuterMark should be included once in each worker thread before any 
+*  Parasolid processing is initated.  It sets up a local storage for the worker thread
+*  and creates a new lightweight partition in which all Parasolid processing should be
+*  performed.  The destructor will delete the lightweight partition created for this 
+*  thread.
+*
++===============+===============+===============+===============+===============+======*/
+struct WorkerThreadOuterMark : RefCountedBase
+    {
+    public:
+    DGNPLATFORM_EXPORT WorkerThreadOuterMark ();
+    DGNPLATFORM_EXPORT ~WorkerThreadOuterMark ();
+    };
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      09/2017
+*
+*  The WorkerThreadInnerMark should be included once in the worker thread whenever
+*  any Parasolid processing occurs.  It set the partition to the lightweight partition
+*  for this thread and advances the partition mark (PMark) so that will be used to 
+*  roll back if a sever error occurs.
+*                                                    Ray.Bentley      09/2017
++===============+===============+===============+===============+===============+======*/
+struct WorkerThreadInnerMark : RefCountedBase
+    {
+    private:
+    BeMutexHolder     m_mutexHolder;
+
+    public:
+    DGNPLATFORM_EXPORT WorkerThreadInnerMark ();
+    DGNPLATFORM_EXPORT ~WorkerThreadInnerMark ();
+    };
+    
+typedef  RefCountedPtr<MainThreadMark>          MainThreadMarkPtr;
+typedef  RefCountedPtr<WorkerThreadOuterMark>   WorkerThreadOuterMarkPtr;
+typedef  RefCountedPtr<WorkerThreadInnerMark>   WorkerThreadInnerMarkPtr;
+};
+
+
+
+
 END_BENTLEY_DGN_NAMESPACE
 
