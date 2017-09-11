@@ -49,7 +49,11 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                     {
                     jsonLoginResponseString = jsonResponseStreamReader.ReadToEnd();
                     }
-
+                string jsonDatasetsResponseString;
+                using ( StreamReader jsonDatasetsResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerDatasetsResponse.txt")) )
+                    {
+                    jsonDatasetsResponseString = jsonDatasetsResponseStreamReader.ReadToEnd();
+                    }
                 string jsonQueryResponseString;
                 using ( StreamReader jsonQueryResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerSpatialQueryResponse.txt")) )
                     {
@@ -67,6 +71,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 string urlLogout = "https://earthexplorer.usgs.gov/inventory/json/v/1.4.0/" + "logout?jsonRequest=" + Uri.EscapeUriString(jsonLogoutRequest);
 
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogin))).Repeat.Once().Return(jsonLoginResponseString);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonDatasetsResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonQueryResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogout))).Repeat.Once().Return(jsonLogoutResponseString);
                 }
@@ -100,7 +105,11 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                     {
                     jsonLoginResponseString = jsonResponseStreamReader.ReadToEnd();
                     }
-
+                string jsonDatasetsResponseString;
+                using ( StreamReader jsonDatasetsResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerDatasetsResponse.txt")) )
+                    {
+                    jsonDatasetsResponseString = jsonDatasetsResponseStreamReader.ReadToEnd();
+                    }
                 string jsonQueryResponseString;
                 using ( StreamReader jsonQueryResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerSpatialQueryErrorResponse.txt")) )
                     {
@@ -118,6 +127,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 string urlLogout = "https://earthexplorer.usgs.gov/inventory/json/v/1.4.0/" + "logout?jsonRequest=" + Uri.EscapeUriString(jsonLogoutRequest);
 
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogin))).Repeat.Once().Return(jsonLoginResponseString);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonDatasetsResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonQueryResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogout))).Repeat.Once().Return(jsonLogoutResponseString);
                 }
@@ -146,7 +156,11 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                     {
                     jsonLoginResponseString = jsonResponseStreamReader.ReadToEnd();
                     }
-
+                string jsonDatasetsResponseString;
+                using ( StreamReader jsonDatasetsResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerDatasetsResponse.txt")) )
+                    {
+                    jsonDatasetsResponseString = jsonDatasetsResponseStreamReader.ReadToEnd();
+                    }
                 string jsonLogoutResponseString;
                 using ( StreamReader jsonLogoutResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerLogoutResponse.txt")) )
                     {
@@ -159,6 +173,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 string urlLogout = "https://earthexplorer.usgs.gov/inventory/json/v/1.4.0/" + "logout?jsonRequest=" + Uri.EscapeUriString(jsonLogoutRequest);
 
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogin))).Repeat.Once().Return(jsonLoginResponseString);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonDatasetsResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Throw(new TaskCanceledException());
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogout))).Repeat.Once().Return(jsonLogoutResponseString);
                 }
@@ -186,7 +201,11 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                     {
                     jsonLoginResponseString = jsonResponseStreamReader.ReadToEnd();
                     }
-
+                string jsonDatasetsResponseString;
+                using ( StreamReader jsonDatasetsResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerDatasetsResponse.txt")) )
+                    {
+                    jsonDatasetsResponseString = jsonDatasetsResponseStreamReader.ReadToEnd();
+                    }
                 string jsonLogoutResponseString;
                 using ( StreamReader jsonLogoutResponseStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("EarthExplorerLogoutResponse.txt")) )
                     {
@@ -202,6 +221,7 @@ namespace IndexECPlugin.Tests.Tests.Helpers
                 AggregateException ex = new AggregateException(innerExceptions);
 
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogin))).Repeat.Once().Return(jsonLoginResponseString);
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Return(jsonDatasetsResponseString);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.NotEqual(urlLogin))).Repeat.Once().Throw(ex);
                 Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Equal(urlLogout))).Repeat.Once().Return(jsonLogoutResponseString);
                 }
@@ -349,11 +369,30 @@ namespace IndexECPlugin.Tests.Tests.Helpers
             }
 
         [Test]
-        public void GetXmlDocTest()
+        public void GetXmlDocErrorTest()
             {
             IHttpResponseGetter httpResponseGetterMock = (IHttpResponseGetter) m_mock.StrictMock(typeof(IHttpResponseGetter));
 
             using (m_mock.Record())
+                {
+                Exception ex = new AccessViolationException();
+                Expect.Call(httpResponseGetterMock.GetHttpResponse(Arg<string>.Is.Anything)).Repeat.Once().Throw(ex);
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery();
+                UsgsEEDataFetcher fetcher = new UsgsEEDataFetcher(query, httpResponseGetterMock);
+
+                Assert.Throws<AccessViolationException>(() => fetcher.GetXmlDocForInstance("1234", "5678"), "The error was not thrown as is.");
+                }
+            }
+
+        [Test]
+        public void GetXmlDocTest ()
+            {
+            IHttpResponseGetter httpResponseGetterMock = (IHttpResponseGetter) m_mock.StrictMock(typeof(IHttpResponseGetter));
+
+            using ( m_mock.Record() )
                 {
 
                 string xmlResponseString;
