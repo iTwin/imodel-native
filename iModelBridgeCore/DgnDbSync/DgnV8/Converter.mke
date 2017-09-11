@@ -185,6 +185,7 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ImagePP.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib 
