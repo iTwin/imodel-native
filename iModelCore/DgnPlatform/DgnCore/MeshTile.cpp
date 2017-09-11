@@ -2495,7 +2495,9 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
     {
     // We need to generate these in this threads parasolid partition so that we 
     // can roll them back correctly in the event of a server parasolid error.
+#if defined (BENTLEYCONFIG_PARASOLID)    
     PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+#endif
 
     IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
     DRange3d        range = clone->GetEntityRange();
