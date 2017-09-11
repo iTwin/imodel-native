@@ -124,7 +124,7 @@ GL_ScalableMesh::GL_ScalableMesh(const char *filepath)
 		ScalableMesh::IScalableMeshMemoryCounts::SetMaximumVideoMemoryUsage(video_memory);      // default video memory usage is 512 Mbytes
 		ScalableMesh::IScalableMeshMemoryCounts::GetAmountOfUsedVideoMemory();                  // use this for framerate estimation
 	}
-	bInitialized = true;
+	bInitialized = true; 
 	m_texUnit = -1;
 	load3sm(filepath);
 

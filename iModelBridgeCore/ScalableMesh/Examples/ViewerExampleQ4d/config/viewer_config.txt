@@ -16,6 +16,7 @@ back_col = 0, 0, 0
 camera_near_plane = 0.05
 camera_far_plane = 500
 camera_position = 8.0, 8.0, 5.0
+camera_fov = 60
 
 #Buttons to display, must have Button prefix
 ButtonLogo = (
