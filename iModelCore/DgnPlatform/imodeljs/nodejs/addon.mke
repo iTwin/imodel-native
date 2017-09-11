@@ -67,6 +67,7 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJsonCpp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibJpegTurbo.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJpeg.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibxml2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
