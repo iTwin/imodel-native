@@ -1204,7 +1204,7 @@ uint32_t Converter::GetV8Level(DgnV8EhCR v8Eh)
 DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& v8mm)
     {
     if (!v8Eh.GetElementCP()->ehdr.isGraphics)
-        return GetConverter().GetUncategorizedCategory(); // level of non-graphic element is not valid for category...
+        return v8mm.GetDgnModel().Is2dModel() ? GetConverter().GetUncategorizedDrawingCategory() : GetConverter().GetUncategorizedCategory(); // level of non-graphic element is not valid for category...
 
     uint32_t v8Level = Converter::GetV8Level(v8Eh);
     Level::Type ltype = v8mm.GetDgnModel().Is3d() ? Level::Type::Spatial : Level::Type::Drawing;

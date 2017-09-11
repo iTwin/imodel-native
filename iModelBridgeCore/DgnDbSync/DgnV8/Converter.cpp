@@ -2057,7 +2057,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     V8ElementECContent ecContent;
     GetECContentOfElement(ecContent, v8eh, v8mm, isNewElement);
 
-    const bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
+    bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
     const bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
 
     DgnModelR targetModel = v8mm.GetDgnModel();
@@ -2123,7 +2123,8 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             m_skipECContent= true;
             results.m_element = nullptr;
             results.m_v8PrimaryInstance = V8ECInstanceKey();
-            auto res = _CreateElementAndGeom(results, v8mm, elementClassId, false, categoryId, elementCode, v8eh);
+            hasPrimaryInstance = false;
+            auto res = _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh);
             m_skipECContent = was;
             if (BentleyApi::SUCCESS != res)
                 return BSIERROR;
@@ -2820,6 +2821,7 @@ void SpatialConverterBase::ConvertElementList(DgnV8Api::PersistentElementRefList
 
     //bool isGraphics = list->_IsGraphicsList();
     bool isGraphics = (nullptr != dynamic_cast<DgnV8Api::GraphicElementRefList*>(list));
+
 
     for (auto v8El : *list)
         {
