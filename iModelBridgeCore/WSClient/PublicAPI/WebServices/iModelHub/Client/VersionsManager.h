@@ -37,7 +37,7 @@ private:
 
     WSQuery CreateChangeSetsAfterVersionQuery(Utf8StringCR versionId, BeSQLite::BeGuidCR fileId) const;
 
-    WSQuery CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, uint64_t changeSetIndex, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
 
     VersionsManager() {};
 
