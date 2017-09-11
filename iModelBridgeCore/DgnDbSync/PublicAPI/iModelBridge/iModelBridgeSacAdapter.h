@@ -132,7 +132,7 @@ struct iModelBridgeSacAdapter
     //! @private
     IMODEL_BRIDGE_EXPORT static BentleyStatus ExtractFromIModel(BeFileName& outFile, BeFileNameCR imodelFile);
     //! @private
-    IMODEL_BRIDGE_EXPORT static BentleyStatus ExecuteOne(iModelBridge& bridge, Params const& saparams);
+    IMODEL_BRIDGE_EXPORT static BentleyStatus CreateOrUpdateBim(iModelBridge& bridge, Params const& saparams);
 
 public:
     //! Initialize the DgnPlatform host

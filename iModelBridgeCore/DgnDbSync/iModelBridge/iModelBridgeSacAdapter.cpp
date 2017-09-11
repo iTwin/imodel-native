@@ -159,7 +159,7 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeSacAdapter::ExecuteOne(iModelBridge& bridge, Params const& saparams)
+BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Params const& saparams)
     {
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
@@ -235,21 +235,15 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
 
     bool isNewFile = !outputFileName.DoesPathExist();
     
-    bvector<BeFileName> inputs;
-    inputs.push_back(inputFileName);
-
-    for (auto input : inputs)
+    bridge._GetParams().SetInputFileName(inputFileName);
+    if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
         {
-        bridge._GetParams().SetInputFileName(input);
-        if (BSISUCCESS != ExecuteOne(bridge, saparams))
+        if (isNewFile)
             {
-            if (isNewFile)
-                {
-                outputFileName.BeDeleteFile();
-                bridge._DeleteSyncInfo();
-                }
-            return BSIERROR;
+            outputFileName.BeDeleteFile();
+            bridge._DeleteSyncInfo();
             }
+        return BSIERROR;
         }
 
     /* NEEDS WORK
