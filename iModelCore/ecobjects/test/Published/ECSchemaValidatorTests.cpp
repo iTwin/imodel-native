@@ -655,9 +655,9 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
+* @bsimethod                             Colin.Kerr                             07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
+TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     {
     Utf8CP badSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -693,7 +693,7 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
 
 
-    Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    Utf8CP badSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="TestClassGood1">
         <ECProperty propertyName="PropName" typeName="long">
@@ -701,9 +701,9 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     </ECEntityClass>
     </ECSchema>)xml";
 
-    ECSchema::ReadFromXmlString(schema, goodSchemaXml1, *context);
+    ECSchema::ReadFromXmlString(schema, badSchemaXml3, *context);
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name does not end in 'Id' even though the type is 'long'";
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property type is 'long'";
 
     Utf8CP goodSchemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -720,7 +720,9 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     Utf8CP goodSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="SourceClass"/>
-    <ECEntityClass typeName="TargetClass"/>
+    <ECEntityClass typeName="TargetClass">
+        <ECNavigationProperty propertyName="NavProp" relationshipName="TestRelationshipGood" direction="backward" />
+    </ECEntityClass>
     <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="SourceClass"/>
@@ -736,7 +738,7 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
 
-    Utf8CP goodSchemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    Utf8CP badSchemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="SourceClass"/>
     <ECEntityClass typeName="TargetClass"/>
@@ -751,9 +753,9 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     </ECRelationshipClass>
     </ECSchema>)xml";
 
-    ECSchema::ReadFromXmlString(schema, goodSchemaXml4, *context);
+    ECSchema::ReadFromXmlString(schema, badSchemaXml4, *context);
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'iD' not 'Id'";
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property type is long";
     }
 
 /*---------------------------------------------------------------------------------**//**

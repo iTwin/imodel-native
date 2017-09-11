@@ -279,11 +279,15 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
         bool doNotUseECMAScript =  (ECObjectsStatus::Success == customAttr->GetValue (v, "DoNotUseECMAScript") && !v.IsNull() && v.GetBoolean());
         if (ECObjectsStatus::Success == customAttr->GetValue (v, "ParserRegularExpression") && !v.IsNull())
             {
-            parserRegex = ParserRegex::Create (v.GetUtf8CP(), doNotUseECMAScript);
-            if (NULL == parserRegex)
-                { 
-                LOG.errorv("A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression.  Failed to parse '%s' on ECProperty %s:%s", v.GetUtf8CP(), ecprop.GetClass().GetFullName(), ecprop.GetName().c_str()); 
-                return NULL; 
+            Utf8CP parserExpression = v.GetUtf8CP();
+            if (!Utf8String::IsNullOrEmpty(parserExpression))
+                {
+                parserRegex = ParserRegex::Create(parserExpression, doNotUseECMAScript);
+                if (NULL == parserRegex)
+                    {
+                    LOG.errorv("A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression.  Failed to parse '%s' on ECProperty %s:%s", v.GetUtf8CP(), ecprop.GetClass().GetFullName(), ecprop.GetName().c_str());
+                    return NULL;
+                    }
                 }
             }
         }

@@ -1524,7 +1524,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetName() const;
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8CP GetFullName() const;
-    //! Formats the class name for use in an ECSQL statement. ([{SchemaName}].[{ClassName}])
+    //! Formats the class name for use in an ECSQL statement: [{SchemaName}].[{ClassName}]
     //! @remarks The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
     //! Returns an iterable of all the ECProperties defined on this class
