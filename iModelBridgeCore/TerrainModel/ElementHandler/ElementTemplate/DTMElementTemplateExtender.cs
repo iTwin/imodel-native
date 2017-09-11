@@ -130,9 +130,12 @@ namespace Bentley.TerrainModel.ElementTemplate
             if (property != null)
                 {
                 string displayStyleName = property.StringValue;
-                if (!DisplayStyleManager.DoesDisplayStyleExistInFile(displayStyleName, copiedTemplate.Owner.DgnFile))
+                if (!string.IsNullOrEmpty(displayStyleName))
                     {
-                    DisplayStyleManager.CopyDisplayStyleToFile(displayStyleName, dgnLibTemplate.Owner.DgnFile, copiedTemplate.Owner.DgnFile);
+                    if (!DisplayStyleManager.DoesDisplayStyleExistInFile(displayStyleName, copiedTemplate.Owner.DgnFile))
+                        {
+                        DisplayStyleManager.CopyDisplayStyleToFile(displayStyleName, dgnLibTemplate.Owner.DgnFile, copiedTemplate.Owner.DgnFile);
+                        }
                     }
                 }
             }
