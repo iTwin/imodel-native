@@ -745,17 +745,20 @@ void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFor
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Utf8CP expected)
+void FormattingTestFixture::NamedFormatJsonTest(int testNum, Utf8CP stdName, bool verbose, Utf8CP expected)
     {
     NamedFormatSpecCP  nfsP = StdFormatSet::FindFormatSpec(stdName);
     Json::Value jval = nfsP->ToJson(verbose);
-    LOG.infov("Format %s json: %s", stdName, jval.ToString().c_str());
+    LOG.infov("[%03d] Format %s json: %s", testNum, stdName, jval.ToString().c_str());
     bool equ; 
 
     NamedFormatSpec nfs1 = NamedFormatSpec(jval);
 
     equ = nfsP->IsIdentical(nfs1);
-   // EXPECT_TRUE(equ);
+    if (equ)
+        EXPECT_TRUE(equ);
+    else
+        LOG.infov("Format %s conversion failed", stdName);
     }
 
 //----------------------------------------------------------------------------------------
@@ -782,6 +785,16 @@ void FormattingTestFixture::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
     EXPECT_TRUE(up1.IsIdentical(up2));
     }
 
+void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
+    {
+    BEU::UnitSynonymMap map = BEU::UnitSynonymMap(unitName, synonym);
+    Json::Value jval = map.ToJson();
+    BEU::UnitSynonymMap other = BEU::UnitSynonymMap(jval);
+    bool ident = map.IsIdentical(other);
+    EXPECT_TRUE(map.IsIdentical(other));
+    LOG.infov("UnitSynonymMap(%s, %s) => json: %s (%s)", unitName, synonym, jval.ToString().c_str(), 
+                                                                     FormatConstant::BoolText(ident));
+    }
 
 
 END_BENTLEY_FORMATTEST_NAMESPACE

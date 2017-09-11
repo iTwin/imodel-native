@@ -199,6 +199,11 @@ public:
     UnitCP GetUnit() const { return m_unit; }
     PhenomenonCP GetPhenomenon() const{ return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
     UNITS_EXPORT Json::Value ToJson();
+    UNITS_EXPORT bool IsIdentical(UnitSynonymMapCR other);
+    UNITS_EXPORT static bool AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2);
+    UNITS_EXPORT static bvector<UnitSynonymMap> MakeUnitSynonymVector(Json::Value jval);
+    UNITS_EXPORT static size_t AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym);
+
     };
 
 struct Phenomenon final : UnitsSymbol
@@ -241,7 +246,9 @@ public:
     UNITS_EXPORT UnitCP FindSynonym(Utf8CP synonym) const;
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
-    UNITS_EXPORT void AddSynonymMap(Json::Value jval) const;
+    UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
+    UNITS_EXPORT Json::Value SynonymMapToJson();
+    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

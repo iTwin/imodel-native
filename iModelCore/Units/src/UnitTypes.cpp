@@ -416,10 +416,53 @@ UnitSynonymMap::UnitSynonymMap(Json::Value jval)
 Json::Value UnitSynonymMap::ToJson()
     {
     Json::Value jval;
-    jval[json_unitName()] = m_unit->GetName();
-    jval[json_synonym()] = m_synonym.c_str();
+    if (nullptr != m_unit)
+        {
+        jval[json_unitName()] = m_unit->GetName();
+        jval[json_synonym()] = m_synonym.c_str();
+        }
     return jval;
     }
+
+bool UnitSynonymMap::IsIdentical(UnitSynonymMapCR other)
+    {
+    if (m_unit != other.m_unit) return false;
+    if (BeStringUtilities::StricmpAscii(m_synonym.c_str(), other.m_synonym.c_str()) != 0) return false;
+    return true;
+    }
+
+bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2)
+    {
+    if (v1.size() != v2.size()) return false;
+    for (size_t i = 0; i < v1.size(); i++)
+        {
+        if (!v1[i].IsIdentical(v2[i])) return false;
+        }
+    return true;
+    }
+
+bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
+    {
+    UnitSynonymMap map;
+    Json::Value val;
+    bvector<UnitSynonymMap> mapV;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        val = *iter;
+        map = UnitSynonymMap(val);
+        mapV.push_back(map);
+        }
+    return mapV;
+    }
+
+size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym)
+    {
+    UnitSynonymMap map(unitName, synonym);
+    mapV.push_back(map);
+    return mapV.size();
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -475,8 +518,40 @@ void Phenomenon::AddSynonymMap(UnitSynonymMapCR map) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
-void AddSynonymMap(Json::Value jval)
+void Phenomenon::AddSynonymMaps(Json::Value jval) const // this value could be an array
     {
-    UnitSynonymMap map = UnitSynonymMap(jval);
-
+    UnitSynonymMap map;
+    Json::Value val;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        val = *iter;
+        for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
+            {
+            map = UnitSynonymMap(val);
+            AddSynonymMap(map);
+            }
+        }
     }
+
+Json::Value Phenomenon::SynonymMapToJson()
+    {
+    Json::Value jval;
+
+    for (size_t i = 0; i < m_altNames.size(); i++)
+        {
+        jval.append(m_altNames[i].ToJson());
+        }
+    return jval;
+    }
+
+Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
+    {
+    Json::Value jval;
+
+    for (size_t i = 0; i < mapV.size(); i++)
+        {
+        jval.append(mapV[i].ToJson());
+        }
+    return jval;
+    }
+

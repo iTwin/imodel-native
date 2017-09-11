@@ -553,11 +553,11 @@ public:
 struct NamedFormatSpec
     {
 private:
-        Utf8String      m_name;                  // name or ID of the format
-        Utf8String           m_alias;                 // short alternative name (alias)
-        NumericFormatSpec   m_numericSpec;
-        CompositeValueSpec  m_compositeSpec;
-        FormatSpecType  m_specType;
+        Utf8String         m_name;                  // name or ID of the format
+        Utf8String         m_alias;                 // short alternative name (alias)
+        NumericFormatSpec  m_numericSpec;
+        CompositeValueSpec m_compositeSpec;
+        FormatSpecType     m_specType;
         FormatProblemDetail m_problem;
 
 public:

@@ -72,9 +72,11 @@ struct FormattingTestFixture
         static void FormattingTraitsTest();
         static void FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose);
         static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
-        static void NamedFormatJsonTest(Utf8CP formatName, bool verbose, Utf8CP expected);
+        static void NamedFormatJsonTest(int testNum, Utf8CP formatName, bool verbose, Utf8CP expected);
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
         static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
+        static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym);
+        //static void LoadUnitSynonymsTest();
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

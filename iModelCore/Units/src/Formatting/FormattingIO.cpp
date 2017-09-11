@@ -115,7 +115,6 @@ size_t StdFormatSet::StdInit()
     return s;
     }
 
-
 size_t StdFormatSet::CustomInit()
     {
     m_customSet.clear();
@@ -553,25 +552,6 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
         SetInputUnit(inputUnit);
         }    
     }
-
-
-    //friend struct CompositeValue;
-    //protected:
-    //    static const size_t  indxMajor = 0;
-    //    static const size_t  indxMiddle = 1;
-    //    static const size_t  indxMinor = 2;
-    //    static const size_t  indxSub = 3;
-    //    static const size_t  indxInput = 4;
-    //    static const size_t  indxLimit = 5;
-    //    size_t m_ratio[indxSub];
-    //    //BEU::UnitCP m_units[indxLimit];
-    //    UnitProxySet m_unitProx = UnitProxySet(indxLimit);
-    //    //Utf8CP m_unitLabel[indxLimit];
-    //    FormatProblemDetail m_problem;
-    //    CompositeSpecType m_type;
-    //    bool m_includeZero;
-    //    Utf8String m_spacer;
-
 
 //===================================================
 //

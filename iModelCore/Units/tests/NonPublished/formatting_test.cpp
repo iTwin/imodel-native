@@ -204,11 +204,11 @@ TEST(FormattingTest, Json)
     bvector<Utf8CP> stdNames = StdFormatSet::StdFormatNames(true);
     for (int i = 0; i < stdNames.size(); i++)
         {
-        FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
+        FormattingTestFixture::NamedFormatJsonTest(i, stdNames[i], false, "");
         }
     for (int i = 0; i < stdNames.size(); i++)
         {
-        FormattingTestFixture::NamedFormatJsonTest(stdNames[i], true, "");
+        FormattingTestFixture::NamedFormatJsonTest(i, stdNames[i], true, "");
         }
     LOG.info("================  All Std formats to Json (end)");
 
@@ -227,6 +227,22 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitProxyJsonTest("ARC_DEG", "°");
     FormattingTestFixture::UnitProxyJsonTest("ARC_MINUTE", "'");
     FormattingTestFixture::UnitProxyJsonTest("ARC_SECOND", "\"");
+
+    FormattingTestFixture::UnitSynonymMapTest("FT", "feet");
+    FormattingTestFixture::UnitSynonymMapTest("ARC_DEG", u8"°");
+    FormattingTestFixture::UnitSynonymMapTest("ARC_SECOND", "\"");
+
+    bvector<BEU::UnitSynonymMap> mapV;
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "foot");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", u8"фут");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "'");
+    Json::Value mapJ = BEU::Phenomenon::SynonymMapVectorToJson(mapV);
+    Utf8String mapS = mapJ.ToString();
+    LOG.infov("mapVector %s", mapS.c_str());
+    bvector<BEU::UnitSynonymMap> mapV2 = BEU::UnitSynonymMap::UnitSynonymMap::MakeUnitSynonymVector(mapJ);
+    bool id = BEU::UnitSynonymMap::AreVectorsIdentical(mapV, mapV2);
+    LOG.infov("Vectors identical %s", FormatConstant::BoolText(id));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
