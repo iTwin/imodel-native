@@ -100,7 +100,7 @@
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
-        <SubPart PartName="BeXml"                        PartFile="BeLibxml2"            Repository="libsrc-libxml2" />        
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="BeCurl"                          PartFile="BeCurl"               Repository="Libsrc-Curl"/>
         <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
