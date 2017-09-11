@@ -1358,7 +1358,7 @@ $(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSuppo
 #----------------------------------------------------------------------
 #       Libraries used
 #----------------------------------------------------------------------
-BeLibJpegTurbo                  = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
+BeLibJpegTurbo                  = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext)
 IppJpegLib12Bits                = $(ContextSubpartsLibs)$(libprefix)IppJpeg12Bits$(stlibext)
 IppGdalLib                      = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
 PdfLibInitializer               = $(libprefix)PdfLibInitializer$(libext)

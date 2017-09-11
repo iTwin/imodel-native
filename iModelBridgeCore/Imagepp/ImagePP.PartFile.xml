@@ -15,7 +15,7 @@
     <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="png"                     PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib"                    PartFile="Zlib"             Repository="Libsrc-Compress" />
-        <SubPart PartName="BeLibJpegTurbo"          PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
@@ -105,7 +105,7 @@
         <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
         <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
-        <SubPart PartName="BeLibJpegTurbo"                  PartFile="BeLibJpegTurbo"       Repository="libsrc-libjpegturbo"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Zlib"                            PartFile="Zlib"                 Repository="Libsrc-Compress" />
         <SubPart PartName="png"                             PartFile="png"                  Repository="libsrc-png"/>
         <SubPart PartName="Jpeg12BitsLib" />
