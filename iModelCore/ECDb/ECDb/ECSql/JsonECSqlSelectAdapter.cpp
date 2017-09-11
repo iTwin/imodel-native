@@ -554,7 +554,6 @@ bool ECPropertyFormatter::_FormattedStringFromECValue(Utf8StringR strVal, ECN::E
      * Fortunately, all the type adapters are still at the DgnPlatform layer, and the
      * application that wants to use the ITypeAdapter/ITypeAdapterContext can still pass in
      * an appropriate implementation of ECPropertyFormatter.
-     * For an example of this use, see DgnECPropertyFormatter in DgnPlatform.
      */
 
     strVal = ecValue.ToString();
