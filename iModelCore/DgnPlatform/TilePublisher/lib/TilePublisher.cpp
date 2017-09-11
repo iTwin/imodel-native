@@ -3933,7 +3933,8 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
         }
 
     WString         modelRootName = GetRootName(modelId, classifier);
-    BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
+    WString         modelDir      = L"TileSets\\" + m_rootName;
+    BeFileName      tilesetFileName (nullptr, modelDir.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();
 
     utf8FileName.ReplaceAll("\\", "//");
