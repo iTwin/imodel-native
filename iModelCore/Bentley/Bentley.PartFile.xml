@@ -202,5 +202,15 @@
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Bentley-UwpTest.log</Files>
         </Bindings>
     </Part>
+
+    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart PartName="BeLibJpegTurbo" PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <Bindings>
+            <PublicAPI Domain="BeJpeg"/>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibext)</Libs>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
 	
 </BuildContext>
