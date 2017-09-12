@@ -13,6 +13,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnView/DgnViewLib.h>
+#include <iModelBridge/iModelBridgeFwkTypes.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -139,15 +140,10 @@ struct iModelBridge
     static Utf8CP str_BridgeType_DWG() {return "DWG";}
 
     //! The bridge's affinity to some source file.
-    enum Affinity {None, Low, Medium, High, ExactMatch};
+    typedef iModelBridgeAffinityLevel Affinity;
 
     //! Identifies a bridge that has some affinity to a requested source file
-    struct BridgeAffinity
-        {
-        WString m_bridgeRegSubKey;          //!< The @ref ANCHOR_BridgeRegistration "subkey" that identifies the bridge in the registry.
-        iModelBridge::Affinity m_affinity;  //!< The affinity of the bridge for the requested source file.
-        BridgeAffinity() : m_affinity(Affinity::None) {}
-        };
+    typedef iModelBridgeWithAffinity BridgeAffinity;
 
     enum class CmdLineArgStatus{Success, Error, NotRecognized};
 
@@ -489,19 +485,3 @@ extern "C"
     typedef BentleyApi::Dgn::iModelBridge* T_iModelBridge_getInstance(wchar_t const* regSubKey);
     };
 
-/*! \typedef typedef void T_iModelBridge_getAffinity (BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeaffinity, BentleyApi::BeFileName const& bridgeLibraryPath, BentleyApi::BeFileName const& sourceFileName);
- *  \brief The signature of the <code>iModelBridge_getAffinity</code> function that a shared library must implement in order to @ref iModelBridge_getAffinity "report the affinity of a bridge for a source document to the framework".
- *  Note that the iModelBridge_getAffinity function must have extern "C" linkage and must be exported.
- *  \param[out] bridgeAffinity      Return the bridge, if any, that could convert this source document.
- *  \param[in] affinityLibraryPath  The full path to the affinity library that implements this function. This is a convenience, in case this function needs to locate assets relative to itself.
- *  \param[in] sourceFIleName       The name of the source file to check
- *  @note If set, the value in bridgeAffinity.m_bridgeRegSubKey must match the @ref ANCHOR_BridgeRegistration "subkey" of a bridge in the registry.
- *  @note This function will be called in a separate process from the bridge. The iModelBridge_getAffinity function can (and must) do its own initialization as required to compute affinity.
- * @ingroup GROUP_iModelBridge
- */
-extern "C"
-    {
-    typedef void T_iModelBridge_getAffinity (BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
-                                             BentleyApi::BeFileName const& affinityLibraryPath,
-                                             BentleyApi::BeFileName const& sourceFileName);
-    };

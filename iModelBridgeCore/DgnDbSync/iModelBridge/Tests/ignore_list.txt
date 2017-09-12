@@ -1,2 +1,1 @@
-# fails in Firebug, PRG, and Android
-iModelBridgeTests.iModelBridgeSyncInfoFileTesterSyncInfoFile
+

@@ -51,13 +51,3 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 %endif
 
 %include $(sharedMki)linktool.mki
-
-######### iModelBridgeGetAffinityHost.exe ############
-
-always:
-    $(_bmake) $(baseDir)iModelBridgeGetAffinityHost.mke
-
-######### iModelBridgeAssign.exe ############
-
-always:
-    $(_bmake) $(baseDir)iModelBridgeAssignMain.mke

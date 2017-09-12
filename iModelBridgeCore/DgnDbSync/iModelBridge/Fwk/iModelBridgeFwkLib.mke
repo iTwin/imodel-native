@@ -17,6 +17,7 @@ always:
     ~mkdir $(o)
 
 iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+RegistryDir = $(baseDir)Registry/
 
 #--------------------------------------------------------------------------------------
 #   Compile the source
@@ -31,7 +32,9 @@ $(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBrid
 
 $(o)DgnDbServerClientUtils$(oext): $(baseDir)DgnDbServerClientUtils.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)DgnDbServerClientUtils.h $(DgnDbServerDepends) ${MultiCompileDepends}
 
-$(o)cpl_spawn$(oext): $(baseDir)cpl_spawn.cpp $(baseDir)cpl_spawn.h ${MultiCompileDepends}
+$(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(RegistryDir)iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
