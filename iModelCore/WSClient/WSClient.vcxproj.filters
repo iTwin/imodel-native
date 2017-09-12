@@ -468,9 +468,6 @@
     <ClCompile Include="iModelHubClient\CodeAdmin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="iModelHubClient\Configuration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="iModelHubClient\Error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -492,9 +489,6 @@
     <ClCompile Include="iModelHubClient\Logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="iModelHubClient\PredownloadManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="iModelHubClient\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -511,6 +505,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="iModelHubClient\UserInfoManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\ChangeSetCacheManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1070,9 +1067,6 @@
     <ClInclude Include="iModelHubClient\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="iModelHubClient\PredownloadManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1089,9 +1083,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Configuration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Error.h">
@@ -1158,6 +1149,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\FileLock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

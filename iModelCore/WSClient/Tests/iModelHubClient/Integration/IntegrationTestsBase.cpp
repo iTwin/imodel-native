@@ -9,7 +9,6 @@
 #include "IntegrationTestsBase.h"
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
-#include <WebServices/iModelHub/Client/Configuration.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <Bentley/bmap.h>
@@ -57,7 +56,6 @@ void IntegrationTestsBase::SetUp()
     m_pHost = new ScopediModelHubHost();
     Initialize(m_pHost);
     CreateInitialSeedDb();
-    Configuration::SetPredownloadChangeSetsEnabled(false);
     }
 
 //---------------------------------------------------------------------------------------

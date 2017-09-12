@@ -10,7 +10,6 @@
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/TxnManager.h>
 #include <WebServices/iModelHub/Client/Client.h>
-#include <WebServices/iModelHub/Client/Configuration.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGN
@@ -428,7 +427,6 @@ bool IsDirEmpty(BeFileName dirToCheck)
 
 TEST_F(BriefcaseTests, PreDownload)
     {
-    Configuration::SetPredownloadChangeSetsEnabled(true);
     BeFileName preDownloadPath;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(preDownloadPath, L"DgnDbRev\\PreDownload");
     BeAssert(SUCCESS == status && "Cannot get pre-download directory");
@@ -436,6 +434,7 @@ TEST_F(BriefcaseTests, PreDownload)
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
 
     auto briefcase = AcquireBriefcaseWithoutSync();
+    briefcase->GetiModelConnection().GetChangeSetCacheManager().EnableBackgroundDownload()->GetResult();
     InitializeWithChangeSets();
 
     // Wait max 50 sec until changeSet files are preDownloaded
@@ -451,14 +450,11 @@ TEST_F(BriefcaseTests, PreDownload)
     auto result = briefcase->PullAndMerge()->GetResult();
     EXPECT_SUCCESS(result);
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
-    Configuration::SetPredownloadChangeSetsEnabled(false);
+
     }
 
 TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
     {
-    Configuration::SetPredownloadChangeSetsEnabled(true);
-    Configuration::SetPredownloadChangeSetsCacheSize(1);
-
     BeFileName preDownloadPath;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(preDownloadPath, L"DgnDbRev\\PreDownload");
     BeAssert(SUCCESS == status && "Cannot get pre-download directory");
@@ -466,6 +462,8 @@ TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
 
     auto briefcase = AcquireBriefcaseWithoutSync();
+    briefcase->GetiModelConnection().GetChangeSetCacheManager().EnableBackgroundDownload()->GetResult();
+    briefcase->GetiModelConnection().GetChangeSetCacheManager().SetMaxCacheSize(1);
     InitializeWithChangeSets();
 
     // Wait max 20 sec until changeSet files are preDownloaded
@@ -480,8 +478,6 @@ TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
         }
 
     EXPECT_EQ(1, GetDirSize(preDownloadPath));
-    Configuration::SetPredownloadChangeSetsCacheSize(10 * 1024 * 1024);
-    Configuration::SetPredownloadChangeSetsEnabled(false);
     }
 
 TEST_F(BriefcaseTests, PreDownloadTurnedOff)
@@ -501,12 +497,13 @@ TEST_F(BriefcaseTests, PreDownloadTurnedOff)
 
 TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
     {
-    Configuration::SetPredownloadChangeSetsEnabled(true);
     // Acquire 5 briefcases
     bvector<BriefcasePtr> briefcases;
     for (int i = 0; i < 4; i++)
         {
-        briefcases.push_back(AcquireBriefcaseWithoutSync());
+        auto briefcase = AcquireBriefcaseWithoutSync();
+        briefcase->GetiModelConnection().GetChangeSetCacheManager().EnableBackgroundDownload()->GetResult();
+        briefcases.push_back(briefcase);
         }
 
     // Initialize some changeSets
@@ -523,7 +520,6 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
             lastChangeSet = currentBriefcase->GetLastChangeSetPulled();
         else
             EXPECT_EQ(lastChangeSet, currentBriefcase->GetLastChangeSetPulled());
-        Configuration::SetPredownloadChangeSetsEnabled(false);
         }
     }
 
