@@ -14,23 +14,46 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-#define JSON_POINT_X_KEY "x"
-#define JSON_POINT_Y_KEY "y"
-#define JSON_POINT_Z_KEY "z"
+//JSON Wire Format - Reserved property names
+#define JSON_Id "id"
+#define JSON_ClassId "classId"
+#define JSON_SourceId "sourceId"
+#define JSON_SourceClassId "sourceClassId"
+#define JSON_TargetId "targetId"
+#define JSON_TargetClassId "targetClassId"
 
-#define JSON_NAVIGATION_ID_KEY "id"
-#define JSON_NAVIGATION_RELECCLASSID_KEY "relECClassId"
+#define JSON_NavigationId "id"
+#define JSON_NavigationRelClassName "relClassName"
+
+#define JSON_PointX "x"
+#define JSON_PointY "y"
+#define JSON_PointZ "z"
+
+
 
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      01/2014
 +===============+===============+===============+===============+===============+======*/
 struct ECJsonUtilities
     {
+public:
+    BE_JSON_NAME(id)
+    BE_JSON_NAME(classId)
+    BE_JSON_NAME(className)
+    BE_JSON_NAME(sourceId)
+    BE_JSON_NAME(sourceClassId)
+    BE_JSON_NAME(targetId)
+    BE_JSON_NAME(targetClassId)
+    BE_JSON_NAME(relClassName)
+    BE_JSON_NAME(x)
+    BE_JSON_NAME(y)
+    BE_JSON_NAME(z)
+
 private:
     ECJsonUtilities() = delete;
     ~ECJsonUtilities() = delete;
 
-    static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Utf8CP coordinateKey);
+    static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Json::StaticString const& coordinateKey);
 
     static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECSchemaRemapperCP remapper = nullptr);
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);

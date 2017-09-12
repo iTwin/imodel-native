@@ -85,8 +85,8 @@ BentleyStatus ECJsonUtilities::JsonToBinary(ByteStream& byteStream, Json::Value 
 BentleyStatus ECJsonUtilities::Point2dToJson(Json::Value& json, DPoint2d pt)
     {
     json = Json::Value(Json::objectValue);
-    json[JSON_POINT_X_KEY] = pt.x;
-    json[JSON_POINT_Y_KEY] = pt.y;
+    json[json_x()] = pt.x;
+    json[json_y()] = pt.y;
     return SUCCESS;
     }
 
@@ -99,8 +99,8 @@ BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, Json::Value const& js
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY))
+    if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
+        SUCCESS != PointCoordinateFromJson(y, json, json_y()))
         return ERROR;
 
     pt = DPoint2d::From(x, y);
@@ -114,9 +114,9 @@ BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, Json::Value const& js
 BentleyStatus ECJsonUtilities::Point3dToJson(Json::Value& json, DPoint3d pt)
     {
     json = Json::Value(Json::objectValue);
-    json[JSON_POINT_X_KEY] = pt.x;
-    json[JSON_POINT_Y_KEY] = pt.y;
-    json[JSON_POINT_Z_KEY] = pt.z;
+    json[json_x()] = pt.x;
+    json[json_y()] = pt.y;
+    json[json_z()] = pt.z;
     return SUCCESS;
     }
 
@@ -130,9 +130,9 @@ BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, Json::Value const& js
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY) ||
-        SUCCESS != PointCoordinateFromJson(z, json, JSON_POINT_Z_KEY))
+    if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
+        SUCCESS != PointCoordinateFromJson(y, json, json_y()) ||
+        SUCCESS != PointCoordinateFromJson(z, json, json_z()))
         return ERROR;
 
     pt = DPoint3d::From(x, y, z);
@@ -144,7 +144,7 @@ BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, Json::Value const& js
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json::Value const& json, Utf8CP coordinateKey)
+BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json::Value const& json, Json::StaticString const& coordinateKey)
     {
     if (json.isNull() || !json.isObject())
         return ERROR;
@@ -410,13 +410,13 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 continue;
                 }
 
-            if (!childJsonValue.isObject() || !childJsonValue.isMember(JSON_NAVIGATION_ID_KEY))
+            if (!childJsonValue.isObject() || !childJsonValue.isMember(json_id()))
                 {
                 status = ERROR;
                 continue;
                 }
 
-            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[JSON_NAVIGATION_ID_KEY], INT64_C(0));
+            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[json_id()], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -424,14 +424,14 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 }
 
             ECValue v;
-            if (!childJsonValue.isMember(JSON_NAVIGATION_RELECCLASSID_KEY))
+            if (!childJsonValue.isMember("relClassId"))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     status = ERROR;
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], INT64_C(0));
+                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["relClassId"], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     status = ERROR;
                 }
@@ -550,9 +550,9 @@ BentleyStatus ECRapidJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
-    json.AddMember(JSON_POINT_X_KEY, coordVal, allocator);
+    json.AddMember(JSON_PointX, coordVal, allocator);
     coordVal.SetDouble(pt.y);
-    json.AddMember(JSON_POINT_Y_KEY, coordVal, allocator);
+    json.AddMember(JSON_PointY, coordVal, allocator);
     return SUCCESS;
     }
 
@@ -568,8 +568,8 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY))
+    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_PointX) ||
+        SUCCESS != PointCoordinateFromJson(y, json, JSON_PointY))
         return ERROR;
 
     pt = DPoint2d::From(x, y);
@@ -584,11 +584,11 @@ BentleyStatus ECRapidJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
-    json.AddMember(JSON_POINT_X_KEY, coordVal, allocator);
+    json.AddMember(JSON_PointX, coordVal, allocator);
     coordVal.SetDouble(pt.y);
-    json.AddMember(JSON_POINT_Y_KEY, coordVal, allocator);
+    json.AddMember(JSON_PointY, coordVal, allocator);
     coordVal.SetDouble(pt.z);
-    json.AddMember(JSON_POINT_Z_KEY, coordVal, allocator);
+    json.AddMember(JSON_PointZ, coordVal, allocator);
     return SUCCESS;
     }
 
@@ -605,9 +605,9 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY) ||
-        SUCCESS != PointCoordinateFromJson(z, json, JSON_POINT_Z_KEY))
+    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_PointX) ||
+        SUCCESS != PointCoordinateFromJson(y, json, JSON_PointY) ||
+        SUCCESS != PointCoordinateFromJson(z, json, JSON_PointZ))
         return ERROR;
 
     pt = DPoint3d::From(x, y, z);
@@ -889,14 +889,14 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
 
             RapidJsonValueCR json = it->value;
 
-            if (!json.IsObject() || !json.HasMember(JSON_NAVIGATION_ID_KEY))
+            if (!json.IsObject() || !json.HasMember(JSON_NavigationId))
                 {
                 status = ERROR;
                 LogJsonParseError(json, instance.GetClass(), accessString);
                 continue;
                 }
 
-            const uint64_t navId = (uint64_t) Int64FromJson(json[JSON_NAVIGATION_ID_KEY], INT64_C(0));
+            const uint64_t navId = (uint64_t) Int64FromJson(json[JSON_NavigationId], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -905,7 +905,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 }
 
             ECValue v;
-            if (!json.HasMember(JSON_NAVIGATION_RELECCLASSID_KEY))
+            if (!json.HasMember("relClassId"))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     {
@@ -915,7 +915,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) Int64FromJson(json[JSON_NAVIGATION_RELECCLASSID_KEY], INT64_C(0));
+                const uint64_t relClassId = (uint64_t) Int64FromJson(json["relClassId"], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     {
                     status = ERROR;
@@ -1330,10 +1330,10 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
     
     // GetValue performs the check for an invalid id and will assert if it is not valid.
-    navObj[JSON_NAVIGATION_ID_KEY] = navInfo.GetId<BeInt64Id>().ToString();
+    navObj[JSON_NavigationId] = navInfo.GetId<BeInt64Id>().ToString();
 
     if (navInfo.GetRelationshipClassId().IsValid())
-        navObj[JSON_NAVIGATION_RELECCLASSID_KEY] = navInfo.GetRelationshipClassId().GetValueUnchecked();
+        navObj["relClassId"] = navInfo.GetRelationshipClassId().GetValueUnchecked();
 
     return BSISUCCESS;
     }
