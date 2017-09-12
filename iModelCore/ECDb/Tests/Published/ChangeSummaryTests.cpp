@@ -115,12 +115,6 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     changeSet.Free();
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_EQ(BE_SQLITE_OK, result);
-
-    changeSummary.Free();
-    BeTest::SetFailOnAssert(false);
-    status = changeSummary.FromChangeSet(changeSet);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_TRUE(ERROR == status);
     }
 
 //---------------------------------------------------------------------------------------
