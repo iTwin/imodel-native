@@ -1143,7 +1143,7 @@ BentleyStatus BisJson1ExporterImpl::ExportModel(Json::Value& out, Utf8CP schemaN
         LogMessage(TeleporterLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
         return ERROR;
         }
-    JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter jsonAdapter(*statement);
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -1308,8 +1308,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
         return ERROR;
         }
     statement->BindId(1, parentModel);
-    JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    jsonAdapter.SetStructArrayAsString(true);
+    JsonECSqlSelectAdapter jsonAdapter(*statement);
     Utf8String prefix = m_dgndb->Schemas().GetECSchema(schemaName)->GetNamespacePrefix();
 
     while (BE_SQLITE_ROW == statement->Step())
