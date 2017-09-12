@@ -12,7 +12,6 @@
 #include "Logging.h"
 #include <thread>
 #include <random>
-#include <WebServices/iModelHub/Client/Configuration.h>
 #include "Events/EventManager.h"
 #include <WebServices/iModelHub/Client/BreakHelper.h>
 #include "Utils.h"
@@ -28,9 +27,6 @@ Briefcase::Briefcase(Dgn::DgnDbPtr db, iModelConnectionPtr connection)
     {
     m_db = db;
     m_imodelConnection = connection;
-
-    if (Configuration::GetPredownloadChangeSetsEnabled())
-        m_imodelConnection->SubscribeChangeSetsDownload();
     }
 
 //---------------------------------------------------------------------------------------

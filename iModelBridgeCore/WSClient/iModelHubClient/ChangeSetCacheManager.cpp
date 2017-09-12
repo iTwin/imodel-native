@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelHubClient/PredownloadManager.cpp $
+|     $Source: iModelHubClient/ChangeSetCacheManager.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/Briefcase.h>
-#include "PredownloadManager.h"
+#include "FileLock.h"
 #include "Logging.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
-#include <WebServices/iModelHub/Client/Configuration.h>
+#include <WebServices/iModelHub/Client/ChangeSetCacheManager.h>
 #include <Bentley/BeFileListIterator.h>
 #include "Utils.h"
 
@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
 //---------------------------------------------------------------------------------------
-bool PredownloadManager::TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId)
+bool ChangeSetCacheManager::TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId) const
     {
     auto preDownloadPath = BuildChangeSetPredownloadPathname(changeSetId);
     
@@ -38,14 +38,17 @@ bool PredownloadManager::TryGetChangeSetFile(BeFileName changeSetFileName, Utf8S
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//@bsimethod                                     Algirdas.Mikoliunas             09/2017
 //---------------------------------------------------------------------------------------
-void PredownloadManager::SubscribeChangeSetsDownload(iModelConnectionP imodelConnectionP)
+StatusTaskPtr ChangeSetCacheManager::EnableBackgroundDownload() const
     {
+    if (m_preDownloadCallback)
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+
     EventTypeSet eventTypes;
     eventTypes.insert(Event::EventType::ChangeSetPostPushEvent);
 
-    auto preDownloadCallback = std::make_shared<EventCallback>([=](EventPtr event)
+    m_preDownloadCallback = std::make_shared<EventCallback>([=](EventPtr event)
         {
         auto changeSetEventPtr = EventParser::GetChangeSetPostPushEvent(event);
         auto changeSetId = changeSetEventPtr->GetChangeSetId();
@@ -59,18 +62,38 @@ void PredownloadManager::SubscribeChangeSetsDownload(iModelConnectionP imodelCon
             return;
             }
             
-        if (changeSetEventPtr.IsValid() && imodelConnectionP)
+        if (changeSetEventPtr.IsValid() && m_connection)
             {
-            PredownloadChangeSet(imodelConnectionP, changeSetId)->GetResult();
+            PredownloadChangeSet(m_connection, changeSetId)->GetResult();
             }
         });
-    imodelConnectionP->SubscribeEventsCallback(&eventTypes, preDownloadCallback);
+    return m_connection->SubscribeEventsCallback(&eventTypes, m_preDownloadCallback);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             09/2017
+//---------------------------------------------------------------------------------------
+StatusTaskPtr ChangeSetCacheManager::DisableBackgroundDownload() const
+    {
+    if (m_preDownloadCallback)
+        {
+        return m_connection->UnsubscribeEventsCallback(m_preDownloadCallback)->Then<StatusResult>([=](StatusResultCR unsubscribeResult)
+            {
+            if (unsubscribeResult.IsSuccess())
+                {
+                m_preDownloadCallback.reset();
+                }
+            return unsubscribeResult;
+            });
+        }
+
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-BeFileName PredownloadManager::BuildChangeSetPredownloadPathname(Utf8String changeSetId)
+BeFileName ChangeSetCacheManager::BuildChangeSetPredownloadPathname(Utf8String changeSetId)
     {
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev\\PreDownload");
@@ -83,7 +106,7 @@ BeFileName PredownloadManager::BuildChangeSetPredownloadPathname(Utf8String chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-uint64_t PredownloadManager::GetCacheSize(BeFileName directoryName) const
+uint64_t ChangeSetCacheManager::GetCacheSize(BeFileName directoryName) const
     {
     BeFileListIterator fileIterator(directoryName, false);
 
@@ -104,7 +127,7 @@ uint64_t PredownloadManager::GetCacheSize(BeFileName directoryName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-bvector<BeFileName> PredownloadManager::GetOrderedCacheFiles(BeFileName directoryName) const
+bvector<BeFileName> ChangeSetCacheManager::GetOrderedCacheFiles(BeFileName directoryName) const
     {
     BeFileListIterator fileIterator(directoryName, false);
     BeFileName tempFileName;
@@ -130,13 +153,13 @@ bvector<BeFileName> PredownloadManager::GetOrderedCacheFiles(BeFileName director
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Algirdas.Mikoliunas                01/2017
 //---------------------------------------------------------------------------------------
-void PredownloadManager::CheckCacheSize(BeFileName changeSetFileName) const
+void ChangeSetCacheManager::CheckCacheSize(BeFileName changeSetFileName) const
     {
     auto directoryName = changeSetFileName.GetDirectoryName();
     directoryName.AppendToPath(L"*.rev");
 
     uint64_t cacheSize = GetCacheSize(directoryName);
-    int maxCacheSize = Configuration::GetPredownloadChangeSetsCacheSize();
+    int maxCacheSize = m_preDownloadCacheSize;
 
     if (cacheSize > maxCacheSize)
         {
@@ -179,9 +202,9 @@ void PredownloadManager::CheckCacheSize(BeFileName changeSetFileName) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr PredownloadManager::PredownloadChangeSet
+StatusTaskPtr ChangeSetCacheManager::PredownloadChangeSet
 (
-iModelConnectionP        imodelConnectionP,
+iModelConnectionCP                imodelConnectionP,
 Utf8StringCR                      changeSetId,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken

@@ -40,13 +40,14 @@ public:
 struct EventManager : RefCountedBase
 {
 private:
-    iModelConnectionP         m_imodelConnectionP;
+    iModelConnectionP       m_imodelConnectionP;
     EventMap                m_eventCallbacks;
+    BeMutex                 m_eventCallbacksMutex;
     EventManagerContextPtr  m_eventManagerContext;
     EventCallbackPtr        m_pullMergeAndPushCallback;
 
     bool Start();
-    EventTypeSet* GetAllSubscribedEvents();
+    void GetAllSubscribedEvents(EventTypeSet& allEventTypes);
 
 public:
     EventManager(iModelConnectionP imodelConnectionP) : m_imodelConnectionP(imodelConnectionP) {}
