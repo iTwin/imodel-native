@@ -779,6 +779,9 @@ TEST_F (StringEncodingTests, ForceUtf8)
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                          Colin.Kerr              02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     {
     ReadKitchenSinkSchemaFromXml ();
