@@ -737,6 +737,7 @@
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
         <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
     </ProductDirectoryList>
 
