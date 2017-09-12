@@ -890,16 +890,8 @@ bool JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, IECSqlValu
     if (!JsonFromInstanceId(jsonValue[JSON_NAVIGATION_ID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropId]))
         return false;
 
-    IECSqlValue const& classIdVal = ecsqlValue[ECDBSYS_PROP_ECClassId];
-    ECClassCP ecClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(ECClassId((uint64_t) classIdVal.GetInt64()));
-    if (!ecClass)
-        return false;
-    if (!JsonFromPropertyValue(jsonValue["$ECClassId"], classIdVal))
-        return false;
-    JsonFromClassKey(jsonValue["$ECClassKey"], *ecClass);
-
     IECSqlValue const& relClassIdVal = ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId];
-    ECClassCP ecRelClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(ECClassId((uint64_t) relClassIdVal.GetInt64()));
+    ECClassCP ecRelClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>());
     if (!ecRelClass)
         return false;
     if (!JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], relClassIdVal))
