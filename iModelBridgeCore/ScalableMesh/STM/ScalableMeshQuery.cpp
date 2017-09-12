@@ -2805,6 +2805,11 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<
     return _GetSkirtMeshes(meshes, activeClips);
     }
 
+void IScalableMeshNode::ClearCachedData()
+{
+	return _ClearCachedData();
+}
+
 #ifdef WIP_MESH_IMPORT
 bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
     {

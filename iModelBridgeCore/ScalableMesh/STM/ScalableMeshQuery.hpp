@@ -2360,22 +2360,38 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                     int width, height;
                     memcpy(&width, texPtr->GetData(), sizeof(int));
                     memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
+
+                    size_t usedMemInBytes;
+                    bool isStoredOnGpu;
+
                     SmCachedDisplayTexture* cachedDisplayTexture;
 
                     displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                 usedMemInBytes,
+                                                                 isStoredOnGpu,
                                                                  width,
                                                                  height,
                                                                  false,
                                                                  QV_RGB_FORMAT,
                                                                  texPtr->GetData() + 3 * sizeof(int));
 
+                    //Default heuristic
+                    if (usedMemInBytes == 0)
+                        usedMemInBytes = width * height * 6;
+                    
                     SmCachedDisplayTextureData* data = new SmCachedDisplayTextureData(cachedDisplayTexture,
                                                                                       meshNode->GetSingleTextureID(),
                                                                                       displayCacheManagerPtr,
-                                                                                      width*height * 6
+                                                                                      usedMemInBytes
                                                                                       );
 
-                    displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
+                    if (isStoredOnGpu)
+                        {
+                        assert(displayCacheManagerPtr->_IsUsingVideoMemory());
+                        data->SetIsInVRAM(true);
+                        }
+
+                    displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID(), isStoredOnGpu);
 
                     TRACEPOINT(THREAD_ID(), EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
                     }
@@ -2671,25 +2687,32 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 SmCachedDisplayMesh* cachedDisplayMesh = 0;
 
+                size_t usedMemInBytes = 0;
+                bool isStoredOnGpu = false;
+
                 if (s_deactivateTexture || !meshNode->IsTextured())
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
-                                                                    finalPointNb,
-                                                                    &centroid,
-                                                                    finalPointPtr,
-                                                                    0,
-                                                                    (int)finalIndexNb / 3,
-                                                                    finalIndexPtr,
-                                                                    0,
-                                                                    0,
-                                                                    meshNode->GetBlockID().m_integerID,
-                                                                   (uint64_t)m_scalableMeshP);
+                                                                                     usedMemInBytes,
+                                                                                     isStoredOnGpu,
+                                                                                     finalPointNb,
+                                                                                     &centroid,
+                                                                                     finalPointPtr,
+                                                                                     0,
+                                                                                     (int)finalIndexNb / 3,
+                                                                                     finalIndexPtr,
+                                                                                     0,
+                                                                                     0,
+                                                                                     meshNode->GetBlockID().m_integerID,
+                                                                                     (uint64_t)m_scalableMeshP);
 
                     assert(status == SUCCESS);
                     }
                 else
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
+                                                                                        usedMemInBytes,
+                                                                                        isStoredOnGpu,
                                                                                         finalPointNb,
                                                                                         &centroid,
                                                                                         finalPointPtr,
@@ -2704,18 +2727,25 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     assert(status == SUCCESS);
                     }
 
-                size_t qvMemorySizeEstimate = finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
+                //Use some global heuristic
+                if (usedMemInBytes == 0)
+                    usedMemInBytes = finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
 
                 SmCachedDisplayMeshData* displayMeshData(new SmCachedDisplayMeshData(cachedDisplayMesh,
                     displayCacheManagerPtr,
                     textureID,
                     !s_deactivateTexture && meshNode->IsTextured() && textureIDs[part / 2].first,
-                    qvMemorySizeEstimate,
+                    usedMemInBytes,
                     appliedClips));
 
-
+                if (isStoredOnGpu)
+                    {
+                    assert(displayCacheManagerPtr->_IsUsingVideoMemory());
+                    displayMeshData->SetIsInVRAM(true);
+                    }                
+                
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
-                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve);
+                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve, isStoredOnGpu);
                 else m_cachedDisplayMeshData->push_back(*displayMeshData);
 
                 TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
@@ -3103,6 +3133,11 @@ template <class POINT> bool ScalableMeshNode<POINT>::_DeleteClip(uint64_t id, bo
     {
     return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->DeleteClip(id,isVisible);
     }
+
+template <class POINT> void ScalableMeshNode<POINT>::_ClearCachedData()
+{
+	m_node->RemoveNonDisplayPoolData();
+}
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
     {
