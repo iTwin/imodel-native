@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/CacheQueryHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -490,7 +490,7 @@ ICancellationTokenPtr ct
     bool remoteIdColumnNeedsVerification = false;
     int remoteIdColumn = GetRemoteIdColumnIndex(info, remoteIdColumnNeedsVerification);
 
-    JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(statement);
 
     if (!adapter.GetRowInstance(jsonInstanceOut, ecClassId))
         {
