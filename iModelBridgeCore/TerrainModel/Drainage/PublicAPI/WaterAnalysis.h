@@ -29,6 +29,7 @@ ADDDRAINAGETYPES(WaterAnalysisResult);
 
 ADDDRAINAGETYPES(WaterAnalysisResultItem);
 ADDDRAINAGETYPES(WaterAnalysisResultPoint);
+ADDDRAINAGETYPES(WaterAnalysisResultGeometry);
 ADDDRAINAGETYPES(WaterAnalysisResultStream);
 ADDDRAINAGETYPES(WaterAnalysisResultPond);
 

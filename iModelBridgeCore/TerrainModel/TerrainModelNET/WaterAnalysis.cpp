@@ -190,52 +190,58 @@ public ref class WaterAnalysisResultPoint : public WaterAnalysisResultItem
             }
     };
 
-public ref class WaterAnalysisResultStream : public WaterAnalysisResultItem
+public ref class WaterAnalysisResultGeometry : public WaterAnalysisResultItem
     {
     private:
-        WaterAnalysisResultStreamP m_stream;
+        WaterAnalysisResultGeometryP m_geom;
     internal:
-        WaterAnalysisResultStream(WaterAnalysisResultStreamR native) : WaterAnalysisResultItem(native), m_stream(&native)
+        WaterAnalysisResultGeometry(WaterAnalysisResultGeometryR native) : WaterAnalysisResultItem(native), m_geom(&native)
             { }
     public:
-        virtual WaterAnalysisResultStream^ AsStream() override { return this; }
-
         property BGEO::CurveVector^ Geometry
             {
             BGEO::CurveVector^ get()
                 {
-                CurveVectorCR geometry = m_stream->GetGeometry();
+                CurveVectorCR geometry = m_geom->GetGeometry();
 
                 return BGEO::CurveVector::CreateFromNative((System::IntPtr)const_cast<void*>((const void*)&geometry));
                 }
             }
     };
 
-public ref class WaterAnalysisResultPond : public WaterAnalysisResultItem
+public ref class WaterAnalysisResultStream : public WaterAnalysisResultGeometry
+    {
+    private:
+        WaterAnalysisResultStreamP m_stream;
+    internal:
+        WaterAnalysisResultStream(WaterAnalysisResultStreamR native) : WaterAnalysisResultGeometry(native), m_stream(&native)
+            { }
+    public:
+        virtual WaterAnalysisResultStream^ AsStream() override { return this; }
+    };
+
+public ref class WaterAnalysisResultPond : public WaterAnalysisResultGeometry
     {
     private:
         WaterAnalysisResultPondP m_pond;
     internal:
-        WaterAnalysisResultPond(WaterAnalysisResultPondR native) : WaterAnalysisResultItem(native), m_pond (&native)
+        WaterAnalysisResultPond(WaterAnalysisResultPondR native) : WaterAnalysisResultGeometry(native), m_pond (&native)
             { }
     public:
         virtual WaterAnalysisResultPond^ AsPond() override { return this; }
-
-        property BGEO::CurveVector^ Geometry
-            {
-            BGEO::CurveVector^ get()
-                {
-                CurveVectorCR geometry = m_pond->GetGeometry();
-
-                return BGEO::CurveVector::CreateFromNative((System::IntPtr)const_cast<void*>((const void*)&geometry));
-                }
-            }
 
         property bool IsFull
             {
             bool get()
                 {
                 return m_pond->IsFull();
+                }
+            }
+        property double Depth
+            {
+            double get()
+                {
+                return m_pond->Depth();
                 }
             }
     };

@@ -225,7 +225,6 @@ int wmain(int argc, wchar_t *argv[])
 ** Initialise DTM
 */
  bcdtmInitialise() ;
- test();
  sOutputToConsole = true;
  //test ();
  if( fpLOG != NULL ) { fclose(fpLOG) ; fpLOG = NULL ; }
