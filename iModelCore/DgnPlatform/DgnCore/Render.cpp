@@ -674,6 +674,14 @@ void FeatureSymbologyOverrides::Appearance::InitFrom(DgnSubCategory::Override co
     ColorDef rgb;
     if (ovr.GetColor(rgb))
         SetRgb(rgb);
+
+    RenderMaterialId matId;
+    if (ovr.GetMaterial(matId))
+        {
+        BeAssert(!matId.IsValid() && "Disabling material is supported; swapping material is currently not");
+        if (!matId.IsValid())
+            SetIgnoresMaterial(true);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -693,6 +701,9 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
 
     if (m_flags.m_linePixels && !app.m_flags.m_linePixels)
         app.SetLinePixels(GetLinePixels());
+
+    if (m_flags.m_ignoreMaterial)
+        app.SetIgnoresMaterial(true);
 
     return app;
     }
@@ -721,6 +732,9 @@ OvrGraphicParams FeatureSymbologyOverrides::Appearance::ToOvrGraphicParams() con
 
     if (OverridesLinePixels())
         ovr.SetLinePixels(GetLinePixels());
+
+    if (IgnoresMaterial())
+        ovr.SetMaterial(nullptr);
 
     return ovr;
     }

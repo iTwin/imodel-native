@@ -2628,19 +2628,26 @@ struct FeatureSymbologyOverrides
     private:
         friend struct FeatureSymbologyOverrides;
 
+        struct Flags
+            {
+            uint8_t         m_rgb:1;
+            uint8_t         m_alpha:1;
+            uint8_t         m_weight:1;
+            uint8_t         m_linePixels:1;
+            uint8_t         m_ignoreMaterial:1;
+            };
+
         ColorDef        m_color;
         uint8_t         m_weight;
         LinePixels      m_linePixels;
-        struct
+        union
             {
-            uint32_t        m_rgb:1;
-            uint32_t        m_alpha:1;
-            uint32_t        m_weight:1;
-            uint32_t        m_linePixels:1;
-            }           m_flags;
+            Flags       m_flags;
+            uint8_t     m_flagsMask;
+            };
     public:
         Appearance() { Init(); }
-        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = m_flags.m_linePixels = 0;  }
+        void Init() { m_flagsMask = 0; }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
         //! Override transparency
@@ -2653,6 +2660,8 @@ struct FeatureSymbologyOverrides
         void SetWeight(uint8_t weight) { m_flags.m_weight = true; m_weight = weight; }
         //! Override line code
         void SetLinePixels(LinePixels pix) { m_flags.m_linePixels = true; m_linePixels = pix; }
+        //! Override to ignore render material (including any associated texture)
+        void SetIgnoresMaterial(bool ignore) { m_flags.m_ignoreMaterial = ignore; }
         //! Override RGB (alpha component of color is ignored)
         void SetRgb(ColorDef color)
             {
@@ -2673,9 +2682,11 @@ struct FeatureSymbologyOverrides
         uint8_t GetWeight() const { return m_weight; }
         //! Get the line code override
         LinePixels GetLinePixels() const { return m_linePixels; }
+        //! Returns whether render material (including texture) is ignored
+        bool IgnoresMaterial() const { return m_flags.m_ignoreMaterial; }
 
         //! Returns true if any aspect of symbology is overridden.
-        bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
+        bool OverridesSymbology() const { return 0 != m_flagsMask; }
         //! Returns true if transparency is overridden. If it is not, the return values of GetTransparency() and GetAlpha() are meaningless
         bool OverridesAlpha() const { return m_flags.m_alpha; }
         //! Returns true if RGB is overridden. If it is not, the return value of GetRgb() is meaningless
