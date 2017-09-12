@@ -114,8 +114,16 @@ BentleyStatus GetTablesPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap co
 BentleyStatus GetTablesPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
     {
     if (Enum::Contains(m_filter, propertyMap.GetType()))
-        m_tables.insert(&propertyMap.GetTable());
+        {
+        if (propertyMap.GetType() == PropertyMap::Type::Navigation)
+            {
+            NavigationPropertyMap const& navPropertyMap = propertyMap.GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap.IsComplete())
+                return SUCCESS;
+            }
 
+        m_tables.insert(&propertyMap.GetTable());
+        }
     return SUCCESS;
     }
 

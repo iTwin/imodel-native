@@ -48,7 +48,7 @@ struct DbMapValidator final : NonCopyableClass
         BentleyStatus ValidateNavigationPropertyMap(NavigationPropertyMap const&) const;
         BentleyStatus ValidateNavigationPropertyMapNotNull(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
         BentleyStatus ValidateNavigationPropertyMapUniqueness(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
-
+        BentleyStatus ValidateOverflowPropertyMaps(ClassMap const& classMap) const;
         ECDbCR GetECDb() const { return m_dbMap.GetECDb(); }
         DbSchema const& GetDbSchema() const { return m_dbMap.GetDbSchema(); }
         IssueReporter const& Issues() const { return m_dbMap.Issues(); }

@@ -2082,7 +2082,7 @@ BentleyStatus DbMappingManager::Tables::MapToTable(SchemaImportContext& ctx, Cla
                  else
                      classMap.AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
                  }
-
+#if 0 //
              for (DbTable const* table : classMap.GetTables())
                  {
                  DbTable::LinkNode const* overflowTableNode = table->GetLinkNode().FindOverflowTable();
@@ -2092,6 +2092,7 @@ BentleyStatus DbMappingManager::Tables::MapToTable(SchemaImportContext& ctx, Cla
                      break;
                      }
                  }
+#endif
              }
          }
 
