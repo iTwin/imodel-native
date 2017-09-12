@@ -79,7 +79,7 @@ RelationshipInfo RelationshipInfoManager::ReadInfo(ECRelationshipClassCR relatio
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW == status)
         {
-        JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+        JsonECSqlSelectAdapter adapter(*statement);
         adapter.GetRowInstance(infoJson, m_cachedRelationshipInfoClass->GetId());
         relationshipInstanceId = ECDbHelper::ECInstanceIdFromJsonValue(infoJson[CLASS_CachedRelationshipInfo_PROPERTY_InstanceId]);
         }
@@ -127,7 +127,7 @@ RelationshipInfo RelationshipInfoManager::FindInfo(ECInstanceKeyCR relationshipK
         }
 
     Json::Value infoJson;
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     adapter.GetRowInstance(infoJson, m_cachedRelationshipInfoClass->GetId());
 
     return RelationshipInfo(infoJson, relationshipClass, relationshipKey.GetInstanceId(), m_cachedRelationshipInfoClass->GetId());

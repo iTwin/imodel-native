@@ -84,7 +84,7 @@ BentleyStatus ChangeInfoManager::GetChanges(IChangeManager::Changes& changesOut,
 BentleyStatus ChangeInfoManager::GetObjectChanges(IChangeManager::Changes& changesOut, bool onlyReadyToSync)
     {
     auto statement = GetPreparedStatementForGetChanges(m_objectInfoManager.GetInfoClass(), onlyReadyToSync);
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
@@ -108,7 +108,7 @@ BentleyStatus ChangeInfoManager::GetObjectChanges(IChangeManager::Changes& chang
 BentleyStatus ChangeInfoManager::GetRelationshipChanges(IChangeManager::Changes& changesOut, bool onlyReadyToSync)
     {
     auto statement = GetPreparedStatementForGetChanges(m_relationshipInfoManager.GetInfoClass(), onlyReadyToSync);
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
@@ -132,7 +132,7 @@ BentleyStatus ChangeInfoManager::GetRelationshipChanges(IChangeManager::Changes&
 BentleyStatus ChangeInfoManager::GetFileChanges(IChangeManager::Changes& changesOut, bool onlyReadyToSync)
     {
     auto statement = GetPreparedStatementForGetChanges(m_fileInfoManager.GetInfoClass(), onlyReadyToSync);
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
