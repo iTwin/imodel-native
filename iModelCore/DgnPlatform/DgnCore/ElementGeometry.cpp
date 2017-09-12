@@ -323,6 +323,9 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
     if (0 != geom.GetNumBounds())
         {
         IFacetOptionsPtr options = IFacetOptions::CreateForSurfaces();
+
+        options->SetMinPerBezier(3);
+
         IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*options);
 
         builder->Add(geom);

@@ -296,143 +296,17 @@ static void DPoint3dVectorFromJson(bvector<DPoint3d>& points, JsonValueCR inValu
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static T IdFromJson(JsonValueCR json)
-    {
-    if (!json.isString())
-        {
-        BeAssert(false);
-        return T();
-        }
-
-    return T(T::FromString(json.asCString()).GetValueUnchecked());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static void IdToJson(JsonValueR outValue, T id)
-    {
-    outValue = id.ToString(T::UseHex::Yes);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static void IdVectorFromJson(bvector<T>& ids, JsonValueCR jsonArray)
-    {
-    for (Json::ArrayIndex i=0; i<jsonArray.size(); ++i)
-        {
-        ids.push_back(IdFromJson<T>(jsonArray.get(i, "0")));
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static void IdVectorToJson(JsonValueR outValue, bvector<T> const& ids)
-    {
-    outValue = Json::arrayValue;
-    for (auto id : ids)
-        {
-        Json::Value member;
-        IdToJson(member, id);
-        outValue.append(member);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static void IdSetFromJson(BeSQLite::IdSet<T>& ids, JsonValueCR jsonArray)
-    {
-    for (Json::ArrayIndex i = 0; i<jsonArray.size(); ++i)
-        {
-        ids.insert(IdFromJson<T>(jsonArray.get(i, "0")));
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-template<typename T>
-static void IdSetToJson(JsonValueR outValue, BeSQLite::IdSet<T> const& ids)
-    {
-    outValue = Json::arrayValue;
-    for (auto id : ids)
-        {
-        Json::Value member;
-        IdToJson(member, id);
-        outValue.append(member);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static Utf8String IdVectorToJsonString(bvector<T> const& ids)
-    {
-    Json::Value jsonArray;
-    IdVectorToJson(jsonArray, ids);
-    return jsonArray.ToString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static bvector<T> IdVectorFromJsonString(Utf8StringCR jsonString)
-    {
-    Json::Value jsonArray;
-    Json::Reader::Parse(jsonString, jsonArray);
-    bvector<T> ids;
-    IdVectorFromJson(ids, jsonArray);
-    return ids;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static Utf8String IdSetToJsonString(BeSQLite::IdSet<T> const& ids)
-    {
-    Json::Value jsonArray;
-    IdSetToJson(jsonArray, ids);
-    return jsonArray.ToString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static BeSQLite::IdSet<T> IdSetFromJsonString(Utf8StringCR jsonString)
-    {
-    Json::Value jsonArray;
-    Json::Reader::Parse(jsonString, jsonArray);
-    BeSQLite::IdSet<T> ids;
-    IdSetFromJson(ids, jsonArray);
-    return ids;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 *! Represent a NavigationProperty in JSON, in the format used by iModelJson.
 * @bsimethod                                                    Sam.Wilson      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static void NavigationPropertyToJson(JsonValueR json, ECN::ECValue::NavigationInfo const&);
+DGNPLATFORM_EXPORT static Json::Value NavigationPropertyToJson(ECN::ECValue::NavigationInfo const&);
 
 /*---------------------------------------------------------------------------------**//**
 *! Parse a NavigationProperty from JSON, according to the format used by iModelJson.
 * @bsimethod                                                    Sam.Wilson      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static void NavigationPropertyFromJson(ECN::ECValue&, JsonValueCR json, DgnDbR db);
+DGNPLATFORM_EXPORT static ECN::ECValue NavigationPropertyFromJson(JsonValueCR json, DgnDbR db);
 
 };
 
