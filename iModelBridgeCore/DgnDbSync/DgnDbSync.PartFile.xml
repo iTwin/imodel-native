@@ -131,6 +131,7 @@
         <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
         <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
         <ProductDirectory Name="VendorNotices"              Path="notices" />
+        <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
         <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
