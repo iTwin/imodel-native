@@ -237,7 +237,7 @@ protected:
 
     // This method is used in SetLookAhead to give the list of needed tiles
     // to a derived class, since it knows how to obtain the tiles.
-                   virtual void    RequestLookAhead(uint32_t               pi_Page,
+    IMAGEPP_EXPORT virtual void    RequestLookAhead(uint32_t               pi_Page,
                                                     const HGFTileIDList&   pi_rBlocks,
                                                     bool                   pi_Async,
                                                     uint32_t               pi_ConsumerID);
