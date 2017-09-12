@@ -77,6 +77,9 @@ public:
         BENTLEY_SM_EXPORT IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
         BENTLEY_SM_EXPORT void             RemoveRegisteredScalableMesh(const WString& path);
         void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
+
+        BENTLEY_SM_EXPORT virtual Utf8String GetProjectWiseContextShareLink(const WString& path) { return Utf8String(); }
+
         };
 
     //! Must be called once per Host before calling any method in ScalableMesh. Applications can have more than one Host. 
