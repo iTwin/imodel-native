@@ -21,8 +21,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
     {
     protected:
-        static const int s_initialInstanceCount = 1000000;
-        static const int s_opCount = 50000;
+        static const int s_initialInstanceCount = 100;
+        static const int s_opCount = 50;
         static const uint64_t s_firstElementId = UINT64_C(1099511627785);
 
         PerformanceElementsCRUDTestFixture()

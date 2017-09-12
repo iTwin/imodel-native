@@ -192,7 +192,7 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, BeFileNameCR fn, DgnDb::OpenMode
 //---------------------------------------------------------------------------------------
 void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
-    JsonECSqlSelectAdapter adapter(stmt);
+    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions::LongsAreIds);
     adapter.GetRowForImodelJs(rowJson);
     }
 
@@ -632,9 +632,11 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
     if (!instanceId.IsValid())
         return BE_SQLITE_ERROR;
 
-    JsonReader reader(ecdb, ecClass->GetId());
-    BentleyStatus status = reader.ReadInstance(jsonInstance, instanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    if (status != BentleyStatus::SUCCESS)
+    JsonReader reader(ecdb, *ecClass);
+    if (!reader.IsValid())
+        return BE_SQLITE_ERROR;
+
+    if (SUCCESS != reader.Read(jsonInstance, instanceId))
         return BE_SQLITE_ERROR;
 
     jsonInstance["$ECInstanceId"] = BeInt64Id((int64_t) instanceId.GetValueUnchecked()).ToHexStr();
