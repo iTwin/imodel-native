@@ -410,6 +410,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
     {
+    ScopedDgnHost host;
+
 #ifdef _WIN32
     _set_error_mode(_OUT_TO_MSGBOX);
 #endif
