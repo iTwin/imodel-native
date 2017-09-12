@@ -47,7 +47,7 @@ struct JsonUpdaterTests : ECDbTestFixture
         {
         JsonReader reader(db, spatialInstanceKey.GetClassId());
         Json::Value actualJsonValue;
-        BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+        BentleyStatus status = reader.Read(actualJsonValue, spatialInstanceKey.GetInstanceId());
         ASSERT_EQ(SUCCESS, status);
 
         //printf ("%s\r\n", actualJsonValue.toStyledString ().c_str ());
@@ -144,7 +144,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ASSERT_TRUE(relClass != nullptr);
     JsonReader reader(m_ecdb, relClass->GetId());
     Json::Value relationshipJson;
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(relationshipJson, relInstanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    ASSERT_EQ(SUCCESS, reader.Read(relationshipJson, relInstanceId));
     ASSERT_STREQ("good morning", relationshipJson["Name"].asCString());
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
 
@@ -212,7 +212,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ASSERT_TRUE(ecClass != nullptr);
     JsonReader reader(m_ecdb, ecClass->GetId());
     Json::Value ecClassJson;
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    ASSERT_EQ(SUCCESS, reader.Read(ecClassJson, key.GetInstanceId()));
     ASSERT_EQ(100, ecClassJson["P1"].asInt());
     ASSERT_STREQ("JsonTest", ecClassJson["P2"].asCString());
     ASSERT_DOUBLE_EQ(1000.10, ecClassJson["P3"].asDouble());

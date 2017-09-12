@@ -27,10 +27,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
               </ECEntityClass>
             </ECSchema>)xml"
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct FileInfoTestFixture : ECDbTestFixture {};
+    //---------------------------------------------------------------------------------------
+    // @bsiclass                                     Krischan.Eberle                  11/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    struct FileInfoTestFixture : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14
@@ -99,7 +99,7 @@ TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation)
 TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
-                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbFileInfo" version="02.00" alias="ecdbf"/>
                 <ECEntityClass typeName="MyExternalFileInfo" modifier="Sealed">
@@ -306,124 +306,124 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
 
 
 //Specific for file search in Document Root only.
-BeFileName SearchTestFile (Utf8CP testFileName)
+BeFileName SearchTestFile(Utf8CP testFileName)
     {
-    WString testFileNameW (testFileName, BentleyCharEncoding::Utf8);
+    WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
-    BeTest::GetHost ().GetDocumentsRoot (testFilePath);
-    testFilePath.AppendToPath (L"ECDb");
-    testFilePath.AppendToPath (testFileNameW.c_str ());
+    BeTest::GetHost().GetDocumentsRoot(testFilePath);
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(testFileNameW.c_str());
     return testFilePath;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Maha Nasir                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (FileInfoTestFixture, IterateThroughEmbeddedFiles)
+TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb ("ecdbfileinfo.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbfileinfo.ecdb"));
 
-    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles ();
+    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
 
-        {
-        //Test file 1
-        BeFileName testFilePath = SearchTestFile ("StartupCompany.json");
-        ASSERT_TRUE (testFilePath.DoesPathExist ());
+    {
+    //Test file 1
+    BeFileName testFilePath = SearchTestFile("StartupCompany.json");
+    ASSERT_TRUE(testFilePath.DoesPathExist());
 
-        DbResult stat = BE_SQLITE_OK;
-        DateTime expectedLastModified = DateTime::GetCurrentTimeUtc ();
-        double expectedLastModifiedJd = 0.0;
-        ASSERT_EQ (SUCCESS, expectedLastModified.ToJulianDay (expectedLastModifiedJd));
+    DbResult stat = BE_SQLITE_OK;
+    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
+    double expectedLastModifiedJd = 0.0;
+    ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-        //Imports the file into the db.
-        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "StartupCompany.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", nullptr, &expectedLastModified);
-        ASSERT_EQ (BE_SQLITE_OK, stat);
-        ASSERT_TRUE (embeddedFileId.IsValid ());
-        }
+    //Imports the file into the db.
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.json", testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
+    }
 
-        {
-        //test file 2
-        BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
-        ASSERT_TRUE (testFilePath.DoesPathExist ());
+    {
+    //test file 2
+    BeFileName testFilePath = SearchTestFile("CommonGeometry.json");
+    ASSERT_TRUE(testFilePath.DoesPathExist());
 
-        //Imports the file into the db.
-        DbResult stat = BE_SQLITE_OK;
-        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
-        ASSERT_EQ (BE_SQLITE_OK, stat);
-        ASSERT_TRUE (embeddedFileId.IsValid ());
-        }
+    //Imports the file into the db.
+    DbResult stat = BE_SQLITE_OK;
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "CommonGeometry.json", testFilePath.GetNameUtf8().c_str(), "JSON", "Geometry");
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
+    }
 
-    DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator ();
-    ASSERT_EQ (2, iter.QueryCount ());
+    DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator();
+    ASSERT_EQ(2, iter.QueryCount());
 
-    DbEmbeddedFileTable::Iterator::Entry file = iter.begin ();
+    DbEmbeddedFileTable::Iterator::Entry file = iter.begin();
     for (auto const& file : iter)
         {
-        if (Utf8String (file.GetNameUtf8 ()) == "StartupCompany.json")
+        if (Utf8String(file.GetNameUtf8()) == "StartupCompany.json")
             {
-            ASSERT_EQ (1, file.GetId ().GetValue());
-            ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
-            ASSERT_EQ (8612, file.GetFileSize ());
-            ASSERT_EQ (NULL, file.GetDescriptionUtf8 ());
-            ASSERT_EQ (524288, file.GetChunkSize ());
+            ASSERT_EQ(1, file.GetId().GetValue());
+            ASSERT_STREQ("JSON", file.GetTypeUtf8());
+            ASSERT_EQ(886, file.GetFileSize());
+            ASSERT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
+            ASSERT_EQ(524288, file.GetChunkSize());
             }
-        else if (Utf8String (file.GetNameUtf8 ()) == "CommonGeometry.json")
+        else if (Utf8String(file.GetNameUtf8()) == "CommonGeometry.json")
             {
-            ASSERT_EQ (2, file.GetId ().GetValue());
-            ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
-            ASSERT_EQ (765, file.GetFileSize ());
-            ASSERT_STREQ ("Geometry", file.GetDescriptionUtf8 ());
-            ASSERT_EQ (524288, file.GetChunkSize ());
+            ASSERT_EQ(2, file.GetId().GetValue());
+            ASSERT_STREQ("JSON", file.GetTypeUtf8());
+            ASSERT_EQ(765, file.GetFileSize());
+            ASSERT_STREQ("Geometry", file.GetDescriptionUtf8());
+            ASSERT_EQ(524288, file.GetChunkSize());
             }
         }
-    iter.end ();
+    iter.end();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Maha Nasir                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (FileInfoTestFixture, VerifyEmbeddedFileSize)
+TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb ("ecdbfileinfo.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbfileinfo.ecdb"));
 
-    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles ();
+    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
 
     //embed test file
     Utf8CP testFileName = "CommonGeometry.json";
     uint64_t size = 0;
-        {
-        BeFileName testFilePath = SearchTestFile (testFileName);
-        ASSERT_TRUE (testFilePath.DoesPathExist ());
+    {
+    BeFileName testFilePath = SearchTestFile(testFileName);
+    ASSERT_TRUE(testFilePath.DoesPathExist());
 
-        //Imports the test file into the db.
-        DbResult stat = BE_SQLITE_OK;
-        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, testFileName, testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
-        ASSERT_EQ (BE_SQLITE_OK, stat);
-        ASSERT_TRUE (embeddedFileId.IsValid ());
+    //Imports the test file into the db.
+    DbResult stat = BE_SQLITE_OK;
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", "Geometry");
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
 
-        //Query the values for a file.
-        BeBriefcaseBasedId id = embeddedFileTable.QueryFile (testFileName, &size);
-        ASSERT_TRUE (id.IsValid ());
-        ASSERT_TRUE (size > 0);
-        }
+    //Query the values for a file.
+    BeBriefcaseBasedId id = embeddedFileTable.QueryFile(testFileName, &size);
+    ASSERT_TRUE(id.IsValid());
+    ASSERT_TRUE(size > 0);
+    }
 
     //Read existing embedded file, AddEntry, Save and verify the size. 
-        {
-        Utf8CP newfileName = "CopyCommonGeometry.json";
+    {
+    Utf8CP newfileName = "CopyCommonGeometry.json";
 
-        //Creates a new entry in the embedded file table with the specified name.
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.AddEntry (newfileName, "JSON"));
-        bvector<Byte> buffer;
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (buffer, testFileName));
+    //Creates a new entry in the embedded file table with the specified name.
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(newfileName, "JSON"));
+    bvector<Byte> buffer;
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer, testFileName));
 
-        //Now save data without compression and read it again to verify that the data is unchanged.
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (buffer.data (), size, newfileName, nullptr, false));
-        bvector<Byte> newBuffer;
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (newBuffer, newfileName));
-        ASSERT_TRUE (buffer.size () == newBuffer.size ());
-        ASSERT_EQ (0, memcmp (&buffer[0], &newBuffer[0], buffer.size ()));
-        }
+    //Now save data without compression and read it again to verify that the data is unchanged.
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, newfileName, nullptr, false));
+    bvector<Byte> newBuffer;
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(newBuffer, newfileName));
+    ASSERT_TRUE(buffer.size() == newBuffer.size());
+    ASSERT_EQ(0, memcmp(&buffer[0], &newBuffer[0], buffer.size()));
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -685,7 +685,7 @@ TEST_F(FileInfoTestFixture, Purge)
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> END");
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
-    
+
     //Now delete Owner Foo
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId=?"));
