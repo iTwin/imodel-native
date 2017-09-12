@@ -20,7 +20,8 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelConnection.h       \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelManager.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelAdmin.h            \
-                                $(iModelHubClientMkiPublicApiDir)Client/VersionsManager.h   \
+                                $(iModelHubClientMkiPublicApiDir)Client/VersionsManager.h        \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetCacheManager.h  \
                                 $(iModelHubClientMkiPublicApiDir)Client/Result.h                 \
                                 $(iModelHubClientMkiPublicApiDir)Client/Error.h                  \
                                 $(iModelHubClientMkiPublicApiDir)Client/ClientHelper.h           \
@@ -34,14 +35,13 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Events/DeletedEvent.h           \
                                 $(iModelHubClientMkiSourceDir)Logging.h                          \
                                 $(iModelHubClientMkiSourceDir)Utils.h                            \
+                                $(iModelHubClientMkiSourceDir)FileLock.h                         \
                                 $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
-                                $(iModelHubClientMkiSourceDir)PredownloadManager.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
                                 $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/VersionInfo.h            \
-                                $(iModelHubClientMkiPublicApiDir)Client/Configuration.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfo.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfoManager.h
 
@@ -79,9 +79,7 @@ $(o)Client$(oext)                          : $(iModelHubClientMkiSourceDir)Clien
 
 $(o)EventManager$(oext)                    : $(iModelHubClientMkiSourceDir)Events/EventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)PredownloadManager$(oext)              : $(iModelHubClientMkiSourceDir)PredownloadManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)Configuration$(oext)                   : $(iModelHubClientMkiSourceDir)Configuration.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+$(o)ChangeSetCacheManager$(oext)           : $(iModelHubClientMkiSourceDir)ChangeSetCacheManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ClientHelper$(oext)                    : $(iModelHubClientMkiSourceDir)ClientHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

@@ -36,7 +36,7 @@ public:
 
 private:
     friend struct iModelConnection;
-    friend struct PredownloadManager;
+    friend struct ChangeSetCacheManager;
     Utf8String m_id;
     Utf8String m_parentChangeSetId;
     Utf8String m_dbGuid;

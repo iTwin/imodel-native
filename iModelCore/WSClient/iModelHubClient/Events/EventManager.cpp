@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
 #include <WebServices/iModelHub/Client/Briefcase.h>
+#include <WebServices/iModelHub/Client/Result.h>
 #include <thread>
 #include "EventManager.h"
 #include "../Logging.h"
@@ -166,25 +167,21 @@ StatusTaskPtr EventManager::Stop()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-EventTypeSet* EventManager::GetAllSubscribedEvents()
+void EventManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
     {
-    EventTypeSet* allEventTypes = new EventTypeSet();
-
     for (auto eventCallback : m_eventCallbacks)
         {
         if (eventCallback.second.empty())
             {
-            return nullptr;
+            return;
             }
 
         for(auto eventType : eventCallback.second)
             {
-            if (!EventListContainsEvent(*allEventTypes, eventType))
-                allEventTypes->insert(eventType);
+            if (!EventListContainsEvent(allEventTypes, eventType))
+                allEventTypes.insert(eventType);
             }
         }
-
-    return allEventTypes;
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,25 +189,35 @@ EventTypeSet* EventManager::GetAllSubscribedEvents()
 //---------------------------------------------------------------------------------------
 StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback)
     {
+    const Utf8String methodName = "EventManager::Subscribe";
+    BeMutexHolder lock(m_eventCallbacksMutex);
+
     // Check callback is already subscribed
     if (m_eventCallbacks.find(callback) != m_eventCallbacks.end())
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventCallbackAlreadySubscribed));
-
 
     auto types = eventTypes ? *eventTypes : EventTypeSet();
     m_eventCallbacks.Insert(callback, types);
 
     // Gather all event types
-    EventTypeSet* allEventTypes = GetAllSubscribedEvents();
-    auto subscribeResult = m_imodelConnectionP->SubscribeToEvents(allEventTypes);
+    EventTypeSet allEventTypes;
+    GetAllSubscribedEvents(allEventTypes);
+    return m_imodelConnectionP->SubscribeToEvents(&allEventTypes)->Then<StatusResult>([=](StatusResultCR subscribeResult)
+        {
+        if (!subscribeResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, subscribeResult.GetError().GetMessage().c_str());
+            return subscribeResult;
+            }
 
-    if (!subscribeResult->GetResult().IsSuccess())
-        return subscribeResult;
+        if (!Start())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Thread start failed");
+            return StatusResult::Error(Error::Id::EventServiceSubscribingError);
+            }
 
-    if (!Start())
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventServiceSubscribingError));
-
-    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+        return StatusResult::Success();
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -218,6 +225,8 @@ StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr
 //---------------------------------------------------------------------------------------
 StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose)
     {
+    BeMutexHolder lock(m_eventCallbacksMutex);
+    
     *dispose = false;
     if (callback)
         {
@@ -237,6 +246,7 @@ StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose
         }
     
     // Subscribe only to remaining events
-    EventTypeSet* allEventTypes = GetAllSubscribedEvents();
-    return m_imodelConnectionP->SubscribeToEvents(allEventTypes);
-    }
+    EventTypeSet allEventTypes;
+    GetAllSubscribedEvents(allEventTypes);
+    return m_imodelConnectionP->SubscribeToEvents(&allEventTypes);
+}
