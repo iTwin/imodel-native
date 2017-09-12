@@ -222,7 +222,7 @@ BentleyStatus JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, I
     if (SUCCESS != JsonFromInstanceId(jsonValue[JSON_NAVIGATION_ID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropId]))
         return ERROR;
 
-    IECSqlValue const& classIdVal = ecsqlValue[ECDBSYS_PROP_ECClassId];
+  /*  IECSqlValue const& classIdVal = ecsqlValue[ECDBSYS_PROP_ECClassId];
     ECClassCP ecClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(classIdVal.GetId<ECClassId>());
     if (ecClass == nullptr)
          return ERROR;
@@ -231,7 +231,8 @@ BentleyStatus JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, I
         return ERROR;
     
     JsonFromClassKey(jsonValue["$ECClassKey"], *ecClass);
-    
+    */
+
     IECSqlValue const& relClassIdVal = ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId];
     ECClassCP relClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>());
     if (relClass == nullptr)
@@ -266,21 +267,17 @@ BentleyStatus JsonECSqlSelectAdapter::JsonFromStruct(JsonValueR jsonValue, IECSq
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty) const
     {
-    ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo();
-    ECTypeDescriptor const& typeDescriptor = columnInfo.GetDataType();
+    ECTypeDescriptor const& typeDescriptor = ecsqlValue.GetColumnInfo().GetDataType();
     BeAssert(typeDescriptor.IsPrimitive());
-    PrimitiveType primitiveType = typeDescriptor.GetPrimitiveType();
-    // Note: The incoming property can be an array, so it's just simpler to use the column to get the primitive type. 
-
-    switch (primitiveType)
+    switch (typeDescriptor.GetPrimitiveType())
         {
             case PRIMITIVETYPE_Binary:
             {
             int size = -1;
-            const Byte* data = (const Byte *) ecsqlValue.GetBlob(&size);
-            Utf8String encoded;
-            Base64Utilities::Encode(encoded, data, size);
-            jsonValue = encoded;
+            Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
+            Utf8String base64Str;
+            Base64Utilities::Encode(base64Str, data, size);
+            jsonValue = base64Str;
             return SUCCESS;
             }
             case PRIMITIVETYPE_Boolean:

@@ -134,23 +134,43 @@ TEST_F(JsonReaderTests, PartialPoints)
     Json::Value actualJson;
     ASSERT_TRUE(adapter.GetRowInstance(actualJson));
     selStmt.Finalize();
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
 
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
-    ASSERT_STREQ("1,0", actualJson["P2D"].asCString());
-    ASSERT_STREQ("0,2,0", actualJson["P3D"].asCString());
-    ASSERT_STREQ("0,3", actualJson["PStructProp"]["p2d"].asCString());
-    ASSERT_STREQ("0,0,4", actualJson["PStructProp"]["p3d"].asCString());
+    ASSERT_TRUE(actualJson.isMember("P2D"));
+    ASSERT_TRUE(actualJson["P2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
 
-    JsonReader reader(m_ecdb, testClass->GetId());
+    ASSERT_TRUE(actualJson.isMember("P3D"));
+    ASSERT_TRUE(actualJson["P3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_TRUE(actualJson["PStructProp"]["p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+
+    ASSERT_TRUE(actualJson["PStructProp"]["p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
+
     actualJson = Json::Value();
+    JsonReader reader(m_ecdb, *testClass);
+    ASSERT_TRUE(reader.IsValid());
     ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId()));
 
-    ASSERT_DOUBLE_EQ(1.0, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P2D"]["y"].asDouble());
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2.0, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
 
     ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
     ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());

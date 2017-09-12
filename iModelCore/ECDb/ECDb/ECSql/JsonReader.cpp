@@ -32,12 +32,14 @@ struct StatementResetScope final : NonCopyableClass
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    Ramanujam.Raman                 9 / 2013
+//@bsimethod                                    Krischan.Eberle                09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId) : m_ecdb(ecdb)
-    {
-    m_isValid = Initialize(ecClassId) == SUCCESS;
-    }
+JsonReader::JsonReader(ECDbCR ecdb, ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClass) == SUCCESS; }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Ramanujam.Raman                 09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClassId) == SUCCESS; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle               09/2017
@@ -45,21 +47,24 @@ JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId) : m_ecdb(ecdb)
 BentleyStatus JsonReader::Initialize(ECClassId ecClassId)
     {
     ECClassCP ecClass = m_ecdb.Schemas().GetClass(ecClassId);
-    if (ecClass != nullptr)
+    if (ecClass == nullptr)
         return ERROR;
+    
+    return Initialize(*ecClass);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle               09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonReader::Initialize(ECClassCR ecClass)
+    {
     Utf8String ecsql("SELECT ECInstanceId,ECClassId");
-    bool isFirstProp = true;
-    for (ECPropertyCP prop : ecClass->GetProperties())
+    for (ECPropertyCP prop : ecClass.GetProperties())
         {
-        if (!isFirstProp)
-            ecsql.append(",");
-
-        ecsql.append("[").append(prop->GetName()).append("]");
-        isFirstProp = false;
+        ecsql.append(",[").append(prop->GetName()).append("]");
         }
 
-    ecsql.append(" FROM ONLY ").append(ecClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
+    ecsql.append(" FROM ONLY ").append(ecClass.GetECSqlName()).append(" WHERE ECInstanceId=?");
 
     if (ECSqlStatus::Success != m_statement.Prepare(m_ecdb, ecsql.c_str()))
         return ERROR;

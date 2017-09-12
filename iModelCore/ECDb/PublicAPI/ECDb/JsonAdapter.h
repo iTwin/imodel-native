@@ -16,8 +16,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //=======================================================================================
-//! Adapts the rows returned by ECSqlStatement to the JSON format. 
-//! @see ECSqlStatement, ECInstanceECSqlSelectAdapter
+//! Adapts the rows returned by an ECSqlStatement to the JSON wire format. 
+//! @see ECSqlStatement
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      08/2012
 //+===============+===============+===============+===============+===============+======
@@ -26,13 +26,12 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
     public:
         //=======================================================================================
         //! Options to control the format of the JSON returned by methods in the JsonECSqlSelectAdapter.
-        //! @see JsonECSqlSelectAdapter
         // @bsiclass                                                Ramanujam.Raman      10/2012
         //+===============+===============+===============+===============+===============+======
         enum class FormatOptions
         {
         Default,
-        LongsAreIds
+        LongsAreIds //!< ECProperties of type Long are treated as Ids and therefore formatted as Ids (i.e. as hex strings)
         };
 
     private:
@@ -56,23 +55,22 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
 
     public:
 
-        //! Creates a new instance of the adapter
-        //! @param[in] ecsqlStatement Prepared ECSQL statement
+        //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
+        //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions) {}
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions formatOptions = FormatOptions::Default) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions) {}
         ~JsonECSqlSelectAdapter() {}
 
         //! Gets the entire current row as JSON
         //! @param [out] currentRow Property values for the current row.
-        //! @return false if there was an error in retrieving/formatting values. true otherwise.
-        //! @remarks 
-        //! The values are organized as an array of values, each representing an instance. 
+        //! @return false if there was an error in retrieving values. true otherwise.
+        //! @remarks The values are organized as an array of values, each representing an instance. 
         //!
         //! Summary information on instances can be obtained through special property keys starting
         //! with "$". e.g., $ECInstanceId.
         //!
-        //! @see JsonECSqlSelectAdapterGetRowInstance
+        //! @see JsonECSqlSelectAdapter::GetRowInstance
         //! @code
         //! [
         //! {
@@ -92,27 +90,21 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! ...
         //! ]
         //! }
-        //! 
-        //! where ECJsonValue:
-        //! NullValue | PrimitiveValue | StructValue | ArrayValue
-        //! 
-        //! where PrimitiveValue:
-        //! RawValue | FormattedValue // Depending on the formatting option passed in
-        //! 
-        //! RawValue: e.g.,
-        //!     Integer:  2, 
-        //!     Double: 3.5
-        //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-        //!     Point3d: {"x" : 1.1, "y" : 2.2, "z" : 3.3} (JSON object value)
-        //!     String: "Test"
-        //!     
-        //!  FormattedValue: e.g., 
-        //!     Integer: "2"
-        //!     Double: "3 feet 6 inches"
-        //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-        //!     Point3d: "1.1, 2.2, 3.3"
-        //!     String: "Test"
         //! @endcode
+        //! where ECJsonValue: NullValue | PrimitiveValue | StructValue | ArrayValue
+        //! and where PrimitiveValue is formatted like this:
+        //!     - Binary/Blob: Base64 string
+        //!     - Boolean: true / false
+        //!     - DateTime: JulianDay double
+        //!     - Double: 3.5
+        //!     - Integer:  2, 
+        //!     - Long/Int64:
+        //!         - @ref JsonECSqlSelectAdapter::FormatOptions::Default "FormatOptions::Default": as string because of Int64 JavaScript issues
+        //!         - @ref JsonECSqlSelectAdapter::FormatOptions::LongsAreIds "FormatOptions::LongsAreIds": as hex string
+        //!     - Geometry: Base64 string of FlatBuffer Blob of the Geometry
+        //!     - Point2d: {"x" : 1.1, "y" : 2.2} 
+        //!     - Point3d: {"x" : 1.1, "y" : 2.2, "z" : 3.3} 
+        //!     - String: "Test"
         ECDB_EXPORT bool GetRow(JsonValueR currentRow) const;
 
         //! Gets a specific instance from the current row as JSON
@@ -120,7 +112,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @param [in] ecClassId ECClassId indicating the class of the instance needed from the current row 
         //! @return false if there was an error in retrieving values. true otherwise.
         //! @remarks The method returns only the instance of the type requested.
-        //! The format of the JSON is very similar to that described in @ref GetRow() except that there 
+        //! The format of the JSON is very similar to that described in JsonECSqlSelectAdapter::GetRow except that there 
         //! is just one top level instance, instead of an array of instances. 
         //! @code
         //! {
@@ -139,7 +131,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @return false if there was an error in retrieving values. true otherwise.
         //! @remarks Uses the class of the first column, and thereafter ignores any columns that don't 
         //! belong to the same class. 
-        //! The format of the JSON is very similar to that described in @ref GetRow() except that there 
+        //! The format of the JSON is very similar to that described in JsonECSqlSelectAdapter::GetRow except that there 
         //! is just one top level instance, instead of an array of instances. 
         //! @code
         //! [
@@ -153,20 +145,17 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @see JsonECSqlSelectAdapter::GetRow
         ECDB_EXPORT bool GetRowInstance(JsonValueR json) const;
 
-          //! Gets the current row in the ImodelJs JSON wire format.
+        //! Gets the current row in the ImodelJs JSON wire format.
         //! @param [out] json ImodelJs JSON wire format representation of value
         //! @return false if there was an error in retrieving values. true otherwise.
         ECDB_EXPORT bool GetRowForImodelJs(JsonValueR json);
     };
 
 //=================================================================================
-//! Reads information associated with an instance of the class in the JSON format.
-//! @remarks This is mainly a convenience wrapper over @ref ECSqlStatement and
-//! @ref JsonECSqlSelectAdapter. The recommended use is for a simple retrieval of instances
-//! of a class. The utility however also provides the capability to gather other
-//! instances that have been deemed to be retrieved along with the requested
-//! instance for display purposes through the RelatedItemsDisplaySpecification
-//! custom attribute.
+//! Reads ECInstances in the JSON wire format.
+//! @remarks This is mainly a convenience wrapper over @ref JsonECSqlSelectAdapter. 
+//! The recommended use is for a simple retrieval of instances
+//! of a class.
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Ramanujam.Raman      09/2013
 //+===============+===============+===============+===============+===============+======
@@ -175,15 +164,24 @@ struct JsonReader final : NonCopyableClass
     private:
         ECDbCR m_ecdb;
         mutable ECSqlStatement m_statement;
+        JsonECSqlSelectAdapter::FormatOptions m_formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default;
         bool m_isValid = false;
 
+        BentleyStatus Initialize(ECN::ECClassCR);
         BentleyStatus Initialize(ECN::ECClassId);
 
     public:
-        //! Construct a reader for the specified class. 
+        //! Initializes a new JsonReader instance for the specified class. 
+        //! @param[in] ecdb ECDb
+        //! @param[in] ecClass ECClass of the instance that needs to be retrieved. 
+        //! @param[in] formatOptions Options to control the output. 
+        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default);
+
+        //! Initializes a new JsonReader instance for the specified class. 
         //! @param ecdb [in] ECDb
         //! @param ecClassId [in] ECClassId indicating the class of the instance that needs to be retrieved. 
-        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId);
+        //! @param[in] formatOptions Options to control the output. 
+        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default);
         ~JsonReader() {}
 
         //! Indicates whether this JsonReader is valid and can be used to retrieve instances.
@@ -192,9 +190,9 @@ struct JsonReader final : NonCopyableClass
         bool IsValid() const { return m_isValid; }
 
         //! Reads (only) the specified instance in the JSON format. 
-        //! @param [out] jsonInstance JSON representation of the ECInstance as a property-value map.  
+        //! @param [out] jsonInstance JSON representation of the ECInstance as a JSON object made up of property-value pairs.
         //! @param ecInstanceId [in] ECInstanceId pointing to the instance that needs to be retrieved. 
-        //! @remarks The returned JSON is a map of properties and values for the specified instance. See 
+        //! @remarks The returned JSON is a JSON object of property value pairs for the specified instance. See 
         //! @ref JsonECSqlSelectAdapter::GetRowInstance for more details. 
         ECDB_EXPORT BentleyStatus Read(JsonValueR jsonInstance, ECInstanceId ecInstanceId) const;
     };
@@ -210,10 +208,10 @@ struct JsonInserter final : NonCopyableClass
         ECInstanceInserter m_ecinstanceInserter;
 
     public:
-        //! Construct an inserter for the specified class. 
-        //! @param ecdb [in] ECDb
-        //! @param ecClass [in] ECClass of the instance that needs to be inserted. 
-        //! @param [in] writeToken Token required to execute ECSQL INSERT statements if 
+        //! Initializes a new JsonInserter instance for the specified class. 
+        //! @param[in] ecdb ECDb
+        //! @param[in] ecClass ECClass of the instance that needs to be inserted. 
+        //! @param[in] writeToken Token required to execute ECSQL INSERT statements if 
         //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @remarks Holds some cached state to speed up future inserts of the same class. Keep the 
@@ -221,7 +219,7 @@ struct JsonInserter final : NonCopyableClass
         JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass, writeToken) {}
 
         //! Indicates whether this JsonInserter is valid and can be used to insert JSON instances.
-        //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
+        //! It is not valid, if the underlying ECClass is not mapped or not instantiable for example.
         //! @return true if the inserter is valid and can be used for inserting. false if it cannot be used for inserting.
         bool IsValid() const { return m_ecinstanceInserter.IsValid(); }
 
@@ -259,10 +257,10 @@ struct JsonUpdater final : NonCopyableClass
         ECN::IECInstancePtr CreateEmptyRelInstance(ECN::ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 
     public:
-        //! Construct an updater for the specified class. 
-        //! @param ecdb [in] ECDb
-        //! @param ecClass [in] ECClass of the instance that needs to be updated. 
-        //! @param [in] writeToken Token required to execute ECSQL UPDATE statements if 
+        //! Initializes a new JsonUpdater instance for the specified class. 
+        //! @param[in] ecdb ECDb
+        //! @param[in] ecClass ECClass of the instance that needs to be updated. 
+        //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 
         //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
@@ -272,7 +270,7 @@ struct JsonUpdater final : NonCopyableClass
         JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, writeToken, ecsqlOptions) {}
 
         //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
-        //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
+        //! It is not valid, if the underlying ECClass is not mapped or not instantiable for example.
         //! @return true if the updater is valid and can be used for updating. false if it cannot be used for updating.
         bool IsValid() const { return m_ecinstanceUpdater.IsValid(); }
 
@@ -330,7 +328,7 @@ struct JsonDeleter final : NonCopyableClass
         JsonDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecinstanceDeleter(ecdb, ecClass, writeToken) {}
 
         //! Indicates whether this JsonDeleter is valid and can be used to delete instances.
-        //! It is not valid, if @p ecClass is not mapped for example.
+        //! It is not valid, if the underlying ECClass is not mapped for example.
         //! @return true if the deleter is valid and can be used for deleting. false if it cannot be used for delete.
         bool IsValid() const { return m_ecinstanceDeleter.IsValid(); }
 
