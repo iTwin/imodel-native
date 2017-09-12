@@ -97,31 +97,36 @@ namespace IndexECPlugin.Source.Helpers
             try
                 {
                 apiKey = GetEEApiKey();
+                var datasetList = GetDatasetList(apiKey, spatialFilter);
+
 
                 //TODO: Parallelize this foreach
                 foreach ( var dataset in m_datasetList )
                     {
                     try
                         {
-                        string jsonRequest = m_jsonSpatialRequest.Replace("_apiKey", apiKey).Replace("_datasetName", dataset.DatasetName).Replace("_spatialFilter", spatialFilter).Replace("_maxResults", m_maxResults);
-
-                        string response = m_httpResponseGetter.GetHttpResponse(IndexConstants.EEBaseApiURL + "search?jsonRequest=" + Uri.EscapeUriString(jsonRequest));
-
-                        JObject jsonResponse = JObject.Parse(response);
-                        string errorCode = jsonResponse.TryToGetString("errorCode");
-                        if ( !String.IsNullOrWhiteSpace(errorCode) )
+                        if ( datasetList.Any(d => d == dataset.DatasetName) )
                             {
-                            throw new OperationFailedException("Usgs Earth Explorer API returned an error code : " + errorCode);
+
+                            string jsonRequest = m_jsonSpatialRequest.Replace("_apiKey", apiKey).Replace("_datasetName", dataset.DatasetName).Replace("_spatialFilter", spatialFilter).Replace("_maxResults", m_maxResults);
+
+                            string response = m_httpResponseGetter.GetHttpResponse(IndexConstants.EEBaseApiURL + "search?jsonRequest=" + Uri.EscapeUriString(jsonRequest));
+
+                            JObject jsonResponse = JObject.Parse(response);
+                            string errorCode = jsonResponse.TryToGetString("errorCode");
+                            if ( !String.IsNullOrWhiteSpace(errorCode) )
+                                {
+                                throw new OperationFailedException("Usgs Earth Explorer API returned an error code : " + errorCode);
+                                }
+
+                            if ( (jsonResponse["data"] != null) && jsonResponse["data"]["results"] != null )
+                                {
+                                responseList.Add(new EERequestBundle()
+                                {
+                                    Dataset = dataset, jtokenList = jsonResponse["data"]["results"]
+                                });
+                                }
                             }
-
-                        if((jsonResponse["data"] != null) && jsonResponse["data"]["results"] != null)
-                            {
-                            responseList.Add(new EERequestBundle()
-                            {
-                                Dataset = dataset, jtokenList = jsonResponse["data"]["results"]
-                            });
-                            }
-
                         }
                     catch ( OperationFailedException ex)
                         {
@@ -197,6 +202,35 @@ namespace IndexECPlugin.Source.Helpers
                 Log.Logger.error("Usgs Earth Explorer Logout call problem: " + e.Message);
                 throw;
                 }
+            }
+
+        private List<string> GetDatasetList (string apiKey, string spatialFilter)
+            {
+            List<string> datasetList = new List<string>();
+            string jsonRequest = "{\"apiKey\":\"" + apiKey + ",\"spatialFilter\":" + spatialFilter + "}";
+            string response = m_httpResponseGetter.GetHttpResponse(IndexConstants.EEBaseApiURL + "datasets?jsonRequest=" + Uri.EscapeUriString(jsonRequest));
+
+            JObject jobject = JObject.Parse(response);
+
+            string errorCode = jobject.TryToGetString("errorCode");
+            if ( String.IsNullOrWhiteSpace(errorCode) )
+                {
+                JArray datasetsArray = jobject["data"] as JArray;
+                if ( datasetsArray != null )
+                    {
+                    foreach ( JObject datasetObject in datasetsArray )
+                        {
+                        string datasetName = datasetObject.TryToGetString("datasetName");
+                        if ( !String.IsNullOrWhiteSpace(datasetName) )
+                            {
+                            datasetList.Add(datasetName);
+                            }
+                        }
+                    return datasetList;
+                    }
+                }
+            throw new OperationFailedException("Could not retrieve Dataset List from Usgs Earth Explorer API.");
+
             }
 
         /// <summary>

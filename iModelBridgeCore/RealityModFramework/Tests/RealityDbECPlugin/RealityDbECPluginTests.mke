@@ -121,7 +121,13 @@ ASSEMBLY_SOURCE_LIST = \
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
 #ASSEMBLY_RES_TO_ADD = LocalizableStrings
+
 #%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = EarthExplorerDatasetsResponse.txt
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
+
+%include assemblyResourceAppend.mki
 
 ASSEMBLY_RES_TO_ADD_FILENAME = EarthExplorerLoginErrorResponse.txt
 ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Ressources/
