@@ -259,7 +259,7 @@ bool UnZipFile(BeFileName pi_strSrc, BeFileName& pi_strDest)
     return (unzClose(uf) == 0);
     }
 
-void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, Utf8String footprint)
+void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, Utf8String footprint, Utf8String extension)
     {
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, fileName);
@@ -270,7 +270,7 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
     rootDocument.ReplaceAll("\\","/");
     properties.Insert(RealityDataField::RootDocument, rootDocument);
     properties.Insert(RealityDataField::Classification, "Terrain");
-    properties.Insert(RealityDataField::Type, "adf");
+    properties.Insert(RealityDataField::Type, extension);
     properties.Insert(RealityDataField::Description, "SRTM-derived 1 Second Digital Elevation Models Version 1.0");
     properties.Insert(RealityDataField::Visibility, "PUBLIC");
     properties.Insert(RealityDataField::Listable, "true");
@@ -286,27 +286,40 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
     BeFileName TempPath;
     Desktop::FileSystem::BeGetTempPath(TempPath);
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(zippedFile, "", propertyString, false, true, statusFunc);
-    if (upload->IsValidTransfer())
+    int retryTimer = 1000;
+    while (retryTimer < 256000)
         {
-        std::cout << Utf8PrintfString("Upload file : %s \n", zippedFile.GetNameUtf8());
+        RealityDataServiceUpload* upload = new RealityDataServiceUpload(zippedFile, "", propertyString, false, true, statusFunc);
+        if (upload->IsValidTransfer())
+            {
+            std::cout << Utf8PrintfString("Upload file : %s \n", zippedFile.GetNameUtf8());
 
-        upload->SetProgressCallBack(progressFunc);
-        upload->SetProgressStep(0.5);
-        upload->OnlyReportErrors(true);
-        const TransferReport& ur = upload->Perform();
-        delete upload; //close filestream
-        Utf8String report;
-        ur.ToXml(report);
-        if(report.ContainsI("error"))
-            std::cout << zippedFile.GetNameUtf8() << " failed to upload\n" << std::endl;
-        //else if (memorySaverMode)
-            BeFileName::BeDeleteFile(zippedFile.GetName());
-        std::cout << report << std::endl;
-        }
-    else
-        {
-        std::cout << zippedFile.GetNameUtf8() << " failed to create\n" << std::endl;
+            upload->SetProgressCallBack(progressFunc);
+            upload->SetProgressStep(0.5);
+            upload->OnlyReportErrors(true);
+            const TransferReport& ur = upload->Perform();
+            delete upload; //close filestream
+            Utf8String report;
+            ur.ToXml(report);
+            if(report.ContainsI("error"))
+                std::cout << zippedFile.GetNameUtf8() << " failed to upload\n" << std::endl;
+            //else if (memorySaverMode)
+                BeFileName::BeDeleteFile(zippedFile.GetName());
+            std::cout << report << std::endl;
+            break;
+            }
+        else
+            {
+            std::cout << zippedFile.GetNameUtf8() << " failed to create\n" << std::endl;
+            retryTimer *= 2;
+            if(retryTimer < 256000) //ims gets grumpy sometimes and we need to retry
+                {
+                std::cout << "retrying in "<< retryTimer << "ms\n" << std::endl;
+                Sleep(retryTimer);
+                }
+            else
+                std::cout << "moving on\n" << std::endl;
+            }
         }
     }
 
@@ -357,8 +370,10 @@ void extractData(BeFileName file)
         return;
         }
 
+    Utf8String extension = Utf8String(file.GetExtension().c_str());
+
     ZipFile(file);
-    upload(file, name, resolution, footprint);
+    upload(file, name, resolution, footprint, extension);
     }
 
 bool validatePath(Utf8StringR path)
