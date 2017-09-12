@@ -13,6 +13,8 @@
     #error "GetProcAddress not supported on this platform"
 #endif
 
+#include <Bentley/Bentley.h>
+#include <Bentley/BentleyConfig.h>
 #include <Bentley/BeGetProcAddress.h>
 
 //---------------------------------------------------------------------------------------
@@ -20,7 +22,7 @@
 //---------------------------------------------------------------------------------------
 void BeGetProcAddress::SetLibrarySearchPath(BeFileNameCR pathname)
     {
-#if defined(_WIN32)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     /*
     * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs 
     * with the converter:   
@@ -42,12 +44,14 @@ void BeGetProcAddress::SetLibrarySearchPath(BeFileNameCR pathname)
     newPath.append(::_wgetenv(L"PATH"));
     _wputenv(newPath.c_str());
 
-#else
+#elif defined(__unix__)
 
     Utf8String ldpath(L"LD_LIBRARY_PATH=");
     ldpath.append(Utf8String(pathname).c_str());
     putenv(strdup(ldpath.c_str()));
 
+#else
+    BeAssert(false && "platform not supported");
 #endif
     }
 
@@ -56,10 +60,13 @@ void BeGetProcAddress::SetLibrarySearchPath(BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 void* BeGetProcAddress::LoadLibrary(BeFileNameCR libName)
     {
-#ifdef _WIN32
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     return LoadLibraryW(libName.c_str());
-#else
+#elif defined(__unix__)
     return dlopen(Utf8String(libName).c_str(), RTLD_LAZY);
+#else
+    BeAssert(false && "platform not supported");
+    return nullptr;
 #endif
     }
 
@@ -68,10 +75,12 @@ void* BeGetProcAddress::LoadLibrary(BeFileNameCR libName)
 //---------------------------------------------------------------------------------------
 void BeGetProcAddress::UnloadLibrary(void* libhandle)
     {
-#ifdef _WIN32
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     FreeLibrary((HMODULE)libhandle);
-#else
+#elif defined(__unix__)
     dlclose(libhandle);
+#else
+    BeAssert(false && "platform not supported");
 #endif
     }
 
@@ -80,10 +89,13 @@ void BeGetProcAddress::UnloadLibrary(void* libhandle)
 //---------------------------------------------------------------------------------------
 void* BeGetProcAddress::GetProcAddress(void* libhandle, Utf8CP procName)
     {
-#ifdef _WIN32
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     return ::GetProcAddress((HMODULE)libhandle, procName);
-#else
+#elif defined(__unix__)
     return dlsym(libhandle, procName);
+#else
+    BeAssert(false && "platform not supported");
+    return nullptr;
 #endif
     }
 
