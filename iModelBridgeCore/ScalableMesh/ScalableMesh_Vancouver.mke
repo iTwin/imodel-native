@@ -519,7 +519,8 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)IppJpegLibTurbo.lib \
-	$(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+	$(ContextSubpartsLibs)BeJpeg.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
