@@ -835,10 +835,12 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
         instanceDataOut[DataSourceCache_PROPERTY_ClassKey] = ECDbHelper::ECClassKeyFromClass(*ecClass);
         instanceDataOut[DataSourceCache_PROPERTY_RemoteId] = objectId.remoteId;
 
-        JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings));
-
+        //Deprecated: Use presentation rules instead. Adapter doesn't do any formatting anymore
+        //JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings));
+        JsonECSqlSelectAdapter adapter(*statement);
         JsonValueR instanceDisplayData = instanceDataOut[DataSourceCache_PROPERTY_DisplayData];
-        adapter.GetRowDisplayInfo(instanceDataOut[DataSourceCache_PROPERTY_DisplayInfo]);
+        //Deprecated: Use presentation rules instead. Adapter doesn't do any formatting anymore
+        //adapter.GetRowDisplayInfo(instanceDataOut[DataSourceCache_PROPERTY_DisplayInfo]);
 
         if (!adapter.GetRowInstance(instanceDisplayData, ecClass->GetId()))
             {
@@ -851,7 +853,7 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
 
     JsonValueR instanceRawData = JsonFormat::Display == format ? instanceDataOut[DataSourceCache_PROPERTY_RawData] : instanceDataOut;
 
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     if (!adapter.GetRowInstance(instanceRawData, ecClass->GetId()))
         {
         instanceDataOut = Json::nullValue;

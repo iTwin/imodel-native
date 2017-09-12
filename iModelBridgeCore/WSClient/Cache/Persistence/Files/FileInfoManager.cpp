@@ -178,7 +178,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             "JOIN ONLY " ECSql_CachedFileInfo " cfi USING " ECSql_CachedFileInfoToFileInfo " ";
         });
 
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     BentleyStatus returnValue = SUCCESS;
 
     while (BE_SQLITE_ROW == statement->Step())
@@ -290,7 +290,7 @@ Json::Value FileInfoManager::ReadCachedFileInfo(CachedInstanceKeyCR cachedKey)
         return infoJson;
         }
 
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
 
     adapter.GetRowInstance(infoJson, m_cachedFileInfoClass->GetId());
 
@@ -329,7 +329,7 @@ Json::Value FileInfoManager::ReadExternalFileInfo(CachedInstanceKeyCR cachedKey)
         return infoJson;
         }
 
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(*statement);
     adapter.GetRowInstance(infoJson, m_externalFileInfoClass->GetId());
 
     return infoJson;
