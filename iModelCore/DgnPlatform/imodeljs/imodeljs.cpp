@@ -632,7 +632,7 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
     if (!instanceId.IsValid())
         return BE_SQLITE_ERROR;
 
-    JsonReader reader(ecdb, ecClass->GetId());
+    JsonReader reader(ecdb, *ecClass);
     if (!reader.IsValid())
         return BE_SQLITE_ERROR;
 
