@@ -322,6 +322,7 @@
         <ProductDirectory Name="Assets"         RelativeTo="Assemblies"     Path="Assets" LibType="static"/>
         <ProductDirectory Name="Libs"                                       Path="libs"/>
         <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
         <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
     </ProductDirectoryList>
 
