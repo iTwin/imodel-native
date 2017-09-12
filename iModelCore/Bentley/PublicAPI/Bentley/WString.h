@@ -491,6 +491,32 @@ struct Utf8String : public bastring
         next = substr(offset, idelim-offset);
         return idelim+1;
         }
+
+    //! Put quotes around a string.
+    Utf8StringR AddQuotes()
+        {
+        insert(begin(), '\"');
+        insert(end(),   '\"');
+        return *this;
+        }
+
+    //! Remove quotes from around a string.
+    Utf8StringR DropQuotes()
+        {
+        if (2 > length())
+            return *this;
+
+        iterator first = begin();
+        iterator last  = end() - 1;
+
+        if ('\"' != *first || '\"' != *last)
+            return *this;
+
+        erase(last);
+        erase(first);
+        return *this;
+        }
+
 };
 
 //=======================================================================================

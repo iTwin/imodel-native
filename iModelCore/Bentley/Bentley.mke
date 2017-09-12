@@ -80,6 +80,8 @@ $(o)BeStringUtilities$(oext)    : $(nonportDir)BeStringUtilities.cpp $(BentleyAP
 
 $(o)BeSystemInfo$(oext)         : $(nonportDir)BeSystemInfo.cpp $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
 
+$(o)BeGetProcAddress$(oext)     : $(nonportDir)BeGetProcAddress.cpp $(BentleyAPISrc)BeGetProcAddress.h ${MultiCompileDepends}
+
 $(o)BeTimeUtilities$(oext)      : $(nonportDir)BeTimeUtilities.cpp $(BentleyAPISrc)BeTimeUtilities.h ${MultiCompileDepends}
 
 $(o)DirectoryObserver$(oext)    : $(bentleyDir)DirectoryObserver.cpp $(BentleyAPISrc)DirectoryObserver.h ${MultiCompileDepends}
