@@ -593,3 +593,15 @@ size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
         }
     return num;
     }
+
+Json::Value UnitRegistry::SynonymsToJson() const
+    {
+    Json::Value jMap;
+    for (auto iter = m_phenomena.begin(); iter != m_phenomena.end(); iter++)
+        {
+        PhenomenonP pp = iter->second;
+        if(!pp->m_altNames.empty())
+          jMap.append(pp->SynonymMapToJson());
+        }
+    return jMap;
+    }

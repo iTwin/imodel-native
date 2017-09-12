@@ -69,7 +69,7 @@ size_t StdFormatSet::StdInit()
     stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
     AddFormat("Stop1000-2", stop, "stop1000-2");
 
-
+    // %f  %.04f
     //AddFormat("RoadStatF", new NumericFormatSpec(PresentationType::Station100, ShowSignOption::OnlyNegative, traits, 2), "rsf2");
     //AddFormat("RoadStatM", new NumericFormatSpec(PresentationType::Station1000, ShowSignOption::OnlyNegative, traits, 2), "rsm2");
 

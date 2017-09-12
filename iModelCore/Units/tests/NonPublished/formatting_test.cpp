@@ -237,12 +237,19 @@ TEST(FormattingTest, Json)
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "foot");
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", u8"фут");
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "'");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_DEG", "^");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_DEG", u8"°");
+    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_MINUTE", "'");
     Json::Value mapJ = BEU::Phenomenon::SynonymMapVectorToJson(mapV);
     Utf8String mapS = mapJ.ToString();
     LOG.infov("mapVector %s", mapS.c_str());
     bvector<BEU::UnitSynonymMap> mapV2 = BEU::UnitSynonymMap::UnitSynonymMap::MakeUnitSynonymVector(mapJ);
     bool id = BEU::UnitSynonymMap::AreVectorsIdentical(mapV, mapV2);
     LOG.infov("Vectors identical %s", FormatConstant::BoolText(id));
+    BEU::UnitRegistry::Instance().LoadSynonyms(mapJ);
+    Json::Value allSyn = BEU::UnitRegistry::Instance().SynonymsToJson();
+    Utf8String synS = allSyn.ToString();
+    LOG.infov("AllSynonyms %s", synS.c_str());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17

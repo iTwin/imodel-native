@@ -92,6 +92,7 @@ public:
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
     UnitCP GetPlatformLengthUnit() { return LookupUnit("M"); }
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
+    UNITS_EXPORT Json::Value SynonymsToJson() const;
     };
 
 END_BENTLEY_UNITS_NAMESPACE
