@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFVirtualEarthFile
@@ -16,6 +16,11 @@
 #include "HRFRasterFileCapabilities.h"
 
 BEGIN_IMAGEPP_NAMESPACE
+
+
+//Application using a consumer ID greater than this define will be able to do multiple set look ahead to accumulate multiple tiles instead of 
+//the default behavior, which is to cancel previous look ahead when a new one is triggered. Initialy required for 3SM.
+#define BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID 1000000000
 
 class HRPPixelType;
 struct WorkerPool;
@@ -97,7 +102,8 @@ public:
     virtual uint64_t                     GetFileCurrentSize(HFCBinStream* pi_pBinStream) const;
 
     //Look ahead method.
-    virtual bool                         CanPerformLookAhead(uint32_t pi_Page) const;
+    virtual bool                         CanPerformLookAhead(uint32_t pi_Page) const;    
+    IMAGEPP_EXPORT virtual bool          ForceCancelLookAhead(uint32_t pi_Page);
 
     //This static method indicates if a plain URL can be represented
     //by this specific URL
@@ -114,8 +120,8 @@ public:
     IMAGEPP_EXPORT WStringCR GetBrandLogoURI() const;
 
     // Get the lists of provider for the specified extent and zoom
-    IMAGEPP_EXPORT ImageryProviders const& GetProviders() const;
-
+    IMAGEPP_EXPORT ImageryProviders const& GetProviders() const;    
+    
 protected:
 
     //Constructor use only to create a child
@@ -137,6 +143,12 @@ protected:
     virtual void RequestLookAhead(uint32_t             pi_Page,
                                   const HGFTileIDList& pi_rBlocks,
                                   bool                pi_Async);
+
+            void RequestLookAhead(uint32_t             pi_Page,         
+                                  const HGFTileIDList& pi_rBlocks,                                  
+                                  bool                 pi_Async, 
+                                  uint32_t             pi_ConsumerID) override;
+
 
     //This method is used in SetLookAhead to indicate to a derived class that
     //the current LookAhead has been cancelled.
@@ -161,6 +173,7 @@ private:
     std::unique_ptr<ThreadLocalHttp> m_threadLocalHttp;
 
     std::map<uint64_t, RefCountedPtr<VirtualEarthTileQuery>> m_tileQueryMap;
+    std::mutex                                               m_tileQueryMapMutex;
 
     //Disabled methods
     HRFVirtualEarthFile(const HRFVirtualEarthFile& pi_rObj);

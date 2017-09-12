@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthFile
@@ -506,10 +506,12 @@ HRFVirtualEarthFile::HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rURL,
     : HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
     {
 
+#ifndef BINGMAPS_AUTO_PASSWORD        
     HFCAuthenticationCallback* pCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->GetCallback(HFCAuthenticationCallback::CLASS_ID);
 
     if(pCallback == 0)
         throw HFCLoginInformationNotAvailableException();
+#endif
 
     if(!pi_rURL->IsCompatibleWith(HFCURLHTTPBase::CLASS_ID))
         throw HFCCannotOpenFileException(pi_rURL->GetURL());
@@ -825,7 +827,8 @@ uint64_t HRFVirtualEarthFile::GetFileCurrentSize(HFCBinStream* pi_pBinStream) co
 //-----------------------------------------------------------------------------
 void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
                                            const HGFTileIDList& pi_rBlocks,
-                                           bool                pi_Async)
+                                           bool                 pi_Async, 
+                                           uint32_t             pi_ConsumerID)
     {
     HGFTileIDList::const_iterator Itr(pi_rBlocks.begin());
     if (Itr != pi_rBlocks.end())
@@ -849,8 +852,21 @@ void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
         //The editor must exist
         HASSERT(pResEditor != 0);
 
-        pResEditor->RequestLookAhead(pi_rBlocks);
+        pResEditor->RequestLookAhead(pi_rBlocks, pi_ConsumerID);
         }
+    }
+
+//-----------------------------------------------------------------------------
+// Protected
+// Function that is called to request some tiles to be fetch to the server
+// before that are actually read by the application. HRFVirtualEarthFile
+// supports only look ahead by tiles.
+//-----------------------------------------------------------------------------
+void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
+                                           const HGFTileIDList& pi_rBlocks,    
+                                           bool                 pi_Async)
+    {
+    RequestLookAhead(pi_Page, pi_rBlocks, 0, pi_Async);
     }
 
 //-----------------------------------------------------------------------------
@@ -862,7 +878,9 @@ void HRFVirtualEarthFile::CancelLookAhead(uint32_t pi_Page)
     HPRECONDITION(pi_Page == 0);
 
     // I assumed that HRF is not thread safe and that there will be only one thread that will execute LookAHead request and copyFrom(ReadBlock).
+    m_tileQueryMapMutex.lock();
     m_tileQueryMap.clear();
+    m_tileQueryMapMutex.unlock();
     }
 
 //-----------------------------------------------------------------------------
@@ -917,6 +935,20 @@ bool HRFVirtualEarthFile::HasLookAheadByBlock(uint32_t pi_Page) const
 bool HRFVirtualEarthFile::CanPerformLookAhead(uint32_t pi_Page) const
     {
     HPRECONDITION(pi_Page == 0);
+    return true;
+    }
+
+//-----------------------------------------------------------------------------
+// Indicates that the a look ahead is cancel. 
+//-----------------------------------------------------------------------------
+bool HRFVirtualEarthFile::ForceCancelLookAhead(uint32_t pi_Page)
+    {
+    HPRECONDITION(pi_Page == 0);
+
+    m_tileQueryMapMutex.lock();
+    m_tileQueryMap.clear();    
+    m_tileQueryMapMutex.unlock();
+
     return true;
     }
 

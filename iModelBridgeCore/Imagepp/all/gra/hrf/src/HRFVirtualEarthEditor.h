@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -81,7 +81,7 @@ protected:
     HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
-    virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
+    virtual void              RequestLookAhead(const HGFTileIDList& pi_rTileIDList, uint32_t pi_ConsumerID);
 
 private:
     HGFTileIDDescriptor m_TileIDDescriptor;

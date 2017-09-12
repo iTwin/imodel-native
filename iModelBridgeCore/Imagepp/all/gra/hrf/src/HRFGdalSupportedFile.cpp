@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1010,6 +1010,7 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
         {
         pi_rTagList.Set(new HRFAttributeVerticalUnitRatioToMeter(verticalUnitRatioToMeter));
         }
+
 
     pPage = new HRFPageDescriptor (GetAccessMode(),
                                    GetCapabilities(),                       // Capabilities,

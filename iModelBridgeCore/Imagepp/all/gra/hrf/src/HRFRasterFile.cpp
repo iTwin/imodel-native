@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFile
@@ -545,7 +545,7 @@ void HRFRasterFile::SetLookAhead(uint32_t              pi_Page,
 
             // Request the needed blocks
             Monitor.ReleaseKey();
-            RequestLookAhead(pi_Page, Blocks, pi_Async);
+            RequestLookAhead(pi_Page, Blocks, pi_Async, pi_ConsumerID);
             }
         }
     else if (pi_rBlocks.empty() && CanCancelLookAhead(pi_Page, (HGFTileIDList&)pi_rBlocks, pi_ConsumerID))
@@ -576,7 +576,7 @@ void HRFRasterFile::SetLookAhead(uint32_t          pi_Page,
         if (GetPageDescriptor(pi_Page)->IsUnlimitedResolution())
             {
             // an unlimited resolution raster has only the main resolution.
-            // A resolution index was associated to an editor...
+           // A resolution index was associated to an editor...
             // find the resolution editor into the ResolutionEditorRegistry
             ResolutionEditorRegistry::const_iterator ResEditorItr(m_ResolutionEditorRegistry.begin());
             HRFResolutionEditor* pResEditor = 0;
@@ -707,7 +707,7 @@ void HRFRasterFile::ResetLookAhead (uint32_t pi_Page,
 
         // Request all the tiles from all the consumers
         for (Consumer = PageConsumer->second.begin(); Consumer != PageConsumer->second.end(); Consumer++)
-            RequestLookAhead(pi_Page, *(Consumer->second), pi_Async);
+            RequestLookAhead(pi_Page, *(Consumer->second), pi_Async, (uint32_t)Consumer->first);
         }
     }
 
@@ -726,6 +726,20 @@ void HRFRasterFile::RequestLookAhead(uint32_t               pi_Page,
     HASSERT(false);
     }
 
+//-----------------------------------------------------------------------------
+// Protected
+// This method is used in SetLookAhead to give the list of needed tiles
+// to a derived class, since it knows how to obtain the tiles.
+//-----------------------------------------------------------------------------
+void HRFRasterFile::RequestLookAhead(uint32_t               pi_Page,
+                                     const HGFTileIDList&   pi_rBlocks,
+                                     bool                   pi_Async,
+                                     uint32_t               pi_ConsumerID)
+    {
+    HPRECONDITION(pi_Page < CountPages());
+
+    RequestLookAhead(pi_Page, pi_rBlocks, pi_Async);
+    }
 
 //-----------------------------------------------------------------------------
 // Protected

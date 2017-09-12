@@ -130,8 +130,12 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
 
     HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*GetRasterFile());
 
+    rasterFile.m_tileQueryMapMutex.lock();
     auto tileQueryItr = rasterFile.m_tileQueryMap.find(TileID);
-    if(tileQueryItr == rasterFile.m_tileQueryMap.end())
+    bool notFoundNode = tileQueryItr == rasterFile.m_tileQueryMap.end();
+    rasterFile.m_tileQueryMapMutex.unlock();
+
+    if(notFoundNode)
         {
 #ifdef _RETURN_RED_TILES_IF_NOT_IN_LOOKAHEAD    // Debug purpose only
         memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes()); 
@@ -204,7 +208,7 @@ HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
 // Protected
 // Request a look ahead for this resolution editor
 //-----------------------------------------------------------------------------
-void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList)
+void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList, uint32_t pi_ConsumerID)
     {
     HPRECONDITION(!pi_rTileIDList.empty());
 
@@ -216,11 +220,17 @@ void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList
 
     for(auto tileId : pi_rTileIDList)
         {
+        rasterFile.m_tileQueryMapMutex.lock();
         auto tileQueryItr = rasterFile.m_tileQueryMap.find(tileId);
-        if(tileQueryItr != rasterFile.m_tileQueryMap.end())
+        bool found = (tileQueryItr != rasterFile.m_tileQueryMap.end());
+        rasterFile.m_tileQueryMapMutex.unlock();
+
+        if(found)
             {
             // Reuse existing query.
-            newTileQuery.insert(*tileQueryItr);
+            
+            if (pi_ConsumerID < BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID)
+                newTileQuery.insert(*tileQueryItr);
             
             // Not sure about that?? should we notify again? tile may or may not be ready at this point.
             //GetRasterFile()->NotifyBlockReady(GetPage(), TileItr->first);
@@ -230,12 +240,25 @@ void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList
             // Tile was not in lookAHead, create a new request
             RefCountedPtr<VirtualEarthTileQuery> pTileQuery = new VirtualEarthTileQuery(tileId, BuildTileUri(tileId), rasterFile);
 
-            newTileQuery.insert({tileId, pTileQuery});
+            if (pi_ConsumerID < BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID)
+                { 
+                newTileQuery.insert({ tileId, pTileQuery });
+                }
+            else
+                {
+                rasterFile.m_tileQueryMapMutex.lock();
+                rasterFile.m_tileQueryMap.insert({ tileId, pTileQuery });
+                rasterFile.m_tileQueryMapMutex.unlock();
+                }
+            
             pool.Enqueue(*pTileQuery);
             }        
         }
 
-    rasterFile.m_tileQueryMap = std::move(newTileQuery);       // Replace with the new queries, old ones will be canceled.
+    if (pi_ConsumerID < BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID)
+        {
+        rasterFile.m_tileQueryMap = std::move(newTileQuery);       // Replace with the new queries, old ones will be canceled.
+        }
     }
 
 

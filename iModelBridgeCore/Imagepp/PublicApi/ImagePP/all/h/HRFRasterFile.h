@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFile
@@ -234,6 +234,15 @@ protected:
                                                  const HGFTileIDList&   pi_rBlocks,
                                                  bool                  pi_Async);
 
+
+    // This method is used in SetLookAhead to give the list of needed tiles
+    // to a derived class, since it knows how to obtain the tiles.
+                   virtual void    RequestLookAhead(uint32_t               pi_Page,
+                                                    const HGFTileIDList&   pi_rBlocks,
+                                                    bool                   pi_Async,
+                                                    uint32_t               pi_ConsumerID);
+
+                   
     // This method is used in SetLookAhead to indicate to a derived class that
     // the current LookAhead has been cancelled.
     IMAGEPP_EXPORT virtual void    CancelLookAhead      (uint32_t               pi_Page);
