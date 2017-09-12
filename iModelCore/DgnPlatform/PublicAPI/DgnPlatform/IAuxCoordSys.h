@@ -73,6 +73,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, ACSDisplayOptions) const;
 
     DGNPLATFORM_EXPORT virtual void _Display(DecorateContextR, ACSDisplayOptions) const;
+    DGNPLATFORM_EXPORT virtual void _Pick(PickContextR) const;
 
     virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return ERROR;}
     virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return ERROR;}
@@ -133,6 +134,9 @@ public:
 
     //! Display a representation of the ACS in the given view.
     void Display(DecorateContextR context, ACSDisplayOptions options) const {return _Display(context, options);}
+
+    //! Allow snapping to ACS origin.
+    void Pick(PickContextR context) const {return _Pick(context);}
 
     // Optional grid settings for this ACS that override the view definition's grid settings when drawing a grid aligned with the ACS.
     bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...

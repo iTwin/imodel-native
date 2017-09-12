@@ -1269,7 +1269,7 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         return;
         }
         
-    JsonECSqlSelectAdapter adapter(*stmt);
+    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions::LongsAreIds);
     adapter.GetRowForImodelJs(elementJson);
     }
 
