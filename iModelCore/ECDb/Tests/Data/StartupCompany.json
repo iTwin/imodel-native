@@ -1,237 +1,40 @@
-﻿{
-   "Categories" : [
-      {
-         "CategoryName" : "Miscellaneous",
-         "Description" : "Miscellaneous",
-         "DisplayLabel" : "Miscellaneous",
-         "Properties" : [
-            {
-               "Categories" : [
-                  {
-                     "CategoryName" : "Miscellaneous",
-                     "Description" : "Miscellaneous",
-                     "DisplayLabel" : "Miscellaneous",
-                     "Properties" : [
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Alpha",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Alpha",
-                           "PrimitiveType" : "double"
-                        },
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Beta",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Beta",
-                           "PrimitiveType" : "double"
-                        },
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Theta",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Theta",
-                           "PrimitiveType" : "double"
-                        }
-                     ]
-                  }
-               ],
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "anglesFoo",
-               "InstanceIndex" : 0,
-               "IsStruct" : true,
-               "Name" : "anglesFoo",
-               "PrimitiveType" : "AnglesStruct"
-            },
-            {
-               "Categories" : [
-                  {
-                     "CategoryName" : "Miscellaneous",
-                     "Description" : "Miscellaneous",
-                     "DisplayLabel" : "Miscellaneous",
-                     "Properties" : [
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Alpha",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Alpha",
-                           "PrimitiveType" : "double"
-                        },
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Beta",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Beta",
-                           "PrimitiveType" : "double"
-                        },
-                        {
-                           "ClassKey" : "StartupCompany.AnglesStruct",
-                           "DisplayLabel" : "Theta",
-                           "InstanceIndex" : 0,
-                           "IsPrimitive" : true,
-                           "Name" : "Theta",
-                           "PrimitiveType" : "double"
-                        }
-                     ]
-                  }
-               ],
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "arrayOfAnglesStructsFoo",
-               "InstanceIndex" : 0,
-               "IsArray" : true,
-               "Name" : "arrayOfAnglesStructsFoo",
-               "PrimitiveType" : "AnglesStruct"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "arrayOfIntsFoo",
-               "InstanceIndex" : 0,
-               "IsArray" : true,
-               "Name" : "arrayOfIntsFoo",
-               "PrimitiveType" : "int"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "binaryFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "binaryFoo",
-               "PrimitiveType" : "binary"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "booleanFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "booleanFoo",
-               "PrimitiveType" : "boolean"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "commonGeometryFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "commonGeometryFoo",
-               "PrimitiveType" : "Bentley.Geometry.Common.IGeometry"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "datetimeFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "datetimeFoo",
-               "PrimitiveType" : "dateTime"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "doubleFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "doubleFoo",
-               "PrimitiveType" : "double"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "intFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "intFoo",
-               "PrimitiveType" : "int"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "longFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "longFoo",
-               "PrimitiveType" : "long"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "point2dFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "point2dFoo",
-               "PrimitiveType" : "point2d"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "point3dFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "point3dFoo",
-               "PrimitiveType" : "point3d"
-            },
-            {
-               "ClassKey" : "StartupCompany.Foo",
-               "DisplayLabel" : "stringFoo",
-               "InstanceIndex" : 0,
-               "IsPrimitive" : true,
-               "Name" : "stringFoo",
-               "PrimitiveType" : "string"
-            }
-         ]
-      }
-   ],
-   "Classes" : {
-      "StartupCompany.AnglesStruct" : {
-         "DisplayLabel" : "AnglesStruct",
-         "Name" : "AnglesStruct",
-         "RelationshipPath" : null,
-         "SchemaName" : "StartupCompany"
+﻿[
+   {
+      "$ECClassId" : "87",
+      "$ECClassKey" : "StartupCompany.Foo",
+      "$ECInstanceId" : "1",
+      "anglesFoo" : {
+         "Alpha" : 12.345000000000001,
+         "Beta" : 12.345000000000001,
+         "Theta" : null
       },
-      "StartupCompany.Foo" : {
-         "DisplayLabel" : "Foo",
-         "Name" : "Foo",
-         "RelationshipPath" : null,
-         "SchemaName" : "StartupCompany"
-      }
-   },
-   "Row" : [
-      {
-         "$ECClassId" : "87",
-         "$ECClassKey" : "StartupCompany.Foo",
-         "$ECClassLabel" : "Foo",
-         "$ECInstanceId" : "1",
-         "$ECInstanceLabel" : "Foo",
-         "anglesFoo" : {
-            "Alpha" : "12.345000000000001",
-            "Beta" : "12.345000000000001",
+      "arrayOfAnglesStructsFoo" : [
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001,
             "Theta" : null
          },
-         "arrayOfAnglesStructsFoo" : [
-            {
-               "Alpha" : "12.345000000000001",
-               "Beta" : "12.345000000000001",
-               "Theta" : null
-            },
-            {
-               "Alpha" : "12.345000000000001",
-               "Beta" : "12.345000000000001",
-               "Theta" : null
-            },
-            {
-               "Alpha" : "12.345000000000001",
-               "Beta" : "12.345000000000001",
-               "Theta" : null
-            }
-         ],
-         "arrayOfIntsFoo" : [ "67", "67", "67" ],
-         "binaryFoo" : null,
-         "booleanFoo" : null,
-         "commonGeometryFoo" : null,
-         "datetimeFoo" : null,
-         "doubleFoo" : "12.345000000000001",
-         "intFoo" : "67",
-         "longFoo" : null,
-         "point2dFoo" : null,
-         "point3dFoo" : null,
-         "stringFoo" : null
-      }
-   ]
-}
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001,
+            "Theta" : null
+         },
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001,
+            "Theta" : null
+         }
+      ],
+      "arrayOfIntsFoo" : [ 67, 67, 67 ],
+      "binaryFoo" : null,
+      "booleanFoo" : null,
+      "commonGeometryFoo" : null,
+      "datetimeFoo" : null,
+      "doubleFoo" : 12.345000000000001,
+      "intFoo" : 67,
+      "longFoo" : null,
+      "point2dFoo" : null,
+      "point3dFoo" : null,
+      "stringFoo" : null
+   }
+]
