@@ -99,8 +99,8 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //!     - Double: 3.5
         //!     - Integer:  2, 
         //!     - Long/Int64:
-        //!         - @ref JsonECSqlSelectAdapter::FormatOptions::Default "FormatOptions::Default": as string because of Int64 JavaScript issues
-        //!         - @ref JsonECSqlSelectAdapter::FormatOptions::LongsAreIds "FormatOptions::LongsAreIds": as hex string
+        //!         - FormatOptions::Default: as string because of Int64 JavaScript issues
+        //!         - FormatOptions::LongsAreIds: as hex string
         //!     - Geometry: Base64 string of FlatBuffer Blob of the Geometry
         //!     - Point2d: {"x" : 1.1, "y" : 2.2} 
         //!     - Point3d: {"x" : 1.1, "y" : 2.2, "z" : 3.3} 
