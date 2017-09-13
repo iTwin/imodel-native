@@ -153,6 +153,7 @@ BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre   08/2017
 //-----------------------------------------------------------------------------------------
+#ifdef VANCOUVER_API
 IRasterGeoCoordinateServices* MyImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl() const 
     {
     if (GeoCoordinationManager::GetServices() != NULL)
@@ -160,6 +161,7 @@ IRasterGeoCoordinateServices* MyImageppLibAdmin::_GetIRasterGeoCoordinateService
 
     return NULL;
     }
+#endif
 
 BentleyStatus ScalableMeshATPexe::Initialize(int argc, WCharP argv[])
     {
