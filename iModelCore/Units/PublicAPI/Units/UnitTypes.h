@@ -203,7 +203,7 @@ public:
     UNITS_EXPORT static bool AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2);
     UNITS_EXPORT static bvector<UnitSynonymMap> MakeUnitSynonymVector(Json::Value jval);
     UNITS_EXPORT static size_t AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym);
-
+    UNITS_EXPORT static bool CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2);
     };
 
 struct Phenomenon final : UnitsSymbol

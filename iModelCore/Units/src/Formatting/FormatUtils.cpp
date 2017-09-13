@@ -1320,7 +1320,7 @@ Utf8String FormatUnitGroup::ToText(bool useAlias)
     return txt;
     }
 
-FormatUnitSetCP FormatUnitGroup::GetPersistenceFUS()
+FormatUnitSetCP FormatUnitGroup::GetPersistenceFUS() const
     {
     return (m_group.size() == 0) ? nullptr : &m_group[0];
     }
@@ -1330,7 +1330,7 @@ size_t FormatUnitGroup::GetPresentationFUSCount()
     return m_group.size()-1;
     }
 
-FormatUnitSetCP FormatUnitGroup::GetPresentationFUS(size_t index)
+FormatUnitSetCP FormatUnitGroup::GetPresentationFUS(size_t index) const
     {
     index++;
     if (index < 1 || index >= m_group.size())

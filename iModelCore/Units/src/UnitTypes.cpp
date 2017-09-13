@@ -423,14 +423,18 @@ Json::Value UnitSynonymMap::ToJson()
         }
     return jval;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 bool UnitSynonymMap::IsIdentical(UnitSynonymMapCR other)
     {
     if (m_unit != other.m_unit) return false;
     if (BeStringUtilities::StricmpAscii(m_synonym.c_str(), other.m_synonym.c_str()) != 0) return false;
     return true;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2)
     {
     if (v1.size() != v2.size()) return false;
@@ -440,7 +444,9 @@ bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<Un
         }
     return true;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
 bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
     {
     UnitSynonymMap map;
@@ -454,14 +460,22 @@ bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
         }
     return mapV;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
 size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym)
     {
     UnitSynonymMap map(unitName, synonym);
     mapV.push_back(map);
     return mapV.size();
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
+bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2)
+    {
+    return true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17

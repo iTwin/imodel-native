@@ -631,6 +631,7 @@ struct FormatUnitSet
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
     };
 
+
 struct FormatUnitGroup
     {
     private:
@@ -644,9 +645,9 @@ struct FormatUnitGroup
         UNITS_EXPORT Utf8String ToText(bool useAlias);
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-        UNITS_EXPORT FormatUnitSetCP GetPersistenceFUS();
+        UNITS_EXPORT FormatUnitSetCP GetPersistenceFUS() const;
         UNITS_EXPORT size_t GetPresentationFUSCount();
-        UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index);
+        UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index) const;
         UNITS_EXPORT bool IsIdentical(FormatUnitGroupCR other) const;
     };
 
@@ -679,7 +680,7 @@ public:
     UNITS_EXPORT static bool AreSetsIdentical();
     UNITS_EXPORT size_t GetFormatCount() { return m_formatSet.size(); }
     UNITS_EXPORT size_t GetCustomCount() { return m_customSet.size(); }
-    UNITS_EXPORT static size_t AddFormatDef(bvector<NamedFormatSpecCP> *vec, NamedFormatSpecCP fmtP);
+    //UNITS_EXPORT static size_t AddFormatDef(bvector<NamedFormatSpecCP> *vec, NamedFormatSpecCP fmtP);
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
    // UNITS_EXPORT bvector<Json::Value> ToJson();
