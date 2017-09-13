@@ -288,205 +288,362 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
  will compute the sub-resolution and the view oriented parameters.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>::Filter(
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
-    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
-                                    size_t numSubNodes) const
+	HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
+	std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
+	size_t numSubNodes) const
 
-    {
+{
 
-    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
+	HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
 
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+	RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
 
-    // Compute the number of points in sub-nodes
-    size_t totalNumberOfPoints = 0;
+	// Compute the number of points in sub-nodes
+	size_t totalNumberOfPoints = 0;
 	bvector<bvector<DPoint3d>> polylines;
 	bvector<DTMFeatureType> types;
-    for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-        {
-        if (subNodes[indexNodes] != NULL)
-            {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
-            totalNumberOfPoints += subNodePointsPtr->size();
+	bvector<bool> anyHull(numSubNodes, false);
+	bvector<int> beginIdx(numSubNodes, -1);
+	for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+	{
+		if (subNodes[indexNodes] != NULL)
+		{
+			RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+			totalNumberOfPoints += subNodePointsPtr->size();
 
 			HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
 
-			subMeshNode->ReadFeatureDefinitions(polylines, types);
-            }
-        }
+			bvector<bvector<DPoint3d>> polylinesNode;
+			bvector<DTMFeatureType> typesNode;
+			subMeshNode->ReadFeatureDefinitions(polylinesNode, typesNode);
 
+			for (auto& type : typesNode)
+				if (type == DTMFeatureType::Hull)
+					anyHull[indexNodes] = true;
 
-    if (totalNumberOfPoints < 10)
-        {
-        // There are far too few points to start decimating them towards the root.
-        // We then promote then all so they are given a high importance to make sure some terrain
-        // representativity is retained in this area.
-        DRange3d extent = DRange3d::NullRange();
-        parentPointsPtr->clear();
-        for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
-            {
-            extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
-
-            if (subNodes[indexNodes] != NULL)
-                {      
-                if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
-
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());                                
-                parentPointsPtr->push_back(&(*subNodesPointsPtr)[0], subNodesPointsPtr->size());                                    
-                }
-            }
-        if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
-        if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
-            {
-            std::cout << " FILTERING NODE " << pParentMeshNode->GetBlockID().m_integerID << " WRONG EXTENT " << std::endl;
-            }
-        }
-    else
-    {    
-        size_t pointArrayInitialNumber[8];
-        DRange3d extent = DRange3d::NullRange();
-
-        parentPointsPtr->clear();
-        parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
-        for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
-        {
-            if (subNodes[indexNodes] != NULL)
-                {            
-                if (!subNodes[indexNodes]->IsLoaded()) subNodes[indexNodes]->Load();
-                if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
-                // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
-                // In reality starting at 9 not all points are used but let's gives us a little margin.
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
-
-
-                if (subNodePointsPtr->size() == 0)
-                    continue;
-
-                if (subNodePointsPtr->size() <= 10)
-                    {
-                    // Too few content in node ... promote them all                           
-                    parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());
-                    }
-                else
-                    {
-                    subNodePointsPtr = subNodes[indexNodes]->GetPointsPtr();
-                    pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
-
-
-                    vector<POINT> points(subNodePointsPtr->size());
-                    memcpy(&points[0], &(*subNodePointsPtr)[0], points.size() * sizeof(POINT));
-                    
-                    std::random_shuffle(points.begin(), points.end());
-
-                    size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
-
-
-                    parentPointsPtr->push_back(&points[0], std::min(count, points.size()));
-
-                }               
-            }
-            if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
-
-        }
-
-        SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
-        parentPointsPtr = 0;
-        pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
-
-		if (polylines.size() > 0)
-		{
-			bvector<DTMFeatureType> newTypes;
-			bvector<DTMFeatureType> otherNewTypes;
-			bvector<bvector<DPoint3d>> newLines;
-			MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
-			{
-				if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
-				{
-					newLines.push_back(vec);
-					newTypes.push_back(types[i]);
-					return false;
-				}
-				else return true;
-			},
-				[&otherNewTypes](const bvector<DPoint3d>& vec)
-			{
-				otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
-			});
-			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
-			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
-			types = otherNewTypes;
-
-			newTypes.clear();
-			otherNewTypes.clear();
-			newLines.clear();
-			MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
-			{
-				if (types[i] != DTMFeatureType::Island)
-				{
-					newLines.push_back(vec);
-					newTypes.push_back(types[i]);
-					return false;
-				}
-				else return true;
-			},
-				[&otherNewTypes](const bvector<DPoint3d>& vec)
-			{
-				otherNewTypes.push_back(DTMFeatureType::Island);
-			});
-			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
-			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
-			types = otherNewTypes;
-			newLines = polylines;
-
-			SimplifyPolylines(polylines);
-			std::transform(polylines.begin(), polylines.end(),newLines.begin(), polylines.begin(),
-				[newLines&, polylines&](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
-			{
-				if(types[&vec - &polylines[0]] == DTMFeatureType::Hull)
-					return vec2;
-				else return vec;
-			});
-
+			types.insert(types.end(), typesNode.begin(), typesNode.end());
+			if(anyHull[indexNodes])
+				beginIdx[indexNodes] = (int)polylines.size();
+			polylines.insert(polylines.end(), polylinesNode.begin(), polylinesNode.end());
 		}
+	}
 
-		for (auto& polyline : polylines)
+
+	if (totalNumberOfPoints < 10)
+	{
+		// There are far too few points to start decimating them towards the root.
+		// We then promote then all so they are given a high importance to make sure some terrain
+		// representativity is retained in this area.
+		DRange3d extent = DRange3d::NullRange();
+		parentPointsPtr->clear();
+		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
 		{
-			if (polyline.empty()) continue;
-			DRange3d extent2 = DRange3d::From(polyline);
-			pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
-		}
-    if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
-        {
-        pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);
-        }
-    else
-        {
-        pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
-        }    
-    }
-    if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
-        {
-        std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
-#if FILTER_DBG_WHEN_NODE_HAS_NO_FACE
-        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-            {
-            if (subNodes[indexNodes] != NULL)
-                {
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
-                Utf8String namePts = "e:\\output\\scmesh\\2016-08-24\\sub_mesh_tile_";
-                LOGSTRING_NODE_INFO(subNodes[indexNodes], namePts)
-                    namePts.append(".pts");
-                size_t _nVertices = subNodePointsPtr->size();
-                FILE* _meshFile = fopen(namePts.c_str(), "wb");
-                fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
-                fwrite(&((*subNodePointsPtr)[0]), sizeof(DPoint3d), _nVertices, _meshFile);
-                fclose(_meshFile);
-                }
-            }
+			extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
+
+			if (subNodes[indexNodes] != NULL)
+			{
+				if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
+
+				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());
+				parentPointsPtr->push_back(&(*subNodesPointsPtr)[0], subNodesPointsPtr->size());
+
+				if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
+				{
+					if (!anyHull[indexNodes])
+					{
+						types.push_back(DTMFeatureType::Hull);
+						bvector<DPoint3d> boxPts;
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+
+						auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
+						IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+							new ScalableMeshNode<POINT>(nodePtr)
+#else
+							ScalableMeshNode<POINT>::CreateItem(nodePtr)
 #endif
-        }
-    return true;
-    }
+						);
+						BcDTMPtr dtm = nodeP->GetBcDTM().get();
+						for (auto& pt : boxPts)
+						{
+							int drapedTypeP;
+							dtm->GetDTMDraping()->DrapePoint(&pt.z, nullptr, nullptr, nullptr, drapedTypeP, pt);
+						}
+						polylines.push_back(boxPts);
+					}
+					else
+					{
+						types.push_back(types[beginIdx[indexNodes]]);
+						polylines.push_back(polylines[beginIdx[indexNodes]]);
+					}
+				}
+			}
+		}
+		if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
+		if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
+		{
+			std::cout << " FILTERING NODE " << pParentMeshNode->GetBlockID().m_integerID << " WRONG EXTENT " << std::endl;
+		}
+	}
+	else
+	{
+		size_t pointArrayInitialNumber[8];
+		DRange3d extent = DRange3d::NullRange();
+
+		parentPointsPtr->clear();
+		parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
+		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+		{
+			if (subNodes[indexNodes] != NULL)
+			{
+				if (!subNodes[indexNodes]->IsLoaded()) subNodes[indexNodes]->Load();
+				if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
+				// The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
+				// In reality starting at 9 not all points are used but let's gives us a little margin.
+				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+
+
+				if (subNodePointsPtr->size() == 0)
+					continue;
+
+				if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
+				{
+					if (!anyHull[indexNodes])
+					{
+
+						types.push_back(DTMFeatureType::Hull);
+						bvector<DPoint3d> boxPts;
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
+
+						auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
+						IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+							new ScalableMeshNode<POINT>(nodePtr)
+#else
+							ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+						);
+						BcDTMPtr dtm = nodeP->GetBcDTM().get();
+						for (auto& pt : boxPts)
+						{
+							int drapedTypeP;
+							if(dtm.IsValid()) 
+								dtm->GetDTMDraping()->DrapePoint(&pt.z, nullptr, nullptr, nullptr, drapedTypeP, pt);
+						}
+
+						polylines.push_back(boxPts);
+					}
+					else
+					{
+						types.push_back(types[beginIdx[indexNodes]]);
+						polylines.push_back(polylines[beginIdx[indexNodes]]);
+					}
+				}
+
+				if (subNodePointsPtr->size() <= 10)
+				{
+					// Too few content in node ... promote them all                           
+					parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());
+				}
+				else
+				{
+					subNodePointsPtr = subNodes[indexNodes]->GetPointsPtr();
+					pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
+
+
+					vector<POINT> points(subNodePointsPtr->size());
+					memcpy(&points[0], &(*subNodePointsPtr)[0], points.size() * sizeof(POINT));
+
+					std::random_shuffle(points.begin(), points.end());
+
+					size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
+
+
+					parentPointsPtr->push_back(&points[0], std::min(count, points.size()));
+
+				}
+			}
+			if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
+
+		}
+
+	}
+
+	if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
+	{
+		size_t nRemoved = 0;
+		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+		{
+			if (beginIdx[indexNodes] != -1)
+			{
+				polylines.erase(polylines.begin() + beginIdx[indexNodes] - nRemoved);
+				types.erase(types.begin() + beginIdx[indexNodes] - nRemoved);
+				nRemoved++;
+			}
+		}
+	}
+	SMMemoryPool::GetInstance()->RemoveItem(pParentMeshNode->m_pointsPoolItemId, pParentMeshNode->GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)pParentMeshNode->m_SMIndex);
+	parentPointsPtr = 0;
+	pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+	if (polylines.size() > 0)
+	{
+		bvector<DTMFeatureType> newTypes;
+		bvector<DTMFeatureType> otherNewTypes;
+		bvector<bvector<DPoint3d>> newLines;
+		MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+		{
+			if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
+			{
+				newLines.push_back(vec);
+				newTypes.push_back(types[i]);
+				return false;
+			}
+			else return true;
+		},
+			[&otherNewTypes](const bvector<DPoint3d>& vec)
+		{
+			otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
+		});
+		otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+		polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+		types = otherNewTypes;
+
+		newTypes.clear();
+		otherNewTypes.clear();
+		newLines.clear();
+		MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+		{
+			if (types[i] != DTMFeatureType::Island)
+			{
+				newLines.push_back(vec);
+				newTypes.push_back(types[i]);
+				return false;
+			}
+			else return true;
+		},
+			[&otherNewTypes](const bvector<DPoint3d>& vec)
+		{
+			otherNewTypes.push_back(DTMFeatureType::Island);
+		});
+		otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+		polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+		types = otherNewTypes;
+
+		newTypes.clear();
+		otherNewTypes.clear();
+		newLines.clear();
+
+
+		for (size_t i = polylines.size() - 1; i > 0; i--)
+		{
+			bvector<bvector<DPoint3d>> defsHull;
+			defsHull.push_back(polylines[i]);
+			defsHull.push_back(polylines[i - 1]);
+			MergePolygonSets(defsHull, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			{
+				if (types[i] != DTMFeatureType::Hull)
+				{
+					newLines.push_back(vec);
+					newTypes.push_back(types[i]);
+					return false;
+				}
+				else return true;
+			},
+				[&otherNewTypes](const bvector<DPoint3d>& vec)
+			{
+				otherNewTypes.push_back(DTMFeatureType::Hull);
+			});
+			if (defsHull.size() > 0)
+			{
+				polylines[i - 1] = defsHull[0];
+				types[i - 1] = otherNewTypes[0];
+			}
+			if (defsHull.size() > 1)
+			{
+				polylines[i] = defsHull[1];
+				types[i] = otherNewTypes[1];
+			}
+			if (newLines.size() > 0)
+			{
+				polylines[i] = newLines[0];
+				types[i] = newTypes[0];
+			}
+			if (newLines.size() > 1)
+			{
+				polylines[i - 1] = newLines[1];
+				types[i - 1] = newTypes[1];
+			}
+			if (defsHull.size() + newLines.size() < 2) polylines[i].clear();
+		}
+
+		newLines = polylines;
+		SimplifyPolylines(polylines);
+		std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
+			[&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
+		{
+			if (types[&vec - &polylines[0]] == DTMFeatureType::Hull)
+				return vec2;
+			else return vec;
+		});
+
+	}
+
+	std::unique(polylines.begin(), polylines.end(), [](const bvector<DPoint3d>& a, const bvector<DPoint3d>&b) {
+		if (a.size() != b.size()) return false;
+		for (size_t i = 0; i < a.size(); ++i)
+			if (!a[i].IsEqual(b[i]))
+				return false;
+
+		return true;
+	});
+
+	for (auto& polyline : polylines)
+	{
+		if (polyline.empty()) continue;
+		DRange3d extent2 = DRange3d::From(polyline);
+		pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
+	}
+	if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
+	{
+		pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);
+	}
+	else
+	{
+		pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
+	}
+
+	if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
+	{
+		std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+#if FILTER_DBG_WHEN_NODE_HAS_NO_FACE
+		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+		{
+			if (subNodes[indexNodes] != NULL)
+			{
+				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+				Utf8String namePts = "e:\\output\\scmesh\\2016-08-24\\sub_mesh_tile_";
+				LOGSTRING_NODE_INFO(subNodes[indexNodes], namePts)
+					namePts.append(".pts");
+				size_t _nVertices = subNodePointsPtr->size();
+				FILE* _meshFile = fopen(namePts.c_str(), "wb");
+				fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
+				fwrite(&((*subNodePointsPtr)[0]), sizeof(DPoint3d), _nVertices, _meshFile);
+				fclose(_meshFile);
+			}
+		}
+#endif
+	}
+	return true;
+}
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 11/15
