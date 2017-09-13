@@ -110,6 +110,7 @@
     <ClCompile Include="Published\ViewAttachment_Test.cpp" />
     <ClCompile Include="Published\VolumeElement_Test.cpp" />
     <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp" />
+    <ClCompile Include="TestFixture\DgnPlatformSeedManager.cpp" />
     <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp" />
     <ClCompile Include="TestFixture\GeomHelper.cpp" />
   </ItemGroup>
@@ -131,6 +132,7 @@
     <ClInclude Include="Published\DgnHandlersTests.h" />
     <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h" />
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
+    <ClInclude Include="TestFixture\DgnPlatformSeedManager.h" />
     <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h" />
     <ClInclude Include="TestFixture\GeomHelper.h" />
   </ItemGroup>
@@ -161,7 +163,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\DgnPlatformTest\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntermediateOutputPath>

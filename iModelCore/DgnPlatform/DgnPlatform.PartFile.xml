@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
@@ -123,6 +123,7 @@
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/PerfTestDomain.h</Files>
         </Bindings>
     </Part>
 

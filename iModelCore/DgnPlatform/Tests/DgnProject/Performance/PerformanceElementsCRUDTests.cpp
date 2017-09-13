@@ -9,7 +9,6 @@
 
 // Uncomment this if you want elapsed time of each test case logged to console in addition to the log file.
 // #define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -25,6 +24,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());
+        ASSERT_EQ(SchemaStatus::Success, PerfTestDomain::GetDomain().ImportSchema(*m_db));
+
         ASSERT_TRUE(m_db->IsDbOpen());
         //m_db->Schemas().CreateClassViewsInDb();
         {
@@ -38,7 +39,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
             ASSERT_TRUE(element.IsValid());
             }
         }
-
+        m_db->SaveChanges();
+        m_db->ExecuteSql("vacuum");
         m_db->CloseDb();
         }
 
@@ -546,7 +548,7 @@ int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
     if (!element.IsValid())
     {// Get the minimum Id from bis_Element table.
         Statement stat1;
-        DgnClassId classId = m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, className);
+        DgnClassId classId = m_db->Schemas().GetClassId(PTEST_SCHEMA_NAME, className);
         
         DbResult result = stat1.Prepare(*m_db, "SELECT min(Id) from bis_Element where ECClassId=?");
         stat1.BindId(1, classId);
