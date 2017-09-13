@@ -2443,11 +2443,6 @@ void BeStringUtilities::FormatUInt64(Utf8P string, uint64_t number, uint64_t bas
         Strrev(string);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool hasHexPrefix(Utf8CP str) {return (str[0] == '0' && (str[1] == 'X' || str[1] == 'x'));}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2459,7 +2454,7 @@ uint64_t BeStringUtilities::ParseUInt64(Utf8CP string, BentleyStatus* outStat)
     if (Utf8String::IsNullOrEmpty(string))
         return 0;
 
-    if (hasHexPrefix(string))
+    if (HasHexPrefix(string))
         return ParseHex(string, &status);
 
     uint64_t value = 0;
@@ -2486,7 +2481,7 @@ uint64_t BeStringUtilities::ParseHex(Utf8CP hs, BentleyStatus* outStat)
     BentleyStatus ALLOW_NULL_OUTPUT(status,outStat);
     status = ERROR;
 
-    if (hasHexPrefix(hs))
+    if (HasHexPrefix(hs))
         hs += 2;
 
     if (!*hs)
