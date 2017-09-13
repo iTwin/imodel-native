@@ -36,11 +36,13 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
 
 #ifndef VANCOUVER_API
+/*
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
         {           
         pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
+*/
 #endif
    if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
         {
