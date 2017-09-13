@@ -158,13 +158,116 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json:
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 2/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
+    {
+    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "", classLocater, remapper);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const Json::Value& jsonValue, PrimitiveType primitiveType)
+BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
     {
-    Json::ValueType jsonValueType = jsonValue.type();
+    if (!jsonValue.isObject())
+        return ERROR;
 
-    BentleyStatus status = SUCCESS;
+    for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
+        {
+        Json::Value& childJsonValue = *iter;
+        if (childJsonValue.isNull())
+            continue;
+
+        Utf8CP memberName = iter.memberName();
+        if (IsSystemMember(memberName))
+            continue;
+
+        Utf8String remappedMemberName(memberName);
+        if (nullptr != remapper)
+            remapper->ResolvePropertyName(remappedMemberName, currentClass);
+        ECPropertyP ecProperty = currentClass.GetPropertyP(remappedMemberName.c_str());
+        if (ecProperty == nullptr)
+            return ERROR;
+
+        Utf8String accessString = currentAccessString.empty() ? remappedMemberName : currentAccessString + "." + remappedMemberName;
+        if (ecProperty->GetIsPrimitive())
+            {
+            ECValue ecValue;
+            if (SUCCESS != ECPrimitiveValueFromJson(ecValue, childJsonValue, ecProperty->GetAsPrimitiveProperty()->GetType()))
+                return ERROR;
+
+            ECObjectsStatus ecStatus;
+            ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
+            BeAssert(ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange);
+            continue;
+            }
+        else if (ecProperty->GetIsStruct())
+            {
+            if (SUCCESS != ECInstanceFromJson(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, remapper))
+                return ERROR;
+
+            continue;
+            }
+        else if (ecProperty->GetIsArray())
+            {
+            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty, accessString))
+                return ERROR;
+            }
+        else if (ecProperty->GetIsNavigation())
+            {
+            NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
+            if (navProp->IsMultiple())
+                {
+                LOG.error("NavigationECProperties with IsMultiple == true not supported by ECJsonUtilities");
+                return ERROR;
+                }
+
+            if (!childJsonValue.isObject() || !childJsonValue.isMember(json_id()))
+                return ERROR;
+
+            BeAssert(childJsonValue[json_id()].isString());
+            BentleyStatus hexParseStat = SUCCESS;
+            const uint64_t navId = BeStringUtilities::ParseHex(childJsonValue[json_id()].asCString(), &hexParseStat);
+            if (SUCCESS != hexParseStat)
+                return ERROR;
+
+            ECValue v;
+            if (!childJsonValue.isMember(json_relClassName()))
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
+                    return ERROR;
+                }
+            else
+                {
+                BeAssert(childJsonValue[json_relClassName()].isString());
+                Utf8String schemaName, className;
+                if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, childJsonValue[json_relClassName()].asString()))
+                    return ERROR;
+
+                ECClassId relClassId = classLocater.LocateClassId(schemaName.c_str(), className.c_str());
+                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), relClassId))
+                    return ERROR;
+                }
+
+            ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 1/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::Value const& jsonValue, PrimitiveType primitiveType)
+    {
+    if (jsonValue.isNull())
+        return SUCCESS;
+
+    Json::ValueType jsonValueType = jsonValue.type();
     switch (primitiveType)
         {
             case PRIMITIVETYPE_Point2d:
@@ -173,8 +276,7 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
             if (JsonToPoint2d(point2d, jsonValue))
                 return ERROR;
 
-            status = ecValue.SetPoint2d(point2d);
-            break;
+            return ecValue.SetPoint2d(point2d);
             }
             case PRIMITIVETYPE_Point3d:
             {
@@ -182,86 +284,114 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
             if (JsonToPoint3d(point3d, jsonValue))
                 return ERROR;
 
-            status = ecValue.SetPoint3d(point3d);
-            break;
+            return ecValue.SetPoint3d(point3d);
             }
             case PRIMITIVETYPE_Integer:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::intValue || jsonValueType == Json::stringValue))
-                    return ERROR;
-                if (jsonValue.isInt())
-                    status = ecValue.SetInteger(jsonValue.asInt());
-                else if (jsonValue.isString())
-                    status = ecValue.SetInteger(std::stoi(jsonValue.asCString()));
-                break;
+            {
+            if (jsonValueType != Json::intValue && jsonValueType != Json::stringValue)
+                return ERROR;
+
+            if (jsonValue.isInt())
+                return ecValue.SetInteger(jsonValue.asInt());
+
+            return ecValue.SetInteger(std::stoi(jsonValue.asCString()));
+            }
             case PRIMITIVETYPE_Long:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
+            {
+            if (jsonValueType != Json::stringValue)
+                return ERROR; //int64_t values need to be serialized as strings to allow use in Javascript"
+
+            Utf8CP longStr = jsonValue.asCString();
+            int64_t val;
+            if (BeStringUtilities::HasHexPrefix(longStr))
+                {
+                BentleyStatus hexParseStat = SUCCESS;
+                val = (int64_t) BeStringUtilities::ParseHex(longStr, &hexParseStat);
+                if (SUCCESS != hexParseStat)
                     return ERROR;
-                status = ecValue.SetLong(BeJsonUtilities::Int64FromValue(jsonValue));
-                break;
+                }
+            else
+                val = BeJsonUtilities::Int64FromValue(jsonValue);
+            
+            return ecValue.SetLong(val);
+            }
             case PRIMITIVETYPE_Double:
-                if (!jsonValue.isConvertibleTo(Json::ValueType::realValue) && !jsonValue.isString())
-                    return ERROR;
-                if (jsonValue.isDouble())
-                    status = ecValue.SetDouble(jsonValue.asDouble());
-                else if (jsonValue.isInt())
-                    status = ecValue.SetDouble((double)jsonValue.asInt());
-                else if (jsonValue.isString())
-                    status = ecValue.SetDouble(std::stod(jsonValue.asCString()));
-                else
-                    {
-                    BeAssert(false && "Invalid type to convert to double");
-                    return ERROR;
-                    }
-                break;
+            {
+            if (!jsonValue.isConvertibleTo(Json::ValueType::realValue) && !jsonValue.isString())
+                return ERROR;
+            if (jsonValue.isDouble())
+                return ecValue.SetDouble(jsonValue.asDouble());
+
+            if (jsonValue.isInt())
+                return ecValue.SetDouble((double) jsonValue.asInt());
+            if (jsonValue.isString())
+                return ecValue.SetDouble(std::stod(jsonValue.asCString()));
+
+            BeAssert(false && "Invalid type to convert to double");
+            return ERROR;
+            }
             case PRIMITIVETYPE_DateTime:
             {
-            if (!EXPECTED_CONDITION(jsonValueType == Json::stringValue))
-                return ERROR;
-            DateTime dateTime;
-            DateTime::FromString(dateTime, jsonValue.asString().c_str());
-            status = ecValue.SetDateTime(dateTime);
-            break;
+            if (jsonValueType == Json::stringValue)
+                {
+                DateTime dateTime;
+                DateTime::FromString(dateTime, jsonValue.asString().c_str());
+                return ecValue.SetDateTime(dateTime);
+                }
+
+            if (jsonValueType == Json::realValue)
+                return ecValue.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jsonValue.asDouble()));
+
+            BeAssert(false && "Invalid type to convert to DateTime");
+            return ERROR;
             }
             case PRIMITIVETYPE_String:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::stringValue))
-                    return ERROR;
-                status = ecValue.SetUtf8CP(jsonValue.asString().c_str(), true);
-                break;
+            {
+            if (jsonValueType != Json::stringValue)
+                return ERROR;
+
+            return ecValue.SetUtf8CP(jsonValue.asString().c_str(), true);
+            }
             case PRIMITIVETYPE_Boolean:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::booleanValue))
-                    return ERROR;
-                status = ecValue.SetBoolean(jsonValue.asBool());
-                break;
+            {
+            if (jsonValueType != Json::booleanValue)
+                return ERROR;
+
+            return ecValue.SetBoolean(jsonValue.asBool());
+            }
             case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
             if (SUCCESS != JsonToBinary(blob, jsonValue))
                 return ERROR;
 
-            status = ecValue.SetBinary(blob.data(), blob.size(), true);
-            break;
+            return ecValue.SetBinary(blob.data(), blob.size(), true);
             }
             case PRIMITIVETYPE_IGeometry:
             {
-            if (!EXPECTED_CONDITION(jsonValueType == Json::objectValue))
-                return ERROR;
+            if (jsonValueType == Json::objectValue)
+                {
+                bvector<IGeometryPtr> geometry;
+                if (!BentleyGeometryJson::TryJsonValueToGeometry(jsonValue, geometry))
+                    return ERROR;
 
-            if (jsonValue.isNull())
-                return SUCCESS;
+                BeAssert(geometry.size() == 1);
+                return ecValue.SetIGeometry(*(geometry[0]));
+                }
 
-            bvector<IGeometryPtr> geometry;
-            if (!BentleyGeometryJson::TryJsonValueToGeometry(jsonValue, geometry))
-                return ERROR;
+            if (jsonValueType == Json::stringValue)
+                {
+                bvector<Byte> geometryFbBlob;
+                if (SUCCESS != JsonToBinary(geometryFbBlob, jsonValue))
+                    return ERROR;
 
-            BeAssert(geometry.size() == 1);
-            return ecValue.SetIGeometry(*(geometry[0]));
+                return ecValue.SetIGeometry(geometryFbBlob.data(), geometryFbBlob.size(), true);
+                }
             }
             default:
-                status = ERROR;
+                BeAssert(false);
+                return ERROR;
         }
-
-    POSTCONDITION(status == SUCCESS, ERROR);
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -274,20 +404,19 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
     if ((!property.GetIsArray() && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
         return ERROR;
 
-    if (!EXPECTED_CONDITION(jsonValue.isArray()))
+    if (!jsonValue.isArray())
         return ERROR;
 
-    BentleyStatus r_status = SUCCESS;
     uint32_t length = jsonValue.size();
     if (length == 0)
         return SUCCESS;
 
-    ECObjectsStatus status = instance.AddArrayElements(accessString.c_str(), length);
-    POSTCONDITION(ECObjectsStatus::Success == status, ERROR);
+    if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), length))
+        return ERROR;
 
     if (property.GetIsStructArray())
         {
-        auto structArrayProperty = property.GetAsStructArrayProperty();
+        StructArrayECPropertyCP structArrayProperty = property.GetAsStructArrayProperty();
         if (nullptr == structArrayProperty)
             return ERROR;
 
@@ -314,12 +443,9 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
     for (uint32_t ii = 0; ii < length; ii++)
         {
         ECValue ecPrimitiveValue;
-        BentleyStatus status = ECPrimitiveValueFromJson(ecPrimitiveValue, jsonValue[ii], primType);
-        if (SUCCESS != status)
-            {
-            r_status = status;
-            continue;
-            }
+        if (SUCCESS != ECPrimitiveValueFromJson(ecPrimitiveValue, jsonValue[ii], primType))
+            return ERROR;
+
         ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecPrimitiveValue, ii);
         if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
@@ -327,127 +453,21 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
             }
         }
 
-    return r_status;
+    return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 2/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, IECSchemaRemapperCP remapper)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECJsonUtilities::IsSystemMember(Utf8CP memberName)
     {
-    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "", remapper);
-    }
+    if (Utf8String::IsNullOrEmpty(memberName))
+        return false;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 1/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECSchemaRemapperCP remapper)
-    {
-    if (!jsonValue.isObject())
-        return ERROR;
-
-    BentleyStatus status = SUCCESS;
-    for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
-        {
-        Json::Value& childJsonValue = *iter;
-        if (childJsonValue.isNull())
-            continue;
-
-        Utf8CP memberName = iter.memberName();
-        if (*memberName == '$')
-            continue;
-
-        Utf8String remappedMemberName(memberName);
-        if (nullptr != remapper)
-            remapper->ResolvePropertyName(remappedMemberName, currentClass);
-        ECPropertyP ecProperty = currentClass.GetPropertyP(remappedMemberName.c_str());
-        if (!EXPECTED_CONDITION(ecProperty != nullptr))
-            {
-            status = ERROR;
-            continue;
-            }
-
-        Utf8String accessString = (currentAccessString[0] == 0) ? remappedMemberName.c_str() : currentAccessString + "." + remappedMemberName.c_str();
-        if (ecProperty->GetIsPrimitive())
-            {
-            ECValue ecValue;
-            PrimitiveECPropertyCP primitiveProperty = ecProperty->GetAsPrimitiveProperty();
-            PrimitiveType primitiveType = primitiveProperty->GetType();
-            if (SUCCESS != ECPrimitiveValueFromJson(ecValue, childJsonValue, primitiveType))
-                {
-                status = ERROR;
-                continue;
-                }
-            ECObjectsStatus ecStatus;
-            ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
-            BeAssert(ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange);
-            continue;
-            }
-        else if (ecProperty->GetIsStruct())
-            {
-            StructECPropertyCP structProperty = ecProperty->GetAsStructProperty();
-            if (SUCCESS != ECInstanceFromJson(instance, childJsonValue, structProperty->GetType(), accessString, remapper))
-                status = ERROR;
-            continue;
-            }
-        else if (ecProperty->GetIsArray())
-            {
-            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty, accessString))
-                {
-                status = ERROR;
-                continue;
-                }
-            }
-        else if (ecProperty->GetIsNavigation())
-            {
-            //JSON structure for nav props:
-            //"<NavPropName>" : {"id":"<Related id>"[, "relECClassId":"<RelECClassId>"]}
-            NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
-            if (navProp->IsMultiple())
-                {
-                LOG.error("NavigationECProperties with IsMultiple == true not supported by ECJsonUtilities");
-                status = ERROR;
-                continue;
-                }
-
-            if (!childJsonValue.isObject() || !childJsonValue.isMember(json_id()))
-                {
-                status = ERROR;
-                continue;
-                }
-
-            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[json_id()], INT64_C(0));
-            if (navId == INT64_C(0))
-                {
-                status = ERROR;
-                continue;
-                }
-
-            ECValue v;
-            if (!childJsonValue.isMember("relClassId"))
-                {
-                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
-                    status = ERROR;
-                }
-            else
-                {
-                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["relClassId"], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
-                    status = ERROR;
-                }
-
-            if (SUCCESS == status)
-                {
-                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
-                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
-                    status = ERROR;
-                }
-
-            continue;
-            }
-        }
-
-    return status;
+    return strcmp(memberName, json_id()) == 0 || strcmp(memberName, json_className()) == 0 ||
+        strcmp(memberName, json_relClassName()) == 0 ||
+        strcmp(memberName, json_sourceId()) == 0 || strcmp(memberName, json_targetId()) == 0 ||
+        strcmp(memberName, json_classId()) == 0 || strcmp(memberName, json_sourceClassId()) == 0 || strcmp(memberName, json_targetClassId()) == 0;
     }
 
 //=======================================================================================

@@ -29,8 +29,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 #define JSON_PointY "y"
 #define JSON_PointZ "z"
 
-
-
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      01/2014
 +===============+===============+===============+===============+===============+======*/
@@ -55,8 +53,10 @@ private:
 
     static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Json::StaticString const& coordinateKey);
 
-    static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECSchemaRemapperCP remapper = nullptr);
+    static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
+
+    static bool IsSystemMember(Utf8CP);
 
 public:
     //! Populates an ECValue given a Json value and a PrimitiveType
@@ -66,7 +66,9 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
 
-    ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, IECSchemaRemapperCP remapper = nullptr);
+    //! @remarks
+    //! Ids are formatted as hex strings
+    ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
 
     //! Converts the specified Byte array to a Json value
     //! The Byte array is converted to a string using a Base64 encoding.
