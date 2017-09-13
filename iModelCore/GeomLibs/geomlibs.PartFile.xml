@@ -49,7 +49,7 @@
         <SubPart PartName="GeomDlls"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Headers" PartFile="flatbuffers" Repository="libsrc-flatbuffers"/>
-        <SubPart PartName="BeXml"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)BentleyGeomSerialization$(ApiNumber)$(shlibext)</Assemblies>
