@@ -1025,11 +1025,9 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                 {
                     case DbValueType::BlobVal:
                     {
-                    if (SUCCESS != ECJsonUtilities::BinaryToJson(row[stmt.GetColumnName(i)], (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i)))
-                        {
-                        BimConsole::WriteErrorLine("Failed to export table %s", tableName);
-                        return;
-                        }
+                    Utf8String base64Str;
+                    Base64Utilities::Encode(base64Str, (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i));
+                    row[stmt.GetColumnName(i)] = base64Str;
                     break;
                     }
                     case DbValueType::FloatVal:
