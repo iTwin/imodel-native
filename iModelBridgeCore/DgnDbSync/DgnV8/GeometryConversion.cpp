@@ -1875,10 +1875,13 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
 
             Bentley::DVec3d      scaleVec;
             Bentley::DPoint3d    origin;
-            Bentley::RotMatrix   rMatrix;
+            Bentley::RotMatrix   rMatrix, invRMatrix;
 
             localToGeom.GetTranslation(origin);
             localToGeom.GetMatrix(rMatrix);
+
+            if (!invRMatrix.InverseOf(rMatrix))
+                return false;
 
             rMatrix.NormalizeColumnsOf(rMatrix, scaleVec);
 
