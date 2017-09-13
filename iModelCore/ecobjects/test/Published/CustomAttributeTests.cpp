@@ -598,7 +598,7 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle              12/2012
+// @bsimethod                                   Colin.Kerr              12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     {
