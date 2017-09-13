@@ -55,9 +55,11 @@
     <ClCompile Include="StructuralPhysical\Slab.cpp" />
     <ClCompile Include="StructuralPhysical\SpreadFooting.cpp" />
     <ClCompile Include="StructuralPhysical\StripFooting.cpp" />
+    <ClCompile Include="StructuralPhysical\StructuralAddition.cpp" />
     <ClCompile Include="StructuralPhysical\StructuralElement.cpp" />
     <ClCompile Include="StructuralPhysical\StructuralMember.cpp" />
     <ClCompile Include="StructuralPhysical\StructuralPhysicalDomain.cpp" />
+    <ClCompile Include="StructuralPhysical\StructuralSubtraction.cpp" />
     <ClCompile Include="StructuralPhysical\SurfaceMember.cpp" />
     <ClCompile Include="StructuralPhysical\Wall.cpp" />
     <ClCompile Include="StructuralProfiles\BuiltUpProfile.cpp" />
@@ -91,11 +93,13 @@
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Slab.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SpreadFooting.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StripFooting.h" />
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralAddition.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralElement.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralMember.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalApi.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDefinitions.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDomain.h" />
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralSubtraction.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SurfaceMember.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Wall.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfile.h" />

@@ -29,6 +29,8 @@
 //-----------------------------------------------------------------------------------------
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralElement "StructuralElement"
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralMember "StructuralMember"
+#define STRUCTURAL_PHYSICAL_CLASS_StructuralSubtraction "StructuralSubtraction"
+#define STRUCTURAL_PHYSICAL_CLASS_StructuralAddition "StructuralAddition"
 #define STRUCTURAL_PHYSICAL_CLASS_SurfaceMember "SurfaceMember"
 #define STRUCTURAL_PHYSICAL_CLASS_Slab "Slab"
 #define STRUCTURAL_PHYSICAL_CLASS_Wall "Wall"
@@ -60,6 +62,8 @@
 STRUCTURAL_POINTER_TYPEDEFS(StructuralElement)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralMember)
 STRUCTURAL_POINTER_TYPEDEFS(SurfaceMember)
+STRUCTURAL_POINTER_TYPEDEFS(StructuralSubtraction)
+STRUCTURAL_POINTER_TYPEDEFS(StructuralAddition)
 STRUCTURAL_POINTER_TYPEDEFS(Slab)
 STRUCTURAL_POINTER_TYPEDEFS(Wall)
 STRUCTURAL_POINTER_TYPEDEFS(CurveMember)

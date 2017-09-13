@@ -38,7 +38,7 @@ struct StructuralPhysicalCategory : NonCopyableClass
 
     private:
         static void InsertDomainCategories(Dgn::DgnDbR);
-        static Dgn::DgnCategoryId InsertCategory(Dgn::DgnDbR, Utf8CP, Dgn::ColorDef const&);
+        static Dgn::DgnCategoryId InsertCategory(Dgn::DgnDbR, Utf8CP, Dgn::ColorDef const&, Dgn::DgnCategory::Rank rank = Dgn::DgnCategory::Rank::Domain);
         
     public:
         //! Get the DgnSubCategoryId

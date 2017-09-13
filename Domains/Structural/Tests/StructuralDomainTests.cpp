@@ -8,6 +8,7 @@
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
 
 
@@ -184,6 +185,19 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, WALL_CODE_VALUE2);
 
+
+    //newtest
+    /*ECN::ECClassCP structuralClass = db->GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, Wall::MyHandlerECClassName());
+    ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(*db, structuralClass->GetId());
+    DgnElementPtr   elem = elementHandler->Create(DgnElement::CreateParams(*db, physicalModel->GetModelId(), structuralClass->GetId(), code));
+    GeometrySourceP geomElem = elem.IsValid() ? elem->ToGeometrySourceP() : nullptr;
+
+    Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(*db, structuralClass->GetDisplayLabel().c_str());
+    geomElem->SetCategoryId(categoryId);
+
+    */
+
+
     WallPtr pw = Wall::Create(physicalModel);
     status = pw->SetCode(code);
 
@@ -191,56 +205,36 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
 
     //test geometry
     Dgn::Placement3d placement;
-    placement.GetOriginR() = DPoint3d::From(0.0, 0.0, 0.0);
-
+    placement.GetOriginR() = DPoint3d::From(10.0, 10.0, -50.0);
     pw->SetPlacement(placement);
 
-    Transform matrixEmpty;
-    matrixEmpty.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    DPoint3d blockSize = DPoint3d::From(25.0, 10.0, 0.5);
+    DPoint3d blockCenter = DPoint3d::From(blockSize.x / 2.0, blockSize.y / 2.0, blockSize.z / 2.0);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(blockCenter, blockSize, true);
 
-    Transform rotationMatrix;
-    Transform linearMatrix;
+    ISolidPrimitivePtr blockGeom = ISolidPrimitive::CreateDgnBox(blockDetail);
 
-    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
-    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET, WALL_THICKNESS + WALL_OFFSET, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    ASSERT_TRUE(blockGeom.IsValid());
 
-    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*pw);
-    builder->Append(pw->GetCategoryId());
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*pw->ToGeometrySourceP());
+    
+    GeometrySourceP geomElem = pw->ToGeometrySourceP();
+    geomElem->SetCategoryId(pw->GetCategoryId());
+
+    builder->Append(pw->GetCategoryId(), GeometryBuilder::CoordSystem::World);
 
     Dgn::Render::GeometryParams params;
+
+    DgnCategoryId c = pw->GetCategoryId();
+
     params.SetCategoryId(pw->GetCategoryId());
+    params.SetLineColor(ColorDef::Red());
+    params.SetWeight(2);
+    builder->Append(params, GeometryBuilder::CoordSystem::World);
 
-    Dgn::ColorDef lineColor;
-    Dgn::ColorDef fillColor;
-    lineColor.SetColors(0, 0, 255, 0);
-    fillColor.SetColors(0, 255, 255, 0);
+    builder->Append(*blockGeom, GeometryBuilder::CoordSystem::World);
+    builder->Finish(*pw->ToGeometrySourceP());
 
-    params.SetLineColor(lineColor);
-    params.SetFillColor(fillColor);
-    builder->Append(params);
-
-    DPoint3d points[4];
-    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
-    points[1] = DPoint3d::From(100.0, 0.0, 0.0);
-    points[2] = DPoint3d::From(100.0, 50.0, 0.0);
-    points[3] = DPoint3d::From(0.0, 50.0, 0.0);
-
-    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
-
-    DVec3d vec = DVec3d::From(0.0, 0.0, 80.0);
-
-    // Create member
-    ISolidPrimitivePtr member = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(shape, vec, true));
-
-    member->TransformInPlace(rotationMatrix);
-    member->TransformInPlace(linearMatrix);
-
-    if (!builder->Append(*member))
-        {
-        ASSERT_TRUE(false);
-        }
-
-    builder->Finish(*pw);
     //end test geometry
 
     pw->Insert(&status);
@@ -268,6 +262,34 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, WALL_CODE_VALUE2);
     ASSERT_TRUE(queriedElement.IsValid());
+
+    //create a view, it is neccessary if you like to see geoemetry with Gist
+    Dgn::DefinitionModelR dictionary = db->GetDictionaryModel();
+    Dgn::CategorySelectorPtr categorySelector = new Dgn::CategorySelector(dictionary, "Default");
+
+    Dgn::ModelSelectorPtr modelSelector = new Dgn::ModelSelector(dictionary, "Default");
+    modelSelector->AddModel(physicalModel->GetModelId());
+
+    Dgn::DisplayStyle3dPtr displayStyle = new Dgn::DisplayStyle3d(dictionary, "Default");
+
+    displayStyle->SetBackgroundColor(Dgn::ColorDef::DarkYellow());
+    displayStyle->SetSkyBoxEnabled(false);
+    displayStyle->SetGroundPlaneEnabled(false);
+
+    Dgn::Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
+    viewFlags.SetRenderMode(Dgn::Render::RenderMode::SmoothShade);
+    viewFlags.SetShowTransparency(true);
+    viewFlags.ShowTransparency();
+
+    displayStyle->SetViewFlags(viewFlags);
+
+    //create view 
+    Dgn::OrthographicViewDefinition view(dictionary, "Structure View", *categorySelector, *displayStyle, *modelSelector);
+    view.SetStandardViewRotation(Dgn::StandardView::Iso); // Default to a rotated view
+    view.LookAtVolume(db->GeoLocation().GetProjectExtents());
+    view.Insert();
+    Dgn::DgnViewId viewId = view.GetViewId();
+    db->SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
 
     /*double queriedThickness = queriedElement->GetPropertyValueDouble("Thickness");
 
@@ -685,12 +707,66 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-
-
     ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileZone);
     ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();
 
     ASSERT_TRUE(aspectEnabler.IsValid());
 
     ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
+    }
+
+#define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
+TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+
+    StructuralSubtractionPtr subtraction = StructuralSubtraction::Create(physicalModel);
+    subtraction->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, STRUCTURALSUBTRACTION_CODE_VALUE);
+    subtraction->SetCode(code);
+    subtraction->SetUserLabel("Structural Subtraction label");
+    subtraction->SetFederationGuid(BeSQLite::BeGuid(true));
+
+    subtraction->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::SpatialLocationElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::SpatialLocationElement>(*physicalModel, STRUCTURALSUBTRACTION_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define STRUCTURALADDITION_CODE_VALUE       "STRUCTURALADDITION-001"
+TEST_F(StructuralDomainTestFixture, StructuralAdditionClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+
+    StructuralAdditionPtr addition = StructuralAddition::Create(physicalModel);
+    addition->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, STRUCTURALADDITION_CODE_VALUE);
+    addition->SetCode(code);
+    addition->SetUserLabel("Structural Addition label");
+    addition->SetFederationGuid(BeSQLite::BeGuid(true));
+
+    addition->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, STRUCTURALADDITION_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
     }

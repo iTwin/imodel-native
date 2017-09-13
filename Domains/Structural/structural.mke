@@ -77,6 +77,8 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructPhysPublicAPI)StructuralElement.h \
     $(StructPhysPublicAPI)StructuralMember.h \
     $(StructPhysPublicAPI)SurfaceMember.h \
+    $(StructPhysPublicAPI)StructuralAddition.h \
+    $(StructPhysPublicAPI)StructuralSubtraction.h \
     $(StructPhysPublicAPI)Slab.h \
     $(StructPhysPublicAPI)Wall.h \
     $(StructPhysPublicAPI)CurveMember.h \
@@ -133,6 +135,18 @@ $(o)StructuralMember$(oext) : $(StructPhys)StructuralMember.cpp \
     ${MultiCompileDepends} \
     $(StructPhysPublicAPI)StructuralMember.h \
     $(StructPhysPublicAPI)StructuralElement.h \
+    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)StructuralAddition$(oext) : $(StructPhys)StructuralAddition.cpp \
+    ${MultiCompileDepends} \
+    $(StructPhysPublicAPI)StructuralAddition.h \
+    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)StructuralSubtraction$(oext) : $(StructPhys)StructuralSubtraction.cpp \
+    ${MultiCompileDepends} \
+    $(StructPhysPublicAPI)StructuralSubtraction.h \
     $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 

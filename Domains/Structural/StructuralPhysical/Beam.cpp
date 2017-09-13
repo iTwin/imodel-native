@@ -18,7 +18,6 @@ BeamPtr Beam::Create(Dgn::PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    // TODO: needs a real category, not a fake one just passed
     Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(model.GetDgnDb(), STRUCTURAL_PHYSICAL_CATEGORY_StructuralCategory);
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId);

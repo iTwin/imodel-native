@@ -158,6 +158,12 @@
     <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp">
       <Filter>StructuralMaterial</Filter>
     </ClCompile>
+    <ClCompile Include="StructuralPhysical\StructuralSubtraction.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysical\StructuralAddition.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -273,6 +279,12 @@
     </ClInclude>
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h">
       <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralSubtraction.h">
+      <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralAddition.h">
+      <Filter>StructuralPhysical</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

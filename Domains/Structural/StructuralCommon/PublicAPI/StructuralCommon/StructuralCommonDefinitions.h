@@ -54,6 +54,8 @@
 #define STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel              "StructuralPhysicalModel"
 #define STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel        "StructuralTypeDefinitionModel"
 
+#define STRUCTURAL_COMMON_CLASS_FormAspect                           "Form"
+
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------

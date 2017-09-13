@@ -23,3 +23,5 @@
 #include "FoundationMember.h"
 #include "SpreadFooting.h"
 #include "StripFooting.h"
+#include "StructuralSubtraction.h"
+#include "StructuralAddition.h"

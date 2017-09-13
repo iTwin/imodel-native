@@ -40,7 +40,6 @@ struct StructuralDomainUtilities
 
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP              CreateDefinitionElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR className);
     STRUCTURAL_DOMAIN_EXPORT static Dgn::DefinitionElementPtr        CreateDefinitionElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model, Utf8CP categoryName = nullptr);
-
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, StructuralPhysicalModelPtr model);
 
     STRUCTURAL_DOMAIN_EXPORT static Dgn::SchemaStatus                UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);

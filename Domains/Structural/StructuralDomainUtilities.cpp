@@ -388,11 +388,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
          return nullptr;
         }
 
-     Utf8String localCategoryName = structuralClass->GetDisplayLabel();
-
-     if (nullptr != categoryName)
-         localCategoryName = categoryName;
-
      Dgn::DefinitionElement::CreateParams params(db, modelId, classId);
 
      Dgn::DgnElementPtr element = elmHandler->Create(params);
