@@ -647,9 +647,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\Render.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnECPersistence.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatformErrors.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
@@ -1095,9 +1092,6 @@
       <Filter>DgnHandlers</Filter>
     </ClCompile>
     <ClCompile Include="DgnHandlers\ScopedDgnHost.cpp">
-      <Filter>DgnHandlers</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnHandlers\DgnECPersistence.cpp">
       <Filter>DgnHandlers</Filter>
     </ClCompile>
     <ClCompile Include="DgnHandlers\DgnECTypes.cpp">

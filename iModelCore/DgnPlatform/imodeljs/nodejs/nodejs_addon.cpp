@@ -25,7 +25,6 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <rapidjson/rapidjson.h>
 
-
 #define REQUIRE_ARGUMENT_STRING(i, var, errcode)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
         ResolveArgumentError(info, errcode);                            \
@@ -672,8 +671,6 @@ public:
 
     static NAN_MODULE_INIT(Init)
         {
-        printf("In NodeAddonECDb::Init method");
-
         Nan::HandleScope scope;
 
         Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);

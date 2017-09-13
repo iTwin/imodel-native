@@ -458,7 +458,6 @@ DgnECDepends = \
     $(DgnPlatformAPISrc)DgnChangeSummary.h \
     $(DgnPlatformAPISrc)DgnECSymbolProvider.h \
     $(DgnPlatformAPISrc)DgnECTypes.h \
-    $(DgnPlatformAPISrc)DgnECPersistence.h \
     $(DgnHandlersDir)DgnECTypeAdapters.h \
     $(DgnHandlersDir)DgnECInteropStringFormatter.h \
 
@@ -472,8 +471,6 @@ $(CoreObjs)DgnECTypes$(oext) : $(DgnHandlersDir)DgnECTypes.cpp $(DgnECDepends) $
 $(CoreObjs)DgnECTypeAdapters$(oext) : $(DgnHandlersDir)DgnECTypeAdapters.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnECInteropStringFormatter$(oext) : $(DgnHandlersDir)DgnECInteropStringFormatter.cpp $(DgnECDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnECPersistence$(oext) : $(DgnHandlersDir)DgnECPersistence.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 
 #----------------------------------------------------------------------
@@ -609,6 +606,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
