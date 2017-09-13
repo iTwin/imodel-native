@@ -206,7 +206,7 @@ private:
     mutable bool m_forceRedraw;
     mutable bset<uint64_t>                          m_activeClips;
 
-    BeFileName                              m_path;
+    Utf8String                              m_path;
     bool                                    m_isProgressiveDisplayOn;
     bool                                    m_isInsertingClips;
 
@@ -263,7 +263,7 @@ public:
 
     void SetFileNameProperty(BeFileNameCR smFilename);
 
-    BeFileName GetPath() const { return m_path; }
+    Utf8String GetPath() const { return m_path; }
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

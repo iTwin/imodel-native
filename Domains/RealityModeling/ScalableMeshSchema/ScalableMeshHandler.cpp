@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ScalableMeshSchemaPCH.h"
-
+#include <ScalableMesh\ScalableMeshLib.h>
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
@@ -1744,7 +1744,6 @@ ScalableMeshModel::~ScalableMeshModel()
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {
     assert(m_smPtr == nullptr);
-    m_path = smFilename;
 
     bvector<IMeshSpatialModelP> allScalableMeshes;
     ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
@@ -1768,6 +1767,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             appData->m_modelSearched = true;
             }
         }
+
+    m_path = ScalableMeshLib::GetHost().GetProjectWiseContextShareLink(smFilename);
+    if (m_path.empty())
+        m_path = Utf8String(smFilename.c_str());
 
     const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
 
