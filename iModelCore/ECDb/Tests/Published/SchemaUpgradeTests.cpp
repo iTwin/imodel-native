@@ -5258,30 +5258,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_DbIndexChanges)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(schemaWithIndexNameModified, filePath, {true, true}, "Modifying DbIndex::Name");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        ECClassCP b = m_ecdb.Schemas().GetClass("TestSchema", "B");
-        ASSERT_NE(b, nullptr);
-        IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
-        ASSERT_FALSE(ca.IsNull());
-
-        ECValue indexes, indexName;
-        ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
-        ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
-        ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
-
-        //verify entry updated in ec_Index table
-        Statement statement;
-        ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(m_ecdb, "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial'"));
-        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-
-        statement.Finalize();
-        m_ecdb.CloseDb();
-        }
+    AssertSchemaUpdate(schemaWithIndexNameModified, filePath, {false, false}, "Modifying DbIndex::Name");
 
     Utf8CP schemaWithIndexDeleted =
         "<?xml version='1.0' encoding='utf-8'?>"

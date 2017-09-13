@@ -2423,6 +2423,14 @@ schema_name:
             $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
+    |
+        SQL_TOKEN_NAME ':' table_name 
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = newNode(":", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
 ;
 
 table_name:

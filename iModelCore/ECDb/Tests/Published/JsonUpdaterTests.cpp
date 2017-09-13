@@ -10,58 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct JsonUpdaterTests : ECDbTestFixture
-    {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                              Ramanujam.Raman                   10/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    void ValidateCGPoint(JsonValueCR expectedValue, JsonValueCR actualValue)
-        {
-        ASSERT_TRUE(!expectedValue.isNull());
-
-        for (int ii = 0; ii < 3; ii++)
-            {
-            double expectedCoord = expectedValue[ii].asDouble();
-            double actualCoord = actualValue[ii].asDouble();
-            ASSERT_DOUBLE_EQ(expectedCoord, actualCoord);
-            }
-        }
-    //
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                              Ramanujam.Raman                   10/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    void ValidateCGPointArray(JsonValueCR expectedValue, JsonValueCR actualValue)
-        {
-        ASSERT_TRUE(!expectedValue.isNull());
-        ASSERT_TRUE(expectedValue.isArray());
-        ASSERT_TRUE(expectedValue.size() == actualValue.size());
-
-        for (int ii = 0; ii < (int) expectedValue.size(); ii++)
-            ValidateCGPoint(expectedValue[ii], actualValue[ii]);
-        }
-    //
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                              Ramanujam.Raman                   10/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonValueCR expectedJsonValue)
-        {
-        JsonReader reader(db, spatialInstanceKey.GetClassId());
-        Json::Value actualJsonValue;
-        BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-        ASSERT_EQ(SUCCESS, status);
-
-        //printf ("%s\r\n", actualJsonValue.toStyledString ().c_str ());
-        /*Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
-        Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
-        ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());*/
-
-        ValidateCGPoint(expectedJsonValue["Center"]["Coordinate"]["xyz"], actualJsonValue["Center"]["Coordinate"]["xyz"]);
-        ValidateCGPoint(expectedJsonValue["LLP"]["Coordinate"]["xyz"], actualJsonValue["LLP"]["Coordinate"]["xyz"]);
-        ValidateCGPoint(expectedJsonValue["URP"]["Coordinate"]["xyz"], actualJsonValue["URP"]["Coordinate"]["xyz"]);
-
-        ValidateCGPointArray(expectedJsonValue["Location"]["Polygon"]["Point"], actualJsonValue["Location"]["Polygon"]["Point"]);
-        }
-    };
+struct JsonUpdaterTests : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/16
@@ -142,9 +91,9 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
 
     ECClassCP relClass = m_ecdb.Schemas().GetClass("test", "AHasA");
     ASSERT_TRUE(relClass != nullptr);
-    JsonReader reader(m_ecdb, relClass->GetId());
+    JsonReader reader(m_ecdb, *relClass);
     Json::Value relationshipJson;
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(relationshipJson, relInstanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    ASSERT_EQ(SUCCESS, reader.Read(relationshipJson, relInstanceId));
     ASSERT_STREQ("good morning", relationshipJson["Name"].asCString());
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
 
@@ -210,9 +159,9 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
-    JsonReader reader(m_ecdb, ecClass->GetId());
+    JsonReader reader(m_ecdb,*ecClass);
     Json::Value ecClassJson;
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    ASSERT_EQ(SUCCESS, reader.Read(ecClassJson, key.GetInstanceId()));
     ASSERT_EQ(100, ecClassJson["P1"].asInt());
     ASSERT_STREQ("JsonTest", ecClassJson["P2"].asCString());
     ASSERT_DOUBLE_EQ(1000.10, ecClassJson["P3"].asDouble());
@@ -279,7 +228,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                                                                   "   <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
                                                                   "   </ECEntityClass>"
                                                                   "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
@@ -291,14 +240,13 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
 
     Json::Value expectedJsonCppValue;
     ECDbTestUtility::ReadJsonInputFromFile(expectedJsonCppValue, pathname);
-    //printf ("%s\r\n", expectedJsonCppValue.toStyledString ().c_str ());
 
     rapidjson::Document expectedRapidJsonValue;
-    bool parseSuccessful = !expectedRapidJsonValue.Parse<0>(Json::FastWriter().write(expectedJsonCppValue).c_str()).HasParseError();
-    ASSERT_TRUE(parseSuccessful);
+    ASSERT_FALSE(expectedRapidJsonValue.Parse<0>(Json::FastWriter().write(expectedJsonCppValue).c_str()).HasParseError());
 
     // Insert using RapidJson API
     JsonInserter inserter(m_ecdb, *spatialClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey rapidJsonInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
@@ -309,8 +257,29 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     m_ecdb.SaveChanges();
 
     // Validate
-    ValidateSpatialInstance(m_ecdb, rapidJsonInstanceKey, expectedJsonCppValue);
-    ValidateSpatialInstance(m_ecdb, jsonCppInstanceKey, expectedJsonCppValue);
+    JsonReader reader(m_ecdb, *spatialClass);
+    ASSERT_TRUE(reader.IsValid());
+
+    for (ECInstanceId id : {rapidJsonInstanceKey.GetInstanceId(), jsonCppInstanceKey.GetInstanceId()})
+        {
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson, id));
+        ASSERT_TRUE(actualJson.isObject()) << id.ToString().c_str();
+        for (int coordIx = 0; coordIx < 3; coordIx++)
+            {
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["Center"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["Center"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson.ToString().c_str();
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["LLP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["LLP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson["Center"]["Coordinate"]["xyz"].ToString().c_str();
+            ASSERT_DOUBLE_EQ(expectedJsonCppValue["URP"]["Coordinate"]["xyz"][coordIx].asDouble(), actualJson["URP"]["Coordinate"]["xyz"][coordIx].asDouble()) << id.ToString().c_str() << " Actual Json: " << actualJson["Center"]["Coordinate"]["xyz"].ToString().c_str();
+            }
+
+        for (int i = 0; i < (int) expectedJsonCppValue["Location"]["Polygon"]["Point"].size(); i++)
+            {
+            for (int coordIx = 0; coordIx < 3; coordIx++)
+                {
+                ASSERT_DOUBLE_EQ(expectedJsonCppValue["Location"]["Polygon"]["Point"][i][coordIx].asDouble(), actualJson["Location"]["Polygon"]["Point"][i][coordIx].asDouble()) << id.ToString().c_str();
+                }
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------

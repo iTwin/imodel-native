@@ -36,80 +36,6 @@ struct JsonReaderTests : public ECDbTestFixture
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     03/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterelationshipprop.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />"
-                                "        <ECCustomAttributes>"
-                                "            <RelatedItemsDisplaySpecifications xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-                                "                <Specifications>"
-                                "                   <RelatedItemsDisplaySpecification>"
-                                "                   <ParentClass>ts:A1</ParentClass>"
-                                "                   <RelationshipPath>ts:AHasA</RelationshipPath>"
-                                "                   <DerivedClasses>"
-                                "                   <string>ts:A2</string>"
-                                "                   </DerivedClasses>"
-                                "                   </RelatedItemsDisplaySpecification>"
-                                "                </Specifications>"
-                                "            </RelatedItemsDisplaySpecifications>"
-                                "        </ECCustomAttributes>"
-                                "    <ECEntityClass typeName='A' >"
-                                "        <ECProperty propertyName='Aprop' typeName='int' />"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='A1' >"
-                                "        <BaseClass>A</BaseClass>"
-                                "        <ECProperty propertyName='A1prop' typeName='int' />"
-                                "    </ECEntityClass>"
-                                "    <ECEntityClass typeName='A2' >"
-                                "        <BaseClass>A</BaseClass>"
-                                "        <ECProperty propertyName='A2prop' typeName='int' />"
-                                "    </ECEntityClass>"
-                                "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
-                                "        <ECProperty propertyName='Name' typeName='string' />"
-                                "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
-                                "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
-                                "    </ECRelationshipClass>"
-                                "</ECSchema>")));
-
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (Aprop) VALUES(?)"));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 111));
-    ECInstanceKey sourceKey;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(sourceKey));
-    ECInstanceId sourceInstanceId = sourceKey.GetInstanceId();
-
-    stmt.Reset();
-    stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 222));
-    ECInstanceKey targetKey;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(targetKey));
-    ECInstanceId targetInstanceId = targetKey.GetInstanceId();
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.AHasA (SourceECInstanceId, TargetECInstanceId, Name) VALUES(?,?,'good morning')"));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceInstanceId));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, targetInstanceId));
-
-    ECInstanceKey relKey;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
-    ECInstanceId relInstanceId = relKey.GetInstanceId();
-
-    ECClassCP entityClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
-    ASSERT_TRUE(entityClass != nullptr);
-    JsonReader reader(m_ecdb, entityClass->GetId());
-    Json::Value classJsonWithRelatedInstances;
-    Json::Value jsonDisplayInfo;
-    ASSERT_EQ(SUCCESS, reader.Read(classJsonWithRelatedInstances, jsonDisplayInfo, sourceInstanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
-    //test needs to be enhanced once fixed Defect 383266
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, JsonValueStruct)
@@ -157,11 +83,9 @@ TEST_F(JsonReaderTests, JsonValueStruct)
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
 
-    Json::Value jsonValue;
     JsonECSqlSelectAdapter jsonAdapter(statement);
-    jsonAdapter.GetRowDisplayInfo(jsonValue);
-    bool stat = jsonAdapter.GetRow(jsonValue["Row"]);
-    ASSERT_TRUE(stat);
+    Json::Value jsonValue;
+    ASSERT_TRUE(jsonAdapter.GetRow(jsonValue));
     statement.Finalize();
 
     // Read benchmark JSON
@@ -210,23 +134,43 @@ TEST_F(JsonReaderTests, PartialPoints)
     Json::Value actualJson;
     ASSERT_TRUE(adapter.GetRowInstance(actualJson));
     selStmt.Finalize();
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
 
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
-    ASSERT_STREQ("1,0", actualJson["P2D"].asCString());
-    ASSERT_STREQ("0,2,0", actualJson["P3D"].asCString());
-    ASSERT_STREQ("0,3", actualJson["PStructProp"]["p2d"].asCString());
-    ASSERT_STREQ("0,0,4", actualJson["PStructProp"]["p3d"].asCString());
+    ASSERT_TRUE(actualJson.isMember("P2D"));
+    ASSERT_TRUE(actualJson["P2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
 
-    JsonReader reader(m_ecdb, testClass->GetId());
+    ASSERT_TRUE(actualJson.isMember("P3D"));
+    ASSERT_TRUE(actualJson["P3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_TRUE(actualJson["PStructProp"]["p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+
+    ASSERT_TRUE(actualJson["PStructProp"]["p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
+
     actualJson = Json::Value();
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(actualJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    JsonReader reader(m_ecdb, *testClass);
+    ASSERT_TRUE(reader.IsValid());
+    ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId()));
 
-    ASSERT_DOUBLE_EQ(1.0, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P2D"]["y"].asDouble());
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2.0, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
 
     ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
     ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());

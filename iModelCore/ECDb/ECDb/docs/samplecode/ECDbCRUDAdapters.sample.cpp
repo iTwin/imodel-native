@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUDAdapters.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -69,14 +69,14 @@ BentleyStatus ECDb_JsonECSqlSelectAdapter()
         }
 
 
-    Json::Value jsonPage(Json::arrayValue);
+    Json::Value jsonPage;
 
     JsonECSqlSelectAdapter adapter(statement);
     // Execute statement and step over each row of the result set
     while (BE_SQLITE_ROW == statement.Step())
         {
         Json::Value currentRow;
-        bool stat = adapter.GetRow(currentRow);
+        bool stat = adapter.GetRowInstance(currentRow);
         if (stat)
             jsonPage.append(currentRow);
         }

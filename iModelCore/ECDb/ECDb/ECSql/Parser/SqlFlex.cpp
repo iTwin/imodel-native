@@ -1,4 +1,4 @@
-#line 3 "E:\\BSW\\Bim0200holdouts-ECDb\\src\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 3 "d:\\dev\\dgndb\\bim20dev\\src\\\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 // 
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -43,7 +43,7 @@
 
 
 
-#line 47 "E:\\BSW\\Bim0200holdouts-ECDb\\src\\ECDb\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
+#line 47 "d:\\dev\\dgndb\\bim20dev\\src\\\\ECDb\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
 
 #define  YY_INT_ALIGNED short int
 

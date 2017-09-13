@@ -872,14 +872,6 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOptio
             continue; // There are tables which are just not mapped to EC that we simply don't care about (e.g., be_Prop table)
             }
 
-        if (rowEntry.GetTableName().StartsWith("ec_"))
-            {
-            rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
-            LOG.errorv("ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.", rowEntry.GetTableName().c_str());
-            BeAssert(false && "ChangeSet includes changes to an EC system table, and that may represent an ECSchema change. Change summaries are not reliable.");
-            return ERROR;
-            }
-
         ECClassCP primaryClass = rowEntry.GetPrimaryClass();
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())

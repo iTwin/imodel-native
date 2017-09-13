@@ -26,812 +26,152 @@ bool IsIdProperty(Utf8StringCR propertyName)
             0 == propertyName.CompareTo(ECDBSYS_PROP_SourceECClassId) || 0 == propertyName.CompareTo(ECDBSYS_PROP_TargetECClassId));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::PropertyTree::AddInlinedStructNodes(PropertyTreeNode& parentNode, IECSqlValue const& ecSqlValue, int instanceIndex)
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 07/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonECSqlSelectAdapter::GetRowInstance(JsonValueR json) const
     {
-    BeAssert(&parentNode == &m_rootNode); // Inlined structs should only be specified at the root (or top level of a ECSQL query). 
-    ECSqlColumnInfoCR columnInfo = ecSqlValue.GetColumnInfo();
-    ECSqlPropertyPathCR propertyPath = columnInfo.GetPropertyPath();
-    ECN::ECClassCR rootClass = columnInfo.GetRootClass();
-
-    // Visit all the property path entries from the root struct property to the leaf primitive property
-    size_t pathLength = propertyPath.Size();
-    BeAssert(pathLength > 1 && "The method should only be called for inlined structs");
-    PropertyTreeNode* currentNode = &parentNode;
-    for (size_t ii = 0; ii < pathLength; ii++)
+    if (!m_ecsqlStatement.IsPrepared())
         {
-        ECPropertyCP ecProperty = propertyPath.At(ii).GetProperty();
-        BeAssert(ecProperty != nullptr && "With the current ECSQL implementation, an in-lined struct member cannot have array entries (with NULL properties) in it's path!!!");
-        bmap<Utf8String, PropertyTreeNode const*>& childNodes = currentNode->m_childNodes;
-        auto it = childNodes.find(ecProperty->GetName());
-        if (it != childNodes.end())
-            currentNode = const_cast<PropertyTreeNode*>(it->second);
-        else
-            {
-            ECClassCR ecClass = (ii == 0) ? rootClass : ecProperty->GetClass();
-            currentNode = new PropertyTreeNode(ecProperty, &ecClass, instanceIndex);
-            childNodes[ecProperty->GetName()] = currentNode;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP JsonECSqlSelectAdapter::GetClassFromStructOrStructArray(ECPropertyCR ecProperty)
-    {
-    if (ecProperty.GetIsStruct())
-        {
-        StructECPropertyCP structProperty = ecProperty.GetAsStructProperty();
-        return &(structProperty->GetType());
-        }
-    else if (ecProperty.GetIsArray())
-        {
-        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
-        BeAssert(structArrayProperty != nullptr);
-        return &structArrayProperty->GetStructElementType();
-        }
-
-    /* else */
-    BeAssert(false && "Property has to be a struct or a struct array");
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNode& parentNode, bvector<ECClassCP>& rootClasses, IECSqlValue const& ecsqlValue)
-    {
-    bool isRootReader = (&parentNode == &m_rootNode);
-
-    ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo();
-    ECPropertyCP ecProperty = columnInfo.GetProperty();
-    BeAssert(ecProperty != nullptr && "This iteration cannot be on an array reader, and the column cannot represent an array value");
-
-    // Skip instance id node
-    if (isRootReader && IsIdProperty(ecProperty->GetName()))
-        return;
-
-    // If reading the root (top level) columns, determine the index of the instance that the property belongs in
-    int instanceIndex = parentNode.m_instanceIndex;
-    if (isRootReader)
-        {
-        ECN::ECClassCR rootClass = columnInfo.GetRootClass();
-        bvector<ECClassCP>::const_iterator iter = std::find(rootClasses.begin(), rootClasses.end(), &rootClass);
-        if (iter == rootClasses.end())
-            {
-            // Setup a new instance (index)
-            instanceIndex = (int) rootClasses.size();
-            rootClasses.push_back(&rootClass);
-            }
-        else
-            {
-            // Use an existing instance index
-            instanceIndex = (int) (iter - rootClasses.begin());
-            }
-        }
-    BeAssert(instanceIndex >= 0);
-
-    // Special processing of inline structs - visit the entire property path to hierarchically add nodes
-    bool isInlinedStructMember = (isRootReader && ecProperty->GetIsStruct() && (columnInfo.GetPropertyPath().Size() > 1));
-    if (isInlinedStructMember)
-        {
-        AddInlinedStructNodes(parentNode, ecsqlValue, instanceIndex);
-        return;
-        }
-
-    // Add node for the property
-    bmap<Utf8String, PropertyTreeNode const*>& childNodes = parentNode.m_childNodes;
-    if (childNodes.find(ecProperty->GetName()) == childNodes.end())
-        {
-        ECPropertyCP ecProperty = columnInfo.GetProperty();
-        BeAssert(ecProperty != nullptr);
-        ECClassCP ecClass;
-        if (parentNode.m_property == nullptr) // i.e., IsRootReader
-            ecClass = &(columnInfo.GetRootClass());
-        else
-            ecClass = GetClassFromStructOrStructArray(*(parentNode.m_property));
-        childNodes[ecProperty->GetName()] = new PropertyTreeNode(ecProperty, ecClass, instanceIndex);
-        }
-
-    // Process nested children
-    IECSqlValue const* structValue = nullptr;
-    if (ecProperty->GetIsStruct())
-        {
-        bool isInlinedStructMember = (isRootReader && (columnInfo.GetPropertyPath().Size() > 1));
-        if (!isInlinedStructMember)
-            structValue = &ecsqlValue;
-        }
-    else if (ecProperty->GetIsStructArray())
-        {
-        auto arrayIt = ecsqlValue.GetArrayIterable().begin();
-        if (arrayIt != ecsqlValue.GetArrayIterable().end())
-            structValue = &*arrayIt;
-        }
-
-    if (structValue != nullptr)
-        {
-        //TODO: root class handling should not be necessary for struct members, right? Krischan.
-        bvector<ECClassCP> structRootClasses;
-        for (IECSqlValue const& memberVal : structValue->GetStructIterable())
-            {
-            PropertyTreeNode& childNode = *const_cast<PropertyTreeNode*> (childNodes[ecProperty->GetName()]);
-            AddChildNodes(childNode, structRootClasses, memberVal);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter::FormatOptions::FormatOptions(ECValueFormat format /* = ECValueFormat::FormattedStrings */, ECPropertyFormatterP propertyFormatter /* = nullptr */) 
-    : m_format(format), m_propertyFormatter(propertyFormatter)
-    {
-    if (m_format == ECValueFormat::FormattedStrings && m_propertyFormatter.IsNull())
-        m_propertyFormatter = ECPropertyFormatter::Create();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonECSqlSelectAdapter::JsonECSqlSelectAdapter(ECSqlStatementCR ecsqlStatement, FormatOptions formatOptions /* = FormatOptions (ECValueFormat::FormattedStrings) */) 
-    : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_structArrayAsString(false) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetIntegerValue(int& value, IECInstanceCR instance, Utf8CP propertyName)
-    {
-    ECValue v;
-    instance.GetValue(v, propertyName);
-    if (v.IsNull())
+        LOG.error("ECSqlStatement passed to JsonECSqlSelectAdapter is not prepared yet.");
         return false;
-    value = v.GetInteger();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetStringValue(Utf8String& value, IECInstanceCR instance, Utf8CP propertyName)
-    {
-    ECValue v;
-    instance.GetValue(v, propertyName);
-    if (v.IsNull())
-        return false;
-    value = v.GetUtf8CP();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetBooleanValue(bool& value, IECInstanceCR instance, Utf8CP propertyName)
-    {
-    ECValue v;
-    instance.GetValue(v, propertyName);
-    if (v.IsNull())
-        return false;
-    value = v.GetBoolean();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetPriorityFromCustomAttribute(int& priority, IECInstancePtr priorityCA)
-    {
-    if (priorityCA.IsNull())
-        return false;
-    return GetIntegerValue(priority, *priorityCA, "Priority");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetPriorityFromProperty(int& priority, ECPropertyCR ecProperty)
-    {
-    IECInstancePtr priorityCA = ecProperty.GetCustomAttribute("PropertyPriority");
-    return GetPriorityFromCustomAttribute(priority, priorityCA);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::PrioritySortPredicate(const IECInstancePtr& priorityCA1, const IECInstancePtr& priorityCA2)
-    {
-    if (priorityCA1 == priorityCA2)
-        return false;
-
-    int priority1 = INT_MIN;
-    GetPriorityFromCustomAttribute(priority1, priorityCA1);
-
-    int priority2 = INT_MIN;
-    GetPriorityFromCustomAttribute(priority2, priorityCA2);
-
-    return priority1 > priority2;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::PropertySortPredicate(PropertyTreeNode const* propertyNode1, PropertyTreeNode const* propertyNode2)
-    {
-    /* Return true if property1 is before property2. False otherwise */
-
-    // Sort by priority
-    int priority1 = INT_MIN;
-    GetPriorityFromProperty(priority1, *propertyNode1->m_property);
-    int priority2 = INT_MIN;
-    GetPriorityFromProperty(priority2, *propertyNode2->m_property);
-    if (priority1 != priority2)
-        return priority1 > priority2; // Return true if property1 has higher priority than priority2
-
-    // Sort alphabetically by display label
-    Utf8StringCR displayLabel1 = propertyNode1->m_property->GetDisplayLabel();
-    Utf8StringCR displayLabel2 = propertyNode2->m_property->GetDisplayLabel();
-    return displayLabel1.CompareTo(displayLabel2) < 0; // Return true if property1 is alphabetically before property2
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::GetRowDisplayInfo(JsonValueR rowDisplayInfo) const
-    {
-    PropertyTree propertyTree;
-    const int columnCount = m_ecsqlStatement.GetColumnCount();
-    bvector<ECClassCP> rootClasses; // Root classes found in order of their first appearance in a column
-    for (int i = 0; i < columnCount; i++)
-        {
-        propertyTree.AddChildNodes(propertyTree.m_rootNode, rootClasses, m_ecsqlStatement.GetValue(i));
         }
 
-    JsonFromPropertyTree(rowDisplayInfo, propertyTree);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromPropertyTree(JsonValueR jsonValue, PropertyTree const& propertyTree) const
-    {
-    // TODO: Need a hierarchical visitor pattern on the tree
-    JsonFromPropertyRecursive(jsonValue, propertyTree.m_rootNode);
-
-    // TODO: Wish we had the unordered_set here. 
-    bset<ECClassCP> processedECClasses;
-    JsonFromClassesRecursive(jsonValue["Classes"], processedECClasses, propertyTree.m_rootNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromClassesRecursive(JsonValueR jsonValue, bset<ECClassCP>& classes, PropertyTreeNode const& propertyTreeNode) const
-    {
-    ECClassCP ecClass = propertyTreeNode.m_class;
-    if (ecClass != nullptr && classes.end() == std::find(classes.begin(), classes.end(), ecClass))
+    if (m_ecsqlStatement.GetColumnCount() == 0)
         {
-        classes.insert(ecClass);
-        JsonFromClass(jsonValue, *ecClass);
+        LOG.errorv("ECSqlStatement '%s' passed to JsonECSqlSelectAdapter has no SELECT clause.", m_ecsqlStatement.GetECSql());
+        return false;
         }
 
-    for (auto nodeIter = propertyTreeNode.m_childNodes.begin(); nodeIter != propertyTreeNode.m_childNodes.end(); nodeIter++)
+    // Pick the first column's class to get the instance
+    IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(0);
+    ECClassCR rootClass = ecsqlValue.GetColumnInfo().GetRootClass();
+    return GetRowInstance(json, rootClass.GetId());
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonECSqlSelectAdapter::GetRowInstance(JsonValueR json, ECClassId classId) const
+    {
+    if (!m_ecsqlStatement.IsPrepared())
         {
-        PropertyTreeNode const* childNode = nodeIter->second;
-        JsonFromClassesRecursive(jsonValue, classes, *childNode);
+        LOG.error("ECSqlStatement passed to JsonECSqlSelectAdapter is not prepared yet.");
+        return false;
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String JsonECSqlSelectAdapter::GetClassKey(ECClassCR ecClass)
-    {
-    Utf8PrintfString classKey("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
-    return classKey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromClass(JsonValueR jsonValue, ECClassCR ecClass) const
-    {
-    Utf8String classKey = GetClassKey(ecClass);
-    BeAssert(!jsonValue.isMember(classKey.c_str()));
-
-    JsonValueR jsonClass = jsonValue[classKey.c_str()];
-
-    jsonClass["Name"] = ecClass.GetName();
-    jsonClass["DisplayLabel"] = ecClass.GetDisplayLabel();
-    jsonClass["SchemaName"] = ecClass.GetSchema().GetName();
-    jsonClass["RelationshipPath"] = Json::nullValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromPropertyRecursive(JsonValueR jsonValue, PropertyTreeNode const& propertyTreeNode) const
-    {
-    // TODO: Consider implementing a hierarchical visitor pattern here. 
-    ECPropertyCP ecProperty = propertyTreeNode.m_property;
-    ECClassCP ecClass = propertyTreeNode.m_class;
-    int instanceIndex = propertyTreeNode.m_instanceIndex;
-
-    /* Process node */
-    if (ecProperty != nullptr)
-        JsonFromProperty(jsonValue, *ecProperty, *ecClass, instanceIndex);
-
-    /* Process any child nodes */
-    if (propertyTreeNode.m_childNodes.size() > 0)
+    if (m_ecsqlStatement.GetColumnCount() == 0)
         {
-        // Categorize, filter and sort child nodes
-        bvector<IECInstancePtr> categories;
-        bmap<Utf8String, bvector<PropertyTreeNode const*>> childNodesByCategory;
-        CategorizeProperties(categories, childNodesByCategory, propertyTreeNode.m_childNodes);
-        SortProperties(categories, childNodesByCategory);
-
-        // Create Json
-        int categoryIndex = 0;
-        jsonValue["Categories"] = Json::Value(Json::arrayValue);
-        for (IECInstancePtr& categoryCustomAttribute : categories)
-            JsonFromCategory(jsonValue["Categories"][categoryIndex++], categoryCustomAttribute, childNodesByCategory);
-
-        return;
+        LOG.errorv("ECSqlStatement '%s' passed to JsonECSqlSelectAdapter has no SELECT clause.", m_ecsqlStatement.GetECSql());
+        return false;
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::CategorizeProperties(bvector<IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory, bmap<Utf8String, PropertyTreeNode const*> const& nodes) const
-    {
-    // Process all children of node - filter/hide and organize by category
-    for (auto nodeIter = nodes.begin(); nodeIter != nodes.end(); nodeIter++)
+    json = Json::Value(Json::objectValue);
+    json["$ECClassKey"] = Json::nullValue;
+
+    ECClassCP foundClass = nullptr;
+    const int count = m_ecsqlStatement.GetColumnCount();
+    for (int columnIndex = 0; columnIndex < count; columnIndex++)
         {
-        PropertyTreeNode const* node = nodeIter->second;
-        ECPropertyCP ecProperty = node->m_property;
-
-        // Skip property if hidden
-        IECInstancePtr hide = ecProperty->GetCustomAttribute("HideProperty");
-        if (hide.IsValid())
+        IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
+        ECSqlColumnInfo const& columnInfo = ecsqlValue.GetColumnInfo();
+        ECClassCR rootClass = columnInfo.GetRootClass();
+        if (columnInfo.IsGeneratedProperty() || rootClass.GetId() != classId)
             continue;
 
-        // Determine category
-        Utf8String categoryName;
-        IECInstancePtr category = m_formatOptions.m_propertyFormatter->GetPropertyCategory(*ecProperty);
-        if (!category.IsValid() || !GetStringValue(categoryName, *category, "Name"))
-            categoryName = "Miscellaneous";
-
-        // Organize by category
-        bvector<PropertyTreeNode const*>* categoryProperties = nullptr;
-        auto categoryIter = nodesByCategory.find(categoryName);
-        if (categoryIter != nodesByCategory.end())
-            categoryProperties = &(categoryIter->second);
-        else
-            {
-            categories.push_back(category);
-            nodesByCategory[categoryName] = bvector<PropertyTreeNode const*>();
-            categoryProperties = &nodesByCategory[categoryName];
-            }
-        categoryProperties->push_back(node);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::SortProperties(bvector<IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory) const
-    {
-    // Sort categories
-    std::sort(categories.begin(), categories.end(), JsonECSqlSelectAdapter::PrioritySortPredicate);
-
-    // Sort properties within each category
-    for (auto it = nodesByCategory.begin(); it != nodesByCategory.end(); ++it)
-        {
-        bvector<PropertyTreeNode const*>& categoryProperties = it->second;
-        std::sort(categoryProperties.begin(), categoryProperties.end(), JsonECSqlSelectAdapter::PropertySortPredicate);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromProperty(JsonValueR propertyJson, ECPropertyCR ecProperty, ECClassCR ecClass, int instanceIndex) const
-    {
-    // PropertyJson = ObjectValue (SchemaName, ClassName, PropertyName, PropertyDisplayLabel, PropertyDescription, PropertyType, PropertyPriority)
-    propertyJson = Json::Value(Json::objectValue);
-    propertyJson["Name"] = ecProperty.GetName();
-
-    propertyJson["DisplayLabel"] = ecProperty.GetDisplayLabel();
-
-    if (!Utf8String::IsNullOrEmpty(ecProperty.GetDescription().c_str()))
-        propertyJson["Description"] = ecProperty.GetDescription();
-
-    propertyJson["PrimitiveType"] = ecProperty.GetTypeName();
-
-    int priority;
-    if (GetPriorityFromProperty(priority, ecProperty))
-        propertyJson["Priority"] = priority;
-
-    // Struct array properties are processed through a separate cursor
-    if (ecProperty.GetIsPrimitive())
-        propertyJson["IsPrimitive"] = true;
-    else if (ecProperty.GetIsStruct())
-        propertyJson["IsStruct"] = true;
-    else if (ecProperty.GetIsArray())
-        propertyJson["IsArray"] = true;
-    else if (ecProperty.GetIsNavigation())
-        propertyJson["IsNavigation"] = true;
-
-    propertyJson["ClassKey"] = GetClassKey(ecClass);
-    propertyJson["InstanceIndex"] = (instanceIndex >= 0) ? instanceIndex : Json::nullValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromCategory(JsonValueR jsonValue, IECInstancePtr& categoryCustomAttribute, bmap<Utf8String, bvector<PropertyTreeNode const*>> const& nodesByCategory) const
-    {
-    // CategoryJson = ObjectValue (CategoryName, CategoryStandard, CategoryDisplayLabel, CategoryDescription, CategoryExpand, CategoryPriority, Properties)
-    jsonValue = Json::Value(Json::objectValue);
-
-    Utf8String categoryName;
-    if (categoryCustomAttribute.IsValid())
-        {
-        bool status = GetStringValue(categoryName, *categoryCustomAttribute, "Name");
-        if (!status)
-            categoryName = "Miscellaneous";
-        jsonValue["CategoryName"] = categoryName;
-
-        int standard;
-        if (GetIntegerValue(standard, *categoryCustomAttribute, "Standard"))
-            jsonValue["Standard"] = standard;
-
-        Utf8String displayLabel;
-        if (GetStringValue(displayLabel, *categoryCustomAttribute, "DisplayLabel"))
-            jsonValue["DisplayLabel"] = displayLabel;
-        else
-            jsonValue["DisplayLabel"] = categoryName;
-
-        Utf8String description;
-        if (GetStringValue(description, *categoryCustomAttribute, "Description"))
-            jsonValue["Description"] = description;
-
-        bool expand;
-        if (GetBooleanValue(expand, *categoryCustomAttribute, "Expand"))
-            jsonValue["Expand"] = expand;
-
-        int priority;
-        if (GetIntegerValue(priority, *categoryCustomAttribute, "Priority"))
-            jsonValue["Priority"] = priority;
-        }
-    else
-        {
-        categoryName = "Miscellaneous";
-        jsonValue["CategoryName"] = "Miscellaneous";
-        jsonValue["DisplayLabel"] = "Miscellaneous";
-        jsonValue["Description"] = "Miscellaneous";
+        foundClass = &rootClass;
+        if (SUCCESS != JsonFromCell(json, ecsqlValue))
+            return false;
         }
 
-    // Construct the JSON for the properties within the category
-    jsonValue["Properties"] = Json::Value(Json::arrayValue);
-    auto categoryIter = nodesByCategory.find(categoryName);
-    BeAssert(categoryIter != nodesByCategory.end());
-    const bvector<PropertyTreeNode const*>& categoryProperties = categoryIter->second;
-    JsonValueR categoryPropertiesJson = jsonValue["Properties"];
-    for (PropertyTreeNode const* propertyTreeNode : categoryProperties)
+    if (foundClass == nullptr)
         {
-        // Create property JSON (at the end of the array)
-        JsonFromPropertyRecursive(categoryPropertiesJson[categoryPropertiesJson.size()], *propertyTreeNode);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr ECPropertyFormatter::_GetPropertyCategory(ECN::ECPropertyCR ecProperty)
-    {
-    return ecProperty.GetCustomAttribute("Category");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyFormatter::_FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    /*
-     * Note: We could conceivably use the IECTypeAdapter and IECTypeAdapterContext
-     * to come up with the equivalent string value here.
-     * However, these constructs are unusable in the ECDb layer at the moment.
-     * For example, IECTypeAdapterContext::Create() takes the entire ECInstance
-     * containing the property value. There are some type adapters that require the
-     * entire instance to format a single property value.
-     * Then there are adapters that use the (DgnEC) implementation of IECInstance to pass
-     * context like DgnModel, DgnElement, etc.
-     * In ECDb, we simply don't have the entire instance loaded into memory.
-     *
-     * Fortunately, all the type adapters are still at the DgnPlatform layer, and the
-     * application that wants to use the ITypeAdapter/ITypeAdapterContext can still pass in
-     * an appropriate implementation of ECPropertyFormatter.
-     * For an example of this use, see DgnECPropertyFormatter in DgnPlatform.
-     */
-
-    strVal = ecValue.ToString();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::FormattedJsonFromECValue(JsonValueR jsonValue, ECValueCR ecValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    Utf8String strValue;
-    BeAssert(m_formatOptions.m_propertyFormatter.IsValid());
-    if (!m_formatOptions.m_propertyFormatter->FormattedStringFromECValue(strValue, ecValue, ecProperty, isArrayMember))
-        return false;
-
-    jsonValue = strValue;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    int size;
-    const Byte* data = (const Byte *) ecsqlValue.GetBlob(&size);
-    ECValue ecValue;
-    ecValue.SetBinary(data, (size_t) size, false);
-
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        Utf8String encoded;
-        Base64Utilities::Encode(encoded, data, size);
-        jsonValue = encoded;
-        return true;
-        }
-
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    // TODO: Raw binary values needs to be Base64 encoded here
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromCG(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    IGeometryPtr geometry = ecsqlValue.GetGeometry();
-    if (geometry == nullptr)
-        {
-        BeAssert(false && "Could not read Common Geometry");
+        LOG.errorv("No properties of ECClass with Id '%s' found in ECSqlStatement '%s' passed to JsonECSqlSelectAdapter.", classId.ToString().c_str(), m_ecsqlStatement.GetECSql());
         return false;
         }
 
-    return BentleyGeometryJson::TryGeometryToJsonValue(jsonValue, *geometry, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromBoolean(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    bool value = ecsqlValue.GetBoolean();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = value;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetBoolean(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromDateTime(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    DateTime dateTime = ecsqlValue.GetDateTime();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = dateTime.ToString();
-        return true;
-        }
-
-    // TODO: Need to make the formatting locale aware. 
-    ECValue ecValue;
-    ecValue.SetDateTime(dateTime);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromDouble(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    double value = ecsqlValue.GetDouble();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = value;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetDouble(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromInt(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    int value = ecsqlValue.GetInt();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = value;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetInteger(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromInt64(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    int64_t value = ecsqlValue.GetInt64();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = BeJsonUtilities::StringValueFromInt64(value); // Javascript has issues with holding Int64 values!!!
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetLong(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPoint2d(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    DPoint2d value = ecsqlValue.GetPoint2d();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue["x"] = value.x;
-        jsonValue["y"] = value.y;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetPoint2d(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPoint3d(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    DPoint3d value = ecsqlValue.GetPoint3d();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue["x"] = value.x;
-        jsonValue["y"] = value.y;
-        jsonValue["z"] = value.z;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetPoint3d(value);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromString(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    Utf8CP strValue = ecsqlValue.GetText();
-    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
-        {
-        jsonValue = strValue;
-        return true;
-        }
-
-    ECValue ecValue;
-    ecValue.SetUtf8CP(strValue, false);
-    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
-    {
-    bool status = false;
-    ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo();
-    const ECTypeDescriptor& typeDescriptor = columnInfo.GetDataType();
-    BeAssert(typeDescriptor.IsPrimitive());
-    PrimitiveType primitiveType = typeDescriptor.GetPrimitiveType();
-    // Note: The incoming property can be an array, so it's just simpler to use the column to get the primitive type. 
-
-    switch (primitiveType)
-        {
-            case PRIMITIVETYPE_Binary:
-            {
-            status = JsonFromBinary(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Boolean:
-            {
-            status = JsonFromBoolean(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_DateTime:
-            {
-            status = JsonFromDateTime(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Double:
-            {
-            status = JsonFromDouble(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Integer:
-            {
-            status = JsonFromInt(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Long:
-            {
-            status = JsonFromInt64(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Point2d:
-            {
-            status = JsonFromPoint2d(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_Point3d:
-            {
-            status = JsonFromPoint3d(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_String:
-            {
-            status = JsonFromString(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            case PRIMITIVETYPE_IGeometry:
-            {
-            status = JsonFromCG(jsonValue, ecsqlValue, ecProperty, isArrayMember);
-            break;
-            }
-            default:
-                BeAssert(false && "Unknown type");
-                break;
-        }
-
-    POSTCONDITION(status, false);
+    JsonFromClassKey(json["$ECClassKey"], *foundClass);
     return true;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 10/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonECSqlSelectAdapter::GetRow(JsonValueR currentRow) const
+    {
+    currentRow = Json::Value(Json::arrayValue);
+
+    bmap<ECClassCP, int> classesInSelectClause; // Classes used in the select clause plus their index of their first appearance in the select clause
+
+    int count = m_ecsqlStatement.GetColumnCount();
+    for (int columnIndex = 0; columnIndex < count; columnIndex++)
+        {
+        IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
+        ECClassCR rootClass = ecsqlValue.GetColumnInfo().GetRootClass();
+
+        auto it = classesInSelectClause.find(&rootClass);
+        // Setup a new instance (if necessary)
+        int instanceIndex = 0;
+        if (it == classesInSelectClause.end())
+            {
+            // Setup a new instance
+            instanceIndex = (int) classesInSelectClause.size();
+            classesInSelectClause[&rootClass] = instanceIndex;
+
+            Json::Value& currentInstance = currentRow[instanceIndex];
+            JsonFromClassKey(currentInstance["$ECClassKey"], rootClass);
+            }
+        else
+            {
+            // Update an existing instance
+            instanceIndex = it->second;
+            }
+
+        // Setup node for the property
+        if (SUCCESS != JsonFromCell(currentRow[instanceIndex], ecsqlValue))
+            return false;
+        }
+
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonECSqlSelectAdapter::GetRowForImodelJs(JsonValueR jsonResult)
+    {
+    if (m_formatOptions != FormatOptions::LongsAreIds)
+        return false;
+
+    const int colCount = m_ecsqlStatement.GetColumnCount();
+    for (int i = 0; i < colCount; ++i)
+        {
+        IECSqlValue const& value = m_ecsqlStatement.GetValue(i);
+        ECSqlColumnInfoCR info = value.GetColumnInfo();
+        BeAssert(info.IsValid());
+
+        Utf8String name = info.GetProperty()->GetName();
+        name[0] = (char) tolower(name[0]);
+
+        if (value.IsNull())
+            continue; // if the value is null, just skip it
+
+        if (SUCCESS != JsonFromPropertyValue(jsonResult[name], value))
+            return false;
+        }
+
+    return true;
+    }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
     if (!property.GetIsArray())
-        return false;
+        return ERROR;
 
     if (property.GetIsStructArray())
         return JsonFromStructArray(jsonValue, ecsqlValue);
@@ -842,160 +182,200 @@ bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
-    bool status = true;
-
     int ii = 0;
-    auto temp = Json::Value(Json::arrayValue);
+    Json::Value temp(Json::arrayValue);
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (!JsonFromStruct(temp[ii++], arrayElementValue))
-            status = false;
+        if (SUCCESS != JsonFromStruct(temp[ii++], arrayElementValue))
+            return ERROR;
         }
-    if (m_structArrayAsString)
-        jsonValue = temp.toStyledString().c_str();
-    else
-        jsonValue = temp;
-    return status;
+
+    jsonValue = temp;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
-    bool status = true;
-
     int ii = 0;
     jsonValue = Json::Value(Json::arrayValue);
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (!JsonFromPrimitive(jsonValue[ii++], arrayElementValue, property, true))
-            status = false;
+        if (SUCCESS != JsonFromPrimitive(jsonValue[ii++], arrayElementValue, property))
+            return ERROR;
         }
 
-    return status;
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle               06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     jsonValue = Json::Value(Json::objectValue);
-    if (!JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_ID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropId]))
-        return false;
 
-    return JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId]);
+    if (SUCCESS != JsonFromInstanceId(jsonValue[JSON_NAVIGATION_ID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropId]))
+        return ERROR;
+
+    IECSqlValue const& relClassIdVal = ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId];
+    ECClassCP relClass = m_ecsqlStatement.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>());
+    if (relClass == nullptr)
+        return ERROR;
+
+    if (SUCCESS != JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], relClassIdVal))
+        return ERROR;
+
+    JsonFromClassKey(jsonValue["$ECRelClassKey"], *relClass);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromStruct(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromStruct(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
-    bool rStatus = true;
     jsonValue = Json::Value(Json::objectValue);
     for (IECSqlValue const& structMemberValue : ecsqlValue.GetStructIterable())
         {
         ECPropertyCP ecLeafProperty = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(ecLeafProperty != nullptr && "TODO: Adjust code as ColumnInfo::GetProperty can be null.");
-        if (!JsonFromPropertyValue(jsonValue[ecLeafProperty->GetName().c_str()], structMemberValue))
-            rStatus = false;
+        if (SUCCESS != JsonFromPropertyValue(jsonValue[ecLeafProperty->GetName().c_str()], structMemberValue))
+            return ERROR;
         }
-    return rStatus;
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2013
+* @bsimethod                                    Ramanujam.Raman                 09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromClassKey(JsonValueR jsonValue, ECClassCR ecClass) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty) const
     {
-    jsonValue = GetClassKey(ecClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromClassLabel(JsonValueR jsonValue, ECClassCR ecClass) const
-    {
-    jsonValue = ecClass.GetDisplayLabel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromInstanceLabel(JsonValueR jsonValue, ECClassCR ecClass) const
-    {
-    jsonValue = Json::Value(Json::nullValue);
-
-    ECPropertyP ecLabelProperty = ecClass.GetInstanceLabelProperty();
-    if (nullptr != ecLabelProperty && ecLabelProperty->GetIsPrimitive())
+    ECTypeDescriptor const& typeDescriptor = ecsqlValue.GetColumnInfo().GetDataType();
+    BeAssert(typeDescriptor.IsPrimitive());
+    switch (typeDescriptor.GetPrimitiveType())
         {
-        // Find the appropriate column, and retrieve the value from the Db
-        int columnCount = m_ecsqlStatement.GetColumnCount();
-        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            case PRIMITIVETYPE_Binary:
             {
-            IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
-            ECPropertyCP ecProperty = ecsqlValue.GetColumnInfo().GetProperty();
-            BeAssert(ecProperty != nullptr && "TODO: Adjust code as ColumnInfo::GetProperty can be null.");
-
-            if (ecProperty->GetId() == ecLabelProperty->GetId())
-                {
-                if (!ecsqlValue.IsNull() &&
-                    JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false))
-                    return;
-                break;
-                }
+            int size = -1;
+            Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
+            Utf8String base64Str;
+            Base64Utilities::Encode(base64Str, data, size);
+            jsonValue = base64Str;
+            return SUCCESS;
             }
-        }
+            case PRIMITIVETYPE_Boolean:
+            {
+            jsonValue = ecsqlValue.GetBoolean();
+            return SUCCESS;
+            }
 
-    JsonFromClassLabel(jsonValue, ecClass);
+            case PRIMITIVETYPE_DateTime:
+            {
+            jsonValue = ecsqlValue.GetDateTime().ToString();
+            return SUCCESS;
+            }
+            case PRIMITIVETYPE_Double:
+            {
+            jsonValue = ecsqlValue.GetDouble();
+            return SUCCESS;
+            }
+            case PRIMITIVETYPE_Integer:
+            {
+            jsonValue = ecsqlValue.GetInt();
+            return SUCCESS;
+            }
+            case PRIMITIVETYPE_Long:
+            {
+            if (m_formatOptions == FormatOptions::LongsAreIds)
+                jsonValue = ecsqlValue.GetId<BeInt64Id>().ToHexStr();
+            else
+                jsonValue = BeJsonUtilities::StringValueFromInt64(ecsqlValue.GetInt64()); // Javascript has issues with holding Int64 values!!!
+
+            return SUCCESS;
+            }
+            case PRIMITIVETYPE_Point2d:
+                return ECJsonUtilities::Point2dToJson(jsonValue, ecsqlValue.GetPoint2d());
+
+            case PRIMITIVETYPE_Point3d:
+                return ECJsonUtilities::Point3dToJson(jsonValue, ecsqlValue.GetPoint3d());
+
+            case PRIMITIVETYPE_String:
+            {
+            jsonValue = ecsqlValue.GetText();
+            return SUCCESS;
+            }
+
+            case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr geometry = ecsqlValue.GetGeometry();
+            if (geometry == nullptr)
+                {
+                BeAssert(false && "Could not read Common Geometry");
+                return ERROR;
+                }
+
+            return BentleyGeometryJson::TryGeometryToJsonValue(jsonValue, *geometry, false) ? SUCCESS : ERROR;
+            }
+
+            default:
+                BeAssert(false && "Unknown type");
+                return ERROR;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromInstanceId(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+void JsonECSqlSelectAdapter::JsonFromClassKey(JsonValueR jsonValue, ECClassCR ecClass) const { jsonValue = GetClassKey(ecClass); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonECSqlSelectAdapter::JsonFromInstanceId(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     ECInstanceId ecInstanceId = ecsqlValue.GetId<ECInstanceId>();
     //TODO: If ECInstanceId is invalid, shouldn't something else than 0 be returned?
     const uint64_t ecInstanceIdVal = ecInstanceId.IsValid() ? ecInstanceId.GetValue() : INT64_C(0);
     jsonValue = BeJsonUtilities::StringValueFromInt64(ecInstanceIdVal); // Javascript has issues with holding Int64 values!!!
-    return true;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     if (ecsqlValue.IsNull())
         {
         jsonValue = Json::nullValue;
-        return true;
+        return SUCCESS;
         }
 
     ECN::ECPropertyCP ecProperty = ecsqlValue.GetColumnInfo().GetProperty();
     BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
     if (ecProperty->GetIsPrimitive())
-        return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
-    else if (ecProperty->GetIsStruct())
+        return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty);
+    if (ecProperty->GetIsStruct())
         return JsonFromStruct(jsonValue, ecsqlValue);
-    else if (ecProperty->GetIsNavigation())
+    if (ecProperty->GetIsNavigation())
         return JsonFromNavigation(jsonValue, ecsqlValue);
-    else if (ecProperty->GetIsArray())
+    if (ecProperty->GetIsArray())
         return JsonFromArray(jsonValue, ecsqlValue, *ecProperty);
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
-    return false;
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     // Create an empty JSON cell (create hierarchy in the case of structs)
     ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo();
@@ -1023,120 +403,19 @@ bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue cons
 
     if (isInstanceIdColumn)
         return JsonFromInstanceId(*currentCell, ecsqlValue);
-    else
-        return JsonFromPropertyValue(*currentCell, ecsqlValue);
+
+    return JsonFromPropertyValue(*currentCell, ecsqlValue);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetRowInstance(JsonValueR ecJsonInstance) const
+//---------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   01/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8String JsonECSqlSelectAdapter::GetClassKey(ECClassCR ecClass)
     {
-    PRECONDITION(m_ecsqlStatement.GetColumnCount() > 0 && "No columns to create an instance", false);
-
-    // Pick the first column's class to get the instance
-    IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(0);
-    ECClassCR rootClass = ecsqlValue.GetColumnInfo().GetRootClass();
-    return GetRowInstance(ecJsonInstance, rootClass.GetId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetRowInstance(JsonValueR ecJsonInstance, ECClassId ecClassId) const
-    {
-    bool status = true;
-    ecJsonInstance = Json::Value(Json::objectValue);
-
-    ecJsonInstance["$ECClassKey"] = Json::nullValue;
-    ecJsonInstance["$ECClassLabel"] = Json::nullValue;
-    ecJsonInstance["$ECInstanceLabel"] = Json::nullValue;
-
-    ECClassCP foundClass = nullptr;
-    int count = m_ecsqlStatement.GetColumnCount();
-    for (int columnIndex = 0; columnIndex < count; columnIndex++)
-        {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
-        auto const& columnInfo = ecsqlValue.GetColumnInfo();
-        auto const& rootClass = columnInfo.GetRootClass();
-        if (columnInfo.IsGeneratedProperty() || rootClass.GetId() != ecClassId)
-            continue;
-
-        foundClass = &rootClass;
-        if (!JsonFromCell(ecJsonInstance, ecsqlValue))
-            status = false;
-        }
-
-    POSTCONDITION(foundClass != nullptr && "Could not find supplied class in row", false);
-
-    JsonFromClassKey(ecJsonInstance["$ECClassKey"], *foundClass);
-    JsonFromClassLabel(ecJsonInstance["$ECClassLabel"], *foundClass);
-    JsonFromInstanceLabel(ecJsonInstance["$ECInstanceLabel"], *foundClass);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetRowAsIs(JsonValueR ecJsonRow) const
-    {
-    bool status = true;
-    ecJsonRow = Json::Value(Json::arrayValue);
-
-    int count = m_ecsqlStatement.GetColumnCount();
-    for (int columnIndex = 0; columnIndex < count; columnIndex++)
-        {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
-        if (!JsonFromPropertyValue(ecJsonRow[columnIndex], ecsqlValue))
-            status = false;
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetRow(JsonValueR currentRow) const
-    {
-    bool status = true;
-    currentRow = Json::Value(Json::arrayValue);
-
-    bvector<ECClassCP> classes; // Classes found in order of their first appearance in a column
-
-    int count = m_ecsqlStatement.GetColumnCount();
-    for (int columnIndex = 0; columnIndex < count; columnIndex++)
-        {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement.GetValue(columnIndex);
-        ECClassCR rootClass = ecsqlValue.GetColumnInfo().GetRootClass();
-
-        // Setup a new instance (if necessary)
-        int instanceIndex = 0;
-        bvector<ECClassCP>::const_iterator iter = std::find(classes.begin(), classes.end(), &rootClass);
-        if (iter == classes.end())
-            {
-            // Setup a new instance
-            instanceIndex = (int) classes.size();
-            classes.push_back(&rootClass);
-
-            Json::Value& currentInstance = currentRow[instanceIndex];
-            JsonFromClassKey(currentInstance["$ECClassKey"], rootClass);
-            JsonFromClassLabel(currentInstance["$ECClassLabel"], rootClass);
-            JsonFromInstanceLabel(currentInstance["$ECInstanceLabel"], rootClass);
-            }
-        else
-            {
-            // Update an existing instance
-            instanceIndex = (int) (iter - classes.begin());
-            }
-
-        // Setup node for the property
-        if (!JsonFromCell(currentRow[instanceIndex], ecsqlValue))
-            status = false;
-        }
-
-    return status;
+    Utf8String classKey;
+    classKey.Sprintf("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    return classKey;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -724,9 +724,98 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             return ERROR;
         }
 
-    return SUCCESS;
+    return ValidateOverflowPropertyMaps(classMap);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Affan.Khan                           07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& classMap) const
+    {
+    const auto containOverflow = [] (std::vector<DbTable const*> const& tables)
+        {
+        for (DbTable const* table : tables)
+            {
+            if (table->GetType() == DbTable::Type::Overflow)
+                return true;
+            }
+
+        return false;
+        };
+
+    bool hasOveflowTable = false;
+    bool hasECInstanceIdInOverflowTable = false;
+    bool hasECClassIdInOverflowTable = false;
+    int nDataPropertyInOverflowTable = 0;
+    for (DbTable const* table : classMap.GetTables())
+        {
+        if (table->GetType() == DbTable::Type::Overflow)
+            {
+            hasOveflowTable = true;
+            break;
+            }
+        }
+    
+    for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
+        {
+        if (propertyMap->IsSystem())
+            {
+            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+                hasECInstanceIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
+
+            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECClassId))
+                hasECClassIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
+            }
+        else
+            {
+            if (propertyMap->GetAs<DataPropertyMap>().GetTable().GetType() == DbTable::Type::Overflow)
+                nDataPropertyInOverflowTable++;
+            }
+        }
+
+    const bool hasAnyOverflowProperty = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable || nDataPropertyInOverflowTable > 0;
+    if (hasOveflowTable && !hasAnyOverflowProperty)
+        {
+        Issues().Report("The class '%s' point to overflow table but has no property that is persisted in overflow table.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (!hasOveflowTable && hasAnyOverflowProperty)
+        {
+        Issues().Report("The class '%s has property map that point to overflow table but the classmap tables list does not.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (hasECInstanceIdInOverflowTable && !hasECClassIdInOverflowTable)
+        {
+        Issues().Report("The class '%s' has ECInstanceId property map that is mapped to overflow table but ECClassId property map is not map to overflow table.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+    
+    if (!hasECInstanceIdInOverflowTable && hasECClassIdInOverflowTable)
+        {
+        Issues().Report("The class '%s' has ECClassId property map that is mapped to overflow table but ECInstanceId property map is not map to overflow table.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (hasAnyOverflowProperty)
+        {
+        const bool hasSystemPropertyMap = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable;
+        if (hasSystemPropertyMap && nDataPropertyInOverflowTable == 0)
+            {
+            Issues().Report("The class '%s' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.", classMap.GetClass().GetFullName());
+            return ERROR;
+            }
+
+        if (!hasSystemPropertyMap && nDataPropertyInOverflowTable > 0)
+            {
+            Issues().Report("The class '%s' has data properties that map to overflow table but ECInstanceId/ECClassId properties are not mapped to overflow table.", classMap.GetClass().GetFullName());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Krischan.Eberle                        07/2017
 //+---------------+---------------+---------------+---------------+---------------+------

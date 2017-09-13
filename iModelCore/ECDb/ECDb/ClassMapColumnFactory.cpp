@@ -537,25 +537,29 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
     if (m_overflowTable != nullptr)
         return m_overflowTable;
 
+    m_overflowTable  = m_classMap.GetOverflowTable();
+    if (m_overflowTable != nullptr)
+        return m_overflowTable;
+
     if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().empty())
         {
-        DbTable* overflowTable = DbMappingManager::Tables::CreateOverflowTable(ctx, *m_primaryOrJoinedTable);
-        const_cast<ClassMap&>(m_classMap).SetOverflowTable(*overflowTable);
-        m_overflowTable = overflowTable;
-        return m_overflowTable;
+        m_overflowTable = DbMappingManager::Tables::CreateOverflowTable(ctx, *m_primaryOrJoinedTable);
         }
     else if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().size() == 1)
         {
         DbTable::LinkNode const* overflowTable = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
         if (overflowTable->GetType() == DbTable::Type::Overflow)
-            {
             m_overflowTable = &overflowTable->GetTableR();
-            return m_overflowTable;
-            }
+        }
+    
+    if (m_overflowTable == nullptr)
+        {
+        BeAssert(false && "Cannot create overflow table");
+        return nullptr;
         }
 
-    BeAssert(false && "Cannot create overflow table");
-    return nullptr;
+    const_cast<ClassMap&>(m_classMap).SetOverflowTable(*m_overflowTable);
+    return m_overflowTable;
     }
 
 

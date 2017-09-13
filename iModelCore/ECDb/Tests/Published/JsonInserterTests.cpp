@@ -69,15 +69,12 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     statement.Finalize();
 
     /* Retrieve the previously imported instance as JSON */
-    ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document");
-    ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
-    DbResult stepStatus = statement.Step();
-    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
     Json::Value afterImportJson;
-    JsonECSqlSelectAdapter jsonAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    bool status = jsonAdapter.GetRowInstance(afterImportJson, documentClass->GetId());
-    ASSERT_TRUE(status);
+    JsonECSqlSelectAdapter jsonAdapter(statement);
+    ASSERT_TRUE(jsonAdapter.GetRowInstance(afterImportJson, documentClass->GetId()));
     statement.Finalize();
 
     /* Validate */
@@ -148,7 +145,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
 
     Json::Value afterImportJson;
-    JsonECSqlSelectAdapter jsonAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter jsonAdapter(statement);
     bool status = jsonAdapter.GetRowInstance(afterImportJson, documentClass->GetId());
     ASSERT_TRUE(status);
     statement.Finalize();

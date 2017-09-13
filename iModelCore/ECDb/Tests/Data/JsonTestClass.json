@@ -1,9 +1,7 @@
 ﻿{
    "$ECClassId" : "57",
    "$ECClassKey" : "JsonTests.Document",
-   "$ECClassLabel" : "Document",
    "$ECInstanceId" : "1",
-   "$ECInstanceLabel" : "A-Model.pdf",
    "ApprovalStatus" : null,
    "Attributes" : [
       {
