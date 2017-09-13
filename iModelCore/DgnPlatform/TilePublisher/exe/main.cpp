@@ -423,6 +423,24 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
         }
 
+    // &&RB TODO: the following function can be removed when the url to RDS repository
+    //            is being transferred in the ibim file.
+    virtual Utf8String GetProjectWiseContextShareLink(const WString& path) override
+        {
+        if (m_smPaths->count(path) > 0 && path.substr(0, 8) == L"https://")
+            {
+            auto guidPos = path.find(L"/", 8) + 1;
+            auto guidLength = path.find(L"/", guidPos) - guidPos;
+            auto guid = Utf8String(path.substr(guidPos, guidLength));
+
+            SMHost::initializeRealityDataService();
+
+            Utf8String rdsUrl = "https://" + RealityDataService::GetServerName() + "v" + RealityDataService::GetWSGProtocol() + "/Repositories/" + RealityDataService::GetRepoName() + "/" + RealityDataService::GetSchemaName() + "/RealityData/" + guid;
+
+            return rdsUrl;
+            }
+        return Utf8String();
+        }
 
 private:
 

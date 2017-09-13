@@ -33,7 +33,6 @@ void Symbology::InitializeDefaults()
     m_current.SetAppearance(DbOpcode::Update, updated);
     m_current.SetAppearance(DbOpcode::Delete, deleted);
 
-    updated.SetAlpha(0x80);
     inserted.SetAlpha(0x80);
     deleted.SetAlpha(0x80);
 

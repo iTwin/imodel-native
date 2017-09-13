@@ -88,7 +88,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnDb.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnDbTables.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnDomain.h" />
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnECPersistence.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECSymbolProvider.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnECTypes.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnElement.h" />
@@ -398,7 +397,6 @@
     <ClCompile Include="DgnGeoCoord\ReprojectCache.cpp" />
     <ClCompile Include="DgnHandlers\DgnChangeSummary.cpp" />
     <ClCompile Include="DgnHandlers\DgnECInteropStringFormatter.cpp" />
-    <ClCompile Include="DgnHandlers\DgnECPersistence.cpp" />
     <ClCompile Include="DgnHandlers\DgnECSymbolProvider.cpp" />
     <ClCompile Include="DgnHandlers\DgnECTypeAdapters.cpp" />
     <ClCompile Include="DgnHandlers\DgnECTypes.cpp" />

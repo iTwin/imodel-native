@@ -52,7 +52,6 @@ typedef JsECDb const& JsECDbCR;
 struct IModelJs
 {
     static Dgn::DgnDbPtr GetDbByName(BeSQLite::DbResult& dbres, BeFileNameCR fn, Dgn::DgnDb::OpenMode mode);
-    static Json::Value GetRowAsRawJson(BeSQLite::EC::ECSqlStatement&);
     static void GetRowAsJson(Json::Value& json, BeSQLite::EC::ECSqlStatement&);
     static void GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR) ;
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);

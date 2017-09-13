@@ -493,6 +493,27 @@ void AuxCoordSystem::_Display(DecorateContextR context, ACSDisplayOptions option
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void AuxCoordSystem::_Pick(PickContextR context) const
+    {
+    IPickGeomP pickGeom;
+
+    if (nullptr == (pickGeom = context.GetIPickGeom()))
+        return;
+
+    pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::Interior) + 1000)); // Make really low priority...
+
+    DPoint3d origin = _GetOrigin();
+    auto graphic = context.CreateGraphic();
+
+    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 1); // Doesn't matter...
+    graphic->AddPointString(1, &origin);
+
+    pickGeom->_SetHitPriorityOverride(HitPriority::Highest); // Clear priority override...
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AuxCoordSystem::_PointFromString

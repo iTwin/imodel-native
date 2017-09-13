@@ -177,6 +177,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
         //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
         static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
 
+        void _SetExtents(DVec3dCR delta) override {;} // don't allow zooming - see TFS#735477
+
     public:
         //! Create a new redline view definition element, prior to inserting it.  @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
         //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails

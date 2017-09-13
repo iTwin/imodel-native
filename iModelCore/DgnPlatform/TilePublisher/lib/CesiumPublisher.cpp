@@ -175,7 +175,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (NULL == htmlFile)
         return Status::CantWriteToBaseDirectory;
 
-    Utf8String jsonFileUrl = Utf8String (m_rootName) + "/" + Utf8String(jsonRootName.c_str());
+    Utf8String jsonFileUrl = "TileSets/"  + Utf8String (m_rootName) + "/" + Utf8String(jsonRootName.c_str());
     jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
     std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);
@@ -186,7 +186,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");
     BeFileName scriptsDstDir(m_outputDir);
-    scriptsDstDir.AppendToPath(L"scripts");
+    scriptsDstDir.AppendToPath(L"PublishedScripts");
     BeFileName::CloneDirectory(scriptsSrcDir.c_str(), scriptsDstDir.c_str());
 
     return Status::Success;

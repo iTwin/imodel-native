@@ -339,9 +339,24 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
+    // NOTE: MSBsplineSurface::GetPoleRange can result in a very large range and using IPolyfaceConstruction can be slow.
+    //       Unfortunately, we don't have a better way to handle trimmed surfaces and getting a large range for a surface has
+    //       undesirable consequences for fit view which uses the element aligned box and doesn't look at the geometry.
+    if (0 != geom.GetNumBounds())
+        {
+        IFacetOptionsPtr options = IFacetOptions::CreateForSurfaces();
+
+        options->SetMinPerBezier(3);
+
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*options);
+
+        builder->Add(geom);
+
+        return getRange(builder->GetClientMeshR(), range, transform);
+        }
+
     Transform originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal;
 
-    // NOTE: MSBsplineSurface::GetPoleRange can result in a very large range...but using IPolyfaceConstruction is too slow...
     if (geom.TightPrincipalExtents(originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal, range))
         {
         centroidalLocalToWorld.Multiply(range, range);

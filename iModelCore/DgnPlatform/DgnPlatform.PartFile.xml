@@ -59,12 +59,12 @@
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
-        <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
@@ -536,6 +536,7 @@
 
     <Part Name="DgnPlatformNoViewTested">
       <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
@@ -649,6 +650,8 @@
         <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
@@ -673,7 +676,7 @@
     </Part>
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
-        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="TilePublisherLib" />																																							                                                             
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
@@ -735,6 +738,7 @@
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
         <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
     </ProductDirectoryList>
 
