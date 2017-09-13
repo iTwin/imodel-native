@@ -48,7 +48,11 @@ ImsClientPtr ImsClient::GetShared()
 ImsClient::ImsClient(ClientInfoPtr clientInfo, IHttpHandlerPtr httpHandler) :
 m_clientInfo(clientInfo),
 m_httpHandler(httpHandler)
-    {}
+    {
+	//this "username:apikey" is hardcoded into CONNECTION Client source code, so we have it here as well
+	//it can be overriden by the client application by calling SetImsActiveSTSHelperServiceAuthKey
+	SetImsActiveSTSHelperServiceAuthKey("BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
@@ -248,4 +252,54 @@ Utf8String ImsClient::GetClientRelyingPartyUriForWtrealm(ClientInfoCR info)
 Utf8String ImsClient::GetLegacyRelyingPartyUri()
     {
     return UrlProvider::Urls::ConnectWsgGlobal.Get();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Tomas.Tamasauskas    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ImsClient::GetA2PUrl(Utf8String url, SamlTokenPtr token, Utf8String tokenGuid)
+    {
+    #if defined(BENTLEY_WIN32)
+        Utf8String platformType("desktop");
+    #else
+        Utf8String platformType("mobile");
+    #endif
+
+    Utf8String rpUri = "sso://wsfed_" + platformType + "/" + m_clientInfo->GetApplicationProductId();
+
+    Json::Value params;
+    params["Realm"] = rpUri; //client relying party uri, token registretion service does not accept base64 encoded strings here
+    params["TokenKey"] = tokenGuid;//BeGuid(true).ToString();
+    params["TokenXml"] = token->AsString();
+    params["TargetRealm"] = url;
+
+    Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(m_ImsActiveSTSHelperServiceAuthKey).c_str());
+    
+    HttpClient client(m_clientInfo, UrlProvider::GetSecurityConfigurator(m_httpHandler));
+    Http::Request request = client.CreatePostRequest(UrlProvider::Urls::ImsActiveSTSHelperService.Get() + "/json/RegisterToken");
+    request.GetHeaders().SetAuthorization(authorization);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
+    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
+    request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
+
+    auto response = request.Perform().get(folly::Duration(5000));
+    if (response.IsSuccess())
+        {
+        Json::Value body = Json::Reader::DoParse(response.GetBody().AsString());
+        return UrlProvider::Urls::ImsPassiveAuthUrl.Get() + "?key1=" + tokenGuid + "&key2=" + body.asString() + "&rpUrl=" + BeStringUtilities::UriEncode(url.c_str());
+        }
+    else
+        {
+        BeAssert(false && "ImsClient:GetA2PUrl: error occured while registering a token.");
+        return url;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Tomas.Tamasauskas    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/	
+Utf8StringCR ImsClient::SetImsActiveSTSHelperServiceAuthKey(Utf8StringCR user, Utf8StringCR apiKey)
+    {
+    Utf8PrintfString credsPair("%s:%s", user, apiKey);
+    return m_ImsActiveSTSHelperServiceAuthKey = credsPair;
     }
