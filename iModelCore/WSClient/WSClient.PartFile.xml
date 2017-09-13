@@ -95,6 +95,7 @@
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClient-PublishedAPI"/>
+        <SubPart PartName="WSClient_en_L10N"/>
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient.*.nupkg</Files>
         </Bindings>
