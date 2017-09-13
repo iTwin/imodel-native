@@ -9,6 +9,7 @@
 #include <random>
 #include <queue>
 #include <thread>
+#include <iomanip>
 
 #ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
@@ -601,7 +602,8 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         else
                             {
-                            streamingRasterUrl = "http://www.bing.com/maps/Road";
+                            //streamingRasterUrl = "http://www.bing.com/maps/Road";
+                            streamingRasterUrl = "http://www.bing.com/maps/Aerial";
                             }
                         
                         if (smCreateStatus == 0)
