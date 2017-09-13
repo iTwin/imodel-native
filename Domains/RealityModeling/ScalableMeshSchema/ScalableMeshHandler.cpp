@@ -1780,20 +1780,24 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     scale.z = 1;
     
     DgnGCS* projGCS = dgnProject.GeoLocation().GetDgnGCS();
+    DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
 
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
         dgnGcsPtr->UorsFromCartesian(scale, scale);
+        scale.DifferenceOf(scale, globalOrigin);
 
         if (projGCS != nullptr && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
             dgnGcsPtr->SetReprojectElevation(true);
 
+            Transform trans = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                         0, scale.y, 0, globalOrigin.y,
+                                                         0, 0, scale.z, globalOrigin.z);
+
             DRange3d smExtent, smExtentUors;
             m_smPtr->GetRange(smExtent);
-            Transform trans;
-            trans.InitFromScaleFactors(scale.x, scale.y, scale.z);
             trans.Multiply(smExtentUors, smExtent);
 
             DPoint3d extent;
@@ -1814,12 +1818,16 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
                 }
             else
                 {
-                m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
+                m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
+                                                                   0, scale.y, 0, -globalOrigin.y,
+                                                                   0, 0, scale.y, -globalOrigin.z);
                 }
             }
         else
             {
-            m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
+            m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
+                                                               0, scale.y, 0, -globalOrigin.y,
+                                                               0, 0, scale.y, -globalOrigin.z);
             }
         }
     else
