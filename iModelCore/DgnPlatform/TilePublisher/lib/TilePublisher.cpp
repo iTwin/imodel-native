@@ -3794,11 +3794,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels, classifierModels;
 
-//#define PUBLISH_SCHEDULES
-#ifdef PUBLISH_SCHEDULES
-    PublishScheduleSimulations();
-#endif
-
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);
 
@@ -4194,6 +4189,15 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
     json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
     
+    Json::Value     scheduleJson = GetScheduleJson();
+
+    if (!scheduleJson.isNull() && scheduleJson.size() > 0)
+        {
+        json["timeline"] = true;
+        json["timelineVisible"] = true;
+        json["schedules"] = scheduleJson;
+        }
+
     return Status::Success;
     }
 
@@ -4226,7 +4230,6 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
     json["models"] = GetModelsJson(allModels);
     json["classifiers"] = GetAllClassifiersJson();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
