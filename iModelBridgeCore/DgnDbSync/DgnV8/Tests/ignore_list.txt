@@ -27,24 +27,6 @@ ConverterAppTests.VerifyConversionApp_CreateBim
     #       Which is: 32768
     # [  FAILED  ] ConverterAppTests.VerifyConversionApp_CreateBim (17856 ms)
 
-BasicGeometryTests.Line
-    # bim0200, x64, NDEBUG, random
-    # [ RUN      ] BasicGeometryTests.Line
-    # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb C:\Users\JEFF~1.MAR\AppData\Local\Temp\Bentley\Build\tmp19076\DgnV8ConverterTests\testSeed.bim
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(46): error: Value of: dgndb.IsValid()
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] BasicGeometryTests.Line (380 ms)
-
-BasicGeometryTests.LineUpdateWithoutAnyChange
-    # bim0200, x64, NDEBUG, random
-    # [ RUN      ] BasicGeometryTests.LineUpdateWithoutAnyChange
-    # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb C:\Users\JEFF~1.MAR\AppData\Local\Temp\Bentley\Build\tmp19076\DgnV8ConverterTests\testSeed.bim
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(46): error: Value of: dgndb.IsValid()
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] BasicGeometryTests.LineUpdateWithoutAnyChange (43 ms)
-
 #----------------------------------------------------------------------------------------
 #   Tests that are failing only on tiles branch
 #----------------------------------------------------------------------------------------

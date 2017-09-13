@@ -28,6 +28,7 @@ protected:
     void DeleteMember(bool groupOwnsMembers);
     void DeleteGroup(bool groupOwnsMembers);
     void CreateGroupInDictionary(bool groupOwnsMembers);
+    void Update(bool groupOwnsMembers);
 
     };
 
@@ -317,6 +318,76 @@ void NamedGroupTests::DeleteGroup(bool groupOwnsMembers)
             ASSERT_TRUE(elem2.IsValid()) << "Element member should not have been deleted when its group was deleted and it isn't owned by group";
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void NamedGroupTests::Update(bool groupOwnsMembers)
+    {
+    LineUpFiles(L"Update.ibim", L"Test3d.dgn", false); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    ECObjectsV8::ECSchemaP schema = nullptr;
+    if (groupOwnsMembers)
+        schema = AddSchema(v8editor);
+    DgnV8Api::ElementId eid1;
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid1);
+    v8editor.AddLine(&eid2);
+
+    //Create a named group.
+    DgnV8Api::NamedGroupFlags ngFlags;
+    DgnV8Api::NamedGroupPtr nGroup1;
+    EXPECT_EQ(DgnV8Api::NG_Success, DgnV8Api::NamedGroup::Create(nGroup1, L"Test Named Group 1", L"Test Description 1", ngFlags, v8editor.m_defaultModel));
+    DgnV8Api::NamedGroupMemberFlags memberFlags;
+    EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid1, v8editor.m_defaultModel, memberFlags));
+    EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid2, v8editor.m_defaultModel, memberFlags));
+    EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->WriteToFile(true));
+    if (groupOwnsMembers)
+        {
+        DgnV8Api::ElementHandle eh(nGroup1->GetElementRef());
+        AddInstance(v8editor, schema, eh);
+        }
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    // Verify
+    DgnElementId groupId;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyElement(*db, eid1, GeometricPrimitive::GeometryType::CurvePrimitive);
+
+        DgnElementCPtr elem2 = FindV8ElementInDgnDb(*db, eid1);
+        EXPECT_TRUE(elem2.IsValid());
+        groupId = GetGroupId(*elem2, groupOwnsMembers);
+        DgnElementCPtr elemGroup = db->Elements().GetElement(groupId);
+        EXPECT_TRUE(elemGroup.IsValid());
+
+        EXPECT_EQ(2, GetMembers(*elemGroup, groupOwnsMembers).size()) << "There should be 2 member in NamedGroup";
+        }
+
+    // Verify
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyElement(*db, eid1, GeometricPrimitive::GeometryType::CurvePrimitive);
+
+        DgnElementCPtr elem2 = FindV8ElementInDgnDb(*db, eid1);
+        EXPECT_TRUE(elem2.IsValid());
+        groupId = GetGroupId(*elem2, groupOwnsMembers);
+        DgnElementCPtr elemGroup = db->Elements().GetElement(groupId);
+        EXPECT_TRUE(elemGroup.IsValid());
+
+        EXPECT_EQ(2, GetMembers(*elemGroup, groupOwnsMembers).size()) << "There should be 2 member in NamedGroup";
+        }
+
+    // This test doesn't actually verify anything.  TFS#750398 reported errors in the log on an update.  The converter was trying to recreate the named groups
+    // on the update, and reported failures due to unique constraint violations.  However, it didn't affect the rest of the update, and the existing named groups were
+    // unaffected.  It simply was a logging issue.  The fix was to check to make sure the group member wasn't already part of the group before adding it.  So the only way to
+    // verify the fix would be to scan the logfile to check for that error, which this test cannot do automatically.
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -707,4 +778,20 @@ TEST_F(NamedGroupTests, ConvertNamedGroupFromDictionary)
 TEST_F(NamedGroupTests, ConvertNamedGroupFromDictionaryWithOwnership)
     {
     CreateGroupInDictionary(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedGroupTests, UpdateWithNoChanges)
+    {
+    Update(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedGroupTests, UpdateWithNoChangesWithOwnership)
+    {
+    Update(true);
     }

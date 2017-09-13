@@ -1396,7 +1396,10 @@ void RootModelConverter::_ConvertSchemas()
     if (IsUpdating())
         {
         CheckNoECSchemaChanges();
-        return;
+        if (!m_needReimportSchemas)
+            return;
+        if (WasAborted())
+            return;
         }
 
     SetStepName(Converter::ProgressMessage::STEP_DISCOVER_ECSCHEMAS());
@@ -1460,12 +1463,22 @@ void RootModelConverter::_ConvertSchemas()
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Upgrade V8 ECSchemas");
 
     timer.Start();
+    ChangeDetector* changeDetector = nullptr;
+    if (IsUpdating())
+        {
+        changeDetector = dynamic_cast<ChangeDetector*> (m_changeDetector.get());
+        if (nullptr != changeDetector)
+            changeDetector->ReleaseIterators();
+        }
     //The schema import is wrapped into transaction management so that in case of a failed
     //schema import the DB can be set into a clean state again. This also means
     //* any previous changes to the file are committed
     //* in case of a successful schema import, changes are committed again
     if (BentleyApi::SUCCESS != ImportTargetECSchemas())
         return;
+
+    if (IsUpdating() && nullptr != changeDetector)
+        changeDetector->PrepareIterators(GetDgnDb());
 
     ReportProgress();
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Import ECSchemas");
@@ -1900,16 +1913,26 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
 
                 if (m_namedGroupOwnsMembers)
                     {
-                    DgnElementPtr childEdit = child->CopyForEdit();
-                    DgnClassId parentRelClassId = m_converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-                    childEdit->SetParentId(m_parentId, parentRelClassId);
-                    elementTable.Update(*childEdit);
+                    if (child->GetParentId() != m_parentId)
+                        {
+                        DgnElementPtr childEdit = child->CopyForEdit();
+                        DgnClassId parentRelClassId = m_converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+                        childEdit->SetParentId(m_parentId, parentRelClassId);
+                        elementTable.Update(*childEdit);
+                        }
                     return DgnV8Api::MemberTraverseStatus::Continue;
                     }
 
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
-                if (group.IsValid())
-                    ElementGroupsMembers::Insert(*group, *child, 0);
+                if (group.IsValid() && !ElementGroupsMembers::HasMember(*group, *child))
+                    {
+                    if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
+                        {
+                        Utf8String error;
+                        error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
+                        m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                        }
+                    }
 
                 return DgnV8Api::MemberTraverseStatus::Continue;
                 }
