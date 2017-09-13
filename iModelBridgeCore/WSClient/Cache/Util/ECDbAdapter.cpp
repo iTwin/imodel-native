@@ -496,7 +496,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
 
     Utf8String className(ecClass->GetName());
 
-    JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(statement);
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
@@ -535,7 +535,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceFromStatement(ECSqlStatement& stat
         return ERROR;
         }
 
-    JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(statement);
     if (!adapter.GetRowInstance(jsonInstanceOut, ecClass->GetId()))
         {
         return ERROR;

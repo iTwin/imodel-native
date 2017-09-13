@@ -8,7 +8,6 @@
 #include "IntegrationTestsBase.h"
 #include "IntegrationTestsHelper.h"
 #include <WebServices/iModelHub/Client/Client.h>
-#include <WebServices/iModelHub/Client/Configuration.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeThread.h>
@@ -91,11 +90,10 @@ TEST_F(EventTests, SubscribeTests)
 //---------------------------------------------------------------------------------------
 TEST_F(EventTests, UnsubscribeTests)
     {
-    Configuration::SetPredownloadChangeSetsEnabled(true);
 
     //Prepare imodel and acquire a briefcase
     auto briefcase = AcquireBriefcase();
-
+    briefcase->GetiModelConnection().GetChangeSetCacheManager().EnableBackgroundDownload()->GetResult();
     EventCallbackPtr callback = std::make_shared<EventCallback>([=](EventPtr event) {});
 
     //Get result
@@ -103,7 +101,6 @@ TEST_F(EventTests, UnsubscribeTests)
     EXPECT_FALSE(unsubscribeResult.IsSuccess());
     EXPECT_EQ(Error::Id::EventCallbackNotFound, unsubscribeResult.GetError().GetId());
 
-    Configuration::SetPredownloadChangeSetsEnabled(false);
     }
 
 //---------------------------------------------------------------------------------------

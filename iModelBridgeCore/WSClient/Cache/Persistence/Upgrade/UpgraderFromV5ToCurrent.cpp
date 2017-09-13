@@ -603,7 +603,7 @@ JsonValueR instanceInfo
         return ERROR;
         }
 
-    JsonECSqlSelectAdapter jsonAdapter(*statement, ECValueFormat::RawNativeValues);
+    JsonECSqlSelectAdapter jsonAdapter(*statement);
     if (!jsonAdapter.GetRowInstance(instanceJson, key.GetClassId()))
         {
         return ERROR;
@@ -662,7 +662,7 @@ JsonValueR fileInfo
         return SUCCESS;
         }
 
-    JsonECSqlSelectAdapter fileInfoJsonAdapter(*statement, ECValueFormat::RawNativeValues);
+    JsonECSqlSelectAdapter fileInfoJsonAdapter(*statement);
     if (!fileInfoJsonAdapter.GetRowInstance(fileInfo, m_adapter.GetECClass("DSCacheSchema", "CachedFileInfo")->GetId()))
         {
         return ERROR;
@@ -694,7 +694,7 @@ BentleyStatus UpgraderFromV5ToCurrent::ReadSchemaInfo(Utf8String& schemaName)
 BentleyStatus UpgraderFromV5ToCurrent::ReadRoots(JsonValueR roots)
     {
     ECSqlStatement statement;
-    JsonECSqlSelectAdapter jsonAdapter(statement, ECValueFormat::RawNativeValues);
+    JsonECSqlSelectAdapter jsonAdapter(statement);
 
     m_adapter.PrepareStatement(statement, "SELECT * FROM ONLY [DSC].[Root]");
     while (BE_SQLITE_ROW == statement.Step())
