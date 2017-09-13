@@ -169,10 +169,55 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
         v = ECN::ECValue(jsonValue.asInt64());
     else if (jsonValue.isDouble())
         v = ECN::ECValue(jsonValue.asDouble());
-    else if (jsonValue.isString())          // *** WIP_ECUTILS -- detect if string is a serialized DateTime?
-        v = ECN::ECValue(jsonValue.asCString());
+    else if (jsonValue.isString())
+        {
+        if (ECN::PRIMITIVETYPE_DateTime == typeRequired)
+            {
+            DateTime dt;
+            if (BSISUCCESS == DateTime::FromString(dt, jsonValue.asCString()))
+                v = ECN::ECValue(dt);
+            else
+                v.SetIsNull(true);
+            }
+        else if (ECN::PRIMITIVETYPE_Binary == typeRequired)
+            {
+            // *** TBD: need extended type to recognize GUID
+            // *** TBD: buffer = base64-decode(jsonValue.asCString());
+            // *** TBD: v = ECN::ECValue(buffer, buffersize);
+            v.SetIsNull(true);
+            }
+        else if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
+            }
+        else
+            {
+            v = ECN::ECValue(jsonValue.asCString());
+            }
+        }
+    else if (jsonValue.isArray())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble(), jsonValue[2].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble()));
+            }
+        else
+            {
+            v.SetIsNull(true);
+            }
+        }
     else
+        {
         v.SetIsNull(true);
+        }
 
     if (!v.IsNull() && !v.ConvertToPrimitiveType(typeRequired))
         v.SetIsNull(true);

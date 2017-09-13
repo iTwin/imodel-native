@@ -1273,6 +1273,131 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     adapter.GetRowForImodelJs(elementJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, JsonValueCR jsonProp, Utf8CP ecPropName, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
+    {
+    ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
+    auto tdesc = propLayout->GetTypeDescriptor();
+    //if (!tdesc.IsPrimitive())
+    //    {
+    //    BeAssert(false && "not supporting complex property types for now");
+    //    return BSIERROR;
+    //    }
+
+    ECN::ECValue ecvalue;
+    if (BSISUCCESS != ECUtils::ConvertJsonToECValue(ecvalue, jsonProp, tdesc.GetPrimitiveType()))
+        {
+        BeAssert(false && "unsupported property type");
+        return BSIERROR;
+        }
+
+    if (DgnDbStatus::Success != propAccessor.SetPropertyValue(ecvalue, arrayIdx))
+        {
+        BeAssert(false && "SetPropertyValue failed!?");
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+enum class AutoHandlePropertyStatus 
+    {
+    FoundAndAutoHandled,
+    NotFound,
+    NotAutoHandled
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static BentleyStatus autoHandlePropertyFromJson(AutoHandlePropertyStatus& pstatus, DgnElementR elem, JsonValueCR jsonProp, Utf8CP ecPropName, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
+    {
+    ElementECPropertyAccessor access(elem, ecPropName); // Look up the property by name, in order to get metadata info about it and to prepare to set it.
+    if (!access.IsValid())
+        {
+        pstatus = AutoHandlePropertyStatus::NotFound;
+        return BSIERROR;
+        }
+
+    if (!access.IsAutoHandled())
+        {
+        pstatus = AutoHandlePropertyStatus::NotAutoHandled;
+        return BSIERROR;
+        }
+
+    pstatus = AutoHandlePropertyStatus::FoundAndAutoHandled;
+
+    if (!jsonProp.isArray())
+        return setPropertyFromJson(access, jsonProp, ecPropName);
+        
+    if (DgnDbStatus::Success != elem.AddPropertyArrayItems(access.GetPropertyIndex(), jsonProp.size()))
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    for (Json::ArrayIndex i = 0; i < jsonProp.size(); ++i)
+        {
+        if (BSISUCCESS != setPropertyFromJson(access, jsonProp[i], ecPropName, PropertyArrayIndex(i)))
+            return BSIERROR;
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static bool isDefinitelyNotAutoHandled(Utf8CP jsPropName)
+    {
+    // *** NEEDS WORK: We have defined a bunch of special properties in our element wire format
+    // ***              That are not in the biscore ECSchema. So, we have no way of checking
+    // ***              if they are auto-handled or not using metadata. Only some _FromJson method somewhere
+    // ***              knows what these properties are. Here, I check for the few special properties
+    // ***              that I happen to know about by looking at the code.
+
+    switch (jsPropName[0])
+        {
+        case 'i': return 0==strcmp(jsPropName, "id");
+        case 'c': return 0==strcmp(jsPropName, "classFullName") || 0==strcmp(jsPropName, "code");
+        case 'p': return 0==strcmp(jsPropName, "placement");
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJson)
+    {
+    auto eclass = elem.GetElementClass();
+    
+    // I will loop over the props passed in, rather than the auto-handled properties that are defined for this element class.
+    // The caller will typically set only a small subset of the properties.
+    for (auto const& jsPropName : elementJson.getMemberNames())
+        {
+        if (isDefinitelyNotAutoHandled(jsPropName.c_str()))  // filter out some special properties that are not actually in the ECSChema (and are certainly not auto-handled)
+            continue;
+
+        // Probably, the JS property name will have a lowercase first letter. The standard for ECProperties is an uppercase first letter.
+        Utf8String ecPropName(jsPropName);
+        ecPropName[0] = (char)toupper(ecPropName[0]);
+        AutoHandlePropertyStatus pstatus;
+        if (BSISUCCESS != autoHandlePropertyFromJson(pstatus, elem, elementJson[jsPropName], ecPropName.c_str()) && (AutoHandlePropertyStatus::NotFound == pstatus))
+            {
+            // No property was found by the adjusted name. Maybe the jsPropName is actually the correct name of the ECProperty!? Try it.
+            autoHandlePropertyFromJson(pstatus, elem, elementJson[jsPropName], jsPropName.c_str());
+            
+            // Note: don't assert if the property is not found. Our element wire format includes a bunch of properties that are not in the schema.
+            //          we have no reliable way of checking for them here. 
+            }
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1325,6 +1450,8 @@ void DgnElement::_FromJson(JsonValueR props)
         m_jsonProperties.From(std::move(props[json_jsonProperties()]));
         _OnLoadedJsonProperties();
         }
+
+    autoHandlePropertiesFromJson(*this, props);
     }
 
 /*---------------------------------------------------------------------------------**//**
