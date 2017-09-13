@@ -13,7 +13,6 @@
 #include <WebServices/iModelHub/Client/BreakHelper.h>
 #include <WebServices/iModelHub/Client/UserInfoManager.h>
 #include "Events/EventManager.h"
-#include "PredownloadManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
 
@@ -23,8 +22,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
 
 # define MAX_AsyncQueries 10
-
-PredownloadManagerPtr iModelConnection::s_preDownloadManager = new PredownloadManager();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -1592,66 +1589,88 @@ EventTypeSet oldEventTypes
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnection::SetEventSASToken(ICancellationTokenPtr cancellationToken)
+StatusTaskPtr iModelConnection::SetEventSASToken(ICancellationTokenPtr cancellationToken)
     {
     const Utf8String methodName = "iModelConnection::SetEventSASToken";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    auto sasToken = GetEventServiceSASToken(cancellationToken)->GetResult();
-    if (!sasToken.IsSuccess())
+    return GetEventServiceSASToken(cancellationToken)->Then<StatusResult>([=](AzureServiceBusSASDTOResultCR sasTokenResult)
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, sasToken.GetError().GetMessage().c_str());
-        return false;
-        }
+        if (!sasTokenResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, sasTokenResult.GetError().GetMessage().c_str());
+            return StatusResult::Error(sasTokenResult.GetError());
+            }
 
-    m_eventSAS = sasToken.GetValue();
+        m_eventSAS = sasTokenResult.GetValue();
 
-    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-    return true;
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        return StatusResult::Success();
+        });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
+StatusTaskPtr iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
     {
     EventSubscriptionTaskPtr eventSubscription = nullptr;
+    StatusResultPtr finalResult = std::make_shared<StatusResult>();
 
     if (m_eventSubscription == nullptr)
         eventSubscription = GetEventServiceSubscriptionId(eventTypes, cancellationToken);
     else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
         eventSubscription = UpdateEventServiceSubscriptionId(eventTypes, cancellationToken);
     else
-        return true;
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
 
-    if (!eventSubscription->GetResult().IsSuccess())
-        return false;
+    return eventSubscription->Then([=](EventSubscriptionResultCR subscriptionResult)
+        {
+        if (!subscriptionResult.IsSuccess())
+            {
+            finalResult->SetError(subscriptionResult.GetError());
+            }
 
-    m_eventSubscription = eventSubscription->GetResult().GetValue();
-    return SetEventSASToken(cancellationToken);
+        m_eventSubscription = subscriptionResult.GetValue();
+        SetEventSASToken(cancellationToken)->Then([=](StatusResultCR setResult)
+            {
+            if (!setResult.IsSuccess())
+                {
+                finalResult->SetError(setResult.GetError());
+                }
+
+            finalResult->SetSuccess();
+            });
+        })->Then<StatusResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            05/2016
 //---------------------------------------------------------------------------------------
-bool iModelConnection::SetEventServiceClient
+StatusTaskPtr iModelConnection::SetEventServiceClient
 (
 EventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 )
     {
-    if (!SetEventSubscription(eventTypes, cancellationToken))
-        return false;
+    return SetEventSubscription(eventTypes, cancellationToken) ->Then<StatusResult>([=](StatusResultCR subscribeResult)
+        {
+        if (!subscribeResult.IsSuccess())
+            return StatusResult::Error(subscribeResult.GetError());
 
-    BeMutexHolder lock(m_eventServiceClientMutex);
+        BeMutexHolder lock(m_eventServiceClientMutex);
 
-    if (m_eventServiceClient == nullptr)
-        m_eventServiceClient = new EventServiceClient(m_eventSAS->GetBaseAddress(), m_iModelInfo.GetId(), m_eventSubscription->GetSubscriptionId());
+        if (m_eventServiceClient == nullptr)
+            m_eventServiceClient = EventServiceClient::Create(m_eventSAS->GetBaseAddress(), m_eventSubscription->GetSubscriptionId());
 
-    m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-    return true;
+        m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
+        return StatusResult::Success();
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1933,9 +1952,7 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
-        return (SetEventServiceClient(eventTypes, cancellationToken)) ?
-            CreateCompletedAsyncTask<StatusResult>(StatusResult::Success()) :
-            CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventServiceSubscribingError));
+        return SetEventServiceClient(eventTypes, cancellationToken);
         });
     }
 
@@ -2237,7 +2254,7 @@ ICancellationTokenPtr             cancellationToken
     DgnRevisionPtr changeSetPtr = DgnRevision::Create(&changeSetStatus, changeSet->GetId(), changeSet->GetParentChangeSetId(), changeSet->GetDbGuid());
     auto changeSetFileName = changeSetPtr->GetRevisionChangesFile();
 
-    if (s_preDownloadManager->TryGetChangeSetFile(changeSetFileName, changeSet->GetId()))
+    if (m_changeSetCacheManager.TryGetChangeSetFile(changeSetFileName, changeSet->GetId()))
         return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Success(changeSetPtr));
 
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId());
@@ -3488,18 +3505,6 @@ ICancellationTokenPtr               cancellationToken
             {
             return *finalResult;
             });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             01/2017
-//---------------------------------------------------------------------------------------
-void iModelConnection::SubscribeChangeSetsDownload()
-    {
-    if (m_subscribedForPreDownload)
-        return;
-
-    m_subscribedForPreDownload = true;
-    s_preDownloadManager->SubscribeChangeSetsDownload(this);
     }
 
 //---------------------------------------------------------------------------------------

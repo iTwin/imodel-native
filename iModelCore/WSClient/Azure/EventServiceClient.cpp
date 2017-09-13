@@ -12,7 +12,7 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR repoId, Utf8StringCR userId)
+EventServiceClient::EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR userId)
     {
     m_baseAddress = baseAddress;
     m_fullAddress = m_baseAddress + "/Subscriptions/" + userId + "/messages/head?timeout=";
