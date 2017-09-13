@@ -9,6 +9,7 @@
 #include <random>
 #include <queue>
 #include <thread>
+#include <iomanip>
 
 #ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
@@ -399,6 +400,8 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     BeXmlStatus status;
     WString stmFileName;
     bool streamFromMapBox = false;
+    bool streamFromBingMap = false;
+
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
     if (status != BEXML_Success)
@@ -508,10 +511,23 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             WString streamAttr;
             auto readStatus = pTestNode->GetAttributeStringValue(streamAttr, "textureStreaming");
-            if (readStatus == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
-                {
-                streamFromMapBox = true;
-                }
+
+            if (readStatus == BEXML_Success)
+                { 
+                if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+                    {
+                    streamFromMapBox = true;
+                    }
+                else
+                if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
+                    {
+                    streamFromBingMap = true;
+                    }
+                else
+                    {
+                    assert(!"Unknown textureStreaming value");
+                    }
+                }                                
 
             if (ParseSourceSubNodes(creatorPtr->EditSources(), pTestNode) == true)
                 {
@@ -573,12 +589,23 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         result = L"CREATION : SUCCESS | STM FILE OPENING : FAILURE";
                         }
 
-                    if (streamFromMapBox)
+                    if (streamFromMapBox || streamFromBingMap)
                         {
                         stmFile = 0;
                         StatusInt smCreateStatus = 0;
                         auto newSourceCreatorP = IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), smCreateStatus);
-                        Utf8String mapBoxPath = "http://api.mapbox.com/v4";
+                        Utf8String streamingRasterUrl;
+
+                        if (streamFromMapBox)
+                            {
+                            streamingRasterUrl = "http://api.mapbox.com/v4";
+                            }
+                        else
+                            {
+                            //streamingRasterUrl = "http://www.bing.com/maps/Road";
+                            streamingRasterUrl = "http://www.bing.com/maps/Aerial";
+                            }
+                        
                         if (smCreateStatus == 0)
                             {
                             if (!gcsKeyName.empty())
@@ -587,7 +614,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                                 newSourceCreatorP->SetBaseGCS(baseGCSPtr);
                                 }
                             ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
-                                                                                                            WString(mapBoxPath.c_str(), true).c_str());
+                                                                                                            WString(streamingRasterUrl.c_str(), true).c_str());
                             newSourceCreatorP->EditSources().Add(sourceP);                            
                             newSourceCreatorP->SaveToFile();
                             newSourceCreatorP = 0;
@@ -595,7 +622,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
                         StatusInt stat;
                         IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);                        
-                        WString url = WString(mapBoxPath.c_str(), true);
+                        WString url = WString(streamingRasterUrl.c_str(), true);
                         if (stat == SUCCESS)
                             meshCreator->SetTextureStreamFromUrl(url);
                         }

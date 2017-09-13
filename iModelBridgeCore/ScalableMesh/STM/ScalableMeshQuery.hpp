@@ -1497,34 +1497,42 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                     }
                 }
 
-
-            const DifferenceSet* clipDiffSet = nullptr;
-            bool anythingToApply = false;
-            if (flags->ShouldLoadClips() && m_meshNode->m_nbClips > 0)
+            bool mustAppendDefaultMesh = true;
+            if (flags->ShouldLoadClips())
                 {
-                m_meshNode->ComputeMergedClips();
-                if (clipId == 0 || m_meshNode->HasClip(clipId))
+                const DifferenceSet* clipDiffSet = nullptr;
+                bool anythingToApply = false;
+                mustAppendDefaultMesh = false;
+                if (m_meshNode->m_nbClips > 0)
                     {
-                    for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                    m_meshNode->ComputeMergedClips();
+                    if (clipId == 0 || m_meshNode->HasClip(clipId))
                         {
-                        if (diffSet.clientID == clipId)
+                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                             {
-                            anythingToApply = true;
-                            clipDiffSet = &diffSet;
+                            if (diffSet.clientID == clipId)
+                                {
+                                anythingToApply = true;
+                                clipDiffSet = &diffSet;
+                                }
                             }
                         }
                     }
-                }
 
-            if (anythingToApply)
-                {
-                clipDiffSet->ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
-                    toLoadUv, toLoadUvIndex, toLoadUvCount,
-                    dataPoints.data(), dataPoints.size(),
-                    dataFaceIndexes.data(), dataFaceIndexes.size(),
-                    dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                if (anythingToApply)
+                    {
+                    clipDiffSet->ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                        dataPoints.data(), dataPoints.size(),
+                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                    }
+                else
+                    {
+                    mustAppendDefaultMesh = !isClipBoundary;
+                    }
                 }
-            else if (!isClipBoundary)
+            if (mustAppendDefaultMesh)
                 {
                 toLoadPoints = dataPoints.data();
                 toLoadNbPoints = dataPoints.size();

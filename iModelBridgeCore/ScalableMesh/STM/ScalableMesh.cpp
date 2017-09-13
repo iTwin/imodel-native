@@ -461,9 +461,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t converageId) const
+int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, bool withClips) const
     {
-    return _Generate3DTiles(outContainerName, outDatasetName, server, progress, converageId);
+    return _Generate3DTiles(outContainerName, outDatasetName, server, progress, (withClips ? (uint64_t)-1 : (uint64_t)-2));
     }
 
 BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -2893,7 +2893,6 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     bool hasCoverages = false;
     bvector<SMNodeGroupPtr> coverageTilesets;
 
-#if BAKE_CLIPS_3DTILES
     if (coverageId == (uint64_t)-1)
         {
         // Generate 3DTiles tilesets for all coverages
@@ -2912,12 +2911,14 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
                 WString coverageFullPathName;
                 BeFileName::BeGetFullPathName(coverageFullPathName, coverageFileName.c_str());
 
-                IScalableMeshPtr coverageMesh = nullptr;
-                if ((coverageMesh = IScalableMesh::GetFor(coverageFullPathName.c_str(), Utf8String(m_baseExtraFilesPath.c_str()), false, true, true, status)) == nullptr || status != SUCCESS)
+                IScalableMeshPtr coverageMeshPtr = nullptr;
+                if ((coverageMeshPtr = IScalableMesh::GetFor(coverageFullPathName.c_str(), Utf8String(m_baseExtraFilesPath.c_str()), false, true, true, status)) == nullptr || status != SUCCESS)
                     {
                     BeAssert(false); // Error opening coverage 3sm
                     return status;
                     }
+
+                auto coverageMesh = static_cast<ScalableMesh<POINT>*>(coverageMeshPtr.get());
 
                 // Create directory for coverage tileset output
                 BeFileName coverageOutDir(path.c_str());
@@ -2928,19 +2929,18 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
                     BeAssert(false); // Could not create tileset output directory for coverage
                     return status;
                     }
-                if ((status = coverageMesh->Generate3DTiles(coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, coverageID)) != SUCCESS)
+                if ((status = coverageMesh->_Generate3DTiles(coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, coverageID)) != SUCCESS)
                     {
                     BeAssert(false); // Could not publish coverage
                     return status;
                     }
-                auto coverageIndex = static_cast<ScalableMesh<POINT>*>(coverageMesh.get())->m_scmIndexPtr;
+                auto coverageIndex = coverageMesh->m_scmIndexPtr;
                 auto root = coverageIndex->GetRootNodeGroup();
                 BeAssert(root.IsValid()); // Something wrong in the publish
                 coverageTilesets.push_back(root);
                 }
             }
         }
-#endif
 
     status = m_scmIndexPtr->Publish3DTiles(path, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
     SMNodeGroupPtr rootTileset = m_scmIndexPtr->GetRootNodeGroup();

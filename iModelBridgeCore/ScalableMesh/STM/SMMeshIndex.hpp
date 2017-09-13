@@ -5197,7 +5197,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
         }
 
     bool isClipBoundary = false;
-    if (clipID != -1)
+    if (clipID != -2 && clipID != -1)
         {
         for (const auto& diffSet : *static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->GetDiffSetPtr())
             {
