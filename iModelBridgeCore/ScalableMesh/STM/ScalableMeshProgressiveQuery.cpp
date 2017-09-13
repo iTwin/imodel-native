@@ -400,6 +400,9 @@ static bool s_delayJoinThread = true;
 
 void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
     {
+    //Currently the preload is just use for streaming texture source.
+    if (IndexTexture::Streaming != smP->GetMainIndexP()->IsTextured())
+        return;    
     
     bvector<DRange3d> tileRanges;
 
@@ -417,7 +420,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP
     dataStore->PreloadData(tileRanges);
     }
 
-static bool s_doPreLoad = false;
+//static bool s_doPreLoad = true;
 
 class QueryProcessor
     {
@@ -584,8 +587,10 @@ private:
                     {
                     ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();                   
+                    
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == IndexTexture::Streaming);// && processingQueryPtr->m_loadTexture;
 
-                    if (s_doPreLoad)
+                    if (doPreLoad)
                         {                        
                         processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &producedFoundNodes, threadId);
                         }
@@ -603,7 +608,7 @@ private:
                         {
                         processingQueryPtr->m_nodeQueryProcessors[threadId]->DoQuery();
 
-                        if (producedFoundNodes.GetNodes().size() > 0 && s_doPreLoad)
+                        if (producedFoundNodes.GetNodes().size() > 0 && doPreLoad)
                             {                                         
                             ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), producedFoundNodes.GetNodes(), false);
 
@@ -1511,9 +1516,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
-    //PRE
-    
-    if (toLoadNodes.size() > 0 && s_doPreLoad)
+    //PRE        
+    if (toLoadNodes.size() > 0 && (newQuery).m_loadTexture)
         {         
         ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
 
