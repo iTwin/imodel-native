@@ -337,7 +337,7 @@ protected:
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
-    void PublishScheduleSimulations();
+    Json::Value GetScheduleJson();
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
