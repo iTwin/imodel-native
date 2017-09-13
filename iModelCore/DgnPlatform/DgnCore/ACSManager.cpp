@@ -505,7 +505,7 @@ void AuxCoordSystem::_Pick(PickContextR context) const
     pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::Interior) + 1000)); // Make really low priority...
 
     DPoint3d origin = _GetOrigin();
-    auto graphic = context.CreateGraphic();
+    auto graphic = context.CreateWorldGraphic();
 
     graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 1); // Doesn't matter...
     graphic->AddPointString(1, &origin);
