@@ -36,8 +36,6 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_currentRevisionOverrides.Insert(DbOpcode::Insert, inserted);
     m_currentRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
-    update.SetFillTransparency(128);
-    update.SetLineTransparency(128);
     inserted.SetFillTransparency(128);
     inserted.SetLineTransparency(128);
     deleted.SetFillTransparency(128);

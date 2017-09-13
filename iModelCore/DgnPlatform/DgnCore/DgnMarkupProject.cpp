@@ -569,6 +569,12 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
         BeFileName::BeCopyFile(params.m_seedDb, fileName, !params.GetOverwriteExisting());
         OpenParams oparams(OpenMode::ReadWrite);
         db = DgnDb::OpenDgnDb(nullptr, fileName, oparams);
+
+        // Must have its own unique GUID.
+        BeGuid guid;
+        guid.Create();
+        db->ChangeDbGuid(guid);
+        db->SaveChanges();
         }
     else
         {

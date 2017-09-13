@@ -114,6 +114,7 @@ int                 m_currentGeomMarkerId = 0;
 bool                m_isAssociative = false;
 
 bool                m_forcePlanar = false;
+bool                m_applyPerspective = false;
 Transform           m_flattenTrans = Transform::FromIdentity();
 DVec3d              m_flattenDir = DVec3d::UnitZ();
 
@@ -162,6 +163,9 @@ DGNPLATFORM_EXPORT bool GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPo
 DGNPLATFORM_EXPORT bool GetActiveFaces(CurveVectorPtr& region); //!< @private Used by DgnRegionElementTool
 DGNPLATFORM_EXPORT bool IsFaceAtPointSelected(DPoint3dCR seedPoint); //!< @private Used by DgnRegionElementTool
 DGNPLATFORM_EXPORT bool GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT void SetPerspectiveFlatten(bool apply); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool IsPerspectiveRegion(); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT CurveVectorPtr GetFromPerspectiveRegion(CurveVectorCR region, bool isDynamic = false); //!< @private Used by DgnRegionElementTool
 
 DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots); //!< @private Used by DgnRegionElementTool. Returns unique roots for all active faces...
 DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region); //!< @private Used by DgnRegionElementTool. May contain duplicates...
