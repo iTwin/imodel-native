@@ -15,12 +15,23 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+static double s_minPixelSizeLimit = 0.25;
+
 DPoint2d MapBoxTextureProvider::_GetMinPixelSize()
     {
     DPoint2d minSize;
 
     minSize.x = m_minExt.GetWidth();
-    minSize.y = m_minExt.GetHeight();
+    minSize.y = m_minExt.GetHeight();  
+
+#ifndef NDEBUG
+    if (s_minPixelSizeLimit != 0)
+        {
+        minSize.x = s_minPixelSizeLimit;
+        minSize.y = s_minPixelSizeLimit;
+        }
+#endif
+
     return minSize;
     }
 

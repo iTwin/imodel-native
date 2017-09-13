@@ -2,6 +2,9 @@
 #include "ImagePPHeaders.h"
 #include "RasterUtilities.h"
 #include "ReprojectionModel.h"
+
+#include <ImagePP\all\h\HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP\all\h\HRPPixelTypeV24B8G8R8.h>
 #include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
@@ -20,12 +23,12 @@
 #include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <ImagePP/all/h/HRFRasterFileCache.h>
 
+#include <ImagePP/all/h/HRFBmpFile.h>
+
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
-
-static bool s_useMapBox = true;
 
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
@@ -34,11 +37,8 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {   
-        if (s_useMapBox)
-            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        else
-            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
+        {           
+        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
 #endif
@@ -56,6 +56,7 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
         {
+        //NEEDS_WORK_SM : Imagepp cache doesn't work with very large image.
         //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
         }
 #endif
@@ -224,14 +225,16 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
     rasterFile = pRasterFile;
 
 
-
+    //return rasterSource.GetPtr();
 
     HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetWorldCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
     mosaicPtr->Add(rasterSource);
     return mosaicPtr.GetPtr();
-
-
     }
+
+#ifndef NDEBUG	
+static bool s_outputTile = false; 
+#endif
 
 
 StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
@@ -273,7 +276,9 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     HFCPtr<HRABitmap> pTextureBitmap;
 
-    HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
+    HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV24R8G8B8());
+
+   
 #ifdef VANCOUVER_API
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
 #endif
@@ -297,8 +302,8 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
                                        8);
 #endif
 
-    byte* pixelBufferPRGBA = new byte[width * height * 4];
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, width * height * 4);
+    byte* pixelBufferPRGB = new byte[width * height * 3];
+    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGB, width * height * 3);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
     HRAClearOptions clearOptions;
@@ -337,11 +342,37 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     for (size_t i = 0; i < width*height; ++i)
         {
-        *pPixel++ = pixelBufferPRGBA[i * 4];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
+        *pPixel++ = pixelBufferPRGB[i * 3];
+        *pPixel++ = pixelBufferPRGB[i * 3 + 1];
+        *pPixel++ = pixelBufferPRGB[i * 3 + 2];
         }
-    delete[] pixelBufferPRGBA;
+    
+#ifndef NDEBUG
+    if (s_outputTile)
+	{
+    static int ind = 0;
+
+    WChar outputFileName[1000];
+
+    _snwprintf(outputFileName,
+               1000,
+               L"file://D:\\MyDoc\\RMA Iter 6\\BingMap\\Log\\bitmap%i.bmp",
+               ind++);
+
+
+    HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(outputFileName));
+
+    HFCPtr<HRPPixelType> pPixelTypeBMP(new HRPPixelTypeV24B8G8R8());
+
+    HRFBmpCreator::CreateBmpFileFromImageData(pFileName,
+                                                                        width,
+                                                                        height,
+        pPixelTypeBMP,
+        &texData[0] + 3 * sizeof(int));
+	}
+#endif
+    
+    delete[] pixelBufferPRGB;
     pTextureBitmap = 0;
     return SUCCESS;
     }

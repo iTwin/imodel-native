@@ -14,6 +14,8 @@
 
 #include <ImagePP\all\h\HGF2DProjective.h>
 
+#include <ImagePP\all\h\HRFVirtualEarthFile.h>
+
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
     : SMSQLiteSisterFile(database)
@@ -92,9 +94,8 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
                 {
                 path = WString(L"file://") + rasterSource->GetPath();
                 }
-
-            //path = WString(L¨http://www.bing.com/maps//¨);
-            path = WString(L"http://www.bing.com/maps/aerial/");
+            
+            //path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
             m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
@@ -246,7 +247,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
-        uint32_t consumerID = 1;
+        uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_raster->SetLookAhead(shape, consumerID);
         }
 
@@ -306,14 +307,8 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
         { 
         HGFTileIDList blocks;
 
-        m_streamingRasterFile->SetLookAhead(0, blocks, 0, false);
-
- //       m_streamingRasterFile->RequestLookAhead(99, blocks, false);
+        ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
-/*
-    uint32_t consumerID = 1;
-    m_raster->SetLookAhead(shape, consumerID);
-*/
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
