@@ -27,6 +27,9 @@ $(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTes
 $(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)UnitTests/DgnPlatformTestDomain.h
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/UnitTests/PerfTestDomain.h : $(DgnPlatformAPISrc)UnitTests/PerfTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests
 #------------------------------------------------------------------------------------------
