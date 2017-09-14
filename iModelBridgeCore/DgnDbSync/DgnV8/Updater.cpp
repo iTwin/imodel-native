@@ -214,18 +214,6 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         //  This V8 element was previously mapped to at least one element in the BIM. See if the V8 element has changed.
         res.m_v8ElementMapping = found.GetV8ElementMapping();
         res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
-
-		if (ChangeType::None == res.m_changeType)
-			{		
-		    for (auto xdomain : XDomainRegistry::s_xdomains)
-				{
-				if (xdomain->_IsXDataChanged(converter, v8eh, v8mm))
-					{
-					res.m_changeType = ChangeType::Update;
-					break;
-					}
-				}
-			}
         }
 
     iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!

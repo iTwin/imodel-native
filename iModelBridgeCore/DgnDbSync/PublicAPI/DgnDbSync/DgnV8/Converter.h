@@ -2672,9 +2672,12 @@ struct XDomain
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
 
-    //! Detect a change in any data that outside the element itself but is somehow accessed by your _DetermineElementParams or _ProcessResults methods 
-    //! and factored into the results of converting the element to BIS. An example would be a linked record in an external database.
-    virtual bool _IsXDataChanged(Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm) {return false;}
+    //! An element's hash must capture the state of *all* of the data that will be used by the conversion logic to produce a BIM element, 
+    //! including any external data that your _DetermineElementParams or _ProcessResults methods might somehow access and factor into the result.
+    //! This hash value is stored in syncinfo and is used by the update logic to detect if the input data has changed. (For files such as V7, 
+    //! the hash value actually serves as the source element's unique ID.) Only elements with a changed hash value are updated.
+    //! Override this method in order to update the element's hash with the external data that your _DetermineElementParams or _ProcessResults methods will use.
+    virtual void _ComputeHash(BentleyApi::MD5& hasher, DgnV8EhCR v8eh) {;}
 
     //! Register an XDomain to be used by the converter. Do not free xd after calling this!
     DGNDBSYNC_EXPORT static void Register(XDomain& xd);
