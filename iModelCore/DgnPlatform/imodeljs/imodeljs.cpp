@@ -554,18 +554,7 @@ DbResult IModelJs::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 ECClassCP IModelJs::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     {
-    Utf8String classKey = jsonInstance["$ECClassKey"].asString();
-    if (classKey.empty())
-        return nullptr;
-
-    Utf8String::size_type dotIndex = classKey.find('.');
-    if (Utf8String::npos == dotIndex || classKey.length() == dotIndex + 1)
-        return nullptr;
-
-    Utf8String schemaName = classKey.substr(0, dotIndex);
-    Utf8String className = classKey.substr(dotIndex + 1);
-
-    return ecdb.Schemas().GetClass(schemaName, className);
+    return ECJsonUtilities::GetClassFromClassNameJson(jsonInstance[ECJsonUtilities::json_className()], ecdb.GetClassLocater());
     }
 
 //---------------------------------------------------------------------------------------
@@ -573,11 +562,11 @@ ECClassCP IModelJs::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
 //---------------------------------------------------------------------------------------
 ECInstanceId IModelJs::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     {
-    if (!jsonInstance.isMember("$ECInstanceId"))
+    if (!jsonInstance.isMember(ECJsonUtilities::json_id()))
         return ECInstanceId();
 
     ECInstanceId instanceId;
-    if (SUCCESS != ECInstanceId::FromString(instanceId, jsonInstance["$ECInstanceId"].asCString()))
+    if (SUCCESS != ECInstanceId::FromString(instanceId, jsonInstance[ECJsonUtilities::json_id()].asCString()))
         return ECInstanceId();
 
     return instanceId;
@@ -639,7 +628,8 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
     if (SUCCESS != reader.Read(jsonInstance, instanceId))
         return BE_SQLITE_ERROR;
 
-    jsonInstance["$ECInstanceId"] = BeInt64Id((int64_t) instanceId.GetValueUnchecked()).ToHexStr();
+    //WIP: JsonReader should return the id already. So this call should not be necessary.
+    jsonInstance[ECJsonUtilities::json_id()] = BeInt64Id((int64_t) instanceId.GetValueUnchecked()).ToHexStr();
     return BE_SQLITE_OK;
     }
 
@@ -652,12 +642,20 @@ DbResult IModelJs::DeleteInstance(ECDbCR ecdb, JsonValueCR instanceKey)
     if (!ecClass)
         return BE_SQLITE_ERROR;
 
-    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
-    if (!instanceId.IsValid())
+    if (!instanceKey.isMember(ECJsonUtilities::json_id()))
         return BE_SQLITE_ERROR;
 
-    JsonDeleter deleter(ecdb, *ecClass, nullptr);
-    return  deleter.Delete(instanceId);
+    Utf8CP instanceId = instanceKey[ECJsonUtilities::json_id()].asCString();
+    BeAssert(Utf8String::IsNullOrEmpty(instanceId));
+
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId=%s", ecClass->GetECSqlName().c_str(), instanceId);
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str(), nullptr))
+        return BE_SQLITE_ERROR;
+
+    return stmt.Step();
     }
 
 //---------------------------------------------------------------------------------------
@@ -667,10 +665,10 @@ DbResult IModelJs::ContainsInstance(bool& containsInstance, JsECDbR ecdb, JsonVa
     {
     BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that I have a chance to get last ECDb error message
 
-    if (!instanceKey.isMember("$ECClassKey"))
+    if (!instanceKey.isMember(ECJsonUtilities::json_className()))
         return BE_SQLITE_ERROR;
 
-    Utf8String classKey = instanceKey["$ECClassKey"].asString();
+    Utf8String classKey = instanceKey[ECJsonUtilities::json_className()].asString();
     if (classKey.empty())
         return BE_SQLITE_ERROR;
 
