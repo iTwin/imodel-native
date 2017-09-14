@@ -58,6 +58,10 @@ TEST_F(LRPTests, InitializeFileJob)
     auto db = CreateTestDb();
     int seedFileCodesCount = GetCodesCount(*db);
 
+    // Check projectGuid is not set
+    auto savedGuid = db->QueryProjectGuid();
+    EXPECT_FALSE(savedGuid.IsValid());
+
     auto modelPtr = CreateModel("InitializeModel1", *db);
     EXPECT_EQ(DgnDbStatus::Success, InsertStyle("InitializeStyle1", *db, true));
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
@@ -68,6 +72,10 @@ TEST_F(LRPTests, InitializeFileJob)
     auto imodelInfoPtr = createResult.GetValue();
     auto imodelConnection = ConnectToiModel(*m_client, imodelInfoPtr);
     auto briefcasePtr = AcquireBriefcase(*m_client, *imodelInfoPtr);
+
+    // Check InitializeFileJob set ProjectGuid
+    savedGuid = briefcasePtr->GetDgnDb().QueryProjectGuid();
+    EXPECT_EQ(m_client->GetProjectId(), savedGuid.ToString());
 
     //Check if codes are created and locks cleaned
     ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 2);
