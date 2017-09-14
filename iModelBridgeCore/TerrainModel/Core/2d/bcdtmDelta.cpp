@@ -7,9 +7,38 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
+#include <ppl.h>
 
 extern long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
+extern thread_local bool justForDelta;
+
+template <class T> class AutoRestore
+    {
+    private:
+        T   m_original;     // value of the original variable
+        T*  m_addr;         // address of the original variable so that we can restore it later
+
+    public:
+        AutoRestore (T* original)
+            {
+            m_original = *original;
+            m_addr     = original;
+            }
+
+        AutoRestore (T* original, T newVal)     // save original and then set to new value
+            {
+            m_addr     = original;
+            m_original = *original;
+            *original  = newVal;
+            }
+
+        ~AutoRestore ()
+            {
+            *m_addr = m_original;
+            }
+        T GetOriginal() {return m_original;}
+    };
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -53,11 +82,11 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaSurfaceDtmFile
  WCharCP toFileP,               /* ==> To Dtm File For Delta Option = 2              */
  WCharCP deltaFileP,            /* ==> Delta File To Be Created                      */
  long deltaOption,               /* ==> Delta Option <1=Elevation,2=Surface>          */
- long modelOption,               /* ==> Model Option <1=Tin,2=Lattice>                */ 
+ long modelOption,               /* ==> Model Option <1=Tin,2=Lattice>                */
  DPoint3d *polyPtsP,                  /* ==> Pointer To Fence Points                       */
  long numPolyPts,                /* ==> Number Of Fence Points                        */
  long numLatticePts,             /* ==> Number Of Lattice Points For Model Option = 2 */
- double elevation                /* ==> Elevation For Delta Option = 1                */ 
+ double elevation                /* ==> Elevation For Delta Option = 1                */
 )
 /*
 ** This Is the Controlling Function For Creating A Delta Surface
@@ -104,7 +133,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaSurfaceDtmFile
     break   ;
 
     case  2 :    /* Delta Tin To Surface       */
-      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ; 
+      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ;
       if( bcdtmDelta_createDeltaTinToSurfaceDtmObject(&dtm1P,&dtm2P,&dtm3P,polyPtsP,numPolyPts)) goto errexit ;
     break   ;
 
@@ -113,7 +142,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaSurfaceDtmFile
     break   ;
 
     case  4 :    /* Delta Lattice To Surface   */
-      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ; 
+      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ;
       if( bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(dtm1P,dtm2P,&latticeP,polyPtsP,numPolyPts,numLatticePts) ) goto errexit ;
     break   ;
 
@@ -136,10 +165,10 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaSurfaceDtmFile
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Delta Surface To File") ;
  if( wcslen(deltaFileP) )
-   { 
+   {
     if( modelOption == 1 ) if( bcdtmWrite_toFileDtmObject(dtm3P,deltaFileP) ) goto errexit ;
     if( modelOption == 2 ) if( bcdtmWrite_toFileLatticeObject(latticeP,deltaFileP)) goto errexit ;
-   } 
+   }
 /*
 ** Cleanup
 */
@@ -172,11 +201,11 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createGeopakPortDeltaSurfaceDtmFile
  WCharCP toFileP,               /* ==> To Dtm File For Delta Option = 2              */
  void **deltaObjPP,              /* <== Pointer To Created Delta Object               */
  long deltaOption,               /* ==> Delta Option <1=Elevation,2=Surface>          */
- long modelOption,               /* ==> Model Option <1=Tin,2=Lattice>                */ 
+ long modelOption,               /* ==> Model Option <1=Tin,2=Lattice>                */
  DPoint3d *polyPtsP,                  /* ==> Pointer To Fence Points                       */
  long numPolyPts,                /* ==> Number Of Fence Points                        */
  long numLatticePts,             /* ==> Number Of Lattice Points For Model Option = 2 */
- double elevation                /* ==> Elevation For Delta Option = 1                */ 
+ double elevation                /* ==> Elevation For Delta Option = 1                */
 )
 /*
 ** This Is the Controlling Function For Creating A Delta Surface
@@ -224,7 +253,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createGeopakPortDeltaSurfaceDtmFile
     break   ;
 
     case  2 :    /* Delta Tin To Surface       */
-      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ; 
+      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ;
       if( bcdtmDelta_createDeltaTinToSurfaceDtmObject(&dtm1P,&dtm2P,&dtm3P,polyPtsP,numPolyPts)) goto errexit ;
       *deltaObjPP = ( void *)dtm3P ;
     break   ;
@@ -235,7 +264,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createGeopakPortDeltaSurfaceDtmFile
    break   ;
 
     case  4 :    /* Delta Lattice To Surface   */
-      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ; 
+      if( bcdtmRead_fromFileDtmObject(&dtm2P,toFileP)) goto errexit ;
       if( bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(dtm1P,dtm2P,&latticeP,polyPtsP,numPolyPts,numLatticePts) ) goto errexit ;
       *deltaObjPP = ( void *)latticeP ;
     break   ;
@@ -284,7 +313,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToElevationDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    pnt,numPolyPts,intersectResult ;
- DPoint3d     *polyPtsP=NULL ; 
+ DPoint3d     *polyPtsP=NULL ;
  double  largestArea=0.0  ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
  DTM_POLYGON_LIST *plistP,*pp ;
@@ -316,8 +345,8 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToElevationDtmObject
 /*
 ** Check For Old Tin Files
 */
- if( dtm1P->ppTol == 0.0 ) 
-   { 
+ if( dtm1P->ppTol == 0.0 )
+   {
     bcdtmWrite_message(1,0,0,"Convert Old Dtm (dtmP) File(s)") ;
     ret = 20 ;
     goto errexit ;
@@ -330,54 +359,55 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToElevationDtmObject
 /*
 ** If No Intersection Return
 */
-   if( ! intersectResult ) { if( polyP != NULL )  bcdtmPolygon_deletePolygonObject(&polyP) ; return(0) ; } 
+   if( ! intersectResult ) { if( polyP != NULL )  bcdtmPolygon_deletePolygonObject(&polyP) ; return(0) ; }
 /*
 ** If Tin Hull Totally Within Polygon Clone Dtm Object
 */
  if( intersectResult == 1 ) { if( bcdtmObject_cloneDtmObject(dtm1P,dtm2PP)) goto errexit ; }
 /*
 ** Else Clip dtm1P
-*/  
+*/
  else
    {
     plistP = polyP->polyListP ;
 /*
 **  If More Than One Intersect Polygon, Get Polygon With Largest Area
 */
-    if( polyP->numPolygons > 1 ) 
+    if( polyP->numPolygons > 1 )
       {
        largestArea = (polyP->polyListP)->area ;
-       for( pp = polyP->polyListP ; pp < polyP->polyListP + polyP->numPolygons ; ++pp) 
-         { 
+       for( pp = polyP->polyListP ; pp < polyP->polyListP + polyP->numPolygons ; ++pp)
+         {
           if( pp->area > largestArea ) { largestArea = pp->area ; plistP = pp ; }
          }
       }
 /*
 **  Copy Polygon Object Polygon To DPoint3d Polygon
-*/ 
+*/
     if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plistP-polyP->polyListP),&polyPtsP,&numPolyPts))  goto errexit ;
 /*
 **  Clip Tin Object
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object") ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object") ;
+    AutoRestore<bool> _inDelta(&justForDelta, true);
     if( bcdtmClip_cloneAndClipToPolygonDtmObject(dtm1P,dtm2PP,polyPtsP,numPolyPts,DTMClipOption::External)) goto errexit ;
    }
 /*
 ** Calculate Delta Tin Values
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Delta Tin") ; 
- for( pnt = 0  ; pnt < (*dtm2PP)->numPoints ; ++pnt ) 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Delta Tin") ;
+ for( pnt = 0  ; pnt < (*dtm2PP)->numPoints ; ++pnt )
    {
     pntP  = pointAddrP(*dtm2PP,pnt) ;
     pntP->z = elevation - pntP->z  ;
-   } 
+   }
  bcdtmMath_setBoundingCubeDtmObject(*dtm2PP) ;
 /*
 ** Cleanup
 */
  cleanup :
- if( polyPtsP != NULL ) free(polyPtsP) ; 
- if( polyP    != NULL ) bcdtmPolygon_deletePolygonObject(&polyP)  ; 
+ if( polyPtsP != NULL ) free(polyPtsP) ;
+ if( polyP    != NULL ) bcdtmPolygon_deletePolygonObject(&polyP)  ;
 /*
 ** Job Completed
 */
@@ -387,7 +417,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToElevationDtmObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- if( dtm2PP != NULL ) bcdtmObject_destroyDtmObject(dtm2PP) ; goto errexit ; 
+ if( dtm2PP != NULL ) bcdtmObject_destroyDtmObject(dtm2PP) ; goto errexit ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -405,7 +435,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
  BC_DTM_OBJ       *dtm3P=NULL,*dtm4P=NULL,*saveTin ;
  DPoint3d    *pntP ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
- DTM_POLYGON_LIST *plist1P,*plist2P ; 
+ DTM_POLYGON_LIST *plist1P,*plist2P ;
 /*
 ** Write Status Message
 */
@@ -451,8 +481,8 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
 /*
 ** If No Intersection Found Return
 */
- if( ! intersectResult ) 
-  {  
+ if( ! intersectResult )
+  {
    bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Overlap") ;
    goto errexit ;
   }
@@ -460,17 +490,17 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
 **  If More Than One Intersect Polygon, Get Polygon With Largest Area
 */
  plist1P = polyP->polyListP ;
- if( polyP->numPolygons > 1 ) 
+ if( polyP->numPolygons > 1 )
    {
     largestArea = (polyP->polyListP)->area ;
-    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P) 
-      { 
-       if( plist2P->area > largestArea ) { largestArea = plist2P->area ; plist1P = plist2P ;} 
+    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P)
+      {
+       if( plist2P->area > largestArea ) { largestArea = plist2P->area ; plist1P = plist2P ;}
       }
    }
 /*
 ** Copy Polygon Object Polygon To DPoint3d Polygon
-*/ 
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying Intersection Polygon") ;
  if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plist1P-polyP->polyListP),&clipPtsP,&numClipPts)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersection Polygon = %p Number Of Points = %6ld",clipPtsP,numClipPts) ;
@@ -481,10 +511,12 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
 /*
 **  Clip dtm1P Object
 */
+ {
+ AutoRestore<bool> __inDelta(&justForDelta, true);
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm1P => dtm3P") ;
  startTime = bcdtmClock() ;
  if( bcdtmClip_cloneAndClipToPolygonDtmObject(*dtm1PP,&dtm3P,clipPtsP,numClipPts,DTMClipOption::External)) goto errexit ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"**** Time To Clip dtm1P     = %12.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtm3P,dtm3P->hullPoint,&area,&direction) ;
@@ -499,13 +531,14 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm2P => Tin4") ;
  startTime = bcdtmClock() ;
  if (bcdtmClip_cloneAndClipToPolygonDtmObject (*dtm2PP, &dtm4P, clipPtsP, numClipPts, DTMClipOption::External)) goto errexit;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"**** Time To Clip dtm2P      = %12.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtm4P,dtm4P->hullPoint,&area,&direction);
     bcdtmWrite_message(0,0,0,"**** Area Of Clip dtm2P Hull = %12.3lf",area) ;
     bcdtmWrite_toFileDtmObject(dtm4P,L"tin4.dtm") ;
     bcdtmWrite_message(0,0,0,"dtm4P->ppTol = %20.15lf dtm4P->plTol = %20.15lf dtm4P->mppTol = %20.15lf",dtm4P->ppTol,dtm4P->plTol,dtm4P->mppTol) ;
+   }
    }
  bcdtmObject_destroyDtmObject(dtm2PP) ;
 /*
@@ -516,14 +549,14 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
  if( dtm4P->numPoints > dtm3P->numPoints )
    {
     tinReverse = 1 ;
-    saveTin  = dtm3P ; 
-    dtm3P = dtm4P ; 
+    saveTin  = dtm3P ;
+    dtm3P = dtm4P ;
     dtm4P = saveTin ;
    }
 /*
 **  Intersect dtm3P And dtm4P
-*/ 
- if( bcdtmDelta_calculateDeltaTinToTinDtmObject(dtm3P,dtm4P)) goto errexit ; 
+*/
+ if( bcdtmDelta_calculateDeltaTinToTinDtmObject(dtm3P,dtm4P)) goto errexit ;
 /*
 ** Negate z Values If Tins Reversed
 */
@@ -545,7 +578,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
 */
  cleanup :
  if( clipPtsP != NULL ) { free(clipPtsP) ; clipPtsP = NULL ; }
- if( polyP     != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;  
+ if( polyP     != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;
  if( dtm3P     != NULL ) bcdtmObject_destroyDtmObject(&dtm3P) ;
  if( dtm4P     != NULL ) bcdtmObject_destroyDtmObject(&dtm4P) ;
 /*
@@ -568,7 +601,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject
 (
  BC_DTM_OBJ *dtmP,                  //  DTM To Create Delta For
  BC_DTM_OBJ **deltaDtmPP,           //  Delta DTM To Create
- double     elevation,              //  Elevation For Delta Calculation 
+ double     elevation,              //  Elevation For Delta Calculation
  DPoint3d        *deltaPtsP,             //  Clip Boundary For Delta Calculation
  long       numDeltaPts             //  Number Of Points In Clipping Boundary
  )
@@ -607,18 +640,19 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject
    {
     bcdtmWrite_message(2,0,0,"Method Requires NULL Delta DTM") ;
     goto errexit ;
-   }  
+   }
 /*
-** Clone And Clip 
+** Clone And Clip
 */
  if( deltaPtsP != NULL )
    {
+     AutoRestore<bool> _inDelta(&justForDelta, true);
    if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtmP, deltaDtmPP, deltaPtsP, numDeltaPts, DTMClipOption::Internal)) goto errexit;
    }
  else
-   {    
-    if( bcdtmObject_cloneDtmObject(dtmP,deltaDtmPP)) goto errexit ; 
-   } 
+   {
+    if( bcdtmObject_cloneDtmObject(dtmP,deltaDtmPP)) goto errexit ;
+   }
 /*
 ** Subtract Elevation From DTM
 */
@@ -635,7 +669,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject
 /*
 ** Clean Up
 */
- cleanup :   
+ cleanup :
 /*
 ** Job Completed
 */
@@ -671,7 +705,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  BC_DTM_OBJ       *dtm3P=NULL,*dtm4P=NULL,*saveTin ;
  DPoint3d    *pntP ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
- DTM_POLYGON_LIST *plist1P,*plist2P ; 
+ DTM_POLYGON_LIST *plist1P,*plist2P ;
 /*
 ** Write Status Message
 */
@@ -696,7 +730,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
    {
     bcdtmWrite_toFileDtmObject(dtm1P,L"delta1.bcdtm") ;
     bcdtmWrite_toFileDtmObject(dtm2P,L"delta2.bcdtm") ;
-   } 
+   }
 /*
 ** Check If Both DTM Objects Are In TIN_STATE
 */
@@ -725,8 +759,8 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
 /*
 ** If No Intersection Found Return
 */
- if( ! intersectResult ) 
-  {  
+ if( ! intersectResult )
+  {
    bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Overlap") ;
    goto errexit ;
   }
@@ -734,17 +768,17 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
 **  If More Than One Intersect Polygon, Get Polygon With Largest Area
 */
  plist1P = polyP->polyListP ;
- if( polyP->numPolygons > 1 ) 
+ if( polyP->numPolygons > 1 )
    {
     largestArea = (polyP->polyListP)->area ;
-    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P) 
-      { 
-       if( plist2P->area > largestArea ) { largestArea = plist2P->area ; plist1P = plist2P ;} 
+    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P)
+      {
+       if( plist2P->area > largestArea ) { largestArea = plist2P->area ; plist1P = plist2P ;}
       }
    }
 /*
 ** Copy Polygon Object Polygon To DPoint3d Polygon
-*/ 
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying Intersection Polygon") ;
  if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plist1P-polyP->polyListP),&clipPtsP,&numClipPts)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersection Polygon = %p Number Of Points = %6ld",clipPtsP,numClipPts) ;
@@ -755,10 +789,12 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  /*
 **  Clip dtm1P Object
 */
+ {
+ AutoRestore<bool> _inDelta(&justForDelta, true);
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm1P => dtm3P") ;
  startTime = bcdtmClock() ;
  if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtm1P, &dtm3P, clipPtsP, numClipPts, DTMClipOption::External)) goto errexit;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"**** Time To Clip dtm1P     = %12.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtm3P,dtm3P->hullPoint,&area,&direction) ;
@@ -772,7 +808,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm2P => Tin4") ;
  startTime = bcdtmClock() ;
  if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtm2P, &dtm4P, clipPtsP, numClipPts, DTMClipOption::External)) goto errexit;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"**** Time To Clip dtm2P      = %12.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtm4P,dtm4P->hullPoint,&area,&direction);
@@ -780,6 +816,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
     bcdtmWrite_toFileDtmObject(dtm4P,L"tin4.dtm") ;
     bcdtmWrite_message(0,0,0,"dtm4P->ppTol = %20.15lf dtm4P->plTol = %20.15lf dtm4P->mppTol = %20.15lf",dtm4P->ppTol,dtm4P->plTol,dtm4P->mppTol) ;
    }
+ }
 /*
 ** Insert Tin With Smallest Number Of Points
 */
@@ -788,14 +825,14 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  if( dtm4P->numPoints > dtm3P->numPoints )
    {
     tinReverse = 1 ;
-    saveTin  = dtm3P ; 
-    dtm3P = dtm4P ; 
+    saveTin  = dtm3P ;
+    dtm3P = dtm4P ;
     dtm4P = saveTin ;
    }
 /*
 **  Intersect dtm3P And dtm4P
-*/ 
- if( bcdtmDelta_calculateDeltaTinToTinDtmObject(dtm3P,dtm4P)) goto errexit ; 
+*/
+ if( bcdtmDelta_calculateDeltaTinToTinDtmObject(dtm3P,dtm4P)) goto errexit ;
 /*
 ** Negate z Values If Tins Reversed
 */
@@ -826,7 +863,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
       {
        bcdtmWrite_message(2,0,0,"Delta Dtm Invalid") ;
        goto errexit ;
-      } 
+      }
     else bcdtmWrite_message(2,0,0,"Delta Dtm Valid") ;
    }
 /*
@@ -834,7 +871,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
 */
  cleanup :
  if( clipPtsP  != NULL ) { free(clipPtsP) ; clipPtsP = NULL ; }
- if( polyP     != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;  
+ if( polyP     != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;
  if( dtm3P     != NULL ) bcdtmObject_destroyDtmObject(&dtm3P) ;
  if( dtm4P     != NULL ) bcdtmObject_destroyDtmObject(&dtm4P) ;
 /*
@@ -904,7 +941,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
  DPoint3d     *polyPtsP=NULL ;
  BC_DTM_OBJ       *dtm3P=NULL ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
- DTM_POLYGON_LIST *plist1P,*plist2P ; 
+ DTM_POLYGON_LIST *plist1P,*plist2P ;
 /*
 ** Write Status Message
 */
@@ -940,8 +977,8 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
 /*
 ** If No Intersection Found Return
 */
- if( ! intersectResult ) 
-  {  
+ if( ! intersectResult )
+  {
    bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Overlap") ;
    goto errexit ;
   }
@@ -949,12 +986,12 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
 **  If More Than One Intersect Polygon Get Polygon With Largest Area
 */
  plist1P = polyP->polyListP ;
- if( polyP->numPolygons > 1 ) 
+ if( polyP->numPolygons > 1 )
    {
     largestArea = (polyP->polyListP)->area ;
-    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P ) 
-      { 
-       if( plist2P->area > largestArea ) 
+    for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P )
+      {
+       if( plist2P->area > largestArea )
          {
           largestArea = plist2P->area ;
           plist1P = plist2P ;
@@ -963,12 +1000,15 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
    }
 /*
 ** Copy Polygon Object Polygon To DPoint3d Polygon
-*/ 
+*/
  if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plist1P-polyP->polyListP),&polyPtsP,&numPolyPts)) goto errexit ;
 /*
 **  Clip dtm2P Object
 */
+ {
+ AutoRestore<bool> _inDelta(&justForDelta, true);
  if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtm2P, &dtm3P, polyPtsP, numPolyPts, DTMClipOption::External)) goto errexit;
+ }
 /*
 ** Build Delta Lattice
 */
@@ -977,9 +1017,9 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
 ** Clean Up
 */
  cleanup :
- if( polyPtsP != NULL ) free(polyPtsP) ; 
- if( polyP    != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;  
- if( dtm3P    != NULL && dtm3P != dtm2P ) bcdtmObject_destroyDtmObject(&dtm3P) ; 
+ if( polyPtsP != NULL ) free(polyPtsP) ;
+ if( polyP    != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;
+ if( dtm3P    != NULL && dtm3P != dtm2P ) bcdtmObject_destroyDtmObject(&dtm3P) ;
 /*
 ** Job Complist1Peted
 */
@@ -1036,30 +1076,30 @@ BENTLEYDTM_Private int bcdtmDelta_calculateDeltaTinToTinDtmObject(BC_DTM_OBJ *dt
 /*
 ** Intersect Voids And Islands In Polygon Object
 */
- if( polyP != NULL ) 
-   { 
+ if( polyP != NULL )
+   {
     if( bcdtmDelta_intersectVoidsAndIslands(polyP,&intPolyP)) goto errexit ;
    }
 /*
 ** Insert Voids And Island Hulls Into Both TINs
 */
- if( intPolyP != NULL ) 
+ if( intPolyP != NULL )
    {
-    for( plistP = intPolyP->polyListP ; plistP < intPolyP->polyListP + intPolyP->numPolygons ; ++plistP ) 
-      { 
+    for( plistP = intPolyP->polyListP ; plistP < intPolyP->polyListP + intPolyP->numPolygons ; ++plistP )
+      {
        if( plistP->userTag == 1 || plistP->userTag == 2 )
-         { 
+         {
           bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(intPolyP,(long)(plistP-intPolyP->polyListP),&FeatPts,&NumFeatPts) ;
           insert = bcdtmInsert_internalStringIntoDtmObject(dtm1P,1,2,FeatPts,NumFeatPts,&sp1) ;
           insert = bcdtmInsert_internalStringIntoDtmObject(dtm2P,1,2,FeatPts,NumFeatPts,&sp2) ;
           bcdtmList_nullTptrListDtmObject(dtm1P,sp1) ;
           bcdtmList_nullTptrListDtmObject(dtm2P,sp2) ;
           if( FeatPts != NULL ) { free(FeatPts) ; FeatPts = NULL ; }
-         } 
+         }
       }
     bcdtmList_cleanDtmObject(dtm1P) ;
     bcdtmList_cleanDtmObject(dtm2P) ;
-   } 
+   }
 /*
 ** Save dtm2P Points
 */
@@ -1085,33 +1125,33 @@ BENTLEYDTM_Private int bcdtmDelta_calculateDeltaTinToTinDtmObject(BC_DTM_OBJ *dt
 /*
 ** Insert Voids And Islands Into TIN1
 */
- if( intPolyP != NULL ) 
+ if( intPolyP != NULL )
    {
     if( dbg ) bcdtmWrite_message(1,0,0,"Inserting Voids And Islands In Delta Tin") ;
-    for( plistP = intPolyP->polyListP ; plistP < intPolyP->polyListP + intPolyP->numPolygons ; ++plistP ) 
-      { 
+    for( plistP = intPolyP->polyListP ; plistP < intPolyP->polyListP + intPolyP->numPolygons ; ++plistP )
+      {
        if( plistP->userTag == 1 || plistP->userTag == 2 )
          {
           bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(intPolyP,(long)(plistP-intPolyP->polyListP),&FeatPts,&NumFeatPts) ;
           insert = bcdtmInsert_internalStringIntoDtmObject(dtm1P,1,2,FeatPts,NumFeatPts,&sp1) ;
           if( plistP->userTag == 1 )
             {
-             bcdtmMath_getPolygonDirectionP3D(FeatPts,NumFeatPts,&direction,&area) ; 
+             bcdtmMath_getPolygonDirectionP3D(FeatPts,NumFeatPts,&direction,&area) ;
              if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Adding Void   ** direction = %2ld area = %15.5lf",direction,area) ;
-             if( area > 0.001 ) if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,dtm1P->nullFeatureId,sp1,1)) goto errexit ; 
+             if( area > 0.001 ) if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,dtm1P->nullFeatureId,sp1,1)) goto errexit ;
             }
           else
             {
-             bcdtmMath_getPolygonDirectionP3D(FeatPts,NumFeatPts,&direction,&area) ; 
+             bcdtmMath_getPolygonDirectionP3D(FeatPts,NumFeatPts,&direction,&area) ;
              if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Adding Island ** direction = %2ld area = %15.5lf",direction,area) ;
-             if( area > 0.001 ) if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,DTMFeatureType::Island,DTM_NULL_USER_TAG,dtm1P->nullFeatureId,sp1,1)) goto errexit ; 
+             if( area > 0.001 ) if( bcdtmInsert_addDtmFeatureToDtmObject(dtm1P,NULL,0,DTMFeatureType::Island,DTM_NULL_USER_TAG,dtm1P->nullFeatureId,sp1,1)) goto errexit ;
             }
           if( FeatPts != NULL ) { free(FeatPts) ; FeatPts = NULL ; }
-         } 
+         }
       }
     bcdtmMark_voidPointsDtmObject(dtm1P) ;
     bcdtmPolygon_deletePolygonObject(&intPolyP) ;
-   } 
+   }
 /*
 ** Clean Tin 1
 */
@@ -1128,10 +1168,10 @@ BENTLEYDTM_Private int bcdtmDelta_calculateDeltaTinToTinDtmObject(BC_DTM_OBJ *dt
 /*
 ** Check Tin - Development Only
 */
- if( cdbg == 1 ) 
-   { 
+ if( cdbg == 1 )
+   {
     bcdtmWrite_message(0,0,0,"Checking Delta Tin") ;
-    if( bcdtmCheck_tinComponentDtmObject(dtm1P)) goto errexit ; 
+    if( bcdtmCheck_tinComponentDtmObject(dtm1P)) goto errexit ;
     bcdtmWrite_message(0,0,0,"Tin OK") ;
    }
 /*
@@ -1139,7 +1179,7 @@ BENTLEYDTM_Private int bcdtmDelta_calculateDeltaTinToTinDtmObject(BC_DTM_OBJ *dt
 */
  cleanup :
  dtm1P->incPoints = incPoints ;
- if( polyP      != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ; 
+ if( polyP      != NULL ) bcdtmPolygon_deletePolygonObject(&polyP) ;
  if( intPolyP   != NULL ) bcdtmPolygon_deletePolygonObject(&intPolyP) ;
  if( dtm2PtsP   != NULL ) { free(dtm2PtsP)   ; dtm2PtsP   = NULL ; }
  if( dtm2LinesP != NULL ) { free(dtm2LinesP) ; dtm2LinesP = NULL ; }
@@ -1168,35 +1208,57 @@ BENTLEYDTM_Private int bcdtmDelta_drapeTin1PointsOnTin2DtmObject(BC_DTM_OBJ *dtm
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long pnt,drapeResult  ; 
- DPoint3d  *pntP ;
- double z   ;
  long errCnt = 0 ;
+ bool doErrexit = false;
 /*
 ** Scan All Points And Determine If they Fall On Tin
 */
- for( pnt = 0 ; pnt < dtm1P->numPoints ; ++pnt )
+ auto function = [&](long pnt)
+     //for( pnt = 0 ; pnt < dtm1P->numPoints ; ++pnt )
+     {
+     if (doErrexit)
+         return;
+     long drapeResult  ;
+     DPoint3d  *pntP ;
+     double z   ;
+     pntP = pointAddrP(dtm1P,pnt) ;
+     if (bcdtmDrape_pointDtmObject(dtm2P, pntP->x, pntP->y, &z, &drapeResult))
+         {
+         doErrexit = true;
+         return;
+         }
+     if( ! drapeResult )
+         {
+         //bcdtmWrite_message(1,0,0,"dtm1P Point[%8ld] ** %12.5lf %12.5lf %10.4lf ** External To dtm2P Hull",pnt,pntP->x,pntP->y,pntP->z) ;
+         ++errCnt ;
+         if( errCnt > 100 )
+             {
+             doErrexit = true;
+             return;
+             }
+         }
+     pntP->z  = pntP->z - z ;
+     //if( dbg && pnt % 50000 == 0 ) bcdtmWrite_message(10,0,0,"Points Subtracted = %8ld of %8ld",pnt,dtm1P->numPoints)  ;
+     };
+ const size_t concurrency_limit = 1000;
+ if (dtm1P->numPoints < concurrency_limit)
+     {
+     for(long pnt = 0; pnt < dtm1P->numPoints; pnt++)
+         function(pnt);
+     }
+ else
+    concurrency::parallel_for ((int)0, (int)dtm1P->numPoints, (int)1, function);
+
+ if (doErrexit) goto errexit;
+ if( dbg )
    {
-    pntP = pointAddrP(dtm1P,pnt) ;
-    if( bcdtmDrape_pointDtmObject(dtm2P,pntP->x,pntP->y,&z,&drapeResult)) goto errexit ;
-    if( ! drapeResult ) 
-      {
-       bcdtmWrite_message(1,0,0,"dtm1P Point[%8ld] ** %12.5lf %12.5lf %10.4lf ** External To dtm2P Hull",pnt,pntP->x,pntP->y,pntP->z) ; 
-       ++errCnt ;
-       if( errCnt > 100 ) goto errexit ;
-      }
-    pntP->z  = pntP->z - z ;
-    if( dbg && pnt % 50000 == 0 ) bcdtmWrite_message(10,0,0,"Points Subtracted = %8ld of %8ld",pnt,dtm1P->numPoints)  ;
-   }
- if( dbg ) 
-   {
-    bcdtmWrite_message(10,0,0,"Points Subtracted = %6ld of %6ld",pnt,dtm1P->numPoints) ;
+    //bcdtmWrite_message(10,0,0,"Points Subtracted = %6ld of %6ld",pnt,dtm1P->numPoints) ;
     bcdtmWrite_message(10,0,0,"") ;
    }
 /*
 ** Clean Up
 */
- cleanup : 
+ cleanup :
 /*
 ** Job Completed
 */
@@ -1206,7 +1268,7 @@ BENTLEYDTM_Private int bcdtmDelta_drapeTin1PointsOnTin2DtmObject(BC_DTM_OBJ *dtm
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
+ goto cleanup ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -1221,26 +1283,26 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinPtsToP3DArrayDtmObject(BC_DTM_OBJ *dtmP
  int   ret=DTM_SUCCESS ;
  long  pnt ;
  DPoint3d   *p3dP=NULL ;
- DPoint3d *pntP ; 
+ DPoint3d *pntP ;
 /*
 ** Allocate Memory
 */
  *numTinPtsP = dtmP->numPoints ;
  *tinPtsPP   = ( DPoint3d * ) malloc( *numTinPtsP * sizeof(DPoint3d) ) ;
- if( *tinPtsPP == NULL ) 
-   { 
-    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
+ if( *tinPtsPP == NULL )
+   {
+    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
    }
 /*
 ** Copy The Points
 */
  for( pnt = 0 , p3dP = *tinPtsPP ; pnt < dtmP->numPoints ; ++pnt , ++p3dP )
-   { 
+   {
     pntP    = pointAddrP(dtmP,pnt) ;
-    p3dP->x = pntP->x ; 
-    p3dP->y = pntP->y ; 
-    p3dP->z = pntP->z ; 
+    p3dP->x = pntP->x ;
+    p3dP->y = pntP->y ;
+    p3dP->z = pntP->z ;
    }
 /*
 ** Clean Up
@@ -1279,8 +1341,8 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinLinesToPointLinesDtmObject(BC_DTM_OBJ *
 ** Allocate Memory
 */
  *tinLinesPP = ( PNTLINE * ) malloc( *numTinLinesP * sizeof(PNTLINE) ) ;
- if( *tinLinesPP == NULL ) 
-   { 
+ if( *tinLinesPP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
    }
@@ -1296,10 +1358,10 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinLinesToPointLinesDtmObject(BC_DTM_OBJ *
        clistP = clistAddrP(dtmP,clcPtr) ;
        p2     = clistP->pntNum ;
        clcPtr = clistP->nextPtr ;
-       if( p2 > p1 ) 
-         { 
-          lineP->P1 = p1 ; 
-          lineP->P2 = p2 ; 
+       if( p2 > p1 )
+         {
+          lineP->P1 = p1 ;
+          lineP->P2 = p2 ;
           ++lineP ;
          }
       }
@@ -1359,17 +1421,17 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
     if( fabs(p3dP->x-pntP->x) <= dtmP->ppTol && fabs(p3dP->y-pntP->y) <= dtmP->ppTol )
       {
        if( bcdtmMath_distance(p3dP->x,p3dP->y,pntP->x,pntP->y) < dtmP->ppTol )
-         { 
-          p3dP->x = pntP->x ; 
-          p3dP->y = pntP->y ; 
+         {
+          p3dP->x = pntP->x ;
+          p3dP->y = pntP->y ;
           ++numMoved ;
          }
-      }   
+      }
    }
 /*
 ** Write Move Times
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"**** Time To Move Points    = %8.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmWrite_message(0,0,0,"**** Number Of Points Moved = %8ld",numMoved) ;
@@ -1385,7 +1447,7 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
 /*
 ** Set Memory Increment Parameters
 */
- if( dtmP->incPoints < numTinPts * 10 ) dtmP->incPoints = numTinPts * 10 ; 
+ if( dtmP->incPoints < numTinPts * 10 ) dtmP->incPoints = numTinPts * 10 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->incPoints   = %8ld",dtmP->incPoints) ;
 /*
 ** Set Tolerances
@@ -1400,10 +1462,10 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
    {
     if( dbg && cnt % 1000 == 0 ) bcdtmWrite_message(0,0,0,"Points Inserted = %8ld of %8ld",cnt,numTinPts) ;
     if( bcdtmInsert_storePointInDtmObject(dtmP,1,1,p3dP->x,p3dP->y,p3dP->z,&pntNum) ) goto errexit ;
-    if( dtmP->numPoints - dtmP->numSortedPoints > 1500 ) 
-      { 
+    if( dtmP->numPoints - dtmP->numSortedPoints > 1500 )
+      {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Resorting Tin Structure") ;
-       if( bcdtmTin_resortTinStructureDtmObject(dtmP) ) 
+       if( bcdtmTin_resortTinStructureDtmObject(dtmP) )
        goto errexit ;
       }
    }
@@ -1422,7 +1484,7 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
        goto errexit ;
       }
     bcdtmWrite_message(0,0,0,"Triangulation Valid") ;
-   } 
+   }
 /*
 ** Allocate Memory To Hold To-Tin Point Numbers
 */
@@ -1451,7 +1513,7 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
    {
     p1 = *(pointsP + lineP->P1) ;
     p2 = *(pointsP + lineP->P2) ;
-    if( dbg && cnt % 1000 == 0 ) 
+    if( dbg && cnt % 1000 == 0 )
       {
        bcdtmWrite_message(10,0,0,"Lines Inserted = %6ld of %6ld ** dtmP->numPoints = %8ld dtmP->memPoints = %8ld",cnt,numTinLines,dtmP->numPoints,dtmP->memPoints) ;
        bcdtmWrite_message(0,0,0,"numPrecisionError = %8ld ** numSnapFix = %8ld",numPrecisionError,numSnapFix) ;
@@ -1459,9 +1521,9 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
          {
           if( bcdtmCheck_trianglesDtmObject(dtmP))
           goto errexit ;
-         } 
+         }
       }
-    if( p1 != p2 ) 
+    if( p1 != p2 )
       {
        if( bcdtmInsert_lineBetweenPointsDtmObject(dtmP,p1,p2,1,2) == 1 ) goto errexit ;
        sp = p1 ;
@@ -1471,9 +1533,9 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
           np    = nodeP->tPtr ;
           nodeP->tPtr = dtmP->nullPnt ;
           sp = np ;
-         } while( sp != dtmP->nullPnt ) ;  
-      } 
-   } 
+         } while( sp != dtmP->nullPnt ) ;
+      }
+   }
 
  if( dbg )
    {
@@ -1505,7 +1567,7 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmDelta_copyVoidsAndIslandsToPolygonObjectDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *dtm2P,DTM_POLYGON_OBJ **polyPP) 
+BENTLEYDTM_Private int bcdtmDelta_copyVoidsAndIslandsToPolygonObjectDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *dtm2P,DTM_POLYGON_OBJ **polyPP)
 /*
 ** This Function Copies The Voids And Islands To A Polygon Object
 */
@@ -1551,7 +1613,7 @@ if( bcdtmUtility_copyTinDtmFeatureTypeToPolygonObjectDtmObject(dtm2P,*polyPP,DTM
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,DTM_POLYGON_OBJ **IntPoly ) 
+BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,DTM_POLYGON_OBJ **IntPoly )
 /*
 ** This Function Intersects The Voids And Islands From Two Tins
 ** In Polygon Object IntPoly
@@ -1585,7 +1647,7 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,
 */
  if( ( Tin1Voids && ! Tin2Voids ) || ( ! Tin1Voids && Tin2Voids ))
    {
-    if( bcdtmPolygon_createPolygonObject(IntPoly)) return(1) ; 
+    if( bcdtmPolygon_createPolygonObject(IntPoly)) return(1) ;
     if( bcdtmPolygon_copyPolygonObjectToPolygonObject(Poly,*IntPoly)) return(1) ;
     for( pl = (*IntPoly)->polyListP ; pl < (*IntPoly)->polyListP + (*IntPoly)->numPolygons ; ++pl ) pl->userTag = pl->userTag % 10 ;
     return(0) ;
@@ -1608,32 +1670,32 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsAndIslands(DTM_POLYGON_OBJ *Poly,
     if( NumTags == 1 && pl->s1 != DTM_NULL_PNT )
       {
        if( *TagList % 10 == 2 )
-         { 
+         {
           tag = (long)*TagList ;
           bcdtmPolygon_getTagListFromTagObject(IntTag,pl->s1,&TagList,&NumTags,&Utag1,&Utag2,&Utag3,&Utag4) ;
           if( NumTags == 1 && *TagList % 10 == 1 && tag / 10 == *TagList / 10 ) pl->userTag = 2 ;
          }
-      }  
+      }
 /*
 ** Check For Intersection Of Islands
-*/      
+*/
     if( NumTags == 2 )
       {
        if( *TagList % 10 == 2 && *(TagList+1) % 10 == 2 ) pl->userTag = 2 ;
-      } 
+      }
     if( NumTags == 1 )
       {
        if( *TagList % 10 == 2 ) pl->userTag = 2 ;
-      } 
+      }
    }
 /*
 ** Intersect Voids
 */
  npoly = (*IntPoly)->numPolygons ;
- if( bcdtmDelta_intersectVoidsInPolygonObject(Poly,IntPoly) ) goto Error_Exit ; 
+ if( bcdtmDelta_intersectVoidsInPolygonObject(Poly,IntPoly) ) goto Error_Exit ;
  for( ofs = npoly ; ofs < (*IntPoly)->numPolygons ; ++ofs ) ((*IntPoly)->polyListP + ofs)->userTag = 1 ;
 /*
-** Error Exit 
+** Error Exit
 */
  Error_Exit :
 /*
@@ -1655,7 +1717,7 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsInPolygonObject
 (
  DTM_POLYGON_OBJ *voidPolyP,
  DTM_POLYGON_OBJ **intVoidPolyPP
-) 
+)
 /*
 ** This Function Intersects The Polygons In Polygon Object Poly And Stores Them
 ** In Polygon Object IntPoly
@@ -1696,13 +1758,13 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsInPolygonObject
 /*
 ** Create Polygon Object For Intersected Voids
 */
- if( *intVoidPolyPP == NULL ) 
-   { 
-    if( bcdtmPolygon_createPolygonObject(intVoidPolyPP)) goto errexit ;  
+ if( *intVoidPolyPP == NULL )
+   {
+    if( bcdtmPolygon_createPolygonObject(intVoidPolyPP)) goto errexit ;
    }
 /*
 ** Copy Voids To The Polygon Object
-*/   
+*/
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     if( ftableAddrP(dtmP,dtmFeature)->dtmFeatureType == DTMFeatureType::Void )
@@ -1714,7 +1776,7 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsInPolygonObject
           bcdtmMath_reversePolygonDirectionP3D(voidPtsP,numVoidPts) ;
          }
         if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*intVoidPolyPP,voidPtsP,numVoidPts,1)) goto errexit ;
-      } 
+      }
    }
 /*
 ** Cleanup
@@ -1731,5 +1793,5 @@ BENTLEYDTM_Public int bcdtmDelta_intersectVoidsInPolygonObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
+ goto cleanup ;
 }
