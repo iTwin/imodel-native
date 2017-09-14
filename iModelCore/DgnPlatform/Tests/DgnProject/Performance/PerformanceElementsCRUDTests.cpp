@@ -39,8 +39,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
             ASSERT_TRUE(element.IsValid());
             }
         }
-        m_db->SaveChanges();
-        m_db->ExecuteSql("vacuum");
         m_db->CloseDb();
         }
 
@@ -506,7 +504,15 @@ void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int ini
 
     int minElemId = GetfirstElementId(className);
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
-
+    //<<<<<=======================================
+    //              Warm up cache
+    for (uint64_t i = 0; i < opCount; i++)
+        {
+        const DgnElementId id(minElemId + i*elementIdIncrement);
+        DgnElementCPtr element = m_db->Elements().GetElement(id);
+        ASSERT_TRUE(element != nullptr);
+        }
+    //=========================================>>>>
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
