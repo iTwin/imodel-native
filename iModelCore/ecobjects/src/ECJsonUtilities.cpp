@@ -22,6 +22,83 @@ END_UNNAMED_NAMESPACE
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//--------------------------------------------------------------------------------------
+//! Returns true if the member name is a top-level system member name, i.e. it is a system
+//! member which can show up as top-level property in an ECInstance JSON
+// @bsimethod                                    Krischan.Eberle                 09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool IsTopLevelSystemMember(Utf8CP memberName)
+    {
+    if (Utf8String::IsNullOrEmpty(memberName))
+        return false;
+
+    return strcmp(memberName, ECJsonSystemNames::Id()) == 0 || strcmp(memberName, ECJsonSystemNames::ClassName()) == 0 ||
+        strcmp(memberName, ECJsonSystemNames::SourceId()) == 0 || strcmp(memberName, ECJsonSystemNames::TargetId()) == 0 ||
+        strcmp(memberName, ECJsonSystemNames::SourceClassName()) == 0 || strcmp(memberName, ECJsonSystemNames::TargetClassName()) == 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::IdToJson(Json::Value& json, BeInt64Id id)
+    {
+    if (!id.IsValid())
+        return ERROR;
+
+    json = id.ToHexStr();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassLocaterR classLocater)
+    {
+    if (!json.isString())
+        return nullptr;
+
+    //support both delimiters (The colon is common in ECObjects. The dot is common elsewhere)
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(json.asCString(), ".:", tokens);
+    if (tokens.size() != 2)
+        return nullptr;
+
+    return classLocater.LocateClass(tokens[0].c_str(), tokens[1].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+ECClassId ECJsonUtilities::GetClassIdFromClassNameJson(JsonValueCR json, IECClassLocaterR classLocater)
+    {
+    if (!json.isString())
+        return ECClassId();
+
+    //support both delimiters (The colon is common in ECObjects. The dot is common elsewhere)
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(json.asCString(), ".:", tokens);
+    if (tokens.size() != 2)
+        return ECClassId();
+
+    return classLocater.LocateClassId(tokens[0].c_str(), tokens[1].c_str());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::JsonToDateTime(DateTime& dateTime, JsonValueCR json)
+    {
+    if (!json.isString())
+        return ERROR;
+
+    return DateTime::FromString(dateTime, json.asCString());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
@@ -157,12 +234,34 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json:
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::IGeometryToJson(Json::Value& json, IGeometryCR geom)
+    {
+    return BentleyGeometryJson::TryGeometryToJsonValue(json, geom, false) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+IGeometryPtr ECJsonUtilities::JsonToIGeometry(JsonValueCR json)
+    {
+    bvector<IGeometryPtr> geometry;
+    if (!BentleyGeometryJson::TryJsonValueToGeometry(json, geometry) || geometry.empty())
+        return nullptr;
+
+    return geometry[0];
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 2/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const Json::Value& jsonValue, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
     {
-    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "", classLocater, remapper);
+    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, remapper);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -180,7 +279,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             continue;
 
         Utf8CP memberName = iter.memberName();
-        if (IsSystemMember(memberName))
+        if (IsTopLevelSystemMember(memberName))
             continue;
 
         Utf8String remappedMemberName(memberName);
@@ -211,7 +310,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             }
         else if (ecProperty->GetIsArray())
             {
-            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty, accessString))
+            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty, accessString, classLocater))
                 return ERROR;
             }
         else if (ecProperty->GetIsNavigation())
@@ -223,30 +322,24 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 return ERROR;
                 }
 
-            if (!childJsonValue.isObject() || !childJsonValue.isMember(json_id()))
+            if (!childJsonValue.isObject() || !childJsonValue.isMember(json_navId()))
                 return ERROR;
 
-            BeAssert(childJsonValue[json_id()].isString());
-            BentleyStatus hexParseStat = SUCCESS;
-            const uint64_t navId = BeStringUtilities::ParseHex(childJsonValue[json_id()].asCString(), &hexParseStat);
-            if (SUCCESS != hexParseStat)
+            BeAssert(childJsonValue[json_navId()].isString());
+            BeInt64Id navId = JsonToId<BeInt64Id>(childJsonValue[json_navId()]);
+            if (!navId.IsValid())
                 return ERROR;
 
             ECValue v;
-            if (!childJsonValue.isMember(json_relClassName()))
+            if (!childJsonValue.isMember(json_navRelClassName()))
                 {
-                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     return ERROR;
                 }
             else
                 {
-                BeAssert(childJsonValue[json_relClassName()].isString());
-                Utf8String schemaName, className;
-                if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, childJsonValue[json_relClassName()].asString()))
-                    return ERROR;
-
-                ECClassId relClassId = classLocater.LocateClassId(schemaName.c_str(), className.c_str());
-                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), relClassId))
+                ECClassId relClassId = GetClassIdFromClassNameJson(childJsonValue[json_navRelClassName()], classLocater);
+                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
                     return ERROR;
                 }
 
@@ -298,22 +391,31 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
             }
             case PRIMITIVETYPE_Long:
             {
-            if (jsonValueType != Json::stringValue)
-                return ERROR; //int64_t values need to be serialized as strings to allow use in Javascript"
+            if (jsonValueType == Json::intValue)
+                return ecValue.SetLong(jsonValue.asInt64());
 
-            Utf8CP longStr = jsonValue.asCString();
-            int64_t val;
-            if (BeStringUtilities::HasHexPrefix(longStr))
+            if (jsonValueType == Json::uintValue)
+                return ecValue.SetLong((int64_t) jsonValue.asUInt64());
+
+            if (jsonValueType == Json::stringValue)
                 {
-                BentleyStatus hexParseStat = SUCCESS;
-                val = (int64_t) BeStringUtilities::ParseHex(longStr, &hexParseStat);
-                if (SUCCESS != hexParseStat)
-                    return ERROR;
+                Utf8CP longStr = jsonValue.asCString();
+                int64_t val;
+                if (BeStringUtilities::HasHexPrefix(longStr))
+                    {
+                    BentleyStatus hexParseStat = SUCCESS;
+                    val = (int64_t) BeStringUtilities::ParseHex(longStr, &hexParseStat);
+                    if (SUCCESS != hexParseStat)
+                        return ERROR;
+                    }
+                else
+                    val = BeJsonUtilities::Int64FromValue(jsonValue);
+
+                return ecValue.SetLong(val);
                 }
-            else
-                val = BeJsonUtilities::Int64FromValue(jsonValue);
-            
-            return ecValue.SetLong(val);
+
+            BeAssert(false);
+            return ERROR;
             }
             case PRIMITIVETYPE_Double:
             {
@@ -332,25 +434,21 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
             }
             case PRIMITIVETYPE_DateTime:
             {
-            if (jsonValueType == Json::stringValue)
-                {
-                DateTime dateTime;
-                DateTime::FromString(dateTime, jsonValue.asString().c_str());
-                return ecValue.SetDateTime(dateTime);
-                }
+            if (jsonValueType != Json::stringValue)
+                return ERROR;
 
-            if (jsonValueType == Json::realValue)
-                return ecValue.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jsonValue.asDouble()));
+            DateTime dateTime;
+            if (SUCCESS != JsonToDateTime(dateTime, jsonValue))
+                return ERROR;
 
-            BeAssert(false && "Invalid type to convert to DateTime");
-            return ERROR;
+            return ecValue.SetDateTime(dateTime);
             }
             case PRIMITIVETYPE_String:
             {
             if (jsonValueType != Json::stringValue)
                 return ERROR;
 
-            return ecValue.SetUtf8CP(jsonValue.asString().c_str(), true);
+            return ecValue.SetUtf8CP(jsonValue.asCString(), true);
             }
             case PRIMITIVETYPE_Boolean:
             {
@@ -371,12 +469,11 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
             {
             if (jsonValueType == Json::objectValue)
                 {
-                bvector<IGeometryPtr> geometry;
-                if (!BentleyGeometryJson::TryJsonValueToGeometry(jsonValue, geometry))
+                IGeometryPtr geom = JsonToIGeometry(jsonValue);
+                if (geom == nullptr)
                     return ERROR;
 
-                BeAssert(geometry.size() == 1);
-                return ecValue.SetIGeometry(*(geometry[0]));
+                return ecValue.SetIGeometry(*geom);
                 }
 
             if (jsonValueType == Json::stringValue)
@@ -387,6 +484,8 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
 
                 return ecValue.SetIGeometry(geometryFbBlob.data(), geometryFbBlob.size(), true);
                 }
+
+            return ERROR;
             }
             default:
                 BeAssert(false);
@@ -397,7 +496,7 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECPropertyCR property, Utf8StringCR accessString)
+BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
     {
     NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
 
@@ -424,7 +523,7 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
         for (uint32_t ii = 0; ii < length; ii++)
             {
             IECInstancePtr structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance(0);
-            ECInstanceFromJson(*structInstance, jsonValue[ii], structType, "");
+            ECInstanceFromJson(*structInstance, jsonValue[ii], structType, "", classLocater);
             ECValue ecStructValue;
             ecStructValue.SetStruct(structInstance.get());
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecStructValue, ii);
@@ -456,23 +555,71 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
     return SUCCESS;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 09/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECJsonUtilities::IsSystemMember(Utf8CP memberName)
-    {
-    if (Utf8String::IsNullOrEmpty(memberName))
-        return false;
 
-    return strcmp(memberName, json_id()) == 0 || strcmp(memberName, json_className()) == 0 ||
-        strcmp(memberName, json_relClassName()) == 0 ||
-        strcmp(memberName, json_sourceId()) == 0 || strcmp(memberName, json_targetId()) == 0 ||
-        strcmp(memberName, json_classId()) == 0 || strcmp(memberName, json_sourceClassId()) == 0 || strcmp(memberName, json_targetClassId()) == 0;
-    }
 
 //=======================================================================================
 //  ECRapidJsonUtility
 //=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECRapidJsonUtilities::IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    if (!id.IsValid())
+        return ERROR;
+
+    Utf8String hexStr = id.ToHexStr();
+    json.SetString(hexStr.c_str(), (rapidjson::SizeType) hexStr.size(), allocator);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+void ECRapidJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    Utf8StringCR fullName = ecClass.GetFullName();
+    json.SetString(fullName.c_str(), (rapidjson::SizeType) fullName.size(), allocator);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+ECClassCP ECRapidJsonUtilities::JsonToClass(RapidJsonValueCR json, IECClassLocaterR classLocater)
+    {
+    if (!json.IsString())
+        return nullptr;
+
+    //support both delimiters (The colon is common in ECObjects. The dot is common elsewhere)
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(json.GetString(), ".:", tokens);
+    if (tokens.size() != 2)
+        return nullptr;
+
+    return classLocater.LocateClass(tokens[0].c_str(), tokens[1].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+ECClassId ECRapidJsonUtilities::JsonToClassId(RapidJsonValueCR json, IECClassLocaterR classLocater)
+    {
+    if (!json.IsString())
+        return ECClassId();
+
+    //support both delimiters (The colon is common in ECObjects. The dot is common elsewhere)
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(json.GetString(), ".:", tokens);
+    if (tokens.size() != 2)
+        return ECClassId();
+
+    return classLocater.LocateClassId(tokens[0].c_str(), tokens[1].c_str());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    07/2016
@@ -504,6 +651,18 @@ int64_t ECRapidJsonUtilities::Int64FromJson(RapidJsonValueCR value, int64_t defa
         }
 
     return defaultOnError;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECRapidJsonUtilities::JsonToDateTime(DateTime& dateTime, RapidJsonValueCR json)
+    {
+    if (!json.IsString())
+        return ERROR;
+
+    return DateTime::FromString(dateTime, json.GetString());
     }
 
 //---------------------------------------------------------------------------------------
@@ -570,9 +729,9 @@ BentleyStatus ECRapidJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
-    json.AddMember(JSON_PointX, coordVal, allocator);
+    json.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::X()), coordVal, allocator);
     coordVal.SetDouble(pt.y);
-    json.AddMember(JSON_PointY, coordVal, allocator);
+    json.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Y()), coordVal, allocator);
     return SUCCESS;
     }
 
@@ -588,8 +747,8 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_PointX) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_PointY))
+    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()))
         return ERROR;
 
     pt = DPoint2d::From(x, y);
@@ -604,11 +763,11 @@ BentleyStatus ECRapidJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
-    json.AddMember(JSON_PointX, coordVal, allocator);
+    json.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::X()), coordVal, allocator);
     coordVal.SetDouble(pt.y);
-    json.AddMember(JSON_PointY, coordVal, allocator);
+    json.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Y()), coordVal, allocator);
     coordVal.SetDouble(pt.z);
-    json.AddMember(JSON_PointZ, coordVal, allocator);
+    json.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Z()), coordVal, allocator);
     return SUCCESS;
     }
 
@@ -625,9 +784,9 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_PointX) ||
-        SUCCESS != PointCoordinateFromJson(y, json, JSON_PointY) ||
-        SUCCESS != PointCoordinateFromJson(z, json, JSON_PointZ))
+    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()) ||
+        SUCCESS != PointCoordinateFromJson(z, json, ECJsonSystemNames::Point::Z()))
         return ERROR;
 
     pt = DPoint3d::From(x, y, z);
@@ -649,12 +808,57 @@ BentleyStatus ECRapidJsonUtilities::PointCoordinateFromJson(double& coordinate, 
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECRapidJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    Utf8String jsonStr;
+    if (!BentleyGeometryJson::TryGeometryToJsonString(jsonStr, geom, false) || jsonStr.empty())
+        return ERROR;
+
+    rapidjson::Document jsonDoc;
+    if (jsonDoc.Parse<0>(jsonStr.c_str()).HasParseError())
+        return ERROR;
+
+    BeAssert(jsonDoc.IsObject());
+    for (auto& member : jsonDoc.GetObject())
+        {
+        json.AddMember(member.name, member.value, allocator);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2017
+//---------------------------------------------------------------------------------------
+//static
+IGeometryPtr ECRapidJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
+    {
+    if (!json.IsObject())
+        return nullptr;
+
+    rapidjson::StringBuffer jsonStr;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+    json.Accept(writer);
+
+    bvector<IGeometryPtr> geometry;
+    if (!BentleyGeometryJson::TryJsonStringToGeometry(jsonStr.GetString(), geometry) || geometry.empty())
+        return nullptr;
+
+    return geometry[0];
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, RapidJsonValueCR jsonValue, PrimitiveType primitiveType)
     {
+    if (jsonValue.IsNull())
+        return SUCCESS;
+
     switch (primitiveType)
         {
             case PRIMITIVETYPE_Point2d:
@@ -700,7 +904,21 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
 
             // Int64 values can be represented in JSON as base64 string (to be compatible with JavaScript)
             if (jsonValue.IsString())
-                return ecValue.SetLong(Int64FromJson(jsonValue));
+                {
+                Utf8CP str = jsonValue.GetString();
+                int64_t val;
+                if (BeStringUtilities::HasHexPrefix(str))
+                    {
+                    BentleyStatus parseStat = SUCCESS;
+                    val = BeStringUtilities::ParseHex(str, &parseStat);
+                    if (SUCCESS != parseStat)
+                        return ERROR;
+                    }
+                else
+                    val = Int64FromJson(jsonValue);
+
+                return ecValue.SetLong(val);
+                }
 
             return ERROR;
             }
@@ -715,9 +933,11 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
             if (!jsonValue.IsString())
                 return ERROR;
 
-            DateTime dateTime;
-            DateTime::FromString(dateTime, jsonValue.GetString());
-            return ecValue.SetDateTime(dateTime);
+            DateTime dt;
+            if (SUCCESS != JsonToDateTime(dt, jsonValue))
+                return ERROR;
+
+            return ecValue.SetDateTime(dt);
             }
 
             case PRIMITIVETYPE_String:
@@ -734,24 +954,25 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
 
             case PRIMITIVETYPE_IGeometry:
             {
-            if (!jsonValue.IsObject())
-                return ERROR;
+            if (jsonValue.IsObject())
+                {
+                IGeometryPtr geom = JsonToIGeometry(jsonValue);
+                if (geom == nullptr)
+                    return ERROR;
 
-            if (jsonValue.IsNull())
-                return SUCCESS;
+                return ecValue.SetIGeometry(*geom);
+                }
 
-            rapidjson::StringBuffer stringBuffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
-            jsonValue.Accept(writer);
+            if (jsonValue.IsString())
+                {
+                bvector<Byte> flatBufferBlob;
+                if (SUCCESS != JsonToBinary(flatBufferBlob, jsonValue))
+                    return ERROR;
 
-            Utf8String jsonStr(stringBuffer.GetString());
+                return ecValue.SetBinary(flatBufferBlob.data(), flatBufferBlob.size(), true);
+                }
 
-            bvector<IGeometryPtr> geometry;
-            if (!BentleyGeometryJson::TryJsonStringToGeometry(jsonStr, geometry))
-                return ERROR;
-
-            BeAssert(geometry.size() == 1);
-            return ecValue.SetIGeometry(*(geometry[0]));
+            return ERROR;
             }
             case PRIMITIVETYPE_Binary:
             {
@@ -769,14 +990,9 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, RapidJsonValueCR jsonValue, ECPropertyCR property, Utf8StringCR accessString)
+BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, RapidJsonValueCR jsonValue, ArrayECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
     {
-    NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
-
     if (!jsonValue.IsArray())
-        return ERROR;
-
-    if ((!property.GetIsArray() && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
         return ERROR;
 
     rapidjson::SizeType size = jsonValue.Size();
@@ -788,32 +1004,27 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
 
     if (property.GetIsStructArray())
         {
-        StructArrayECPropertyCP structArrayProperty = property.GetAsStructArrayProperty();
-        BeAssert(nullptr != structArrayProperty);
-
-        ECClassCP structType = &structArrayProperty->GetStructElementType();
+        ECClassCP structType = &property.GetAsStructArrayProperty()->GetStructElementType();
         BeAssert(nullptr != structType);
-
         for (rapidjson::SizeType i = 0; i < size; i++)
             {
             IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance(0);
-            ECInstanceFromJson(*structInstance, jsonValue[i], *structType, "");
+            if (SUCCESS != ECInstanceFromJson(*structInstance, jsonValue[i], *structType, Utf8String(), classLocater))
+                return ERROR;
 
             ECValue structValue;
             structValue.SetStruct(structInstance.get());
 
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), structValue, i);
             if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
-                {
-                BeAssert(false);
-                }
+                return ERROR;
             }
 
         return SUCCESS;
         }
 
-    PrimitiveArrayECPropertyCP arrayProp = property.GetAsPrimitiveArrayProperty();
-    PrimitiveType primType = arrayProp != nullptr ? arrayProp->GetPrimitiveElementType() : navProp->GetType();
+    BeAssert(property.GetIsPrimitiveArray());
+    PrimitiveType primType = property.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
 
     BentleyStatus returnStatus = SUCCESS;
     for (rapidjson::SizeType i = 0; i < size; i++)
@@ -840,124 +1051,125 @@ BentleyStatus ECRapidJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(IECInstanceR instance, RapidJsonValueCR jsonValue)
+BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(IECInstanceR instance, RapidJsonValueCR jsonValue, IECClassLocaterR classLocater)
     {
-    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), "");
+    return ECInstanceFromJson(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString)
+BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater)
     {
     if (!jsonValue.IsObject())
         return ERROR;
 
-    BentleyStatus status = SUCCESS;
     for (rapidjson::Value::ConstMemberIterator it = jsonValue.MemberBegin(); it != jsonValue.MemberEnd(); ++it)
         {
         if (it->value.IsNull())
             continue;
 
-        if ('$' == it->name.GetString()[0])
+        if (IsTopLevelSystemMember(it->name.GetString()))
             continue;
 
         Utf8CP propertyName = it->name.GetString();
-        ECPropertyP propertyP = currentClass.GetPropertyP(propertyName);
-        if (nullptr == propertyP)
+        ECPropertyP prop = currentClass.GetPropertyP(propertyName);
+        if (nullptr == prop)
             {
             LOG.errorv("Failed to create ECInstance from JSON: Property '%s' not found in ECClass '%s'.", propertyName, currentClass.GetFullName());
-            status = ERROR;
-            continue;
+            return ERROR;
             }
 
         Utf8String accessString = currentAccessString.empty() ? propertyName : currentAccessString + "." + propertyName;
-        if (propertyP->GetIsPrimitive())
+        if (prop->GetIsPrimitive())
             {
             ECValue ecValue;
-            if (SUCCESS != ECPrimitiveValueFromJson(ecValue, it->value, propertyP->GetAsPrimitiveProperty()->GetType()))
+            if (SUCCESS != ECPrimitiveValueFromJson(ecValue, it->value, prop->GetAsPrimitiveProperty()->GetType()))
                 {
-                status = ERROR;
                 LogJsonParseError(it->value, instance.GetClass(), accessString);
-                continue;
+                return ERROR;
                 }
 
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
-            BeAssert((ECObjectsStatus::Success == ecStatus) || (ECObjectsStatus::PropertyValueMatchesNoChange == ecStatus));
+            if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
+                {
+                LogJsonParseError(it->value, instance.GetClass(), accessString);
+                return ERROR;
+                }
+
+            continue;
             }
-        else if (propertyP->GetIsStruct())
+
+        if (prop->GetIsStruct())
             {
-            if (SUCCESS != ECInstanceFromJson(instance, it->value, propertyP->GetAsStructProperty()->GetType(), accessString))
-                status = ERROR;
+            if (SUCCESS != ECInstanceFromJson(instance, it->value, prop->GetAsStructProperty()->GetType(), accessString, classLocater))
+                return ERROR;
+
+            continue;
             }
-        else if (propertyP->GetIsArray())
+
+        if (prop->GetIsArray())
             {
-            if (SUCCESS != ECArrayValueFromJson(instance, it->value, *propertyP, accessString))
-                status = ERROR;
+            if (SUCCESS != ECArrayValueFromJson(instance, it->value, *prop->GetAsArrayProperty(), accessString, classLocater))
+                return ERROR;
+
+            continue;
             }
-        else if (propertyP->GetIsNavigation())
+
+        if (prop->GetIsNavigation())
             {
-            //JSON structure for nav props:
-            //"<NavPropName>" : {"id":"<Related id>"[, "relECClassId":"<RelECClassId>"]}
-            NavigationECPropertyCP navProp = propertyP->GetAsNavigationProperty();
+            NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
             if (navProp->IsMultiple())
                 {
                 LOG.error("NavigationECProperties with IsMultiple == true not supported by ECRapidJsonUtilities");
-                status = ERROR;
-                continue;
+                return ERROR;
                 }
 
             RapidJsonValueCR json = it->value;
 
-            if (!json.IsObject() || !json.HasMember(JSON_NavigationId))
+            if (!json.IsObject() || !json.HasMember(ECJsonSystemNames::Navigation::Id()))
                 {
-                status = ERROR;
                 LogJsonParseError(json, instance.GetClass(), accessString);
-                continue;
+                return ERROR;
                 }
 
-            const uint64_t navId = (uint64_t) Int64FromJson(json[JSON_NavigationId], INT64_C(0));
-            if (navId == INT64_C(0))
+            BeInt64Id navId = JsonToId<BeInt64Id>(json[ECJsonSystemNames::Navigation::Id()]);
+            if (!navId.IsValid())
                 {
-                status = ERROR;
                 LogJsonParseError(json, instance.GetClass(), accessString);
-                continue;
+                return ERROR;
                 }
 
             ECValue v;
-            if (!json.HasMember("relClassId"))
+            if (!json.HasMember(ECJsonSystemNames::Navigation::RelClassName()))
                 {
-                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     {
-                    status = ERROR;
                     LogJsonParseError(json, instance.GetClass(), accessString);
+                    return ERROR;
                     }
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) Int64FromJson(json["relClassId"], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
+                BeAssert(json[ECJsonSystemNames::Navigation::RelClassName()].IsString());
+                ECClassId relClassId = JsonToClassId(json[ECJsonSystemNames::Navigation::RelClassName()], classLocater);
+                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
                     {
-                    status = ERROR;
                     LogJsonParseError(json, instance.GetClass(), accessString);
+                    return ERROR;
                     }
                 }
 
-            if (SUCCESS == status)
+            const ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+            if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
                 {
-                const ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
-                if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
-                    {
-                    status = ERROR;
-                    LogJsonParseError(json, instance.GetClass(), accessString);
-                    }
+                LogJsonParseError(json, instance.GetClass(), accessString);
+                return ERROR;
                 }
-
-            continue;
             }
         }
 
-    return status;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1349,11 +1561,10 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
 
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
     
-    // GetValue performs the check for an invalid id and will assert if it is not valid.
-    navObj[JSON_NavigationId] = navInfo.GetId<BeInt64Id>().ToString();
+    navObj[ECJsonUtilities::json_navId()] = navInfo.GetId<BeInt64Id>().ToHexStr();
 
-    if (navInfo.GetRelationshipClassId().IsValid())
-        navObj["relClassId"] = navInfo.GetRelationshipClassId().GetValueUnchecked();
+    if (navInfo.GetRelationshipClass() != nullptr)
+        ECJsonUtilities::ClassNameToJson(navObj[ECJsonUtilities::json_navRelClassName()], *navInfo.GetRelationshipClass());
 
     return BSISUCCESS;
     }
