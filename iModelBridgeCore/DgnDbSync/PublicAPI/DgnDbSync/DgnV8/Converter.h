@@ -1821,7 +1821,7 @@ public:
     //! Get the ID of the CodeSpec which determines element codes based on v8 BusinessKeySpecification custom attributes.
     CodeSpecId GetBusinessKeyCodeSpec() const {return m_businessKeyCodeSpecId;}
 
-    DgnCode CreateCode(Utf8StringCR value) const;
+    DGNDBSYNC_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
     DgnCode CreateDebuggingCode(DgnV8EhCR v8eh);
 
     bool WantDebugCodes() const {return m_addDebugDgnCodes;}
@@ -2634,6 +2634,50 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual void _ImportSchema(DgnDbR ) {}
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
+};
+
+//=======================================================================================
+//! Interface for a "cross-cutting domain" - an extension that is applied to every element,
+//! regardless of what Element Handler it has.
+//! @bsiclass                                                    Sam.Wilson      11/16
+//=======================================================================================
+struct XDomain
+{
+    /* Use this callback to initialize your domain then call DgnDomains::RegisterDomain
+     * @param bridgeAssetsDir   The directory that contains the assets for the bridge (and the dgnplatform). ECSchemas will be located under this directory.
+    */
+    virtual void _RegisterDomain(BentleyApi::BeFileNameCR bridgeAssetsDir) {} 
+
+    // Called just before the specified element is converted.
+    // return SkipElement if the specified element should not be converted.
+    enum class Result {Proceed=0, SkipElement=1};
+    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) {return Result::Proceed;}
+
+    // Called just before the specified element is converted.
+    // Compute the class, code, and/or category that should be used for the specified element. 
+    // On input, each parameter contains the default values that will be used to convert the element.
+    // Modify any parameter that you want to change.
+    virtual void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) {;}
+
+    // Called just after the specified element is converted but before it is written to the BIM. The conversion results parameter contains the converted element.
+    // This is the right place to convert user data linkages that the default converter might not know about. You can write the results as properties of the
+    // converted element.
+    // After this function returns, the element will be written.
+    virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {}
+
+    // Override the BIS conversion rule that will be applied to this element
+    virtual void _DetermineBisConversionRule(BisConversionRule&, DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) {;}
+
+    virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
+    virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
+    virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
+
+    //! Detect a change in any data that outside the element itself but is somehow accessed by your _DetermineElementParams or _ProcessResults methods 
+    //! and factored into the results of converting the element to BIS. An example would be a linked record in an external database.
+    virtual bool _IsXDataChanged(Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm) {return false;}
+
+    //! Register an XDomain to be used by the converter. Do not free xd after calling this!
+    DGNDBSYNC_EXPORT static void Register(XDomain& xd);
 };
 
 //=======================================================================================

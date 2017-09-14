@@ -1862,7 +1862,13 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
 
     v8SymbolScale = 0.0;
 
-    if (nullptr == upx || !upx->_GetBasisTransform(localToGeom, v8eh, m_converter))
+    bool basisTransformSuppliedByExtension = false;
+    if (nullptr != upx)
+        basisTransformSuppliedByExtension = upx->_GetBasisTransform(localToGeom, v8eh, m_converter);
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        basisTransformSuppliedByExtension |= xdomain->_GetBasisTransform(localToGeom, v8eh, m_converter);
+
+    if (!basisTransformSuppliedByExtension)
         {
         // NOTE: Attempt to preserve local coordinate system of V8 element for making geom parts.
         //       We can't just call DisplayHandler::GetBasisTransform as it doesn't return a good local
@@ -2539,7 +2545,14 @@ bool IgnorePublicChildren(DgnV8EhCR v8eh)
     {
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
 
-    return (nullptr != upx && upx->_IgnorePublicChildren());
+    if (nullptr != upx && upx->_IgnorePublicChildren())
+        return true;
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (xdomain->_IgnorePublicChildren())
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2549,7 +2562,16 @@ bool DisablePostInstancing(DgnV8EhCR v8eh)
     {
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
 
-    return (nullptr != upx && upx->_DisablePostInstancing());
+    if (nullptr != upx && upx->_DisablePostInstancing())
+        return true;
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (xdomain->_DisablePostInstancing())
+            return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

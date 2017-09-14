@@ -915,3 +915,56 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     outputBim->SaveChanges();
     wprintf(L"%ls\n", outputBim->GetFileName().c_str());
     }
+
+struct TestXDomain : XDomain
+    {
+    int m_counts[2] {};
+
+    void _DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8EhCR v8eh, Converter& cvt, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override
+        {
+        if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
+            return;
+
+        Utf8PrintfString codeValue("TestXDomain-%d", m_counts[0]);
+        code = cvt.CreateCode(codeValue.c_str());
+        ++m_counts[0];
+        }
+
+    void _ProcessResults(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter&) override 
+        {
+        if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
+            return;
+
+        ++m_counts[1];
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, XDomainTest)
+    {
+    LineUpFiles(L"XDomainTest.bim", L"Test3d.dgn", false);
+    
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+    v8editor.Save();
+
+    TestXDomain testXdomain;
+    XDomain::Register(testXdomain);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    EXPECT_EQ(1, testXdomain.m_counts[0]);
+    EXPECT_EQ(1, testXdomain.m_counts[1]);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    ASSERT_TRUE(db.IsValid());
+    if (true)
+        {
+        EC::ECSqlStatement stmt;
+        ASSERT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT COUNT(*) FROM bis.element WHERE (CodeValue LIKE 'TestXDomain%')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        }
+    }
