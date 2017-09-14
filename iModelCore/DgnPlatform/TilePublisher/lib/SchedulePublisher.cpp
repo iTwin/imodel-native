@@ -292,7 +292,7 @@ void    AppendJsonEntry(Json::Value& jsonEntries, State& state, double time, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value     GetJson(DgnElementId id, double start, double end, DgnDbCR db)
+Json::Value     GetJson(uint32_t id, double start, double end, DgnDbCR db)
     {
     double          current = start;
     State           state(start);
@@ -300,7 +300,7 @@ Json::Value     GetJson(DgnElementId id, double start, double end, DgnDbCR db)
     Json::Value     json = Json::objectValue;
     Json::Value     jsonEntries = Json::arrayValue;
 
-    json["elementId"] = id.GetValue();
+    json["id"] = id;
     for (auto entry = m_entries.begin(); entry != m_entries.end(); entry++)
         {
         ScheduleAppearance  appearance(entry->GetAppearanceId(), db);
@@ -356,21 +356,27 @@ struct CompareSchedules
 /*---------------------------------------------------------------------------------**//**                                                                                                                                                 
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value     GetJson(double start, double end, DgnDbCR db)
+Json::Value     GetJson(PublisherContext::T_ScheduleEntryMap& entryMap, double start, double end, DgnDbCR db)
     {
     Json::Value scheduleJson = Json::arrayValue;
-//#define DO_MERGE
+#define DO_MERGE
 #ifdef DO_MERGE
-    bmap<ElementSchedulePtr, bvector<DgnElementId>, CompareSchedules>     mergedSchedules;
+    
+    uint32_t nextEntry = 0;
+    bmap<ElementSchedulePtr, uint32_t, CompareSchedules>     mergedSchedules;
 
     for (auto const& curr : m_elementSchedules)
         {
-        bvector<DgnElementId>   ids(1, curr.first);
-        auto        insertPair = mergedSchedules.Insert(curr.second, bvector<DgnElementId>(1, curr.first));
+        auto        insertPair = mergedSchedules.Insert(curr.second, nextEntry);
 
-        if (!insertPair.second)
-            insertPair.first->second.push_back(curr.first);
+        entryMap[curr.first] = nextEntry;
+        if (insertPair.second)
+            nextEntry++;
         }
+
+    for (auto const& curr : mergedSchedules)
+        scheduleJson.append(curr.first->GetJson(curr.second, start, end, db));
+    
 #else
     for (auto const& curr : m_elementSchedules)
         scheduleJson.append(curr.second->GetJson(curr.first, start, end, db));
@@ -427,59 +433,11 @@ Schedule (Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Pl
 };  // Schedule
 
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR db, DateType dateType)
+void  PublisherContext::ExtractSchedules()
     {
-    for (auto const& planEntry : Planning::Plan::MakePlanIterator(markupDb))
-        {
-        PlanCPtr        plan = Planning::Plan::Get(markupDb, planEntry.GetId());
-
-        if (!plan.IsValid())
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        for (auto& baseline : plan->MakeBaselineIterator())
-            {
-            TimeSpanCP      timeSpan;
-
-            if (nullptr != (timeSpan = plan->GetTimeSpan(baseline.GetId())))
-                {
-                double      start, end;
-
-                if (!extractTimeSpan (start, end, *timeSpan, dateType))
-                    continue;
-
-                Schedule        rawSchedule (planEntry, *plan, baseline, markupDb, db, dateType);
-                Json::Value     entriesJson = rawSchedule.GetJson(start, end, markupDb);
-
-                if (entriesJson.size() > 0)
-                    {
-                    Json::Value     scheduleJson = Json::objectValue;
-
-                    scheduleJson["label"] = plan->GetUserLabel();
-                    scheduleJson["type"]  = PlanningUtility::ConvertDateTypeToString(dateType).c_str();
-                    scheduleJson["start"] = start;
-                    scheduleJson["end"]   = end;
-                    scheduleJson["elements"] = std::move(entriesJson);
-                    schedules.append(scheduleJson);
-                    }
-                }
-            }
-        }
-    return schedules.empty() ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value   PublisherContext::GetScheduleJson()
-    {
-    Json::Value scheduleJson = Json::arrayValue;
-
     DgnDomains::RegisterDomain(PlanningDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(MarkupDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
@@ -491,17 +449,56 @@ Json::Value   PublisherContext::GetScheduleJson()
     DgnMarkupProjectPtr     markupDb = DgnMarkupProject::OpenDgnDb(nullptr, BeFileName(device.c_str(), directory.c_str(), name.c_str(), nullptr), openParams);
 
     if (!markupDb.IsValid())
-        return scheduleJson;
+        return;
 
     if (!PlanningDomain::GetDomain().IsSchemaImported(*markupDb))
-        return scheduleJson;
+        return;
 
     DateType        scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
     int             scheduleId = 0;
 
     for (auto& scheduleType : scheduleTypes)
-        extractSchedules(scheduleJson, *markupDb, GetDgnDb(), scheduleType, scheduleId++);
+        {
+        for (auto const& planEntry : Planning::Plan::MakePlanIterator(*markupDb))
+            {
+            PlanCPtr        plan = Planning::Plan::Get(*markupDb, planEntry.GetId());
 
-    return scheduleJson;
+            if (!plan.IsValid())
+                {
+                BeAssert(false);
+                continue;
+                }
+            for (auto& baseline : plan->MakeBaselineIterator())
+                {
+                TimeSpanCP      timeSpan;
+
+                if (nullptr != (timeSpan = plan->GetTimeSpan(baseline.GetId())))
+                    {
+                    double      start, end;
+
+                    if (!extractTimeSpan (start, end, *timeSpan, scheduleType))
+                        continue;
+
+                    Schedule            rawSchedule (planEntry, *plan, baseline, *markupDb, GetDgnDb(), scheduleType);
+                    T_ScheduleEntryMap  entryMap;
+                    Json::Value         entriesJson = rawSchedule.GetJson(entryMap, start, end, *markupDb);
+
+                    if (entriesJson.size() > 0)
+                        {
+                        Json::Value     scheduleJson = Json::objectValue;
+
+                        scheduleJson["label"] = plan->GetUserLabel();
+                        scheduleJson["type"]  = PlanningUtility::ConvertDateTypeToString(scheduleType).c_str();
+                        scheduleJson["start"] = start;
+                        scheduleJson["end"]   = end;
+                        scheduleJson["elements"] = std::move(entriesJson);
+                        scheduleJson["index"] = (int) m_scheduleEntryMaps.size();
+                        m_schedulesJson.append(scheduleJson);
+                        m_scheduleEntryMaps.push_back(std::move(entryMap));
+                        }
+                    }
+                }
+            }
+        }
     }
 
