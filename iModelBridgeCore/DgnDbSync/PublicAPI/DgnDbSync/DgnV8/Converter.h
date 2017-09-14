@@ -2681,6 +2681,8 @@ struct XDomain
 
     //! Register an XDomain to be used by the converter. Do not free xd after calling this!
     DGNDBSYNC_EXPORT static void Register(XDomain& xd);
+    //! Un-Register an XDomain. 
+    DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
 };
 
 //=======================================================================================

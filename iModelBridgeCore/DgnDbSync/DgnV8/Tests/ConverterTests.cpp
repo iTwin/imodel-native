@@ -967,4 +967,6 @@ TEST_F(ConverterTests, XDomainTest)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(1, stmt.GetValueInt(0));
         }
+
+    XDomain::UnRegister(testXdomain);
     }

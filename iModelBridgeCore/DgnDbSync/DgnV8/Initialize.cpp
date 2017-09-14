@@ -779,4 +779,14 @@ void XDomain::Register(XDomain& xd)
     XDomainRegistry::s_xdomains.push_back(&xd); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void XDomain::UnRegister(XDomain& xd) 
+    {
+    auto i = std::find(XDomainRegistry::s_xdomains.begin(), XDomainRegistry::s_xdomains.end(), &xd); 
+    if (i != XDomainRegistry::s_xdomains.end())
+        XDomainRegistry::s_xdomains.erase(i);
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
