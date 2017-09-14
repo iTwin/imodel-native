@@ -263,7 +263,7 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
         return ERROR;
         }
 
-    JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter adapter(statement);
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {

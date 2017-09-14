@@ -143,6 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         virtual BentleyStatus GetJsonRelatedTargets(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP orderBy = nullptr) = 0;
 
         virtual BentleyStatus GetRelatedTargetKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut) = 0;
+        virtual BentleyStatus GetRelatedSourceKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR target, ECInstanceKeyMultiMap& keysOut) = 0;
 
         virtual ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
         virtual bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;

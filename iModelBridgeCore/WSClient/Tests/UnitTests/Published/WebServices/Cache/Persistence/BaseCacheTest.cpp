@@ -175,6 +175,14 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                     <Class class="TestClassB" />
                 </Target>
             </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestOneToOneHoldingRelationshipClass" isDomainClass="True" strength="holding" strengthDirection="forward">
+                <Source cardinality="(1,1)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(1,1)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
             <ECRelationshipClass typeName="TestHoldingRelationshipClass" isDomainClass="True" strength="holding" strengthDirection="forward">
                 <Source cardinality="(0,N)" polymorphic="True">
                     <Class class="TestClass" />
