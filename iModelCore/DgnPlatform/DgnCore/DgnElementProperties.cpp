@@ -1223,6 +1223,16 @@ void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECN::PropertyLayoutCP ElementECPropertyAccessor::GetPropertyLayout() const
+    {
+    ECN::PropertyLayoutCP playout;
+    m_layout->GetPropertyLayoutByIndex(playout, m_propIdx);
+    return playout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
     if (!IsValid() || (nullptr != m_accessors))
