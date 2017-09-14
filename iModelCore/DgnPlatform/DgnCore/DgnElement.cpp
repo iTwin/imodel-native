@@ -1273,80 +1273,243 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     adapter.GetRowForImodelJs(elementJson);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, JsonValueCR jsonProp, Utf8CP ecPropName, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus convertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
     {
-    ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
-    auto tdesc = propLayout->GetTypeDescriptor();
-    //if (!tdesc.IsPrimitive())
-    //    {
-    //    BeAssert(false && "not supporting complex property types for now");
-    //    return BSIERROR;
-    //    }
-
-    ECN::ECValue ecvalue;
-    if (BSISUCCESS != ECUtils::ConvertJsonToECValue(ecvalue, jsonProp, tdesc.GetPrimitiveType()))
+    if (jsonValue.isBool())
+        v = ECN::ECValue(jsonValue.asBool());
+    else if (jsonValue.isIntegral())
+        v = ECN::ECValue(jsonValue.asInt64());
+    else if (jsonValue.isDouble())
+        v = ECN::ECValue(jsonValue.asDouble());
+    else if (jsonValue.isString())
         {
-        BeAssert(false && "unsupported property type");
-        return BSIERROR;
+        if (ECN::PRIMITIVETYPE_DateTime == typeRequired)
+            {
+            DateTime dt;
+            if (BSISUCCESS == DateTime::FromString(dt, jsonValue.asCString()))
+                v = ECN::ECValue(dt);
+            else
+                v.SetIsNull(true);
+            }
+        else if (ECN::PRIMITIVETYPE_Binary == typeRequired)
+            {
+            // *** TBD: need extended type to recognize GUID
+            // *** TBD: buffer = base64-decode(jsonValue.asCString());
+            // *** TBD: v = ECN::ECValue(buffer, buffersize);
+            v.SetIsNull(true);
+            }
+        else
+            {
+            v = ECN::ECValue(jsonValue.asCString());
+            }
+        }
+    else if (jsonValue.isObject())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
+            }
+        else
+            {
+            v.SetIsNull(true);
+            }
+        }
+    else if (jsonValue.isArray())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble(), jsonValue[2].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble()));
+            }
+        else
+            {
+            v.SetIsNull(true);
+            }
+        }
+    else
+        {
+        v.SetIsNull(true);
         }
 
-    if (DgnDbStatus::Success != propAccessor.SetPropertyValue(ecvalue, arrayIdx))
-        {
-        BeAssert(false && "SetPropertyValue failed!?");
-        return BSIERROR;
-        }
+    if (!v.IsNull() && !v.ConvertToPrimitiveType(typeRequired))
+        v.SetIsNull(true);
 
-    return BSISUCCESS;
+    return v.IsNull()? BSIERROR: BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-enum class AutoHandlePropertyStatus 
+#ifdef WIP_STRUCT_ARRAY
+static ECN::IECInstancePtr ecStructInstanceFromJson(ECN::ECClassCR eclass, JsonValueCR structJson)
     {
-    FoundAndAutoHandled,
-    NotFound,
-    NotAutoHandled
-    };
+    auto inst = eclass.GetDefaultStandaloneEnabler()->CreateInstance();
+
+    for (auto const& jsPropName : structJson.getMemberNames())
+        {
+        // Probably, the JS property name will have a lowercase first letter. The standard for ECProperties is an uppercase first letter.
+        auto ecProp = getECPropertyName(eclass, jsPropName.c_str());
+        if (nullptr == ecProp)  
+            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
+
+        if (ecProp-> ...
+        }
+
+    return inst;
+    }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static BentleyStatus autoHandlePropertyFromJson(AutoHandlePropertyStatus& pstatus, DgnElementR elem, JsonValueCR jsonProp, Utf8CP ecPropName, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
+static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, ValueKind itemKind, PrimitiveType primitiveItemType, JsonValueCR jsonProp, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
     {
-    ElementECPropertyAccessor access(elem, ecPropName); // Look up the property by name, in order to get metadata info about it and to prepare to set it.
-    if (!access.IsValid())
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Primitive == itemKind)
         {
-        pstatus = AutoHandlePropertyStatus::NotFound;
-        return BSIERROR;
-        }
-
-    if (!access.IsAutoHandled())
-        {
-        pstatus = AutoHandlePropertyStatus::NotAutoHandled;
-        return BSIERROR;
-        }
-
-    pstatus = AutoHandlePropertyStatus::FoundAndAutoHandled;
-
-    if (!jsonProp.isArray())
-        return setPropertyFromJson(access, jsonProp, ecPropName);
-        
-    if (DgnDbStatus::Success != elem.AddPropertyArrayItems(access.GetPropertyIndex(), jsonProp.size()))
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    for (Json::ArrayIndex i = 0; i < jsonProp.size(); ++i)
-        {
-        if (BSISUCCESS != setPropertyFromJson(access, jsonProp[i], ecPropName, PropertyArrayIndex(i)))
+        ECN::ECValue ecvalue;
+        if (BSISUCCESS != convertJsonToECValue(ecvalue, jsonProp, primitiveItemType))
+            {
+            BeAssert(false && "unsupported property type");
             return BSIERROR;
+            }
+
+        if (DgnDbStatus::Success != propAccessor.SetPropertyValue(ecvalue, arrayIdx))
+            {
+            BeAssert(false && "SetPropertyValue failed!?");
+            return BSIERROR;
+            }
+
+        return BSISUCCESS;
         }
-    return BSISUCCESS;
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Navigation == itemKind)
+        {
+        BeInt64Id id;
+        ECClassId relationshipClassId;
+        if (jsonProp.isObject())
+            {
+            id.FromString(jsonProp["id"].asCString());
+            bvector<Utf8String> classNameParts;
+            BeStringUtilities::Split(jsonProp["relClass"].asCString(), ":", classNameParts);
+            relationshipClassId = propAccessor.GetElement().GetDgnDb().Schemas().GetClassId(classNameParts[0], classNameParts[1]);
+            }
+        else
+            {
+            id.FromString(jsonProp.asCString());
+            }
+        ECN::ECValue nav(id, relationshipClassId);
+        return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nav, arrayIdx))? BSISUCCESS: BSIERROR;
+        }
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Struct == itemKind)
+        {
+        if (!jsonProp.isObject())
+            {
+            BeAssert(false && "must have a json struct value for a struct-valued ECProperty");
+            return BSIERROR;
+            }
+
+        for (auto const& jsPropName: jsonProp.getMemberNames())
+            {
+            Utf8String accessString(propAccessor.GetAccessString());
+            Utf8String ecStructPropName(jsPropName);
+            ecStructPropName[0] = (char)toupper(ecStructPropName[0]);
+            accessString.append(".").append(ecStructPropName.c_str());
+
+            ElementECPropertyAccessor structPropAccessor(propAccessor.GetElement(), accessString.c_str());
+            if (!structPropAccessor.IsValid())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            ECN::PropertyLayoutCP memberPropLayout = structPropAccessor.GetPropertyLayout();
+            auto memberTdesc = memberPropLayout->GetTypeDescriptor();
+
+            if (BSISUCCESS != setPropertyFromJson(structPropAccessor, memberTdesc.GetTypeKind(), memberTdesc.GetPrimitiveType(), jsonProp[jsPropName], arrayIdx))
+                return BSIERROR;
+            }
+
+        return BSISUCCESS;
+        }
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Array == itemKind)
+        {
+        if (!jsonProp.isArray())
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+
+        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
+        auto tdesc = propLayout->GetTypeDescriptor();
+    
+        if (DgnDbStatus::Success != propAccessor.GetElement().AddPropertyArrayItems(propAccessor.GetPropertyIndex(), jsonProp.size()))
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+
+        for (Json::ArrayIndex i = 0; i < jsonProp.size(); ++i)
+            {
+            if (ECN::ARRAYKIND_Struct == tdesc.GetArrayKind())
+                {
+#ifdef WIP_STRUCT_ARRAY
+                ECN::ECClassCP structECClass = propAccessor.GetElement().GetDgnDb().Schemas().GetECClass(
+                auto structInstance = ecStructInstanceFromJson(*..., jsonProp[i]);
+                ECN::ECValue value;
+                value.SetStruct(structInstance.get());
+                propAccessor.SetPropertValue(value, PropertyArrayIndex(i));
+#else
+                BeAssert(false && "WIP_STRUCT_ARRAY");
+#endif
+                }
+            else
+                {
+                if (BSISUCCESS != setPropertyFromJson(propAccessor, ECN::VALUEKIND_Primitive, tdesc.GetPrimitiveType(), jsonProp[i], PropertyArrayIndex(i)))
+                    return BSIERROR;
+                }
+            }
+
+        return BSISUCCESS;
+        }
+
+    BeAssert(false && "unrecognized kind");
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static ECPropertyP getECPropertyName(ECN::ECClassCR eclass, Utf8CP jsPropName)
+    {
+    if (isupper(jsPropName[0]))
+        return eclass.GetPropertyP(jsPropName);
+
+    // If the js property name starts with a lowercase letter, assume that the corresponding ECProperty name starts with an uppercase letter.
+    // Try that first, because that's the most common case.
+    Utf8String ecPropName(jsPropName);
+    ecPropName[0] = (char)ecPropName[0];
+    auto ecprop = eclass.GetPropertyP(ecPropName.c_str());
+    if (nullptr != ecprop)
+        return ecprop;
+
+    // Maybe the real ECProperty does start with a lowercase letter...?
+    return eclass.GetPropertyP(jsPropName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1382,17 +1545,24 @@ static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJs
             continue;
 
         // Probably, the JS property name will have a lowercase first letter. The standard for ECProperties is an uppercase first letter.
-        Utf8String ecPropName(jsPropName);
-        ecPropName[0] = (char)toupper(ecPropName[0]);
-        AutoHandlePropertyStatus pstatus;
-        if (BSISUCCESS != autoHandlePropertyFromJson(pstatus, elem, elementJson[jsPropName], ecPropName.c_str()) && (AutoHandlePropertyStatus::NotFound == pstatus))
+        auto ecProp = getECPropertyName(*elem.GetElementClass(), jsPropName.c_str());
+        if (nullptr == ecProp)  
+            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
+
+        ElementECPropertyAccessor propAccessor(elem, ecProp->GetName().c_str()); // Look up the property by name, in order to get metadata info about it and to prepare to set it.
+        if (!propAccessor.IsValid())
             {
-            // No property was found by the adjusted name. Maybe the jsPropName is actually the correct name of the ECProperty!? Try it.
-            autoHandlePropertyFromJson(pstatus, elem, elementJson[jsPropName], jsPropName.c_str());
-            
-            // Note: don't assert if the property is not found. Our element wire format includes a bunch of properties that are not in the schema.
-            //          we have no reliable way of checking for them here. 
+            BeAssert(false);
+            continue;
             }
+            
+        if (!propAccessor.IsAutoHandled())
+            continue;
+
+        //  This is an auto-handled property. Set it.
+        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
+        auto tdesc = propLayout->GetTypeDescriptor();
+        setPropertyFromJson(propAccessor, tdesc.GetTypeKind(), tdesc.GetPrimitiveType(), elementJson[jsPropName]);
         }
     }
 
