@@ -18,17 +18,16 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
+struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
     {
+
     protected:
-        static const int s_initialInstanceCount = 100;
-        static const int s_opCount = 50;
+        static const int s_initialInstanceCount = 1000000;
+        static const int s_opCount = 50000;
         static const uint64_t s_firstElementId = UINT64_C(1099511627785);
 
-        PerformanceElementsCRUDTestFixture()
-            {
-            DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-            }
+        PerformanceElementsCRUDTestFixture(){}
+
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName) const;
@@ -51,7 +50,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
 
-        void ApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount, bool setFederationGuid = false, int idStrategy = 0);
+        void ApiInsertTime(Utf8CP className, int initialInstanceCount1 = s_initialInstanceCount, int opCount = s_opCount, bool setFederationGuid = false, int idStrategy = 0);
         void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
