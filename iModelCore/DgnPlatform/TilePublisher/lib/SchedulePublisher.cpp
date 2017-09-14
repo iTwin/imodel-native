@@ -238,7 +238,7 @@ public:
         State(double time) : m_time(time), m_show(false), m_setColor(false) { }
         };
         
-
+    bool operator < (struct ElementSchedule const& rhs) const { return m_entries < rhs.m_entries; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -345,27 +345,43 @@ void    AddEntry (DgnElementId elementId, ElementScheduleEntry const& entry)
         found->second->AddEntry(entry);
     }
     
+struct CompareSchedules
+    {
+    bool operator() (ElementSchedulePtr const& schedule0, ElementSchedulePtr const& schedule1) const
+        {
+        return *schedule0 < *schedule1;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**                                                                                                                                                 
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value     GetJson(double start, double end, DgnDbCR db)
     {
     Json::Value scheduleJson = Json::arrayValue;
-
-    int i=0;
+//#define DO_MERGE
+#ifdef DO_MERGE
+    bmap<ElementSchedulePtr, bvector<DgnElementId>, CompareSchedules>     mergedSchedules;
 
     for (auto const& curr : m_elementSchedules)
-        scheduleJson.append(curr.second->GetJson(curr.first, start, end, db));
+        {
+        bvector<DgnElementId>   ids(1, curr.first);
+        auto        insertPair = mergedSchedules.Insert(curr.second, bvector<DgnElementId>(1, curr.first));
 
+        if (!insertPair.second)
+            insertPair.first->second.push_back(curr.first);
+        }
+#else
+    for (auto const& curr : m_elementSchedules)
+        scheduleJson.append(curr.second->GetJson(curr.first, start, end, db));
+#endif
     return scheduleJson;
     }
-
-};  // Schedule
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Planning::Baseline::Entry const& baselineEntry, DgnDbCR markupDb, DgnDbCR db, DateType dateType)
+Schedule (Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Planning::Baseline::Entry const& baselineEntry, DgnDbCR markupDb, DgnDbCR db, DateType dateType)
     {
     Utf8CP              ecSqlFormatStr =
         "SELECT Activity.ECInstanceId, TimeSpan.%sStart, TimeSpan.%sFinish " \
@@ -404,11 +420,12 @@ static BentleyStatus   extractRawSchedule (Schedule& schedule, Planning::Plan::E
             ElementScheduleEntry    scheduleEntry(startJulian, endJulian, entry.GetAppearanceProfileId());
 
             for (auto& elementId : affectedElements)
-                schedule.AddEntry(elementId, scheduleEntry);
+                AddEntry(elementId, scheduleEntry);
             }
         }
-    return SUCCESS;
     }
+};  // Schedule
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -423,21 +440,20 @@ BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR
         if (!plan.IsValid())
             {
             BeAssert(false);
-            continue;
+            return ERROR;
             }
         for (auto& baseline : plan->MakeBaselineIterator())
             {
-            Schedule        rawSchedule;
             TimeSpanCP      timeSpan;
 
-            if (nullptr != (timeSpan = plan->GetTimeSpan(baseline.GetId())) &&
-                SUCCESS == extractRawSchedule(rawSchedule, planEntry, *plan, baseline, markupDb, db, dateType))
+            if (nullptr != (timeSpan = plan->GetTimeSpan(baseline.GetId())))
                 {
                 double      start, end;
 
                 if (!extractTimeSpan (start, end, *timeSpan, dateType))
                     continue;
 
+                Schedule        rawSchedule (planEntry, *plan, baseline, markupDb, db, dateType);
                 Json::Value     entriesJson = rawSchedule.GetJson(start, end, markupDb);
 
                 if (entriesJson.size() > 0)
@@ -454,8 +470,7 @@ BentleyStatus extractSchedules(Json::Value& schedules, DgnDbCR markupDb, DgnDbCR
                 }
             }
         }
-
-    return 0 == schedules.size() ? ERROR : SUCCESS;
+    return schedules.empty() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,9 +497,10 @@ Json::Value   PublisherContext::GetScheduleJson()
         return scheduleJson;
 
     DateType        scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
+    int             scheduleId = 0;
 
     for (auto& scheduleType : scheduleTypes)
-        extractSchedules(scheduleJson, *markupDb, GetDgnDb(), scheduleType);
+        extractSchedules(scheduleJson, *markupDb, GetDgnDb(), scheduleType, scheduleId++);
 
     return scheduleJson;
     }

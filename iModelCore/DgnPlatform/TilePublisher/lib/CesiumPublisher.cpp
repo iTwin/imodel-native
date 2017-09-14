@@ -238,12 +238,18 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
+//#define WORKING_ON_SCHEDULE 
+#ifdef WORKING_ON_SCHEDULE
+    Json::Value     scheduleJson = GetScheduleJson();
+#endif
+
     auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;
 
     ProgressMeter progressMeter(*this);
     TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
+
 
     DRange3d            range;
 
