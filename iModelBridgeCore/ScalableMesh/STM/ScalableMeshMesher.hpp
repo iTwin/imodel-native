@@ -1671,7 +1671,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         if (bound.size() > 2)
             {
             if (!bsiDPoint3d_pointEqualTolerance(&bound.front(), &bound.back(), 1e-8)) bound.push_back(bound.front());
-#if 1//SM_OUTPUT_MESHES_STITCHING
+#if 0//SM_OUTPUT_MESHES_STITCHING
             WString namePoly = LOG_PATH_STR_W+L"poly_";
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
             namePoly.append(L"_");
@@ -1865,7 +1865,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         {
         for (auto& feature : voidFeatures)
             {
-#if 1//SM_OUTPUT_MESHES_STITCHING
+#if 0//SM_OUTPUT_MESHES_STITCHING
             WString namePoly = LOG_PATH_STR_W+L"featurepoly_";
             namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
             namePoly.append(L"_");
