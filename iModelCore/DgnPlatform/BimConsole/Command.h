@@ -227,7 +227,7 @@ struct SqliteCommand final : public Command
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
-        void ExecuteSelect(BeSQLite::Statement&) const;
+        void ExecuteSelect(BeSQLite::Statement&, Session& session) const;
         void ExecuteNonSelect(Session&, BeSQLite::Statement&) const;
 
     public:
