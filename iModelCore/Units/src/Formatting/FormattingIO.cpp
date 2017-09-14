@@ -118,7 +118,7 @@ size_t StdFormatSet::StdInit()
 size_t StdFormatSet::CustomInit()
     {
     m_customSet.clear();
-    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");  // "Default Decimal" "Standard representation of decimal numbers with 6 dig
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); 
@@ -132,7 +132,9 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2u\", \"SpecName\" : \"Stop1000-2u\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2\", \"SpecName\" : \"Stop100-2\", \"SpecType\" : \"numeric\"}");
+   
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4\", \"SpecName\" : \"Stop100-2-4\", \"SpecType\" : \"numeric\"}");
+    
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4\", \"SpecName\" : \"Stop1000-2-4\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2\", \"SpecName\" : \"Stop1000-2\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"realSign\", \"SpecName\" : \"SignedReal\", \"SpecType\" : \"numeric\"}");
@@ -563,6 +565,11 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     Json::Value jNFS;
     jNFS[json_SpecName()] = m_name;
     jNFS[json_SpecAlias()] = m_alias;
+    if (!m_description.empty())
+        jNFS[json_SpecDescript()] = m_description;
+    if (!m_displayLabel.empty())
+        jNFS[json_SpecLabel()] = m_displayLabel;
+
     jNFS[json_SpecType()] = Utils::FormatSpecTypeToName(m_specType);
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
@@ -589,6 +596,10 @@ NamedFormatSpec::NamedFormatSpec(Json::Value jval)
             m_name = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecAlias()) == 0)
             m_alias = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
+            m_description = val.asString();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
+            m_displayLabel = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
             m_specType = Utils::NameToFormatSpecType(val.asCString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)

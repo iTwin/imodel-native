@@ -64,6 +64,8 @@ BE_JSON_NAME(minWidth)
 // NamedFormatSpec
 BE_JSON_NAME(SpecName)
 BE_JSON_NAME(SpecAlias)
+BE_JSON_NAME(SpecDescript)
+BE_JSON_NAME(SpecLabel)
 BE_JSON_NAME(SpecType)
 BE_JSON_NAME(CompositeFormat)
 BE_JSON_NAME(NumericFormat)
@@ -555,6 +557,8 @@ struct NamedFormatSpec
 private:
         Utf8String         m_name;                  // name or ID of the format
         Utf8String         m_alias;                 // short alternative name (alias)
+        Utf8String         m_description;           // @units_msg:descr_Real8@
+        Utf8String         m_displayLabel;          // @units_msg:label_Real8@
         NumericFormatSpec  m_numericSpec;
         CompositeValueSpec m_compositeSpec;
         FormatSpecType     m_specType;
@@ -569,7 +573,13 @@ public:
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         bool HasName(Utf8CP name) const { return 0 == BeStringUtilities::StricmpAscii(name, m_name.c_str()); }
         bool HasAlias(Utf8CP name) const { return 0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()); }
+        
         Utf8CP GetName() const { return m_name.c_str(); };
+        Utf8CP GetDescription() const { return m_description.c_str(); };
+        Utf8CP SetDescription(Utf8CP descr) { m_description = descr;  return m_description.c_str(); };
+        Utf8CP GetLabel() const { return m_displayLabel.c_str(); };
+        Utf8CP SetLabel(Utf8CP label) { m_displayLabel = label;  return m_displayLabel.c_str(); };
+
         FormatSpecType  GetSpecType(){return m_specType;}
         bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
         NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
@@ -654,8 +664,8 @@ struct FormatUnitGroup
 struct StdFormatSet
     {
 private:
-    bvector<NamedFormatSpecCP> m_formatSet;
-    bvector<NamedFormatSpecCP> m_customSet;
+    bvector<NamedFormatSpecCP> m_formatSet;    // core + app
+    bvector<NamedFormatSpecCP> m_customSet;    // user
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr);
