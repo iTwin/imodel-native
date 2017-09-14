@@ -33,7 +33,7 @@
         <SubPart PartName="VersionedV8_InternalSDK" />
         <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <!-- The following subparts produce libraries that define optional domains. If you intend to use these domains and if you do not depend on the DgnClientSDK, then you must depend on these subcategories directly. -->
         <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
@@ -84,7 +84,7 @@
       <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
       <SubPart PartName="PublicAPI"/>
       <SubPart PartName="ImagePP"               PartFile="ImagePP"          Repository="ImagePP" />
-      <SubPart PartName="BeLibJpegTurbo"        PartFile="BeLibJpegTurbo"   Repository="Libsrc-libjpegturbo"/>
+      <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
       <SubPart PartName="Raster"                PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
       <SubPart PartName="PointCloud"            PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
       <Bindings>
@@ -131,6 +131,7 @@
         <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
         <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
         <ProductDirectory Name="VendorNotices"              Path="notices" />
+        <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
         <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
