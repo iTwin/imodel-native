@@ -1374,8 +1374,6 @@ static bool isDefinitelyNotAutoHandled(Utf8CP jsPropName)
 //---------------------------------------------------------------------------------------
 static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJson)
     {
-    auto eclass = elem.GetElementClass();
-    
     // I will loop over the props passed in, rather than the auto-handled properties that are defined for this element class.
     // The caller will typically set only a small subset of the properties.
     for (auto const& jsPropName : elementJson.getMemberNames())
