@@ -117,21 +117,14 @@ IRepositoryManagerP DgnDbServerClientUtils::GetRepositoryManager(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static iModelInfoPtr getRepositoryInfoByName(Error& err, Client& client, Utf8String projectId, Utf8StringCR name)
     {
-    auto result = client.GetiModels(projectId)->GetResult();
+    auto result = client.GetiModelByName(projectId, name)->GetResult();
     if (!result.IsSuccess())
         {
         err = result.GetError();
         return nullptr;
         }
 
-    for (auto iModel : result.GetValue())
-        {
-        if (name.EqualsI(iModel->GetName()))
-            return iModel;
-        }
-
-    err = Error(Error::Id::iModelDoesNotExist);
-    return nullptr;
+    return result.GetValue();
     }
 
 /*---------------------------------------------------------------------------------**//**
