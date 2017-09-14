@@ -186,17 +186,20 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
             // *** TBD: v = ECN::ECValue(buffer, buffersize);
             v.SetIsNull(true);
             }
-        else if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+        else
+            {
+            v = ECN::ECValue(jsonValue.asCString());
+            }
+        }
+    else if (jsonValue.isObject())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
             {
             v = ECN::ECValue(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
             }
         else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
             {
             v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
-            }
-        else
-            {
-            v = ECN::ECValue(jsonValue.asCString());
             }
         }
     else if (jsonValue.isArray())
