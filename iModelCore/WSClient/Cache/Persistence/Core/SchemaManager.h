@@ -26,7 +26,6 @@ struct SchemaManager
         ECSchemaPtr LoadSchema(BeFileNameCR schemaPath, ECSchemaReadContext& context);
         BentleyStatus LoadSchemas(const std::vector<BeFileName>& schemaPaths, std::vector<ECSchemaPtr>& schemasOut);
         BentleyStatus FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context);
-        BentleyStatus FixLegacySchemaRelationshipCardinalities(ECSchema& schema);
         Utf8String ToFullNameListString(const std::vector<ECSchemaPtr>& schemas);
         BentleyStatus ImportSchemas(const std::vector<ECSchemaPtr>& schemas);
         BentleyStatus RemoveReferences(ECSchema& schema, SchemaKeyCR referencedSchemaKey);

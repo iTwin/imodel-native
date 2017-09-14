@@ -298,8 +298,7 @@ ECInstanceKeyR deletedInstanceOut
 )
     {
     //Check if there is one to one relathioniship
-    //Note: Becouse of the schema adjustments, have to check upper limit
-    if (1 != relathionshipConstrain.GetMultiplicity().GetUpperLimit())
+    if (0 != RelationshipMultiplicity::Compare(relathionshipConstrain.GetMultiplicity(), RelationshipMultiplicity::OneOne()))
         return SUCCESS;
 
     ECInstanceKeyMultiMap keysOut;

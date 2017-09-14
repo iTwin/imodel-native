@@ -71,9 +71,6 @@ BentleyStatus SchemaManager::ImportExternalSchemas(const std::vector<ECSchemaPtr
 
         if (SUCCESS != FixLegacySchema(*schema, *context))
             return ERROR;
-
-        if (SUCCESS != FixLegacySchemaRelationshipCardinalities(*schema))
-            return ERROR;
         }
     return ImportSchemas(schemas);
     }
@@ -257,55 +254,6 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
     return SUCCESS;
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& schema)
-    {
-    // XXX: 2017-03 workaround to support WSG 2.5 schemas on DgnDb61-16Q4 for Navigator app.
-    // Relationships with (1,1) cardinality ends are mapped as required and such end class instance cannot be inserted without NavigationProperty.
-    // WSCache insert instances seperately, and WSG 2.x schemas have no NavigationProperties, so workaround to change cardinalities from (1,1) to (0,1) is done.
-
-    bset<ECClassCP> modifiedClasses;
-
-    for (ECClassCP ecClass : schema.GetClasses())
-        {
-        ECRelationshipClassCP ecRelClass = ecClass->GetRelationshipClassCP();
-        if (!ecRelClass)
-            continue;
-
-        if (0 == RelationshipMultiplicity::Compare(ecRelClass->GetSource().GetMultiplicity(), RelationshipMultiplicity::OneOne()))
-            {
-            ecRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-            modifiedClasses.insert(ecRelClass);
-            }
-
-        if (0 == RelationshipMultiplicity::Compare(ecRelClass->GetTarget().GetMultiplicity(), RelationshipMultiplicity::OneOne()))
-            {
-            ecRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-            modifiedClasses.insert(ecRelClass);
-            }
-        }
-
-    if (!modifiedClasses.empty())
-        {
-        Utf8String classesStr;
-        for (auto ecClass : modifiedClasses)
-            {
-            if (!classesStr.empty())
-                classesStr += ", ";
-            classesStr += ecClass->GetName();
-            }
-
-        LOG.warningv(
-            "Adjustements for schema '%s' relationship classes were applided due to compatibility issues. "
-            "End cardinalities (1,1) were changed to (0,1) for classes: %s",
-            schema.GetFullSchemaName().c_str(),
-            classesStr.c_str());
-        }
-
-    return SUCCESS;
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2017
