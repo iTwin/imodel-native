@@ -437,6 +437,8 @@ public:
 
     uint32_t GetPropertyIndex() const {return m_propIdx;}
 
+    DgnElementR GetElement() const {return m_element;}
+
     DGNPLATFORM_EXPORT ECN::PropertyLayoutCP GetPropertyLayout() const;
 
     DGNPLATFORM_EXPORT Utf8CP GetAccessString() const;
