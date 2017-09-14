@@ -64,7 +64,7 @@ struct IMHSClientExe : DgnPlatformLib::Host
     IMHSClientExe();
     BentleyStatus Initialize(Utf8String exePath);
     bool IsValid() const { return m_client.IsValid(); }
-    BriefcasePtr AcquireBriefcase(iModelConnectionPtr connection, iModelInfoPtr imodelInfo, Utf8String guid);
+    BriefcasePtr AcquireBriefcase(iModelConnectionPtr connection, Utf8String guid);
     int CreateNewModelAndPush(Utf8String projectNr, Utf8String imodelId);
     };
 

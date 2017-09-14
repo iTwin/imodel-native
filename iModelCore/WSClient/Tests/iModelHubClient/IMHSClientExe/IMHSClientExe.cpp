@@ -63,13 +63,13 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, iModelInfoPtr imodelInfo, Utf8String guid)
+BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, Utf8String guid)
     {
     BeFileName briefcaseLocation(GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     briefcaseLocation.AppendToPath(BeFileName(guid));
     briefcaseLocation.AppendSeparator();
     BeFileName::CreateNewDirectory(briefcaseLocation.c_str());
-    auto acquireResult = m_client->AcquireBriefcase(*imodelInfo, briefcaseLocation, false)->GetResult();
+    auto acquireResult = m_client->AcquireBriefcase(connection->GetiModelInfo(), briefcaseLocation, false)->GetResult();
     if (!acquireResult.IsSuccess())
         return nullptr;
 
@@ -92,9 +92,8 @@ BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, iMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodelId)
     {
-    auto getiModelResult = m_client->GetiModelById(projectId, imodelId)->GetResult();
     // Connect to imodel
-    auto connectionResult = m_client->ConnectToiModel(*getiModelResult.GetValue())->GetResult();
+    auto connectionResult = m_client->ConnectToiModel(*m_client->GetiModelById(projectId, imodelId)->GetResult().GetValue())->GetResult();
     if (!connectionResult.IsSuccess())
         return BSIERROR;
     iModelConnectionPtr connection = connectionResult.GetValue();
@@ -102,7 +101,7 @@ int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodel
 
     // Acquire briefcase
     Utf8String guid = BeSQLite::BeGuid(true).ToString();
-    auto briefcase = AcquireBriefcase(connection, getiModelResult.GetValue(), guid);
+    auto briefcase = AcquireBriefcase(connection, guid);
     if (briefcase.IsNull())
         return 1;
     DgnDbR briefcaseDb = briefcase->GetDgnDb();
