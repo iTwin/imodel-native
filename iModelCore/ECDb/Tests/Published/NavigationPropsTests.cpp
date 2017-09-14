@@ -2316,11 +2316,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     Utf8String newElementJsonStr;
     newElementJsonStr.Sprintf("{\"Code\":\"TestCode-1\","
-                              " \"Model1\":{\"" JSON_NAVIGATION_ID_KEY "\": %s},"
-                              " \"Model2\":{\"" JSON_NAVIGATION_ID_KEY "\": %s, \"" JSON_NAVIGATION_RELECCLASSID_KEY "\": %s}}",
+                              " \"Model1\":{\"id\": \"%s\"},"
+                              " \"Model2\":{\"id\": \"%s\", \"relClassName\": \"np.ParentHasChildren2\"}}",
                               modelKey.GetInstanceId().ToString().c_str(),
-                              modelKey.GetInstanceId().ToString().c_str(),
-                              m_ecdb.Schemas().GetClassId("np", "ParentHasChildren2").ToString().c_str());
+                              modelKey.GetInstanceId().ToString().c_str());
 
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError()) << newElementJsonStr.c_str();
@@ -2374,11 +2373,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     JsonECSqlSelectAdapter selAdapter(selStmt);
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     Json::Value json;
-    ASSERT_TRUE(selAdapter.GetRowInstance(json));
+    ASSERT_EQ(SUCCESS, selAdapter.GetRow(json));
 
-    Utf8CP idStr = json["$ECInstanceId"].asCString();
-    ECInstanceId id;
-    ASSERT_EQ(SUCCESS, ECInstanceId::FromString(id, idStr));
+    ECInstanceId id = ECJsonUtilities::JsonToId<ECInstanceId>(json[ECJsonUtilities::json_id()]);
     ASSERT_EQ(elementKey.GetInstanceId(), id);
 
     {
@@ -2387,13 +2384,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     Json::Value const& modelJson = json["Model1"];
     ASSERT_FALSE(modelJson.isNull()) << "Model1 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[JSON_NAVIGATION_ID_KEY];
+    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model1.Id is not expected to be null in the read ECInstance";
-    ASSERT_EQ(modelKey.GetInstanceId().GetValue(), BeJsonUtilities::Int64FromValue(modelIdJson));
+    ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassIdJson = modelJson[JSON_NAVIGATION_RELECCLASSID_KEY];
-    ASSERT_FALSE(modelRelClassIdJson.isNull()) << "Model1.RelECClassId is not expected to be null in the read ECInstance";
-    ASSERT_EQ(m_ecdb.Schemas().GetClassId("np", "ParentHasChildren1").GetValue(), BeJsonUtilities::Int64FromValue(modelRelClassIdJson));
+    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model1.RelECClassId is not expected to be null in the read ECInstance";
+    ASSERT_STREQ("np.ParentHasChildren1", modelRelClassNameJson.asCString());
     }
 
     {
@@ -2404,13 +2401,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     Json::Value const& modelJson = json["Model2"];
     ASSERT_FALSE(modelJson.isNull()) << "Model2 is not expected to be null in the read ECInstance";
-    Json::Value const& modelIdJson = modelJson[JSON_NAVIGATION_ID_KEY];
+    Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model2.Id is not expected to be null in the read ECInstance";
-    ASSERT_EQ(modelKey.GetInstanceId().GetValue(), BeJsonUtilities::Int64FromValue(modelIdJson));
+    ASSERT_STRCASEEQ(modelKey.GetInstanceId().ToHexStr().c_str(), modelIdJson.asCString());
 
-    Json::Value const& modelRelClassIdJson = modelJson[JSON_NAVIGATION_RELECCLASSID_KEY];
-    ASSERT_FALSE(modelRelClassIdJson.isNull()) << "Model2.RelECClassId is not expected to be null in the read ECInstance";
-    ASSERT_EQ(m_ecdb.Schemas().GetClassId("np", "ParentHasChildren2").GetValue(), BeJsonUtilities::Int64FromValue(modelRelClassIdJson));
+    Json::Value const& modelRelClassNameJson = modelJson[ECJsonUtilities::json_navRelClassName()];
+    ASSERT_FALSE(modelRelClassNameJson.isNull()) << "Model2.RelECClassId is not expected to be null in the read ECInstance";
+    ASSERT_STREQ("np.ParentHasChildren2", modelRelClassNameJson.asCString());
     }
 
     }

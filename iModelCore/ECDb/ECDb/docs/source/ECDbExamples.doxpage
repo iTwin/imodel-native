@@ -337,8 +337,7 @@
     @ref BentleyApi::Json::Value "JSON" objects into the @ref ECDbFile "ECDb file". It internally
     creates the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement", binds the corresponding values to it, and
     finally executes it.
-    The @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" and
-    @ref BentleyApi::BeSQLite::EC::JsonDeleter "JsonDeleter" work likewise.
+    The @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" works likewise.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_JsonInserter,Example]
     __PUBLISH_INSERT_FILE__ Overview_ECDb_JsonInserter.sampleCode

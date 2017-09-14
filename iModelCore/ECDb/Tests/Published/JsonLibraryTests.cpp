@@ -428,6 +428,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
 
     // insert 1 row using JsonCpp
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonInput));
@@ -441,10 +442,10 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
 
     // now update the row that was just inserted
     JsonUpdater updater(m_ecdb, *documentClass, nullptr);
-
-    rapidJsonInput["$ECInstanceId"].SetNull();
-    rapidJsonInput["Urx"].SetDouble(3.3);
-    rapidJsonInput["Ury"].SetDouble(4.4);
+    ASSERT_TRUE(updater.IsValid());
+    rapidJsonInput[ECJsonSystemNames::Id()].SetNull();
+    rapidJsonInput.AddMember("Urx", 3.3, rapidJsonInput.GetAllocator());
+    rapidJsonInput.AddMember("Ury", 4.4, rapidJsonInput.GetAllocator());
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetInstanceId(), rapidJsonInput));
     m_ecdb.SaveChanges();

@@ -251,20 +251,6 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     return ViewGenerator::CreateUpdatableViews(GetECDb());
     }
 
- void SchemaManager::Export(bvector<ECSchemaCP> const& schemas, Utf8CP outputFolder)
-    {
-
-     for (ECSchemaCP schema : schemas)
-         {
-         if (schema->IsStandardSchema())
-             continue;
-
-         BeFileName file(outputFolder);
-         file.AppendUtf8((schema->GetFullSchemaName() + ".ecschema.xml").c_str());
-         schema->WriteToXmlFile(file.GetName());
-         }
-    }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -518,14 +504,6 @@ ECSchemaPtr SchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType matchTy
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
     schemaContext.GetCache().AddSchema(*schemaP);
     return schemaP;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP SchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
-    {
-    return GetClass(schemaName, className);
     }
 
 //---------------------------------------------------------------------------------------

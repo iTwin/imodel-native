@@ -76,9 +76,10 @@ BentleyStatus ECDb_JsonECSqlSelectAdapter()
     while (BE_SQLITE_ROW == statement.Step())
         {
         Json::Value currentRow;
-        bool stat = adapter.GetRowInstance(currentRow);
-        if (stat)
-            jsonPage.append(currentRow);
+        if (SUCCESS != adapter.GetRow(currentRow))
+            return ERROR;
+
+        jsonPage.append(currentRow);
         }
 
     // do something with the page of JSON data

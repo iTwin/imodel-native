@@ -101,9 +101,9 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
         //! Implementation of IECClassLocater
-        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override;
-        static void Export(bvector<ECN::ECSchemaCP> const& schemas, Utf8CP outputFolder);
-
+        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return GetClass(schemaName, className); }
+        ECN::ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) override { return GetClassId(schemaName, className); }
+        
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         SchemaManager(ECDb const&, BeMutex&);

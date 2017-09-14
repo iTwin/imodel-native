@@ -165,11 +165,6 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
         ASSERT_EQ(expected == ExpectedResult::Success, jsonUpdater.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
-        {
-        JsonDeleter jsonDeleter(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, jsonDeleter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
-        }
-
         };
 
     runAdapters(readonlyECDb, nullptr, ExpectedResult::Error);

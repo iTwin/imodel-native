@@ -1973,10 +1973,11 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
     testFilePath.AppendToPath(L"ECDb");
-    testFilePath.AppendToPath(L"StartupCompany.json");
+    testFilePath.AppendToPath(L"Schemas");
+    testFilePath.AppendToPath(L"ECSqlTest.01.00.ecschema.xml");
     DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
     DbResult stat = BE_SQLITE_OK;
-    fi2Id = embeddedFileTable.Import(&stat, "embed1", testFilePath.GetNameUtf8().c_str(), "JSON");
+    fi2Id = embeddedFileTable.Import(&stat, "embed1", testFilePath.GetNameUtf8().c_str(), "XML");
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(fi2Id.IsValid());
 

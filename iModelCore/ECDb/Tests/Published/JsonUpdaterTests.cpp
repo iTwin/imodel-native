@@ -40,7 +40,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(ECInstanceId(), val)) << "Empty JSON value";
 
     val["Name"] = "test2.txt";
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), val)) << "JSON value without id member";
     }
 
 //---------------------------------------------------------------------------------------
@@ -233,16 +233,34 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
 
-    BeFileName pathname;
-    BeTest::GetHost().GetDocumentsRoot(pathname);
-    pathname.AppendToPath(L"ECDb");
-    pathname.AppendToPath(L"CommonGeometry.json");
+    Utf8String expectedJson(R"json({ "Location" : { "Polygon" : { "Point" : [[17.672993680591887, 48.591463341759322, 0.0], 
+                                                                    [26.072599028627593, 48.591463341759322, 0.0],
+                                                                    [26.072599028627593, 54.891247623320339, 0.0],
+                                                                    [17.672993680591887, 54.891247623320339, 0.0],
+                                                                    [17.672993680591887, 48.591463341759322, 0.0]] }},
+                    "LLP" : {
+                        "Coordinate" : {
+                            "xyz" : [17.672993680591887, 48.591463341759322, 0.0]
+                        }
+                    },
+                    "URP" : {
+                        "Coordinate" : {
+                            "xyz" : [26.072599028627593, 54.891247623320339, 0.0]
+                        }
+                    },
+                    "Center" : {
+                        "Coordinate" : {
+                            "xyz" : [21.87279635460974, 51.741355482539831, 0.0]
+                        }
+                    }
+                        }
+                       )json");
 
     Json::Value expectedJsonCppValue;
-    ECDbTestUtility::ReadJsonInputFromFile(expectedJsonCppValue, pathname);
+    ASSERT_TRUE(Json::Reader::Parse(expectedJson, expectedJsonCppValue));
 
     rapidjson::Document expectedRapidJsonValue;
-    ASSERT_FALSE(expectedRapidJsonValue.Parse<0>(Json::FastWriter().write(expectedJsonCppValue).c_str()).HasParseError());
+    ASSERT_FALSE(expectedRapidJsonValue.Parse<0>(expectedJson.c_str()).HasParseError());
 
     // Insert using RapidJson API
     JsonInserter inserter(m_ecdb, *spatialClass, nullptr);

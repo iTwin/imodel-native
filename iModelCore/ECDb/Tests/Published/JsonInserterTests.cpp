@@ -12,27 +12,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct JsonInserterTests : public ECDbTestFixture
-    {
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                      Muhammad Hassan                  02/16
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bool WriteJsonToFile(WCharCP path, const Json::Value& jsonValue)
-        {
-        Utf8String strValue = Json::StyledWriter().write(jsonValue);
-        FILE* file = fopen(Utf8String(path).c_str(), "w");
-
-        if (file == NULL)
-            {
-            BeAssert(false);
-            return false;
-            }
-        fwprintf(file, L"%ls", WString(strValue.c_str(), BentleyCharEncoding::Utf8).c_str());
-        fclose(file);
-        return true;
-        }
-    };
+struct JsonInserterTests : public ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
@@ -47,8 +27,8 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    Json::Value jsonInput;
-    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    Json::Value expectedJson;
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(expectedJson, jsonInputFile));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -58,7 +38,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, jsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, expectedJson));
     m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
@@ -72,24 +52,16 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document"));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
-    Json::Value afterImportJson;
+    Json::Value actualJson;
     JsonECSqlSelectAdapter jsonAdapter(statement);
-    ASSERT_TRUE(jsonAdapter.GetRowInstance(afterImportJson, documentClass->GetId()));
+    ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
 
     /* Validate */
-    int compare = jsonInput.compare(afterImportJson);
-    if (0 != compare)
-        {
-        BeFileName afterImportFile;
-        BeTest::GetHost().GetOutputRoot(afterImportFile);
-        afterImportFile.AppendToPath(L"JsonTestClass-AfterImport.json");
-        WriteJsonToFile(afterImportFile.GetName(), afterImportJson);
-        ASSERT_TRUE(false) << "Inserted and Retrieved Json doesn't match";
-        }
+    ASSERT_EQ(0, expectedJson.compare(actualJson)) << actualJson.ToString().c_str();
 
     //verify Json Insertion using the other Overload
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(actualJson));
     m_ecdb.SaveChanges();
 
     //Verify Inserted Instances.
@@ -112,13 +84,10 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    Json::Value jsonInput;
-    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
-
-    //to rapidjson
-    rapidjson::Document rapidJsonInput;
-    bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
-    ASSERT_TRUE(parseSuccessful);
+    Json::Value expectedJsonCpp;
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(expectedJsonCpp, jsonInputFile));
+    rapidjson::Document expectedJson;
+    ASSERT_FALSE(expectedJson.Parse<0>(Json::FastWriter().write(expectedJsonCpp).c_str()).HasParseError());
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -128,7 +97,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     // Insert using rapidjson
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, rapidJsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, expectedJson));
     m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
@@ -144,24 +113,66 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
 
-    Json::Value afterImportJson;
+    Json::Value actualJson;
     JsonECSqlSelectAdapter jsonAdapter(statement);
-    bool status = jsonAdapter.GetRowInstance(afterImportJson, documentClass->GetId());
-    ASSERT_TRUE(status);
+    ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
 
     /* Validate */
-    int compare = jsonInput.compare(afterImportJson);
-    if (0 != compare)
-        {
-        BeFileName afterImportFile;
-        BeTest::GetHost().GetOutputRoot(afterImportFile);
-        afterImportFile.AppendToPath(L"JsonTestClass-AfterImport.json");
-        WriteJsonToFile(afterImportFile.GetName(), afterImportJson);
-        ASSERT_TRUE(false) << "Inserted and Retrieved Json doesn't match";
-        }
+    ASSERT_EQ(0, expectedJsonCpp.compare(actualJson)) << actualJson.ToString().c_str();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, InsertRapidJson2)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("insertrapidjson.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='s' typeName='string' />"
+        "        <ECProperty propertyName='p2d' typeName='point2d' />"
+        "        <ECProperty propertyName='p3d' typeName='point3d' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+
+    rapidjson::Document rapidJsonVal;
+    rapidJsonVal.SetObject();
+    rapidJsonVal.AddMember("Price", 3.0003, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("s", "StringVal", rapidJsonVal.GetAllocator());
+
+    //add point2d member
+    rapidjson::Value point2dObjValue;
+    point2dObjValue.SetObject();
+    point2dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
+    point2dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("p2d", point2dObjValue, rapidJsonVal.GetAllocator());
+
+    //add point3d member
+    rapidjson::Value point3dObjValue;
+    point3dObjValue.SetObject();
+    point3dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
+    point3dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
+    point3dObjValue.AddMember("z", 0, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("p3d", point3dObjValue, rapidJsonVal.GetAllocator());
+
+    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
+    ASSERT_TRUE(parentClass != nullptr);
+    JsonInserter inserter(m_ecdb, *parentClass, nullptr);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, rapidJsonVal));
+    m_ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
+    stmt.BindPoint2d(1, DPoint2d::From(0, 0));
+    stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
+    DbResult stepStatus = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    }
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle           01/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -240,57 +251,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     EXPECT_EQ(1, statement.GetValueId <ECInstanceId>(0).GetValue());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Muhammad Hassan                  09/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecprimitivevaluefromjson.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "        <ECProperty propertyName='s' typeName='string' />"
-        "        <ECProperty propertyName='p2d' typeName='point2d' />"
-        "        <ECProperty propertyName='p3d' typeName='point3d' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
 
-    rapidjson::Document rapidJsonVal;
-    rapidJsonVal.SetObject();
-    rapidJsonVal.AddMember("Price", 3.0003, rapidJsonVal.GetAllocator());
-    rapidJsonVal.AddMember("s", "StringVal", rapidJsonVal.GetAllocator());
-
-    //add point2d member
-    rapidjson::Value point2dObjValue;
-    point2dObjValue.SetObject();
-    point2dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
-    point2dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
-    rapidJsonVal.AddMember("p2d", point2dObjValue, rapidJsonVal.GetAllocator());
-
-    //add point3d member
-    rapidjson::Value point3dObjValue;
-    point3dObjValue.SetObject();
-    point3dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
-    point3dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
-    point3dObjValue.AddMember("z", 0, rapidJsonVal.GetAllocator());
-    rapidJsonVal.AddMember("p3d", point3dObjValue, rapidJsonVal.GetAllocator());
-
-    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
-    ASSERT_TRUE(parentClass != nullptr);
-    JsonInserter inserter(m_ecdb, *parentClass, nullptr);
-
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, rapidJsonVal));
-    m_ecdb.SaveChanges();
-
-    ECSqlStatement stmt;
-    ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
-    stmt.BindPoint2d(1, DPoint2d::From(0, 0));
-    stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
-    DbResult stepStatus = stmt.Step();
-    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
-    }
 
 #define JSONTABLE_NAME "testjson"
 

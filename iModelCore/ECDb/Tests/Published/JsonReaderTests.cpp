@@ -14,26 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct JsonReaderTests : public ECDbTestFixture
-    {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                      Muhammad Hassan                  05/16
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bool WriteJsonToFile(WCharCP path, const Json::Value& jsonValue)
-        {
-        Utf8String strValue = Json::StyledWriter().write(jsonValue);
-        FILE* file = fopen(Utf8String(path).c_str(), "w");
-
-        if (file == NULL)
-            {
-            BeAssert(false);
-            return false;
-            }
-        fwprintf(file, L"%ls", WString(strValue.c_str(), BentleyCharEncoding::Utf8).c_str());
-        fclose(file);
-        return true;
-        }
-    };
+struct JsonReaderTests : public ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  05/16
@@ -78,35 +59,42 @@ TEST_F(JsonReaderTests, JsonValueStruct)
 
     /* Retrieve the JSON for the inserted Instance */
     ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, "SELECT * FROM ONLY stco.Foo");
-    ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
-    DbResult stepStatus = statement.Step();
-    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ONLY stco.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
     JsonECSqlSelectAdapter jsonAdapter(statement);
-    Json::Value jsonValue;
-    ASSERT_TRUE(jsonAdapter.GetRow(jsonValue));
+    Json::Value actualJson;
+    ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
 
-    // Read benchmark JSON
-    BeFileName jsonInputFile;
-    BeTest::GetHost().GetDocumentsRoot(jsonInputFile);
-    jsonInputFile.AppendToPath(L"ECDb");
-    jsonInputFile.AppendToPath(L"StartupCompany.json");
+    Json::Value expectedJson;
+    ASSERT_TRUE(Json::Reader::Parse(R"json({
+      "$ECInstanceId" : "0X1",
+      "$ECClassKey" : "StartupCompany.Foo",
+      "anglesFoo" : 
+            {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001
+            },
+      "arrayOfAnglesStructsFoo" : [
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001
+         },
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001
+         },
+         {
+            "Alpha" : 12.345000000000001,
+            "Beta" : 12.345000000000001
+         }
+        ],
+      "arrayOfIntsFoo" : [ 67, 67, 67 ],
+      "doubleFoo" : 12.345000000000001,
+      "intFoo" : 67})json", expectedJson));
 
-    Json::Value jsonInput;
-    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
-
-    /* Validate */
-    int compare = jsonInput.compare(jsonValue);
-    if (0 != compare)
-        {
-        BeFileName afterImportFile;
-        BeTest::GetHost().GetOutputRoot(afterImportFile);
-        afterImportFile.AppendToPath(L"StartupCompany-AfterImport.json");
-        WriteJsonToFile(afterImportFile.GetName(), jsonValue);
-        ASSERT_TRUE(false) << "Inserted and Retrieved Json doesn't match";
-        }
+    ASSERT_EQ(0, expectedJson.compare(actualJson)) << actualJson.ToString().c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -132,10 +120,9 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
     Json::Value actualJson;
-    ASSERT_TRUE(adapter.GetRowInstance(actualJson));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
     selStmt.Finalize();
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
     ASSERT_TRUE(actualJson.isMember("P2D"));
     ASSERT_TRUE(actualJson["P2D"].isObject());
@@ -148,15 +135,15 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
     ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
 
-    ASSERT_TRUE(actualJson.isMember("PStructProp"));
-    ASSERT_TRUE(actualJson["PStructProp"]["p2d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+    ASSERT_TRUE(actualJson.isMember("PStructProp.p2d"));
+    ASSERT_TRUE(actualJson["PStructProp.p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp.p2d"]["y"].asDouble());
 
-    ASSERT_TRUE(actualJson["PStructProp"]["p3d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
+    ASSERT_TRUE(actualJson["PStructProp.p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp.p3d"]["z"].asDouble());
 
     actualJson = Json::Value();
     JsonReader reader(m_ecdb, *testClass);
