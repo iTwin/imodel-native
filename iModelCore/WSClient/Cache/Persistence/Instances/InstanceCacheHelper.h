@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -114,6 +114,7 @@ struct InstanceCacheHelper::CachedInstances
         void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key, bool isFullyCached);
 
         bool HasCachedInstance(ObjectIdCR objectId) const;
+        bool HasCachedInstance(CachedInstanceKeyCR objectId) const;
         ECInstanceKey GetCachedInstance(ObjectIdCR objectId) const;
 
         const bset<CachedInstanceKey>& GetCachedInstances() const;

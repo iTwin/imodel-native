@@ -23,6 +23,7 @@
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
 #include <WebServices/iModelHub/Client/UserInfoManager.h>
 #include <WebServices/iModelHub/Client/VersionsManager.h>
+#include <WebServices/iModelHub/Client/ChangeSetCacheManager.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -43,6 +44,7 @@ typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeSequence);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetCacheManager);
 
 DEFINE_TASK_TYPEDEFS(iModelConnectionPtr, iModelConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, File);
@@ -134,6 +136,7 @@ private:
     friend struct PredownloadManager;
     friend struct EventManager;
     friend struct VersionsManager;
+    friend struct ChangeSetCacheManager;
 
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
@@ -143,13 +146,14 @@ private:
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
 
-    EventServiceClient*        m_eventServiceClient = nullptr;
+    EventServiceClientPtr      m_eventServiceClient = nullptr;
     BeMutex                    m_eventServiceClientMutex;
     EventSubscriptionPtr       m_eventSubscription;
     AzureServiceBusSASDTOPtr   m_eventSAS;
     EventManagerPtr            m_eventManagerPtr;
     UserInfoManager            m_userInfoManager;
     VersionsManager            m_versionsManager;
+    ChangeSetCacheManager      m_changeSetCacheManager;
 
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
@@ -263,13 +267,13 @@ private:
     FileTaskPtr GetBriefcaseFileInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
     //! Sets the EventSASToken in the EventServiceClient
-    bool SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
+    StatusTaskPtr SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Sets the EventSubscription in the EventServiceClient
-    bool SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
+    StatusTaskPtr SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Sets EventServiceClient.
-    bool SetEventServiceClient(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    StatusTaskPtr SetEventServiceClient(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Gets the Event SAS Token from EventServiceClient
     AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -322,7 +326,6 @@ private:
     WSQuery CreateChangeSetsAfterIdQuery(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
     WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
-    void SubscribeChangeSetsDownload();
 
     //! Sends a request from changeset.
     StatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
@@ -416,11 +419,16 @@ public:
         m_wsRepositoryClient = client;
         m_userInfoManager = UserInfoManager(client);
         m_versionsManager = VersionsManager(client, this);
+        m_changeSetCacheManager = ChangeSetCacheManager(this);
         }
 
     //! Gets VersionsManager
     //! @return Versions manager
     IMODELHUBCLIENT_EXPORT VersionsManagerCR GetVersionsManager() const { return m_versionsManager; }
+
+    //! Gets Change set cache manager
+    //! @return Change set cache manager
+    IMODELHUBCLIENT_EXPORT ChangeSetCacheManagerCR GetChangeSetCacheManager() const { return m_changeSetCacheManager; }
 
     //! Receive Events from EventService
     //! @param[in] longPolling
