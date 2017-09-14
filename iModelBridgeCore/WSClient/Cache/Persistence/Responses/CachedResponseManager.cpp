@@ -504,8 +504,8 @@ BentleyStatus CachedResponseManager::InsertInfo(CachedResponseInfoR info)
         return SUCCESS;
 
     Json::Value& instance = info.GetJsonData();
-    instance[CLASS_CachedResponseInfo_PROPERTY_Parent][NavPropId] = info.GetKey().GetParent().GetInstanceId().ToString();
-    instance[CLASS_CachedResponseInfo_PROPERTY_Holder][NavPropId] = info.GetKey().GetHolder().GetInstanceId().ToString();
+    instance[CLASS_CachedResponseInfo_PROPERTY_Parent][ECJsonUtilities::json_navId()] = info.GetKey().GetParent().GetInstanceId().ToString();
+    instance[CLASS_CachedResponseInfo_PROPERTY_Holder][ECJsonUtilities::json_navId()] = info.GetKey().GetHolder().GetInstanceId().ToString();
 
     if (BE_SQLITE_OK != m_responseInserter.Get().Insert(instance))
         return ERROR;
