@@ -340,6 +340,25 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
 
             status = ECObjectsStatus::Error;
             }
+
+        if (prop->IsKindOfQuantityDefinedLocally())
+            {
+            auto propKOQ = prop->GetKindOfQuantity();
+            auto basePropKOQ = prop->GetBaseProperty()->GetKindOfQuantity();
+            if (nullptr == basePropKOQ)
+                {
+                LOG.errorv("Property '%s.%s' specifies a KindOfQuantity locally but it's base property '%s.%s' does not define or inherit a KindOfQuantity",
+                           prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetBaseProperty()->GetClass().GetFullName(), prop->GetBaseProperty()->GetName().c_str());
+                status = ECObjectsStatus::Error;
+                }
+            else if (!Units::Unit::AreEqual(propKOQ->GetPersistenceUnit().GetUnit(), basePropKOQ->GetPersistenceUnit().GetUnit()))
+                {
+                LOG.errorv("Property '%s.%s' specifies a KindOfQuantity '%s' which has a different persistence unit than the KindOfQuantity '%s' specified on the base property '%s.%s'",
+                           prop->GetClass().GetFullName(), prop->GetName().c_str(), propKOQ->GetFullName().c_str(),
+                           prop->GetBaseProperty()->GetClass().GetFullName(), prop->GetBaseProperty()->GetName().c_str(), basePropKOQ->GetFullName().c_str());
+                status = ECObjectsStatus::Error;
+                }
+            }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
         LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'",

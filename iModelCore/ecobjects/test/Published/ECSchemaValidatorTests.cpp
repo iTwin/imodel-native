@@ -1218,4 +1218,45 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema5)) << "Should fail validation as persistence unit is an METRIC unit, 'CM'";
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                       Colin.Kerr                      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
+    {
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double" kindOfQuantity="Length" />
+        </ECEntityClass>
+        <ECEntityClass typeName="DerivedClass">
+            <ECProperty propertyName="Length" typeName="double" kindOfQuantity="OtherLength" />
+        </ECEntityClass>
+        <KindOfQuantity typeName="Length" persistenceUnit="M" relativeError="1e-1" />
+        <KindOfQuantity typeName="OtherLength" persistenceUnit="M" relativeError="1e-1" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since persistence unit is unchanged";
+
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double" kindOfQuantity="Length" />
+        </ECEntityClass>
+        <ECEntityClass typeName="DerivedClass">
+            <BaseClass>BaseClass</BaseClass>
+            <ECProperty propertyName="Length" typeName="double" kindOfQuantity="OtherLength" />
+        </ECEntityClass>
+        <KindOfQuantity typeName="Length" persistenceUnit="M" relativeError="1e-1" />
+        <KindOfQuantity typeName="OtherLength" persistenceUnit="FT" relativeError="1e-1" />
+    </ECSchema>)xml";
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema2, badSchemaXml, *context2);
+    ASSERT_TRUE(schema2.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation as persistence unit is changed";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
