@@ -2648,24 +2648,25 @@ struct XDomain
     */
     virtual void _RegisterDomain(BentleyApi::BeFileNameCR bridgeAssetsDir) {} 
 
-    // Called just before the specified element is converted.
+    // Called just before the specified element is converted (and after the applicable ConvertToDgnDbElementExtension is called).
     // return SkipElement if the specified element should not be converted.
     enum class Result {Proceed=0, SkipElement=1};
     virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) {return Result::Proceed;}
 
-    // Called just before the specified element is converted.
+    // Called just before the specified element is converted and after the applicable ConvertToDgnDbElementExtension is called.
     // Compute the class, code, and/or category that should be used for the specified element. 
     // On input, each parameter contains the default values that will be used to convert the element.
     // Modify any parameter that you want to change.
     virtual void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) {;}
 
-    // Called just after the specified element is converted but before it is written to the BIM. The conversion results parameter contains the converted element.
+    // Called just after the specified element is converted but before it is written to the BIM. Called after the applicable ConvertToDgnDbElementExtension is called.
+    // The conversion results parameter contains the converted element.
     // This is the right place to convert user data linkages that the default converter might not know about. You can write the results as properties of the
     // converted element.
     // After this function returns, the element will be written.
     virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {}
 
-    // Override the BIS conversion rule that will be applied to this element
+    // Override the BIS conversion rule that will be applied to this element. Called after the applicable ConvertToDgnDbElementExtension is called.
     virtual void _DetermineBisConversionRule(BisConversionRule&, DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) {;}
 
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
