@@ -1875,10 +1875,13 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
 
             Bentley::DVec3d      scaleVec;
             Bentley::DPoint3d    origin;
-            Bentley::RotMatrix   rMatrix;
+            Bentley::RotMatrix   rMatrix, invRMatrix;
 
             localToGeom.GetTranslation(origin);
             localToGeom.GetMatrix(rMatrix);
+
+            if (!invRMatrix.InverseOf(rMatrix))
+                return false;
 
             rMatrix.NormalizeColumnsOf(rMatrix, scaleVec);
 
@@ -2898,12 +2901,12 @@ struct CveConverter : DgnV8Api::IElementGraphicsProcessor
     virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
     virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 
-    virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override {BeAssert(false && "should not be called for CVE geometry"); return nullptr;}
-    virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override {BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR;}
-    virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR, bool) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR, Bentley::IFaceMaterialAttachmentsCP) { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessCurvePrimitive(Bentley::ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
+    virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override { return nullptr;}
+    virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override { return Bentley::BSIERROR;}
+    virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR, bool) override {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR, Bentley::IFaceMaterialAttachmentsCP) {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessCurvePrimitive(Bentley::ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override {  return Bentley::BSIERROR; }
 
     virtual DgnV8Api::DrawPurpose _GetDrawPurpose() override { return DgnV8Api::DrawPurpose::DgnDbConvert; } // Required so that xg symbols get pushed onto DisplayPath...
     virtual void _AnnounceContext(DgnV8Api::ViewContext& context) override { m_context = &context; }

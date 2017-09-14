@@ -121,9 +121,47 @@
         <SubPart PartName="iModelBridgeFwkLib"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeFwk$(exeext)</Files>
-          <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
-          <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>
+    </Part>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- iModelBridgeAssign - Writes to a database of bridge->file assignments -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="iModelBridgeAssign" SaveProduct="true">
+      <SubPart PartName="iModelBridgeAssignExe" LibType="Static" />
+      <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static" />
+      <Directories DirectoryListName="iModelBridgeAssignDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="iModelBridgeAssignDirList">
+      <ProductDirectory Name="Assemblies"                Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies"                Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="Libs"                      Deliver="false" LibType="static"/>
+      <ProductDirectory Name="Libs"                      Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="PublicApi"                 Deliver="false" LibType="static"/>
+      <ProductDirectory Name="PublicApi"                 Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="VendorApi"                 Deliver="false" LibType="static"/>
+      <ProductDirectory Name="VendorApi"                 Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="Assets"                    Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="Assets"                    Path="assets" LibType="static"/>
+      <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="dynamic"/>
+      <ProductDirectory Name="VendorNotices"             Path="notices" LibType="static" />
+    </ProductDirectoryList>
+
+    <Part Name="iModelBridgeAssignExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeAssignMain.mke">
+      <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+      <SubPart PartName="PublicApi"/>
+      <Bindings>
+        <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
+      <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+      <SubPart PartName="PublicApi"/>
+      <Bindings>
+        <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+      </Bindings>
     </Part>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
