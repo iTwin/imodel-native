@@ -118,8 +118,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_CachedFileInfoToFileInfo                              "[WSC].[" CLASS_CachedFileInfoToFileInfo "]"
 #define ECSql_ObjectInfoToCachedFileInfoOwnership                   "[WSC].[" CLASS_CachedFileInfoToFileInfoOwnership "]"
 
-#define NavPropId                                                   JSON_NavigationId
-
 //! Values for property CLASS_CachedObjectInfo_PROPERTY_InstanceState
 enum class CachedInstanceState
     {
