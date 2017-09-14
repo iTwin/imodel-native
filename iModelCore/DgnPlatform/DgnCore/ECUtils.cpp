@@ -201,6 +201,10 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
             {
             v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
             }
+        else
+            {
+            v.SetIsNull(true);
+            }
         }
     else if (jsonValue.isArray())
         {
