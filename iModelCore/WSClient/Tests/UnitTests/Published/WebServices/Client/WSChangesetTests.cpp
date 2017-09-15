@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSChangesetTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -59,6 +59,7 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOn
     auto expectedJson = ToJson(R"({
         "instance":
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"A"
@@ -113,6 +114,7 @@ TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJso
     auto expectedJson = ToJson(R"({
         "instances":[
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"Foo"
@@ -134,6 +136,7 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneExistingIn
     auto expectedJson = ToJson(R"({
         "instance":
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"Foo"
