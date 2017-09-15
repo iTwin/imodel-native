@@ -35,23 +35,10 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         LongsAreIds //!< ECProperties of type Long are treated as Ids and therefore formatted as Ids (i.e. as hex strings)
         };
 
-
-
     private:
         ECSqlStatementCR m_ecsqlStatement;
         FormatOptions m_formatOptions = FormatOptions::Default;
-
-        BentleyStatus JsonFromPropertyValue(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus JsonFromCell(JsonValueR, IECSqlValue const&) const;
-
-        BentleyStatus JsonFromNavigation(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus JsonFromStruct(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus JsonFromStructArray(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus JsonFromPrimitiveArray(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
-        BentleyStatus JsonFromPrimitive(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
-
-        static void ToJsonMemberName(Utf8StringR str) { str[0] = (char) tolower(str[0]); }
-
+   
     public:
 
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
@@ -113,29 +100,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @param [out] json Current row values of the column of the specified class as JSON object of property name value pairs
         //! @param [in] classId ECClassId indicating the class of the instance needed from the current row 
         //! @return false if there was an error in retrieving values. true otherwise.
-        ECDB_EXPORT bool GetRowInstance(JsonValueR json, ECN::ECClassId classId) const;
-
-        //! Gets the columns referring to only the class of the first column in the current row as JSON.
-        //!
-        //! Example:
-        //! Assume the ECSQL <c>SELECT Employee.ECInstanceId, Employee.Name, Employee.Age, Company.ECInstanceId, Company.Name FROM myschema.Employee JOIN myschema.Company USING myschema.CompanyEmploysEmployee</c>.
-        //!
-        //! Because the first SELECT clause item refers to a property of class @c Employee, the resulting JSON would be:
-        //! 
-        //!     {
-        //!     "id" : "0x123",
-        //!     "name": "Sally Smith",
-        //!     "age": 30
-        //!     }
-        //!
-        //! @param [out] json Current row values of the column of the first class in the select clause as JSON object of property name value pairs
-        //! @return false if there was an error in retrieving values. true otherwise.
-        ECDB_EXPORT bool GetRowInstance(JsonValueR json) const;
-
-        //! Gets the current row in the ImodelJs JSON wire format.
-        //! @param [out] json current row as JSON object of property name value pairs
-        //! @return false if there was an error in retrieving values. true otherwise.
-        ECDB_EXPORT bool GetRowForImodelJs(JsonValueR json);
+        ECDB_EXPORT BentleyStatus GetRowInstance(JsonValueR json, ECN::ECClassId classId) const;
     };
 
 //=================================================================================

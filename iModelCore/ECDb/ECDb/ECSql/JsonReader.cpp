@@ -90,8 +90,8 @@ BentleyStatus JsonReader::Read(Json::Value& jsonValue, ECInstanceId ecInstanceId
     if (BE_SQLITE_ROW != m_statement.Step())
         return ERROR;
 
-    JsonECSqlSelectAdapter jsonAdapter(m_statement);
-    return jsonAdapter.GetRowInstance(jsonValue) ? SUCCESS : ERROR;
+    JsonECSqlSelectAdapter jsonAdapter(m_statement, m_formatOptions);
+    return jsonAdapter.GetRow(jsonValue);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
