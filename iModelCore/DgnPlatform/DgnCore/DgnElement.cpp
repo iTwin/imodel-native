@@ -1602,7 +1602,7 @@ void DgnElement::_FromJson(JsonValueR props)
         m_modelId.FromJson(props[json_model()]);
 
     if (props.isMember(json_code()))
-        m_code.FromJson(props[json_code()]);
+        m_code.FromJson2(props[json_code()]);
 
     if (props.isMember(json_federationGuid()))
         m_federationGuid.FromString(props[json_federationGuid()].asString().c_str());

@@ -981,6 +981,34 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         }
 
     //=======================================================================================
+    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    static NAN_METHOD(UpdateElementSync)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject(DgnDbStatus::NotOpen));
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
+
+        Json::Value elemProps = Json::Value::From(*elemPropsJsonStr, *elemPropsJsonStr+elemPropsJsonStr.length());
+        auto status = IModelJs::UpdateElement(*db->m_dgndb, elemProps);
+
+        v8::Local<v8::Object> ret;
+        if (DgnDbStatus::Success != status)
+            ret = NodeUtils::CreateErrorObject(status);
+        else
+            ret = NodeUtils::CreateSuccessObject(Nan::Undefined());
+
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1183,6 +1211,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementSync);
+        Nan::SetPrototypeMethod(t, "updateElementSync", UpdateElementSync);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
