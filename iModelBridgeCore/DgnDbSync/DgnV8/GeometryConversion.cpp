@@ -1416,6 +1416,47 @@ static T_PartGeom* GetCache(Bentley::ElementRefP elRef, double v8SymbolScale, bo
 }; // DgnV8PartReferenceAppData
 
 /*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  09/17
++===============+===============+===============+===============+===============+======*/
+struct PostInstancePartCacheAppData: BeSQLite::Db::AppData
+{
+protected:
+
+typedef bmap<DgnGeometryPartId, DgnGeometryPartCPtr> T_PartIdToGeom;
+T_PartIdToGeom m_map;
+
+public:
+
+static BeSQLite::Db::AppData::Key const& GetKey()
+    {
+    static BeSQLite::Db::AppData::Key s_key;
+    return s_key;
+    }
+
+static DgnGeometryPartCPtr GetPart(DgnGeometryPartId partId, DgnDbR db)
+    {
+    auto cache = (PostInstancePartCacheAppData*) db.FindAppData(GetKey());
+
+    if (nullptr == cache)
+        {
+        cache = new PostInstancePartCacheAppData();
+        db.AddAppData(PostInstancePartCacheAppData::GetKey(), cache);
+        }
+
+    T_PartIdToGeom::iterator found = cache->m_map.find(partId);
+
+    if (found == cache->m_map.end())
+        {
+        cache->m_map[partId] = db.Elements().Get<DgnGeometryPart>(partId);
+        found = cache->m_map.find(partId);
+        }
+
+    return found->second;
+    }
+
+}; // PostInstancePartCacheAppData
+
+/*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct V8GraphicsCollector : DgnV8Api::IElementGraphicsProcessor
@@ -1862,7 +1903,13 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
 
     v8SymbolScale = 0.0;
 
-    if (nullptr == upx || !upx->_GetBasisTransform(localToGeom, v8eh, m_converter))
+    bool basisTransformSuppliedByExtension = false;
+    if (nullptr != upx)
+        basisTransformSuppliedByExtension = upx->_GetBasisTransform(localToGeom, v8eh, m_converter);
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        basisTransformSuppliedByExtension |= xdomain->_GetBasisTransform(localToGeom, v8eh, m_converter);
+
+    if (!basisTransformSuppliedByExtension)
         {
         // NOTE: Attempt to preserve local coordinate system of V8 element for making geom parts.
         //       We can't just call DisplayHandler::GetBasisTransform as it doesn't return a good local
@@ -1875,10 +1922,13 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
 
             Bentley::DVec3d      scaleVec;
             Bentley::DPoint3d    origin;
-            Bentley::RotMatrix   rMatrix;
+            Bentley::RotMatrix   rMatrix, invRMatrix;
 
             localToGeom.GetTranslation(origin);
             localToGeom.GetMatrix(rMatrix);
+
+            if (!invRMatrix.InverseOf(rMatrix))
+                return false;
 
             rMatrix.NormalizeColumnsOf(rMatrix, scaleVec);
 
@@ -2235,6 +2285,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPath const& path)
     {
+#if defined (NOT_NOW_TOO_SLOW_TFS_752781)
     if (!m_model.Is3d())
         return false;
 
@@ -2255,12 +2306,10 @@ bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPat
     if (DgnV8Api::SHARED_CELL_ELM == elRef->GetElementType() || DgnV8Api::SHAREDCELL_DEF_ELM == elRef->GetElementType())
         return false;
 
-    // Normal cell components and BReps are good candidates for post-instancing...
-    if (GeometricPrimitive::GeometryType::BRepEntity == geometry.GetGeometryType())
-        return true;
-
+    // Normal cell components are good candidates for post-instancing...
     if (DgnV8Api::CELL_HEADER_ELM == elRef->GetElementType() && !elRef->GetUnstableMSElementCP()->hdr.dhdr.props.b.h)
         return true;
+#endif
 
     return false;
     }
@@ -2275,7 +2324,7 @@ bool IsMatchingPartGeometry(DgnGeometryPartId partId, DgnDbR db, GeometricPrimit
     if (GeometricPrimitive::GeometryType::TextString == geomType)
         return false; // Don't post-instance text...
 
-    DgnGeometryPartCPtr partGeometry = db.Elements().Get<DgnGeometryPart>(partId);
+    DgnGeometryPartCPtr partGeometry = PostInstancePartCacheAppData::GetPart(partId, db);
 
     if (!partGeometry.IsValid())
         return false;
@@ -2539,7 +2588,14 @@ bool IgnorePublicChildren(DgnV8EhCR v8eh)
     {
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
 
-    return (nullptr != upx && upx->_IgnorePublicChildren());
+    if (nullptr != upx && upx->_IgnorePublicChildren())
+        return true;
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (xdomain->_IgnorePublicChildren())
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2549,7 +2605,16 @@ bool DisablePostInstancing(DgnV8EhCR v8eh)
     {
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
 
-    return (nullptr != upx && upx->_DisablePostInstancing());
+    if (nullptr != upx && upx->_DisablePostInstancing())
+        return true;
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (xdomain->_DisablePostInstancing())
+            return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2898,12 +2963,12 @@ struct CveConverter : DgnV8Api::IElementGraphicsProcessor
     virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
     virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 
-    virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override {BeAssert(false && "should not be called for CVE geometry"); return nullptr;}
-    virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override {BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR;}
-    virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR, bool) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR, Bentley::IFaceMaterialAttachmentsCP) { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessCurvePrimitive(Bentley::ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override { BeAssert(false && "should not be called for CVE geometry"); return Bentley::BSIERROR; }
+    virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override { return nullptr;}
+    virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override { return Bentley::BSIERROR;}
+    virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR, bool) override {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR, Bentley::IFaceMaterialAttachmentsCP) {  return Bentley::BSIERROR; }
+    virtual Bentley::BentleyStatus _ProcessCurvePrimitive(Bentley::ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override {  return Bentley::BSIERROR; }
 
     virtual DgnV8Api::DrawPurpose _GetDrawPurpose() override { return DgnV8Api::DrawPurpose::DgnDbConvert; } // Required so that xg symbols get pushed onto DisplayPath...
     virtual void _AnnounceContext(DgnV8Api::ViewContext& context) override { m_context = &context; }

@@ -2075,6 +2075,13 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             return BSIERROR;
             }
         }
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (XDomain::Result::SkipElement == xdomain->_PreConvertElement(v8eh, *this, v8mm))
+            {
+            return BSIERROR;
+            }
+        }
 
     DgnCategoryId categoryId;
     DgnClassId elementClassId;
@@ -2084,6 +2091,9 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     if (nullptr != upx)
         upx->_DetermineElementParams(elementClassId, elementCode, categoryId, v8eh, *this, ecContent.m_primaryV8Instance.get(), v8mm);
         
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_DetermineElementParams(elementClassId, elementCode, categoryId, v8eh, *this, ecContent.m_primaryV8Instance.get(), v8mm);
+
     if (!categoryId.IsValid())
         {
         categoryId = defaultCategoryId;
@@ -2159,6 +2169,9 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     // Code above created element(s) matching the class/code/category that a converter extension specified; let it fill in its own element, either keeping or replacing the proxy graphics we generated above.
     if (nullptr != upx)
         upx->_ProcessResults(results, v8eh, v8mm, *this);
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_ProcessResults(results, v8eh, v8mm, *this);
 
     BeAssert(results.m_element.IsValid());// At this point results.m_element is expected to be valid
 

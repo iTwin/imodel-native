@@ -489,6 +489,9 @@ void SyncInfo::ComputeHash(BentleyApi::MD5& hasher, DgnV8EhCR v8eh)
         hasher.Add((Byte*)xaiter.PeekData(), (uint32_t)xaiter.GetSize());
         }
 
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+		xdomain->_ComputeHash(hasher, v8eh);
+
     for (DgnV8Api::ChildElemIter child (v8eh); child.IsValid(); child=child.ToNext())
         {
         ComputeHash(hasher, child);
