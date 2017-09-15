@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,6 +43,8 @@ struct ServerInfoProvider
 
         AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
         AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSInfoHttpResult> GetInfoByPokingWSG (int apiSubVersion, ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSInfoHttpResult> PokeWSG (Utf8StringCR versionUrlSuffix, ICancellationTokenPtr ct) const;
 
     public:
         ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration);
