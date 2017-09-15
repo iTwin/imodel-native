@@ -4195,14 +4195,16 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
     json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
     
+#ifdef WORKING_ON_SCHEDULE	
     Json::Value     scheduleJson = GetScheduleJson();
-
+    
     if (!scheduleJson.isNull() && scheduleJson.size() > 0)
         {
         json["timeline"] = true;
         json["timelineVisible"] = true;
         json["schedules"] = scheduleJson;
         }
+#endif		
 
     return Status::Success;
     }
