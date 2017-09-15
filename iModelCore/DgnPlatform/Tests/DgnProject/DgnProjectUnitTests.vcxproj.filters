@@ -283,8 +283,8 @@
     <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\CustomHandledPropertyTest.cpp">
-      <Filter>Published</Filter>
+    <ClCompile Include="TestFixture\DgnPlatformSeedManager.cpp">
+      <Filter>TestFixture</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -344,6 +344,9 @@
     </ClInclude>
     <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h">
       <Filter>UnitTests</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\DgnPlatformSeedManager.h">
+      <Filter>TestFixture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

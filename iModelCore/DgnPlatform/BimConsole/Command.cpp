@@ -1368,18 +1368,24 @@ void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (BeStringUtilities::Strnicmp(sql.c_str(), "SELECT", 6) == 0)
-        ExecuteSelect(stmt);
-    else
-        ExecuteNonSelect(session, stmt);
+     ExecuteSelect(stmt, session);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     07/2015
 //---------------------------------------------------------------------------------------
-void SqliteCommand::ExecuteSelect(Statement& statement) const
+void SqliteCommand::ExecuteSelect(Statement& statement, Session& session) const
     {
     const int columnCount = statement.GetColumnCount();
+    if (columnCount == 0)
+        {
+        if (statement.Step() != BE_SQLITE_DONE)
+            {
+            BimConsole::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
+            return;
+            }
+        }
+
     for (int i = 0; i < columnCount; i++)
         {
         BimConsole::Write("%s\t", statement.GetColumnName(i));
@@ -1387,6 +1393,7 @@ void SqliteCommand::ExecuteSelect(Statement& statement) const
 
     BimConsole::WriteLine();
     BimConsole::WriteLine("-------------------------------------------------------------");
+
 
     while (statement.Step() == BE_SQLITE_ROW)
         {

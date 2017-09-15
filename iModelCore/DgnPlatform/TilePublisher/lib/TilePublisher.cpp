@@ -3969,9 +3969,15 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             Json::Value modelJson(Json::objectValue);
 
-            auto sheetModel = model->ToSheetModel();
+            auto        sheetModel = model->ToSheetModel();
+
+            // The reality models (Point Clouds and Reality meshes) do not contain elements and therefore
+            // no categories etc.   They unfortunately do not have their own base class and therefore no
+            // good way to detect - except that they do not extend physical model.
+            bool        isRealityModel = nullptr != spatialModel && nullptr == model->ToPhysicalModel();
+
             modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? "spatial" : (nullptr != sheetModel ? "sheet" : "drawing");
+            modelJson["type"] = nullptr != spatialModel ? (isRealityModel ? "reality" : "spatial") : (nullptr != sheetModel ? "sheet" : "drawing");
 
             if (nullptr != spatialModel)
                 {
@@ -4189,14 +4195,16 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
     json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
     
+#ifdef WORKING_ON_SCHEDULE	
     Json::Value     scheduleJson = GetScheduleJson();
-
+    
     if (!scheduleJson.isNull() && scheduleJson.size() > 0)
         {
         json["timeline"] = true;
         json["timelineVisible"] = true;
         json["schedules"] = scheduleJson;
         }
+#endif		
 
     return Status::Success;
     }
