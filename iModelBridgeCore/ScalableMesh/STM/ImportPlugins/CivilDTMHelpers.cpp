@@ -43,7 +43,7 @@ CivilImportedTypes::CivilImportedTypes ()
         DTMFeatureType::Breakline,
         // Removed as it was automatically transformed to DTMFeatureType::TinHull when tin was triangulated. Tin types couldn't be added to
         // not triangulated dtm.
-        DTMFeatureType::Hull,
+        //DTMFeatureType::Hull,
         DTMFeatureType::ContourLine,
         DTMFeatureType::Void,
         DTMFeatureType::BreakVoid,
