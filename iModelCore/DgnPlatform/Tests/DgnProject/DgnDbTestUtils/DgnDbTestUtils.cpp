@@ -568,6 +568,7 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
 DgnDbPtr DgnDbTestUtils::OpenSeedDb(WCharCP relSeedPath)
     {
     return OpenDgnDb(relSeedPath, DgnDb::OpenMode::Readonly);
+
     }
 
 //---------------------------------------------------------------------------------------

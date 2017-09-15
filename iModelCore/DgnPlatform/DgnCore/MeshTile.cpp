@@ -2330,13 +2330,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
         bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
         if (!haveCached)
             {
-            // The proces of visiting the element can potentially generate parasolid bodies.
-            // We need to generate these in this threads parasolid partition so that we 
-            // can roll them back correctly in the event of a server parasolid error.
-#if defined (BENTLEYCONFIG_PARASOLID)    
-            PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
-#endif
-
             m_curElemId = elemId;
             context.VisitElement(elemId, false);
             FlushPolyfaceCache();
@@ -2762,12 +2755,40 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Beastings 09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLID) 
+static bool hasBRep(GeometrySourceCR source)
+    {
+    GeometryCollection collection(source);
+
+    for (auto iter : collection)
+        {
+        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+            return true;
+        }
+
+    return false;
+    }
+#endif
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    // If the geometry has a parasolid BRep then create a mark so that work is done in this threads lightweight partition and
+    // error handling works properly..
+    PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
+    if (hasBRep(source))
+        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
+
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -417,6 +417,14 @@ public:
 
     bool IsValid() const {return m_isPropertyIndexValid;}
 
+    bool IsAutoHandled() const {return nullptr == m_accessors;}
+
+    uint32_t GetPropertyIndex() const {return m_propIdx;}
+
+    DgnElementR GetElement() const {return m_element;}
+
+    DGNPLATFORM_EXPORT ECN::PropertyLayoutCP GetPropertyLayout() const;
+
     DGNPLATFORM_EXPORT Utf8CP GetAccessString() const;
 
     DGNPLATFORM_EXPORT DgnDbStatus SetAutoHandledPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex);

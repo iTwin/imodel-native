@@ -274,6 +274,8 @@ struct PublisherContext : TileGenerator::ITileCollector
     typedef bvector<ClassifierInfo>             T_ClassifierInfos;
     typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
     typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
+    typedef bmap<DgnElementId, uint32_t>        T_ScheduleEntryMap;
+
       
     Statistics                                  m_statistics;
 
@@ -298,6 +300,8 @@ protected:
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
     bset<DgnSubCategoryId>                      m_usedSubCategories;
+    Json::Value                                 m_schedulesJson;
+    bvector<T_ScheduleEntryMap>                 m_scheduleEntryMaps;
 
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
@@ -336,7 +340,8 @@ protected:
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
-    Json::Value GetScheduleJson();
+    void ExtractSchedules();
+
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
