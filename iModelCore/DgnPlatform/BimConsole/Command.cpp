@@ -1368,7 +1368,7 @@ void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-     ExecuteSelect(stmt, session);
+    ExecuteSelect(stmt, session);
     }
 
 //---------------------------------------------------------------------------------------
