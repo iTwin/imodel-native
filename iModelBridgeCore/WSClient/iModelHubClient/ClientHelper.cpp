@@ -94,11 +94,9 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
 ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
     {
     m_signinMgr = managerPtr;
-    Utf8String host = UrlProvider::Urls::iModelHubApi.Get();
 
-    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
+    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::iModelHubApi.Get());
     ClientPtr client = Client::Create(m_clientInfo, authHandler);
-    client->SetServerURL(host);
 
     return client;
     }
@@ -109,15 +107,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
 ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, WebServices::UrlProvider::Environment environment)
     {
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, m_localState);
-    
-    m_signinMgr = managerPtr;
-    Utf8String host = UrlProvider::Urls::iModelHubApi.Get();
-
-    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(host);
-    ClientPtr client = Client::Create(m_clientInfo, authHandler);
-    client->SetServerURL(host);
-
-    return client;
+    return SignInWithManager(managerPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**

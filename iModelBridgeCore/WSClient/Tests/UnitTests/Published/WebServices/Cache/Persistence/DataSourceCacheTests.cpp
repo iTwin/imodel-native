@@ -359,8 +359,6 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     auto cachedRelClass = cachedSchema->GetClassCP("AB")->GetRelationshipClassCP();
     ASSERT_TRUE(nullptr != cachedRelClass);
 
-    EXPECT_EQ("(0..1)", cachedRelClass->GetSource().GetMultiplicity().ToString());
-    EXPECT_EQ("(0..1)", cachedRelClass->GetTarget().GetMultiplicity().ToString());
 
     // Test caching
     StubInstances instances;
@@ -3183,6 +3181,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingSourceCardinality_Error)
     {
     auto cache = GetTestCache();
@@ -3197,6 +3198,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingTargetCardinality_Error)
     {
     auto cache = GetTestCache();
@@ -3212,6 +3216,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
     {
     // Arrange
@@ -3233,6 +3240,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "C"}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationshipWithUnusedInstances_RemovesUnusedInstancesFromCashe)
     {
     auto cache = GetTestCache();
@@ -3260,6 +3270,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClassB", "B"}).IsInCache());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_DoesNotLooseChildrenData)
     {
     auto cache = GetTestCache();
@@ -3287,7 +3300,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassB", "B"}));
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData2)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData)
     {
     auto cache = GetTestCache();
     auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneHoldingRelationshipClass");
@@ -3309,6 +3325,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingR
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "C"}, {"TestSchema.TestClass", "B"}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData3)
     {
     auto cache = GetTestCache();
