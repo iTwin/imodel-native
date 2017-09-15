@@ -1377,8 +1377,13 @@ void BeCGWriter::Write (IGeometryCR geometry)
         case IGeometry::GeometryType::Polyface:
             {
             PolyfaceHeaderPtr polyface = geometry.GetAsPolyfaceHeader ();
-
-            WritePolyface (*polyface);
+            if (polyface->GetMeshStyle () == MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
+                WritePolyface (*polyface);
+            else
+                {
+                auto indexedPolyface = polyface->CloneAsVariableSizeIndexed (*polyface);
+                WritePolyface (*indexedPolyface);
+                }
             break;
             }
 
