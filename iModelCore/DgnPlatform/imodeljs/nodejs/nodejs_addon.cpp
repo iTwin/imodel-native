@@ -42,7 +42,7 @@
 
 #define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode)                   \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
-        info.GetReturnValue().Set(CreateErrorObject(errcode));          \
+        info.GetReturnValue().Set(NodeUtils::CreateErrorObject(errcode));          \
         return;                                                                 \
     }                                                                           \
     Nan::Utf8String var(info[i]);
@@ -102,6 +102,36 @@ using namespace v8;
 using namespace node;
 
 //=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct NodeUtils
+    {
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
+        {
+        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
+        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
+        return retObj;
+        }
+        
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename STATUSTYPE>
+    static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode)
+        {
+        v8::Local<v8::Object> error = Nan::New<v8::Object>();
+        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
+
+        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
+        retObj->Set(Nan::New("error").ToLocalChecked(), error);
+        return retObj;
+        }
+    };
+
+//=======================================================================================
 //! Base class for helper functions. All such functions have the following in common:
 //  -- All return Promises and execute asynchronously
 //! @bsiclass
@@ -133,7 +163,7 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         Nan::HandleScope scope;
         auto resolver = v8::Promise::Resolver::New(info.GetIsolate());
         info.GetReturnValue().Set(resolver->GetPromise());
-        v8::Local<v8::Object> retObj = CreateErrorObject(errorStatus);
+        v8::Local<v8::Object> retObj = NodeUtils::CreateErrorObject(errorStatus);
         resolver->Resolve(retObj);
         }
 
@@ -145,34 +175,16 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         }
 
-    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
-        {
-        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
-        return retObj;
-        }
-        
-    static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode)
-        {
-        v8::Local<v8::Object> error = Nan::New<v8::Object>();
-        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
-
-        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        retObj->Set(Nan::New("error").ToLocalChecked(), error);
-        return retObj;
-        }
-
-
     v8::Local<v8::Object> CreateErrorObject()
         {
         BeAssert(_HadError());
-        return CreateErrorObject(m_status);
+        return NodeUtils::CreateErrorObject(m_status);
         }
 
     v8::Local<v8::Object> CreateSuccessObject()
         {
         BeAssert(!_HadError());
-        return CreateSuccessObject(GetResultOrUndefined());
+        return NodeUtils::CreateSuccessObject(GetResultOrUndefined());
         }
 
     void HandleOKCallback() override
@@ -937,43 +949,36 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         };
 
     //=======================================================================================
-    // insert a new element
-    //! @bsiclass
+    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
     //=======================================================================================
-    struct InsertElementWorker : WorkerBase<DgnDbStatus>
+    static NAN_METHOD(InsertElementSync)
         {
-        Json::Value m_props;       // input
-        Json::Value m_out;
-    
-        InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-        static NAN_METHOD(ExecuteSync)
+        if (!db->m_dgndb.IsValid())
             {
-            Nan::HandleScope scope;
-            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-            REQUIRE_ARGUMENT_STRING_SYNC(0, props, DgnDbStatus::BadRequest);
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject(DgnDbStatus::NotOpen));
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
 
-            InsertElementWorker worker(db, props);
-            worker.Execute();
-            info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
+        Json::Value elemProps = Json::Value::From(*elemPropsJsonStr, *elemPropsJsonStr+elemPropsJsonStr.length());
+        Json::Value elemIdJsonObj;
+        auto status = IModelJs::InsertElement(elemIdJsonObj, *db->m_dgndb, elemProps);
+
+        v8::Local<v8::Object> ret;
+        if (DgnDbStatus::Success != status)
+            ret = NodeUtils::CreateErrorObject(status);
+        else
+            {
+            auto elemIdStrJsObj = Nan::New(elemIdJsonObj.ToString().c_str()).ToLocalChecked();
+            ret = NodeUtils::CreateSuccessObject(elemIdStrJsObj);
             }
 
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest);
-            (new InsertElementWorker(db, opts))->ScheduleAndReturnPromise(info);
-            }
-
-        bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_out.ToString().c_str()).ToLocalChecked(); return true;}
-        void Execute() override
-            {
-            REQUIRE_DB_TO_BE_OPEN
-            m_status = IModelJs::InsertElement(m_out, GetDgnDb(), m_props);
-            }
-        bool _HadError() override {return m_status != DgnDbStatus::Success;}
-        };
+        info.GetReturnValue().Set(ret);
+        }
 
     //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
@@ -1177,8 +1182,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
-        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
-        Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementWorker::ExecuteSync);
+        Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementSync);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
