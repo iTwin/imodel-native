@@ -1,7 +1,7 @@
 {
   "name": "@bentley/imodeljs-${VERSION_CODE}-${PLATFORM}",
   "license": "UNLICENSED",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "keywords": [
     "Bentley",
     "iModel"

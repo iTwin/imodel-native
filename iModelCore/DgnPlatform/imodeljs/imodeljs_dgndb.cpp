@@ -278,6 +278,22 @@ DgnDbStatus IModelJs::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus IModelJs::DeleteElement(DgnDbR dgndb, JsonValueR idJsonVal)
+    {
+    DgnElementId eid(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+    if (!eid.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCPtr elPersist = dgndb.Elements().GetElement(eid);
+    if (!elPersist.IsValid())
+        return DgnDbStatus::MissingId;
+
+    return elPersist->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IModelJs::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
