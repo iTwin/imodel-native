@@ -781,17 +781,23 @@ void RealityDataConsole::ListRoots()
     bvector<Utf8String> subvec = bvector<Utf8String>();
     Utf8String owner;
     if(ultimateVec.size() > 0)
+        {
         owner = ultimateVec[0]->GetOwner();
+        owner.ToLower();
+        }
 
     Utf8String schema = RealityDataService::GetSchemaName();
     int position = 0;
+    Utf8String rdOwner;
     for (RealityDataPtr rData : ultimateVec)
         {
-        if(owner != rData->GetOwner())
+        rdOwner = rData->GetOwner();
+        rdOwner.ToLower();
+        if(owner != rdOwner)
             {
             nodes.Insert(owner, subvec);
             subvec.clear();
-            owner = rData->GetOwner();
+            owner = rdOwner;
             }
 
         subvec.push_back(Utf8PrintfString("%-30s  %-22s (%s / %s) %s  %ld", rData->GetName(), rData->GetRealityDataType(), rData->IsListable() ? "Lst" : " - ", ShortenVisibility(rData->GetVisibilityTag()), rData->GetIdentifier(), rData->GetTotalSize()));
