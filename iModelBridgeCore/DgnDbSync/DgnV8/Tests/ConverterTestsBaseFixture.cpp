@@ -64,11 +64,6 @@ void ConverterTestBaseFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterTestBaseFixture::SetUp()
     {
-    BentleyApi::BeFileName seedDgnDb;
-    BentleyApi::BeTest::GetHost().GetTempDir(seedDgnDb);
-    seedDgnDb.AppendToPath(L"testSeed.bim");
-    if (seedDgnDb.DoesPathExist())
-        seedDgnDb.BeDeleteFile();
     InitializeTheConverter(); // this initializes the converter itself and the DgnV8 host
 
     iModelBridgeSacAdapter::InitForBeTest(m_params);
@@ -82,14 +77,15 @@ void ConverterTestBaseFixture::SetUp()
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
+
     BentleyApi::BeTest::GetHost().GetTempDir(m_seedDgnDbFileName);
     m_seedDgnDbFileName.AppendToPath(L"testSeed.bim");
-    //static bool s_isSeedCreated;
-    //if (!s_isSeedCreated)
-    //    {
+    static bool s_isSeedCreated;
+    if (!s_isSeedCreated)
+        {
         SetUp_CreateNewDgnDb();
-    //    s_isSeedCreated = true;
-    //    }
+        s_isSeedCreated = true;
+        }
     }
 
 //-----------------------------------------------------------------------------------------
@@ -117,9 +113,8 @@ void ConverterTestBaseFixture::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterTestBaseFixture::TearDown()
     {
-    /*if (m_wantCleanUp)
-        BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());*/
-    
+    if (m_wantCleanUp)
+        BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());
     }
 
 /*---------------------------------------------------------------------------------**//**
