@@ -153,7 +153,7 @@ CachedResponseInfo CachedResponseManager::ReadInfo(ResponseKeyCR key)
     Json::Value infoJson;
 
     JsonECSqlSelectAdapter adapter(*statement);
-    if (!adapter.GetRowInstance(infoJson, m_responseClass->GetId()))
+    if (SUCCESS != adapter.GetRow(infoJson))
         {
         return CachedResponseInfo();
         }

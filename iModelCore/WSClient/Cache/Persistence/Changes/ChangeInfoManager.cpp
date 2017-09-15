@@ -88,7 +88,7 @@ BentleyStatus ChangeInfoManager::GetObjectChanges(IChangeManager::Changes& chang
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
-        if (!adapter.GetRowInstance(infoJson, m_objectInfoManager.GetInfoClass()->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(infoJson, m_objectInfoManager.GetInfoClass()->GetId()))
             {
             return ERROR;
             }
@@ -112,7 +112,7 @@ BentleyStatus ChangeInfoManager::GetRelationshipChanges(IChangeManager::Changes&
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
-        if (!adapter.GetRowInstance(infoJson, m_relationshipInfoManager.GetInfoClass()->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(infoJson, m_relationshipInfoManager.GetInfoClass()->GetId()))
             {
             return ERROR;
             }
@@ -136,7 +136,7 @@ BentleyStatus ChangeInfoManager::GetFileChanges(IChangeManager::Changes& changes
     while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
-        if (!adapter.GetRowInstance(infoJson, m_fileInfoManager.GetInfoClass()->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(infoJson, m_fileInfoManager.GetInfoClass()->GetId()))
             {
             return ERROR;
             }
