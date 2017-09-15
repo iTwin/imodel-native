@@ -43,8 +43,6 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
-
 $(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
 
 $(o)Pathway$(oext) : $(_MakeFilePath)Pathway.cpp ${MultiCompileDepends} $(appPublicApi)Pathway.h
@@ -60,6 +58,10 @@ $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp $
 $(o)RoadSegment$(oext) : $(_MakeFilePath)RoadSegment.cpp ${MultiCompileDepends} $(appPublicApi)RoadSegment.h
 
 $(o)TravelwaySegment$(oext) : $(_MakeFilePath)TravelwaySegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySegment.h
+
+$(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
+
+$(o)TypicalSectionPoint$(oext) : $(_MakeFilePath)TypicalSectionPoint.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSectionPoint.h
 
 %include MultiCppCompileGo.mki
 

@@ -49,6 +49,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Models
 #define BRRP_CLASS_DesignSpeedDefinitionModel                       "DesignSpeedDefinitionModel"
+#define BRRP_CLASS_OverallTypicalSectionBreakDownModel              "OverallTypicalSectionBreakDownModel"
 #define BRRP_CLASS_RoadClassDefinitionModel                         "RoadClassDefinitionModel"
 #define BRRP_CLASS_RoadRailCategoryModel                            "RoadRailCategoryModel"
 #define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
@@ -57,13 +58,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_AlignmentIntersectionElement                     "AlignmentIntersectionElement"
-#define BRRP_CLASS_BufferComponent                                  "BufferComponent"
-#define BRRP_CLASS_BufferDefinition                                 "BufferDefinition"
 #define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
 #define BRRP_CLASS_DesignSpeedDefinitionElement                     "DesignSpeedDefinitionElement"
 #define BRRP_CLASS_DesignSpeedDefinitionTable                       "DesignSpeedDefinitionTable"
-#define BRRP_CLASS_EndConditionComponent                            "EndConditionComponent"
-#define BRRP_CLASS_EndConditionDefinition                           "EndConditionDefinition"
 #define BRRP_CLASS_LinearlyLocatedStatus                            "LinearlyLocatedStatus"
 #define BRRP_CLASS_OverallTypicalSection                            "OverallTypicalSection"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
@@ -77,16 +74,31 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_RoadIntersectionElement                          "RoadIntersectionElement"
 #define BRRP_CLASS_RoadIntersectionLegElement                       "RoadIntersectionLegElement"
 #define BRRP_CLASS_Roadway                                          "Roadway"
+#define BRRP_CLASS_RoadLaneComponent                                "RoadLaneComponent"
 #define BRRP_CLASS_RoadTravelwayDefinition                          "RoadTravelwayDefinition"
-#define BRRP_CLASS_TravelwayComponent                               "TravelwayComponent"
+#define BRRP_CLASS_TravelwayComponentElement                        "TravelwayComponentElement"
 #define BRRP_CLASS_TravelwayDefinitionElement                       "TravelwayDefinitionElement"
 #define BRRP_CLASS_TravelwayIntersectionSegmentElement              "TravelwayIntersectionSegmentElement"
 #define BRRP_CLASS_TravelwaySegmentElement                          "TravelwaySegmentElement"
+#define BRRP_CLASS_TravelwaySideComponent                           "TravelwaySideComponent"
+#define BRRP_CLASS_TravelwaySideDefinition                          "TravelwaySideDefinition"
+#define BRRP_CLASS_TravelwayStructureComponent                      "TravelwayStructureComponent"
+#define BRRP_CLASS_TravelwayStructureDefinition                     "TravelwayStructureDefinition"
 #define BRRP_CLASS_TravelwayTransition                              "TravelwayTransition"
 #define BRRP_CLASS_TypicalSectionComponentElement                   "TypicalSectionComponentElement"
+#define BRRP_CLASS_TypicalSectionConstraintConstantOffset           "TypicalSectionConstraintConstantOffset"
+#define BRRP_CLASS_TypicalSectionConstraintOffset                   "TypicalSectionConstraintOffset"
+#define BRRP_CLASS_TypicalSectionConstraintSource                   "TypicalSectionConstraintSource"
+#define BRRP_CLASS_TypicalSectionConstraintWithOffset               "TypicalSectionConstraintWithOffset"
 #define BRRP_CLASS_TypicalSectionElement                            "TypicalSectionElement"
+#define BRRP_CLASS_TypicalSectionHorizontalConstraint               "TypicalSectionHorizontalConstraint"
+#define BRRP_CLASS_TypicalSectionOffsetParameter                    "TypicalSectionOffsetParameter"
+#define BRRP_CLASS_TypicalSectionParameter                          "TypicalSectionParameter"
+#define BRRP_CLASS_TypicalSectionPoint                              "TypicalSectionPoint"
+#define BRRP_CLASS_TypicalSectionPointName                          "TypicalSectionPointName"
 #define BRRP_CLASS_TypicalSectionPortion                            "TypicalSectionPortion"
 #define BRRP_CLASS_TypicalSectionPortionElement                     "TypicalSectionPortionElement"
+#define BRRP_CLASS_TypicalSectionVerticalConstraint                 "TypicalSectionVerticalConstraint"
 
 
 // Aspects
@@ -102,6 +114,11 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_RegularSegmentRefersToTravelwayDefinition          "RegularSegmentRefersToTravelwayDefinition"
 #define BRRP_REL_RoadClassRefersToDefinition                        "RoadClassRefersToDefinition"
 #define BRRP_REL_RoadwayOwnsRoadClasses                             "RoadwayOwnsRoadClasses"
+#define BRRP_REL_TypicalSectionComponentGroupsPoints                "TypicalSectionComponentGroupsPoints"
+#define BRRP_REL_TypicalSectionConstraintOwnsOffset                 "TypicalSectionConstraintOwnsOffset"
+#define BRRP_REL_TypicalSectionPointConstraint                      "TypicalSectionPointConstraint"
+#define BRRP_REL_TypicalSectionPointOwnsConstraintSource            "TypicalSectionPointOwnsConstraintSource"
+#define BRRP_REL_TypicalSectionPointRefersToName                    "TypicalSectionPointRefersToName"
 
 
 // Properties
@@ -113,6 +130,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BRRP_CATEGORY_Track                                         "Track"
 #define BRRP_CATEGORY_Road                                          "Road"
+#define BRRP_CATEGORY_TravelwayDefComponent                         "TravelwayDefComponent"
+#define BRRP_CATEGORY_TravelwaySideDefComponent                     "TravelwaySideDefComponent"
+#define BRRP_CATEGORY_TravelwayStructureDefComponent                "TravelwayStructureDefComponent"
+#define BRRP_CATEGORY_TypicalSectionPoint                           "TypicalSectionPoint"
 
 
 //-----------------------------------------------------------------------------------------
@@ -124,7 +145,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CODESPEC_RoadClassDefinition                          "RoadClassDefinition"
 #define BRRP_CODESPEC_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
 #define BRRP_CODESPEC_RoadTravelway                                "RoadTravelway"
-#define BRRP_CODESPEC_TypicalSectionComponent                      "TypicalSectionComponent"
+#define BRRP_CODESPEC_TypicalSectionParameter                      "TypicalSectionParameter"
+#define BRRP_CODESPEC_TypicalSectionPoint                          "TypicalSectionPoint"
+#define BRRP_CODESPEC_TypicalSectionPointName                      "TypicalSectionPointName"
 
 
 //-----------------------------------------------------------------------------------------
@@ -179,29 +202,41 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AlignmentIntersectionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(BufferComponent)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(BufferDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionTable)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionComponent)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinition)
+ROADRAILPHYSICAL_TYPEDEFS(ITypicalSectionConstraintPoint)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(LinearlyLocatedStatus)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSectionBreakDownModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularTravelwaySegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailCategoryModel)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayComponent)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(StatusAspect)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayComponentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayDefinitionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayIntersectionSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySideComponent)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySideDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayStructureComponent)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayStructureDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayTransition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionComponentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintConstantOffset)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintOffset)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintSource)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintWithOffset)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionHorizontalConstraint)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionOffsetParameter)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionParameter)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPoint)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPointName)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortionBreakDownModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortion)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(StatusAspect)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionVerticalConstraint)
 
 // Road-specific
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClassDefinition)
@@ -213,6 +248,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadIntersectionLegElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadClass)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadDesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailCategoryModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadLaneComponent)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadTravelwayDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Roadway)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)

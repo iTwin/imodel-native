@@ -7,6 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
 #include <RoadRailPhysical/RoadRailPhysicalDomain.h>
+#include <RoadRailPhysical/ElementAspects.h>
+#include <RoadRailPhysical/Pathway.h>
+#include <RoadRailPhysical/RoadClass.h>
+#include <RoadRailPhysical/RoadDesignSpeed.h>
+#include <RoadRailPhysical/RoadRailCategory.h>
+#include <RoadRailPhysical/RoadSegment.h>
+#include <RoadRailPhysical/TravelwaySegment.h>
+#include <RoadRailPhysical/TypicalSection.h>
+#include <RoadRailPhysical/TypicalSectionPoint.h>
 
 DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 
@@ -17,21 +26,30 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
 
+    RegisterHandler(OverallTypicalSectionBreakDownModelHandler::GetHandler());
     RegisterHandler(TypicalSectionPortionBreakDownModelHandler::GetHandler());
 
     RegisterHandler(TypicalSectionPortionElementHandler::GetHandler());
-    RegisterHandler(TypicalSectionPortionHandler::GetHandler());
-
     RegisterHandler(OverallTypicalSectionHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
-    RegisterHandler(EndConditionDefinitionHandler::GetHandler());
-    RegisterHandler(BufferDefinitionHandler::GetHandler());
+    RegisterHandler(TravelwaySideDefinitionHandler::GetHandler());
+    RegisterHandler(TravelwayStructureDefinitionHandler::GetHandler());
 
     RegisterHandler(TypicalSectionComponentElementHandler::GetHandler());
-    RegisterHandler(BufferComponentHandler::GetHandler());
-    RegisterHandler(EndConditionComponentHandler::GetHandler());
-    RegisterHandler(TravelwayComponentHandler::GetHandler());
+    RegisterHandler(TravelwayStructureComponentHandler::GetHandler());
+    RegisterHandler(TravelwaySideComponentHandler::GetHandler());
+    RegisterHandler(TravelwayComponentElementHandler::GetHandler());
+    RegisterHandler(RoadLaneComponentHandler::GetHandler());
+
+    RegisterHandler(TypicalSectionPointNameHandler::GetHandler());
+    RegisterHandler(TypicalSectionPointHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintSourceHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintWithOffsetHandler::GetHandler());
+    RegisterHandler(TypicalSectionHorizontalConstraintHandler::GetHandler());
+    RegisterHandler(TypicalSectionVerticalConstraintHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintOffsetHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintConstantOffsetHandler::GetHandler());
 
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(TravelwaySegmentElementHandler::GetHandler());
@@ -152,10 +170,29 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionComponent, CodeScopeSpec::CreateModelScope());
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionParameter, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionPointName, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionPoint, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        auto sequenceSpec = CodeFragmentSpec::FromSequence();
+        sequenceSpec.SetStartNumber(1);
+        codeSpecPtr->GetFragmentSpecsR().push_back(sequenceSpec);
         codeSpecPtr->Insert();
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }

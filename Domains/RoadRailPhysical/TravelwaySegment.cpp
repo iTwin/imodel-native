@@ -68,7 +68,7 @@ RegularTravelwaySegmentPtr RegularTravelwaySegment::Create(PathwayElementCR path
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RegularTravelwaySegment::SetTravelwayDefinition(TravelwayDefinitionElementCR travelwayDef)
     { 
-    SetPropertyValue("TravelwayDefinition", travelwayDef.GetElementId(),
+    SetPropertyValue("Definition", travelwayDef.GetElementId(),
         GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RegularSegmentRefersToTravelwayDefinition));
     }
 

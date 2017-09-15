@@ -17,9 +17,9 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class for physical Road and Rail segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElement : Dgn::SpatialLocationElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySegmentElement, Dgn::PhysicalElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySegmentElement, Dgn::SpatialLocationElement);
     friend struct TravelwaySegmentElementHandler;
 
 protected:
@@ -56,7 +56,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RegularTravelwaySegment)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RegularTravelwaySegment)
 
-    Dgn::DgnElementId GetTravelwayDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("TravelwayDefinition"); }
+    Dgn::DgnElementId GetTravelwayDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("Definition"); }
     ROADRAILPHYSICAL_EXPORT void SetTravelwayDefinition(TravelwayDefinitionElementCR travelwayDef);
 
     ROADRAILPHYSICAL_EXPORT static RegularTravelwaySegmentPtr Create(PathwayElementCR pathway, double fromDistanceAlong, double toDistanceAlong, TravelwayDefinitionElementCR travelwayDef);
@@ -128,9 +128,9 @@ public:
 //! ElementHandler for TravelwaySegment Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElementHandler : Dgn::dgn_ElementHandler::Physical
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySegmentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySegmentElement, TravelwaySegmentElement, TravelwaySegmentElementHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySegmentElement, TravelwaySegmentElement, TravelwaySegmentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwaySegmentElementHandler
 
 //=================================================================================

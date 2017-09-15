@@ -10,6 +10,7 @@
     <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH_SHORT" persistenceUnit="M" relativeError="1e-2" />
     <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RAD" relativeError="1e-2" />
     <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT" relativeError="1e-2" />
+    <KindOfQuantity typeName="SLOPE" displayLabel="SLOPE" persistenceUnit="M/M" relativeError="1e-2" />
 
     <ECEntityClass typeName="RoadRailCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
@@ -77,8 +78,8 @@
     <!-- END PathwayElement Class Hierarchy -->
     
     <!-- BEGIN TravelwaySegment Element Class Hierarchy -->
-    <ECEntityClass typeName="TravelwaySegmentElement" modifier="Abstract" description="Base class for segments of a Travelway, which is the section of the Pathway in direct contact with the moving objects (e.g. motor vehicles, trains, etc)." >
-        <BaseClass>bis:PhysicalElement</BaseClass>
+    <ECEntityClass typeName="TravelwaySegmentElement" modifier="Abstract" description="Base class for segments of a Travelway, which is the contiguous spatial portion of a Pathway in direct contact with the moving objects." >
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -86,14 +87,13 @@
                 <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
-        <ECProperty propertyName="TravelwayIndex" typeName="int" />
     </ECEntityClass>
-    <ECEntityClass typeName="RegularTravelwaySegment" modifier="Sealed" description="Physical segment of a Travelway, with a constant definition." >
+    <ECEntityClass typeName="RegularTravelwaySegment" modifier="Sealed" description="Travelway segment with a constant definition." >
         <BaseClass>TravelwaySegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="TravelwayDefinition" relationshipName="RegularSegmentRefersToTravelwayDefinition" direction="Forward"/>
+        <ECNavigationProperty propertyName="Definition" relationshipName="RegularSegmentRefersToTravelwayDefinition" direction="Forward"/>
         <ECProperty propertyName="TravelwayDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
     </ECEntityClass>
     <ECRelationshipClass typeName="RegularSegmentRefersToTravelwayDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
@@ -104,20 +104,10 @@
             <Class class="TravelwayDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="TravelwayTransition" modifier="Sealed" description="Physical segment of a Travelway, with a variable Travelway definition.">
+    <ECEntityClass typeName="TravelwayTransition" modifier="Sealed" description="Travelway segment with a variable Travelway definition.">
         <BaseClass>TravelwaySegmentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="PathFoundationElement" modifier="Abstract" description="Base class for Road/Rail foundation elements." >
-        <BaseClass>bis:PhysicalElement</BaseClass>
-        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
-                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
-            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="PathwayAssemblesElements" strength="embedding" modifier="Sealed">
@@ -127,6 +117,55 @@
         </Source>
         <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N elements">
             <Class class="bis:PhysicalElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TravelwayStructureElement" modifier="Abstract" description="Base class for a set of physical layers providing structural support to the Travelway." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RegularTravelwayStructureSegment" modifier="None" description="A segment of a Travelway structure with a constant definition." >
+        <BaseClass>TravelwayStructureElement</BaseClass>
+        <ECNavigationProperty propertyName="Definition" relationshipName="RegularSegmentRefersToTravelwayStructureDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RegularSegmentRefersToTravelwayStructureDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RegularTravelwayStructureSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 definition">
+            <Class class="TravelwayStructureDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TravelwayStructureIntersectionLeg" modifier="None" description="A segment of a Travelway structure along an intersection with another." >
+        <BaseClass>TravelwayStructureElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwaySideElement" modifier="Abstract" description="Base class for a Set of physical elements, with their corresponding structural layers, along the side of a Travelway, providing different purposes (e.g. separation, safety, connections to existing terrain, etc)." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RegularTravelwaySideSegment" modifier="None" description="Generic class for Road/Rail end-condition elements." >
+        <BaseClass>TravelwaySideElement</BaseClass>
+        <ECNavigationProperty propertyName="Definition" relationshipName="RegularSegmentRefersToTravelwaySideDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RegularSegmentRefersToTravelwaySideDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RegularTravelwaySideSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 definition">
+            <Class class="TravelwaySideDefinition"/>
         </Target>
     </ECRelationshipClass>
     <!-- END TravelwaySegmentElement Class Hierarchy -->
@@ -152,7 +191,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="IntersectionLegDefinition" relationshipName="RoadIntersectionLegRefersToDefinition" direction="Forward"/>
+        <ECNavigationProperty propertyName="Definition" relationshipName="RoadIntersectionLegRefersToDefinition" direction="Forward"/>
     </ECEntityClass>    
     <ECRelationshipClass typeName="RoadIntersectionLegRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
@@ -163,47 +202,6 @@
         </Target>
     </ECRelationshipClass>
     <!-- END RoadSegmentElement Class Hierarchy -->
-
-    <!-- BEGIN PathFoundationSegment Class Hierarchy -->
-    <ECEnumeration typeName="TravelwaySide" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Left"/>
-        <ECEnumerator value="1" displayLabel="Right"/>
-    </ECEnumeration>
-    <ECEntityClass typeName="PathFoundationSegment" modifier="None" description="Generic class for Road/Rail foundation segment elements." >
-        <BaseClass>PathFoundationElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="PathFoundationIntersectionSegment" modifier="None" description="Generic class for Road/Rail foundation intersection elements." >
-        <BaseClass>PathFoundationElement</BaseClass>
-    </ECEntityClass>    
-    <ECEntityClass typeName="EndConditionSegment" modifier="None" description="Generic class for Road/Rail end-condition elements." >
-        <BaseClass>PathFoundationElement</BaseClass>
-        <ECNavigationProperty propertyName="EndConditionDefinition" relationshipName="EndConditionSegmentRefersToDefinition" direction="Forward"/>
-        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
-        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="EndConditionSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
-            <Class class="EndConditionSegment"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
-            <Class class="EndConditionDefinition"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="BufferSegment" modifier="None" description="Generic class for Road/Rail buffer elements." >
-        <BaseClass>PathFoundationElement</BaseClass>
-        <ECNavigationProperty propertyName="BufferDefinition" relationshipName="BufferSegmentRefersToDefinition" direction="Forward"/>
-        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
-        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="BufferSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
-            <Class class="BufferSegment"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
-            <Class class="BufferDefinition"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- END PathFoundationSegment Class Hierarchy -->
 
     <!-- BEGIN AlignmentIntersectionElement Class Hierarchy -->
     <ECEntityClass typeName="AlignmentIntersectionElement" modifier="Abstract" description="Base class for Physical intersections driven by alignments.">
@@ -367,7 +365,7 @@
     <!-- END Definition classes -->
     
     <!-- BEGIN Design-Speed classes -->
-    <ECEntityClass typeName="DesignSpeedDefinitionTable">
+    <ECEntityClass typeName="DesignSpeedDefinitionTable" displayLabel="Design Speed Table">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
@@ -484,7 +482,7 @@
     </ECRelationshipClass>
     <!-- END RoadClass classes -->
 
-    <!-- BEGIN TypicalSectionComponentDefinition classes -->
+    <!-- BEGIN TypicalSection Element classes -->
     <!--ECEnumeration typeName="TypicalSectionComponent_SubType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="Undefined"/>
         <ECEnumerator value="1" displayLabel="Dual-face barrier 1"/>
@@ -544,9 +542,8 @@
         <ECEnumerator value="17" displayLabel="Bridge deck"/>
         <ECEnumerator value="18" displayLabel="Ballast"/>
     </ECEnumeration-->
-    <ECEntityClass typeName="OverallTypicalSection" modifier="Sealed">
-        <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>bis:ISubModeledElement</BaseClass>
+    <ECEntityClass typeName="OverallTypicalSection" modifier="Sealed" displayLabel="Overall Typical Section">
+        <BaseClass>bis:TemplateRecipe2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -557,58 +554,114 @@
         <ECProperty propertyName="LastUsed" typeName="dateTime"/>
         <ECProperty propertyName="Thumbnail" typeName="binary"/>
         <ECProperty propertyName="IsFavorite" typeName="boolean"/>
+        <ECNavigationProperty propertyName="MainAlignment" relationshipName="OverallTypicalSectionRefersToMainAlignment" direction="Forward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionPortionElement" modifier="Abstract" description="Base class representing a portion of an overall Typical-section of a Pathway.">
+    <ECRelationshipClass typeName="OverallTypicalSectionRefersToMainAlignment" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by 1 OverallTypicalSection as its Main alignment">
+            <Class class="OverallTypicalSection"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 Alignment as Main">
+            <Class class="OverallTypicalSectionAlignment"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="OverallTypicalSectionBreakDownModel" description="Model breaking down an entire Typical-section of a Pathway">
+        <BaseClass>bis:GeometricModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>        
+    </ECEntityClass>
+    <ECEntityClass typeName="OverallTypicalSectionAlignment" displayLabel="Alignment location in context of an Overall Typical Section" modifier="Sealed">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="OverallTypicalSectionPortionElement" displayLabel="Typical Section Portion" modifier="Abstract">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Definition" relationshipName="OverallTypicalSectionPortionRefersToDefinition" direction="Forward"/>
+        <ECNavigationProperty propertyName="Alignment" relationshipName="OverallTypicalSectionPortionRefersToAlignment" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="OverallTypicalSectionPortionRefersToDefinition" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N PlacedTypicalSectionPortion">
+            <Class class="OverallTypicalSectionPortionElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Portion Definition">
+            <Class class="TypicalSectionPortionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="OverallTypicalSectionPortionRefersToAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N PlacedTypicalSectionPortion">
+            <Class class="OverallTypicalSectionPortionElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 typical section alignment">
+            <Class class="OverallTypicalSectionAlignment"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="OriginBasedOverallTypicalSectionPortion" displayLabel="Overall Typical Section Portion placed relative to its origin" modifier="Sealed">
+        <BaseClass>OverallTypicalSectionPortionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="OriginHorizontalOffset" typeName="double" displayLabel="Horizontal offset from Alignment" kindOfQuantity="LENGTH" />
+        <ECProperty propertyName="OriginVerticalOffset" typeName="double" displayLabel="Vertical offset from Alignment" kindOfQuantity="LENGTH" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ConnectionBasedOverallTypicalSectionPortion" displayLabel="Overall Typical Section Portion placed relative to connection points" modifier="Sealed">
+        <BaseClass>OverallTypicalSectionPortionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionPortionElement" modifier="Abstract" description="Base class representing the definition of a portion of overall Typical-sections of a Pathway.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="OriginPoint" relationshipName="TypicalSectionPortionRefersToOriginPoint" direction="Forward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionPortion" modifier="Sealed">
-        <BaseClass>TypicalSectionPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionPortionRefersToOriginPoint" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered as the origin point of N portions">
+            <Class class="TypicalSectionPortionElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 point as its origin">
+            <Class class="TypicalSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TravelwayDefinitionElement" displayLabel="Travelway Definition" modifier="Abstract" description="Base class for definitions of Travelways">
         <BaseClass>TypicalSectionPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RoadTravelwayDefinition" displayLabel="Travelway Template" modifier="Sealed">
+    <ECEntityClass typeName="RoadTravelwayDefinition" displayLabel="Road Travelway Definition" modifier="Sealed">
         <BaseClass>TravelwayDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="TypicalSectionPortionBreakDownModel" description="Model breaking down a portion of a Typical-section of a Pathway">
-        <BaseClass>bis:DefinitionModel</BaseClass>
+        <BaseClass>bis:GeometricModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="EndConditionDefinition" displayLabel="End-condition Definition">
+    <ECEntityClass typeName="TravelwaySideDefinition" displayLabel="Travelway side Definition" description="Definitions for TravelwaySide elements">
         <BaseClass>TypicalSectionPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="PathFoundationDefinition" displayLabel="Path Foundation Definition">
+    <ECEntityClass typeName="TravelwayStructureDefinition" displayLabel="Travelway structure Definition">
         <BaseClass>TypicalSectionPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="BufferDefinition" displayLabel="Buffer Definition">
-        <BaseClass>TypicalSectionPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionComponentElement" displayLabel="Component">
-        <BaseClass>bis:DefinitionElement</BaseClass>
+    <ECEntityClass typeName="TypicalSectionComponentElement" displayLabel="Component" modifier="Abstract">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -624,86 +677,311 @@
             <Class class="bis:RenderMaterial"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="EndConditionComponent" displayLabel="End-condition Component">
+    <ECEntityClass typeName="TravelwayComponentElement" displayLabel="Travelway Component" modifier="Abstract">
         <BaseClass>TypicalSectionComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECProperty propertyName="IsInfiniteLength" typeName="boolean"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwayComponent" displayLabel="Travelway Component">
-        <BaseClass>TypicalSectionComponentElement</BaseClass>
+    <ECEntityClass typeName="RoadLaneComponent" displayLabel="Lane Component" modifier="Sealed">
+        <BaseClass>TravelwayComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECProperty propertyName="Type" typeName="TravelwayComponent_Type"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="BufferComponent" displayLabel="Buffer Component">
+    <ECEntityClass typeName="TravelwaySideComponent" displayLabel="TravelwaySide Component">
         <BaseClass>TypicalSectionComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <!--ECProperty propertyName="Type" typeName="BufferComponent_Type"/-->
     </ECEntityClass>
-    <!--ECEntityClass typeName="PathFoundationComponent" displayLabel="Path Foundation Component">
+    <ECEntityClass typeName="TravelwayStructureComponent" displayLabel="Travelway Structure Component">
         <BaseClass>TypicalSectionComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="PathFoundationComponent_Type"/>
-    </ECEntityClass-->
-    <ECEntityClass typeName="TypicalSectionPoint" displayLabel="Point">
-        <BaseClass>bis:DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="BisCore.01.00.00"/-->
-        </ECCustomAttributes>
-        <ECProperty propertyName="Coordinates" typeName="point2d"/>
+        <!--ECProperty propertyName="Type" typeName="PathFoundationComponent_Type"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionParameter" displayLabel="Parameter">
-        <BaseClass>bis:DefinitionElement</BaseClass>
+    <ECEntityClass typeName="ITypicalSectionConstraintPoint" description="Interface to be mixed-in by targets of a typical section constraint." modifier="Abstract">
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="BisCore.01.00.00"/-->
+            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+            </IsMixin>
         </ECCustomAttributes>
-        <ECProperty propertyName="MinValue" typeName="double"/>
-        <ECProperty propertyName="MaxValue" typeName="double"/>
-        <ECProperty propertyName="BiasValue" typeName="double"/>
-        <ECProperty propertyName="Type" typeName="int"/>
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="TypicalSectionParameterDependsOnPoints" strength="referencing" strengthDirection="backward" modifier="Sealed">
+    <ECEntityClass typeName="TypicalSectionPointName" displayLabel="Point name">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionPoint" displayLabel="Point" description="Point construct in a TypicalSection definition">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
+        <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PointName" relationshipName="TypicalSectionPointRefersToName" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionPointRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Points">
+            <Class class="TypicalSectionPoint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
+            <Class class="TypicalSectionPointName"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionComponentGroupsPoints" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementGroupsMembers</BaseClass>
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is a group member of N components">
+            <Class class="TypicalSectionComponentElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="groups N points">
+            <Class class="TypicalSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionConstraintSource" modifier="Abstract">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionPointOwnsConstraintSource" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Point">
+            <Class class="TypicalSectionPoint"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N Constraint Sources">
+            <Class class="TypicalSectionConstraintSource"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionConstraintWithOffset" modifier="Abstract">
+        <BaseClass>TypicalSectionConstraintSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PointRef" relationshipName="TypicalSectionConstraintWithOffsetRefersToPointRef" direction="Forward"/>
+        <ECNavigationProperty propertyName="Offset" relationshipName="TypicalSectionConstraintRefersToOffset" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintWithOffsetRefersToPointRef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionConstraintWithOffset"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Point reference">
+            <Class class="ITypicalSectionConstraintPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintRefersToOffset" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionConstraintWithOffset"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Constraint-Value">
+            <Class class="TypicalSectionConstraintOffset"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintOwnsOffset" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is owned by 1 Constraint">
+            <Class class="TypicalSectionConstraintWithOffset"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="owns 1 Offset">
+            <Class class="TypicalSectionConstraintOffset"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionHorizontalConstraint" displayLabel="Horizontal" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>        
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionVerticalConstraint" displayLabel="Vertical" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintWithTwoPointsAndOffset" modifier="Abstract">
+        <BaseClass>TypicalSectionConstraintWithOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="OtherPointRef" relationshipName="TypicalSectionConstraintWithOffsetRefersToOtherPointRef" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintWithOffsetRefersToOtherPointRef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionConstraintWithTwoPointsAndOffset"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Point reference">
+            <Class class="ITypicalSectionConstraintPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionVectorOffsetConstraint" displayLabel="Vector-Offset" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionAngleOffsetConstraint" displayLabel="Angle Distance" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Angle" relationshipName="TypicalSectionConstraintRefersToAngle" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintRefersToAngle" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionAngleOffsetConstraint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Constraint-Value">
+            <Class class="TypicalSectionConstraintAngle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionHorizontalMaxConstraint" displayLabel="Horizontal Maximum" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionHorizontalMinConstraint" displayLabel="Horizontal Minimum" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionVerticalMaxConstraint" displayLabel="Vertical Maximum" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionVerticalMinConstraint" displayLabel="Vertical Minimum" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintWithTwoPointsAndOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintOffset" modifier="Abstract">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintConstantOffset" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double" displayLabel="Value" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintParametricOffset" displayLabel="Parametric Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintOffset</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Parameter" relationshipName="TypicalSectionConstraintOffsetRefersToParameter" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintOffsetRefersToParameter" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N ConstraintValues">
+            <Class class="TypicalSectionConstraintParametricOffset"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
+            <Class class="TypicalSectionOffsetParameter"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionConstraintAngle" modifier="Abstract">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintConstantAngle" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintAngle</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double" displayLabel="Value" kindOfQuantity="PLANE_ANGLE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintParametricAngle" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintAngle</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Parameter" relationshipName="TypicalSectionConstraintAngleRefersToParameter" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintAngleRefersToParameter" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N ConstraintValues">
+            <Class class="TypicalSectionConstraintParametricAngle"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
+            <Class class="TypicalSectionAngleParameter"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionConstraintSlope" modifier="Abstract">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintConstantSlope" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double" displayLabel="Value" kindOfQuantity="SLOPE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintParametricSlope" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Parameter" relationshipName="TypicalSectionConstraintSlopeRefersToParameter" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintSlopeRefersToParameter" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N ConstraintValues">
+            <Class class="TypicalSectionConstraintParametricSlope"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
+            <Class class="TypicalSectionSlopeParameter"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionPointConstraint" displayLabel="Point Constraint" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
-            <Class class="TypicalSectionParameter"/>
+            <Class class="TypicalSectionConstraintSource"/>
         </Source>
-        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="refers to N parameters">
+        <Target multiplicity="(1..*)" polymorphic="false" roleLabel="refers to N parameters">
             <Class class="TypicalSectionPoint"/>
         </Target>
-    </ECRelationshipClass-->
-    <ECRelationshipClass typeName="TypicalSectionParameterTargetsPointPairs" strength="referencing" modifier="Sealed">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <ECProperty propertyName="PairNumber" typeName="int"/>
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N parameters">
-            <Class class="TypicalSectionParameter"/>
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
-            <Class class="TypicalSectionPoint"/>
-        </Target>
+        <ECProperty propertyName="Priority" typeName="int" displayLabel="Constraint Priority"/>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TypicalSectionConstraint" strength="referencing" modifier="Sealed">
-        <BaseClass>bis:ElementDrivesElement</BaseClass>
+    <ECEntityClass typeName="TypicalSectionParameter" displayLabel="Parameter" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
-            <!--ClassHasHandler xmlns="BisCore.01.00.00"/-->
-            <!--LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-                <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-            </LinkTableRelationshipMap-->
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>        
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionAngleParameter" displayLabel="Parameter" modifier="Sealed">
+        <BaseClass>TypicalSectionParameter</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Value" typeName="double"/>
-        <!--ECProperty propertyName="Type" typeName="int"/-->
-        <Source multiplicity="(1..*)" polymorphic="true" roleLabel="drives by N points">
-            <Class class="TypicalSectionPoint"/>
-        </Source>
-        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="is driven by N points">
-            <Class class="TypicalSectionPoint"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- END TypicalSectionTemplate Element classes -->
+        <ECProperty propertyName="DefaultValue" typeName="double" displayLabel="Value" kindOfQuantity="PLANE_ANGLE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionOffsetParameter" displayLabel="Parameter" modifier="Sealed">
+        <BaseClass>TypicalSectionParameter</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DefaultValue" typeName="double" displayLabel="Value" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionSlopeParameter" displayLabel="Parameter" modifier="Sealed">
+        <BaseClass>TypicalSectionParameter</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DefaultValue" typeName="double" displayLabel="Value" kindOfQuantity="SLOPE"/>
+    </ECEntityClass>
+    <!-- END TypicalSection Element classes -->
 </ECSchema>

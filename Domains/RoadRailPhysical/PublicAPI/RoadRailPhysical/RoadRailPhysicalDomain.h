@@ -8,14 +8,6 @@
 #pragma once
 
 #include "RoadRailPhysical.h"
-#include "ElementAspects.h"
-#include "Pathway.h"
-#include "RoadDesignSpeed.h"
-#include "RoadClass.h"
-#include "RoadRailCategory.h"
-#include "RoadSegment.h"
-#include "TravelwaySegment.h"
-#include "TypicalSection.h"
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

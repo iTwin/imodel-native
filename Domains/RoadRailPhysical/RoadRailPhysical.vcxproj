@@ -41,6 +41,7 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSection.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSectionPoint.h" />
     <ClInclude Include="RoadRailPhysicalInternal.h" />
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +55,7 @@
     <ClCompile Include="RoadSegment.cpp" />
     <ClCompile Include="TravelwaySegment.cpp" />
     <ClCompile Include="TypicalSection.cpp" />
+    <ClCompile Include="TypicalSectionPoint.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB423497-691B-4A7C-8793-BAA0AC67EC55}</ProjectGuid>

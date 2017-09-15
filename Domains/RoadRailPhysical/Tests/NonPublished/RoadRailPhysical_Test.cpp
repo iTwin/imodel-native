@@ -42,8 +42,10 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
 
-    auto overallTypicalSectoinPtr = OverallTypicalSection::Create(*roadwayStandardsModelPtr, "rural 2 lanes");
-    ASSERT_TRUE(overallTypicalSectoinPtr->Insert().IsValid());
+    auto overallTypicalSectionPtr = OverallTypicalSection::Create(*roadwayStandardsModelPtr, "rural 2 lanes");
+
+    OverallTypicalSectionBreakDownModelPtr overallTypicalSectionModelPtr;
+    ASSERT_TRUE(overallTypicalSectionPtr->Insert(overallTypicalSectionModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
         DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
@@ -124,4 +126,23 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_DOUBLE_EQ(45, transitionCPtr->GetFromDistanceAlong());
     ASSERT_DOUBLE_EQ(90, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"BasicRoadwayTest.bim");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId roadwayStandardsModelId = QueryFirstModelIdOfType(*projectPtr, RoadwayStandardsModel::QueryClassId(*projectPtr));
+    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Get(*projectPtr, roadwayStandardsModelId);
+    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "2 lane");
+
+    TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
+    ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
+
+    InsertTestPointNames(*roadwayStandardsModelPtr);
+    InsertFourLanes(*breakDownModelPtr);
     }

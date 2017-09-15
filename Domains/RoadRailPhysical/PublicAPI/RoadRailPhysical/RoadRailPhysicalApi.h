@@ -16,6 +16,7 @@
 #include "RoadDesignSpeed.h"
 #include "RoadClass.h"
 #include "Pathway.h"
+#include "TypicalSectionPoint.h"
 #include "TypicalSection.h"
 #include "TravelwaySegment.h"
 #include "RoadSegment.h"
