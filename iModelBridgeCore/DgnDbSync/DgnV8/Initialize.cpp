@@ -24,6 +24,8 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
+bvector<XDomain*> XDomainRegistry::s_xdomains;
+
 struct ConverterV8Host;
 
 //=========================================================================================
@@ -700,6 +702,9 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_RegisterDomain(bridgeAssetsDir);
+
     DomainInitCaller caller;
     DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(caller);
     }
@@ -764,6 +769,24 @@ BentleyStatus Converter::CheckCanOpenFile(BentleyApi::BeFileName const& sourceFi
         openStatus = DgnV8Api::DGNFILE_ERROR_RightNotGranted;
 
     return (SUCCESS == openStatus)? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void XDomain::Register(XDomain& xd) 
+    {
+    XDomainRegistry::s_xdomains.push_back(&xd); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void XDomain::UnRegister(XDomain& xd) 
+    {
+    auto i = std::find(XDomainRegistry::s_xdomains.begin(), XDomainRegistry::s_xdomains.end(), &xd); 
+    if (i != XDomainRegistry::s_xdomains.end())
+        XDomainRegistry::s_xdomains.erase(i);
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

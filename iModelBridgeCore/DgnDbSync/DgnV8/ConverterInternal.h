@@ -126,5 +126,9 @@ namespace BECN = BentleyApi::ECN;
     
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
+struct XDomainRegistry
+    {
+    static bvector<XDomain*> s_xdomains;
+    };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

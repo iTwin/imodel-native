@@ -281,6 +281,8 @@ BentleyStatus V8ECClassInfo::Insert(Converter& converter, DgnV8EhCR v8Eh, ECClas
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8Eh.GetHandler());
     if (nullptr != upx)
         rule = upx->_DetermineBisConversionRule(v8Eh, converter.GetDgnDb(), targetModel->Is3dModel());
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_DetermineBisConversionRule(rule, v8Eh, converter.GetDgnDb(), targetModel->Is3dModel());
     if (BisConversionRule::ToDefaultBisBaseClass == rule)
         rule = BisConversionRuleHelper::ConvertToBisConversionRule(v8ElementType, targetModel, namedGroupOwnsMembers, isSecondaryInstancesClass);
 
