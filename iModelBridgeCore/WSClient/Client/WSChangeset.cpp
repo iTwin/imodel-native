@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSChangeset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -560,7 +560,7 @@ Utf8CP WSChangeset::Instance::GetChangeStateStr(ChangeState state)
     switch (state)
         {
         case ChangeState::Existing:
-            return nullptr;
+            return "existing";
         case ChangeState::Created:
             return "new";
         case ChangeState::Modified:
