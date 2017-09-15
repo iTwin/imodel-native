@@ -73,7 +73,7 @@
     <NMakeReBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -N0 r LinearReferencing</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__LINEARREFERENCING_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\VendorAPI\;$(SrcRoot)DgnDomains\LinearReferencing\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\VendorAPI\;$(SrcRoot)DgnDomains\LinearReferencing\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
