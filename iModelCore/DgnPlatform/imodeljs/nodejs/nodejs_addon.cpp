@@ -25,6 +25,14 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <rapidjson/rapidjson.h>
 
+#define REQUIRE_DB_TO_BE_OPEN \
+    if (!m_db->m_dgndb.IsValid())\
+        {\
+        m_status = DgnDbStatus::NotOpen;\
+        return;\
+        }
+
+
 #define REQUIRE_ARGUMENT_STRING(i, var, errcode)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
         ResolveArgumentError(info, errcode);                            \
@@ -746,6 +754,7 @@ protected:
 public:
     static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
 };
+
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -851,12 +860,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                return;
-                }
-
+            REQUIRE_DB_TO_BE_OPEN
             m_status = IModelJs::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
             }
 
@@ -886,12 +890,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                return;
-                }
-
+            REQUIRE_DB_TO_BE_OPEN
             m_status = IModelJs::GetElement(m_elementJson, GetDgnDb(), m_opts);
             }
 
@@ -925,12 +924,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                return;
-                }
-
+            REQUIRE_DB_TO_BE_OPEN
             m_status = IModelJs::GetModel(m_modelJson, GetDgnDb(), m_opts);
             }
 
@@ -947,34 +941,39 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //! @bsiclass
     //=======================================================================================
     struct InsertElementWorker : WorkerBase<DgnDbStatus>
-    {
-    Json::Value m_props;       // input
-    Json::Value m_out;
-    
-    InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
-
-    static NAN_METHOD(ExecuteSync)
         {
-        Nan::HandleScope scope;
-        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        Json::Value m_props;       // input
+        Json::Value m_out;
+    
+        InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
 
-        if (!db->m_dgndb.IsValid())
+        static NAN_METHOD(ExecuteSync)
             {
-            info.GetReturnValue().Set(CreateErrorObject(DgnDbStatus::NotOpen));
-            return;
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+            REQUIRE_ARGUMENT_STRING_SYNC(0, props, DgnDbStatus::BadRequest);
+
+            InsertElementWorker worker(db, props);
+            worker.Execute();
+            info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
             }
 
-        REQUIRE_ARGUMENT_STRING(0, props, DgnDbStatus::BadRequest);
+        static NAN_METHOD(Start)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest);
+            (new InsertElementWorker(db, opts))->ScheduleAndReturnPromise(info);
+            }
 
-        InsertElementWorker worker(db, props);
-        worker.Execute();
-        info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
-        }
-
-    bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_out.ToString().c_str()).ToLocalChecked(); return true;}
-    void Execute() override {m_status = IModelJs::InsertElement(m_out, GetDgnDb(), m_props);}
-    bool _HadError() override {return m_status != DgnDbStatus::Success;}
-    };
+        bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_out.ToString().c_str()).ToLocalChecked(); return true;}
+        void Execute() override
+            {
+            REQUIRE_DB_TO_BE_OPEN
+            m_status = IModelJs::InsertElement(m_out, GetDgnDb(), m_props);
+            }
+        bool _HadError() override {return m_status != DgnDbStatus::Success;}
+        };
 
     //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
@@ -1178,7 +1177,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
-        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::ExecuteSync);
+        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
+        Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementWorker::ExecuteSync);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
