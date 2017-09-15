@@ -11,9 +11,101 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct JsonECSqlSelectAdapterTests : public ECDbTestFixture {};
+
 //---------------------------------------------------------------------------------------
-// @bsiclass                                   Muhammad Hassan                     03/16
+// @bsimethod                                      Krischan.Eberle                09/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "PSAHasP_N1");
+    ASSERT_TRUE(relClassId.IsValid());
+
+    ECInstanceKey pKey, psaKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES (NULL)"));
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(I,L,PStructProp.i,P) VALUES (10,10,10,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, pKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECInstanceId, I, I, P, P.Id, P.RelECClassId FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    JsonECSqlSelectAdapter adapter(stmt);
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
+
+    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id())) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[ECJsonUtilities::json_id()].asCString()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember((Utf8String(ECJsonUtilities::json_id()) + "_1").c_str())) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[(Utf8String(ECJsonUtilities::json_id()) + "_1").c_str()].asCString()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("I")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["I"].asInt()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("I_1")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["I_1"].asInt()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("P") && json["P"].isObject()) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToHexStr().c_str(), json["P"][ECJsonUtilities::json_navId()].asCString()) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", json["P"][ECJsonUtilities::json_navRelClassName()].asCString()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("P.Id")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToString().c_str(), json["P.Id"].asCString()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("P.RelECClassId")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), json["P.RelECClassId"].asCString()) << json.ToString().c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+
+    ECInstanceKey pKey, psaKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES (1000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(psaKey, "INSERT INTO ecsql.PSA(I,L,P2D.X,P2D.Y,PStructProp.i,PStructProp.l,P.Id) VALUES (10,10,10.0,10.0,10,10,1000)"));
+    
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, I + 10, (I + 10) Alias1, I + L, (I + L) Alias2, P2D.X, PStructProp.i, P.Id FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    JsonECSqlSelectAdapter adapter(stmt);
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
+    
+    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id())) << json.ToString().c_str();
+    ASSERT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[ECJsonUtilities::json_id()].asCString()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("[I] + 10")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["[I] + 10"].asInt()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("Alias1")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["Alias1"].asInt()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("[I] + [L]")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["[I] + [L]"].asInt()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("Alias2")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["Alias2"].asInt()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("P2D.X")) << json.ToString().c_str();
+    EXPECT_DOUBLE_EQ(10.0, json["P2D.X"].asDouble()) << json.ToString().c_str();
+    
+    ASSERT_TRUE(json.isMember("PStructProp.i")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["PStructProp.i"].asInt()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("P.Id")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("1000", json["P.Id"].asCString()) << json.ToString().c_str();
+    }
+
+
 struct JsonReaderTests : public ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------

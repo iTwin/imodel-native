@@ -34,14 +34,8 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions options) : m_stmt(stmt), m_formatOptions(options) {}
 
         BentleyStatus ValidatePreconditions() const;
+        ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo);
         BentleyStatus SelectClauseItemToJson(JsonValueR, IECSqlValue const&, ECSqlSystemPropertyInfo const& sysPropInfo) const;
-
-        ECSqlSystemPropertyInfo const& DetermineSystemPropertyInfo(ECSqlColumnInfoCR colInfo)
-            {
-            BeAssert(colInfo.GetProperty() != nullptr && "Must be checked before");
-            return colInfo.IsGeneratedProperty() ? ECSqlSystemPropertyInfo::NoSystemProperty() :
-                m_stmt.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
-            }
 
         static Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&);
         static void ToJsonMemberName(Utf8StringR str) { str[0] = (char) tolower(str[0]); }
@@ -75,8 +69,10 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson) const
             }
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineSystemPropertyInfo(colInfo);
+        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineTopLevelSystemPropertyInfo(colInfo);
         Utf8String memberName = converter.MemberNameFromSelectClauseItem(colInfo, sysPropInfo);
+        if (memberName.empty())
+            return ERROR;
 
         int occurrenceCount = 0;
         auto it = columnNameCollisions.find(memberName);
@@ -90,7 +86,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson) const
         if (occurrenceCount > 1)
             {
             Utf8String suffix;
-            suffix.Sprintf("%d", occurrenceCount - 1);
+            suffix.Sprintf("_%d", occurrenceCount - 1);
             memberName.append(suffix);
             }
 
@@ -134,7 +130,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClass
         foundMatchingSelectClauseItems = true;
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineSystemPropertyInfo(colInfo);
+        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineTopLevelSystemPropertyInfo(colInfo);
         Utf8String memberName = converter.MemberNameFromSelectClauseItem(colInfo, sysPropInfo);
 
         if (SUCCESS != converter.SelectClauseItemToJson(rowJson[memberName.c_str()], ecsqlValue, sysPropInfo))
@@ -440,22 +436,37 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
         }
     }
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlSystemPropertyInfo const& ECSqlToJsonConverter::DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo)
+    {
+    if (colInfo.IsGeneratedProperty())
+        return ECSqlSystemPropertyInfo::NoSystemProperty();
+
+    BeAssert(colInfo.GetProperty() != nullptr && "Must be checked before");
+    ECSqlSystemPropertyInfo const& sysPropInfo = m_stmt.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
+    if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class || sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Relationship)
+        return sysPropInfo;
+
+    return ECSqlSystemPropertyInfo::NoSystemProperty();
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
 Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo)
     {
-    if (!sysPropInfo.IsSystemProperty())
-        {
-        //if property is generated, the display label contains the select clause item as is.
-        //The property name in contrast would have encoded special characters of the select clause item.
-        //Ex: SELECT MyProp + 4 FROM Foo -> the member name in JSON must be "MyProp + 4"
-        if (colInfo.IsGeneratedProperty())
-            return colInfo.GetProperty()->GetDisplayLabel();
+    //if property is generated, the display label contains the select clause item as is.
+    //The property name in contrast would have encoded special characters of the select clause item.
+    //Ex: SELECT MyProp + 4 FROM Foo -> the member name in JSON must be "MyProp + 4"
+    if (colInfo.IsGeneratedProperty())
+        return colInfo.GetProperty()->GetDisplayLabel();
 
+    if (!sysPropInfo.IsSystemProperty())
         return colInfo.GetPropertyPath().ToString();
-        }
 
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class)
         {
