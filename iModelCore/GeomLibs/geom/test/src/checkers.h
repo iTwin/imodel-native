@@ -405,6 +405,7 @@ static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint3d> const &data);
 static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize);
+static void SaveTransformedMarker (DPoint3dCR data, double markerSize = 0.1);
 
 static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
