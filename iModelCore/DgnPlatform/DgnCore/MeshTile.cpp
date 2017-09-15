@@ -2737,6 +2737,7 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Beastings 09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLID) 
 static bool hasBRep(GeometrySourceCR source)
     {
     GeometryCollection collection(source);
@@ -2749,12 +2750,14 @@ static bool hasBRep(GeometrySourceCR source)
 
     return false;
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
     // If the geometry has a parasolid BRep then create a mark so that work is done in this threads lightweight partition and
     // error handling works properly..
     PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
@@ -2763,6 +2766,9 @@ template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_Stroke
 
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
