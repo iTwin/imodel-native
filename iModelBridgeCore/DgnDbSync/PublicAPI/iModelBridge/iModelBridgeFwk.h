@@ -16,6 +16,7 @@
 
 
 #include <iModelBridge/iModelBridge.h>
+#include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <Logging/bentleylogging.h>
@@ -173,6 +174,7 @@ struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
 protected:
     DgnDbPtr m_briefcaseDgnDb;
     BeSQLite::Db m_stateDb;
+    RefCountedPtr<IModelBridgeRegistry> m_registry;
     BeFileName m_briefcaseName;
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
@@ -192,18 +194,8 @@ protected:
     void CleanJobWorkdir();
     void InitLogging();
 
-    //  bridge assignment
-    void DiscoverInstalledBridges();
-    BentleyStatus FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName);
-    bool QueryAnyInstalledBridges();
-    BentleyStatus SearchForBridgeToAssignToDocument(BeFileNameCR);
-    void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
-    void SearchForBridgesToAssignToDocuments();
-    BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);
-    BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
-    BentleyStatus ComputeBridgeAffinityToDocument(iModelBridge::BridgeAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
-    BentleyStatus WriteBridgesFile();
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    IModelBridgeRegistry& GetRegistry();
 
     DgnProgressMeter& GetProgressMeter() const;
 
@@ -251,10 +243,6 @@ public:
 
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
-    //! @private
-    IMODEL_BRIDGE_FWK_EXPORT static int ComputeAffinityMain(int argc, WCharCP argv[]);
-    //! @private
-    IMODEL_BRIDGE_FWK_EXPORT static int AssignMain(int argc, WCharCP argv[]);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 };

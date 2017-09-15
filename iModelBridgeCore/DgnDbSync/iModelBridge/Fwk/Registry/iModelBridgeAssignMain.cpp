@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/iModelBridgeAssignMain.cpp $
+|     $Source: iModelBridge/Fwk/Registry/iModelBridgeAssignMain.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/iModelBridgeFwk.h>
-#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include "iModelBridgeRegistry.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -15,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DGN
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, WCharCP argv[])
     {
-    return iModelBridgeFwk::AssignMain(argc, argv);
+    return iModelBridgeRegistry::AssignMain(argc, argv);
     }
 
 #ifdef __unix__

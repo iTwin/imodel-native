@@ -27,6 +27,7 @@ private:
     iModel::Hub::ClientPtr m_client;
     iModel::Hub::BriefcasePtr m_briefcase;
     iModel::Hub::Error m_lastServerError;
+	Utf8String m_projectId;
 
 public:
     DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment);
