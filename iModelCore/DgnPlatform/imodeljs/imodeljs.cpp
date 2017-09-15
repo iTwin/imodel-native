@@ -106,7 +106,7 @@ void IModelJs::InitLogging()
     Utf8CP configFileEnv = getenv("CONFIG_OPTION_CONFIG_FILE");
     if (!configFileEnv)
         {
-        fprintf(stderr, "CONFIG_OPTION_CONFIG_FILE envvar not defined. Activating default logging using console provider.\n");
+        // fprintf(stderr, "CONFIG_OPTION_CONFIG_FILE envvar not defined. Activating default logging using console provider.\n");
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
         NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_ERROR);
         NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_ERROR);
