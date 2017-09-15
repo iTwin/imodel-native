@@ -50,7 +50,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
-Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, BEF::FormatUnitGroupCP fug, size_t indx, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat = nullptr)
+Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, BEF::FormatUnitGroupCP fug, size_t indx, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
     {
     Utf8String str;
     ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
