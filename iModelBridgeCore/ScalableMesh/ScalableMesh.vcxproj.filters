@@ -1003,9 +1003,6 @@
     <ClInclude Include="stm\RasterUtilities.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="stm\MapBoxTextureProvider.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="stm\ReprojectionModel.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -1017,6 +1014,9 @@
     </ClInclude>
     <ClInclude Include="STM\Stores\SMCesiumPublisher.h">
       <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\StreamTextureProvider.h">
+      <Filter>Includes\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1456,9 +1456,6 @@
     <ClCompile Include="stm\RasterUtilities.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="stm\MapboxTextureProvider.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="stm\ReprojectionModel.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1485,6 +1482,9 @@
     </ClCompile>
     <ClCompile Include="STM\SMSQLiteFile.cpp">
       <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\StreamTextureProvider.cpp">
+      <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -34,7 +34,7 @@
 #include <json/json.h>
 
 
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -3798,7 +3798,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
-    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+    if (dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()))
         {
         textureWidthInPixels = 256;
         textureHeightInPixels = 256;
