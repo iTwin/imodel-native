@@ -53,53 +53,53 @@ struct LRPTests : public IntegrationTestsBase
         }
     };
 
-// TEST_F(LRPTests, InitializeFileJob)
-//     {
-//     auto db = CreateTestDb();
-//     int seedFileCodesCount = GetCodesCount(*db);
+TEST_F(LRPTests, InitializeFileJob)
+    {
+    auto db = CreateTestDb();
+    int seedFileCodesCount = GetCodesCount(*db);
 
-//     // Check projectGuid is not set
-//     auto savedGuid = db->QueryProjectGuid();
-//     EXPECT_FALSE(savedGuid.IsValid());
+    // Check projectGuid is not set
+    auto savedGuid = db->QueryProjectGuid();
+    EXPECT_FALSE(savedGuid.IsValid());
 
-//     auto modelPtr = CreateModel("InitializeModel1", *db);
-//     EXPECT_EQ(DgnDbStatus::Success, InsertStyle("InitializeStyle1", *db, true));
-//     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
+    auto modelPtr = CreateModel("InitializeModel1", *db);
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("InitializeStyle1", *db, true));
+    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
 
-//     auto createResult = m_client->CreateNewiModel(m_projectId, *db)->GetResult();
-//     EXPECT_SUCCESS(createResult);
+    auto createResult = m_client->CreateNewiModel(m_projectId, *db)->GetResult();
+    EXPECT_SUCCESS(createResult);
 
-//     auto imodelInfoPtr = createResult.GetValue();
-//     auto imodelConnection = ConnectToiModel(*m_client, imodelInfoPtr);
-//     auto briefcasePtr = AcquireBriefcase(*m_client, *imodelInfoPtr);
+    auto imodelInfoPtr = createResult.GetValue();
+    auto imodelConnection = ConnectToiModel(*m_client, imodelInfoPtr);
+    auto briefcasePtr = AcquireBriefcase(*m_client, *imodelInfoPtr);
 
-//     // Check InitializeFileJob set ProjectGuid
-//     savedGuid = briefcasePtr->GetDgnDb().QueryProjectGuid();
-//     EXPECT_EQ(m_client->GetProjectId(), savedGuid.ToString());
+    // Check InitializeFileJob set ProjectGuid
+    savedGuid = briefcasePtr->GetDgnDb().QueryProjectGuid();
+    EXPECT_EQ(m_projectId, savedGuid.ToString());
 
-//     //Check if codes are created and locks cleaned
-//     ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 2);
-//     ExpectLocksCount(*briefcasePtr, 0);
+    //Check if codes are created and locks cleaned
+    ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 2);
+    ExpectLocksCount(*briefcasePtr, 0);
 
-//     // Change the file guid
-//     auto fileName = db->GetFileName();
-//     BeSQLite::BeGuid newGuid;
-//     newGuid.Create();
-//     db->ChangeDbGuid(newGuid);
-//     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
+    // Change the file guid
+    auto fileName = db->GetFileName();
+    BeSQLite::BeGuid newGuid;
+    newGuid.Create();
+    db->ChangeDbGuid(newGuid);
+    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
 
-//     modelPtr = CreateModel("ReplaceSeedFile1", *db);
-//     EXPECT_EQ(DgnDbStatus::Success, InsertStyle("ReplaceSeedFile2", *db, true));
-//     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
+    modelPtr = CreateModel("ReplaceSeedFile1", *db);
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("ReplaceSeedFile2", *db, true));
+    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
 
-//     // Replace seed file
-//     auto fileInfo = FileInfo::Create(*db, "Replacement description2");
-//     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-//     EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo)->GetResult());
+    // Replace seed file
+    auto fileInfo = FileInfo::Create(*db, "Replacement description2");
+    EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
+    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo)->GetResult());
 
-//     //Check if codes are created and locks cleaned
-//     ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 4);
-//     ExpectLocksCount(*briefcasePtr, 0);
+    //Check if codes are created and locks cleaned
+    ExpectUnavailableCodesCount(*briefcasePtr, seedFileCodesCount + 4);
+    ExpectLocksCount(*briefcasePtr, 0);
 
-//     DeleteiModel(m_projectId, *m_client, *imodelInfoPtr);
-//     }
+    DeleteiModel(m_projectId, *m_client, *imodelInfoPtr);
+    }
