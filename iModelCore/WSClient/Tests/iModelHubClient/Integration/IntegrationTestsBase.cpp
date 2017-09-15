@@ -35,7 +35,7 @@ L10N::SqlangFiles GetSqlangFiles(BeFileNameCR assets)
     return sdkSqlangFiles;
     }
 
-void Initialize(ScopediModelHubHost* host)
+void IntegrationTestsBase::Initialize(ScopediModelHubHost* host)
     {
     static bool initialized = false;
     if (!initialized)
@@ -56,6 +56,16 @@ void IntegrationTestsBase::SetUp()
     m_pHost = new ScopediModelHubHost();
     Initialize(m_pHost);
     CreateInitialSeedDb();
+
+    //Cleanup
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto client = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+    auto result = client->GetiModels(m_projectId)->GetResult();
+    for (auto imodel : result.GetValue())
+        {
+        if (imodel->GetDescription().EndsWith(" is created by ScopediModelHubHost"))
+            DeleteiModel(m_projectId, *client, *imodel);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -175,9 +185,9 @@ DgnDbPtr IntegrationTestsBase::CreateTestDb(Utf8StringCR baseName)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis            06/2016
 //---------------------------------------------------------------------------------------
-void IntegrationTestsBase::DeleteiModel(ClientCR client, iModelInfoCR imodel)
+void IntegrationTestsBase::DeleteiModel(Utf8StringCR projectId, ClientCR client, iModelInfoCR imodel)
     {
-    auto result = client.DeleteiModel(imodel)->GetResult();
+    auto result = client.DeleteiModel(projectId, imodel)->GetResult();
     EXPECT_SUCCESS(result);
     }
 
@@ -263,28 +273,22 @@ struct StubLocalState : public IJsonLocalState
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas             01/2016
 //---------------------------------------------------------------------------------------
-ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials credentials, IHttpHandlerPtr customHandler)
+ClientPtr IntegrationTestsBase::SetUpClient (Credentials credentials, IHttpHandlerPtr customHandler)
     {
     WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
     ClientPtr client = nullptr;
 
     UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
-    ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
+    auto clientHelper = ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
 
     auto manager = ConnectSignInManager::Create(clientInfo, customHandler, StubLocalState::Instance());
     SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
     if (!signInResult.IsSuccess())
         return nullptr;
 
-    auto clientHelper = ClientHelper::GetInstance();
     client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
 
-    WSError wsError;
-    Utf8String projectId = clientHelper->QueryProjectId(&wsError, IntegrationTestSettings::Instance().GetProjectNr());
-    client->SetProject(projectId);
-
-    client->SetServerURL(host);
-    client->SetCredentials(credentials);
+    m_projectId = IntegrationTestSettings::Instance().GetProjectId();
 
     return client;
     }
@@ -299,7 +303,7 @@ iModelInfoPtr IntegrationTestsBase::CreateNewiModel (ClientCR client, Utf8String
     EXPECT_TRUE(db.IsValid());
 
     //Upload the seed file to the server
-    auto createResult = client.CreateNewiModel(*db)->GetResult();
+    auto createResult = client.CreateNewiModel(m_projectId, *db)->GetResult();
     EXPECT_SUCCESS(createResult);
     if (!createResult.IsSuccess())
         throw createResult.GetError().GetId();
@@ -319,7 +323,7 @@ iModelInfoPtr IntegrationTestsBase::CreateNewiModel (ClientCR client, Utf8String
 iModelInfoPtr IntegrationTestsBase::CreateNewiModelFromDb(ClientCR client, DgnDbR db)
     {
     //Upload the seed file to the server
-    auto createResult = client.CreateNewiModel(db, true, CreateProgressCallback())->GetResult();
+    auto createResult = client.CreateNewiModel(m_projectId, db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     return createResult.GetValue();
     }
@@ -329,7 +333,7 @@ iModelInfoPtr IntegrationTestsBase::CreateNewiModelFromDb(ClientCR client, DgnDb
 //---------------------------------------------------------------------------------------
 iModelConnectionPtr IntegrationTestsBase::ConnectToiModel(ClientCR client, iModelInfoPtr imodelInfo)
     {
-    auto connectionResult = client.ConnectToiModel(imodelInfo->GetId())->GetResult();
+    auto connectionResult = client.ConnectToiModel(*imodelInfo)->GetResult();
     EXPECT_SUCCESS(connectionResult);
     auto connection = connectionResult.GetValue();
     return connection;

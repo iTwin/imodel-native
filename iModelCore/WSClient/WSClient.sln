@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WSClient", "WSClient.vcxproj", "{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}"
 EndProject
@@ -50,6 +50,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MobileUtilsIntegrationTests
 	ProjectSection(ProjectDependencies) = postProject
 		{B30C2A00-471D-4DC9-8640-C08FF86C907E} = {B30C2A00-471D-4DC9-8640-C08FF86C907E}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iModelHubIntegrationTests", "Tests\iModelHubClient\iModelHubIntegrationTests.vcxproj", "{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -178,8 +180,19 @@ Global
 		{1DFD13CD-3E76-453F-BF9E-6B3EFF05DD47}.Release|x64.Build.0 = Debug|x64
 		{1DFD13CD-3E76-453F-BF9E-6B3EFF05DD47}.Release|x86.ActiveCfg = Debug|x64
 		{1DFD13CD-3E76-453F-BF9E-6B3EFF05DD47}.Release|x86.Build.0 = Debug|x64
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Debug|ARM.ActiveCfg = Debug|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Debug|x64.ActiveCfg = Debug|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Debug|x86.ActiveCfg = Debug|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Debug|x86.Build.0 = Debug|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Release|ARM.ActiveCfg = Release|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Release|x64.ActiveCfg = Release|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Release|x86.ActiveCfg = Release|Win32
+		{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B4A6BC2A-C09F-4184-9C9C-122CB599124E}
 	EndGlobalSection
 EndGlobal

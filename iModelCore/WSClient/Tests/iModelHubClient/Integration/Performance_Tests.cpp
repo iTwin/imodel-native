@@ -117,7 +117,7 @@ struct PerformanceTests : public IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
 
-        m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials()); 
+        m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials()); 
         auto db = CreateTestDb("PerformanceTests");
         MultiAspectHandlerDomain::GetDomain().ImportSchema(*db);
         EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
@@ -131,7 +131,7 @@ struct PerformanceTests : public IntegrationTestsBase
 
     virtual void TearDown() override
         {
-        DeleteiModel(*m_client, *m_imodel);
+        DeleteiModel(m_projectId, *m_client, *m_imodel);
         m_client = nullptr;
         m_briefcase->GetDgnDb().CloseDb();
         IntegrationTestsBase::TearDown();
@@ -682,12 +682,15 @@ TEST_F(PerformanceTests, PullMergeAndPush)
     WString imodelIdWide;
     BeStringUtilities::Utf8ToWChar(imodelIdWide, m_imodel->GetId().c_str());
 
+    WString projectIdWide;
+    BeStringUtilities::Utf8ToWChar(projectIdWide, IntegrationTestSettings::Instance().GetProjectId().c_str());
+
     PROCESS_INFORMATION pifs[briefcaseCount];
     BeFileName imhsClientPath;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(imhsClientPath);
     imhsClientPath.AppendToPath(L"..\\IMHSClientExe.exe");
 
-    imodelIdWide = imhsClientPath + L" " + imodelIdWide;
+    imodelIdWide = imhsClientPath + L" " + projectIdWide + L" " + imodelIdWide;
     LPWSTR imodelId = const_cast<wchar_t *>(imodelIdWide.c_str());
     LPCWSTR imhsExePath = imhsClientPath.c_str();
 

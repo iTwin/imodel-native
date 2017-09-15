@@ -32,7 +32,7 @@ struct EventTests : public IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
         auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
         m_imodel = CreateNewiModel(*m_client, nullptr);
         m_imodelConnection = ConnectToiModel(*m_client, m_imodel);
         m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
@@ -40,7 +40,7 @@ struct EventTests : public IntegrationTestsBase
 
     virtual void TearDown() override
         {
-        DeleteiModel(*m_client, *m_imodel);
+        DeleteiModel(m_projectId, *m_client, *m_imodel);
         m_client = nullptr;
         IntegrationTestsBase::TearDown();
         }
