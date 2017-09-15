@@ -5,7 +5,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct MapBoxTextureProvider : virtual public ITextureProvider
+struct StreamTextureProvider : virtual public ITextureProvider
     {
     private:
         HGF2DExtent m_minExt;
@@ -20,6 +20,6 @@ struct MapBoxTextureProvider : virtual public ITextureProvider
         virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) override;
     public:
 
-        MapBoxTextureProvider(WString url, DRange3d totalExt, GeoCoordinates::BaseGCSCPtr targetCS);
+        StreamTextureProvider(WString url, DRange3d totalExt, GeoCoordinates::BaseGCSCPtr targetCS);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
