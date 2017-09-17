@@ -253,34 +253,37 @@ void    AppendJsonEntry(Json::Value& jsonEntries, State& state, double time, boo
 
         state.m_show = show;
         jsonEntry["show"] = show;
-
-        Json::Value     jsonColor = Json::arrayValue;
-        if (nullptr != color)
+        
+        if (show)
             {
+            Json::Value     jsonColor = Json::arrayValue;
+            if (nullptr != color)
+                {
 
-            jsonColor.append(color->GetRed());
-            jsonColor.append(color->GetGreen());
-            jsonColor.append(color->GetBlue());
-            jsonEntry["color"] = jsonColor;
-            state.m_color = *color;
+                jsonColor.append(color->GetRed());
+                jsonColor.append(color->GetGreen());
+                jsonColor.append(color->GetBlue());
+                jsonEntry["color"] = jsonColor;
+                state.m_color = *color;
+                }
+            else
+                {
+                jsonColor.append(255);
+                jsonColor.append(255);
+                jsonColor.append(255);
+                }
+
+            if (nullptr != alpha)
+                jsonColor.append(*alpha);
+            else
+                jsonColor.append(255);
+
+            if (nullptr != fade)
+                jsonEntry["fade"] = fade->GetJson();
+                
+            if (true == (state.m_setColor = (nullptr != color || nullptr != alpha)))
+                jsonEntry["color"] = jsonColor;
             }
-        else
-            {
-            jsonColor.append(255);
-            jsonColor.append(255);
-            jsonColor.append(255);
-            }
-
-        if (nullptr != alpha)
-            jsonColor.append(*alpha);
-        else
-            jsonColor.append(255);
-
-        if (nullptr != fade)
-            jsonEntry["fade"] = fade->GetJson();
-            
-        if (true == (state.m_setColor = (nullptr != color || nullptr != alpha)))
-            jsonEntry["color"] = jsonColor;
 
         jsonEntry["time"] = time;
         jsonEntries.append(std::move(jsonEntry));
