@@ -51,6 +51,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
         //! @remarks
+        //! The JSON returns is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON wire format".
         //! The ECSQL select clause is what exclusively determines what property name value pairs
         //! the JSON will contain.
         //!
@@ -72,7 +73,9 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //!         "name": "Sally Smith",
         //!         "age": 30
         //!     }
-        //!
+        //! 
+        //! Using expressions or aliases or nesting property accessors in the ECSQL select clause
+        //! affect the JSON member names, not the JSON structure.
         //! @param [out] json current row as JSON object of property name value pairs
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json) const;

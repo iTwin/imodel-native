@@ -38,7 +38,7 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         BentleyStatus SelectClauseItemToJson(JsonValueR, IECSqlValue const&, ECSqlSystemPropertyInfo const& sysPropInfo) const;
 
         static Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&);
-        static void ToJsonMemberName(Utf8StringR str) { str[0] = (char) tolower(str[0]); }
+        static void ToJsonMemberName(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
     };
 
 //--------------------------------------------------------------------------------------
@@ -355,7 +355,7 @@ BentleyStatus ECSqlToJsonConverter::StructToJson(JsonValueR jsonValue, IECSqlVal
         ECPropertyCP memberProp = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(memberProp != nullptr);
         Utf8String memberPropName(memberProp->GetName());
-        //ToCamelCase(memberPropName);
+        ToJsonMemberName(memberPropName);
         if (SUCCESS != PropertyValueToJson(jsonValue[memberPropName.c_str()], structMemberValue))
             return ERROR;
         }
@@ -463,10 +463,40 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
     //The property name in contrast would have encoded special characters of the select clause item.
     //Ex: SELECT MyProp + 4 FROM Foo -> the member name in JSON must be "MyProp + 4"
     if (colInfo.IsGeneratedProperty())
-        return colInfo.GetProperty()->GetDisplayLabel();
+        {
+        Utf8String name(colInfo.GetProperty()->GetDisplayLabel());
+        if (name.empty())
+            name.assign(colInfo.GetProperty()->GetName());
+
+        ToJsonMemberName(name);
+        return name;
+        }
 
     if (!sysPropInfo.IsSystemProperty())
-        return colInfo.GetPropertyPath().ToString();
+        {
+        Utf8String name(colInfo.GetPropertyPath().ToString());
+        BeAssert(!name.empty());
+        ToJsonMemberName(name);
+        bool foundDelimiter = false;
+        //lower first character of each token in access string
+        for (size_t i = 1; i < name.size(); i++)
+            {
+            if (foundDelimiter)
+                {
+                name[i] = (Utf8Char) tolower(name[i]);
+                foundDelimiter = false;
+                continue;
+                }
+
+            if (name[i] == '.')
+                {
+                foundDelimiter = true;
+                continue;
+                }
+            }
+
+        return name;
+        }
 
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class)
         {

@@ -33,7 +33,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECInstanceId, I, I, P, P.Id, P.RelECClassId FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECInstanceId, ECClassId, ECClassId, I, I, P, P.Id, P.RelECClassId FROM ecsql.PSA LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter adapter(stmt);
     Json::Value json;
@@ -45,21 +45,31 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     ASSERT_TRUE(json.isMember((Utf8String(ECJsonUtilities::json_id()) + "_1").c_str())) << json.ToString().c_str();
     EXPECT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[(Utf8String(ECJsonUtilities::json_id()) + "_1").c_str()].asCString()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("I")) << json.ToString().c_str();
-    EXPECT_EQ(10, json["I"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_className())) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", json[ECJsonUtilities::json_className()].asCString()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("I_1")) << json.ToString().c_str();
-    EXPECT_EQ(10, json["I_1"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember((Utf8String(ECJsonUtilities::json_className()) + "_1").c_str())) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", json[(Utf8String(ECJsonUtilities::json_className()) + "_1").c_str()].asCString()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("P") && json["P"].isObject()) << json.ToString().c_str();
-    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToHexStr().c_str(), json["P"][ECJsonUtilities::json_navId()].asCString()) << json.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", json["P"][ECJsonUtilities::json_navRelClassName()].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember((Utf8String(ECJsonUtilities::json_id()) + "_1").c_str())) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[(Utf8String(ECJsonUtilities::json_id()) + "_1").c_str()].asCString()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("P.Id")) << json.ToString().c_str();
-    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToString().c_str(), json["P.Id"].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("i")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["i"].asInt()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("P.RelECClassId")) << json.ToString().c_str();
-    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), json["P.RelECClassId"].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("i_1")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["i_1"].asInt()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("p") && json["p"].isObject()) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToHexStr().c_str(), json["p"][ECJsonUtilities::json_navId()].asCString()) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", json["p"][ECJsonUtilities::json_navRelClassName()].asCString()) << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("p.id")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(pKey.GetInstanceId().ToString().c_str(), json["p.id"].asCString()) << json.ToString().c_str();
+
+    //RelECClassId is not converted to relClassName if explicitly specified in select clause.
+    ASSERT_TRUE(json.isMember("p.relECClassId")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), json["p.relECClassId"].asCString()) << json.ToString().c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -74,35 +84,41 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(psaKey, "INSERT INTO ecsql.PSA(I,L,P2D.X,P2D.Y,PStructProp.i,PStructProp.l,P.Id) VALUES (10,10,10.0,10.0,10,10,1000)"));
     
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, I + 10, (I + 10) Alias1, I + L, (I + L) Alias2, P2D.X, PStructProp.i, P.Id FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL, 123, ECInstanceId, I + 10, (I + 10) Alias1, I + L, (I + L) Alias2, P2D.X, PStructProp.i, P.Id FROM ecsql.PSA LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter adapter(stmt);
     Json::Value json;
     ASSERT_EQ(SUCCESS, adapter.GetRow(json));
-    
+
+    ASSERT_EQ(9, json.size());
+    ASSERT_FALSE(json.isMember("nULL") && json.isMember("NULL")) << "NULL literal results in null which is ignored by adapter. " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("123")) << json.ToString().c_str();
+    EXPECT_EQ(123, json["123"].asInt()) << json.ToString().c_str();
+
     ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id())) << json.ToString().c_str();
     ASSERT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[ECJsonUtilities::json_id()].asCString()) << json.ToString().c_str();
-    
+
     ASSERT_TRUE(json.isMember("[I] + 10")) << json.ToString().c_str();
     EXPECT_EQ(20, json["[I] + 10"].asInt()) << json.ToString().c_str();
     
-    ASSERT_TRUE(json.isMember("Alias1")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["Alias1"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("alias1")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["alias1"].asInt()) << json.ToString().c_str();
     
     ASSERT_TRUE(json.isMember("[I] + [L]")) << json.ToString().c_str();
     EXPECT_EQ(20, json["[I] + [L]"].asInt()) << json.ToString().c_str();
     
-    ASSERT_TRUE(json.isMember("Alias2")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["Alias2"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("alias2")) << json.ToString().c_str();
+    EXPECT_EQ(20, json["alias2"].asInt()) << json.ToString().c_str();
     
-    ASSERT_TRUE(json.isMember("P2D.X")) << json.ToString().c_str();
-    EXPECT_DOUBLE_EQ(10.0, json["P2D.X"].asDouble()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("p2D.x")) << json.ToString().c_str();
+    EXPECT_DOUBLE_EQ(10.0, json["p2D.x"].asDouble()) << json.ToString().c_str();
     
-    ASSERT_TRUE(json.isMember("PStructProp.i")) << json.ToString().c_str();
-    EXPECT_EQ(10, json["PStructProp.i"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("pStructProp.i")) << json.ToString().c_str();
+    EXPECT_EQ(10, json["pStructProp.i"].asInt()) << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("P.Id")) << json.ToString().c_str();
-    EXPECT_STRCASEEQ("1000", json["P.Id"].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("p.id")) << json.ToString().c_str();
+    EXPECT_STRCASEEQ("1000", json["p.id"].asCString()) << json.ToString().c_str();
     }
 
 
@@ -165,21 +181,21 @@ TEST_F(JsonReaderTests, JsonValueStruct)
       "$ECClassKey" : "StartupCompany.Foo",
       "anglesFoo" : 
             {
-            "Alpha" : 12.345000000000001,
-            "Beta" : 12.345000000000001
+            "alpha" : 12.345000000000001,
+            "beta" : 12.345000000000001
             },
       "arrayOfAnglesStructsFoo" : [
          {
-            "Alpha" : 12.345000000000001,
-            "Beta" : 12.345000000000001
+            "alpha" : 12.345000000000001,
+            "beta" : 12.345000000000001
          },
          {
-            "Alpha" : 12.345000000000001,
-            "Beta" : 12.345000000000001
+            "alpha" : 12.345000000000001,
+            "beta" : 12.345000000000001
          },
          {
-            "Alpha" : 12.345000000000001,
-            "Beta" : 12.345000000000001
+            "alpha" : 12.345000000000001,
+            "beta" : 12.345000000000001
          }
         ],
       "arrayOfIntsFoo" : [ 67, 67, 67 ],
@@ -216,26 +232,26 @@ TEST_F(JsonReaderTests, PartialPoints)
     selStmt.Finalize();
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
-    ASSERT_TRUE(actualJson.isMember("P2D"));
-    ASSERT_TRUE(actualJson["P2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+    ASSERT_TRUE(actualJson.isMember("p2D"));
+    ASSERT_TRUE(actualJson["p2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, actualJson["p2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["p2D"]["y"].asDouble());
 
-    ASSERT_TRUE(actualJson.isMember("P3D"));
-    ASSERT_TRUE(actualJson["P3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_TRUE(actualJson.isMember("p3D"));
+    ASSERT_TRUE(actualJson["p3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, actualJson["p3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["p3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["p3D"]["z"].asDouble());
 
-    ASSERT_TRUE(actualJson.isMember("PStructProp.p2d"));
-    ASSERT_TRUE(actualJson["PStructProp.p2d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p2d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp.p2d"]["y"].asDouble());
+    ASSERT_TRUE(actualJson.isMember("pStructProp.p2d"));
+    ASSERT_TRUE(actualJson["pStructProp.p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp.p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["pStructProp.p2d"]["y"].asDouble());
 
-    ASSERT_TRUE(actualJson["PStructProp.p3d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp.p3d"]["z"].asDouble());
+    ASSERT_TRUE(actualJson["pStructProp.p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp.p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp.p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["pStructProp.p3d"]["z"].asDouble());
 
     actualJson = Json::Value();
     JsonReader reader(m_ecdb, *testClass);
@@ -244,19 +260,19 @@ TEST_F(JsonReaderTests, PartialPoints)
 
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
 
-    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(1, actualJson["p2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["p2D"]["y"].asDouble());
 
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["p3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2, actualJson["p3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0, actualJson["p3D"]["z"].asDouble());
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp"]["p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["pStructProp"]["p2d"]["y"].asDouble());
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp"]["p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp"]["p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["pStructProp"]["p3d"]["z"].asDouble());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

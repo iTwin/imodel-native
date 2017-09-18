@@ -33,6 +33,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid()) << documentClass->GetFullName();
 
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
@@ -185,15 +186,15 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 
     std::vector<std::pair<Utf8CP, bool>> testDataset
         {
-                {R"json( { "P2D" : { "x": 3.14, "y" : -2.0 } } )json", true},
-                {R"json( { "P2D" : { "x": 3.14 } } )json", false},
-                {R"json( { "P2D" : { "y": 3.14 } } )json", false},
-                {R"json( { "P2D" : { "z": 3.14 } } )json", false},
-                {R"json( { "P3D" : { "x": 3.14, "y" : -2.0, "z": 0.0 } } )json", true},
-                {R"json( { "P3D" : { "x": 3.14 } } )json", false},
-                {R"json( { "P3D" : { "y": 3.14 } } )json", false},
-                {R"json( { "P3D" : { "z": 3.14 } } )json", false},
-                {R"json( { "P3D" : { "x": 3.14, "z": 3.14 } } )json", false}
+                {R"json( { "p2D" : { "x": 3.14, "y" : -2.0 } } )json", true},
+                {R"json( { "p2D" : { "x": 3.14 } } )json", false},
+                {R"json( { "p2D" : { "y": 3.14 } } )json", false},
+                {R"json( { "p2D" : { "z": 3.14 } } )json", false},
+                {R"json( { "p3D" : { "x": 3.14, "y" : -2.0, "z": 0.0 } } )json", true},
+                {R"json( { "p3D" : { "x": 3.14 } } )json", false},
+                {R"json( { "p3D" : { "y": 3.14 } } )json", false},
+                {R"json( { "p3D" : { "z": 3.14 } } )json", false},
+                {R"json( { "p3D" : { "x": 3.14, "z": 3.14 } } )json", false}
         };
 
     JsonInserter inserter(m_ecdb, *testClass, nullptr);

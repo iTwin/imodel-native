@@ -94,8 +94,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     JsonReader reader(m_ecdb, *relClass);
     Json::Value relationshipJson;
     ASSERT_EQ(SUCCESS, reader.Read(relationshipJson, relInstanceId));
-    ASSERT_STREQ("good morning", relationshipJson["Name"].asCString());
-    //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
+    ASSERT_STREQ("good morning", relationshipJson["name"].asCString()) << relationshipJson.ToString().c_str();
 
     // Update relationship properties
     JsonUpdater updater(m_ecdb, *relClass, nullptr);
@@ -105,7 +104,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     * Update relationship properties via Json::Value API
     */
     Utf8CP expectedVal = "good afternoon";
-    relationshipJson["Name"] = expectedVal;
+    relationshipJson["name"] = expectedVal;
     //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipJson, sourceKey, targetKey));
 
@@ -124,7 +123,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     expectedVal = "good evening";
     rapidjson::Document relationshipRapidJson;
     relationshipRapidJson.SetObject();
-    relationshipRapidJson.AddMember("Name", rapidjson::StringRef(expectedVal), relationshipRapidJson.GetAllocator());
+    relationshipRapidJson.AddMember("name", rapidjson::StringRef(expectedVal), relationshipRapidJson.GetAllocator());
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
 
@@ -162,9 +161,9 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     JsonReader reader(m_ecdb,*ecClass);
     Json::Value ecClassJson;
     ASSERT_EQ(SUCCESS, reader.Read(ecClassJson, key.GetInstanceId()));
-    ASSERT_EQ(100, ecClassJson["P1"].asInt());
-    ASSERT_STREQ("JsonTest", ecClassJson["P2"].asCString());
-    ASSERT_DOUBLE_EQ(1000.10, ecClassJson["P3"].asDouble());
+    ASSERT_EQ(100, ecClassJson["p1"].asInt());
+    ASSERT_STREQ("JsonTest", ecClassJson["p2"].asCString());
+    ASSERT_DOUBLE_EQ(1000.10, ecClassJson["p3"].asDouble());
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
 
     // Update ecClass properties
@@ -175,10 +174,9 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     * Update class properties via Json::Value API
     */
     Utf8CP expectedVal = "Json API";
-    ecClassJson["P1"] = 200;
-    ecClassJson["P2"] = expectedVal;
-    ecClassJson["P3"] = 2000.20;
-    //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
+    ecClassJson["p1"] = 200;
+    ecClassJson["p2"] = expectedVal;
+    ecClassJson["p3"] = 2000.20;
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), ecClassJson));
 
     ECSqlStatement checkStmt;
@@ -199,9 +197,9 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     expectedVal = "RapidJson";
     rapidjson::Document ecClassRapidJson;
     ecClassRapidJson.SetObject();
-    ecClassRapidJson.AddMember("P1", 300, ecClassRapidJson.GetAllocator());
-    ecClassRapidJson.AddMember("P2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
-    ecClassRapidJson.AddMember("P3", 3000.30, ecClassRapidJson.GetAllocator());
+    ecClassRapidJson.AddMember("p1", 300, ecClassRapidJson.GetAllocator());
+    ecClassRapidJson.AddMember("p2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
+    ecClassRapidJson.AddMember("p3", 3000.30, ecClassRapidJson.GetAllocator());
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), ecClassRapidJson));
 
@@ -233,22 +231,22 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     ECClassCP spatialClass = m_ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
 
-    Utf8String expectedJson(R"json({ "Location" : { "Polygon" : { "Point" : [[17.672993680591887, 48.591463341759322, 0.0], 
+    Utf8String expectedJson(R"json({ "location" : { "Polygon" : { "Point" : [[17.672993680591887, 48.591463341759322, 0.0], 
                                                                     [26.072599028627593, 48.591463341759322, 0.0],
                                                                     [26.072599028627593, 54.891247623320339, 0.0],
                                                                     [17.672993680591887, 54.891247623320339, 0.0],
                                                                     [17.672993680591887, 48.591463341759322, 0.0]] }},
-                    "LLP" : {
+                    "lLP" : {
                         "Coordinate" : {
                             "xyz" : [17.672993680591887, 48.591463341759322, 0.0]
                         }
                     },
-                    "URP" : {
+                    "uRP" : {
                         "Coordinate" : {
                             "xyz" : [26.072599028627593, 54.891247623320339, 0.0]
                         }
                     },
-                    "Center" : {
+                    "center" : {
                         "Coordinate" : {
                             "xyz" : [21.87279635460974, 51.741355482539831, 0.0]
                         }
