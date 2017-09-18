@@ -310,7 +310,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             }
         else if (ecProperty->GetIsArray())
             {
-            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty, accessString, classLocater))
+            if (SUCCESS != ECArrayValueFromJson(instance, childJsonValue, *ecProperty->GetAsArrayProperty(), accessString, classLocater))
                 return ERROR;
             }
         else if (ecProperty->GetIsNavigation())
@@ -496,13 +496,8 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, Json::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const Json::Value& jsonValue, ECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
+BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const Json::Value& jsonValue, ArrayECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
     {
-    NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
-
-    if ((!property.GetIsArray() && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
-        return ERROR;
-
     if (!jsonValue.isArray())
         return ERROR;
 
@@ -536,8 +531,8 @@ BentleyStatus ECJsonUtilities::ECArrayValueFromJson(IECInstanceR instance, const
         return SUCCESS;
         }
 
-    PrimitiveArrayECPropertyCP arrProp = property.GetAsPrimitiveArrayProperty();
-    PrimitiveType primType = arrProp != nullptr ? arrProp->GetPrimitiveElementType() : navProp->GetType();
+    BeAssert(property.GetIsPrimitiveArray());
+    const PrimitiveType primType = property.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
 
     for (uint32_t ii = 0; ii < length; ii++)
         {
