@@ -455,6 +455,10 @@ public:
 
     static BentleyStatus ParseUInt64(uint64_t& value, Utf8CP string) {BentleyStatus stat; value=ParseUInt64(string, &stat); return stat;} //!< @private
 
+    //! Checks whether the specified string has the hex prefix (0x or 0X).
+    //! @param[in] str String to check. Note: For efficiency reasons, the caller must ensure that @p str has at least as length of 2 characters.
+    static bool HasHexPrefix(Utf8CP str) { return (str != nullptr && str[0] == '0' && (str[1] == 'X' || str[1] == 'x')); }
+
     //! Parses a hexadecimal number from a string that may optionally start with "0x" or "0X"
     //! @param[in] string A string representation of a hex value. May begin with 0x or 0X.
     //! @param[out] status optional status
