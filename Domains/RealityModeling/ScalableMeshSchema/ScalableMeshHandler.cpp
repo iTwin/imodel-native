@@ -1363,8 +1363,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
     clipFileBase.AppendUtf8(std::to_string(nOfOtherModels).c_str());
-    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
-    assert(m_smPtr != 0);
+    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);    
+
+    if (!m_smPtr.IsValid())
+        {
+        m_tryOpen = true;
+        return;
+        }
+
     if (m_smPtr->IsTerrain())
         {
         ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
