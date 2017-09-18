@@ -604,12 +604,12 @@ JsonValueR instanceInfo
         }
 
     JsonECSqlSelectAdapter jsonAdapter(*statement);
-    if (!jsonAdapter.GetRowInstance(instanceJson, key.GetClassId()))
+    if (SUCCESS != jsonAdapter.GetRowInstance(instanceJson, key.GetClassId()))
         {
         return ERROR;
         }
 
-    if (!jsonAdapter.GetRowInstance(instanceInfo, m_adapter.GetECClass("DSCacheSchema", "CachedInstanceInfo")->GetId()))
+    if (SUCCESS != jsonAdapter.GetRowInstance(instanceInfo, m_adapter.GetECClass("DSCacheSchema", "CachedInstanceInfo")->GetId()))
         {
         return ERROR;
         }
@@ -648,7 +648,7 @@ JsonValueR fileInfo
     auto statement = m_statementCache.GetPreparedStatement("ReadFileInfo", [&]
         {
         return
-            "SELECT * FROM ONLY [DSC].[CachedFileInfo] fileInfo "
+            "SELECT fileInfo.* FROM ONLY [DSC].[CachedFileInfo] fileInfo "
             "JOIN [DSCJS].[CachedFileInfoRelationship] rel ON rel.SourceECInstanceId = fileInfo.ECInstanceId "
             "WHERE rel.TargetECInstanceId = ? "
             "LIMIT 1 ";
@@ -663,7 +663,7 @@ JsonValueR fileInfo
         }
 
     JsonECSqlSelectAdapter fileInfoJsonAdapter(*statement);
-    if (!fileInfoJsonAdapter.GetRowInstance(fileInfo, m_adapter.GetECClass("DSCacheSchema", "CachedFileInfo")->GetId()))
+    if (SUCCESS != fileInfoJsonAdapter.GetRow(fileInfo))
         {
         return ERROR;
         }
@@ -699,7 +699,7 @@ BentleyStatus UpgraderFromV5ToCurrent::ReadRoots(JsonValueR roots)
     m_adapter.PrepareStatement(statement, "SELECT * FROM ONLY [DSC].[Root]");
     while (BE_SQLITE_ROW == statement.Step())
         {
-        if (!jsonAdapter.GetRowInstance(roots.append(Json::objectValue)))
+        if (SUCCESS != jsonAdapter.GetRow(roots.append(Json::objectValue)))
             {
             return ERROR;
             }
