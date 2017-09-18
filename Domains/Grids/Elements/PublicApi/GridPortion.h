@@ -35,6 +35,8 @@ typedef bmap<Utf8String, GridAxisMap> GridNameMap;
 struct EXPORT_VTABLE_ATTRIBUTE GridPortion : SurfaceSet
 {
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, SurfaceSet);
+private:
+    BE_PROP_NAME (Normal);
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params);
@@ -60,6 +62,11 @@ public:
     //! @param[in] grid     grid to rotate
     //! @param[in] theta    angle to rotate to
     GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta);
+
+    //! gets the perpendicularity plane of this Grid
+    //! @return             perpendicularity plane of this Grid
+    GRIDELEMENTS_EXPORT DPlane3d    GetPlane ();
+
     
     };
 

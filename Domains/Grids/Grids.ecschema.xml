@@ -116,6 +116,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="OrthogonalGridPortion">

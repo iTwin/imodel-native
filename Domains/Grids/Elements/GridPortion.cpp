@@ -95,4 +95,16 @@ void GridPortion::RotateToAngleXY(GridElementVector& grid, double theta)
     for (GridSurfacePtr gridElement : grid)
         gridElement->RotateXY(theta);
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     09/17
+//---------------------------------------------------------------------------------------
+DPlane3d GridPortion::GetPlane ()
+    {
+    DPlane3d plane;
+    plane.Zero ();
+    plane.normal = DVec3d::From (GetPropertyValueDPoint3d (prop_Normal ()));
+    return plane;
+    }
 END_GRIDS_NAMESPACE
