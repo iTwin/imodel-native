@@ -362,11 +362,14 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertTestPointNames(RoadwayStandard
 //---------------------------------------------------------------------------------------
 BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortionBreakDownModelCR model)
     {
+    TypicalSectionPortionDefinitionElementPtr definitionPtr = TypicalSectionPortionDefinitionElement::GetForEdit(model.GetDgnDb(), model.GetModeledElement()->GetElementId());
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
     bvector<TypicalSectionPointCP> points;
     auto clPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "CL"));
     points.push_back(clPointCPtr.get());
+    definitionPtr->SetOriginPoint(clPointCPtr.get());
+    definitionPtr->Update();
 
     auto leftPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
     points.push_back(leftPointCPtr.get());
@@ -380,10 +383,10 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
 
     auto eotwLPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOTW_L"));
 
+    TypicalSectionSlopeConstraint::CreateAndInsert(*eotwLPointCPtr, *leftPointCPtr,
+        *TypicalSectionConstraintConstantSlope::Create(model, -0.05), 1);
     TypicalSectionHorizontalConstraint::CreateAndInsert(*eotwLPointCPtr, *leftPointCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -3.0), 1);
-    TypicalSectionVerticalConstraint::CreateAndInsert(*eotwLPointCPtr, *leftPointCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -0.05), 2);
+        *TypicalSectionConstraintConstantOffset::Create(model, 3.0), 2);    
 
     points.erase(&points.at(0));
     points.push_back(eotwLPointCPtr.get());

@@ -138,7 +138,7 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
 
     DgnModelId roadwayStandardsModelId = QueryFirstModelIdOfType(*projectPtr, RoadwayStandardsModel::QueryClassId(*projectPtr));
     auto roadwayStandardsModelPtr = RoadwayStandardsModel::Get(*projectPtr, roadwayStandardsModelId);
-    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "2 lane");
+    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "4 lanes");
 
     TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());

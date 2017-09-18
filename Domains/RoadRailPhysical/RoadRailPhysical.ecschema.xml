@@ -547,8 +547,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Guid" typeName="string"/>
-        <ECProperty propertyName="Origin" typeName="point2d"/>
         <ECProperty propertyName="Author" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="LastUsed" typeName="dateTime"/>
@@ -589,7 +587,7 @@
             <Class class="OverallTypicalSectionPortionElement"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Portion Definition">
-            <Class class="TypicalSectionPortionElement"/>
+            <Class class="TypicalSectionPortionDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="OverallTypicalSectionPortionRefersToAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
@@ -614,7 +612,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionPortionElement" modifier="Abstract" description="Base class representing the definition of a portion of overall Typical-sections of a Pathway.">
+    <ECEntityClass typeName="TypicalSectionPortionDefinitionElement" modifier="Abstract" description="Base class representing the definition of a portion of overall Typical-sections of a Pathway.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
@@ -624,14 +622,14 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TypicalSectionPortionRefersToOriginPoint" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered as the origin point of N portions">
-            <Class class="TypicalSectionPortionElement"/>
+            <Class class="TypicalSectionPortionDefinitionElement"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 point as its origin">
             <Class class="TypicalSectionPoint"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="TravelwayDefinitionElement" displayLabel="Travelway Definition" modifier="Abstract" description="Base class for definitions of Travelways">
-        <BaseClass>TypicalSectionPortionElement</BaseClass>
+        <BaseClass>TypicalSectionPortionDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -649,13 +647,13 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="TravelwaySideDefinition" displayLabel="Travelway side Definition" description="Definitions for TravelwaySide elements">
-        <BaseClass>TypicalSectionPortionElement</BaseClass>
+        <BaseClass>TypicalSectionPortionDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="TravelwayStructureDefinition" displayLabel="Travelway structure Definition">
-        <BaseClass>TypicalSectionPortionElement</BaseClass>
+        <BaseClass>TypicalSectionPortionDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -862,6 +860,39 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionSlopeConstraint" displayLabel="Slope" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PointRef" relationshipName="TypicalSectionSlopeConstraintRefersToPointRef" direction="Forward"/>
+        <ECNavigationProperty propertyName="Slope" relationshipName="TypicalSectionConstraintRefersToSlope" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionSlopeConstraintRefersToPointRef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionSlopeConstraint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Point reference">
+            <Class class="ITypicalSectionConstraintPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintRefersToSlope" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Constraints">
+            <Class class="TypicalSectionSlopeConstraint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Constraint-Value">
+            <Class class="TypicalSectionConstraintSlope"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintOwnsSlope" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is owned by 1 Constraint">
+            <Class class="TypicalSectionSlopeConstraint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="owns 1 Slope">
+            <Class class="TypicalSectionConstraintSlope"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TypicalSectionConstraintOffset" modifier="Abstract">
         <BaseClass>bis:InformationRecordElement</BaseClass>
         <ECCustomAttributes>
@@ -890,6 +921,34 @@
             <Class class="TypicalSectionOffsetParameter"/>
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionConstraintSlope" modifier="Abstract">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintConstantSlope" displayLabel="Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double" displayLabel="Value" kindOfQuantity="SLOPE"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionConstraintParametricSlope" displayLabel="Parametric Value" modifier="Sealed">
+        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Parameter" relationshipName="TypicalSectionConstraintSlopeRefersToParameter" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionConstraintSlopeRefersToParameter" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N ConstraintValues">
+            <Class class="TypicalSectionConstraintParametricSlope"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
+            <Class class="TypicalSectionSlopeParameter"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TypicalSectionConstraintAngle" modifier="Abstract">
         <BaseClass>bis:InformationRecordElement</BaseClass>
         <ECCustomAttributes>
@@ -916,34 +975,6 @@
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
             <Class class="TypicalSectionAngleParameter"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="TypicalSectionConstraintSlope" modifier="Abstract">
-        <BaseClass>bis:InformationRecordElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionConstraintConstantSlope" displayLabel="Value" modifier="Sealed">
-        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Value" typeName="double" displayLabel="Value" kindOfQuantity="SLOPE"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionConstraintParametricSlope" displayLabel="Value" modifier="Sealed">
-        <BaseClass>TypicalSectionConstraintSlope</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Parameter" relationshipName="TypicalSectionConstraintSlopeRefersToParameter" direction="Forward"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="TypicalSectionConstraintSlopeRefersToParameter" strength="referencing" strengthDirection="Forward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N ConstraintValues">
-            <Class class="TypicalSectionConstraintParametricSlope"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Parameter">
-            <Class class="TypicalSectionSlopeParameter"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="TypicalSectionPointConstraint" displayLabel="Point Constraint" modifier="Sealed">

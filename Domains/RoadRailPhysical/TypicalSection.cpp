@@ -23,14 +23,30 @@ HANDLER_DEFINE_MEMBERS(TravelwayStructureComponentHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayStructureDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionComponentElementHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionBreakDownModelHandler)
-HANDLER_DEFINE_MEMBERS(TypicalSectionPortionElementHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPortionDefinitionElementHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPortionElement::TypicalSectionPortionElement(CreateParams const& params):
+TypicalSectionPortionDefinitionElement::TypicalSectionPortionDefinitionElement(CreateParams const& params):
     T_Super(params)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionPointCP TypicalSectionPortionDefinitionElement::GetOriginPoint() const
+    { 
+    return TypicalSectionPoint::Get(GetDgnDb(), GetPropertyValueId<DgnElementId>("OriginPoint")).get(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TypicalSectionPortionDefinitionElement::SetOriginPoint(TypicalSectionPointCP point) 
+    { 
+    SetPropertyValue("OriginPoint", (point) ? point->GetElementId() : DgnElementId()); 
     }
 
 /*---------------------------------------------------------------------------------**//**

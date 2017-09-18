@@ -29,7 +29,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(OverallTypicalSectionBreakDownModelHandler::GetHandler());
     RegisterHandler(TypicalSectionPortionBreakDownModelHandler::GetHandler());
 
-    RegisterHandler(TypicalSectionPortionElementHandler::GetHandler());
+    RegisterHandler(TypicalSectionPortionDefinitionElementHandler::GetHandler());
     RegisterHandler(OverallTypicalSectionHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
@@ -48,8 +48,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TypicalSectionConstraintWithOffsetHandler::GetHandler());
     RegisterHandler(TypicalSectionHorizontalConstraintHandler::GetHandler());
     RegisterHandler(TypicalSectionVerticalConstraintHandler::GetHandler());
+    RegisterHandler(TypicalSectionSlopeConstraintHandler::GetHandler());
     RegisterHandler(TypicalSectionConstraintOffsetHandler::GetHandler());
     RegisterHandler(TypicalSectionConstraintConstantOffsetHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintSlopeHandler::GetHandler());
+    RegisterHandler(TypicalSectionConstraintConstantSlopeHandler::GetHandler());
 
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(TravelwaySegmentElementHandler::GetHandler());

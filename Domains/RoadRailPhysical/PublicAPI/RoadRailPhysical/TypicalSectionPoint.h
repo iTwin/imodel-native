@@ -148,6 +148,7 @@ protected:
     explicit TypicalSectionConstraintSource(CreateParams const& params): T_Super(params) {}
 
     virtual TypicalSectionHorizontalConstraintCP _ToHorizontalConstraint() const { return nullptr; }
+    virtual TypicalSectionSlopeConstraintCP _ToSlopeConstraint() const { return nullptr; }
     virtual TypicalSectionVerticalConstraintCP _ToVerticalConstraint() const { return nullptr; }
 
 public:
@@ -157,7 +158,8 @@ public:
     ROADRAILPHYSICAL_EXPORT TypicalSectionConstraintSourceCPtr Insert(int priority, Dgn::DgnDbStatus* stat = nullptr);
 
     TypicalSectionHorizontalConstraintCP ToHorizontalConstraint() const { return _ToHorizontalConstraint(); }
-    TypicalSectionVerticalConstraintCP ToVerticalConstraint() const { return _ToVerticalConstraint(); }
+    TypicalSectionSlopeConstraintCP ToSlopeConstraint() const { return _ToSlopeConstraint(); }
+    TypicalSectionVerticalConstraintCP ToVerticalConstraint() const { return _ToVerticalConstraint(); }    
 }; // TypicalSectionConstraintSource
 
 //=======================================================================================
@@ -177,6 +179,24 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionConstraintOffset)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionConstraintOffset)
 }; // TypicalSectionConstraintOffset
+
+//=======================================================================================
+//! Base class for Constraints Values resolving to Slopes
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionConstraintSlope : Dgn::InformationRecordElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionConstraintSlope, Dgn::InformationRecordElement);
+friend struct TypicalSectionConstraintSlopeHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionConstraintSlope(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionConstraintSlope)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionConstraintSlope)    
+}; // TypicalSectionConstraintSlope
 
 //=======================================================================================
 //! Base class for Constraints applied to Typical Section Points
@@ -255,6 +275,38 @@ public:
 }; // TypicalSectionVerticalConstraint
 
 //=======================================================================================
+//! Slope Constraints applied to Typical Section Points
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionSlopeConstraint : TypicalSectionConstraintSource
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionSlopeConstraint, TypicalSectionConstraintSource);
+friend struct TypicalSectionSlopeConstraintHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionSlopeConstraint(CreateParams const& params) : T_Super(params) {}
+
+    //! @private
+    explicit TypicalSectionSlopeConstraint(CreateParams const& params, ITypicalSectionConstraintPointCR pointRef);
+
+    virtual TypicalSectionSlopeConstraintCP _ToSlopeConstraint() const override { return this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionSlopeConstraint)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionSlopeConstraint)
+
+    TypicalSectionConstraintSlopeCP GetSlope() const { return TypicalSectionConstraintSlope::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("Slope")).get(); }
+    void SetOffset(TypicalSectionConstraintSlopeCP newSlope) { SetPropertyValue("Slope", (newSlope) ? newSlope->GetElementId() : Dgn::DgnElementId()); }
+
+    ITypicalSectionConstraintPointCP GetPointRef() const { return dynamic_cast<ITypicalSectionConstraintPointCP>(GetDgnDb().Elements().GetElement(GetPropertyValueId<Dgn::DgnElementId>("PointRef")).get()); }
+    void SetPointRef(ITypicalSectionConstraintPointCP pointRef) { SetPropertyValue("PointRef", (pointRef) ? pointRef->GetConstraintPointId() : Dgn::DgnElementId()); }
+
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionSlopeConstraintPtr Create(TypicalSectionPointCR constrainedPoint, ITypicalSectionConstraintPointCR pointRef);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionSlopeConstraintCPtr CreateAndInsert(TypicalSectionPointCR constrainedPoint, ITypicalSectionConstraintPointCR pointRef, TypicalSectionConstraintConstantSlopeR offset, int priority);
+}; // TypicalSectionSlopeConstraint
+
+//=======================================================================================
 //! Constant Constraint Offset value
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
@@ -280,6 +332,33 @@ public:
     ROADRAILPHYSICAL_EXPORT static TypicalSectionConstraintConstantOffsetPtr Create(TypicalSectionPortionBreakDownModelCR model, double value);
     ROADRAILPHYSICAL_EXPORT static TypicalSectionConstraintConstantOffsetCPtr CreateAndInsert(TypicalSectionConstraintWithOffsetCR constraint, double value);
 }; // TypicalSectionConstraintConstantOffset
+
+//=======================================================================================
+//! Constant Constraint Slope value
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionConstraintConstantSlope : TypicalSectionConstraintSlope
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionConstraintConstantSlope, TypicalSectionConstraintSlope);
+friend struct TypicalSectionConstraintConstantSlopeHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionConstraintConstantSlope(CreateParams const& params) : T_Super(params) {}
+
+    //! @private
+    explicit TypicalSectionConstraintConstantSlope(CreateParams const& params, double value);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionConstraintConstantSlope)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionConstraintConstantSlope)
+
+    double GetValue() const { return GetPropertyValueDouble("Value"); }
+    void SetValue(double newVal) { SetPropertyValue("Value", ECN::ECValue(newVal)); }
+
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionConstraintConstantSlopePtr Create(TypicalSectionPortionBreakDownModelCR model, double value);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionConstraintConstantSlopeCPtr CreateAndInsert(TypicalSectionSlopeConstraintCR constraint, double value);
+}; // TypicalSectionConstraintConstantSlope
 
 
 
@@ -356,6 +435,15 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionVerticalConstraint, Typi
 }; // TypicalSectionVerticalConstraintHandler
 
 //=================================================================================
+//! ElementHandler for Typical Section Slope Constraints
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionSlopeConstraintHandler : TypicalSectionConstraintSourceHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionSlopeConstraint, TypicalSectionSlopeConstraint, TypicalSectionSlopeConstraintHandler, TypicalSectionConstraintSourceHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionSlopeConstraintHandler
+
+//=================================================================================
 //! ElementHandler for Typical Section Constraint Offset Values
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
@@ -372,5 +460,23 @@ struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionConstraintConstantOffsetHandler : T
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionConstraintConstantOffset, TypicalSectionConstraintConstantOffset, TypicalSectionConstraintConstantOffsetHandler, TypicalSectionConstraintOffsetHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TypicalSectionConstraintConstantOffsetHandler
+
+//=================================================================================
+//! ElementHandler for Typical Section Constraint Slope Values
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionConstraintSlopeHandler : Dgn::dgn_ElementHandler::InformationRecord
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionConstraintSlope, TypicalSectionConstraintSlope, TypicalSectionConstraintSlopeHandler, Dgn::dgn_ElementHandler::InformationRecord, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionConstraintSlopeHandler
+
+//=================================================================================
+//! ElementHandler for Constant Slopes in Typical Section Constraints
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionConstraintConstantSlopeHandler : TypicalSectionConstraintSlopeHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionConstraintConstantSlope, TypicalSectionConstraintConstantSlope, TypicalSectionConstraintConstantSlopeHandler, TypicalSectionConstraintSlopeHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionConstraintConstantSlopeHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

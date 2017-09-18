@@ -12,7 +12,9 @@
 #include <RoadRailPhysical/RoadRailCategory.h>
 
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintConstantOffsetHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintConstantSlopeHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintOffsetHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintSlopeHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintSourceHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintWithOffsetHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionHorizontalConstraintHandler)
@@ -20,6 +22,7 @@ HANDLER_DEFINE_MEMBERS(TypicalSectionOffsetParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointNameHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionSlopeConstraintHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionVerticalConstraintHandler)
 
 /*---------------------------------------------------------------------------------**//**
@@ -379,4 +382,95 @@ TypicalSectionConstraintConstantOffsetCPtr TypicalSectionConstraintConstantOffse
     ptr->SetParentId(constraint.GetElementId(),
         constraint.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_TypicalSectionConstraintOwnsOffset));
     return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionConstraintSlope::TypicalSectionConstraintSlope(CreateParams const& params) : T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionConstraintConstantSlope::TypicalSectionConstraintConstantSlope(CreateParams const& params, double value) : T_Super(params)
+    {
+    SetValue(value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionConstraintConstantSlopePtr TypicalSectionConstraintConstantSlope::Create(TypicalSectionPortionBreakDownModelCR model, double value)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+
+    return new TypicalSectionConstraintConstantSlope(createParams, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionConstraintConstantSlopeCPtr TypicalSectionConstraintConstantSlope::CreateAndInsert(TypicalSectionSlopeConstraintCR constraint, double value)
+    {
+    if (!constraint.GetElementId().IsValid())
+        return nullptr;
+
+    auto ptr = Create(*dynamic_cast<TypicalSectionPortionBreakDownModelCP>(constraint.GetModel().get()), value);
+    if (ptr.IsNull())
+        return nullptr;
+
+    ptr->SetParentId(constraint.GetElementId(),
+        constraint.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_TypicalSectionConstraintOwnsSlope));
+    return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionSlopeConstraint::TypicalSectionSlopeConstraint(CreateParams const& params, ITypicalSectionConstraintPointCR pointRef): T_Super(params)
+    {
+    SetPointRef(&pointRef);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionSlopeConstraintPtr TypicalSectionSlopeConstraint::Create(TypicalSectionPointCR constrainedPoint, ITypicalSectionConstraintPointCR pointRef)
+    {
+    if (!constrainedPoint.GetModelId().IsValid() || !pointRef.GetConstraintPointId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(constrainedPoint.GetDgnDb(), constrainedPoint.GetModelId(), QueryClassId(constrainedPoint.GetDgnDb()));
+    createParams.m_parentId = constrainedPoint.GetElementId();
+    createParams.m_parentRelClassId = constrainedPoint.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_TypicalSectionPointOwnsConstraintSource);
+
+    return new TypicalSectionSlopeConstraint(createParams, pointRef);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionSlopeConstraintCPtr TypicalSectionSlopeConstraint::CreateAndInsert(
+    TypicalSectionPointCR constrainedPoint, ITypicalSectionConstraintPointCR pointRef,
+    TypicalSectionConstraintConstantSlopeR slope, int priority)
+    {
+    // This convenience method assumes slope hasn't been inserted yet.
+    if (slope.GetElementId().IsValid())
+        return nullptr;
+
+    auto ptr = Create(constrainedPoint, pointRef);
+    auto cPtr = ptr->Insert(priority);
+    if (cPtr.IsValid())
+        {
+        slope.SetParentId(cPtr->GetElementId(),
+            constrainedPoint.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_TypicalSectionConstraintOwnsSlope));
+        slope.Insert();
+        }
+
+    return cPtr->ToSlopeConstraint();
     }

@@ -87,7 +87,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_TravelwayTransition                              "TravelwayTransition"
 #define BRRP_CLASS_TypicalSectionComponentElement                   "TypicalSectionComponentElement"
 #define BRRP_CLASS_TypicalSectionConstraintConstantOffset           "TypicalSectionConstraintConstantOffset"
+#define BRRP_CLASS_TypicalSectionConstraintConstantSlope            "TypicalSectionConstraintConstantSlope"
 #define BRRP_CLASS_TypicalSectionConstraintOffset                   "TypicalSectionConstraintOffset"
+#define BRRP_CLASS_TypicalSectionConstraintSlope                    "TypicalSectionConstraintSlope"
 #define BRRP_CLASS_TypicalSectionConstraintSource                   "TypicalSectionConstraintSource"
 #define BRRP_CLASS_TypicalSectionConstraintWithOffset               "TypicalSectionConstraintWithOffset"
 #define BRRP_CLASS_TypicalSectionElement                            "TypicalSectionElement"
@@ -97,7 +99,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_TypicalSectionPoint                              "TypicalSectionPoint"
 #define BRRP_CLASS_TypicalSectionPointName                          "TypicalSectionPointName"
 #define BRRP_CLASS_TypicalSectionPortion                            "TypicalSectionPortion"
-#define BRRP_CLASS_TypicalSectionPortionElement                     "TypicalSectionPortionElement"
+#define BRRP_CLASS_TypicalSectionPortionDefinitionElement           "TypicalSectionPortionDefinitionElement"
+#define BRRP_CLASS_TypicalSectionSlopeConstraint                    "TypicalSectionSlopeConstraint"
 #define BRRP_CLASS_TypicalSectionVerticalConstraint                 "TypicalSectionVerticalConstraint"
 
 
@@ -116,6 +119,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_RoadwayOwnsRoadClasses                             "RoadwayOwnsRoadClasses"
 #define BRRP_REL_TypicalSectionComponentGroupsPoints                "TypicalSectionComponentGroupsPoints"
 #define BRRP_REL_TypicalSectionConstraintOwnsOffset                 "TypicalSectionConstraintOwnsOffset"
+#define BRRP_REL_TypicalSectionConstraintOwnsSlope                  "TypicalSectionConstraintOwnsSlope"
 #define BRRP_REL_TypicalSectionPointConstraint                      "TypicalSectionPointConstraint"
 #define BRRP_REL_TypicalSectionPointOwnsConstraintSource            "TypicalSectionPointOwnsConstraintSource"
 #define BRRP_REL_TypicalSectionPointRefersToName                    "TypicalSectionPointRefersToName"
@@ -225,7 +229,9 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayStructureDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayTransition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionComponentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintConstantOffset)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintConstantSlope)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintOffset)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintSlope)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintSource)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionConstraintWithOffset)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionHorizontalConstraint)
@@ -235,7 +241,8 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPoint)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPointName)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortionBreakDownModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortion)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPortionDefinitionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionSlopeConstraint)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionVerticalConstraint)
 
 // Road-specific

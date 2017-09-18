@@ -16,19 +16,22 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class representing the definition of a portion of overall Typical-sections of a Pathway.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionElement : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionDefinitionElement : Dgn::DefinitionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionElement, Dgn::DefinitionElement);
-friend struct TypicalSectionPortionElementHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionDefinitionElement, Dgn::DefinitionElement);
+friend struct TypicalSectionPortionDefinitionElementHandler;
 
 protected:
     //! @private
-    explicit TypicalSectionPortionElement(CreateParams const& params);
+    explicit TypicalSectionPortionDefinitionElement(CreateParams const& params);
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionPortionElement)
-}; // TypicalSectionPortionElement
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionDefinitionElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionPortionDefinitionElement)
+
+    ROADRAILPHYSICAL_EXPORT TypicalSectionPointCP GetOriginPoint() const;
+    ROADRAILPHYSICAL_EXPORT void SetOriginPoint(TypicalSectionPointCP point);
+}; // TypicalSectionPortionDefinitionElement
 
 //=======================================================================================
 //! Model breaking-down a TypicalSectionPortion elements
@@ -70,9 +73,9 @@ public:
 //! Base class for definitions of Travelways.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElement : TypicalSectionPortionElement
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElement : TypicalSectionPortionDefinitionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TypicalSectionPortionElement);
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TypicalSectionPortionDefinitionElement);
 friend struct TravelwayDefinitionElementHandler;
 
 protected:
@@ -113,9 +116,9 @@ public:
 //! Definition for TravelwaySide elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwaySideDefinition : TypicalSectionPortionElement
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySideDefinition : TypicalSectionPortionDefinitionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySideDefinition, TypicalSectionPortionElement);
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySideDefinition, TypicalSectionPortionDefinitionElement);
 friend struct TravelwaySideDefinitionHandler;
 
 protected:
@@ -138,9 +141,9 @@ public:
 //! Definition for TravelwayStructure Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructureDefinition : TypicalSectionPortionElement
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructureDefinition : TypicalSectionPortionDefinitionElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructureDefinition, TypicalSectionPortionElement);
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructureDefinition, TypicalSectionPortionDefinitionElement);
 friend struct TravelwayStructureDefinitionHandler;
 
 protected:
@@ -332,21 +335,21 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSection, OverallTypicalS
 }; // OverallTypicalSectionHandler
 
 //=================================================================================
-//! ElementHandler for TypicalSection Elements
+//! ElementHandler for TypicalSection DefinitionElements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionElementHandler : Dgn::dgn_ElementHandler::Definition
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionDefinitionElementHandler : Dgn::dgn_ElementHandler::Definition
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionElement, TypicalSectionPortionElement, TypicalSectionPortionElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // TypicalSectionPortionElementHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionDefinitionElement, TypicalSectionPortionDefinitionElement, TypicalSectionPortionDefinitionElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionPortionDefinitionElementHandler
 
 //=================================================================================
 //! ElementHandler for Travelway Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElementHandler : TypicalSectionPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElementHandler : TypicalSectionPortionDefinitionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TravelwayDefinitionElement, TravelwayDefinitionElementHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TravelwayDefinitionElement, TravelwayDefinitionElementHandler, TypicalSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwayDefinitionElementHandler
 
 //=================================================================================
@@ -362,18 +365,18 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadTravelwayDefinition, RoadTravelway
 //! ElementHandler for TravelwaySide Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwaySideDefinitionHandler : TypicalSectionPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySideDefinitionHandler : TypicalSectionPortionDefinitionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySideDefinition, TravelwaySideDefinition, TravelwaySideDefinitionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySideDefinition, TravelwaySideDefinition, TravelwaySideDefinitionHandler, TypicalSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwaySideDefinitionHandler
 
 //=================================================================================
 //! ElementHandler for TravelwayStructure Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructureDefinitionHandler : TypicalSectionPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructureDefinitionHandler : TypicalSectionPortionDefinitionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructureDefinition, TravelwayStructureDefinition, TravelwayStructureDefinitionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructureDefinition, TravelwayStructureDefinition, TravelwayStructureDefinitionHandler, TypicalSectionPortionDefinitionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwayStructureDefinitionHandler
 
 //=======================================================================================
