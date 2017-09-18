@@ -40,7 +40,15 @@ struct TileContext;
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
+// NOTE: Caching geometry parts is not 100% reliable, because the symbology associated with each instance can be any combination of that defined in the part's GeometryStream
+// and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
 // #define CACHE_GEOMETRY_PARTS
+
+// Often we find multiple threads trying to facet the same DgnGeometryPart simultaneously, and we want to allow only one thread to do so while the others wait on the result.
+// Unfortunately this is not 100% reliable, because the symbology associated with each instance can be any combination of that defined in the part's GeometryStream
+// and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
+// Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
+// #define SHARE_GEOMETRY_PARTS
 
 #define TILECACHE_DEBUG
 
@@ -248,7 +256,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 #endif
 
-constexpr double s_minRangeBoxSize    = 5.0;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
 constexpr uint32_t s_minElementsPerTile = 100;
@@ -256,7 +264,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -1256,6 +1264,7 @@ GeomPartPtr Root::FindOrInsertGeomPart(DgnGeometryPartId partId, Render::Geometr
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR context)
     {
+#if defined(SHARE_GEOMETRY_PARTS)
     m_mutex.lock(); // << LOCK
 
     auto foundPart = m_parts.find(partId);
@@ -1303,6 +1312,11 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     builder->NotifyAll();
 
     return part;
+#else
+    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
+    GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
+    return part;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1851,14 +1865,22 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
+#if defined(SHARE_GEOMETRY_PARTS)
             DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
+#else
+            DisplayParamsCPtr params = polyface.m_displayParams;
+#endif
             AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, isContained);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
+#if defined(SHARE_GEOMETRY_PARTS)
             DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
+#else
+            DisplayParamsCPtr params = strokeList.m_displayParams;
+#endif
             AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, isContained);
             }
         }

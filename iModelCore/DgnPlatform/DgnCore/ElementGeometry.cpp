@@ -3467,6 +3467,10 @@ static bool IsFillVisible(ViewContextR context, Render::GeometryParamsCR geomPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
     {
+    // Only use for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...thread-safety issues otherwise...
+    if (nullptr == context.GetIPickGeom())
+        return nullptr;
+
     if (nullptr == element)
         return nullptr;
 
