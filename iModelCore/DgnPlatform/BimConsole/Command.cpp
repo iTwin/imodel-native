@@ -54,7 +54,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -77,6 +77,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".json")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".schemastats")->GetUsage().c_str());
     BimConsole::WriteLine();
@@ -1025,11 +1026,9 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                 {
                     case DbValueType::BlobVal:
                     {
-                    if (SUCCESS != ECJsonUtilities::BinaryToJson(row[stmt.GetColumnName(i)], (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i)))
-                        {
-                        BimConsole::WriteErrorLine("Failed to export table %s", tableName);
-                        return;
-                        }
+                    Utf8String base64Str;
+                    Base64Utilities::Encode(base64Str, (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i));
+                    row[stmt.GetColumnName(i)] = base64Str;
                     break;
                     }
                     case DbValueType::FloatVal:
@@ -1370,7 +1369,7 @@ void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-     ExecuteSelect(stmt, session);
+    ExecuteSelect(stmt, session);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1424,6 +1423,58 @@ void SqliteCommand::ExecuteNonSelect(Session& session, Statement& statement) con
         BimConsole::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
         }
+    }
+
+//******************************* JsonCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     09/2017
+//---------------------------------------------------------------------------------------
+Utf8String JsonCommand::_GetUsage() const
+    {
+    return " .json <ECSQL SELECT>           Returns the results of the ECSQL SELECT as JSON";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     09/2017
+//---------------------------------------------------------------------------------------
+void JsonCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    Utf8StringCR ecsql = argsUnparsed;
+    if (ecsql.empty() || !ecsql.StartsWithIAscii("SELECT"))
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    ECSqlStatement stmt;
+    ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
+    if (status != ECSqlStatus::Success)
+        {
+        BimConsole::WriteErrorLine("Failed to prepare ECSQL statement %s: %s", ecsql.c_str(), session.GetIssues().GetIssue());
+        return;
+        }
+
+    BimConsole::WriteLine("Row Count | Row JSON");
+    BimConsole::WriteLine("--------------------");
+    JsonECSqlSelectAdapter adapter(stmt);
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        Json::Value json;
+        if (SUCCESS != adapter.GetRow(json))
+            {
+            BimConsole::WriteErrorLine("Failed to retrieve the result of the ECSQL as JSON.");
+            return;
+            }
+
+        BimConsole::WriteLine("%d | %s", rowCount, json.ToString().c_str());
+        }
+
     }
 
 //******************************* DbSchemaCommand ******************
