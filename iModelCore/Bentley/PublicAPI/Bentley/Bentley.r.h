@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Bentley.r.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,7 +112,9 @@ typedef char                Utf8Char;
 #define ENUM_IS_FLAGS(ENUMTYPE) \
 inline ENUMTYPE operator| (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<std::underlying_type<ENUMTYPE>::type>(a) | static_cast<std::underlying_type<ENUMTYPE>::type>(b)); } \
 inline ENUMTYPE operator& (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<std::underlying_type<ENUMTYPE>::type>(a) & static_cast<std::underlying_type<ENUMTYPE>::type>(b)); } \
-inline ENUMTYPE operator~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~(static_cast<std::underlying_type<ENUMTYPE>::type>(a))); }
+inline ENUMTYPE operator~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~(static_cast<std::underlying_type<ENUMTYPE>::type>(a))); } \
+inline ENUMTYPE & operator|= (ENUMTYPE & a, ENUMTYPE b) { a = a | b; return a; } \
+inline ENUMTYPE & operator&= (ENUMTYPE & a, ENUMTYPE b) { a = a & b; return a; }
 #else
 #define ENUM_IS_FLAGS(ENUMTYPE)
 #endif
