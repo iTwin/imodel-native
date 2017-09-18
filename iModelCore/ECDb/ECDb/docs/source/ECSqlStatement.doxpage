@@ -26,8 +26,7 @@
     @ref BentleyApi::BeSQLite::EC::ECInstanceInserter "ECInstanceInserter", @ref BentleyApi::BeSQLite::EC::ECInstanceUpdater "ECInstanceUpdater",
     @ref BentleyApi::BeSQLite::EC::ECInstanceDeleter "ECInstanceDeleter" for @ref BentleyApi::ECN::IECInstance "IECInstances" and
     see @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter",
-    @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter", @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater",
-    @ref BentleyApi::BeSQLite::EC::JsonDeleter "JsonDeleter" for JSON).
+    @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter" and @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" for JSON.)
 
     @see @ref ECDbCodeSamples
 

@@ -765,12 +765,6 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     JsonUpdater jsonUpdater(m_ecdb, *employee, nullptr);
     ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetInstanceId(), jsonInput));
 
-    JsonDeleter jsonDeleter(m_ecdb, *employee, nullptr);
-    ASSERT_TRUE(jsonDeleter.IsValid());
-    ECInstanceId instanceId;
-    ECInstanceId::FromString(instanceId, projectInstance->GetInstanceId().c_str());
-    ASSERT_EQ(BE_SQLITE_OK, jsonDeleter.Delete(instanceId)) << "InstanceId is not validated so Delete is expected to succeed even if the id doesn't match the ECClass";
-
     BeTest::SetFailOnAssert(true);
     }
 

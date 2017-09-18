@@ -211,12 +211,13 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     //test file
-    Utf8CP testFileName = "StartupCompany.json";
+    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
     testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
 
@@ -238,7 +239,7 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -305,7 +306,6 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
     }
 
 
-//Specific for file search in Document Root only.
 BeFileName SearchTestFile(Utf8CP testFileName)
     {
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
@@ -313,6 +313,7 @@ BeFileName SearchTestFile(Utf8CP testFileName)
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
     testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(testFileNameW.c_str());
     return testFilePath;
     }
@@ -328,7 +329,7 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
 
     {
     //Test file 1
-    BeFileName testFilePath = SearchTestFile("StartupCompany.json");
+    BeFileName testFilePath = SearchTestFile("ECSqlTest.01.00.ecschema.xml");
     ASSERT_TRUE(testFilePath.DoesPathExist());
 
     DbResult stat = BE_SQLITE_OK;
@@ -337,19 +338,19 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
     //Imports the file into the db.
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.json", testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "ECSqlTest.01.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
     }
 
     {
     //test file 2
-    BeFileName testFilePath = SearchTestFile("CommonGeometry.json");
+    BeFileName testFilePath = SearchTestFile("StartupCompany.02.00.ecschema.xml");
     ASSERT_TRUE(testFilePath.DoesPathExist());
 
     //Imports the file into the db.
     DbResult stat = BE_SQLITE_OK;
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "CommonGeometry.json", testFilePath.GetNameUtf8().c_str(), "JSON", "Geometry");
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.02.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
     }
@@ -360,21 +361,21 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
     DbEmbeddedFileTable::Iterator::Entry file = iter.begin();
     for (auto const& file : iter)
         {
-        if (Utf8String(file.GetNameUtf8()) == "StartupCompany.json")
+        if (strcmp(file.GetNameUtf8(), "StartupCompany.02.00.ecschema.xml") == 0)
             {
-            ASSERT_EQ(1, file.GetId().GetValue());
-            ASSERT_STREQ("JSON", file.GetTypeUtf8());
-            ASSERT_EQ(1052, file.GetFileSize());
-            ASSERT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
-            ASSERT_EQ(524288, file.GetChunkSize());
+            EXPECT_EQ(2, file.GetId().GetValue());
+            EXPECT_STREQ("XML", file.GetTypeUtf8());
+            EXPECT_STREQ("ECSchema", file.GetDescriptionUtf8());
+            EXPECT_EQ(28697, file.GetFileSize());
+            EXPECT_EQ(524288, file.GetChunkSize());
             }
-        else if (Utf8String(file.GetNameUtf8()) == "CommonGeometry.json")
+        else if (strcmp(file.GetNameUtf8(), "ECSqlTest.01.00.ecschema.xml") == 0)
             {
-            ASSERT_EQ(2, file.GetId().GetValue());
-            ASSERT_STREQ("JSON", file.GetTypeUtf8());
-            ASSERT_EQ(765, file.GetFileSize());
-            ASSERT_STREQ("Geometry", file.GetDescriptionUtf8());
-            ASSERT_EQ(524288, file.GetChunkSize());
+            EXPECT_EQ(1, file.GetId().GetValue());
+            EXPECT_STREQ("XML", file.GetTypeUtf8());
+            EXPECT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
+            EXPECT_EQ(29813, file.GetFileSize());
+            EXPECT_EQ(524288, file.GetChunkSize());
             }
         }
     iter.end();
@@ -390,7 +391,7 @@ TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
     DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
 
     //embed test file
-    Utf8CP testFileName = "CommonGeometry.json";
+    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
     uint64_t size = 0;
     {
     BeFileName testFilePath = SearchTestFile(testFileName);
@@ -398,7 +399,7 @@ TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
 
     //Imports the test file into the db.
     DbResult stat = BE_SQLITE_OK;
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", "Geometry");
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -410,10 +411,10 @@ TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
 
     //Read existing embedded file, AddEntry, Save and verify the size. 
     {
-    Utf8CP newfileName = "CopyCommonGeometry.json";
+    Utf8CP newfileName = "CopyECSqlTest.01.00.ecschema.xml";
 
     //Creates a new entry in the embedded file table with the specified name.
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(newfileName, "JSON"));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(newfileName, "XML"));
     bvector<Byte> buffer;
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer, testFileName));
 
@@ -609,24 +610,25 @@ TEST_F(FileInfoTestFixture, Purge)
     ECClassId embeddedFileInfoClassId = m_ecdb.Schemas().GetClassId("ECDbFileInfo", "EmbeddedFileInfo");
     ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
 
-    Utf8CP testFileName = "StartupCompany.json";
+    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
     testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
 
     DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
     DbResult stat = BE_SQLITE_OK;
     DateTime lastModified = DateTime::GetCurrentTimeUtc();
-    BeBriefcaseBasedId id = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &lastModified);
+    BeBriefcaseBasedId id = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &lastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(id.IsValid());
     fooChildEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
 
-    testFileName = "Copy of StartupCompany.json";
+    testFileName = "Copy of ECSqlTest.01.00.ecschema.xml";
     lastModified = DateTime::GetCurrentTimeUtc();
-    id = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &lastModified);
+    id = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &lastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(id.IsValid());
     orphanEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));

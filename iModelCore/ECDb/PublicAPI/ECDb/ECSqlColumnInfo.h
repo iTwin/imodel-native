@@ -234,7 +234,7 @@ struct ECSqlColumnInfo final
         ECN::ECStructClassCP GetStructType() const { BeAssert((m_dataType.IsStruct() || m_dataType.IsStructArray()) && m_structType != nullptr); return m_structType; }
 
         //! Gets the ECProperty backing the specified column
-        //! @note When called from an IECSqlValue for an array property, this method will return nullptr.
+        //! @note When called from an IECSqlValue that represents an array @b element, this method will return nullptr.
         //! @return ECProperty backing the column represented by this info object.
         ECN::ECPropertyCP GetProperty() const { return m_property; }
 

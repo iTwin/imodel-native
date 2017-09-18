@@ -2386,8 +2386,6 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     ASSERT_FALSE(inserter.IsValid());
     JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_FALSE(updater.IsValid());
-    JsonDeleter deleter(m_ecdb, *testClass, nullptr);
-    ASSERT_FALSE(deleter.IsValid());
     }
     }
     }

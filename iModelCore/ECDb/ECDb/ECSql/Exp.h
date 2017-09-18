@@ -90,18 +90,18 @@ struct PropertyPath final
                 static const int NOT_ARRAY = -1;
 
                 Utf8String m_propertyName;
-                ECN::ECPropertyCP m_property;
-                int m_arrayIndex;
+                ECN::ECPropertyCP m_property = nullptr;
+                int m_arrayIndex = NOT_ARRAY;
 
                 void SetProperty(ECN::ECPropertyCR property);
                 void ClearResolvedProperty() { m_property = nullptr; }
 
             public:
-                Location(Utf8StringCR name, int arrayIndex) : m_propertyName(name), m_property(nullptr), m_arrayIndex(arrayIndex) { BeAssert(!name.empty()); }
+                Location(Utf8StringCR name, int arrayIndex) : m_propertyName(name), m_arrayIndex(arrayIndex) { BeAssert(!name.empty()); }
 
                 Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
                 ECN::ECPropertyCP GetProperty() const { return m_property; }
-                bool HasArrayIndex() const { return GetArrayIndex() >= 0; }
+                bool HasArrayIndex() const { return m_arrayIndex >= 0; }
                 int GetArrayIndex() const { return m_arrayIndex; }
 
                 bool IsResolved() const { return m_property != nullptr; }

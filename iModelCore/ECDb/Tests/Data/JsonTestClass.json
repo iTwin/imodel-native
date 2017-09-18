@@ -1,211 +1,148 @@
 ﻿{
-   "$ECClassId" : "57",
+   "$ECInstanceId" : "0X1",
    "$ECClassKey" : "JsonTests.Document",
-   "$ECInstanceId" : "1",
-   "ApprovalStatus" : null,
-   "Attributes" : [
+   "attributes" : [
       {
-         "Label" : "Project Name",
-         "Name" : "ProjectName",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "Spatial proj"
+         "label" : "Project name",
+         "name" : "ProjectName",
+         "value" : "Spatial proj"
       },
       {
-         "Label" : "Project Number",
-         "Name" : "ProjectNumber",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "123333"
+         "label" : "Project Number",
+         "name" : "ProjectNumber",
+         "value" : "123333"
       },
       {
-         "Label" : "Project Location",
-         "Name" : "ProjectLocation",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "Vilnius"
+         "label" : "Project Location",
+         "name" : "ProjectLocation",
+         "value" : "Vilnius"
       },
       {
-         "Label" : "Space1",
-         "Name" : "Space1",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "{00000000-0000-0000-0000-000000000000}"
+         "label" : "Space1",
+         "name" : "Space1",
+         "value" : "{00000000-0000-0000-0000-000000000000}"
       },
       {
-         "Label" : "Document Location",
-         "Name" : "DocumentLocation",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "pw:\\\\BSW-CONSTRUCT.bentley.com:PW_tem\\Documents\\Spatial info"
+         "label" : "Document Location",
+         "name" : "DocumentLocation",
+         "value" : "pw:\\\\BSW-CONSTRUCT.bentley.com:PW_tem\\Documents\\Spatial info"
       },
       {
-         "Label" : "Document Type",
-         "Name" : "DocumentType",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "C"
+         "label" : "Document Type",
+         "name" : "DocumentType",
+         "value" : "C"
       },
       {
-         "Label" : "Title",
-         "Name" : "Title1",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "A-MODEL.PDF"
+         "label" : "Title",
+         "name" : "Title1",
+         "value" : "A-MODEL.PDF"
       },
       {
-         "Label" : "Title2",
-         "Name" : "Title2",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "A-MODEL"
+         "label" : "Title2",
+         "name" : "Title2",
+         "value" : "A-MODEL"
       },
       {
-         "Label" : "Title3",
-         "Name" : "Title3",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : ""
+         "label" : "Title3",
+         "name" : "Title3",
+         "value" : ""
       },
       {
-         "Label" : "Title4",
-         "Name" : "Title4",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : ""
+         "label" : "Title4",
+         "name" : "Title4",
+         "value" : ""
       },
       {
-         "Label" : "Percent Complete",
-         "Name" : "PercentComplete",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "40"
+         "label" : "Percent Complete",
+         "name" : "PercentComplete",
+         "value" : "40"
       },
       {
-         "Label" : "Attributes Updated",
-         "Name" : "AttributesUpdate",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T12:30:00.0000000Z"
+         "label" : "Attributes Updated",
+         "name" : "AttributesUpdate",
+         "value" : "2013-01-09T12:30:00.0000000Z"
       },
       {
-         "Label" : "Storage",
-         "Name" : "Storage",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "Storage"
+         "label" : "Storage",
+         "name" : "Storage",
+         "value" : "Storage"
       },
       {
-         "Label" : "Space2",
-         "Name" : "Space2",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "{00000000-0000-0000-0000-000000000000}"
+         "label" : "Space2",
+         "name" : "Space2",
+         "value" : "{00000000-0000-0000-0000-000000000000}"
       },
       {
-         "Label" : "Drawn By",
-         "Name" : "DrawnBy",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "admin"
+         "label" : "Drawn By",
+         "name" : "DrawnBy",
+         "value" : "admin"
       },
       {
-         "Label" : "Date Drawn",
-         "Name" : "DateDrawn",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T12:30:00.0000000Z"
+         "label" : "Date Drawn",
+         "name" : "DateDrawn",
+         "value" : "2013-01-09T12:30:00.0000000Z"
       },
       {
-         "Label" : "Approved By",
-         "Name" : "ApprovedBy",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "admin"
+         "label" : "Approved By",
+         "name" : "ApprovedBy",
+         "value" : "admin"
       },
       {
-         "Label" : "Authorized By",
-         "Name" : "AuthorizedBy",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "admin"
+         "label" : "Authorized By",
+         "name" : "AuthorizedBy",
+         "value" : "admin"
       },
       {
-         "Label" : "Date Approved",
-         "Name" : "DateApproved",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T12:30:00.0000000Z"
+         "label" : "Date Approved",
+         "name" : "DateApproved",
+         "value" : "2013-01-09T12:30:00.0000000Z"
       },
       {
-         "Label" : "Date Authorized",
-         "Name" : "DateAuthorized",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T12:30:00.0000000Z"
+         "label" : "Date Authorized",
+         "name" : "DateAuthorized",
+         "value" : "2013-01-09T12:30:00.0000000Z"
       },
       {
-         "Label" : "Deliverable",
-         "Name" : "DeliverableCheckbox",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : ""
+         "label" : "Deliverable",
+         "name" : "DeliverableCheckbox",
+         "value" : ""
       },
       {
-         "Label" : "Original Drawing By",
-         "Name" : "OriginalDrawingBy",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "admin"
+         "label" : "Original Drawing By",
+         "name" : "OriginalDrawingBy",
+         "value" : "admin"
       },
       {
-         "Label" : "Date Drawn",
-         "Name" : "OriginalDrawingDate",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T12:30:00.0000000Z"
+         "label" : "Date Drawn",
+         "name" : "OriginalDrawingDate",
+         "value" : "2013-01-09T12:30:00.0000000Z"
       },
       {
-         "Label" : "Approved?",
-         "Name" : "DocumentApproved",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "Yes"
+         "label" : "Approved?",
+         "name" : "DocumentApproved",
+         "value" : "Yes"
       },
       {
-         "Label" : "Scale",
-         "Name" : "Scale",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09"
+         "label" : "Scale",
+         "name" : "Scale",
+         "value" : "2013-01-09"
       },
       {
-         "Label" : "As of",
-         "Name" : "PercentDate",
-         "Type" : null,
-         "Unit" : null,
-         "Value" : "2013-01-09T07:00:00.0000000Z"
+         "label" : "As of",
+         "name" : "PercentDate",
+         "value" : "2013-01-09T07:00:00.0000000Z"
       }
    ],
-   "Class" : null,
-   "Code" : null,
-   "DateCreated" : "2013-01-08T08:12:04.523",
-   "DateEffective" : null,
-   "DateModified" : "2013-01-09T12:29:32.160",
-   "DateObsolete" : null,
-   "Description" : "A-Model",
-   "IsLatestApprovedRevision" : null,
-   "IsLatestRevision" : true,
-   "IsSuperseded" : null,
-   "Llx" : null,
-   "Lly" : null,
-   "Location" : {
-      "Center" : {
+   "dateCreated" : "2013-01-08T08:12:04.523",
+   "dateModified" : "2013-01-09T12:29:32.160",
+   "description" : "A-Model",
+   "location" : {
+      "center" : {
          "x" : 1442316.5919489623,
          "y" : 586684.08205638803,
          "z" : 0.0
       },
-      "Coordinates" : [
+      "coordinates" : [
          {
             "x" : 1425966.6055165580,
             "y" : 589914.91255909996,
@@ -232,11 +169,7 @@
             "z" : 0.0
          }
       ],
-      "Type" : "polygon"
+      "type" : "polygon"
    },
-   "Name" : "A-Model.pdf",
-   "Revision" : null,
-   "State" : null,
-   "Urx" : null,
-   "Ury" : null
+   "name" : "A-Model.pdf"
 }
