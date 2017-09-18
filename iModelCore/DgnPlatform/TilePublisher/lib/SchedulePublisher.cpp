@@ -194,7 +194,7 @@ private:
 
 public:
     ElementScheduleEntry() {}
-    ElementScheduleEntry (double startTime, double endTime, ElementAppearanceProfileId appearanceId) : m_startTime(startTime), m_endTime(endTime), m_appearanceId(appearanceId) { }
+    ElementScheduleEntry (double startTime, double endTime, ElementAppearanceProfileId appearanceId) : m_startTime(startTime), m_endTime(endTime), m_appearanceId(appearanceId) { BeAssert(endTime > startTime); }
 
     double GetStart() const { return m_startTime; }
     double GetEnd() const { return m_endTime; }
@@ -253,34 +253,37 @@ void    AppendJsonEntry(Json::Value& jsonEntries, State& state, double time, boo
 
         state.m_show = show;
         jsonEntry["show"] = show;
-
-        Json::Value     jsonColor = Json::arrayValue;
-        if (nullptr != color)
+        
+        if (show)
             {
+            Json::Value     jsonColor = Json::arrayValue;
+            if (nullptr != color)
+                {
 
-            jsonColor.append(color->GetRed());
-            jsonColor.append(color->GetGreen());
-            jsonColor.append(color->GetBlue());
-            jsonEntry["color"] = jsonColor;
-            state.m_color = *color;
+                jsonColor.append(color->GetRed());
+                jsonColor.append(color->GetGreen());
+                jsonColor.append(color->GetBlue());
+                jsonEntry["color"] = jsonColor;
+                state.m_color = *color;
+                }
+            else
+                {
+                jsonColor.append(255);
+                jsonColor.append(255);
+                jsonColor.append(255);
+                }
+
+            if (nullptr != alpha)
+                jsonColor.append(*alpha);
+            else
+                jsonColor.append(255);
+
+            if (nullptr != fade)
+                jsonEntry["fade"] = fade->GetJson();
+                
+            if (true == (state.m_setColor = (nullptr != color || nullptr != alpha)))
+                jsonEntry["color"] = jsonColor;
             }
-        else
-            {
-            jsonColor.append(255);
-            jsonColor.append(255);
-            jsonColor.append(255);
-            }
-
-        if (nullptr != alpha)
-            jsonColor.append(*alpha);
-        else
-            jsonColor.append(255);
-
-        if (nullptr != fade)
-            jsonEntry["fade"] = fade->GetJson();
-            
-        if (true == (state.m_setColor = (nullptr != color || nullptr != alpha)))
-            jsonEntry["color"] = jsonColor;
 
         jsonEntry["time"] = time;
         jsonEntries.append(std::move(jsonEntry));
@@ -359,9 +362,6 @@ struct CompareSchedules
 Json::Value     GetJson(PublisherContext::T_ScheduleEntryMap& entryMap, double start, double end, DgnDbCR db)
     {
     Json::Value scheduleJson = Json::arrayValue;
-#define DO_MERGE
-#ifdef DO_MERGE
-    
     uint32_t nextEntry = 0;
     bmap<ElementSchedulePtr, uint32_t, CompareSchedules>     mergedSchedules;
 
@@ -369,18 +369,15 @@ Json::Value     GetJson(PublisherContext::T_ScheduleEntryMap& entryMap, double s
         {
         auto        insertPair = mergedSchedules.Insert(curr.second, nextEntry);
 
-        entryMap[curr.first] = nextEntry;
         if (insertPair.second)
             nextEntry++;
+        
+        entryMap[curr.first] = insertPair.first->second;
         }
 
     for (auto const& curr : mergedSchedules)
         scheduleJson.append(curr.first->GetJson(curr.second, start, end, db));
     
-#else
-    for (auto const& curr : m_elementSchedules)
-        scheduleJson.append(curr.second->GetJson(curr.first, start, end, db));
-#endif
     return scheduleJson;
     }
 
@@ -407,6 +404,7 @@ Schedule (Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Pl
     readStmt.BindId(2, baselineEntry.GetId());
 
     DbResult ecStepStatus;
+
     while ((ecStepStatus = readStmt.Step()) == BE_SQLITE_ROW)
         {
         double          startJulian, endJulian;
@@ -414,9 +412,10 @@ Schedule (Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Pl
         ActivityId activityId = readStmt.GetValueId<ActivityId>(0);
 
         if (SUCCESS != readStmt.GetValueDateTime(1).ToJulianDay(startJulian) ||
-            SUCCESS != readStmt.GetValueDateTime(2).ToJulianDay(endJulian))
+            SUCCESS != readStmt.GetValueDateTime(2).ToJulianDay(endJulian) ||
+            endJulian <= startJulian)
             {
-            BeAssert(false);
+            //BeAssert(false);
             continue;
             }
 
@@ -455,7 +454,7 @@ void  PublisherContext::ExtractSchedules()
         return;
 
     DateType        scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
-    int             scheduleId = 0;
+    int             scheduleId = 0;                                                                                                                                                                                    
 
     for (auto& scheduleType : scheduleTypes)
         {
