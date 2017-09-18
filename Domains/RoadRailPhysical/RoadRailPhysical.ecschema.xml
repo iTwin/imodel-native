@@ -20,9 +20,6 @@
     </ECEntityClass>
 
     <!-- BEGIN CustomAttributes and Enums -->    
-    <ECCustomAttributeClass typeName="PropertyPaneHint" appliesTo="Any">
-        <ECProperty propertyName="UserDefinedOrDerived" typeName="boolean"/>
-    </ECCustomAttributeClass>
     <ECEnumeration typeName="PhysicalElement_Status" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="Existing"/>
         <ECEnumerator value="1" displayLabel="Proposed"/>
@@ -687,19 +684,56 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwaySideComponent" displayLabel="TravelwaySide Component">
+    <ECEntityClass typeName="TravelwaySideComponentElement" displayLabel="TravelwaySide Component" modifier="Abstract">
         <BaseClass>TypicalSectionComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECProperty propertyName="Type" typeName="BufferComponent_Type"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwayStructureComponent" displayLabel="Travelway Structure Component">
+    <ECEntityClass typeName="SideSlopeConditionComponent" displayLabel="End-Condition Component" modifier="Sealed">
+        <BaseClass>TravelwaySideComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Priority" typeName="int" displayLabel="Condition Priority"/>
+        <ECProperty propertyName="BenchingCount" typeName="int" displayLabel="Benching Count"/>
+        <ECProperty propertyName="IsInfiniteLength" typeName="boolean" displayLabel="Is Infinite?"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="BarrierComponent" displayLabel="Barrier" modifier="Sealed">
+        <BaseClass>TravelwaySideComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CurbComponent" displayLabel="Curb Component" modifier="Sealed">
+        <BaseClass>TravelwaySideComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadShoulderComponent" displayLabel="Shoulder Component" modifier="Sealed">
+        <BaseClass>TravelwaySideComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="BufferComponent" displayLabel="Buffer Component" modifier="Sealed">
+        <BaseClass>TravelwaySideComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayStructureComponentElement" displayLabel="Travelway Structure Component" modifier="Abstract">
         <BaseClass>TypicalSectionComponentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <!--ECProperty propertyName="Type" typeName="PathFoundationComponent_Type"/-->
+    </ECEntityClass>
+    <ECEntityClass typeName="PavementComponent" displayLabel="Pavement Component" modifier="Sealed">
+        <BaseClass>TravelwayStructureComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ITypicalSectionConstraintPoint" description="Interface to be mixed-in by targets of a typical section constraint." modifier="Abstract">
         <ECCustomAttributes>
@@ -726,6 +760,21 @@
     <ECRelationshipClass typeName="TypicalSectionPointRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Points">
             <Class class="TypicalSectionPoint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
+            <Class class="TypicalSectionPointName"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TypicalSectionPointPlaceHolder" displayLabel="External Point" description="Place-holder for a point that is external to the current definition and, thus, will be resolved while generating meshes">
+        <BaseClass>bis:GeometricElement2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PointName" relationshipName="TypicalSectionPointPlaceHolderRefersToName" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TypicalSectionPointPlaceHolderRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Points">
+            <Class class="TypicalSectionPointPlaceHolder"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
             <Class class="TypicalSectionPointName"/>

@@ -37,13 +37,19 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TravelwayStructureDefinitionHandler::GetHandler());
 
     RegisterHandler(TypicalSectionComponentElementHandler::GetHandler());
-    RegisterHandler(TravelwayStructureComponentHandler::GetHandler());
-    RegisterHandler(TravelwaySideComponentHandler::GetHandler());
+    RegisterHandler(TravelwayStructureComponentElementHandler::GetHandler());
+    RegisterHandler(TravelwaySideComponentElementHandler::GetHandler());
     RegisterHandler(TravelwayComponentElementHandler::GetHandler());
+    RegisterHandler(BarrierComponentHandler::GetHandler());
+    RegisterHandler(BufferComponentHandler::GetHandler());
+    RegisterHandler(CurbComponentHandler::GetHandler());
     RegisterHandler(RoadLaneComponentHandler::GetHandler());
+    RegisterHandler(RoadShoulderComponentHandler::GetHandler());
+    RegisterHandler(PavementComponentHandler::GetHandler());
 
     RegisterHandler(TypicalSectionPointNameHandler::GetHandler());
     RegisterHandler(TypicalSectionPointHandler::GetHandler());
+    RegisterHandler(TypicalSectionPointPlaceHolderHandler::GetHandler());
     RegisterHandler(TypicalSectionConstraintSourceHandler::GetHandler());
     RegisterHandler(TypicalSectionConstraintWithOffsetHandler::GetHandler());
     RegisterHandler(TypicalSectionHorizontalConstraintHandler::GetHandler());

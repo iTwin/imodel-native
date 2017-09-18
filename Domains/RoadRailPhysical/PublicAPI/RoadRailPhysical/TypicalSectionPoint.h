@@ -88,6 +88,33 @@ public:
 }; // TypicalSectionPoint
 
 //=======================================================================================
+//! Point construct in a TypicalSection portion definition.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointPlaceHolder : Dgn::GeometricElement2d
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointPlaceHolder, Dgn::GeometricElement2d);
+friend struct TypicalSectionPointPlaceHolderHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionPointPlaceHolder(CreateParams const& params) : T_Super(params) {}
+
+    //! @private
+    explicit TypicalSectionPointPlaceHolder(CreateParams const& params, TypicalSectionPointNameCR pointName);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPointPlaceHolder)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionPointPlaceHolder)
+
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPlaceHolderPtr Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPlaceHolderCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
+
+    TypicalSectionPointNameCP GetPointName() const { return TypicalSectionPointName::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("PointName")).get(); }
+    void SetPointName(TypicalSectionPointNameCP newVal) { SetPropertyValue("PointName", newVal ? newVal->GetElementId() : Dgn::DgnElementId()); }
+}; // TypicalSectionPointPlaceHolder
+
+//=======================================================================================
 //! Base class for Parameters used in Constraints to a Typical Section Point
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
@@ -379,6 +406,15 @@ struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointHandler : Dgn::dgn_ElementHand
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPoint, TypicalSectionPoint, TypicalSectionPointHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
 }; // TypicalSectionPointHandler
+
+//=================================================================================
+//! ElementHandler for Typical Section Point Place-Holders
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointPlaceHolderHandler : Dgn::dgn_ElementHandler::Geometric2d
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointPlaceHolder, TypicalSectionPointPlaceHolder, TypicalSectionPointPlaceHolderHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionPointPlaceHolderHandler
 
 //=================================================================================
 //! ElementHandler for Typical Section Parameters

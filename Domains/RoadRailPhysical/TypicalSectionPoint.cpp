@@ -22,6 +22,7 @@ HANDLER_DEFINE_MEMBERS(TypicalSectionOffsetParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointNameHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPointPlaceHolderHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionSlopeConstraintHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionVerticalConstraintHandler)
 
@@ -169,6 +170,41 @@ CodeSpecId TypicalSectionPoint::QueryCodeSpecId(DgnDbCR dgndb)
 DgnCode TypicalSectionPoint::CreateCode(TypicalSectionPortionBreakDownModelCR scope)
     {
     return CodeSpec::CreateCode(BRRP_CODESPEC_TypicalSectionPoint, scope, ""); // TODO: Making it sequential
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionPointPlaceHolder::TypicalSectionPointPlaceHolder(CreateParams const& params, TypicalSectionPointNameCR pointName): T_Super(params)
+    {
+    SetPointName(&pointName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionPointPlaceHolderPtr TypicalSectionPointPlaceHolder::Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
+    {
+    if (!model.GetModelId().IsValid() || !pointName.GetElementId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(), 
+        TypicalSectionPointName::CreateCode(model, pointName.GetCode().GetValueUtf8()));
+
+    return new TypicalSectionPointPlaceHolder(createParams, pointName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionPointPlaceHolderCPtr TypicalSectionPointPlaceHolder::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
+    {
+    auto ptr = Create(model, pointName);
+    if (ptr.IsNull())
+        return nullptr;
+
+    return ptr->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**
