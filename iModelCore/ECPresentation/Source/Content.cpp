@@ -554,11 +554,18 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Tautvydas.Zinys                09/2016
+* @bsimethod                                    Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ContentDescriptor::ECPropertiesField::_GetTypeName() const
     {
-    return m_properties.front().GetProperty().GetTypeName();
+    ECPropertyCR prop = m_properties.front().GetProperty();
+    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
+        return "enum";
+
+    if (prop.GetIsNavigation())
+        return "navigation";
+
+    return prop.GetTypeName();
     }
 
 /*---------------------------------------------------------------------------------**//**
