@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralPhysical" alias="sp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <ECSchemaReference name="StructuralCommon" version="01.00.00" alias="sc" />    
     <ECEntityClass typeName="StructuralElement" modifier="Abstract">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
@@ -110,6 +111,15 @@
         </Source>
         <Target multiplicity="(0..*)" roleLabel="StructuralMember refers to StructuralSubtraction (Reversed)" polymorphic="true">
             <Class class="StructuralSubtraction"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="StructuralElementOwnsFormAspect" description="" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
+            <Class class="sc:Form"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>

@@ -18,6 +18,7 @@ StructuralCommonDomain::StructuralCommonDomain() : DgnDomain(BENTLEY_STRUCTURAL_
     {
     RegisterHandler(StructuralPhysicalModelHandler::GetHandler());
     RegisterHandler(StructuralTypeDefinitionModelHandler::GetHandler());
+    RegisterHandler(FormHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

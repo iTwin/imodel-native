@@ -164,6 +164,9 @@
     <ClCompile Include="StructuralPhysical\StructuralAddition.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
+    <ClCompile Include="StructuralCommon\Form.cpp">
+      <Filter>StructuralCommon</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -285,6 +288,9 @@
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralAddition.h">
       <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\Form.h">
+      <Filter>StructuralCommon</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

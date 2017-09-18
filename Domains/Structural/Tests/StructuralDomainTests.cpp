@@ -770,3 +770,26 @@ TEST_F(StructuralDomainTestFixture, StructuralAdditionClassTests)
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, STRUCTURALADDITION_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
     }
+
+TEST_F(StructuralDomainTestFixture, FormClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "FormClassTests");
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    FormPtr formAspect = Form::Create();
+    Form::SetAspect(*pw, *formAspect); //set aspect to wall
+
+    pw->Insert(&status);
+    }
+

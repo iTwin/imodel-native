@@ -71,6 +71,7 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructCommonPublicAPI)StructuralCommonDomain.h \
     $(StructCommonPublicAPI)StructuralPhysicalModel.h \
     $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h \
+    $(StructCommonPublicAPI)Form.h \
     $(StructPhysPublicAPI)StructuralPhysicalApi.h \
     $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
     $(StructPhysPublicAPI)StructuralPhysicalDomain.h \
@@ -156,6 +157,11 @@ $(o)SurfaceMember$(oext) : $(StructPhys)SurfaceMember.cpp \
     $(StructPhysPublicAPI)StructuralMember.h \
     $(StructPhysPublicAPI)StructuralElement.h \
     $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Form$(oext) : $(StructCommon)Form.cpp \
+    ${MultiCompileDepends} \
+    $(StructCommonPublicAPI)Form.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 $(o)Slab$(oext) : $(StructPhys)Slab.cpp \
@@ -314,7 +320,6 @@ $(o)SteelMaterialProperties$(oext) : $(StructMaterial)SteelMaterialProperties.cp
     ${MultiCompileDepends} \
     $(StructMaterialPublicAPI)SteelMaterialProperties.h \
     $(StructMaterialPublicAPI)MaterialProperties.h
-
 
 $(o)VaryingProfileZone$(oext) : $(StructProfiles)VaryingProfileZone.cpp \
     ${MultiCompileDepends} \

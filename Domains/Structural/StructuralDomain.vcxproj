@@ -40,6 +40,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="StructuralCommon\Form.cpp" />
     <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
     <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
@@ -75,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h" />
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\Form.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />

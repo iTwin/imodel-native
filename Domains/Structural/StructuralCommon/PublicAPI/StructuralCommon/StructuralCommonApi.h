@@ -13,3 +13,4 @@
 #include "StructuralCommonDomain.h"
 #include "StructuralPhysicalModel.h"
 #include "StructuralTypeDefinitionModel.h"
+#include "Form.h"

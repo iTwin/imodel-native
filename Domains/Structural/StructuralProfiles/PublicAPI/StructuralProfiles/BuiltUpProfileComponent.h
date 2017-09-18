@@ -29,6 +29,4 @@ struct EXPORT_VTABLE_ATTRIBUTE BuiltUpProfileComponentHandler : Dgn::dgn_AspectH
     RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new BuiltUpProfileComponent(); }
 };
 
-
-
 END_BENTLEY_STRUCTURAL_NAMESPACE
