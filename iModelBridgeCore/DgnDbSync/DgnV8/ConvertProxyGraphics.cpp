@@ -657,11 +657,18 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
             // We already have a graphic for this element. Update it.
             DgnElementCPtr existingEl = GetDgnDb().Elements().GetElement(existingDrawingGraphicId);
 
+            if (existingEl.IsValid())
+                {
             DgnElementPtr writeEl = MakeCopyForUpdate(*drawingGraphic, *existingEl);
             writeEl->Update(&status);
             // There's no need to "update" the syncinfo record for this drawing graphic, as syncinfo does not store anything like a date or a hash
             // for drawing graphics. (We track only the dgnattachment's hash as a proxy for *all* drawing graphics in the attachment.)
             return status;
+            }
+            else 
+                {
+                BeAssert (!"ExistingDrawingGraphic missing. Possibly previously deleted in ChangeDetector::_DetectDeletedModels.");
+                }
             }
         }
 
