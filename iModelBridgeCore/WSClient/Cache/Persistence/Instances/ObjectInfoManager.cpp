@@ -131,7 +131,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
     if (status == BE_SQLITE_ROW)
         {
         JsonECSqlSelectAdapter adapter(*statement);
-        adapter.GetRowInstance(infoJson, m_infoClass->GetId());
+        adapter.GetRow(infoJson);
         }
     else
         {
@@ -176,7 +176,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
 
     Json::Value infoJson;
     JsonECSqlSelectAdapter adapter(*statement);
-    adapter.GetRowInstance(infoJson, m_infoClass->GetId());
+    adapter.GetRow(infoJson);
 
     return ObjectInfo(infoJson, objectClass, m_infoClass->GetId());
     }
