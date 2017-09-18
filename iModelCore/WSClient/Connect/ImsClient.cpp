@@ -300,6 +300,6 @@ Utf8String ImsClient::GetA2PUrl(Utf8String url, SamlTokenPtr token, Utf8String t
 +---------------+---------------+---------------+---------------+---------------+------*/	
 Utf8StringCR ImsClient::SetImsActiveSTSHelperServiceAuthKey(Utf8StringCR user, Utf8StringCR apiKey)
     {
-    Utf8PrintfString credsPair("%s:%s", user, apiKey);
+    Utf8PrintfString credsPair("%s:%s", user.c_str(), apiKey.c_str());
     return m_ImsActiveSTSHelperServiceAuthKey = credsPair;
     }
