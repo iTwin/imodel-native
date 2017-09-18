@@ -106,7 +106,7 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
     else
         {
         Json::Value& instance = info.GetJsonInfo();
-        instance[CLASS_CachedFileInfo_PROPERTY_ObjectInfo][NavPropId] = info.GetCachedInstanceKey().GetInfoKey().GetInstanceId().ToString();
+        instance[CLASS_CachedFileInfo_PROPERTY_ObjectInfo][ECJsonUtilities::json_navId()] = info.GetCachedInstanceKey().GetInfoKey().GetInstanceId().ToString();
 
         if (BE_SQLITE_OK != m_cachedFileInfoInserter.Get().Insert(instance))
             return ERROR;
@@ -196,7 +196,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             }
 
         Json::Value externalFileInfoJson;
-        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
             {
             return ERROR;
             }
@@ -292,7 +292,7 @@ Json::Value FileInfoManager::ReadCachedFileInfo(CachedInstanceKeyCR cachedKey)
 
     JsonECSqlSelectAdapter adapter(*statement);
 
-    adapter.GetRowInstance(infoJson, m_cachedFileInfoClass->GetId());
+    adapter.GetRow(infoJson);
 
     return infoJson;
     }
@@ -330,7 +330,7 @@ Json::Value FileInfoManager::ReadExternalFileInfo(CachedInstanceKeyCR cachedKey)
         }
 
     JsonECSqlSelectAdapter adapter(*statement);
-    adapter.GetRowInstance(infoJson, m_externalFileInfoClass->GetId());
+    adapter.GetRow(infoJson);
 
     return infoJson;
     }

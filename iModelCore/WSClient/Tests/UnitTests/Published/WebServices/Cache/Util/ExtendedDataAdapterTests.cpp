@@ -125,7 +125,13 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Delete(instance.GetInstanceId()));
+    ECSqlStatement stmt;
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM TestSchema.TestClass WHERE ECInstanceId=%s", instance.GetInstanceId().ToString());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*db, ecsql.c_str(), nullptr));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
     data = adapter.GetData(instance);
     EXPECT_TRUE(data.GetData().empty());
     EXPECT_TRUE(data.GetValue("Test").isNull());
@@ -174,7 +180,12 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Delete(holder.GetInstanceId()));
+    ECSqlStatement stmt;
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM TestSchema.TestClass2 WHERE ECInstanceId=%s", holder.GetInstanceId().ToString());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*db, ecsql.c_str(), nullptr));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
 
     data = adapter.GetData(owner);
     EXPECT_TRUE(data.GetData().empty());

@@ -842,7 +842,7 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
         //Deprecated: Use presentation rules instead. Adapter doesn't do any formatting anymore
         //adapter.GetRowDisplayInfo(instanceDataOut[DataSourceCache_PROPERTY_DisplayInfo]);
 
-        if (!adapter.GetRowInstance(instanceDisplayData, ecClass->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(instanceDisplayData, ecClass->GetId()))
             {
             instanceDataOut = Json::nullValue;
             return CacheStatus::Error;
@@ -854,7 +854,7 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
     JsonValueR instanceRawData = JsonFormat::Display == format ? instanceDataOut[DataSourceCache_PROPERTY_RawData] : instanceDataOut;
 
     JsonECSqlSelectAdapter adapter(*statement);
-    if (!adapter.GetRowInstance(instanceRawData, ecClass->GetId()))
+    if (SUCCESS != adapter.GetRowInstance(instanceRawData, ecClass->GetId()))
         {
         instanceDataOut = Json::nullValue;
         return CacheStatus::Error;
