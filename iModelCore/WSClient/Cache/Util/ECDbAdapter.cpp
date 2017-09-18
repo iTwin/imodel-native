@@ -508,7 +508,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
 
         JsonValueR currentObj = jsonInstancesArrayOut.append(Json::objectValue);
 
-        if (!adapter.GetRowInstance(currentObj, ecClass->GetId()))
+        if (SUCCESS != adapter.GetRowInstance(currentObj, ecClass->GetId()))
             {
             return ERROR;
             }
@@ -536,7 +536,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceFromStatement(ECSqlStatement& stat
         }
 
     JsonECSqlSelectAdapter adapter(statement);
-    if (!adapter.GetRowInstance(jsonInstanceOut, ecClass->GetId()))
+    if (SUCCESS != adapter.GetRowInstance(jsonInstanceOut, ecClass->GetId()))
         {
         return ERROR;
         }
