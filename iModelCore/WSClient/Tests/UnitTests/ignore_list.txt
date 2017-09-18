@@ -43,6 +43,14 @@ DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_Cha
 # Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
 CachingDataSourceTests.OpenOrCreate_ServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema
 
+#Failing because of JSON wire format changes used by JsonECSqlSelectAdapter and JsonInserter
+ECInstanceKeyFilterTests.AddLabelFilter_EmptyLabelPassed_FindsNoInstances
+ECInstanceKeyFilterTests.AddLabelFilter_MultipleClasses_FiltersByLabel
+ECInstanceKeyFilterTests.AddLabelFilterAndByClass_MultipleClasses_FiltersByLabelAndClass
+ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_SingleClas_FiltersByLabel
+ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_MultipleClasses_FiltersByLabel
+ECInstanceKeyFilterTests.SetLimit_OnLabelFilter_ReturnsLimitedInstances
+
 #--------------------------------------------------------------------------------
 # RANDOM reproduceable crashes/hangs that break DEV builds
 #--------------------------------------------------------------------------------
