@@ -566,41 +566,20 @@ protected:
     void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
 
-    Render::MaterialPtr _GetMaterial(RenderMaterialId id) const override
-        {
-        Render::SystemP system = m_loadContext.GetRenderSystem();
-        return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;
-        }
-    TexturePtr _CreateTexture(ImageCR image) const override
-        {
-        Render::TexturePtr tx;
-        auto sys = m_loadContext.GetRenderSystem();
-        if (nullptr != sys)
-            tx = sys->_CreateTexture(image);
+    Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
 
-        return tx;
-        }
-    TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp) const override
-        {
-        Render::TexturePtr tx;
-        auto sys = m_loadContext.GetRenderSystem();
-        if (nullptr != sys)
-            tx = sys->_CreateTexture(source, bottomUp);
-
-        return tx;
-        }
-
-    static Render::ViewFlags GetDefaultViewFlags();
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
         : TileContext(geometries, root, range, facetOptions, transformFromDgn, tolerance, tolerance, loadContext) { }
+
+    static Render::ViewFlags GetDefaultViewFlags();
 
     void ProcessElement(DgnElementId elementId, double diagonalRangeSquared);
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams);
     GeomPartPtr GenerateGeomPart(DgnGeometryPartCR, GeometryParamsR);
 
     RootR GetRoot() const { return m_root; }
-    System& GetRenderSystem() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
+    System& GetRenderSystemR() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
     bool BelowMinRange(DRange3dCR range) const
@@ -651,7 +630,7 @@ public:
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params)
-    : GeometryListBuilder(context.GetRenderSystem(), params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
+    : GeometryListBuilder(context.GetRenderSystemR(), params, elemId, context.GetTransformFromDgn()), m_context(context), m_rangeDiagonalSquared(rangeDiagonalSquared)
     {
     SetCheckGlyphBoxes(true);
     }
@@ -660,7 +639,7 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystem(), CreateParams::World(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::World(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -1726,7 +1705,7 @@ double Tile::_GetMaximumSize() const
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct MeshGenerator
+struct MeshGenerator : ViewContext
 {
 private:
     typedef bmap<MeshMergeKey, MeshBuilderPtr> BuilderMap;
@@ -1762,6 +1741,10 @@ private:
     Strokes ClipSegments(StrokesCR strokes) const;
     void ClipStrokes(StrokesR strokes) const;
     void ClipPoints(StrokesR strokes) const;
+
+    SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
+    GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1784,7 +1767,9 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
     m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
     m_featureTable(nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
     {
-    //
+    SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
+    m_is3dView = m_tile.GetElementRoot().Is3d();
+    SetViewFlags(TileContext::GetDefaultViewFlags());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1853,8 +1838,8 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
 
     // Get the polyfaces and strokes with no transform applied
-    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr);
-    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr);
+    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr, *this);
 
     // For each instance, transform the polyfaces and add them to the mesh
     Transform invTransform = Transform::FromIdentity();
@@ -1884,7 +1869,7 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyfaces(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto polyfaces = geom.GetPolyfaces(m_tolerance, m_options.m_normalMode);
+    auto polyfaces = geom.GetPolyfaces(m_tolerance, m_options.m_normalMode, *this);
     AddPolyfaces(polyfaces, geom, rangePixels, isContained);
     }
 
@@ -2055,7 +2040,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never));
+    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never), *this);
     AddStrokes(strokes, geom, rangePixels, isContained);
     }
 

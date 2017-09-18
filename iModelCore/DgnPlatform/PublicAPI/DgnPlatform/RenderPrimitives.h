@@ -723,8 +723,8 @@ private:
 protected:
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) = 0;
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) { return StrokesList(); }
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR) = 0;
+    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR) { return StrokesList(); }
     virtual bool _DoDecimate() const { return false; }
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
@@ -748,11 +748,11 @@ public:
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions) { return _GetPolyfaces(facetOptions); }
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode);
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) { return _GetPolyfaces(facetOptions, context); }
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
+    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) { return _GetStrokes(facetOptions, context); }
     GeomPartCPtr GetPart() const { return _GetPart(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
 
@@ -817,10 +817,10 @@ protected:
 
 public:
     static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance);
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance);
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
+    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
+    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }
@@ -901,10 +901,10 @@ public:
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
-    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance) const;
+    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
-    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance) const;
+    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
     void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)

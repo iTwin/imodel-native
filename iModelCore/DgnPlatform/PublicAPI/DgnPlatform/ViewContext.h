@@ -144,6 +144,8 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageCR image) const;
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
+    DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
+    DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -268,8 +270,11 @@ public:
 
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
     //! DgnViewport, so therefore callers must always test the result of this call for nullptr.
+    //! In general, if you are using GetViewport() to access the Render::Target or Render::System associated with the ViewContext, you are doing it wrong.
     //! @return the DgnViewport. nullptr if not attached to a DgnViewport.
     DgnViewportP GetViewport() const {return m_viewport;}
+    Render::SystemP GetRenderSystem() const {return _GetRenderSystem();}
+    Render::TargetP GetRenderTarget() const {return _GetRenderTarget();}
 
     bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;

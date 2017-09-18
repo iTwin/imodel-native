@@ -22,9 +22,9 @@ using namespace flatbuffers;
 Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
     {
     Render::TexturePtr tx;
-    auto vp = GetViewport();
-    if (nullptr != vp)
-        tx = vp->GetRenderTarget()->CreateTexture(image);
+    auto sys = GetRenderSystem();
+    if (nullptr != sys)
+        tx = sys->_CreateTexture(image);
 
     return tx;
     }
@@ -35,9 +35,9 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
 Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const
     {
     Render::TexturePtr tx;
-    auto vp = GetViewport();
-    if (nullptr != vp)
-        tx = vp->GetRenderTarget()->CreateTexture(source, bottomUp);
+    auto sys = GetRenderSystem();
+    if (nullptr != sys)
+        tx = sys->_CreateTexture(source, bottomUp);
 
     return tx;
     }

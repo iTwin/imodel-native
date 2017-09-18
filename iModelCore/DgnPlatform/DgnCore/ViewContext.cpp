@@ -636,9 +636,8 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::MaterialPtr ViewContext::_GetMaterial(RenderMaterialId id) const
     {
-    DgnViewportP vp = GetViewport();
-    Render::TargetP target = nullptr != vp ? vp->GetRenderTarget() : nullptr;
-    return nullptr != target ? target->GetMaterial(id, GetDgnDb()) : nullptr;
+    auto system = GetRenderSystem();
+    return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1549,3 +1548,22 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions, vp);
     AddWorldDecoration(*graphic->Finish());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TargetP ViewContext::_GetRenderTarget() const
+    {
+    auto vp = GetViewport();
+    return nullptr != vp ? vp->GetRenderTarget() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SystemP ViewContext::_GetRenderSystem() const
+    {
+    auto target = GetRenderTarget();
+    return nullptr != target ? &target->GetSystem() : nullptr;
+    }
+
