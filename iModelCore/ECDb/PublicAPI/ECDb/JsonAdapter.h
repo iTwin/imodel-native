@@ -51,11 +51,25 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
         //! @remarks
-        //! The JSON returns is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON wire format".
+        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON wire format".
         //! The ECSQL select clause is what exclusively determines what property name value pairs
         //! the JSON will contain.
+        //! The ECSQL system properties are converted to the respective JSON wire format system members:
+        //! ECSQL  | JSON Wire Format | JSON Wire Format Data Type
+        //! ------ | ---------------- | --------------------------
+        //! ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
+        //! ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "{Schema Name}.{Class Name}"
+        //! SourceECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId" | Hex String
+        //! SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "{Schema Name}.{Class Name}"
+        //! TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
+        //! TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "{Schema Name}.{Class Name}"
+        //! {Navigation Property}.Id | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "{Schema Name}.{RelationshipClass Name}"
+        //! {Navigation Property}.RelECClassId | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "{Schema Name}.{RelationshipClass Name}"
+        //! {Point2d/3d Property}.X | {point2d/3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! {Point2d/3d Property}.Y | {point2d/3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! {Point3d Property}.Z | {point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
-        //! Example:
+        //! Examples:
         //! For the ECSQL <c>SELECT ECInstanceId, ECClass, Name, Age FROM myschema.Employee WHERE ...</c>
         //! the returned JSON format would be this:
         //! 
