@@ -268,7 +268,7 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         instancesOut.push_back(UpgradeInstance(ecClass->GetId()));
-        if (!adapter.GetRowInstance(instancesOut.back().json, ecClass->GetId()))
+        if (SUCCESS != adapter.GetRow(instancesOut.back().json))
             {
             return ERROR;
             }

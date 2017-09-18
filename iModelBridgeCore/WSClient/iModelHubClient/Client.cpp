@@ -565,7 +565,6 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
             });
     }
 
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -780,7 +779,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
-        StatusResult result = StatusResult::Error(Error(*db, status));
+        StatusResult result = StatusResult::Error(Error(db, status));
         if (!result.IsSuccess())
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return result;
@@ -835,7 +834,7 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
         db = OpenWithSchemaUpgrade(&status, filePath, changeSets);
         if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
-            StatusResult result = StatusResult::Error(Error(*db, status));
+            StatusResult result = StatusResult::Error(Error(db, status));
             if (!result.IsSuccess())
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return result;
@@ -1245,7 +1244,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
-        StatusResult result = StatusResult::Error(Error(*db, status));
+        StatusResult result = StatusResult::Error(Error(db, status));
         if (!result.IsSuccess())
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result));
