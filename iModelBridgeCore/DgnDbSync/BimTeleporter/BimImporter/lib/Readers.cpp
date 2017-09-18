@@ -147,21 +147,21 @@ ECN::ECClassCP Reader::GetClassFromKey(Utf8CP classKey)
 //---------------+---------------+---------------+---------------+---------------+-------
 ECN::IECInstancePtr Reader::_CreateInstance(Json::Value& object)
     {
-    ECClassCP ecClass = GetClassFromKey(object["$ECClassKey"].asString().c_str());
+    ECClassCP ecClass = GetClassFromKey(object[ECJsonUtilities::json_className()].asCString());
     if (nullptr == ecClass)
         {
-        GetLogger().errorv("Failed to get ECClass from key %s\n", object["$ECClassKey"].asString().c_str());
+        GetLogger().errorv("Failed to get ECClass from key %s\n", object[ECJsonUtilities::json_className()].asCString());
         return nullptr;
         }
 
     IECInstancePtr ptr = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     if (!ptr.IsValid())
         {
-        GetLogger().errorv("Failed to create IECInstancePtr from %s's standalone enabler\n", object["$ECClassKey"].asString().c_str());
+        GetLogger().errorv("Failed to create IECInstancePtr from %s's standalone enabler\n", object[ECJsonUtilities::json_className()].asCString());
         return nullptr;
         }
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ptr, object, &m_importer->GetRemapper()))
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ptr, object, m_importer->GetDgnDb()->GetClassLocater(), &m_importer->GetRemapper()))
         {
         GetLogger().errorv("Failed to create ECInstanceFromJson\n");
         return nullptr;
@@ -179,7 +179,7 @@ BentleyStatus Reader::RemapCodeSpecId(Json::Value& element)
         return ERROR;
 
     Utf8PrintfString idStr("%" PRIu64 "", codeSpec.GetValue());
-    element[BIS_ELEMENT_PROP_CodeSpecId]["id"] = idStr;
+    element[BIS_ELEMENT_PROP_CodeSpecId][ECJsonUtilities::json_navId()] = idStr;
     return SUCCESS;
     }
 
