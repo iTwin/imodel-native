@@ -276,8 +276,8 @@ struct PublisherContext : TileGenerator::ITileCollector
     typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
     typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
     typedef bmap<DgnElementId, uint32_t>        T_ScheduleEntryMap;
+    typedef bvector<T_ScheduleEntryMap>         T_ScheduleEntryMaps;
 
-      
     Statistics                                  m_statistics;
 
 protected:
@@ -302,7 +302,7 @@ protected:
     ClassifierInfo*                             m_currentClassifier;
     bset<DgnSubCategoryId>                      m_usedSubCategories;
     Json::Value                                 m_schedulesJson;
-    bvector<T_ScheduleEntryMap>                 m_scheduleEntryMaps;
+    T_ScheduleEntryMaps                         m_scheduleEntryMaps;
 
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
@@ -356,6 +356,7 @@ public:
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
     WString GetTileExtension (TileNodeCR tile);
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
+    T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
     void RecordUsage(FeatureAttributesMapCR attributes);
 

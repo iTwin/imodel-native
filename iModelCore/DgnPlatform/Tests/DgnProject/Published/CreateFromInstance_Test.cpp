@@ -36,7 +36,7 @@ void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf
 
     Json::Value jsonInput;
     ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
-    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput));
+    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput, m_db->GetClassLocater()));
 
     element = m_db->Elements().CreateElement(*ecInstance);
     DgnElementCPtr inserted = element->Insert();
@@ -133,17 +133,13 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
 
     Utf8PrintfString json(
         "{"
-        "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : {\"id\" : \"16\"},"
-        "\"CodeValue\" : \"Hub\","
-        "\"Description\" : \"\","
-        "\"Model\" : {\"id\" : \"16\"},"
-        "\"Parent\" : null,"
-        "\"Rank\" : 1,"
-        "\"UserLabel\" : null,"
-        "\"UserProperties\" : null"
+        "\"codeSpec\" : {\"id\" : \"%s\"},"
+        "\"codeScope\" : {\"id\" : \"0X10\"},"
+        "\"codeValue\" : \"Hub\","
+        "\"model\" : {\"id\" : \"0X10\"},"
+        "\"rank\" : 1"
         "}", 
-        static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_SpatialCategory).GetValue())); // value for CodeSpec.Id
+        m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_SpatialCategory).ToHexStr().c_str()); // value for CodeSpec.Id
 
     DgnElementPtr inserted = nullptr;
     CreateAndInsertElement(inserted, json.c_str(), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
@@ -159,42 +155,35 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
 
     Utf8PrintfString json(
         "{"
-        "\"$ECClassId\" : \"198\","
         "\"$ECClassKey\" : \"BisCore.SpatialViewDefinition\","
-        "\"$ECClassLabel\" : \"SpatialViewDefinition\","
-        "\"$ECInstanceId\" : \"502\","
-        "\"$ECInstanceLabel\" : \"SpatialViewDefinition\","
-        "\"CodeSpec\" : {\"id\" : \"%d\"},"
-        "\"CodeScope\" : {\"id\" : \"16\"},"
-        "\"CodeValue\" : \"Default - View 1\","
-        "\"Description\" : \"\","
-        "\"Model\" : {\"id\" : \"16\"},"
-        "\"Extents\" : {"
+        "\"$ECInstanceId\" : \"0X1F6\","
+        "\"codeSpec\" : {\"id\" : \"%s\"},"
+        "\"codeScope\" : {\"id\" : \"0X10\"},"
+        "\"codeValue\" : \"Default - View 1\","
+        "\"model\" : {\"id\" : \"0X10\"},"
+        "\"extents\" : {"
             "\"x\" : 85.413445258737553,"
             "\"y\" : 76.125601109667528,"
             "\"z\" : 112.79558108349732"
         "},"
-        "\"EyePoint\" : {"
+        "\"eyePoint\" : {"
             "\"x\" : 293.99476935528162,"
             "\"y\" : 69.335060236322079,"
             "\"z\" : 68.339134990346963"
         "},"
-        "\"FocusDistance\" : 100.610733542977,"
-        "\"LensAngle\" : 0.802851455917392,"
-        "\"Origin\" : {"
+        "\"focusDistance\" : 100.610733542977,"
+        "\"lensAngle\" : 0.802851455917392,"
+        "\"origin\" : {"
             "\"x\" : 338.90639657040640,"
             "\"y\" : 174.64311379840612,"
             "\"z\" : -53.387925168591018"
         "},"
-        "\"Parent\" : null,"
-        "\"Pitch\" : -35.264389682754654,"
-        "\"Roll\" : -45.000000000000007,"
-        "\"IsPrivate\" : false,"
-        "\"UserLabel\" : null,"
-        "\"UserProperties\" : null,"
-        "\"Yaw\" : 29.999999999999986"
+        "\"pitch\" : -35.264389682754654,"
+        "\"roll\" : -45.000000000000007,"
+        "\"isPrivate\" : false,"
+        "\"yaw\" : 29.999999999999986"
         "}",
-        static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_ViewDefinition).GetValue())); // value for CodeSpec.Id
+        m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_ViewDefinition).ToHexStr().c_str()); // value for CodeSpec.Id
 
     ECN::ECClassCP viewDefClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);
@@ -203,7 +192,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     
     Json::Value jsonInput;
     ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
-    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput));
+    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput, m_db->GetClassLocater()));
 
     auto viewElement = m_db->Elements().Create<SpatialViewDefinition>(*ecInstance);
     ASSERT_TRUE(viewElement.IsValid());
