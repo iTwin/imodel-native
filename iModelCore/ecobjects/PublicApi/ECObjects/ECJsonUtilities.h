@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=================================================================================
 //! An ECInstance in the JSON Wire Format is formatted as JSON object made up of property value pairs.
 //!
-//!     - All property names are <b>camel-cased</b>.
+//!     - All member names are <b>camel-cased</b>.
 //!     - Reserved property names:
 //!         - "id": ECInstanceId of the instance or the navigation id within a Navigation Property
 //!         - "className": Fully qualified class name ("{schema name}.{class name}")
