@@ -232,7 +232,7 @@ TEST_F(ImsClientTests, GetA2PUrl)
         Utf8PrintfString credsPair("%s:%s", "BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
         Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
         EXPECT_EQ(authorization, request.GetHeaders().GetAuthorization());
-        return StubHttpResponse(HttpStatus::OK, Utf8PrintfString("\"%s\"", BeGuid(true).ToString()));
+        return StubHttpResponse(HttpStatus::OK, Utf8PrintfString("\"%s\"", BeGuid(true).ToString().c_str()));
         });
 
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
