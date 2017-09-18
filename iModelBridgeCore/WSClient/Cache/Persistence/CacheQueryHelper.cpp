@@ -492,7 +492,7 @@ ICancellationTokenPtr ct
 
     JsonECSqlSelectAdapter adapter(statement);
 
-    if (!adapter.GetRowInstance(jsonInstanceOut, ecClassId))
+    if (SUCCESS != adapter.GetRowInstance(jsonInstanceOut, ecClassId))
         {
         return ERROR;
         }
