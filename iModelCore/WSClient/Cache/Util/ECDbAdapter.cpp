@@ -475,7 +475,7 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson)
     {
-    ECClassCP ecClass = GetECClass(ecInstanceJson["$ECClassKey"].asString());
+    ECClassCP ecClass = GetECClass(ecInstanceJson[ECJsonUtilities::json_className()].asString());
     if (nullptr == ecClass)
         {
         return ECInstanceKey();
