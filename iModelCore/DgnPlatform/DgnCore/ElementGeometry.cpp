@@ -3942,7 +3942,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#define WIP_YII_IGNORE_BREPS
+#if defined (BENTLEYCONFIG_PARASOLID)  && !defined(WIP_YII_IGNORE_BREPS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 entryId.Increment();
