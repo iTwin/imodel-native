@@ -541,8 +541,8 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonValueStruct)
 
     Json::Value expectedJson;
     ASSERT_TRUE(Json::Reader::Parse(R"json({
-      "$ECInstanceId" : "0X1",
-      "$ECClassKey" : "StartupCompany.Foo",
+      "id" : "0X1",
+      "className" : "StartupCompany.Foo",
       "anglesFoo" : 
             {
             "alpha" : 12.345000000000001,
