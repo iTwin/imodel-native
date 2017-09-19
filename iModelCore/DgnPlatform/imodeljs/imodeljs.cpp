@@ -200,7 +200,7 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, BeFileNameCR fn, DgnDb::OpenMode
 //---------------------------------------------------------------------------------------
 void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
-    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions::LongsAreIds);
+    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(rowJson);
     }
 
