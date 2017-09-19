@@ -79,15 +79,6 @@ struct ECJsonSystemNames final
         ~ECJsonSystemNames() = delete;
 
     public:
-        static constexpr Utf8CP Id() { return "$ECInstanceId"; }
-        static constexpr Utf8CP ClassName() { return "$ECClassKey"; }
-
-        static constexpr Utf8CP SourceId() { return "$SourceECInstanceId"; }
-        static constexpr Utf8CP SourceClassName() { return "$SourceECClassKey"; }
-        static constexpr Utf8CP TargetId() { return "$TargetECInstanceId"; }
-        static constexpr Utf8CP TargetClassName() { return "$TargetECClassKey"; }
-
-/*      Proposed name changes - not decided yet
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
 
@@ -95,7 +86,7 @@ struct ECJsonSystemNames final
         static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
         static constexpr Utf8CP TargetId() { return "targetId"; }
         static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
-        */
+
         struct Navigation final
             {
             public:
