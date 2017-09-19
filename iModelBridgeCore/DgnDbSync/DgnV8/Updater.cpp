@@ -84,6 +84,9 @@ void Converter::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Utf8String, uin
 
     for (auto& v8SchemaInfo : v8SchemaInfos)
         {
+        if (ECN::ECSchema::IsStandardSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+            continue;
+
         bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(Utf8String(v8SchemaInfo.GetSchemaName()));
         // If schema was not in the original DgnDb, we need to import it
         if (syncEntry == syncInfoChecksums.end())
