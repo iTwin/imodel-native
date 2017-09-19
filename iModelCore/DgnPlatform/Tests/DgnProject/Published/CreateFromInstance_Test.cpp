@@ -155,8 +155,8 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
 
     Utf8PrintfString json(
         "{"
-        "\"$ECClassKey\" : \"BisCore.SpatialViewDefinition\","
-        "\"$ECInstanceId\" : \"0X1F6\","
+        "\"className\" : \"BisCore.SpatialViewDefinition\","
+        "\"id\" : \"0X1F6\","
         "\"codeSpec\" : {\"id\" : \"%s\"},"
         "\"codeScope\" : {\"id\" : \"0X10\"},"
         "\"codeValue\" : \"Default - View 1\","
