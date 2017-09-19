@@ -36,7 +36,7 @@ void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf
 
     Json::Value jsonInput;
     ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
-    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput, m_db->GetClassLocater()));
+    ASSERT_EQ(SUCCESS, ECN::JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonInput, m_db->GetClassLocater()));
 
     element = m_db->Elements().CreateElement(*ecInstance);
     DgnElementCPtr inserted = element->Insert();
@@ -192,7 +192,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     
     Json::Value jsonInput;
     ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
-    ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput, m_db->GetClassLocater()));
+    ASSERT_EQ(SUCCESS, ECN::JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonInput, m_db->GetClassLocater()));
 
     auto viewElement = m_db->Elements().Create<SpatialViewDefinition>(*ecInstance);
     ASSERT_TRUE(viewElement.IsValid());
