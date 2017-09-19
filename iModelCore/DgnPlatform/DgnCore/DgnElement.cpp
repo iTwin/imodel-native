@@ -1269,8 +1269,8 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         return;
         }
         
-    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions::LongsAreIds);
-    adapter.GetRowForImodelJs(elementJson);
+    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
+    adapter.GetRow(elementJson);
     }
 
 /*---------------------------------------------------------------------------------**//**

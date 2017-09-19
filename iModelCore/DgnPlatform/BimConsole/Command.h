@@ -236,6 +236,22 @@ struct SqliteCommand final : public Command
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    09/2017
+//---------------------------------------------------------------------------------------
+struct JsonCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".json"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        JsonCommand() : Command() {}
+        ~JsonCommand() {}
+    };
+
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    03/2014
 //---------------------------------------------------------------------------------------
 struct CommitCommand final : public Command
