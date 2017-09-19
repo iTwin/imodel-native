@@ -24,6 +24,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ScalableMesh\IScalableMeshRDSProvider.h>
 #include "ScalableMeshDraping.h"
 
 /*----------------------------------------------------------------------+
@@ -211,6 +212,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         Transform                     m_reprojectionTransform; //approximation of reprojection used for live transforms.
 
+        IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
+
+
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
 
@@ -264,6 +268,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool          _IsTextured() override;
 
         virtual bool          _IsCesium3DTiles() override;
+
+        virtual Utf8String    _GetProjectWiseContextShareLink() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -445,6 +451,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool          _IsTextured() override { return false; }
 
         virtual bool           _IsCesium3DTiles() override { return false; }
+
+        virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 

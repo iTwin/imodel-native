@@ -43,30 +43,6 @@ ScalableMeshAdmin& ScalableMeshLib::Host::_SupplyScalableMeshAdmin()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Richard.Bois                     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-WsgTokenAdmin& ScalableMeshLib::Host::_SupplyWsgTokenAdmin()
-    {
-    return *new WsgTokenAdmin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Richard.Bois                     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SASTokenAdmin& ScalableMeshLib::Host::_SupplySASTokenAdmin()
-    {
-    return *new SASTokenAdmin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Richard.Bois                     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
-    {
-    return *new SSLCertificateAdmin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Elenie.Godzaridis                     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef VANCOUVER_API
@@ -86,9 +62,6 @@ void ScalableMeshLib::Host::Initialize()
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
-    m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
-    m_sasTokenAdmin = &_SupplySASTokenAdmin();
-    m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
 #ifdef VANCOUVER_API
 	m_stmAdmin = &_SupplySTMAdmin();
 #endif

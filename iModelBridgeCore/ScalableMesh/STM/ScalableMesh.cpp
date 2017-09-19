@@ -38,6 +38,8 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
+#include "ScalableMesh\ScalableMeshLib.h"
+
 
 #include <CloudDataSource/DataSourceManager.h>
 
@@ -166,6 +168,11 @@ bool IScalableMesh::IsTextured()
 bool IScalableMesh::IsCesium3DTiles()
     {
     return _IsCesium3DTiles();
+    }
+
+Utf8String IScalableMesh::GetProjectWiseContextShareLink()
+    {
+    return _GetProjectWiseContextShareLink();
     }
 
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
@@ -672,6 +679,13 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             newBaseEditsFilePath.Assign(temp);
             }
         }
+    else if (WString(filePath).ContainsI(L"realitydataservices") && WString(filePath).ContainsI(L"S3MXECPlugin"))
+        { // Open from ProjectWise Context share
+        isLocal = false;
+        wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+        if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
+        newBaseEditsFilePath.Assign(temp);
+        }
     else
         {
         status = BSIERROR;
@@ -1036,40 +1050,65 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         config_server["settings"]["url"] = Json::Value(utf8Path.c_str());
                         }
                     else
-                        { // RDS
-                        config_server["type"] = "rds";
-                        auto& server_settings = config_server["settings"];
-                        assert(m_path.substr(0, 8) == L"https://");
-                        auto firstSeparatorPos = m_path.find(L".");
-                        auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
-                        server_settings["id"] = Json::Value(serverID.c_str());
-                        server_settings["authentication"]["public"] = true;
+                        {
+                        Utf8String projectID, guid;
+                        if (utf8Path.ContainsI("realitydataservices") && utf8Path.ContainsI("S3MXECPlugin"))
+                            { // RDS
+                            config_server["type"] = "rds";
+                            auto& server_settings = config_server["settings"];
+                            auto firstSeparatorPos = m_path.find(L".");
+                            auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                            server_settings["id"] = Json::Value(serverID.c_str());
+                            server_settings["authentication"]["public"] = false;
 
-                        // compute positions and lengths for guid, root file and azure token
-                        auto guidPos = m_path.find(L"/", 8) + 1;
-                        auto guidLength = m_path.find(L"/", guidPos) - guidPos;
-                        auto rootTilesetPathPos = guidPos + guidLength + 1;
-                        auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
-                        auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
-                        auto azureTokenLength = m_path.size() - azureTokenPos;
+                            auto guidPos = m_path.find_last_of(L"/") + 1;
 
-                        // guid
-                        auto guid = Utf8String(m_path.substr(guidPos, guidLength));
+                            // guid
+                            guid = Utf8String(m_path.substr(guidPos));
 
-                        // root file
-                        auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+                            config["guid"] = Json::Value(guid.c_str());
+                            auto projectIDStartPos = m_path.find(L"S3MXECPlugin--") + 14;
+                            auto projectIDEndPos = m_path.find_first_of(L"/", projectIDStartPos);
+                            projectID = Utf8String(m_path.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+                            }
+                        else
+                            { // Azure
+                            config_server["type"] = "rds";
+                            auto& server_settings = config_server["settings"];
+                            assert(m_path.substr(0, 8) == L"https://");
+                            auto firstSeparatorPos = m_path.find(L".");
+                            auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                            server_settings["id"] = Json::Value(serverID.c_str());
+                            server_settings["authentication"]["public"] = true;
 
-                        // azure token
-                        auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+                            // compute positions and lengths for guid, root file and azure token
+                            auto guidPos = m_path.find(L"/", 8) + 1;
+                            auto guidLength = m_path.find(L"/", guidPos) - guidPos;
+                            auto rootTilesetPathPos = guidPos + guidLength + 1;
+                            auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
+                            auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
+                            auto azureTokenLength = m_path.size() - azureTokenPos;
 
-                        // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+                            // guid
+                            guid = Utf8String(m_path.substr(guidPos, guidLength));
 
-                        server_settings["url"] = Json::Value(rootTilesetPath.c_str());
-                        config["guid"] = Json::Value(guid.c_str());
+                            // root file
+                            auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+
+                            // azure token
+                            auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+
+                            // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+
+                            server_settings["url"] = Json::Value(rootTilesetPath.c_str());
+                            config["guid"] = Json::Value(guid.c_str());
+
+                            projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
+                            }
+                        m_smRDSProvider = IScalableMeshRDSProvider::Create(projectID, guid);
                         }
                     }
-
-                    }
+                }
                 SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(config);
                 m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
 
@@ -1081,7 +1120,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     stream_settings->m_url = localDataFilesPath.GetNameUtf8().c_str();
                     }
 #ifndef VANCOUVER_API                                       
-                dataStore = new SMStreamingStore<Extent3dType>(stream_settings);
+                dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
 #else
                 dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
 #endif
@@ -1798,6 +1837,12 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTextured()
 template <class POINT> bool ScalableMesh<POINT>::_IsCesium3DTiles()
     {
     return m_isCesium3DTiles;
+    }
+
+template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextShareLink()
+    {
+    if (!m_smRDSProvider.IsValid()) return Utf8String();
+    return m_smRDSProvider->GetRDSURLAddress();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider)

@@ -131,6 +131,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual bool          _IsCesium3DTiles() override{ return false; }
 
+        virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
+
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
