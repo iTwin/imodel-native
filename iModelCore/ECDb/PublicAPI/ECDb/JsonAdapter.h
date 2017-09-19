@@ -56,7 +56,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL select clause is what exclusively determines what property name value pairs
         //! the JSON will contain.
-        //! The ECSQL system properties are converted to the respective JSON wire format system members:
+        //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
         //! ------ | ------------| ---------------------
         //! %ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
@@ -125,7 +125,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
     };
 
 //=================================================================================
-//! Reads ECInstances in the JSON wire format.
+//! Reads ECInstances as JSON in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
 //! @remarks This is mainly a convenience wrapper over @ref JsonECSqlSelectAdapter
 //! using an ECSQL that selects all properties of the ECClass plus ECInstanceId and ECClassId.
 //! @ingroup ECDbGroup
@@ -171,7 +171,7 @@ struct JsonReader final : NonCopyableClass
 
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Wire Format".
+//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonInserter final : NonCopyableClass
@@ -217,7 +217,7 @@ struct JsonInserter final : NonCopyableClass
 
 //=======================================================================================
 //! Update EC content in the ECDb file through JSON values
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Wire Format".
+//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
