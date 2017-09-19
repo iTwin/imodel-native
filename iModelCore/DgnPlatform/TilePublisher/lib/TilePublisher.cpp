@@ -86,20 +86,25 @@ private:
 
     static constexpr uint32_t InvalidIndex = 0xffffffff;
 
-    // An entity label designated by an EC property can be displayed without
-    // property server as tool tip.
-    struct LabelInfo
-        {
-
+    struct LabelInfo 
+        {   
         uint32_t    m_index;
         Utf8String  m_label; 
 
         LabelInfo() { }
         LabelInfo(uint32_t index, Utf8StringCR label) : m_index(index), m_label(label) {}
         };
+    struct ScheduleInfo
+        {
+        uint32_t    m_index;
+        uint32_t    m_entry;
+
+        ScheduleInfo() { }
+        ScheduleInfo(uint32_t index, uint32_t entry) : m_index(index), m_entry(entry) { }
+        };
+
+    typedef bmap<uint16_t, ScheduleInfo> T_ScheduleInfoMap;
                             
-
-
 
     enum ClassIndex
         {
@@ -132,12 +137,12 @@ private:
     bmap<DgnSubCategoryId, uint32_t>        m_subcats;
     bmap<DgnCategoryId, uint32_t>           m_cats;
     bmap<DgnElementId, LabelInfo>           m_labels;
+    bvector<T_ScheduleInfoMap>              m_schedules;
     DgnCategoryId                           m_uncategorized;
     bvector<uint32_t>                       m_colors;
     bmap<DgnElementId, uint32_t>            m_colorMap;
     bool                                    m_is3d;
     bool                                    m_isClassifier;
-    PublisherContext::T_ScheduleEntryMaps*  m_scheduleEntryMaps;
 
     template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
         {
@@ -187,8 +192,8 @@ private:
     void InitUncategorizedCategory();
     bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
 public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* colors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleEntryMaps = nullptr)
-        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier), m_scheduleEntryMaps(scheduleEntryMaps)
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* colors = nullptr, PublisherContext::T_ScheduleEntryMaps* schedules = nullptr)
+        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier)
         {
         InitUncategorizedCategory();
         if (nullptr != labelProperty)
@@ -196,6 +201,9 @@ public:
 
         if (nullptr != colors)
             AddColors(*colors);
+
+        if (nullptr != schedules)
+            AddSchedules(*schedules);
 
         Build();
         }
@@ -241,6 +249,32 @@ void     AddLabels(Utf8CP labelProperty)
         if (element.IsValid() &&
             DgnDbStatus::Success == element->GetPropertyValue(value, labelProperty))
             m_labels[featureAttribute.first.GetElementId()] = LabelInfo(m_labels.size(), value.GetUtf8CP());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void     AddSchedules(PublisherContext::T_ScheduleEntryMaps& scheduleEntryMaps)
+    {
+    for (auto& scheduleEntryMap : scheduleEntryMaps)
+        {
+        T_ScheduleInfoMap           scheduleMap;
+        bmap<uint32_t, uint32_t>    usedEntries;
+
+        for (auto& featureAttribute : m_attrs)
+            {
+            auto    found = scheduleEntryMap.find(featureAttribute.first.GetElementId());
+
+            if (found != scheduleEntryMap.end())
+                {
+                auto    scheduleEntry = found->second;
+                auto    insertPair = usedEntries.Insert(scheduleEntry, usedEntries.size());
+
+                scheduleMap[featureAttribute.second] = ScheduleInfo(insertPair.first->second, scheduleEntry);
+                }
+            }
+        m_schedules.push_back(std::move(scheduleMap));
         }
     }
 
@@ -423,32 +457,29 @@ void BatchTableBuilder::MapSymbology(uint32_t offset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchTableBuilder::MapSchedules(uint32_t offset)
     {
-    if (nullptr != m_scheduleEntryMaps)
+    int     mapIndex = 0;
+
+    for (auto& scheduleMap : m_schedules)
         {
-        int     mapIndex = 0;
+        int                 classIndex = kClass_COUNT + mapIndex;
+        Utf8PrintfString    instanceName("Schedule%d", mapIndex++);
 
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
+        Json::Value &schedules = m_json["classes"][classIndex],
+                    &instances = (schedules["instances"] = Json::objectValue),
+                    &scheduleIndex = (instances[instanceName.c_str()] = Json::arrayValue),
+                    &classIds = m_json["classIds"],
+                    &parentCounts = m_json["parentCounts"];
+
+        schedules["length"] = scheduleMap.size();
+        for (auto const& kvp : scheduleMap)
             {
-            int                 classIndex = kClass_COUNT + mapIndex;
-            Utf8PrintfString    instanceName("Schedule%d", mapIndex++);
+            auto const&       scheduleInfo = kvp.second;
 
-            Json::Value &schedules = m_json["classes"][classIndex],
-                        &instances = (schedules["instances"] = Json::objectValue),
-                        &scheduleIndex = (instances[instanceName.c_str()] = Json::arrayValue),
-                        &classIds = m_json["classIds"],
-                        &parentCounts = m_json["parentCounts"];
-
-            int         index = 0;
-            schedules["length"] = scheduleEntryMap.size();
-            for (auto const& kvp : scheduleEntryMap)
-                {
-                classIds[offset + index] = classIndex;
-                parentCounts[offset + index] = 0;
-                scheduleIndex[index] = index;
-                index++;
-                }
-            offset += scheduleEntryMap.size();
+            classIds[offset + scheduleInfo.m_index] = classIndex;
+            parentCounts[offset + scheduleInfo.m_index] = 0;
+            scheduleIndex[scheduleInfo.m_index] = scheduleInfo.m_entry;
             }
+        offset += scheduleMap.size();
         }
     }
 
@@ -515,9 +546,8 @@ void BatchTableBuilder::MapParents()
     uint32_t scheduleOffset = colorsOffset + static_cast<uint32_t>(m_colorMap.size());
     uint32_t totalInstances = colorsOffset;
 
-    if (nullptr != m_scheduleEntryMaps)
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-            totalInstances += scheduleEntryMap.size();
+    for (auto& scheduleMap : m_schedules)
+            totalInstances += scheduleMap.size();
 
     m_json["instancesLength"] = totalInstances;
 
@@ -546,18 +576,15 @@ void BatchTableBuilder::MapParents()
         if (InvalidIndex != colorIndex)
             parentIds[index++] = colorsOffset + colorIndex;
 
-        if (nullptr != m_scheduleEntryMaps)
+        int32_t thisScheduleOffset = scheduleOffset;
+        for (auto& scheduleMap : m_schedules)
             {
-            int32_t thisScheduleOffset = scheduleOffset;
-            for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-                {
-                auto const& found = scheduleEntryMap.find(attr.GetElementId());
-                if (found != scheduleEntryMap.end())
-                    parentIds[index++] = thisScheduleOffset + found->second;
+            auto const& found = scheduleMap.find(kvp.first);
+            if (found != scheduleMap.end())
+                parentIds[index++] = thisScheduleOffset + found->second.m_index;
 
-                thisScheduleOffset += scheduleEntryMap.size();
-                }
-            }
+            thisScheduleOffset += scheduleMap.size();
+            }                                     
         }
 
     // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
@@ -597,14 +624,11 @@ void BatchTableBuilder::MapFeatures()
         if(InvalidIndex != GetColorIndex(attr.GetElementId()))
             parentCount++;
 
-        if (nullptr != m_scheduleEntryMaps)
+        for (auto& scheduleMap : m_schedules)
             {
-            for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-                {
-                auto const& found = scheduleEntryMap.find(attr.GetElementId());
-                if (found != scheduleEntryMap.end())
-                    parentCount++;
-                }
+            auto const& found = scheduleMap.find(kvp.second);
+            if (found != scheduleMap.end())
+                parentCount++;
             }
 
         parentCounts[index] = parentCount;
@@ -632,15 +656,12 @@ void BatchTableBuilder::DefineClasses()
         auto& cls = (classes[i] = Json::objectValue);
         cls["name"] = s_classNames[i];
         }
-    if (nullptr != m_scheduleEntryMaps)
+    int     index = 0;
+    for (auto& scheduleMap : m_schedules)
         {
-        int     index = 0;
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-            {
-            Json::Value     cls = Json::objectValue;
-            cls["name"] = Utf8PrintfString("Schedule%d", index++).c_str();
-            classes.append(cls);
-            }
+        Json::Value     cls = Json::objectValue;
+        cls["name"] = Utf8PrintfString("Schedule%d", index++).c_str();
+        classes.append(cls);
         }
     }
 

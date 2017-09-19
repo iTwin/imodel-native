@@ -88,15 +88,15 @@ public:
             {
             Json::Value     value = Json::objectValue;
 
-            value["start"] = m_start;
-            value["delta"] = (double) (m_end - m_start) / m_time;
+            value["start"] = m_start/255.0;
+            value["delta"] = ((double) m_end - (double) m_start) / 255.0 * m_time;
 
             return value;
             }
         };
 
     bool    GetShowBefore() const { return m_flags.m_showBefore; }
-    bool    GetShowAfter() const { return m_flags.m_showBefore; }
+    bool    GetShowAfter() const { return m_flags.m_showAfter; }
 
     void    SetActiveColor(ColorDefCR color) { m_activeColor.SetColorNoAlpha(color); m_flags.m_activeColor = true; }
     void    SetBeforeColor(ColorDefCR color) { m_beforeColor.SetColorNoAlpha(color); m_flags.m_beforeColor = true; }
@@ -153,13 +153,13 @@ ScheduleAppearance(ElementAppearanceProfileId appearanceId, DgnDbCR markupDb)
         SetAfterColor(color);
 
     if (displaySettings.GetActiveTransparency(alpha))
-        SetActiveAlpha(alpha);
+        SetActiveAlpha(255 - alpha);
 
     if (displaySettings.GetBeforeTransparency(alpha))
-        SetBeforeAlpha(alpha);
+        SetBeforeAlpha(255-alpha);
 
     if (displaySettings.GetAfterTransparency(alpha))
-        SetAfterAlpha(alpha);
+        SetAfterAlpha(255-alpha);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,23 +260,29 @@ void    AppendJsonEntry(Json::Value& jsonEntries, State& state, double time, boo
             if (nullptr != color)
                 {
 
-                jsonColor.append(color->GetRed());
-                jsonColor.append(color->GetGreen());
-                jsonColor.append(color->GetBlue());
+                jsonColor.append(color->GetRed()/255.0);
+                jsonColor.append(color->GetGreen()/255.0);
+                jsonColor.append(color->GetBlue()/255.0);
                 jsonEntry["color"] = jsonColor;
-                state.m_color = *color;
+                state.m_color.SetColorNoAlpha(*color);
                 }
             else
                 {
-                jsonColor.append(255);
-                jsonColor.append(255);
-                jsonColor.append(255);
+                jsonColor.append(1.0);
+                jsonColor.append(1.0);
+                jsonColor.append(1.0);
                 }
 
             if (nullptr != alpha)
-                jsonColor.append(*alpha);
+                {
+                state.m_color.SetAlpha(*alpha);
+                jsonColor.append(*alpha/255.0);
+                }
             else
-                jsonColor.append(255);
+                {
+                state.m_color.SetAlpha(255);
+                jsonColor.append(1.0);
+                }
 
             if (nullptr != fade)
                 jsonEntry["fade"] = fade->GetJson();
@@ -453,8 +459,10 @@ void  PublisherContext::ExtractSchedules()
     if (!PlanningDomain::GetDomain().IsSchemaImported(*markupDb))
         return;
 
-    DateType        scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
-    int             scheduleId = 0;                                                                                                                                                                                    
+    DateType                            scheduleTypes[] = { DateType::Planned, DateType::Actual, DateType::Early, DateType::Late };
+    int                                 scheduleId = 0;  
+    bmap<T_ScheduleEntryMap, uint32_t>  entryMaps;
+                                                                                                                                                                                      
 
     for (auto& scheduleType : scheduleTypes)
         {
@@ -478,9 +486,9 @@ void  PublisherContext::ExtractSchedules()
                     if (!extractTimeSpan (start, end, *timeSpan, scheduleType))
                         continue;
 
-                    Schedule            rawSchedule (planEntry, *plan, baseline, *markupDb, GetDgnDb(), scheduleType);
-                    T_ScheduleEntryMap  entryMap;
-                    Json::Value         entriesJson = rawSchedule.GetJson(entryMap, start, end, *markupDb);
+                    Schedule             rawSchedule (planEntry, *plan, baseline, *markupDb, GetDgnDb(), scheduleType);
+                    T_ScheduleEntryMap   entryMap;
+                    Json::Value          entriesJson = rawSchedule.GetJson(entryMap, start, end, *markupDb);
 
                     if (entriesJson.size() > 0)
                         {
@@ -491,9 +499,13 @@ void  PublisherContext::ExtractSchedules()
                         scheduleJson["start"] = start;
                         scheduleJson["end"]   = end;
                         scheduleJson["elements"] = std::move(entriesJson);
-                        scheduleJson["index"] = (int) m_scheduleEntryMaps.size();
+
+                        auto insertPair = entryMaps.Insert(entryMap, entryMaps.size());
+                        if (insertPair.second)
+                            m_scheduleEntryMaps.push_back(entryMap);
+                            
+                        scheduleJson["index"] = insertPair.first->second;
                         m_schedulesJson.append(scheduleJson);
-                        m_scheduleEntryMaps.push_back(std::move(entryMap));
                         }
                     }
                 }
