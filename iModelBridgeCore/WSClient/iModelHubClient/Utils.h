@@ -163,7 +163,7 @@ namespace Db
         {
         static Utf8CP iModelURL = "iModelHubServiceURL";
         static Utf8CP iModelId = "iModelId";
-        static Utf8CP ParentChangeSetId = "ParentRevisionId";
+        static Utf8CP ParentChangeSetId = "ParentChangeSetId";
         }
     namespace Properties
         {
