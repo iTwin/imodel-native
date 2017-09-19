@@ -349,9 +349,9 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::MemoryPoolAll
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("Name", rapidjson::StringRef(GetName().c_str()), json.GetAllocator());
-    json.AddMember("DisplayLabel", rapidjson::StringRef(GetLabel().c_str()), json.GetAllocator());
-    json.AddMember("Description", rapidjson::StringRef(GetDescription().c_str()), json.GetAllocator());
+    json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Description", rapidjson::Value(GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("Expand", ShouldExpand(), json.GetAllocator());
     json.AddMember("Priority", GetPriority(), json.GetAllocator());
     return json;
