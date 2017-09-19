@@ -1130,7 +1130,7 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
         it = begin;
         step = count >> 1;
         it += step;
-        int cmp = strcmp (it->first, accessString);
+        int cmp = BeStringUtilities::StricmpAscii(it->first, accessString);
         if (cmp == 0)           // easy out, avoiding redundant wcscmp() below
             {
             if (forCreate)
@@ -1151,11 +1151,11 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
     if (forCreate)
         {
         if (it != end)
-            DEBUG_EXPECT (0 != strcmp (accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
+            DEBUG_EXPECT (0 != BeStringUtilities::StricmpAscii(accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
         return it;
         }
     else
-        return (it != end && 0 == strcmp (accessString, it->first)) ? it : end;
+        return (it != end && 0 == BeStringUtilities::StricmpAscii(accessString, it->first)) ? it : end;
     }
 
 

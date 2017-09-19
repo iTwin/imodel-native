@@ -3754,12 +3754,22 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE IECClassLocater
 {
 protected:
-    virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
+    virtual ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) = 0;
+    virtual ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) 
+        { 
+        ECClassCP ecClass = LocateClass(schemaName, className);
+        if (ecClass == nullptr || !ecClass->HasId())
+            return ECClassId(); 
+
+        return ecClass->GetId();
+        }
+
 public:
     virtual ~IECClassLocater() {}
 
-    ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className) { return _LocateClass (schemaName, className); }
-};
+    ECClassCP LocateClass(Utf8CP schemaName, Utf8CP className) { return _LocateClass (schemaName, className); }
+    ECClassId LocateClassId(Utf8CP schemaName, Utf8CP className) { return _LocateClassId(schemaName, className); }
+    };
 
 typedef IECClassLocater& IECClassLocaterR;
 

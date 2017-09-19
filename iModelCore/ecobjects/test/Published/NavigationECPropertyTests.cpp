@@ -12,7 +12,15 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+struct InSchemaClassLocater final : ECN::IECClassLocater
+    {
+    private:
+        ECSchemaCR m_schema;
 
+        ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return m_schema.GetClassCP(className); }
+    public:
+        explicit InSchemaClassLocater(ECSchemaCR schema) : m_schema(schema) {}
+    };
 
 struct NavigationECPropertyTests : ECTestFixture 
 {
@@ -823,7 +831,7 @@ void NavigationPropertyValueTests::VerifyNavPropLongValue(IECInstanceR instance,
     ASSERT_EQ(ECObjectsStatus::Success, instance.GetValueUsingAccessor(myTarget, accessor)) << "Failed to get ECValue for '" << propertyAccessor << "' Navigation Property";
     ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
     EXPECT_TRUE(myTarget.IsNavigation()) << "Expected Navigation Property '" << propertyAccessor << "' to be ValueKind Navigation but it was not.";
-    EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetId<BeInt64Id>()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
+    EXPECT_EQ(expectedValue.GetValue(), myTarget.GetNavigationInfo().GetId<BeInt64Id>().GetValue()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
     if (!expectedRelClassId.IsValid())
         {
@@ -957,7 +965,8 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr 
     {
     IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(sourceDeserialized.IsValid());
-    BentleyStatus readStatus = ECJsonUtilities::ECInstanceFromJson(*sourceDeserialized, instanceJson);
+    InSchemaClassLocater classLocater(*schema);
+    BentleyStatus readStatus = JsonECInstanceConverter::JsonToECInstance(*sourceDeserialized, instanceJson, classLocater);
     ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
     VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
@@ -1232,7 +1241,7 @@ TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
     ASSERT_TRUE(jsonValue.isObject());
     ASSERT_TRUE(jsonValue["Source"].isObject());
     ASSERT_TRUE(jsonValue["Source"]["MyTarget"].isObject());
-    EXPECT_STREQ(navId.ToString().c_str(), jsonValue["Source"]["MyTarget"]["id"].asString().c_str());
+    EXPECT_STREQ(navId.ToHexStr().c_str(), jsonValue["Source"]["MyTarget"][ECJsonUtilities::json_navId()].asString().c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

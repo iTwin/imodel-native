@@ -28,6 +28,16 @@ struct  Struct2
     uint32_t        arraySize;
     };
 
+struct InSchemaClassLocater final : ECN::IECClassLocater
+    {
+    private:
+        ECSchemaCR m_schema;
+
+        ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return m_schema.GetClassCP(className); }
+    public:
+        explicit InSchemaClassLocater(ECSchemaCR schema) : m_schema(schema) {}
+    };
+
 struct InstanceTests;
 struct CompressInstanceTests;
 struct PropertyTests;
@@ -974,7 +984,8 @@ TEST_F(InstanceTests, TestJsonAndXmlInstanceCompatibility)
     BeFileName instanceJson(GetTestDataPath(L"BasicTest_Instance1.json").c_str());
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(instance, instanceJson));
 
-    EXPECT_EQ(BentleyStatus::SUCCESS, ECJsonUtilities::ECInstanceFromJson(*testInstanceJson.get(), instance["Company"]));
+    InSchemaClassLocater classLocater(*schema);
+    EXPECT_EQ(BentleyStatus::SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstanceJson.get(), instance["Company"], classLocater));
 
     EXPECT_TRUE(ECTestUtility::CompareECInstances(*testInstanceXml, *testInstanceJson));
     }
