@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //=======================================================================================
-//! Adapts the rows returned by an ECSqlStatement to the JSON format (@see @ref BentleyApi::ECN::ECJsonSystemNames).
+//! Adapts the rows returned by an ECSqlStatement to the JSON format (see @ref BentleyApi::ECN::ECJsonSystemNames).
 //! 
 //! @see ECSqlStatement, BentleyApi::ECN::ECJsonSystemNames
 //! @ingroup ECDbGroup
