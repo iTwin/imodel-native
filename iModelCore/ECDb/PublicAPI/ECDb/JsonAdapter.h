@@ -65,11 +65,11 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
         //! TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
         //! TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
-        //! {%Navigation Property}.Id | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
-        //! {%Navigation Property}.RelECClassId | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
-        //! {Point2d/Point3d Property}.X | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
-        //! {Point2d/Point3d Property}.Y | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
-        //! {%Point3d Property}.Z | {point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //! <%Navigation Property>.Id | <navigation Property>.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! <%Navigation Property>.RelECClassId | <navigation Property>.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! <Point2d/Point3d Property>.X | <point2d/point3d Property>.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! <Point2d/Point3d Property>.Y | <point2d/point3d Property>.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! <%Point3d Property>.Z | <point3d Property>.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
         //! ####Examples
         //! For the ECSQL <c>SELECT ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
