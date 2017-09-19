@@ -161,7 +161,7 @@ ECN::IECInstancePtr Reader::_CreateInstance(Json::Value& object)
         return nullptr;
         }
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ptr, object, m_importer->GetDgnDb()->GetClassLocater(), &m_importer->GetRemapper()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ptr, object, m_importer->GetDgnDb()->GetClassLocater(), &m_importer->GetRemapper()))
         {
         GetLogger().errorv("Failed to create ECInstanceFromJson\n");
         return nullptr;
