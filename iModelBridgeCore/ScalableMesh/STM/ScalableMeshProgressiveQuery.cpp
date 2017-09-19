@@ -153,6 +153,7 @@ IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Crea
     }
 
 static bool s_keepSomeInvalidate = true; 
+static bool s_preloadInQueryThread = true;
                                             
 template <class POINT, class EXTENT> class NodeQueryProcessor : public RefCountedBase, public IStopQuery
     {
@@ -398,6 +399,13 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
 //NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
 static bool s_delayJoinThread = true;
 
+void ScalableMeshProgressiveQueryEngine::CancelPreload(ScalableMesh<DPoint3d>* smP)
+    {
+    ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());
+    
+    dataStore->CancelPreloadData();
+    }
+
 void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
     {
     //Currently the preload is just use for streaming texture source.
@@ -414,7 +422,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP
     
     ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());    
 
-    if (cancelLastPreload)
+    if (cancelLastPreload)        
         dataStore->CancelPreloadData();
 
     dataStore->PreloadData(tileRanges);
@@ -571,6 +579,16 @@ private:
             //NEEDS_WORK_MST : Maybe we should prioritize the first processing query found
             if (processingQueryPtr != 0 && m_run)
                 {
+                if (s_preloadInQueryThread)
+                    {
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == IndexTexture::Streaming);// && processingQueryPtr->m_loadTexture;
+
+                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0 && doPreLoad)
+                        {
+                        ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), processingQueryPtr->m_toLoadNodes[threadId], false);
+                        }
+                    }
+
                 HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
                 //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
@@ -625,7 +643,7 @@ private:
 
                     continue;
                     }
-                
+                                
                 //Load unloaded node
                 //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
                 if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
@@ -1517,11 +1535,19 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
     //PRE        
-    if (toLoadNodes.size() > 0 && (newQuery).m_loadTexture)
-        {         
-        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
+    if (!s_preloadInQueryThread)
+        { 
+        if (toLoadNodes.size() > 0 && (newQuery).m_loadTexture)
+            {         
+            ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
 
-        ScalableMeshProgressiveQueryEngine::PreloadData(smP, toLoadNodes, true);
+            ScalableMeshProgressiveQueryEngine::PreloadData(smP, toLoadNodes, true);
+            }
+        }
+    else
+        {
+        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
+        ScalableMeshProgressiveQueryEngine::CancelPreload(smP);
         }
     //PRE
 
