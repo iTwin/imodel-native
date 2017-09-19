@@ -6,7 +6,8 @@
     <!-- // WebServicesClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WebServicesClient">
+    <Part Name="WebServicesClient">    
+        <SubPart PartName="BentleyDesktopClient" />
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="WebServicesClient-Library" />
         <SubPart PartName="WebServicesClient-Bindings" />
@@ -104,6 +105,10 @@
                 ProductDirectoryName="ECSchemas"
                 ProductSubDirectory="ECSchemas/WSClient/Cache" />
         </Bindings>
+    </Part>
+
+    <Part Name="BentleyDesktopClient" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64">
+        <SdkSource>Vancouver-BentleyDesktopClient</SdkSource>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->

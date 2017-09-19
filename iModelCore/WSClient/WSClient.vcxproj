@@ -145,6 +145,7 @@
     <ClCompile Include="Configuration\BuddiError.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
+    <ClCompile Include="Connect\ConnectionClientInterface.cpp" />
     <ClCompile Include="Connect\ImsClient.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="Cache\CacheNavigationTask.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Connect\ConnectionClientInterface.h" />
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
@@ -302,6 +304,7 @@
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />

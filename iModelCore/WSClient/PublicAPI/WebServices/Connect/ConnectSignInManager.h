@@ -15,6 +15,7 @@
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Connect/IConnectionClientInterface.h>
 #include <MobileDgn/Utils/Http/AuthenticationHandler.h>
 #include <MobileDgn/Utils/SecureStore.h>
 
@@ -24,6 +25,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 typedef AsyncResult<void, AsyncError> SignInResult;
+typedef AsyncResult<SamlTokenPtr, AsyncError> ConnectionClientTokenResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -70,6 +72,17 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             IConnectTokenProviderPtr tokenProvider;
             };
 
+        class ConnectionClientListener
+            {
+            ConnectSignInManagerPtr m_manager;
+            static ConnectionClientListener* s_instance;
+
+            public:
+                ConnectionClientListener(ConnectSignInManagerPtr manager);
+                static void callback(int eventId);
+                void ConnectionClientCallback(int eventId);
+            };
+
     private:
         mutable BeCriticalSection m_cs;
 
@@ -88,9 +101,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_userChangeHandler;
         std::function<void()> m_userSignInHandler;
         std::function<void()> m_userSignOutHandler;
+        std::function<void()> m_connectionClientSignInHandler;
+
+        IConnectionClientInterfacePtr m_connectionClient;
+        std::shared_ptr<ConnectionClientListener> m_connectionClientListener;
 
     private:
-        ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore);
+        ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient);
 
         void CheckUserChange();
         void StoreSignedInUser();
@@ -115,12 +132,14 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! @param httpHandler - custom HttpHandler to route requests trough
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
         //! @param secureStore - custom encryption provider
+        //! @param connectionClient - Connection Client API
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             ClientInfoPtr clientInfo,
             IHttpHandlerPtr httpHandler = nullptr,
             ILocalState* localState = nullptr,
-            ISecureStorePtr secureStore = nullptr
+            ISecureStorePtr secureStore = nullptr,
+            IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
         //! Can be created after MobileDgn is initialized.
@@ -128,11 +147,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! @param client - custom ImsClient for authenticating user
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
         //! @param secureStore - custom encryption provider
+        //! @param connectionClient - Connection Client API
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             IImsClientPtr client,
             ILocalState* localState = nullptr,
-            ISecureStorePtr secureStore = nullptr
+            ISecureStorePtr secureStore = nullptr,
+            IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
@@ -141,7 +162,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT void Configure(Configuration config);
 
         //! Sign in using identity token. 
-        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
+        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token, Utf8StringCR rpUri = nullptr);
         //! Sign in using user credentials. Credentials will be used for future token retrieval.
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
         //! Store sign-in information on disk so user would stay signed-in. Call after successful sign-in.
@@ -170,6 +191,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will be called after user sign-out
         WSCLIENT_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
 
+        //! Will be called after user signs in to Connection Client
+        WSCLIENT_EXPORT void SetConnectionClientSignInHandler(std::function<void()> handler);
+
         //! Get authentication handler for specific server.
         //! Will automatically authenticate all HttpRequests that is used with. 
         //! Will always represent user that is signed-in when authenticating.
@@ -186,6 +210,17 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         //! Check if token expired and renew/handle expiration
         WSCLIENT_EXPORT void CheckAndUpdateToken();
+
+        //! Check if Connection Client is installed
+        //! Should be called first to make sure the API will work correctly
+        WSCLIENT_EXPORT bool IsConnectionClientInstalled();
+
+        //! Uses Connection Client API to get a token to sign in with
+        WSCLIENT_EXPORT AsyncTaskPtr<ConnectionClientTokenResult> GetConnectionClientToken(Utf8StringCR rpUri);
+
+        //! Uses Connection Client API to listen to events fired by Connection Client
+        WSCLIENT_EXPORT void StartConnectionClientListener();
+
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
