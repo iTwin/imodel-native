@@ -1368,14 +1368,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
     m_basePath = clipFileBase;
-    bool isFilenameFromRDS = smFilename.ContainsI(L"realitydataservices") && smFilename.ContainsI(L"S3MXECPlugin");
-    Utf8String smName (smFilename);
-    if (isFilenameFromRDS)
-        {
-        auto azureLink = ScalableMeshLib::GetHost().GetAzureLink(smFilename);
-        if (!azureLink.empty()) smName = azureLink;
-        }
-    m_smPtr = IScalableMesh::GetFor(WString(smName.c_str(), BentleyCharEncoding::Utf8).GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
+    m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()), false, true);
 
     if (!m_smPtr.IsValid())
         return;    
@@ -1499,10 +1492,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     assert(invertResult);
     
     auto fileId = smFilename;
-    if (m_smPtr->IsCesium3DTiles() && !isFilenameFromRDS)
+    if (m_smPtr->IsCesium3DTiles() && !(smFilename.ContainsI(L"realitydataservices") && smFilename.ContainsI(L"S3MXECPlugin")))
         {
-        // The mesh likely comes from ProjectWiseContextShare
-        auto pwcsLink = BeFileName(ScalableMeshLib::GetHost().GetProjectWiseContextShareLink(smFilename).c_str());
+        // The mesh likely comes from ProjectWiseContextShare, if it does then save that instead
+        auto pwcsLink = BeFileName(m_smPtr->GetProjectWiseContextShareLink().c_str());
         if (!pwcsLink.empty()) fileId = pwcsLink;
         }
 
