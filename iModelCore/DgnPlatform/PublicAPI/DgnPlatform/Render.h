@@ -2363,8 +2363,11 @@ struct DecorationList : RefCounted<NonCopyableClass>
 private:
     List    m_list;
 public:
+    typedef List::iterator iterator;
     typedef List::const_iterator const_iterator;
 
+    iterator begin() { return m_list.begin(); }
+    iterator end() { return m_list.end(); }
     const_iterator begin() const { return m_list.begin(); }
     const_iterator end() const { return m_list.end(); }
     size_t size() const { return m_list.size(); }
