@@ -19,7 +19,7 @@ DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonVal
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
@@ -32,7 +32,7 @@ DbResult JsonInserter::Insert(JsonValueR jsonValue) const
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     ECInstanceKey newInstanceKey;
@@ -51,7 +51,7 @@ DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR js
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     BeAssert(ecInstance.IsValid());
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
