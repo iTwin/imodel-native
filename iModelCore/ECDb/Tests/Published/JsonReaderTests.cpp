@@ -124,6 +124,126 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                09/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_ReservedWordsCollisions.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                            <ECEntityClass typeName="Foo" >
+                                                                                <ECProperty propertyName="className" typeName="string" />
+                                                                            </ECEntityClass>
+                                                                            <ECRelationshipClass typeName="Rel" strength="referencing" modifier="None">
+                                                                                <ECProperty propertyName="sourceClassName" typeName="string" />
+                                                                                <ECProperty propertyName="targetClassName" typeName="string" />
+                                                                                <Source multiplicity="(0..*)" roleLabel="has" polymorphic="False"><Class class="Foo"/></Source>
+                                                                                <Target multiplicity="(0..*)" roleLabel="referenced by" polymorphic="False"><Class class="Foo"/></Target>
+                                                                            </ECRelationshipClass>
+                                                                        </ECSchema>)xml")));
+    ECInstanceKey fooKey, relKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(className) VALUES('Foo class')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(relKey, Utf8PrintfString("INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId, sourceClassName, targetClassName) VALUES(%s,%s,'source','target')",
+                                                                                      fooKey.GetInstanceId().ToString().c_str(), fooKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ECSqlStatement stmt;
+    JsonECSqlSelectAdapter adapter(stmt);
+    Json::Value actualJson;
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, className FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(2, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember((Utf8String(ECJsonUtilities::json_className()) + "_1").c_str())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("Foo class", actualJson[(Utf8String(ECJsonUtilities::json_className()) + "_1")].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    //now using aliases to avoid collision
+    actualJson.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId AS SystemClassName, className FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(2, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("systemClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), actualJson["systemClassName"].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember("className")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("Foo class", actualJson["className"].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    actualJson.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, className AS UserClassName FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(2, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember("userClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("Foo class", actualJson["userClassName"].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    actualJson.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId, sourceClassName, TargetECClassId, targetClassName FROM ts.Rel"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(4, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_sourceClassName())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_sourceClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember((Utf8String(ECJsonUtilities::json_sourceClassName()) + "_1").c_str())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("source", actualJson[(Utf8String(ECJsonUtilities::json_sourceClassName()) + "_1").c_str()].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_targetClassName())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_targetClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember((Utf8String(ECJsonUtilities::json_targetClassName()) + "_1").c_str())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("target", actualJson[(Utf8String(ECJsonUtilities::json_targetClassName()) + "_1").c_str()].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    //now using aliases to avoid collision
+    actualJson.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId SystemSourceClassName, sourceClassName, TargetECClassId SystemTargetClassName, targetClassName FROM ts.Rel"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(4, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("systemSourceClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), actualJson["systemSourceClassName"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("sourceClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("source", actualJson["sourceClassName"].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember("systemTargetClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), actualJson["systemTargetClassName"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("targetClassName")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("target", actualJson["targetClassName"].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    actualJson.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId, sourceClassName UserSourceClass, TargetECClassId, targetClassName UserTargetClass FROM ts.Rel"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(4, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_sourceClassName())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_sourceClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("userSourceClass")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("source", actualJson["userSourceClass"].asCString()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_targetClassName())) << actualJson.ToString().c_str();
+    ASSERT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_targetClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson.isMember("userTargetClass")) << actualJson.ToString().c_str();
+    ASSERT_STREQ("target", actualJson["userTargetClass"].asCString()) << actualJson.ToString().c_str();
+    stmt.Finalize();
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
