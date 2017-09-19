@@ -1115,7 +1115,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
         {
-        m_unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
         if (nullptr == m_unit)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
         else
@@ -1177,7 +1177,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
     else
         m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.GetText());
+    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unit.GetText());
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
@@ -1211,14 +1211,14 @@ bool FormatUnitSet::IsComparable(BEU::QuantityCR qty)
 
 bool FormatUnitSet::IsUnitComparable(Utf8CP unitName)
     {
-     BEU::UnitCP unit =  BEU::UnitRegistry::Instance().LookupUnit(unitName);
+     BEU::UnitCP unit =  BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
      return Utils::AreUnitsComparable(unit, m_unit);
     }
 
 
 BEU::UnitCP FormatUnitSet::ResetUnit()
     {
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
     return m_unit;
     }
 

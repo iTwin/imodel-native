@@ -1050,9 +1050,9 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
-    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
+    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnitCI(fromUOM);
     BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);
-    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnit(toUOM);
+    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnitCI(toUOM);
      // UnitCP fromUnit = qty.GetUnit();
     BEU::PhenomenonCP phTo = toUnit->GetPhenomenon();
     BEU::PhenomenonCP phFrom = fromUnit->GetPhenomenon();

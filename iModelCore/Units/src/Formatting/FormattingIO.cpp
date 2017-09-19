@@ -118,11 +118,11 @@ size_t StdFormatSet::StdInit()
 size_t StdFormatSet::CustomInit()
     {
     m_customSet.clear();
-    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");  // "Default Decimal" "Standard representation of decimal numbers with 6 dig
+    AddCustomFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");  // "Default Decimal" "Standard precision decimal
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
-    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); 
-    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4\", \"SpecName\" : \"Real4\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); ///
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4\", \"SpecName\" : \"Real4\", \"SpecType\" : \"numeric\"}"); 
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2u\", \"SpecName\" : \"Real2U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":3, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3u\", \"SpecName\" : \"Real3U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4u\", \"SpecName\" : \"Real4U\", \"SpecType\" : \"numeric\"}");
@@ -393,7 +393,7 @@ UnitProxy::UnitProxy(Json::Value jval)
             m_unitLabel = val.asString();
         }
     if(!m_unitName.empty())
-         m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+         m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
     }
 
 
@@ -417,7 +417,7 @@ void UnitProxy::LoadJson(Json::Value jval) const
             m_unitLabel = val.asString();
         }
     if (!m_unitName.empty())
-        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
     }
 
 //===================================================
@@ -550,7 +550,7 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     //SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
     if (!input.empty())
         {
-        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnit(input.c_str());
+        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnitCI(input.c_str());
         SetInputUnit(inputUnit);
         }    
     }
@@ -609,6 +609,12 @@ NamedFormatSpec::NamedFormatSpec(Json::Value jval)
         }
     }
 
+
+void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
+    {
+    return;
+    }
+
 //===================================================
 //
 // FormatUnitSet Methods
@@ -656,7 +662,7 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
             m_unitName = val.asString();
-            m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+            m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
             if (nullptr == m_unit)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
             }

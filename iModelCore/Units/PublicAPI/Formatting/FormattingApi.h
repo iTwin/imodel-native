@@ -569,6 +569,7 @@ public:
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Json::Value jval);
+        UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         bool HasName(Utf8CP name) const { return 0 == BeStringUtilities::StricmpAscii(name, m_name.c_str()); }

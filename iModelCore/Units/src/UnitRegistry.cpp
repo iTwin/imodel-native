@@ -432,6 +432,19 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
     return LookupUnitP(name);
     }
 
+UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
+    {
+    size_t len = (nullptr == name) ? 0 : strlen(name);
+    if (len == 0)
+        return nullptr;
+    Utf8P temp = (Utf8P)alloca(len + 2);
+    memset(temp, 0, len + 2);
+    memcpy(temp, name, len);
+    Utf8CP uppName = BeStringUtilities::Strupr(temp);
+    return LookupUnitP(uppName);
+    }
+
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -76,6 +76,7 @@ struct FormattingTestFixture
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
         static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
         static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym);
+        static void RegistryLookupUnitCITest(Utf8CP unitName);
         //static void LoadUnitSynonymsTest();
     };
 

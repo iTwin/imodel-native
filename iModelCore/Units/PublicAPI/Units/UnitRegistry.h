@@ -59,7 +59,6 @@ private:
 
     void AddMapping(Utf8CP oldName, Utf8CP newName);
     bool HasConstant (Utf8CP constantName) const;
-
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
@@ -93,6 +92,7 @@ public:
     UnitCP GetPlatformLengthUnit() { return LookupUnit("M"); }
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
     UNITS_EXPORT Json::Value SynonymsToJson() const;
+    UNITS_EXPORT UnitCP LookupUnitCI(Utf8CP name) const;
     };
 
 END_BENTLEY_UNITS_NAMESPACE

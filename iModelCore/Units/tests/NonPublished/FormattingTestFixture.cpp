@@ -135,7 +135,7 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);
@@ -199,7 +199,7 @@ NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* n
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
     BEU::Quantity q = BEU::Quantity(dval, *unit);
     FormatUnitSet fus = FormatUnitSet(fusDesc);
     LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
@@ -468,7 +468,7 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
     else
         {
         LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
-        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
         BEU::Quantity q1 = qty.ConvertTo(un1);
         if (q1.IsNullQuantity())
             LOG.infov("Invalid alternative Unit: %s", unitName);
@@ -796,6 +796,19 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
                                                                      FormatConstant::BoolText(ident));
     }
 
+void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
+    {
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
+    if (nullptr == unit)
+        {
+        LOG.infov("Unit Name %s is not defined", unitName);
+        return;
+        }
+    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName());
+    EXPECT_TRUE(diff == 0);
+    if(!diff)
+        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName());
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

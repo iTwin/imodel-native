@@ -328,7 +328,7 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
 Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP, Utf8CP uomName)
     {
     Utf8String txt;
-    BEU::UnitCP uom = Utils::IsNameNullOrEmpty(uomName)? nullptr : BEU::UnitRegistry::Instance().LookupUnit(uomName);
+    BEU::UnitCP uom = Utils::IsNameNullOrEmpty(uomName)? nullptr : BEU::UnitRegistry::Instance().LookupUnitCI(uomName);
     CompositeValue cv = DecomposeValue(dval, uom);
     NumericFormatSpec fmtI = NumericFormatSpec(*fmtP);
     fmtI.SetDecimalPrecision(DecimalPrecision::Precision0);  // cloning spec,  but setting precision to 0 for integer parts

@@ -1054,7 +1054,7 @@ UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
     {
     m_unitLabel = nullptr;
     m_unitName = nullptr;
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(name);
     if (nullptr != m_unit)
         {
         m_unitName = Utf8String(name);
@@ -1067,7 +1067,7 @@ UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
 //----------------------------------------------------------------------------------------
 bool UnitProxy::SetName(Utf8CP name)
     {
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(name);
     if (nullptr != m_unit)
         {
         m_unitName = Utf8String(name);
@@ -1095,7 +1095,7 @@ bool UnitProxy::Reset() const
     {
     if (m_unitName.empty())
         return false;
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
     return !(nullptr == m_unit);
     }
 
@@ -1802,7 +1802,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             m_name = Utf8String(buf + 1);
         else
             m_name = Utf8String(buf);
-        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_name.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_name.c_str());
         if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
             {
             BEU::PhenomenonCP ph = (nullptr == refUnit) ? nullptr : refUnit->GetPhenomenon();
@@ -1815,7 +1815,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
                     un = FormatConstant::SpecialAngleSymbol(m_name);
                 }
             if (nullptr != un)
-                m_unit = BEU::UnitRegistry::Instance().LookupUnit(un);
+                m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(un);
             }
         }
     }
@@ -1937,7 +1937,7 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
 
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     {
-    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
     Init(input, start, unit);     
     }
 PUSH_MSVC_IGNORE(6385 6386)
