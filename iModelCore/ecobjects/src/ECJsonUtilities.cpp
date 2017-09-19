@@ -328,7 +328,7 @@ BentleyStatus ECRapidJsonUtilities::IdToJson(RapidJsonValueR json, BeInt64Id id,
 //static
 void ECRapidJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator)
     {
-    Utf8StringCR fullName = ecClass.GetFullName();
+    Utf8String fullName = ECJsonUtilities::FormatClassName(ecClass);
     json.SetString(fullName.c_str(), (rapidjson::SizeType) fullName.size(), allocator);
     }
 
@@ -336,7 +336,7 @@ void ECRapidJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, 
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-ECClassCP ECRapidJsonUtilities::JsonToClass(RapidJsonValueCR json, IECClassLocaterR classLocater)
+ECClassCP ECRapidJsonUtilities::GetClassFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
     {
     if (!json.IsString())
         return nullptr;
@@ -354,7 +354,7 @@ ECClassCP ECRapidJsonUtilities::JsonToClass(RapidJsonValueCR json, IECClassLocat
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECRapidJsonUtilities::JsonToClassId(RapidJsonValueCR json, IECClassLocaterR classLocater)
+ECClassId ECRapidJsonUtilities::GetClassIdFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
     {
     if (!json.IsString())
         return ECClassId();
@@ -1014,7 +1014,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
             else
                 {
                 BeAssert(json[ECJsonSystemNames::Navigation::RelClassName()].IsString());
-                ECClassId relClassId = ECRapidJsonUtilities::JsonToClassId(json[ECJsonSystemNames::Navigation::RelClassName()], classLocater);
+                ECClassId relClassId = ECRapidJsonUtilities::GetClassIdFromClassNameJson(json[ECJsonSystemNames::Navigation::RelClassName()], classLocater);
                 if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
                     return ERROR;
                 }

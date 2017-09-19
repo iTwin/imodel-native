@@ -46,16 +46,16 @@ enum class ECJsonInt64Format
 //!         - "x" : x coordinate of a Point2d/Point3d property value
 //!         - "y" : y coordinate of a Point2d/Point3d property value
 //!         - "z" : z coordinate of a Point3d property value
-//!     - Reserved Id properties (e.g. @ref ECJsonSystemNames::Id "id", @ref ECJsonSystemNames::Navigation::Id,
+//!     - Reserved Id properties (e.g. @ref ECJsonSystemNames::Id "id", ECJsonSystemNames::Navigation::Id,
 //!         @ref ECJsonSystemNames::SourceId "sourceId", @ref ECJsonSystemNames::TargetId "targetId")
-//!        are formatted as <b>hex string</b>.
+//!        are formatted as <b>hexadecimal string</b> (see BentleyApi::BeInt64Id::ToHexStr).
 //!     - Primitive data type formatting:
-//!         - Binary/Blob: Base64 string (see @ref BentleyApi::Base64Utilities )
+//!         - Binary/Blob: Base64 string (see BentleyApi::Base64Utilities )
 //!         - Boolean: true / false
-//!         - DateTime: DateTime ISO string (see @ref BentleyApi::DateTime::ToString )
+//!         - DateTime: DateTime ISO string (see BentleyApi::DateTime::ToString )
 //!         - Double: 3.5
 //!         - Integer: 2, 
-//!         - Long/Int64: Because of JavaScript issues with int64, these format options exist (see @ref BentleyApi::ECN::ECJsonInt64Format):
+//!         - Long/Int64: Because of JavaScript issues with Int64, these format options exist (see BentleyApi::ECN::ECJsonInt64Format):
 //!             - ECJsonInt64Format::AsNumber: as number
 //!             - ECJsonInt64Format::AsDecimalString: as string because of Int64 JavaScript issues
 //!             - ECJsonInt64Format::AsHexadecimalString: as hex string because of Int64 JavaScript issues
@@ -141,12 +141,17 @@ private:
     static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Json::StaticString const& coordinateKey);
 
 public:
- 
+
+    //! Generates the fully qualified name of an ECClass as used in the EC JSON format: {schema name}.{class name}
+    //! @param[in] ecClass ECClass
+    //! @return Fully qualified class name for the EC JSON format
+    static Utf8String FormatClassName(ECClassCR ecClass) { return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str()); }
+
     //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
-    static void ClassNameToJson(Json::Value& json, ECClassCR ecClass) { json = Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str()); }
+    static void ClassNameToJson(Json::Value& json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
 
     //! Looks up an ECClass from a JSON string containing the fully qualified class name
     //! @param[in] json JSON containing the class name
@@ -286,11 +291,49 @@ private:
     static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
 public:
+    //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
+    //! @param[out] json JSON value
+    //! @param[in] ecClass ECClass
+    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
     ECOBJECTS_EXPORT static void ClassToJson(RapidJsonValueR json, ECN::ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator);
-    ECOBJECTS_EXPORT static ECClassCP JsonToClass(RapidJsonValueCR, IECClassLocaterR);
-    ECOBJECTS_EXPORT static ECClassId JsonToClassId(RapidJsonValueCR, IECClassLocaterR);
+    //! Looks up an ECClass from a JSON string containing the fully qualified class name
+    //! @param[in] json JSON containing the class name
+    //! @param[in] locater Class locater to look up the class from the name
+    //! @return Found ECClass or nullptr if class could not be found
+    ECOBJECTS_EXPORT static ECClassCP GetClassFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR locater);
+    //! Looks up an ECClassId from a JSON string containing the fully qualified class name
+    //! @param[in] json JSON containing the class name
+    //! @param[in] locater Class locater to look up the class from the name
+    //! @return Retrieved ECClassId. If not found, an invalid ECClassId is returned
+    ECOBJECTS_EXPORT static ECClassId GetClassIdFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR locater);
 
+    //! Converts a JSON to an Int64 value.
+    //! @remarks The JSON must contain the Int64 value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
+    //! @param[out] val the resulting Int64 value
+    //! @param[in] json the source RapidJsonValueCR
+    //! @return SUCCESS OR ERROR
+    ECOBJECTS_EXPORT static BentleyStatus JsonToInt64(int64_t& val, RapidJsonValueCR json);
+
+    //! Converts the specified Int64 value to a RapidJson value
+    //! @param[out] json the resulting string JSON
+    //! @param[in] val the Int64 value
+    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
+    //! @param[in] int64Format Options for how to format the Int64 value
+    ECOBJECTS_EXPORT static void Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::MemoryPoolAllocator<>& allocator, ECJsonInt64Format int64Format = ECJsonInt64Format::AsDecimalString);
+
+    //! Converts a BeInt64Id to a JSON value.
+    //! @remarks Because JavaScript has issues with Int64 values, the id is serialized as <b>hex string</b>
+    //! (@see BentleyApi::BeInt64Id::ToHexStr)
+    //! @param[out] json resulting JSON value
+    //! @param[in] id BeInt64Id to convert
+    //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus IdToJson(RapidJsonValueR, BeInt64Id, rapidjson::MemoryPoolAllocator<>&);
+  
+    //! Converts an id from a JSON value to a BeInt64Id
+    //! @remarks Because JavaScript has issues with Int64 values, the id in the JSON value must have been
+    //! serialized as <b>hex string</b> (@see BentleyApi::BeInt64Id::ToHexStr)
+    //! @param[in] json JSON value containing the id as <b>hex string</b>
+    //! @return Resulting BeInt64Id. In case of error, an invalid BeInt64Id will be returned.
     template<class TBeInt64Id>
     static TBeInt64Id JsonToId(RapidJsonValueCR json)
         {
@@ -308,21 +351,7 @@ public:
         return TBeInt64Id(idVal);
         }
  
-    //! Converts a JSON to an Int64 value.
-    //! @remarks The JSON must contain the Int64 value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
-    //! @param[out] val the resulting Int64 value
-    //! @param[in] json the source RapidJsonValueCR
-    //! @return SUCCESS OR ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToInt64(int64_t& val, RapidJsonValueCR json);
-    
-    //! Converts the specified Int64 value to a RapidJson value
-    //! @param[out] json the resulting string JSON
-    //! @param[in] val the Int64 value
-    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
-    //! @param[in] int64Format Options for how to format the Int64 value
-    ECOBJECTS_EXPORT static void Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::MemoryPoolAllocator<>& allocator, ECJsonInt64Format int64Format = ECJsonInt64Format::AsDecimalString);
-
-    //! Converts the specified DateTime to a JSON value as ISO8601 string
+     //! Converts the specified DateTime to a JSON value as ISO8601 string
     //! @param[out] json the resulting ISO8601 string JSON value
     //! @param[in] dateTime DateTime to convert
     //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
@@ -414,17 +443,17 @@ struct JsonECInstanceConverter final
 
         //JsonCpp
         static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
+        static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, Json::Value const&, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
         //rapidjson
         static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR);
-        static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
         static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR ecValue, RapidJsonValueCR jsonValue, ECN::PrimitiveType primitiveType);
+        static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
         static bool IsTopLevelSystemMember(Utf8CP memberName);
 
     public:
-        ECOBJECTS_EXPORT static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
         ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
         ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, IECClassLocaterR);
     };
