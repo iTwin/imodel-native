@@ -9,6 +9,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include "MockImsClient.h"
+#include "MockConnectionClientInterface.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
@@ -877,7 +878,7 @@ TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
 
     InSequence seq;
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({ { "name", "TestUser" } })))));
 
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
     manager->FinalizeSignIn();
@@ -885,6 +886,56 @@ TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
     EXPECT_EQ(0, count);
     manager->SignOut();
     EXPECT_EQ(1, count);
+    }
+
+TEST_F(ConnectSignInManagerTests, IsConnectionClientInstalled_ReturnTrue)
+    {
+    auto connectionClient = std::make_shared<MockConnectionClientInterface>();
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore, connectionClient);
+
+    EXPECT_CALL(*connectionClient, IsInstalled()).WillOnce(Return(true));
+    auto result = manager->IsConnectionClientInstalled();
+    ASSERT_TRUE(result);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetConnectionClientToken_ReturnSuccessWithToken)
+    {
+    auto connectionClient = std::make_shared<MockConnectionClientInterface>();
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore, connectionClient);
+
+    Utf8StringCR uri = "";
+    SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
+    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillByDefault(Return(token));
+    ON_CALL(*connectionClient, IsRunning()).WillByDefault(Return(true));
+
+    EXPECT_CALL(*connectionClient, IsInstalled()).WillOnce(Return(true));
+    EXPECT_CALL(*connectionClient, IsRunning()).WillOnce(Return(true));
+    EXPECT_CALL(*connectionClient, StartClientApp()).Times(0);
+    EXPECT_CALL(*connectionClient, IsLoggedIn()).WillOnce(Return(true));
+    EXPECT_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillOnce(Return(token));
+                                    
+    auto result = manager->GetConnectionClientToken(uri);
+    EXPECT_NE(nullptr, result);
+    ASSERT_TRUE(result->GetResult().IsSuccess());
+    }
+
+TEST_F(ConnectSignInManagerTests, GetConnectionClientToken_CantStartClient_ReturnError)
+    {
+    auto connectionClient = std::make_shared<MockConnectionClientInterface>();
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore, connectionClient);
+
+    Utf8StringCR uri = "";
+    SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
+    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillByDefault(Return(token));
+    ON_CALL(*connectionClient, IsRunning()).WillByDefault(Return(false));
+
+    EXPECT_CALL(*connectionClient, IsInstalled()).WillOnce(Return(true));
+    EXPECT_CALL(*connectionClient, IsRunning()).Times(2);
+    EXPECT_CALL(*connectionClient, StartClientApp()).WillOnce(Return(BentleyStatus::SUCCESS));
+
+    auto result = manager->GetConnectionClientToken(uri);
+    EXPECT_NE(nullptr, result);
+    ASSERT_FALSE(result->GetResult().IsSuccess());
     }
 
 #endif

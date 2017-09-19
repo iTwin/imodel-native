@@ -23,6 +23,10 @@
 #include "IdentityAuthenticationPersistence.h"
 #include "WrapperTokenProvider.h"
 
+#ifdef BENTLEY_WIN32
+#include "ConnectionClientInterface.h"
+#endif
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -35,13 +39,24 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore) :
+ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient) :
 m_client(client),
 m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState)),
-m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_cs, m_auth.tokenProvider))
+m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_cs, m_auth.tokenProvider)),
+m_connectionClient(connectionClient)
     {
     m_auth = CreateAuthentication(ReadAuthenticationType());
+
+    if (connectionClient == nullptr)
+        {
+#ifdef BENTLEY_WIN32
+        m_connectionClient = std::make_shared<ConnectionClientInterface>();
+#else
+        m_connectionClient = std::make_shared<IConnectionClientInterface>();
+#endif
+        }
+
     CheckAndUpdateTokenNoLock();
     }
 
@@ -59,18 +74,24 @@ ConnectSignInManagerPtr ConnectSignInManager::Create
 ClientInfoPtr clientInfo,
 IHttpHandlerPtr httpHandler,
 ILocalState* localState,
-ISecureStorePtr secureStore
+ISecureStorePtr secureStore,
+IConnectionClientInterfacePtr connectionClient
 )
     {
-    return Create(ImsClient::Create(clientInfo, httpHandler), localState, secureStore);
+    return Create(ImsClient::Create(clientInfo, httpHandler), localState, secureStore, connectionClient);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore)
+ConnectSignInManagerPtr ConnectSignInManager::Create
+(
+IImsClientPtr client, 
+ILocalState* localState, 
+ISecureStorePtr secureStore,
+IConnectionClientInterfacePtr connectionClient)
     {
-    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(client, localState, secureStore));
+    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(client, localState, secureStore, connectionClient));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -111,7 +132,7 @@ void ConnectSignInManager::Configure(Configuration config)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
+AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token, Utf8StringCR rpUri)
     {
     BeCriticalSectionHolder lock(m_cs);
 
@@ -120,7 +141,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 
     LOG.infov("ConnectSignIn: sign-in token lifetime %d minutes", token->GetLifetime());
 
-    return m_client->RequestToken(*token, nullptr, m_config.identityTokenLifetime)
+    return m_client->RequestToken(*token, rpUri, m_config.identityTokenLifetime)
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
@@ -325,6 +346,15 @@ void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetConnectionClientSignInHandler(std::function<void()> handler)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_connectionClientSignInHandler = handler;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler) const
@@ -482,4 +512,118 @@ void ConnectSignInManager::StoreSignedInUser()
     UserInfo info = GetUserInfo();
     BeAssert(!info.username.empty());
     m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Mark.Uvari          09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConnectSignInManager::IsConnectionClientInstalled()
+    {
+    return m_connectionClient->IsInstalled();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Mark.Uvari          09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionClientToken(Utf8StringCR rpUri)
+    {
+    if (!IsConnectionClientInstalled())
+        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
+
+    if (!m_connectionClient->IsRunning())
+        {
+        m_connectionClient->StartClientApp();
+        if (!m_connectionClient->IsRunning())
+            return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
+        }
+
+    if (!m_connectionClient->IsLoggedIn())
+        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
+
+    SamlTokenPtr samlToken = m_connectionClient->GetSerializedDelegateSecurityToken(rpUri);
+    if (samlToken == nullptr)
+        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
+
+    return  CreateCompletedAsyncTask(ConnectionClientTokenResult::Success(samlToken));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Mark.Uvari          09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::StartConnectionClientListener()
+    {
+    if (!IsConnectionClientInstalled())
+        return;
+
+    if (!m_connectionClient->IsRunning())
+        {
+        m_connectionClient->StartClientApp();
+        if (!m_connectionClient->IsRunning())
+            return;
+        }
+
+    //If current user does not match Connection Client user, sign out
+    if (IsSignedInNoLock())
+        {
+        if (m_connectionClient->IsLoggedIn())
+            {
+            Utf8String ccUserId = m_connectionClient->GetUserId();
+            Utf8String loggedInId = GetUserInfo().userId;
+            bool equals = loggedInId.EqualsI(ccUserId.c_str());
+            if (!equals)
+                SignOut();                
+            }
+        else
+            {
+            SignOut();
+            }
+        }
+
+    ConnectSignInManagerPtr manager = std::shared_ptr<ConnectSignInManager>(this);
+    m_connectionClientListener = std::make_shared<ConnectionClientListener>(manager);
+    m_connectionClient->AddClientEventListener(m_connectionClientListener->callback);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ConnectSignInManager::ConnectionClientListener *ConnectSignInManager::ConnectionClientListener::s_instance = 0;
+
+ConnectSignInManager::ConnectionClientListener::ConnectionClientListener(ConnectSignInManagerPtr manager) : m_manager(manager)
+    {
+    s_instance = this;
+    }
+
+void ConnectSignInManager::ConnectionClientListener::callback(int eventId)
+    {
+    s_instance->ConnectionClientCallback(eventId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(int eventId)
+    {
+    if (IConnectionClientInterface::EVENT_TYPE::LOGIN == eventId)
+        {
+        LOG.infov("Connection Client: Login event");
+        if (m_manager->m_connectionClientSignInHandler)
+            m_manager->m_connectionClientSignInHandler();
+        }
+    else if (IConnectionClientInterface::EVENT_TYPE::LOGOUT == eventId)
+        {
+        LOG.infov("Connection Client: Logout event");
+        m_manager->SignOut();
+        }
+    else if (IConnectionClientInterface::EVENT_TYPE::STARTUP == eventId)
+        {
+        LOG.infov("Connection Client: Startup event");
+        }
+    else if (IConnectionClientInterface::EVENT_TYPE::SHUTDOWN == eventId)
+        {
+        LOG.infov("Connection Client: Shutdown event");
+        m_manager->SignOut();
+        }
+    else
+        LOG.infov("Connection Client: Unknown Event");
     }
