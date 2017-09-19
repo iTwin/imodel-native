@@ -508,6 +508,7 @@ BENTLEYDTM_Private                     int bcdtmInsert_determineStringHullPointI
 BENTLEYDTM_Private                     int bcdtmInsert_findClosestHullLineDtmObject (BC_DTM_OBJ *dtmP, double x, double y, long *hullPnt1P, long *hullPnt2P);
 BENTLEYDTM_Public                      int bcdtmInsert_findClosestLineInterceptWithHullDtmObject (BC_DTM_OBJ *dtmP, long firstPnt, long lastPnt, long *p1P, long *p2P);
 BENTLEYDTM_Public                      int bcdtmInsert_fixPointHullTrianglePrecisionDtmObject (BC_DTM_OBJ *dtmP, long trgPnt1, long trgPnt2, long trgPnt3, double pointX, double pointY, double *fixedXP, double *fixedYP, long *fixTypeP);
+BENTLEYDTM_Public                      int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject (BC_DTM_OBJ *dtmP, long trgPnt1, long trgPnt2, long trgPnt3, long trgPnt4, double pointX, double pointY, double *fixedXP, double *fixedYP, long *fixTypeP, bvector<bool>* existingLines);
 BENTLEYDTM_Public                      int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject (BC_DTM_OBJ *dtmP, long trgPnt1, long trgPnt2, long trgPnt3, long trgPnt4, double pointX, double pointY, double *fixedXP, double *fixedYP, long *fixTypeP);
 BENTLEYDTM_Public                      int bcdtmInsert_getIntersectPointDtmObject (BC_DTM_OBJ *dtmP, long firstPnt, long lastPnt, long Ip, long *insertLine, long *P1, long *P2, long *P3, double *Xi, double *Yi);
 BENTLEYDTM_Public                      int bcdtmInsert_getNextFeatureListOffsetDtmObject (BC_DTM_OBJ *dtmP, long *listOffsetP);
@@ -518,6 +519,7 @@ BENTLEYDTM_EXPORT                      int bcdtmInsert_internalStringIntoDtmObje
 BENTLEYDTM_Private                     int bcdtmInsert_intersectionLinesHullExternalInsertLineCompareFunction(const DTM_STR_INT_PTS *intPnt1P, const DTM_STR_INT_PTS  *intPnt2P);
 BENTLEYDTM_Private                     int bcdtmInsert_intersectionPointsExternalInsertLineCompareFunction (const DTM_STR_INT_PTS *intPnt1P, const DTM_STR_INT_PTS  *intPnt2P);
 BENTLEYDTM_Private                     int bcdtmInsert_intersectStringWithTinHullDtmObject (BC_DTM_OBJ *dtmP, DPoint3d **stringPtsPP, long *numStringPtsP, double mppTol);
+BENTLEYDTM_Public                      int bcdtmInsert_lineBetweenPointsDtmObject(BC_DTM_OBJ *dtmP, long firstPnt, long lastPnt, long drapeOption, long insertOption, DTMInsertPointCallback insertPointCallback, bvector<bool>* existingLines);
 BENTLEYDTM_Public                      int bcdtmInsert_lineBetweenPointsDtmObject(BC_DTM_OBJ *dtmP, long firstPnt, long lastPnt, long drapeOption, long insertOption, DTMInsertPointCallback insertPointCallback = nullptr);
 BENTLEYDTM_Public                      int bcdtmInsert_normalIntersectInsertLineDtmObject(BC_DTM_OBJ *dtmP, long Fp, long Lp, long P1, long P2, double *Xi, double *Yi);
 BENTLEYDTM_Public                      int bcdtmInsert_pointIntoAllDtmFeaturesDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2, long P3);
@@ -550,8 +552,10 @@ BENTLEYDTM_Private                     int bcdtmInsert_scanForStringHullIntersec
 BENTLEYDTM_Private                     int bcdtmInsert_scanForStringHullLineIntersectionsDtmObject (DTM_STR_INT_TAB *intTableP, long numIntTable, DTM_STR_INT_PTS **intPtsPP, long *numIntPtsP, long *memIntPtsP, long incIntPts);
 BENTLEYDTM_Private                     int bcdtmInsert_scanForStringHullPointIntersections (DTM_STR_INT_TAB *IntTable, long IntTableNe, DTM_STR_INT_PTS **IntPts, long *IntPtsNe, long *IntPtsMe, long IntPtsMinc);
 BENTLEYDTM_Private                     int bcdtmInsert_scanPointForPointAngleIntersectionWithTriangleBaseDtmObject (BC_DTM_OBJ *dtmP, long pnt, long anglePnt, long *basePnt1P, long *basePnt2P);
+BENTLEYDTM_Public                      int bcdtmInsert_storePointInDtmObject(BC_DTM_OBJ *dtmP, long drapeOption, long internalPoint, double x, double y, double z, long *dtmPointNumP, DTMInsertPointCallback insertPointCallback, bvector<bool>* existingLines);
 BENTLEYDTM_Public                      int bcdtmInsert_storePointInDtmObject(BC_DTM_OBJ *dtmP, long drapeOption, long internalPoint, double x, double y, double z, long *dtmPointNumP, DTMInsertPointCallback insertPointCallback = nullptr);
 BENTLEYDTM_Public                      int bcdtmInsert_storeRigidPointInDtmObject(BC_DTM_OBJ *dtmP, long drapeFlag, long insertFlag, double x, double y, double z, long *dtmPntNumP);
+BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp, bool allowAdd,  bvector<bool>* existingLines);
 BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp, bool allowAdd);
 BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
 BENTLEYDTM_Public                      int bcdtmInsert_triangulateAboutPointDtmObject (BC_DTM_OBJ *dtmP, long point);

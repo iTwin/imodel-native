@@ -147,65 +147,16 @@ void test_ ()
 
 void test()
     {
-    BC_DTM_OBJ *dtmP = NULL;
-    const wchar_t* fileName = L"D:\\Data\\Elenie\\newDataset\\bcdtm_5130708.bcdtm";
+    BcDTMPtr dtm1 = BcDTM::CreateFromTinFile(L"d:\\s2.bcdtm");
+    BcDTMPtr dtm2 = BcDTM::CreateFromTinFile(L"d:\\s1.bcdtm");
 
-    //fileName = L"D:\\data\\elenie\\clipIssue.bcdtm";
-    if (bcdtmRead_fromFileDtmObject(&dtmP, fileName))
-        return;
+    BcDTMPtr delta = dtm1->Delta(*dtm2, nullptr, 0);
 
-    {
-    BcDTMPtr d = BcDTM::Create();
-    long dtmFeature;
-    DPoint3dP trgPtsP = nullptr;
-    BC_DTM_FEATURE *dtmFeatureP;
-    long numTrgPts;
-    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-        {
-        dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
-        if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP, dtmFeature, &trgPtsP, &numTrgPts))
-            {
-            }
-        else
-            {
-            DTMFeatureId fId;
-            d->AddLinearFeature(dtmFeatureP->dtmFeatureType, trgPtsP, numTrgPts, &fId);
-            }
-        }
+    delta->Save(L"D:\\delta.tin");
+    BcDTMVolumeAreaResult result;
+    DtmVectorString poly;
+    delta->CalculatePrismoidalVolumeToElevation(result, &poly, 15523685.240834834, nullptr, 0, nullptr, 0);
 
-    d->Save(L"D:\\l.bcdtm");
-    }
-    //FILE* fp = fopen("d:\\temp\\outputTM.dat", "rb");
-
-    //while (!feof(fp))
-    //    {
-    //    DPoint3d pts[4];
-    //    fread(pts, sizeof(pts[0]), 4, fp);
-    //    bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::GraphicBreak, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, &pts[0], 4);
-    //    }
-    long took = bcdtmClock();
-    bcdtmObject_triangulateStmTrianglesDtmObject(dtmP);
-    took = bcdtmClock() - took;
-
-    DTMState dummyState;
-    long dummy = 0;
-    long numPoints;
-    long numTinLines;
-    long numTriangles;
-    long numDtmFeatures_;
-    long numBreaks;
-    long numContourLines;
-    long numVoids;
-    long numIslands;
-    long numHoles;
-    long numGroupSpots;
-    bool hasHull;
-
-    DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getStatisticsDtmObject(dtmP, dummyState, numPoints, numTinLines, numTriangles, dummy,
-        dummy, numDtmFeatures_, numBreaks, numContourLines, numVoids, numIslands, numHoles, numGroupSpots, hasHull, dummy);
-    
-    bcdtmWrite_toFileDtmObject(dtmP, L"d:\\test.bcdtm");
-    printf("Took %ld\n", took);
     }
 // BCivilDTM.2.0.lib odbc32.lib odbccp32.lib
 int wmain(int argc, wchar_t *argv[])

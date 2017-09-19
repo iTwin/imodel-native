@@ -918,30 +918,13 @@ struct WaterAnalysis : RefCounted<IRefCounted>
             {
             return m_features;
             }
-        double GetPondElevationTolerance() const
-            {
-            return m_pondElevationTolerance;
-            }
-        void SetPondElevationTolerance(double value)
-            {
-            m_pondElevationTolerance = value;
-            }
-        double GetPondVolumeTolerance() const
-            {
-            return m_pondVolumeTolerance;
-            }
-        void SetPondVolumeTolerance(double value)
-            {
-            m_pondVolumeTolerance = value;
-            }
-        double GetMinimumDepth() const
-            {
-            return m_falseLowDepth;
-            }
-        void SetMinimumDepth(double value)
-            {
-            m_falseLowDepth = value;
-            }
+        BENTLEYDTMDRAINAGE_EXPORT double GetPondElevationTolerance() const;
+        BENTLEYDTMDRAINAGE_EXPORT void SetPondElevationTolerance(double value);
+        BENTLEYDTMDRAINAGE_EXPORT double GetPondVolumeTolerance() const;
+        BENTLEYDTMDRAINAGE_EXPORT void SetPondVolumeTolerance(double value);
+        BENTLEYDTMDRAINAGE_EXPORT double GetMinimumDepth() const;
+        BENTLEYDTMDRAINAGE_EXPORT void SetMinimumDepth(double value);
+
         ZeroSlopeTraceOption GetZeroSlopeOption() const
             {
             return m_zeroSlopeOption;

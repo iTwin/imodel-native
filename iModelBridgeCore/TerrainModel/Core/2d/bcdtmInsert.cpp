@@ -16,6 +16,102 @@
 
 #pragma float_control(precise, on, push)
 thread_local long numPrecisionError = 0, numSnapFix = 0; // These are only used in Debug code.
+thread_local bool justForDelta = false;
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static bool existingLines_testForLine(BC_DTM_OBJ* dtmP, long pt1, long pt2, bvector<bool>* existingLines)
+    {
+    if (nullptr == existingLines)
+        if (bcdtmList_testForDtmFeatureLineDtmObject(dtmP, pt1, pt2))
+            return true;
+
+    if (existingLines == nullptr)
+        return false;
+
+    long cList = nodeAddrP(dtmP, pt1)->cPtr;
+
+    while(cList != dtmP->nullPtr)
+        {
+        if (clistAddrP(dtmP, cList)->pntNum == pt2)
+            return (cList >= (long)existingLines->size()) ? false : (*existingLines)[cList];
+        cList = clistAddrP(dtmP, cList)->nextPtr;
+        }
+    BeAssert(false);
+    return false;
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void existingLines_addLine2(bvector<bool>& existingLines, BC_DTM_OBJ* dtmP, long pt1, long pt2)
+    {
+    long cList = nodeAddrP(dtmP, pt1)->cPtr;
+
+    while(cList != dtmP->nullPtr)
+        {
+        if (clistAddrP(dtmP, cList)->pntNum == pt2)
+            {
+            if (cList >= (long)existingLines.size())
+                existingLines.resize(cList + 1, false);
+            BeAssert(!existingLines[cList]);
+            existingLines[cList] = true;
+            return;
+            }
+        cList = clistAddrP(dtmP, cList)->nextPtr;
+        }
+    BeAssert(false);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void existingLines_deleteLine2(bvector<bool>& existingLines, BC_DTM_OBJ* dtmP, long pt1, long pt2)
+    {
+    long cList = nodeAddrP(dtmP, pt1)->cPtr;
+
+    while(cList != dtmP->nullPtr)
+        {
+        if (clistAddrP(dtmP, cList)->pntNum == pt2)
+            {
+            if (cList >= (long)existingLines.size())
+                existingLines.resize(cList + 1, false);
+            BeAssert(existingLines[cList]);
+            existingLines[cList] = false;
+            return;
+            }
+        cList = clistAddrP(dtmP, cList)->nextPtr;
+        }
+    BeAssert(false);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void existingLines_addLine(bvector<bool>& existingLines, BC_DTM_OBJ* dtmP, long pt1, long pt2)
+    {
+    existingLines_addLine2(existingLines, dtmP, pt1, pt2);
+    existingLines_addLine2(existingLines, dtmP, pt2, pt1);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void existingLines_deleteLine(bvector<bool>& existingLines, BC_DTM_OBJ* dtmP, long pt1, long pt2)
+    {
+    existingLines_deleteLine2(existingLines, dtmP, pt1, pt2);
+    existingLines_deleteLine2(existingLines, dtmP, pt2, pt1);
+    }
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -87,42 +183,50 @@ BENTLEYDTM_Public int bcdtmInsert_addPointToDtmObject(BC_DTM_OBJ *dtmP,double Xp
  return(DTM_ERROR) ;
 }
 
-int bcdtmInsert_addPointAndFixFeaturesToDtmObject (BC_DTM_OBJ* dtmP, long firstPnt, long p1, long p2, long p3, int bkp, double intPntX, double intPntY, double intPntZ, long insertLine, long* p4)
+int bcdtmInsert_addPointAndFixFeaturesToDtmObject(BC_DTM_OBJ* dtmP, long firstPnt, long p1, long p2, long p3, int bkp, double intPntX, double intPntY, double intPntZ, long insertLine, long* p4, bvector<bool>* existingLines)
     {
-    int    ret=DTM_SUCCESS,dbg=0 ;
-    bool voidLine=false;
+    int    ret = DTM_SUCCESS, dbg = 0;
+    bool voidLine = false;
 
-    if( bcdtmInsert_addPointToDtmObject(dtmP,intPntX,intPntY,intPntZ,p4) ) goto errexit ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"p4 = %8ld ** %12.5lf %12.5lf %10.4lf",p4,intPntX,intPntY,intPntZ) ;
+    if (bcdtmInsert_addPointToDtmObject(dtmP, intPntX, intPntY, intPntZ, p4)) goto errexit;
+    if (dbg) bcdtmWrite_message(0, 0, 0, "p4 = %8ld ** %12.5lf %12.5lf %10.4lf", p4, intPntX, intPntY, intPntZ);
     /*
     **    Check For Void Line
     */
-    bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine) ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"voidLine = %2ld",voidLine) ;
-    if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,*p4)->PCWD) ;
+    bcdtmList_testForVoidLineDtmObject(dtmP, p1, p2, voidLine);
+    if (dbg) bcdtmWrite_message(0, 0, 0, "voidLine = %2ld", voidLine);
+    if (voidLine) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP, *p4)->PCWD);
     /*
     **     Update Clist Structure
     */
-    if( bcdtmList_deleteLineDtmObject(dtmP,p1,p2) )
-        goto errexit ;
-    if( bcdtmList_insertLineAfterPointDtmObject(dtmP,firstPnt,*p4,p1))
-        goto errexit ;
-    if( bcdtmList_insertLineAfterPointDtmObject(dtmP,*p4,firstPnt,dtmP->nullPnt))
-        goto errexit ;
-    if( bcdtmList_insertLineBeforePointDtmObject(dtmP,p1,*p4,firstPnt))
-        goto errexit ;
-    if( bcdtmList_insertLineAfterPointDtmObject(dtmP,*p4,p1,firstPnt) )
+    if (nullptr != existingLines)
+        existingLines_deleteLine(*existingLines, dtmP, p1, p2);
+    if (bcdtmList_deleteLineDtmObject(dtmP, p1, p2))
         goto errexit;
-    if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,*p4,firstPnt) )
+    if (bcdtmList_insertLineAfterPointDtmObject(dtmP, firstPnt, *p4, p1))
         goto errexit;
-    if( bcdtmList_insertLineBeforePointDtmObject(dtmP,*p4,p2,firstPnt))
-        goto errexit ;
-    if( p3 != dtmP->nullPnt )
+    if (bcdtmList_insertLineAfterPointDtmObject(dtmP, *p4, firstPnt, dtmP->nullPnt))
+        goto errexit;
+    if (bcdtmList_insertLineBeforePointDtmObject(dtmP, p1, *p4, firstPnt))
+        goto errexit;
+    if (bcdtmList_insertLineAfterPointDtmObject(dtmP, *p4, p1, firstPnt))
+        goto errexit;
+    if (bcdtmList_insertLineAfterPointDtmObject(dtmP, p2, *p4, firstPnt))
+        goto errexit;
+    if (bcdtmList_insertLineBeforePointDtmObject(dtmP, *p4, p2, firstPnt))
+        goto errexit;
+    if (p3 != dtmP->nullPnt)
         {
-        if( bcdtmList_insertLineAfterPointDtmObject(dtmP,p3,*p4,p2))
-            goto errexit ;
-        if( bcdtmList_insertLineAfterPointDtmObject(dtmP,*p4,p3,p1))
-            goto errexit ;
+        if (bcdtmList_insertLineAfterPointDtmObject(dtmP, p3, *p4, p2))
+            goto errexit;
+        if (bcdtmList_insertLineAfterPointDtmObject(dtmP, *p4, p3, p1))
+            goto errexit;
+        }
+
+    if (nullptr != existingLines)
+        {
+        existingLines_addLine(*existingLines, dtmP, p1, *p4);
+        existingLines_addLine(*existingLines, dtmP, p2, *p4);
         }
     /*
     **    If Intersecting Tin Hull Update Hull Pointers
@@ -165,6 +269,15 @@ errexit :
 |                                                            |
 |                                                            |
 +-----------------------------------------------------------*/
+int bcdtmInsert_addPointAndFixFeaturesToDtmObject(BC_DTM_OBJ* dtmP, long firstPnt, long p1, long p2, long p3, int bkp, double intPntX, double intPntY, double intPntZ, long insertLine, long* p4)
+    {
+    return bcdtmInsert_addPointAndFixFeaturesToDtmObject(dtmP, firstPnt, p1, p2, p3, bkp, intPntX, intPntY, intPntZ, insertLine, p4, nullptr);
+    }
+/*-----------------------------------------------------------+
+|                                                            |
+|                                                            |
+|                                                            |
++-----------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
 (
 BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
@@ -172,7 +285,8 @@ long       firstPnt,            /* ==> First Tin Point              */
 long       lastPnt,             /* ==> Last  Tin Point              */
 long       drapeOption,         /* ==> Drape Option                 */
 long       insertOption,        /* ==> InsertOption                 */
-DTMInsertPointCallback insertPointCallback
+DTMInsertPointCallback insertPointCallback,
+bvector<bool>* existingLines
 )
 /*
 ** This Function Inserts A Line Between Two Points In Dtm Object
@@ -211,6 +325,7 @@ DTMInsertPointCallback insertPointCallback
     p3 = dtmP->nullPnt;
     startPnt = firstPnt;
     endPnt = lastPnt;
+
     /*
     ** Write additional diagnostics
     */
@@ -228,10 +343,10 @@ DTMInsertPointCallback insertPointCallback
     /*
 ** Insert And Swap Tin Lines
 */
-    if (insertOption == 1)
+    if (insertOption == 1 || nullptr != existingLines)
         {
         if (dbg) bcdtmWrite_message(0, 0, 0, "Swapping Tin Lines");
-        if (bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(dtmP, firstPnt, lastPnt)) // Was bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+        if (bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(dtmP, firstPnt, lastPnt, true,  existingLines)) // Was bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
             {
             bcdtmWrite_message(1, 0, 0, "Error Swapping Lines firstPnt = %6ld lastPnt = %6ld", firstPnt, lastPnt);
             return(0);
@@ -285,7 +400,7 @@ DTMInsertPointCallback insertPointCallback
                 {
                 ++numPrecisionError;
                 if (dbg) bcdtmWrite_message(0, 0, 0, "Precision Error Detected While Inserting Line");
-                if (bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP, firstPnt, p1, p3, p2, intPntX, intPntY, &intPntX, &intPntY, &fixType)) goto errexit;
+                if (bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP, firstPnt, p1, p3, p2, intPntX, intPntY, &intPntX, &intPntY, &fixType, existingLines)) goto errexit;
                 if (fixType == 0) goto errexit;
                 else
                     {
@@ -372,6 +487,24 @@ errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
+/*-----------------------------------------------------------+
+|                                                            |
+|                                                            |
+|                                                            |
++-----------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
+(
+    BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
+    long       firstPnt,            /* ==> First Tin Point              */
+    long       lastPnt,             /* ==> Last  Tin Point              */
+    long       drapeOption,         /* ==> Drape Option                 */
+    long       insertOption,        /* ==> InsertOption                 */
+    DTMInsertPointCallback insertPointCallback
+)
+    {
+    return bcdtmInsert_lineBetweenPointsDtmObject(dtmP, firstPnt, lastPnt, drapeOption, insertOption, insertPointCallback, nullptr);
+    }
+
 /*-----------------------------------------------------------+
 |                                                            |
 |                                                            |
@@ -867,7 +1000,6 @@ errexit :
     goto cleanup ;
     }
 
-
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -878,7 +1010,8 @@ BENTLEYDTM_Public int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
 BC_DTM_OBJ *dtmP,
 long       firstPnt,
 long       lastPnt,
-bool allowAdd
+bool allowAdd,
+bvector<bool>* existingLines
 )
 /*
 ** This Function Scan From firstPnt To lastPnt And Swaps Lines That Intersect line firstPntlastPnt
@@ -941,7 +1074,7 @@ bool allowAdd
             /*
             **     Test if edge is a feature Line
             */
-            if (bcdtmList_testForDtmFeatureLineDtmObject (dtmP, P2, P3) || nodeAddrP (dtmP, P2)->tPtr == P3 && nodeAddrP (dtmP, P3)->tPtr == P2)
+            if (existingLines_testForLine(dtmP, P2, P3, existingLines) || nodeAddrP (dtmP, P2)->tPtr == P3 && nodeAddrP (dtmP, P3)->tPtr == P2)
                 {
                 double Z = 0;
                 long newP;
@@ -1009,7 +1142,7 @@ bool allowAdd
                             {
                             long fixType;
                             if (dbg) bcdtmWrite_message (0, 0, 0, "Precision Error Detected While Inserting Line");
-                            if (bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject (dtmP, P1, P2, P4, P3, X, Y, &X, &Y, &fixType)) goto errexit;
+                            if (bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject (dtmP, P1, P2, P4, P3, X, Y, &X, &Y, &fixType, existingLines)) goto errexit;
                             insError = true;
                             }
                         }
@@ -1019,7 +1152,7 @@ bool allowAdd
                             bcdtmWrite_message (0, 0, 0, "Adding Point %12.4lf %12.4lf %10.4lf", X, Y, Z);
 
                         bcdtmInsert_getZvalueDtmObject (dtmP, P2, P3, X, Y, &Z);
-                        if (bcdtmInsert_addPointAndFixFeaturesToDtmObject (dtmP, P1, P2, P3, P4, bkp, X, Y, Z, TRUE, &newP))
+                        if (bcdtmInsert_addPointAndFixFeaturesToDtmObject (dtmP, P1, P2, P3, P4, bkp, X, Y, Z, TRUE, &newP, existingLines))
                             goto errexit;
 
                         bcdtmInsert_swapTinLinesThatIntersectInsertLineHelperDtmObject (dtmP, startPnt, newP, crossingLines);
@@ -1143,13 +1276,29 @@ errexit:
 |                                                                    |
 +-------------------------------------------------------------------*/
 int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+(
+    BC_DTM_OBJ *dtmP,
+    long       firstPnt,
+    long       lastPnt,
+    bool       allowAdd
+)
+    {
+    return bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (dtmP, firstPnt, lastPnt, allowAdd, nullptr);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
     (
     BC_DTM_OBJ *dtmP,
     long       firstPnt,
     long       lastPnt
     )
     {
-    return bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (dtmP, firstPnt, lastPnt, true);
+    return bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (dtmP, firstPnt, lastPnt, true, nullptr);
     }
 
 /*-------------------------------------------------------------------+
@@ -1349,7 +1498,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointQuadrilateralPrecisionDtmObject(BC_D
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM_OBJ *dtmP,long trgPnt1,long trgPnt2,long trgPnt3,long trgPnt4,double pointX,double pointY,double *fixedXP,double *fixedYP,long *fixTypeP )
+BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM_OBJ *dtmP,long trgPnt1,long trgPnt2,long trgPnt3,long trgPnt4,double pointX,double pointY,double *fixedXP,double *fixedYP,long *fixTypeP, bvector<bool>* existingLines)
 /*
 ** Assumes:-
 **
@@ -1424,7 +1573,7 @@ BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM
 /*
 **  Test If trgPnt2-trgPnt4 Is A Feature Line
 */
- dtmFeatureLine = bcdtmList_testForDtmFeatureLineDtmObject(dtmP,trgPnt2,trgPnt4) ;
+ dtmFeatureLine = existingLines_testForLine(dtmP,trgPnt2,trgPnt4, existingLines) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"dtmFeatureLine trgPnt2-trgPnt4 = %2ld",dtmFeatureLine) ;
 /*
 ** Recalculate Point Coordinates On Line P2 P4
@@ -1785,6 +1934,16 @@ BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(BC_DTM_OBJ *dtmP, long trgPnt1, long trgPnt2, long trgPnt3, long trgPnt4, double pointX, double pointY, double *fixedXP, double *fixedYP, long *fixTypeP)
+    {
+    return bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP, trgPnt1, trgPnt2, trgPnt3, trgPnt4, pointX, pointY, fixedXP, fixedYP, fixTypeP, nullptr);
+    }
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -4034,6 +4193,8 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long  dtmPntNum,*pntP,*pointNumP=NULL,insert,saveIncPoints ;
  DPoint3d   *p3d ;
+ bvector<bool> existingLines;
+ bvector<bool>* existingLinesP = nullptr;
  long  startTime=0 ;
 /*
 ** Write Entry Message
@@ -4070,7 +4231,13 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
 ** Initialise
 */
  *startPntP = dtmP->nullPnt ;
- bcdtmList_nullTptrValuesDtmObject(dtmP) ;
+ bcdtmList_nullTptrValuesDtmObject(dtmP);
+
+ if (insertOption != 1 && justForDelta)
+     {
+     existingLines.resize(dtmP->cListPtr, true);
+     existingLinesP = &existingLines;
+     }
 /*
 ** Store String Points In Dtm Object
 */
@@ -4079,7 +4246,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  for( p3d = stringPtsP ; p3d < stringPtsP + numStringPts ; ++p3d )
    {
     if( dbg == 1 )  bcdtmWrite_message(0,0,0,"Inserting Point[%4ld] ** %10.4lf %10.4lf %8.4lf",(long)(p3d-stringPtsP),p3d->x,p3d->y,p3d->z) ;
-    if (bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, insertOption, p3d->x, p3d->y, p3d->z, &dtmPntNum, insertPointCallback)) goto errexit;
+    if (bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, insertOption, p3d->x, p3d->y, p3d->z, &dtmPntNum, insertPointCallback, existingLinesP)) goto errexit;
     if( dtmP->numPoints - dtmP->numSortedPoints > 1500 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Resorting Points") ;
@@ -4099,6 +4266,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
        bcdtmWrite_message(0,0,0,"Tin OK") ;
       }
    }
+
  if( dbg ) bcdtmWrite_message(0,0,0,"String Points Inserted") ;
  if( dbg ) bcdtmWrite_message(0,0,0,"**** Time To Insert String Points = %7.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
@@ -4153,7 +4321,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
     if( *(pntP-1) != *pntP )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Inserting Segment %6ld of %6ld ** From %8ld %8ld",(long)(pntP-pointNumP),numStringPts-1,*(pntP-1),*pntP) ;
-       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption, insertPointCallback)) != DTM_SUCCESS )
+       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption, insertPointCallback, existingLinesP)) != DTM_SUCCESS )
          {
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Insert Line = %8ld %8ld Insert Error = %6ld",*(pntP-1),*pntP,insert) ;
           ret = 2 ;
@@ -4236,14 +4404,15 @@ errexit :
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
 (
- BC_DTM_OBJ *dtmP,
- long drapeOption,
- long internalPoint,
- double x,
- double y,
- double z,
- long *dtmPointNumP,
- DTMInsertPointCallback insertPointCallback
+    BC_DTM_OBJ *dtmP,
+    long drapeOption,
+    long internalPoint,
+    double x,
+    double y,
+    double z,
+    long *dtmPointNumP,
+    DTMInsertPointCallback insertPointCallback,
+    bvector<bool>* existingLines
 )
 /*
 ** This Function Stores A Point In The Tin Object
@@ -4383,7 +4552,7 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
     if( precisionError )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error Detected While Inserting Point Onto Line") ;
-       if( bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP,antPnt,pnt2,clkPnt,pnt1,x,y,&x,&y,&fixType))  goto errexit ;
+       if( bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP,antPnt,pnt2,clkPnt,pnt1,x,y,&x,&y,&fixType, existingLines))  goto errexit ;
        if( fixType )
          {
           if( fixType == 1 ) { findType = 1 ; pnt1 = pnt2 ; }
@@ -4473,6 +4642,8 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
       bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidPoint) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
       if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
+      if (nullptr != existingLines)
+          existingLines_deleteLine(*existingLines, dtmP,  pnt1, pnt2);
       if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
@@ -4486,11 +4657,18 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
          {
           if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,pnt1,pnt2,dtmPoint)) goto errexit ;
          }
-    break ;
+      if (nullptr != existingLines)
+          {
+          existingLines_addLine(*existingLines, dtmP, pnt1, dtmPoint);
+          existingLines_addLine(*existingLines, dtmP, pnt2, dtmPoint);
+          }
+      break ;
 
     case  3 :      /* Coincident With External Tin Line  */
       bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidPoint) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
+      if (nullptr != existingLines)
+          existingLines_deleteLine(*existingLines, dtmP, pnt1, pnt2);
       if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
@@ -4504,7 +4682,12 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
         }
       nodeAddrP(dtmP,pnt1)->hPtr = dtmPoint ;
       nodeAddrP(dtmP,dtmPoint)->hPtr = pnt2 ;
-    break ;
+      if (nullptr != existingLines)
+          {
+          existingLines_addLine(*existingLines, dtmP, pnt1, dtmPoint);
+          existingLines_addLine(*existingLines, dtmP, pnt2, dtmPoint);
+          }
+      break ;
 
     case  4 :   /* In Triangle                      */
       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidPoint)) goto errexit ;
@@ -4546,6 +4729,25 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
+(
+    BC_DTM_OBJ *dtmP,
+    long drapeOption,
+    long internalPoint,
+    double x,
+    double y,
+    double z,
+    long *dtmPointNumP,
+    DTMInsertPointCallback insertPointCallback
+)
+    {
+    return bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, internalPoint, x, y, z, dtmPointNumP, insertPointCallback, nullptr);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
