@@ -961,7 +961,7 @@ TEST_F(InstanceSerializationTest, TestInstanceJsonRoundtrip)
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
-    BentleyStatus readbackStatus = ECJsonUtilities::ECInstanceFromJson(*readbackInstance, jsonRoot["$Instance"], classLocater);
+    BentleyStatus readbackStatus = JsonECInstanceConverter::JsonToECInstance(*readbackInstance, jsonRoot["$Instance"], classLocater);
 
     EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
     VerifyTestInstance(readbackInstance.get(), false, true);
@@ -998,7 +998,7 @@ TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
-    BentleyStatus readbackStatus = ECRapidJsonUtilities::ECInstanceFromJson(*readbackInstance, rapidJsonRoot["$Instance"], classLocater);
+    BentleyStatus readbackStatus = JsonECInstanceConverter::JsonToECInstance(*readbackInstance, rapidJsonRoot["$Instance"], classLocater);
 
     EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
     VerifyTestInstance(readbackInstance.get(), false, true);
@@ -1108,7 +1108,7 @@ TEST_F(InstanceSerializationTest, TestSerializeNullValues)
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
-    EXPECT_EQ(BSISUCCESS, ECJsonUtilities::ECInstanceFromJson(*readbackInstance, instanceJson["TestClass"], classLocater));
+    EXPECT_EQ(BSISUCCESS, JsonECInstanceConverter::JsonToECInstance(*readbackInstance, instanceJson["TestClass"], classLocater));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -985,7 +985,7 @@ TEST_F(InstanceTests, TestJsonAndXmlInstanceCompatibility)
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(instance, instanceJson));
 
     InSchemaClassLocater classLocater(*schema);
-    EXPECT_EQ(BentleyStatus::SUCCESS, ECJsonUtilities::ECInstanceFromJson(*testInstanceJson.get(), instance["Company"], classLocater));
+    EXPECT_EQ(BentleyStatus::SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstanceJson.get(), instance["Company"], classLocater));
 
     EXPECT_TRUE(ECTestUtility::CompareECInstances(*testInstanceXml, *testInstanceJson));
     }

@@ -966,7 +966,7 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr 
     IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(sourceDeserialized.IsValid());
     InSchemaClassLocater classLocater(*schema);
-    BentleyStatus readStatus = ECJsonUtilities::ECInstanceFromJson(*sourceDeserialized, instanceJson, classLocater);
+    BentleyStatus readStatus = JsonECInstanceConverter::JsonToECInstance(*sourceDeserialized, instanceJson, classLocater);
     ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
     VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
