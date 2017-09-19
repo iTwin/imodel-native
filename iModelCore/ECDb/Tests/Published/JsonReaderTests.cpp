@@ -77,48 +77,122 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                            <ECStructClass typeName="MyStruct" >
+                                                                                <ECProperty propertyName="SomeNumber" typeName="int" />
+                                                                            </ECStructClass>
+                                                                            <ECEntityClass typeName="Foo" >
+                                                                                <ECProperty propertyName="IntProp" typeName="int" />
+                                                                                <ECProperty propertyName="PtProp" typeName="Point3d" />
+                                                                                <ECStructProperty propertyName="StructProp" typeName="MyStruct" />
+                                                                            </ECEntityClass>
+                                                                        </ECSchema>)xml")));
 
-    ECInstanceKey pKey, psaKey;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES (1000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(psaKey, "INSERT INTO ecsql.PSA(I,L,P2D.X,P2D.Y,PStructProp.i,PStructProp.l,P.Id) VALUES (10,10,10.0,10.0,10,10,1000)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Foo(IntProp,PtProp.X,PtProp.Y,PtProp.Z,StructProp.SomeNumber) VALUES (1000,1000,1000,1000,1000)"));
     
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL, 123, ECInstanceId, I + 10, (I + 10) Alias1, I + L, (I + L) Alias2, P2D.X, PStructProp.i, P.Id FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter adapter(stmt);
     Json::Value json;
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL, NULL As MyNull FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(SUCCESS, adapter.GetRow(json));
 
-    ASSERT_EQ(9, json.size());
+    ASSERT_TRUE(json.isObject()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(0, json.size()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
     ASSERT_FALSE(json.isMember("nULL") && json.isMember("NULL")) << "NULL literal results in null which is ignored by adapter. " << json.ToString().c_str();
+    ASSERT_FALSE(json.isMember("myNull")) << "NULL literal even if it has an alias results in null which is ignored by adapter. " << json.ToString().c_str();
+    stmt.Finalize();
 
-    ASSERT_TRUE(json.isMember("123")) << json.ToString().c_str();
-    EXPECT_EQ(123, json["123"].asInt()) << json.ToString().c_str();
+    json.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 123, 123, 123 AS MyNumber, 123 * 3, 123 * 3 AS MyProduct FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
 
-    ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id())) << json.ToString().c_str();
-    ASSERT_STRCASEEQ(psaKey.GetInstanceId().ToHexStr().c_str(), json[ECJsonUtilities::json_id()].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isObject()) << json.ToString().c_str();
+    ASSERT_EQ(stmt.GetColumnCount(), (int) json.size()) << stmt.GetECSql() << " - " << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("[I] + 10")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["[I] + 10"].asInt()) << json.ToString().c_str();
-    
-    ASSERT_TRUE(json.isMember("alias1")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["alias1"].asInt()) << json.ToString().c_str();
-    
-    ASSERT_TRUE(json.isMember("[I] + [L]")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["[I] + [L]"].asInt()) << json.ToString().c_str();
-    
-    ASSERT_TRUE(json.isMember("alias2")) << json.ToString().c_str();
-    EXPECT_EQ(20, json["alias2"].asInt()) << json.ToString().c_str();
-    
-    ASSERT_TRUE(json.isMember("p2D.x")) << json.ToString().c_str();
-    EXPECT_DOUBLE_EQ(10.0, json["p2D.x"].asDouble()) << json.ToString().c_str();
-    
-    ASSERT_TRUE(json.isMember("pStructProp.i")) << json.ToString().c_str();
-    EXPECT_EQ(10, json["pStructProp.i"].asInt()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("123")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(123, json["123"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
 
-    ASSERT_TRUE(json.isMember("p.id")) << json.ToString().c_str();
-    EXPECT_STRCASEEQ("1000", json["p.id"].asCString()) << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("123_1")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(123, json["123_1"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("myNumber")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(123, json["myNumber"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("123 * 3")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(369, json["123 * 3"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("myProduct")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(369, json["myProduct"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    stmt.Finalize();
+
+
+    json.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IntProp, IntProp As DupIntProp, IntProp, IntProp, IntProp + 10, IntProp + 10 IntPlus10, IntProp + IntProp, IntProp + IntProp [IntProp plus IntProp] FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
+
+    ASSERT_TRUE(json.isObject()) << json.ToString().c_str();
+    ASSERT_EQ(stmt.GetColumnCount(), (int) json.size()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("intProp")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1000, json["intProp"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("dupIntProp")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1000, json["dupIntProp"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("intProp_1")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1000, json["intProp_1"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("intProp_2")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1000, json["intProp_2"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("[IntProp] + 10")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1010, json["[IntProp] + 10"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("intPlus10")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1010, json["intPlus10"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("[IntProp] + [IntProp]")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(2000, json["[IntProp] + [IntProp]"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("intProp plus IntProp")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(2000, json["intProp plus IntProp"].asInt()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    stmt.Finalize();
+
+    json.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PtProp.X, PtProp.Y, PtProp.Z FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
+
+    ASSERT_TRUE(json.isObject()) << json.ToString().c_str();
+    ASSERT_EQ(stmt.GetColumnCount(), (int) json.size()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("ptProp.x")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_DOUBLE_EQ(1000.0, json["ptProp.x"].asDouble()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("ptProp.y")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_DOUBLE_EQ(1000.0, json["ptProp.y"].asDouble()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_TRUE(json.isMember("ptProp.z")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_DOUBLE_EQ(1000.0, json["ptProp.z"].asDouble()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    stmt.Finalize();
+
+    json.clear();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT StructProp.SomeNumber FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json));
+
+    ASSERT_TRUE(json.isObject()) << json.ToString().c_str();
+    ASSERT_EQ(stmt.GetColumnCount(), (int) json.size()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+
+    ASSERT_TRUE(json.isMember("structProp.someNumber")) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    ASSERT_EQ(1000, json["structProp.someNumber"].asDouble()) << stmt.GetECSql() << " - " << json.ToString().c_str();
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -639,6 +713,76 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp"]["p3d"]["x"].asDouble());
     ASSERT_DOUBLE_EQ(0.0, actualJson["pStructProp"]["p3d"]["y"].asDouble());
     ASSERT_DOUBLE_EQ(4.0, actualJson["pStructProp"]["p3d"]["z"].asDouble());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonReaderTests, RoundTrip)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+
+    ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(psaClass != nullptr);
+
+    std::vector<std::tuple<ECClassCP, Utf8CP, ECJsonInt64Format>> dataset
+        {
+                {psaClass, R"json({ "i" : 123,
+                                    "l" : 123,
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", ECJsonInt64Format::AsNumber},
+
+                {psaClass, R"json({ "i" : 123,
+                                    "l" : "123",
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", ECJsonInt64Format::AsDecimalString},
+
+                {psaClass, R"json({ "i" : 123,
+                                    "l" : "0X123",
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", ECJsonInt64Format::AsHexadecimalString}
+
+
+        };
+
+    for (std::tuple<ECClassCP, Utf8CP, ECJsonInt64Format> const& testItem : dataset)
+        {
+        ECClassCR ecClass = *std::get<0>(testItem);
+        Utf8CP expectedJsonStr = std::get<1>(testItem);
+        ECJsonInt64Format int64Format = std::get<2>(testItem);
+        Json::Value expectedJson;
+        ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+
+        JsonInserter inserter(m_ecdb, ecClass, nullptr);
+        ASSERT_TRUE(inserter.IsValid()) << ecClass.GetFullName();
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
+
+        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(int64Format));
+        ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();
+
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(ECJsonUtilities::FormatClassName(ecClass).c_str(), actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+
+        //remove the id and class name members, because the input JSON doesn't have them
+        actualJson.removeMember(ECJsonUtilities::json_id());
+        actualJson.removeMember(ECJsonUtilities::json_className());
+        ASSERT_EQ(0, expectedJson.compare(actualJson)) << "Expected: " << expectedJsonStr << " Actual: " << actualJson.ToString().c_str();
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
