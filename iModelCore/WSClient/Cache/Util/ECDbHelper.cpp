@@ -100,11 +100,11 @@ ECInstanceId ECDbHelper::ECInstanceIdFromJsonValue(JsonValueCR jsonValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceId ECDbHelper::ECInstanceIdFromJsonInstance(JsonValueCR jsonInstance)
     {
-    if (!jsonInstance.isMember("$ECInstanceId"))
+    if (!jsonInstance.isMember(ECJsonUtilities::json_id()))
         {
         return ECInstanceId();
         }
-    return ECInstanceIdFromJsonValue(jsonInstance["$ECInstanceId"]);
+    return ECInstanceIdFromJsonValue(jsonInstance[ECJsonUtilities::json_id()]);
     }
 
 /*--------------------------------------------------------------------------------------+
