@@ -326,8 +326,9 @@ public:
     //! (@see BentleyApi::BeInt64Id::ToHexStr)
     //! @param[out] json resulting JSON value
     //! @param[in] id BeInt64Id to convert
+    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus IdToJson(RapidJsonValueR, BeInt64Id, rapidjson::MemoryPoolAllocator<>&);
+    ECOBJECTS_EXPORT static BentleyStatus IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator);
   
     //! Converts an id from a JSON value to a BeInt64Id
     //! @remarks Because JavaScript has issues with Int64 values, the id in the JSON value must have been
