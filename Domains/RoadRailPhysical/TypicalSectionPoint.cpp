@@ -11,6 +11,9 @@
 #include <RoadRailPhysical/TypicalSection.h>
 #include <RoadRailPhysical/RoadRailCategory.h>
 
+HANDLER_DEFINE_MEMBERS(TravelwayPointNameHandler)
+HANDLER_DEFINE_MEMBERS(TravelwaySidePointNameHandler)
+HANDLER_DEFINE_MEMBERS(TravelwayStructurePointNameHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintConstantOffsetHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintConstantSlopeHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionConstraintOffsetHandler)
@@ -22,7 +25,7 @@ HANDLER_DEFINE_MEMBERS(TypicalSectionOffsetParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionParameterHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointNameHandler)
-HANDLER_DEFINE_MEMBERS(TypicalSectionPointPlaceHolderHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionProxyPointHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionSlopeConstraintHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionVerticalConstraintHandler)
 
@@ -54,36 +57,6 @@ DgnCode TypicalSectionPointName::CreateCode(DgnModelCR scope, Utf8StringCR value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointNamePtr TypicalSectionPointName::Create(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
-    {
-    if (!model.GetModelId().IsValid())
-        return nullptr;
-
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointName));
-
-    TypicalSectionPointNamePtr retVal(new TypicalSectionPointName(createParams));
-
-    if (userLabel)
-        retVal->SetUserLabel(userLabel);
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointNameCPtr TypicalSectionPointName::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
-    {
-    auto ptr = Create(model, pointName, userLabel);
-    if (ptr.IsNull())
-        return nullptr;
-
-    return ptr->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 TypicalSectionPointNameCPtr TypicalSectionPointName::QueryByName(DefinitionModelCR model, Utf8StringCR pointName)
     {
     auto pointId = model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, pointName));
@@ -96,9 +69,119 @@ TypicalSectionPointNameCPtr TypicalSectionPointName::QueryByName(DefinitionModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayPointNamePtr TravelwayPointName::Create(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointName));
+
+    TravelwayPointNamePtr retVal(new TravelwayPointName(createParams));
+
+    if (userLabel)
+        retVal->SetUserLabel(userLabel);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayPointNameCPtr TravelwayPointName::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    auto ptr = Create(model, pointName, userLabel);
+    if (ptr.IsNull())
+        return nullptr;
+
+    return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwaySidePointNamePtr TravelwaySidePointName::Create(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointName));
+
+    TravelwaySidePointNamePtr retVal(new TravelwaySidePointName(createParams));
+
+    if (userLabel)
+        retVal->SetUserLabel(userLabel);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwaySidePointNameCPtr TravelwaySidePointName::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    auto ptr = Create(model, pointName, userLabel);
+    if (ptr.IsNull())
+        return nullptr;
+
+    return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayStructurePointNamePtr TravelwayStructurePointName::Create(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointName));
+
+    TravelwayStructurePointNamePtr retVal(new TravelwayStructurePointName(createParams));
+
+    if (userLabel)
+        retVal->SetUserLabel(userLabel);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayStructurePointNameCPtr TravelwayStructurePointName::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel)
+    {
+    auto ptr = Create(model, pointName, userLabel);
+    if (ptr.IsNull())
+        return nullptr;
+
+    return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TypicalSectionPoint::TypicalSectionPoint(CreateParams const& params, TypicalSectionPointNameCR pointName): T_Super(params)
     {
     SetPointName(&pointName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TypicalSectionPoint::SetPointName(TypicalSectionPointNameCP newVal)
+    {
+    if (newVal)
+        {
+        if (newVal->ToTravelwayPointName() && !dynamic_cast<TravelwayDefinitionElementCP>(GetModel()->GetModeledElement().get()))
+            return DgnDbStatus::BadArg;
+        if (newVal->ToTravelwaySidePointName() && !dynamic_cast<TravelwaySideDefinitionCP>(GetModel()->GetModeledElement().get()))
+            return DgnDbStatus::BadArg;
+        if (newVal->ToTravelwayStructurePointName() && !dynamic_cast<TravelwayStructureDefinitionCP>(GetModel()->GetModeledElement().get()))
+            return DgnDbStatus::BadArg;
+        }
+
+    SetPropertyValue("PointName", newVal ? newVal->GetElementId() : Dgn::DgnElementId());
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,7 +258,7 @@ DgnCode TypicalSectionPoint::CreateCode(TypicalSectionPortionBreakDownModelCR sc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointPlaceHolder::TypicalSectionPointPlaceHolder(CreateParams const& params, TypicalSectionPointNameCR pointName): T_Super(params)
+TypicalSectionProxyPoint::TypicalSectionProxyPoint(CreateParams const& params, TypicalSectionPointNameCR pointName): T_Super(params)
     {
     SetPointName(&pointName);
     }
@@ -183,7 +266,7 @@ TypicalSectionPointPlaceHolder::TypicalSectionPointPlaceHolder(CreateParams cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointPlaceHolderPtr TypicalSectionPointPlaceHolder::Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
+TypicalSectionProxyPointPtr TypicalSectionProxyPoint::Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
     {
     if (!model.GetModelId().IsValid() || !pointName.GetElementId().IsValid())
         return nullptr;
@@ -192,13 +275,13 @@ TypicalSectionPointPlaceHolderPtr TypicalSectionPointPlaceHolder::Create(Typical
         RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(), 
         TypicalSectionPointName::CreateCode(model, pointName.GetCode().GetValueUtf8()));
 
-    return new TypicalSectionPointPlaceHolder(createParams, pointName);
+    return new TypicalSectionProxyPoint(createParams, pointName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointPlaceHolderCPtr TypicalSectionPointPlaceHolder::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
+TypicalSectionProxyPointCPtr TypicalSectionProxyPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName)
     {
     auto ptr = Create(model, pointName);
     if (ptr.IsNull())

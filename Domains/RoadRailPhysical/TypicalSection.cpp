@@ -20,6 +20,7 @@ HANDLER_DEFINE_MEMBERS(PavementComponentHandler)
 HANDLER_DEFINE_MEMBERS(RoadLaneComponentHandler)
 HANDLER_DEFINE_MEMBERS(RoadShoulderComponentHandler)
 HANDLER_DEFINE_MEMBERS(RoadTravelwayDefinitionHandler)
+HANDLER_DEFINE_MEMBERS(SideSlopeConditionComponentHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayComponentElementHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayDefinitionElementHandler)
 HANDLER_DEFINE_MEMBERS(TravelwaySideComponentElementHandler)
@@ -129,6 +130,38 @@ RoadTravelwayDefinitionCPtr RoadTravelwayDefinition::Insert(TypicalSectionPortio
 TravelwaySideDefinition::TravelwaySideDefinition(CreateParams const& params):
     T_Super(params)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecId TravelwaySideDefinition::QueryCodeSpecId(DgnDbCR dgndb)
+    {
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_TravelwaySide);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode TravelwaySideDefinition::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_TravelwaySide, scope, value);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwaySideDefinitionPtr TravelwaySideDefinition::Create(DefinitionModelCR model, Utf8StringCR code)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
+
+    return new TravelwaySideDefinition(createParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,7 +296,7 @@ bvector<DgnElementId> TypicalSectionComponentElement::QueryPointIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TypicalSectionComponentElement::SetPoints(TypicalSectionComponentElementCR component, bvector<TypicalSectionPointCP> const& points)
+DgnDbStatus TypicalSectionComponentElement::SetPoints(TypicalSectionComponentElementCR component, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto pointIds = component.QueryPointIds();
     bvector<size_t> pointIndices;
@@ -276,10 +309,10 @@ DgnDbStatus TypicalSectionComponentElement::SetPoints(TypicalSectionComponentEle
         if (!pointCP)
             return DgnDbStatus::BadArg;
 
-        auto iter = std::find(pointIds.begin(), pointIds.end(), pointCP->GetElementId());
+        auto iter = std::find(pointIds.begin(), pointIds.end(), pointCP->GetConstraintPointId());
         if (iter == pointIds.end()) // New point
             {
-            pointIds.push_back(pointCP->GetElementId());
+            pointIds.push_back(pointCP->GetConstraintPointId());
             pointIndices.push_back(index + 1);
             }
         else
@@ -378,7 +411,7 @@ RoadLaneComponentPtr RoadLaneComponent::Create(TypicalSectionPortionBreakDownMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadLaneComponentCPtr RoadLaneComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points)
+RoadLaneComponentCPtr RoadLaneComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto ptr = Create(model);
     if (ptr.IsNull())
@@ -404,7 +437,7 @@ RoadShoulderComponentPtr RoadShoulderComponent::Create(TypicalSectionPortionBrea
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailCategory::GetTravelwayDefComponent(model.GetDgnDb()));
+        RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
 
     return new RoadShoulderComponent(createParams);
     }
@@ -412,7 +445,7 @@ RoadShoulderComponentPtr RoadShoulderComponent::Create(TypicalSectionPortionBrea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadShoulderComponentCPtr RoadShoulderComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points)
+RoadShoulderComponentCPtr RoadShoulderComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto ptr = Create(model);
     if (ptr.IsNull())
@@ -434,7 +467,7 @@ BufferComponentPtr BufferComponent::Create(TypicalSectionPortionBreakDownModelCR
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailCategory::GetTravelwayDefComponent(model.GetDgnDb()));
+        RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
 
     return new BufferComponent(createParams);
     }
@@ -442,7 +475,7 @@ BufferComponentPtr BufferComponent::Create(TypicalSectionPortionBreakDownModelCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BufferComponentCPtr BufferComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points)
+BufferComponentCPtr BufferComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto ptr = Create(model);
     if (ptr.IsNull())
@@ -456,6 +489,77 @@ BufferComponentCPtr BufferComponent::CreateAndInsert(TypicalSectionPortionBreakD
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SideSlopeConditionComponent::SideSlopeConditionComponent(CreateParams const& params) : T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SideSlopeConditionComponentPtr SideSlopeConditionComponent::Create(TypicalSectionPortionBreakDownModelCR model, int32_t priority)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
+        RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
+
+    SideSlopeConditionComponentPtr retVal(new SideSlopeConditionComponent(createParams));
+    retVal->SetPriority(priority);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SideSlopeConditionComponentCPtr SideSlopeConditionComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, int32_t priority, bvector<ITypicalSectionConstraintPointCP> const& points)
+    {
+    auto ptr = Create(model, priority);
+    if (ptr.IsNull())
+        return nullptr;
+
+    auto cPtr = ptr->Insert();
+    if (cPtr.IsValid())
+        SetPoints(*cPtr, points);
+
+    return cPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Nullable<int32_t> SideSlopeConditionComponent::GetBenchingCount() const
+    {
+    Nullable<int32_t> retVal;
+
+    ECValue v;
+    if (DgnDbStatus::Success == GetPropertyValue(v, "BenchingCount"))
+        {
+        if (!v.IsNull())
+            retVal = v.GetInteger();
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SideSlopeConditionComponent::SetBenchingCount(Nullable<int32_t> newVal)
+    {
+    ECValue v;
+    if (newVal.IsNull())
+        v.SetIsNull(true);
+    else
+        v.SetInteger(newVal.Value());
+
+    SetPropertyValue("BenchingCount", v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurbComponentPtr CurbComponent::Create(TypicalSectionPortionBreakDownModelCR model)
@@ -464,7 +568,7 @@ CurbComponentPtr CurbComponent::Create(TypicalSectionPortionBreakDownModelCR mod
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailCategory::GetTravelwayDefComponent(model.GetDgnDb()));
+        RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
 
     return new CurbComponent(createParams);
     }
@@ -472,7 +576,7 @@ CurbComponentPtr CurbComponent::Create(TypicalSectionPortionBreakDownModelCR mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurbComponentCPtr CurbComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points)
+CurbComponentCPtr CurbComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto ptr = Create(model);
     if (ptr.IsNull())
@@ -494,7 +598,7 @@ BarrierComponentPtr BarrierComponent::Create(TypicalSectionPortionBreakDownModel
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
-        RoadRailCategory::GetTravelwayDefComponent(model.GetDgnDb()));
+        RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
 
     return new BarrierComponent(createParams);
     }
@@ -502,7 +606,7 @@ BarrierComponentPtr BarrierComponent::Create(TypicalSectionPortionBreakDownModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BarrierComponentCPtr BarrierComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points)
+BarrierComponentCPtr BarrierComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
     {
     auto ptr = Create(model);
     if (ptr.IsNull())
@@ -527,4 +631,20 @@ PavementComponentPtr PavementComponent::Create(TypicalSectionPortionBreakDownMod
         RoadRailCategory::GetTravelwayStructureDefComponent(model.GetDgnDb()));
 
     return new PavementComponent(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PavementComponentCPtr PavementComponent::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points)
+    {
+    auto ptr = Create(model);
+    if (ptr.IsNull())
+        return nullptr;
+
+    auto cPtr = ptr->Insert();
+    if (cPtr.IsValid())
+        SetPoints(*cPtr, points);
+
+    return cPtr;
     }

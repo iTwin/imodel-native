@@ -735,51 +735,60 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="TypicalSectionPointName" displayLabel="Point name" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>        
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayPointName" displayLabel="Travelway Point name" modifier="Sealed">
+        <BaseClass>TypicalSectionPointName</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwaySidePointName" displayLabel="TravelwaySide Point name" modifier="Sealed">
+        <BaseClass>TypicalSectionPointName</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayStructurePointName" displayLabel="TravelwayStructure Point Name" modifier="Sealed">
+        <BaseClass>TypicalSectionPointName</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="ITypicalSectionConstraintPoint" description="Interface to be mixed-in by targets of a typical section constraint." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PointName" relationshipName="ITypicalSectionConstraintPointRefersToName" direction="Forward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionPointName" displayLabel="Point name">
-        <BaseClass>bis:DefinitionElement</BaseClass>
-        <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
+    <ECRelationshipClass typeName="ITypicalSectionConstraintPointRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Points">
+            <Class class="ITypicalSectionConstraintPoint"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
+            <Class class="TypicalSectionPointName"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TypicalSectionPoint" displayLabel="Point" description="Point construct in a TypicalSection definition">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-        <ECNavigationProperty propertyName="PointName" relationshipName="TypicalSectionPointRefersToName" direction="Forward"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="TypicalSectionPointRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Points">
-            <Class class="TypicalSectionPoint"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
-            <Class class="TypicalSectionPointName"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="TypicalSectionPointPlaceHolder" displayLabel="External Point" description="Place-holder for a point that is external to the current definition and, thus, will be resolved while generating meshes">
+        </ECCustomAttributes>        
+    </ECEntityClass>    
+    <ECEntityClass typeName="TypicalSectionProxyPoint" displayLabel="External Point" description="Proxy for a point that is external to the current definition and, thus, will be resolved while generating meshes">
         <BaseClass>bis:GeometricElement2d</BaseClass>
+        <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="PointName" relationshipName="TypicalSectionPointPlaceHolderRefersToName" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TypicalSectionPointPlaceHolderRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N Points">
-            <Class class="TypicalSectionPointPlaceHolder"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
-            <Class class="TypicalSectionPointName"/>
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="TypicalSectionComponentGroupsPoints" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementGroupsMembers</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is a group member of N components">

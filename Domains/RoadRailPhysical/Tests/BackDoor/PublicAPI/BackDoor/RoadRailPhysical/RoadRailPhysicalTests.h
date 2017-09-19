@@ -63,6 +63,8 @@ public:
     static RoadDesignSpeedDefinitionPtr InsertRoadDesignSpeedDefinition(Dgn::DgnDbR db);
     static BentleyStatus InsertTestPointNames(RoadwayStandardsModelCR standardsModel);
     static BentleyStatus InsertFourLanes(TypicalSectionPortionBreakDownModelCR model);
+    static BentleyStatus InsertShouldersRightSide(TypicalSectionPortionBreakDownModelCR model);
+    static BentleyStatus InsertSideSlopeRightSide(TypicalSectionPortionBreakDownModelCR model);
 
     //! Creates and caches a fresh "created" file to make the whole process faster
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);

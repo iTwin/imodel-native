@@ -239,7 +239,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionComponentElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionComponentElement)
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetPoints(TypicalSectionComponentElementCR component, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetPoints(TypicalSectionComponentElementCR component, bvector<ITypicalSectionConstraintPointCP> const& points);
 
     ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryPointIds() const;
 }; // TypicalSectionComponentElement
@@ -298,7 +298,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadLaneComponent)
 
     ROADRAILPHYSICAL_EXPORT static RoadLaneComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static RoadLaneComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static RoadLaneComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // RoadLaneComponent
 
 //=======================================================================================
@@ -337,7 +337,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(BarrierComponent)
 
     ROADRAILPHYSICAL_EXPORT static BarrierComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static BarrierComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static BarrierComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // BarrierComponent
 
 //=======================================================================================
@@ -358,7 +358,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadShoulderComponent)
 
     ROADRAILPHYSICAL_EXPORT static RoadShoulderComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static RoadShoulderComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static RoadShoulderComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // RoadShoulderComponent
 
 //=======================================================================================
@@ -379,7 +379,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(CurbComponent)
 
     ROADRAILPHYSICAL_EXPORT static CurbComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static CurbComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static CurbComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // CurbComponent
 
 //=======================================================================================
@@ -400,8 +400,36 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(BufferComponent)
 
     ROADRAILPHYSICAL_EXPORT static BufferComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static BufferComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static BufferComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // BufferComponent
+
+//=======================================================================================
+//! Side-Slope Condition Components for Pathways.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SideSlopeConditionComponent : TravelwaySideComponentElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_SideSlopeConditionComponent, TravelwaySideComponentElement);
+friend struct SideSlopeConditionComponentHandler;
+
+protected:
+    //! @private
+    explicit SideSlopeConditionComponent(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SideSlopeConditionComponent)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(SideSlopeConditionComponent)
+
+    int32_t GetPriority() const { return GetPropertyValueInt32("Priority"); }
+    void SetPriority(int32_t newVal) { SetPropertyValue("Priority", ECN::ECValue(newVal)); }
+    bool GetIsInfiniteLength() const { return GetPropertyValueBoolean("IsInfiniteLength"); }
+    void SetIsInfiniteLength(bool newVal) { SetPropertyValue("IsInfiniteLength", ECN::ECValue(newVal)); }
+    ROADRAILPHYSICAL_EXPORT Nullable<int32_t> GetBenchingCount() const;
+    ROADRAILPHYSICAL_EXPORT void SetBenchingCount(Nullable<int32_t> newVal);
+
+    ROADRAILPHYSICAL_EXPORT static SideSlopeConditionComponentPtr Create(TypicalSectionPortionBreakDownModelCR model, int32_t priority);
+    ROADRAILPHYSICAL_EXPORT static SideSlopeConditionComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, int32_t priority, bvector<ITypicalSectionConstraintPointCP> const& points);
+}; // SideSlopeConditionComponent
 
 //=======================================================================================
 //! Pavement Components for Roadways.
@@ -421,7 +449,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(PavementComponent)
 
     ROADRAILPHYSICAL_EXPORT static PavementComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static PavementComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<TypicalSectionPointCP> const& points);
+    ROADRAILPHYSICAL_EXPORT static PavementComponentCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, bvector<ITypicalSectionConstraintPointCP> const& points);
 }; // PavementComponent
 
 
@@ -558,6 +586,15 @@ struct EXPORT_VTABLE_ATTRIBUTE BufferComponentHandler : TravelwaySideComponentEl
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_BufferComponent, BufferComponent, BufferComponentHandler, TravelwaySideComponentElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // BufferComponentHandler
+
+//=================================================================================
+//! ElementHandler for SideSlopeCondition Component Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SideSlopeConditionComponentHandler : TravelwaySideComponentElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_SideSlopeConditionComponent, SideSlopeConditionComponent, SideSlopeConditionComponentHandler, TravelwaySideComponentElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // SideSlopeConditionComponentHandler
 
 //=================================================================================
 //! ElementHandler for Barrier Component Elements

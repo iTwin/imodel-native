@@ -14,6 +14,105 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
+//! Base class for point constructs in a TypicalSection portion definition.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointName : Dgn::DefinitionElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointName, Dgn::DefinitionElement);
+friend struct TypicalSectionPointNameHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionPointName(CreateParams const& params);
+
+    virtual TravelwayPointNameCP _ToTravelwayPointName() const { return nullptr; }
+    virtual TravelwaySidePointNameCP _ToTravelwaySidePointName() const { return nullptr; }
+    virtual TravelwayStructurePointNameCP _ToTravelwayStructurePointName() const { return nullptr; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPointName)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionPointName)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scope, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointNameCPtr QueryByName(Dgn::DefinitionModelCR model, Utf8StringCR pointName);
+
+    TravelwayPointNameCP ToTravelwayPointName() const { return _ToTravelwayPointName(); }
+    TravelwaySidePointNameCP ToTravelwaySidePointName() const { return _ToTravelwaySidePointName(); }
+    TravelwayStructurePointNameCP ToTravelwayStructurePointName() const { return _ToTravelwayStructurePointName(); }
+}; // TypicalSectionPointName
+
+//=======================================================================================
+//! Point constructs in a Travelway portion definition.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayPointName : TypicalSectionPointName
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayPointName, TypicalSectionPointName);
+friend struct TravelwayPointNameHandler;
+
+protected:
+    //! @private
+    explicit TravelwayPointName(CreateParams const& params) : T_Super(params) {}    
+
+    virtual TravelwayPointNameCP _ToTravelwayPointName() const override { return this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayPointName)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwayPointName)
+
+    ROADRAILPHYSICAL_EXPORT static TravelwayPointNamePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TravelwayPointNameCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);    
+}; // TravelwayPointName
+
+//=======================================================================================
+//! Point constructs in a TravelwaySide portion definition.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySidePointName : TypicalSectionPointName
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySidePointName, TypicalSectionPointName);
+friend struct TravelwaySidePointNameHandler;
+
+protected:
+    //! @private
+    explicit TravelwaySidePointName(CreateParams const& params) : T_Super(params) {}
+
+    virtual TravelwaySidePointNameCP _ToTravelwaySidePointName() const override { return this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwaySidePointName)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwaySidePointName)
+
+    ROADRAILPHYSICAL_EXPORT static TravelwaySidePointNamePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TravelwaySidePointNameCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
+}; // TravelwaySidePointName
+
+//=======================================================================================
+//! Point constructs in a TravelwayStructure portion definition.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructurePointName : TypicalSectionPointName
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructurePointName, TypicalSectionPointName);
+friend struct TravelwayStructurePointNameHandler;
+
+protected:
+    //! @private
+    explicit TravelwayStructurePointName(CreateParams const& params) : T_Super(params) {}
+
+    virtual TravelwayStructurePointNameCP _ToTravelwayStructurePointName() const override { return this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayStructurePointName)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwayStructurePointName)
+
+    ROADRAILPHYSICAL_EXPORT static TravelwayStructurePointNamePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TravelwayStructurePointNameCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
+}; // TravelwayStructurePointName
+
+//=======================================================================================
 //! Interface implemented by elements accepted as targets of TypicalSection constraints
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
@@ -25,33 +124,6 @@ protected:
 public:
     Dgn::DgnElementId GetConstraintPointId() const { return _GetITypicalSectionConstraintPointToDgnElement().GetElementId(); }
 }; // ITypicalSectionConstraintTarget
-
-//=======================================================================================
-//! Point construct in a TypicalSection portion definition.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointName : Dgn::DefinitionElement, ITypicalSectionConstraintPoint
-{
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointName, Dgn::DefinitionElement);
-friend struct TypicalSectionPointNameHandler;
-
-protected:
-    //! @private
-    explicit TypicalSectionPointName(CreateParams const& params);
-
-    virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPointName)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionPointName)
-
-    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scope, Utf8StringCR value);
-
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointNamePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointNameCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointName, Utf8CP userLabel = nullptr);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointNameCPtr QueryByName(Dgn::DefinitionModelCR model, Utf8StringCR pointName);
-}; // TypicalSectionPointName
 
 //=======================================================================================
 //! Point construct in a TypicalSection portion definition.
@@ -84,35 +156,37 @@ public:
     ROADRAILPHYSICAL_EXPORT static TypicalSectionPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
 
     TypicalSectionPointNameCP GetPointName() const { return TypicalSectionPointName::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("PointName")).get(); }
-    void SetPointName(TypicalSectionPointNameCP newVal) { SetPropertyValue("PointName", newVal ? newVal->GetElementId() : Dgn::DgnElementId()); }
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetPointName(TypicalSectionPointNameCP newVal);
 }; // TypicalSectionPoint
 
 //=======================================================================================
 //! Point construct in a TypicalSection portion definition.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointPlaceHolder : Dgn::GeometricElement2d
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionProxyPoint : Dgn::GeometricElement2d, ITypicalSectionConstraintPoint
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointPlaceHolder, Dgn::GeometricElement2d);
-friend struct TypicalSectionPointPlaceHolderHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionProxyPoint, Dgn::GeometricElement2d);
+friend struct TypicalSectionProxyPointHandler;
 
 protected:
     //! @private
-    explicit TypicalSectionPointPlaceHolder(CreateParams const& params) : T_Super(params) {}
+    explicit TypicalSectionProxyPoint(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit TypicalSectionPointPlaceHolder(CreateParams const& params, TypicalSectionPointNameCR pointName);
+    explicit TypicalSectionProxyPoint(CreateParams const& params, TypicalSectionPointNameCR pointName);
+
+    virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPointPlaceHolder)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionPointPlaceHolder)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionProxyPoint)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionProxyPoint)
 
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPlaceHolderPtr Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPlaceHolderCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointPtr Create(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, TypicalSectionPointNameCR pointName);
 
     TypicalSectionPointNameCP GetPointName() const { return TypicalSectionPointName::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("PointName")).get(); }
     void SetPointName(TypicalSectionPointNameCP newVal) { SetPropertyValue("PointName", newVal ? newVal->GetElementId() : Dgn::DgnElementId()); }
-}; // TypicalSectionPointPlaceHolder
+}; // TypicalSectionProxyPoint
 
 //=======================================================================================
 //! Base class for Parameters used in Constraints to a Typical Section Point
@@ -399,6 +473,33 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointName, TypicalSectio
 }; // TypicalSectionPointNameHandler
 
 //=================================================================================
+//! ElementHandler for Travelway Point Names
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayPointNameHandler : TypicalSectionPointNameHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayPointName, TravelwayPointName, TravelwayPointNameHandler, TypicalSectionPointNameHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelwayPointNameHandler
+
+//=================================================================================
+//! ElementHandler for TravelwaySide Point Names
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwaySidePointNameHandler : TypicalSectionPointNameHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwaySidePointName, TravelwaySidePointName, TravelwaySidePointNameHandler, TypicalSectionPointNameHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelwaySidePointNameHandler
+
+//=================================================================================
+//! ElementHandler for TravelwayStructure Point Names
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructurePointNameHandler : TypicalSectionPointNameHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructurePointName, TravelwayStructurePointName, TravelwayStructurePointNameHandler, TypicalSectionPointNameHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelwayStructurePointNameHandler
+
+//=================================================================================
 //! ElementHandler for Typical Section Points
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
@@ -411,10 +512,10 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPoint, TypicalSectionPoi
 //! ElementHandler for Typical Section Point Place-Holders
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPointPlaceHolderHandler : Dgn::dgn_ElementHandler::Geometric2d
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionProxyPointHandler : Dgn::dgn_ElementHandler::Geometric2d
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointPlaceHolder, TypicalSectionPointPlaceHolder, TypicalSectionPointPlaceHolderHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
-}; // TypicalSectionPointPlaceHolderHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionProxyPoint, TypicalSectionProxyPoint, TypicalSectionProxyPointHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionProxyPointHandler
 
 //=================================================================================
 //! ElementHandler for Typical Section Parameters

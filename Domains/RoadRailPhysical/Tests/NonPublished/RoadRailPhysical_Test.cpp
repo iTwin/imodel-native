@@ -139,10 +139,20 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
     DgnModelId roadwayStandardsModelId = QueryFirstModelIdOfType(*projectPtr, RoadwayStandardsModel::QueryClassId(*projectPtr));
     auto roadwayStandardsModelPtr = RoadwayStandardsModel::Get(*projectPtr, roadwayStandardsModelId);
     auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "4 lanes");
+    auto travelwayRightSideDefPtr = TravelwaySideDefinition::Create(*roadwayStandardsModelPtr, "Paved+Unpaved Shoulder right-side");
+    auto sideSlopeRightSideDefPtr = TravelwaySideDefinition::Create(*roadwayStandardsModelPtr, "Side-Slope Conditions right-side");
 
-    TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
-    ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
+    TypicalSectionPortionBreakDownModelPtr twBreakDownModelPtr;
+    ASSERT_TRUE(roadTravelwayDefPtr->Insert(twBreakDownModelPtr).IsValid());
+
+    TypicalSectionPortionBreakDownModelPtr shoulderRBreakDownModelPtr;
+    ASSERT_TRUE(travelwayRightSideDefPtr->Insert(shoulderRBreakDownModelPtr).IsValid());
+
+    TypicalSectionPortionBreakDownModelPtr sideSlopeRBreakDownModelPtr;
+    ASSERT_TRUE(sideSlopeRightSideDefPtr->Insert(sideSlopeRBreakDownModelPtr).IsValid());
 
     InsertTestPointNames(*roadwayStandardsModelPtr);
-    InsertFourLanes(*breakDownModelPtr);
+    InsertFourLanes(*twBreakDownModelPtr);
+    InsertShouldersRightSide(*shoulderRBreakDownModelPtr);
+    InsertSideSlopeRightSide(*sideSlopeRBreakDownModelPtr);
     }

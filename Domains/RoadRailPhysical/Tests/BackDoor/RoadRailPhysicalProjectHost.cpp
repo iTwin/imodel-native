@@ -350,9 +350,12 @@ RoadDesignSpeedDefinitionPtr RoadRailPhysicalTestsFixture::InsertRoadDesignSpeed
 //---------------------------------------------------------------------------------------
 BentleyStatus RoadRailPhysicalTestsFixture::InsertTestPointNames(RoadwayStandardsModelCR model)
     {
-    TypicalSectionPointName::CreateAndInsert(model, "CL", "Centerline");
-    TypicalSectionPointName::CreateAndInsert(model, "EOTW_L", "Edge-of-Travelway left side");
-    TypicalSectionPointName::CreateAndInsert(model, "EOTW_R", "Edge-of-Travelway right side");
+    TravelwayPointName::CreateAndInsert(model, "CL", "Center-line");
+    TravelwayPointName::CreateAndInsert(model, "EOTW_L", "Edge-of-Travelway left-side");
+    TravelwayPointName::CreateAndInsert(model, "EOTW_R", "Edge-of-Travelway right-side");
+
+    TravelwaySidePointName::CreateAndInsert(model, "EOS_L", "Edge-of-Shoulder left-side");
+    TravelwaySidePointName::CreateAndInsert(model, "EOS_R", "Edge-of-Shoulder right-side");
     
     return BentleyStatus::SUCCESS;
     }
@@ -365,13 +368,15 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
     TypicalSectionPortionDefinitionElementPtr definitionPtr = TypicalSectionPortionDefinitionElement::GetForEdit(model.GetDgnDb(), model.GetModeledElement()->GetElementId());
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
-    bvector<TypicalSectionPointCP> points;
     auto clPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "CL"));
-    points.push_back(clPointCPtr.get());
+
     definitionPtr->SetOriginPoint(clPointCPtr.get());
     definitionPtr->Update();
 
     auto leftPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    bvector<ITypicalSectionConstraintPointCP> points;
+    points.push_back(clPointCPtr.get());
     points.push_back(leftPointCPtr.get());
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*leftPointCPtr, *clPointCPtr, 
@@ -388,7 +393,8 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
     TypicalSectionHorizontalConstraint::CreateAndInsert(*eotwLPointCPtr, *leftPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 3.0), 2);    
 
-    points.erase(&points.at(0));
+    points.clear();
+    points.push_back(leftPointCPtr.get());
     points.push_back(eotwLPointCPtr.get());
 
     RoadLaneComponent::CreateAndInsert(model, points);
@@ -411,10 +417,125 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
     TypicalSectionVerticalConstraint::CreateAndInsert(*eotwRPointCPtr, *rightPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, -0.05), 2);
 
-    points.erase(&points.at(0));
+    points.clear();
+    points.push_back(rightPointCPtr.get());
     points.push_back(eotwRPointCPtr.get());
 
     RoadLaneComponent::CreateAndInsert(model, points);
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSectionPortionBreakDownModelCR model)
+    {
+    DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
+
+    auto eotwRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOTW_R"));
+
+    auto rightPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*rightPointCPtr, *eotwRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 1.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*rightPointCPtr, *eotwRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.01), 2);
+
+    auto bottomRightPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomRightPointCPtr, *rightPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*bottomRightPointCPtr, *rightPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+
+    auto bottomLeftPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomLeftPointCPtr, *eotwRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*bottomLeftPointCPtr, *eotwRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+
+    bvector<ITypicalSectionConstraintPointCP> points;
+    points.push_back(eotwRProxyCPtr.get());
+    points.push_back(rightPointCPtr.get());
+    points.push_back(bottomRightPointCPtr.get());
+    points.push_back(bottomLeftPointCPtr.get());
+
+    RoadShoulderComponent::CreateAndInsert(model, points); // Paved shoulder
+
+    auto eosRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOS_R"));
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*eosRPointCPtr, *rightPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 1.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*eosRPointCPtr, *rightPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.01), 2);
+
+    auto bottomEOSRPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomEOSRPointCPtr, *eosRPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*bottomEOSRPointCPtr, *eosRPointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+
+    points.clear();
+    points.push_back(rightPointCPtr.get());
+    points.push_back(eosRPointCPtr.get());
+    points.push_back(bottomEOSRPointCPtr.get());
+    points.push_back(bottomRightPointCPtr.get());
+
+    RoadShoulderComponent::CreateAndInsert(model, points); // Unpaved shoulder
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus RoadRailPhysicalTestsFixture::InsertSideSlopeRightSide(TypicalSectionPortionBreakDownModelCR model)
+    {
+    DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
+
+    auto eosRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOS_R"));
+
+    auto ecHingePointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*ecHingePointCPtr, *eosRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 2.0), 1);
+    TypicalSectionVerticalConstraint::CreateAndInsert(*ecHingePointCPtr, *eosRProxyCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 2);
+
+    bvector<ITypicalSectionConstraintPointCP> points;
+    points.push_back(eosRProxyCPtr.get());
+    points.push_back(ecHingePointCPtr.get());
+
+    BufferComponent::CreateAndInsert(model, points);
+
+    auto ecFillPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionSlopeConstraint::CreateAndInsert(*ecFillPointCPtr, *ecHingePointCPtr,
+        *TypicalSectionConstraintConstantSlope::Create(model, 1.0), 1);
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*ecFillPointCPtr, *ecHingePointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 4.0), 2);    
+
+    points.clear();
+    points.push_back(ecHingePointCPtr.get());
+    points.push_back(ecFillPointCPtr.get());
+
+    SideSlopeConditionComponent::CreateAndInsert(model, 10, points); // Fill condition
+
+    auto ecCutPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
+
+    TypicalSectionSlopeConstraint::CreateAndInsert(*ecCutPointCPtr, *ecHingePointCPtr,
+        *TypicalSectionConstraintConstantSlope::Create(model, -1.0), 1);
+    TypicalSectionHorizontalConstraint::CreateAndInsert(*ecCutPointCPtr, *ecHingePointCPtr,
+        *TypicalSectionConstraintConstantOffset::Create(model, 4.0), 2);
+
+    points.clear();
+    points.push_back(ecHingePointCPtr.get());
+    points.push_back(ecCutPointCPtr.get());
+
+    SideSlopeConditionComponent::CreateAndInsert(model, 20, points); // Cut condition
 
     return BentleyStatus::SUCCESS;
     }
