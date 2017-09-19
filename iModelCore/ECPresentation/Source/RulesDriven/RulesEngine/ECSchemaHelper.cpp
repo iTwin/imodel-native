@@ -382,6 +382,8 @@ struct ECSchemaHelper::SupportedClassesResolver
         DeterminedIncludedEntityClasses = 1 << 1,
         DeterminedExcludedEntityClasses = 1 << 2,
         DeterminedRelationshipClasses = 1 << 3,
+        DeterminedPolymorphicallyIncludedClasses = 1 << 4,
+        DeterminedPolymorphicallyExcludedClasses = 1 << 5,
         };
 
 private:
@@ -391,6 +393,8 @@ private:
     mutable IdSet<ECClassId> m_includedEntityClassIds;
     mutable IdSet<ECClassId> m_excludedEntityClassIds;
     mutable IdSet<ECClassId> m_relationshipClassIds;
+    mutable IdSet<ECClassId> m_polymorphicallyIncludedClassIds;
+    mutable IdSet<ECClassId> m_polymorphicallyExcludedClassIds;
     SupportedEntityClassInfos const* m_classInfos;
     SupportedRelationshipClassInfos const* m_relationshipInfos;
 
@@ -412,6 +416,33 @@ private:
     static void AddClassId(IdSet<ECClassId>& list, ECClassCR ecClass)
         {
         list.insert(ecClass.GetId());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache, bool include) const
+        {
+        static Utf8CP query =
+            "SELECT SourceECInstanceId"
+            " FROM [meta].[ClassHasAllBaseClasses] "
+            " WHERE InVirtualSet(?, TargetECInstanceId)";
+
+        CachedECSqlStatementPtr stmt = statementsCache.GetPreparedStatement(db, query);
+        if (!stmt.IsValid())
+            {
+            BeAssert(false);
+            return IdSet<ECClassId>();
+            }
+
+        IdSet<ECClassId> const& ids = include ? GetIncludedEntityClassIds() : GetExcludedEntityClassIds();
+        stmt->BindVirtualSet(1, ids);
+
+        IdSet<ECClassId> classesIds;
+        while (DbResult::BE_SQLITE_ROW == stmt->Step())
+            classesIds.insert(stmt->GetValueId<ECClassId>(0));
+
+        return classesIds;
         }
     
 public:
@@ -541,6 +572,32 @@ public:
         }
     
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    IdSet<ECClassId> const& GetPolymorphicallyIncludedClassIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache) const
+        {
+        if (0 == (m_flags & DeterminedPolymorphicallyIncludedClasses))
+            {
+            m_polymorphicallyIncludedClassIds = DeterminePolymorphicallySupportedClassesIds(db, statementsCache, true);
+            m_flags |= DeterminedPolymorphicallyIncludedClasses;
+            }
+        return m_polymorphicallyIncludedClassIds;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    IdSet<ECClassId> const& GetPolymorphicallyExcludedClassIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache) const
+        {
+        if (0 == (m_flags & DeterminedPolymorphicallyExcludedClasses))
+            {
+            m_polymorphicallyExcludedClassIds = DeterminePolymorphicallySupportedClassesIds(db, statementsCache, false);
+            m_flags |= DeterminedPolymorphicallyExcludedClasses;
+            }
+        return m_polymorphicallyExcludedClassIds;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                01/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool HasExcludes() const {return !GetExcludedEntityClassIds().empty();}
@@ -622,7 +679,7 @@ static Utf8String CreateRelationshipPathsQuery(ECSchemaHelper::SupportedClassesR
             {
             if (hasCondition)
                 query.append(" AND ");
-            query.append("[end].[ECInstanceId] IN (SELECT SourceECInstanceId FROM [meta].[ClassHasAllBaseClasses] WHERE InVirtualSet(:supportedClassIds, TargetECInstanceId))");
+            query.append("InVirtualSet(:supportedClassIds, [end].[ECinstanceId])");
             hasCondition = true;
             }
         }
@@ -648,7 +705,7 @@ static Utf8String CreateRelationshipPathsQuery(ECSchemaHelper::SupportedClassesR
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus BindVariables(ECSqlStatement& stmt, VirtualSet const& sourceClassIds, ECSchemaHelper::SupportedClassesResolver const& resolver, 
-    int relationshipDirection, int depth, bool include)
+    int relationshipDirection, int depth, bool include, BeSQLite::EC::ECSqlStatementCache const& statementsCache)
     {
     if (!stmt.BindVirtualSet(stmt.GetParameterIndex("sourceClassIds"), sourceClassIds).IsSuccess())
         {
@@ -679,7 +736,7 @@ static BentleyStatus BindVariables(ECSqlStatement& stmt, VirtualSet const& sourc
     
     if (depth <= 0 && !ShouldAcceptAllClasses(resolver, include))
         {
-        IdSet<ECClassId> const& ids = include ? resolver.GetIncludedEntityClassIds() : resolver.GetExcludedEntityClassIds();
+        IdSet<ECClassId> const& ids = include ? resolver.GetPolymorphicallyIncludedClassIds(*stmt.GetECDb(), statementsCache) : resolver.GetPolymorphicallyExcludedClassIds(*stmt.GetECDb(), statementsCache);
         if(!stmt.BindVirtualSet(stmt.GetParameterIndex("supportedClassIds"), ids).IsSuccess())
             {
             BeAssert(false);
@@ -827,7 +884,7 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
     VirtualSet const& sourceClassIds, int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const
     {
     // bind to get includes
-    if (SUCCESS != BindVariables(stmt, sourceClassIds, resolver, relationshipDirection, depth, include))
+    if (SUCCESS != BindVariables(stmt, sourceClassIds, resolver, relationshipDirection, depth, include, *m_statementCache))
         {
         BeAssert(false);
         return;
