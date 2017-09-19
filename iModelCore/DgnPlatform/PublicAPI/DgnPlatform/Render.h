@@ -2169,6 +2169,7 @@ struct TriMeshArgs
     uint32_t            m_numIndices = 0;
     uint32_t const*     m_vertIndex = nullptr;
     uint32_t            m_numPoints = 0;
+    uint32_t            m_edgeWidth = 0;
     QPoint3dCP          m_points= nullptr;
     OctEncodedNormalCP  m_normals = nullptr;
     FPoint2d const*     m_textureUV= nullptr;

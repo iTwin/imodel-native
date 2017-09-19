@@ -1825,6 +1825,7 @@ bool MeshArgs::Init(MeshCR mesh)
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();
+    m_edgeWidth = mesh.GetDisplayParams().GetLineWidth();
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
 
     mesh.ToFeatureIndex(m_features);
