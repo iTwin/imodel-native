@@ -245,27 +245,27 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(ByteStream& byteStream, Json::Value const& json);
     //! Converts the specified DPoint2d to a JSON value
-    //! The point is converted to a JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECJsonSystemNames::Point:Y "y".
+    //! The point is converted to a JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y".
     //! @param[out] json the resulting JSON value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(Json::Value& json, DPoint2d pt);
     //! Converts the specified JSON value to a DPoint2d
-    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
+    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the JSON value
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, Json::Value const& json);
     //! Converts the specified DPoint3d to a JSON value
-    //! The point is converted to a JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
-    //! and @ref BentleyApi::ECJsonSystemNames::Point:Z "z".
+    //! The point is converted to a JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
+    //! and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Z "z".
     //! @param[out] json the resulting JSON value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(Json::Value& json, DPoint3d pt);
     //! Converts the specified JSON value to a DPoint3d
-    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
-    //! and @ref BentleyApi::ECJsonSystemNames::Point:Z "z".
+    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
+    //! and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Z "z".
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
@@ -371,29 +371,29 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(ByteStream& byteStream, RapidJsonValueCR json);
 
     //! Converts the specified DPoint2d to a JSON value
-    //! The point is converted to a JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECJsonSystemNames::Point:Y "y".
+    //! The point is converted to a JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y".
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified JSON value to a DPoint2d
-    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
+    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x" and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json);
     //! Converts the specified DPoint3d to a JSON value
-    //! The point is converted to a JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
-    //! and @ref BentleyApi::ECJsonSystemNames::Point:Z "z".
+    //! The point is converted to a JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
+    //! and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Z "z".
     //! @param[out] json the resulting RapidJson value.
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified JSON value to a DPoint3d
-    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECJsonSystemNames::Point:Y "y"
-    //! and @ref BentleyApi::ECJsonSystemNames::Point:Z "z".
+    //! The JSON value must hold the point as JSON object with keys @ref BentleyApi::ECN::ECJsonSystemNames::Point:X "x", @ref BentleyApi::ECN::ECJsonSystemNames::Point:Y "y"
+    //! and @ref BentleyApi::ECN::ECJsonSystemNames::Point:Z "z".
     //! @param[out] pt the resulting point
     //! @param[in] json the JSON value
     //! @return SUCCESS or ERROR
