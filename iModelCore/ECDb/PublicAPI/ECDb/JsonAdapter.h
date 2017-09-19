@@ -16,28 +16,30 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //=======================================================================================
-//! Adapts the rows returned by an ECSqlStatement to the JSON wire format (@see @ref BentleyApi::ECN::ECJsonSystemNames).
+//! Adapts the rows returned by an ECSqlStatement to the JSON format (@see @ref BentleyApi::ECN::ECJsonSystemNames).
 //! 
-//! @see ECSqlStatement
+//! @see ECSqlStatement, BentleyApi::ECN::ECJsonSystemNames
 //! @ingroup ECDbGroup
-//! @bsiclass                                                 Ramanujam.Raman      08/2012
+//! @bsiclass                                                 08/2012
 //+===============+===============+===============+===============+===============+======
 struct JsonECSqlSelectAdapter final: NonCopyableClass
     {
     public:
-        //=======================================================================================
-        //! Options to control the format of the JSON returned by methods in the JsonECSqlSelectAdapter.
-        // @bsiclass                                                Ramanujam.Raman      10/2012
-        //+===============+===============+===============+===============+===============+======
-        enum class FormatOptions
-        {
-        Default,
-        LongsAreIds //!< ECProperties of type Long are treated as Ids and therefore formatted as Ids (i.e. as hex strings)
-        };
+        struct FormatOptions final
+            {
+            private:
+                ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
 
+            public:
+                //! Initializes a default BentleyApi::ECN::ECJsonInt64Format object with ECJsonInt64Format::AsDecimalString
+                FormatOptions() {}
+                explicit FormatOptions(ECN::ECJsonInt64Format int64Format) : m_int64Format(int64Format) {}
+
+                ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
+            };
     private:
         ECSqlStatementCR m_ecsqlStatement;
-        FormatOptions m_formatOptions = FormatOptions::Default;
+        FormatOptions m_formatOptions;
    
     public:
 
@@ -45,43 +47,43 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions formatOptions = FormatOptions::Default) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions) {}
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions()) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions) {}
         ~JsonECSqlSelectAdapter() {}
 
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
-        //! @remarks
-        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON wire format".
+        //! 
+        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL select clause is what exclusively determines what property name value pairs
         //! the JSON will contain.
         //! The ECSQL system properties are converted to the respective JSON wire format system members:
-        //! ECSQL  | JSON Wire Format | JSON Wire Format Data Type
-        //! ------ | ---------------- | --------------------------
-        //! ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
-        //! ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "{Schema Name}.{Class Name}"
+        //! ECSQL  | JSON Format | JSON Format Data Type
+        //! ------ | ------------| ---------------------
+        //! %ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
+        //! ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "<Schema Name>.<Class Name>"
         //! SourceECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId" | Hex String
-        //! SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "{Schema Name}.{Class Name}"
+        //! SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
         //! TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
-        //! TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "{Schema Name}.{Class Name}"
-        //! {Navigation Property}.Id | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "{Schema Name}.{RelationshipClass Name}"
-        //! {Navigation Property}.RelECClassId | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "{Schema Name}.{RelationshipClass Name}"
-        //! {Point2d/3d Property}.X | {point2d/3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
-        //! {Point2d/3d Property}.Y | {point2d/3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
-        //! {Point3d Property}.Z | {point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //! TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
+        //! {%Navigation Property}.Id | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! {%Navigation Property}.RelECClassId | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! {Point2d/Point3d Property}.X | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! {Point2d/Point3d Property}.Y | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! {%Point3d Property}.Z | {point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
-        //! Examples:
-        //! For the ECSQL <c>SELECT ECInstanceId, ECClass, Name, Age FROM myschema.Employee WHERE ...</c>
+        //! ####Examples
+        //! For the ECSQL <c>SELECT ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
         //! the returned JSON format would be this:
         //! 
         //!     {
-        //!         "id" : "<Hex string>",
+        //!         "id" : "0x13A",
         //!         "className" : "mySchema.Employee",
         //!         "name": "Sally Smith",
         //!         "age": 30
         //!     }
         //!
         //! For the ECSQL <c>SELECT Name, Age FROM myschema.Employee WHERE ...</c>
-        //! where the ECInstanceId was removed, the returned JSON format would be this:
+        //! the returned JSON format would be this:
         //! 
         //!     {
         //!         "name": "Sally Smith",
@@ -90,6 +92,8 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! 
         //! Using expressions or aliases or nesting property accessors in the ECSQL select clause
         //! affect the JSON member names, not the JSON structure.
+        //! @note When using expressions in the SELECT clause it is recommended to assign a column alias to them.
+        //! The JSON member name will then be the alias instead of the full expression.
         //! @param [out] json current row as JSON object of property name value pairs
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json) const;
@@ -132,7 +136,7 @@ struct JsonReader final : NonCopyableClass
     private:
         ECDbCR m_ecdb;
         mutable ECSqlStatement m_statement;
-        JsonECSqlSelectAdapter::FormatOptions m_formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default;
+        JsonECSqlSelectAdapter::FormatOptions m_formatOptions;
         bool m_isValid = false;
 
         BentleyStatus Initialize(ECN::ECClassCR);
@@ -143,13 +147,13 @@ struct JsonReader final : NonCopyableClass
         //! @param[in] ecdb ECDb
         //! @param[in] ecClass ECClass of the instance that needs to be retrieved. 
         //! @param[in] formatOptions Options to control the output. 
-        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default);
+        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions const& formatOptions = JsonECSqlSelectAdapter::FormatOptions());
 
         //! Initializes a new JsonReader instance for the specified class. 
         //! @param ecdb [in] ECDb
         //! @param ecClassId [in] ECClassId indicating the class of the instance that needs to be retrieved. 
         //! @param[in] formatOptions Options to control the output. 
-        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions::Default);
+        ECDB_EXPORT JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions = JsonECSqlSelectAdapter::FormatOptions());
         ~JsonReader() {}
 
         //! Indicates whether this JsonReader is valid and can be used to retrieve instances.

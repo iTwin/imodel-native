@@ -383,7 +383,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
 
                     case PRIMITIVETYPE_Long:
                     {
-                    ECRapidJsonUtilities::Int64ToStringJsonValue(arrayElementJson, INT64VALUE, json.GetAllocator());
+                    ECRapidJsonUtilities::Int64ToJson(arrayElementJson, INT64VALUE, json.GetAllocator());
                     break;
                     }
 
@@ -521,7 +521,10 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     if (!it->IsString())
                         return ERROR;
 
-                    const int64_t val = ECRapidJsonUtilities::Int64FromJson(*it);
+                    int64_t val = 0;
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToInt64(val, *it))
+                        return ERROR;
+
                     if (INT64VALUE != val)
                         return ERROR;
 

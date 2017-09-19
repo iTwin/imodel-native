@@ -337,23 +337,35 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions::Default);
+    JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsNumber));
     Json::Value actualJson;
-    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson));
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
     ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
 
     ASSERT_TRUE(actualJson.isMember("l")) << actualJson.ToString().c_str();
-    ASSERT_STREQ("1234567890", actualJson["l"].asCString()) << "JsonECSqlSelectAdapter::FormatOptions::Default " << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson["l"].isIntegral()) << actualJson.ToString().c_str();
+    ASSERT_EQ(1234567890, actualJson["l"].asInt64()) << "ECJsonInt64Format::AsNumber " << actualJson.ToString().c_str();
 
-    JsonECSqlSelectAdapter adapterLongsAreIds(stmt, JsonECSqlSelectAdapter::FormatOptions::LongsAreIds);
+    JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsDecimalString));
     actualJson.clear();
-    ASSERT_EQ(SUCCESS, adapterLongsAreIds.GetRow(actualJson));
+    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson));
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
     ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
 
     ASSERT_TRUE(actualJson.isMember("l")) << actualJson.ToString().c_str();
-    ASSERT_STREQ(BeInt64Id(1234567890).ToHexStr().c_str(), actualJson["l"].asCString()) << "JsonECSqlSelectAdapter::FormatOptions::LongsAreIds " << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson["l"].isString()) << actualJson.ToString().c_str();
+    ASSERT_STREQ("1234567890", actualJson["l"].asCString()) << "ECJsonInt64Format::AsDecimalString " << actualJson.ToString().c_str();
+
+    JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
+    actualJson.clear();
+    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson));
+    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(actualJson.isMember("l")) << actualJson.ToString().c_str();
+    ASSERT_TRUE(actualJson["l"].isString()) << actualJson.ToString().c_str();
+    ASSERT_STREQ(BeInt64Id(1234567890).ToHexStr().c_str(), actualJson["l"].asCString()) << "ECJsonInt64Format::AsHexadecimalString " << actualJson.ToString().c_str();
     }
 
 //---------------------------------------------------------------------------------------

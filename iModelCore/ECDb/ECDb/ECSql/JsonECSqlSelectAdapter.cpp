@@ -22,7 +22,7 @@ struct ECSqlToJsonConverter final : NonCopyableClass
     {
     private:
         ECSqlStatement const& m_stmt;
-        JsonECSqlSelectAdapter::FormatOptions m_formatOptions;
+        JsonECSqlSelectAdapter::FormatOptions const& m_formatOptions;
 
         BentleyStatus PropertyValueToJson(JsonValueR, IECSqlValue const&) const;
         BentleyStatus PrimitiveToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
@@ -31,14 +31,14 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         BentleyStatus PrimitiveArrayToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
         BentleyStatus StructArrayToJson(JsonValueR, IECSqlValue const&) const;
     public:
-        ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions options) : m_stmt(stmt), m_formatOptions(options) {}
+        ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& options) : m_stmt(stmt), m_formatOptions(options) {}
 
         BentleyStatus ValidatePreconditions() const;
         ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo);
         BentleyStatus SelectClauseItemToJson(JsonValueR, IECSqlValue const&, ECSqlSystemPropertyInfo const& sysPropInfo) const;
 
         static Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&);
-        static void ToJsonMemberName(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
+        static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
     };
 
 //--------------------------------------------------------------------------------------
@@ -210,21 +210,10 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
         switch (sysPropInfo.GetRelationship())
             {
                 case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
-                    return ECJsonUtilities::IdToJson(json, ecsqlValue.GetId<BeInt64Id>());
-
-                case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
-                {
-                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>());
-                if (cls == nullptr)
-                    return ERROR;
-
-                ECJsonUtilities::ClassNameToJson(json, *cls);
-                return SUCCESS;
-                }
-
                 case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
                     return ECJsonUtilities::IdToJson(json, ecsqlValue.GetId<BeInt64Id>());
 
+                case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
                 case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
                 {
                 ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>());
@@ -355,7 +344,7 @@ BentleyStatus ECSqlToJsonConverter::StructToJson(JsonValueR jsonValue, IECSqlVal
         ECPropertyCP memberProp = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(memberProp != nullptr);
         Utf8String memberPropName(memberProp->GetName());
-        ToJsonMemberName(memberPropName);
+        LowerFirstChar(memberPropName);
         if (SUCCESS != PropertyValueToJson(jsonValue[memberPropName.c_str()], structMemberValue))
             return ERROR;
         }
@@ -373,11 +362,9 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
         {
             case PRIMITIVETYPE_Binary:
             {
-            int size = -1;
+            int size = 0;
             Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
-            Utf8String base64Str;
-            Base64Utilities::Encode(base64Str, data, size);
-            jsonValue = base64Str;
+            ECJsonUtilities::BinaryToJson(jsonValue, data, (size_t) size);
             return SUCCESS;
             }
             case PRIMITIVETYPE_Boolean:
@@ -402,14 +389,9 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
             return SUCCESS;
             }
             case PRIMITIVETYPE_Long:
-            {
-            if (m_formatOptions == JsonECSqlSelectAdapter::FormatOptions::LongsAreIds)
-                jsonValue = ecsqlValue.GetId<BeInt64Id>().ToHexStr();
-            else
-                jsonValue = BeJsonUtilities::StringValueFromInt64(ecsqlValue.GetInt64()); // Javascript has issues with holding Int64 values!!!
+                ECJsonUtilities::Int64ToJson(jsonValue, ecsqlValue.GetInt64(), m_formatOptions.GetInt64Format());
+                return SUCCESS;
 
-            return SUCCESS;
-            }
             case PRIMITIVETYPE_Point2d:
                 return ECJsonUtilities::Point2dToJson(jsonValue, ecsqlValue.GetPoint2d());
 
@@ -468,7 +450,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         if (name.empty())
             name.assign(colInfo.GetProperty()->GetName());
 
-        ToJsonMemberName(name);
+        LowerFirstChar(name);
         return name;
         }
 
@@ -476,7 +458,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         {
         Utf8String name(colInfo.GetPropertyPath().ToString());
         BeAssert(!name.empty());
-        ToJsonMemberName(name);
+        LowerFirstChar(name);
         bool foundDelimiter = false;
         //lower first character of each token in access string
         for (size_t i = 1; i < name.size(); i++)

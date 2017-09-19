@@ -34,12 +34,12 @@ struct StatementResetScope final : NonCopyableClass
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Krischan.Eberle                09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::JsonReader(ECDbCR ecdb, ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClass) == SUCCESS; }
+JsonReader::JsonReader(ECDbCR ecdb, ECClassCR ecClass, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClass) == SUCCESS; }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Ramanujam.Raman                 09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClassId) == SUCCESS; }
+JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) : m_ecdb(ecdb), m_formatOptions(formatOptions) { m_isValid = Initialize(ecClassId) == SUCCESS; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle               09/2017

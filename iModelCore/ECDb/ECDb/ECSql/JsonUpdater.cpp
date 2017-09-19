@@ -25,7 +25,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) con
 
     IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -47,7 +47,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECI
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -68,7 +68,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 
     IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
 
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -90,7 +90,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
 
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
         return BE_SQLITE_ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
