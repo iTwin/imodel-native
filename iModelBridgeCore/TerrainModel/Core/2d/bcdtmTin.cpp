@@ -3767,8 +3767,8 @@ BENTLEYDTM_Public int bcdtmTin_compactPointAndNodeTablesDtmObject(BC_DTM_OBJ *dt
 **  Adjust Tin Pointers To Hull
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Adjusting Hull Pointers") ;
-    if( dtmP->hullPoint     >= 0 && dtmP->hullPoint     < dtmP->numPoints ) dtmP->hullPoint      = dtmP->hullPoint     - *(tempP+dtmP->hullPoint) ;
-    if( dtmP->nextHullPoint >= 0 && dtmP->nextHullPoint < dtmP->numPoints ) dtmP->nextHullPoint  = dtmP->nextHullPoint - *(tempP+dtmP->nextHullPoint) ;
+    if( dtmP->hullPoint     >= 0 /*&& dtmP->hullPoint     < dtmP->numPoints*/ ) dtmP->hullPoint      = dtmP->hullPoint     - *(tempP+dtmP->hullPoint) ;
+    if( dtmP->nextHullPoint >= 0 /*&& dtmP->nextHullPoint < dtmP->numPoints*/ ) dtmP->nextHullPoint  = dtmP->nextHullPoint - *(tempP+dtmP->nextHullPoint) ;
 /*
 **  Adjust Node Hull Pointers
 */
