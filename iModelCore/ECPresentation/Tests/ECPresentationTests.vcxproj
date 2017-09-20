@@ -22,6 +22,7 @@
     <ClCompile Include="BackDoor\Localization.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentDescriptorSerializationTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp" />
