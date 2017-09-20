@@ -99,6 +99,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
             m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
+            assert(m_raster != nullptr);
             }
         }
 
@@ -248,7 +249,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+        m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
+        m_preloadMutex.unlock();
         }
 
 #if 0 

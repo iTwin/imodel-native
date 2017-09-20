@@ -57,6 +57,7 @@ template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, 
 template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
     assert(maxCountData >= 256 * 256 * 3);
+    assert(m_source != nullptr);
     
 
     //DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_contentExtentDefined ? m_nodeHeader->m_contentExtent : m_nodeHeader->m_nodeExtent);
