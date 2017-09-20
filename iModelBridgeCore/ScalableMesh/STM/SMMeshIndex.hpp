@@ -34,7 +34,7 @@
 #include <json/json.h>
 
 
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -3807,7 +3807,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
-    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+    if (dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()))
         {
         textureWidthInPixels = 256;
         textureHeightInPixels = 256;
@@ -5236,9 +5236,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     settings->m_isPublishing = true;
     ISMDataStoreTypePtr<EXTENT>     pDataStore(
 #ifndef VANCOUVER_API
-        new SMStreamingStore<EXTENT>(settings)
+        new SMStreamingStore<EXTENT>(settings, nullptr)
 #else
-        SMStreamingStore<EXTENT>::Create(settings)
+        SMStreamingStore<EXTENT>::Create(settings, nullptr)
 #endif
     );
 

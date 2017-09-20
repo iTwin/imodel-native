@@ -316,7 +316,7 @@ $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeade
 
 $(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)MapboxTextureProvider$(oext) : $(stmDir)MapboxTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)StreamTextureProvider$(oext) : $(stmDir)StreamTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -339,6 +339,11 @@ $(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherD
 $(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+#-----------------------------------------------------------------------
+#   Build RDS provider
+#-----------------------------------------------------------------------
+$(o)ScalableMeshRDSProvider$(oext) : $(stmDir)/ScalableMeshRDSProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores
@@ -476,6 +481,8 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \

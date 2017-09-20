@@ -64,8 +64,12 @@ void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector
             if (!feature.back().AlmostEqual(feature.front())) feature.push_back(feature.front());
             islandFeatures.push_back(feature);
             }
-        else bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)featureDefs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
-        }
+		else
+		    {
+			DTMFeatureType type = (DTMFeatureType)featureDefs[i][0];
+			bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, type, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+		    }
+		}
     }
 
 int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType type, BC_DTM_OBJ* dtmObjP)
@@ -261,7 +265,6 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
     HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
     bvector<bool> used(polygons.size(),false);
-    VuPolygonClassifier vu(1e-8, 0);
 
 	bvector<bool> available(polygons.size(), false);
 	for (auto& poly : polygons)
@@ -291,6 +294,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 			if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()) ||
 				bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
 			{
+				VuPolygonClassifier vu(1e-8, 0);
 				vu.ClassifyAUnionB(poly, poly2);
 				bvector<DPoint3d> xyz;
 				bvector<bvector<DPoint3d>> faces;
@@ -308,28 +312,95 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 				if (faces.size() == 1)
 					continue;
 				//compute intersects on single vertices
-				bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+				bmap<DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
 				bvector<DPoint3d> intersectingVertices;
+				bvector<bpair<bpair<DSegment3d, DSegment3d>, bpair<DSegment3d, DSegment3d>>> intersectingContext;
 				int minConsecutiveIntersectingVertices = INT_MAX;
 				int consecutiveIntersectingVertices = 0;
-				for (auto& pt : poly)
-					setOfPts.insert(pt);
+				int nPtsSeen = 0;
+				int loopNPts = 0;
+				for (auto pt : poly)
+				{
+					pt.z = 0;
+					setOfPts.insert(make_bpair(pt, &pt - &poly[0]));
+				}
 				for (auto& pt : poly2)
-					if (setOfPts.count(pt))
+				{
+					++nPtsSeen;
+					DPoint3d pt2d = pt;
+					pt2d.z = 0;
+					if (setOfPts.count(pt2d))
 					{
+						DSegment3d lastSegOn1, nextSegOn1, lastSegOn2, nextSegOn2;
+						lastSegOn1 = DSegment3d::From(setOfPts[pt2d] == 0 ? poly[poly.size() - 2] : poly[setOfPts[pt2d] - 1], poly[setOfPts[pt2d]]);
+						nextSegOn1 = DSegment3d::From(poly[setOfPts[pt2d]], setOfPts[pt2d] == poly.size() - 1 ? poly[1] : poly[setOfPts[pt2d] + 1]);
+						lastSegOn2 = DSegment3d::From(nPtsSeen == 1 ? poly2[poly2.size() - 2] : poly2[nPtsSeen - 2], poly2[nPtsSeen - 1]);
+						nextSegOn2 = DSegment3d::From(poly2[nPtsSeen - 1], nPtsSeen == poly2.size() ? poly2[1] : poly2[nPtsSeen]);
+
 						intersectingVertices.push_back(pt);
+						intersectingContext.push_back(make_bpair(make_bpair(lastSegOn1, nextSegOn1), make_bpair(lastSegOn2, nextSegOn2)));
 						consecutiveIntersectingVertices++;
 					}
 					else
 					{
-						minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+						if (nPtsSeen == 2)
+						{
+							loopNPts = consecutiveIntersectingVertices;
+						}
+						else if (nPtsSeen != 2 && consecutiveIntersectingVertices > 0)
+							minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+						if (consecutiveIntersectingVertices > 1)
+						{
+							intersectingVertices.resize(intersectingVertices.size() - consecutiveIntersectingVertices);
+							intersectingContext.resize(intersectingContext.size() - consecutiveIntersectingVertices);
+						}
 						consecutiveIntersectingVertices = 0;
 					}
+				}
+
+				if (loopNPts != 0)
+				{
+					consecutiveIntersectingVertices += loopNPts - 1;
+					if (consecutiveIntersectingVertices > 0)
+						minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+					consecutiveIntersectingVertices = 0;
+				}
 
 				//No single vertex intersection
 				if (minConsecutiveIntersectingVertices > 1) continue;
 				if (!intersectingVertices.empty())
 				{
+					size_t nColinear = 0;
+					for (size_t i = 0; i < intersectingVertices.size(); ++i)
+					{
+						std::vector<DPoint3d> pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.first.point[0] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.second.point[1] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.first.point[0] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+						pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.second.point[1] };
+						if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+						{
+							nColinear++;
+							continue;
+						}
+
+					}
+					if (nColinear == intersectingVertices.size())
+						continue;
 					bvector<DPoint3d> withoutIntersect;
 					if (poly.size() < poly2.size())
 					{
@@ -374,16 +445,25 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 		if (!available[&poly - &polygons.front()]) continue;
         if (used[&poly - &polygons[0]]) continue;
 		if (poly.empty()) continue;
+		bvector<DPoint3d> poly_2d = poly;
+		for (auto&pt : poly_2d) pt.z = 0;
 
-        //pre-compute the union of polys with this function because apparently sometimes Unify hangs
-        for (auto& poly2:polygons)
-            { 
+		//pre-compute the union of polys with this function because apparently sometimes Unify hangs
+		for (auto& poly2 : polygons)
+		{
 			if (!available[&poly2 - &polygons.front()]) continue;
-            if (&poly == &poly2) continue;
+			if (&poly == &poly2) continue;
 			if (poly2.empty()) continue;
-            if (used[&poly2 - &polygons[0]]) continue;
-            if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()))
+			if (used[&poly2 - &polygons[0]]) continue;
+			VuPolygonClassifier vu(1e-8, 0);
+
+			bvector<DPoint3d> poly2_2d = poly2;
+			for (auto&pt : poly2_2d) pt.z = 0;
+
+			if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size())
+				|| bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
                 {
+				VuPolygonClassifier vu(1e-8, 0);
                 vu.ClassifyAUnionB(poly, poly2);
                 bvector<DPoint3d> xyz;
 				bvector<bvector<DPoint3d>> faces;
@@ -403,7 +483,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 					poly = faces.front();
 					used[&poly2 - &polygons[0]] = true;
 				    }
-				else
+			/*	else
 				   {
 					//compute intersects on vertices
 					bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
@@ -445,7 +525,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 						}
 						else used[&poly2 - &polygons[0]] = true;
 					}
-			        }
+			        }*/
                 }
 
             }
