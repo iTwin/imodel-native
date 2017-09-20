@@ -312,7 +312,7 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
             {
             std::cout << zippedFile.GetNameUtf8() << " failed to create\n" << std::endl;
             retryTimer *= 2;
-            if(retryTimer < 256000) //ims gets grumpy sometimes and we need to retry
+            if(retryTimer < 512001) //ims gets grumpy sometimes and we need to retry
                 {
                 std::cout << "retrying in "<< retryTimer << "ms\n" << std::endl;
                 Sleep(retryTimer);
