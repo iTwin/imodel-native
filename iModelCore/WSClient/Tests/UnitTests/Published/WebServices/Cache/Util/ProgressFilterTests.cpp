@@ -45,6 +45,24 @@ TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfTwoArguments_ProgressEx
     EXPECT_EQ(1, count);
     }
 
+TEST_F(ProgressFilterTests, Execute_MultipleTimesAndMinDelayIsZero_ProgressIsCalledEveryTime)
+    {
+    int count = 0;
+    std::function<void(double)> onProgress = [&] (double a)
+        {
+        count++;
+        EXPECT_EQ(count, a);
+        };
+    std::function<void(double)> filteredProgress = ProgressFilter::Create(onProgress, 0);
+
+    for (int i = 1; i <= 10; i++)
+        {
+        filteredProgress(i);
+        }
+
+    EXPECT_EQ(10, count);
+    }
+
 TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithInsufficientDelay_ProgressIsCalledOnce)
     {
     int count = 0;

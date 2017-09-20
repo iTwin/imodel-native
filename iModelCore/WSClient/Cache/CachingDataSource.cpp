@@ -87,6 +87,22 @@ void CachingDataSource::EnableSkipTokens(bool enable)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::SetMaxParalelFileDownloadLimit(size_t maxParalelDownloads)
+    {
+    m_maxParalelDownloads = maxParalelDownloads;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::SetMinTimeBetweenProgressCalls(uint64_t minTimeBetweenProgressCallsMs)
+    {
+    m_minTimeBetweenProgressCallsMs = minTimeBetweenProgressCallsMs;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CachingDataSource::GetInitialSkipToken() const
@@ -1178,13 +1194,17 @@ CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {
-    auto task = std::make_shared<DownloadFilesTask>(
+    auto task = std::make_shared<DownloadFilesTask>
+        (
         shared_from_this(),
         m_fileDownloadManager,
         std::move(filesToDownload),
         fileCacheLocation,
+        m_maxParalelDownloads,
+        m_minTimeBetweenProgressCallsMs,
         std::move(onProgress),
-        ct);
+        ct
+        );
 
     m_cacheAccessThread->Push(task);
 
