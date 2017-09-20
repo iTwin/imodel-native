@@ -116,26 +116,6 @@
 
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
     <!-- Lay out the test product according to the standard BeGTest layout. -->
-    <ProductDirectoryList ListName="Tests">
-    	<ProductDirectory Name = "ApplicationRoot"			Path="" />
-        <ProductDirectory Name="Assets"                                 Path="Assets" RelativeTo="ApplicationRoot"/>
-    	<ProductDirectory Name="WSClientAssemblies"			/>
-    	<ProductDirectory Name="MobileUtilsAssemblies"		/>
-
-    	<ProductDirectory Name="MobileUtilsAssets"			Path="Assets" />
-    	<ProductDirectory Name="DgnClientSdkTools-Winx86"	Deliver="false" />
-    	<ProductDirectory Name="DgnClientSdkTools-Win7"		Deliver="false" />
-    	<ProductDirectory Name="BentleyEulaDelivery"		Deliver="false" />
-    	<ProductDirectory Name="MobileUtilsXliffs"			Deliver="false" />
-    	<ProductDirectory Name="LicenseAssemblies"			Deliver="false" />
-    	<ProductDirectory Name="DgnDbPlatformAssets"		RelativeTo="ApplicationRoot" />
-        <ProductDirectory Name="Shared"                     Deliver="false" LibType="static" />
-        <ProductDirectory Name="Resources"                  Deliver="false" LibType="static" />
-        <ProductDirectory Name="Sample"                     Deliver="false" />
-        <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
-        <ProductDirectory Name="CifDlls"  Path="Cif"/>
-    </ProductDirectoryList>
-
     <Part Name="Tests">
         <!-- We probabaly need a PublishedAPI part for this product.  If we do, then uncomment the following line -->
         <!-- <SubPart PartName="UnitTests-Published" /> -->
@@ -155,13 +135,11 @@
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
         <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
-        <Directories DirectoryListName="Tests"/>
     </Product>
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="Gtest-CiviliModelBridges-Tests">
     	<Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
-    	<Directories DirectoryListName="Tests" />
     	<SubPart PartName="Gtest" />
     </Product>
 
