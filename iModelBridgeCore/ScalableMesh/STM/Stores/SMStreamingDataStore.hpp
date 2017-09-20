@@ -1098,12 +1098,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
