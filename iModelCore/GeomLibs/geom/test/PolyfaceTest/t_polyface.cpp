@@ -3977,3 +3977,35 @@ TEST(Polyface,CulvertPunchB)
     Check::ClearGeometry ("Polyface.CulvertPunchB");
     }
 
+TEST(Polyface,PunchOverlap)
+    {
+    PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();
+    target->AddPolygon({ { 15,17.5 },{ 2.5,17.5 },{ 2.5,2.5 },{ 14.3263953224568,2.49999999999999 },{ 19.3263953224568,12.5 },{ 14.9999999999999,12.5 },{ 15,17.5 }});
+
+    PolyfaceHeaderPtr clipper = PolyfaceHeader::CreateVariableSizeIndexed();
+    clipper->AddPolygon({ { 2.5,2.5 },{ 15,2.5 },{ 15,10 },{ 2.5,10 },{ 2.5,2.5 } });
+
+    PolyfaceHeaderPtr inside, outside;
+    PolyfaceHeader::ComputePunchXYByPlaneSets(*clipper, *target, &inside, &outside);
+    double a = 20.0;
+    Check::SaveTransformed (*target);
+    Check::SaveTransformed (*clipper);
+    Check::Shift (a,0,0);
+    Check::SaveTransformed (*inside);
+    Check::SaveTransformed (*outside);
+
+    Check::Shift (a,0,0);
+    bvector<bool> trueFalse { true, false};
+    for (auto mergeEdges : trueFalse)
+        {
+        SaveAndRestoreCheckTransform shifter (0,a,0);
+        for (auto mergeFaces : trueFalse)
+            {
+            SaveAndRestoreCheckTransform shifter (a,0,0);
+            auto meshB = outside->CloneWithMaximalPlanarFacets (mergeFaces, mergeEdges);
+            Check::SaveTransformed (*meshB);
+
+            }
+        }
+    Check::ClearGeometry("Polyface.PunchOverlap");
+    }

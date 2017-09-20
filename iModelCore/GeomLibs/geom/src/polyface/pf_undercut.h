@@ -8,7 +8,28 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-
+void CompressCyclicPointsAndZingers (bvector<DPoint3d> &points, double tolerance)
+    {
+    DPoint3dOps::Compress (points, tolerance);
+    double angleTol = Angle::SmallAngle ();
+    size_t n = points.size ();
+    for (size_t i1 = 0; i1 < n; i1++)
+        {
+        size_t i0 = i1 == 0 ? n - 1: i1 - 1;
+        size_t i2 = (i1 + 1) % n;
+        auto xyz0 = points[i0];
+        auto xyz1 = points[i1];
+        auto xyz2 = points[i2];
+        // look from i1 towards each neighbor ..
+        auto vector10 = DVec3d::FromStartEnd (xyz1, xyz0);
+        auto vector12 = DVec3d::FromStartEnd (xyz1, xyz2);
+        if (fabs (vector10.AngleToXY (vector12)) < angleTol)
+            {
+            points.erase (points.begin () + i1);
+            n--;
+            }
+        }
+    }
 void PolygonVectorOps__ComputeUndercut_direct
 (
 TaggedPolygonVectorCR sourceA,
@@ -68,7 +89,7 @@ TaggedPolygonVectorR surfaceBbelowA
                     if (xyzAClip.size () > 0)
                         {
                         counts.Record(4);
-                        DPoint3dOps::CompressCyclic (xyzAClip, pointTolerance);
+                        CompressCyclicPointsAndZingers (xyzAClip, pointTolerance);
                         surfaceAaboveB.push_back (TaggedPolygon (xyzAClip));
                         xyzWork.clear ();
                         // project in reverse order to plane of B
@@ -561,7 +582,7 @@ TaggedPolygonVector* debugPolygons
                         );
                     if (currentShard.size () > 2)
                         {
-                        DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
+                        CompressCyclicPointsAndZingers (currentShard, pointTolerance);
                         if (currentShard.size () > 2)
                             insideShards.PushCopy (currentShard);
                         }
@@ -609,7 +630,7 @@ TaggedPolygonVector* debugPolygons
 
                         if (currentShard.size () > 2)
                             {
-                            DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
+                            CompressCyclicPointsAndZingers (currentShard, pointTolerance);
                             if (currentShard.size () > 2)
                                 insideShards.PushCopy (currentShard);
                             }
@@ -623,7 +644,7 @@ TaggedPolygonVector* debugPolygons
         size_t numOutside = 0;  // To become the number of nontrivial outside shards
         for (auto &shard : shards[shard0])
             {
-            DPoint3dOps::CompressCyclic (shard, pointTolerance);
+            CompressCyclicPointsAndZingers (shard, pointTolerance);
             if (shard.size () > 2)
                 numOutside++;
             }
