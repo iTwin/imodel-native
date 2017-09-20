@@ -132,11 +132,12 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
 
     rasterFile.m_tileQueryMapMutex.lock();
     auto tileQueryItr = rasterFile.m_tileQueryMap.find(TileID);
-    bool notFoundNode = tileQueryItr == rasterFile.m_tileQueryMap.end();
-    rasterFile.m_tileQueryMapMutex.unlock();
+    bool notFoundNode = tileQueryItr == rasterFile.m_tileQueryMap.end();    
 
     if(notFoundNode)
         {
+        rasterFile.m_tileQueryMapMutex.unlock();
+
 #ifdef _RETURN_RED_TILES_IF_NOT_IN_LOOKAHEAD    // Debug purpose only
         memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes()); 
 
@@ -156,6 +157,7 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
     else
         {
         pTileQuery = tileQueryItr->second;
+        rasterFile.m_tileQueryMapMutex.unlock();
         }
 
     pTileQuery->Wait();
