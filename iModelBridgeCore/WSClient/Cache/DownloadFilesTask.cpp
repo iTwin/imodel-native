@@ -28,21 +28,23 @@ CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<FileDownloadManager> fileDownloadManager,
 bset<ObjectId> filesToDownload,
 FileCache fileCacheLocation,
+size_t maxParalelDownloads,
+uint64_t minTimeBetweenProgressCallsMs,
 CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(cachingDataSource, ct),
+m_maxParalelDownloads(maxParalelDownloads),
 m_fileDownloadManager(fileDownloadManager),
 m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
-m_downloadTasksRunning(0),
 m_nextFileToDownloadIndex(0)
     {
     std::function<bool(CachingDataSource::ProgressCR)> shouldSkipFilter = [] (CachingDataSource::ProgressCR progress)
         {
         return progress.GetBytes().current == progress.GetBytes().total;
         };
-    m_onProgressCallback = ProgressFilter::Create(onProgress, shouldSkipFilter);
+    m_onProgressCallback = ProgressFilter::Create(onProgress, shouldSkipFilter, minTimeBetweenProgressCallsMs);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -50,10 +52,16 @@ m_nextFileToDownloadIndex(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DownloadFilesTask::ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file)
     {
-    m_downloadBytesProgress.current += (uint64_t) bytesDownloaded - file.bytesDownloaded;
+    BeCriticalSectionHolder lock(m_progressInfoCS);
+
     file.bytesDownloaded = (uint64_t) bytesDownloaded;
 
-    m_onProgressCallback({m_downloadBytesProgress, file.name});
+    double totalBytesDownloaded = m_processedFileSizes;
+    for (auto file : m_filesBeingDownloaded)
+        totalBytesDownloaded += file->bytesDownloaded;
+
+    ICachingDataSource::Progress::State progress(totalBytesDownloaded, m_totalBytesToDownload);
+    m_onProgressCallback({progress, file.name});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -83,7 +91,7 @@ void DownloadFilesTask::_OnExecute()
         fileProperties.bytesDownloaded = 0;
 
         m_filesToDownload.push_back(fileProperties);
-        m_downloadBytesProgress.total += fileProperties.size;
+        m_totalBytesToDownload += fileProperties.size;
         }
 
     txn.Commit();
@@ -96,30 +104,33 @@ void DownloadFilesTask::_OnExecute()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DownloadFilesTask::ContinueDownloadingFiles()
     {
-    int maxDownloadsRunning = 10;
+    LOG.tracev("DownloadFilesTask: running download tasks: %d", m_filesBeingDownloaded.size());
 
-    LOG.tracev("DownloadFilesTask: running download tasks: %d", m_downloadTasksRunning);
-
-    while (m_downloadTasksRunning < maxDownloadsRunning && m_nextFileToDownloadIndex < m_filesToDownload.size())
+    BeCriticalSectionHolder lock(m_progressInfoCS);
+    while ((size_t)m_filesBeingDownloaded.size() < m_maxParalelDownloads && m_nextFileToDownloadIndex < m_filesToDownload.size())
         {
         if (IsTaskCanceled()) break;
 
-        DownloadFileProperties& file = m_filesToDownload[m_nextFileToDownloadIndex];
-
+        DownloadFileProperties* file = &m_filesToDownload[m_nextFileToDownloadIndex];
         m_nextFileToDownloadIndex++;
+        m_filesBeingDownloaded.insert(file);
 
-        m_downloadTasksRunning++;
-
-        auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(file));
-        m_fileDownloadManager->DownloadAndCacheFile(file.objectId, *file.name, m_fileCacheLocation, onProgress, GetCancellationToken())
-            ->Then(m_ds->GetCacheAccessThread(), [=, &file] (ICachingDataSource::Result& result)
+        // TODO: move max download limitation to m_fileDownloadManager->DownloadAndCacheFile()
+        auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(*file));
+        m_fileDownloadManager->DownloadAndCacheFile(file->objectId, *file->name, m_fileCacheLocation, onProgress, GetCancellationToken())
+            ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::Result& result)
             {
-            m_downloadTasksRunning--;
-
             if (IsTaskCanceled()) return;
 
+            if (true)
+                {
+                BeCriticalSectionHolder lock(m_progressInfoCS);
+                m_filesBeingDownloaded.erase(file);
+                m_processedFileSizes += file->size;
+                }
+
             if (result.IsSuccess())
-                ProgressCalback(static_cast<double>(file.size), static_cast<double>(file.size), file);
+                ProgressCalback(static_cast<double>(file->size), static_cast<double>(file->size), *file);
 
             if (!result.IsSuccess())
                 {
@@ -129,7 +140,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
                     WSError::Id::NotEnoughRights == errorId)
                     {
                     auto txn = m_ds->StartCacheTransaction();
-                    AddFailedObject(txn.GetCache(), file.objectId, result.GetError());
+                    AddFailedObject(txn.GetCache(), file->objectId, result.GetError());
                     txn.Commit();
                     return;
                     }
@@ -139,7 +150,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
                     return;
                     }
                 }
-            
+
             ContinueDownloadingFiles();
             });
         }

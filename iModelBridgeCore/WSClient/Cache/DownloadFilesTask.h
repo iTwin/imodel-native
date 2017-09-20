@@ -32,15 +32,17 @@ struct DownloadFilesTask : public CachingTaskBase
 
     private:
         CachingDataSource::ProgressCallback m_onProgressCallback;
+        size_t m_maxParalelDownloads;
 
         FileCache                       m_fileCacheLocation;
         bset<ObjectId>                  m_filesToDownloadIds;
         bvector<DownloadFileProperties> m_filesToDownload;
         size_t                          m_nextFileToDownloadIndex;
 
-        int                             m_downloadTasksRunning;
-
-        CachingDataSource::Progress::State m_downloadBytesProgress;
+        BeCriticalSection               m_progressInfoCS;
+        bset<DownloadFileProperties*>   m_filesBeingDownloaded;
+        double                          m_totalBytesToDownload = 0;
+        double                          m_processedFileSizes = 0;
 
         std::shared_ptr<FileDownloadManager> m_fileDownloadManager;
 
@@ -57,6 +59,8 @@ struct DownloadFilesTask : public CachingTaskBase
             std::shared_ptr<FileDownloadManager> fileDownloadManager,
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
+            size_t maxParalelDownloads,
+            uint64_t minTimeBetweenProgressCallsMs,
             CachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );

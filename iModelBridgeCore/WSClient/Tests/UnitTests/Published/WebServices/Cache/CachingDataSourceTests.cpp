@@ -1200,6 +1200,173 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     EXPECT_TRUE(result.IsSuccess());
     }
 
+TEST_F(CachingDataSourceTests, CacheFiles_FileDownloadRestarts_ProgressReportsSmallerValue)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    ds->SetMinTimeBetweenProgressCalls(0);
+
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
+    StubInstanceInCache(txn.GetCache(), fileId, {{"TestSize", "42"}});
+    txn.Commit();
+
+    // Act & Assert
+    int onProgressCount = 0;
+    bvector<CachingDataSource::Progress::State> expectedBytes = {{0, 42}, {20, 42}, {10, 42}, {40, 42}, {42, 42}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes()) << "Iteration:" << onProgressCount;
+        onProgressCount++;
+        };
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        progress(0, 42);
+        progress(20, 42);
+        progress(10, 42);
+        progress(40, 42);
+        return CreateCompletedAsyncTask(StubWSFileResult());
+        }));
+
+    ds->CacheFiles({fileId}, false, FileCache::Auto, onProgress, nullptr)->Wait();
+    EXPECT_EQ(expectedBytes.size(), onProgressCount);
+    }
+
+TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    ds->SetMinTimeBetweenProgressCalls(0);
+
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId1 {"TestSchema.TestFileClass", "A"};
+    ObjectId fileId2 {"TestSchema.TestFileClass", "B"};
+    StubInstanceInCache(txn.GetCache(), fileId1, {{"TestSize", "10"}});
+    StubInstanceInCache(txn.GetCache(), fileId2, {{"TestSize", "1000"}});
+    txn.Commit();
+
+    // Act & Assert
+    AsyncTestCheckpoint c1, c2;
+    HttpRequest::ProgressCallback progress1, progress2;
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(fileId1, _, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        progress1 = progress;
+        return WorkerThread::Create()->ExecuteAsync<WSFileResult>([&]
+            {
+            c1.CheckinAndWait();
+            return StubWSFileResult();
+            });
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(fileId2, _, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        progress2 = progress;
+        return WorkerThread::Create()->ExecuteAsync<WSFileResult>([&]
+            {
+            c2.CheckinAndWait();
+            return StubWSFileResult();
+            });
+        }));
+
+    int onProgressCount = 0;
+    bvector<CachingDataSource::Progress::State> expectedBytes = {{1, 1010}, {101, 1010}, {102, 1010}, {202, 1010}, {210, 1010}, {1010, 1010}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes()) << "Iteration:" << onProgressCount;
+        onProgressCount++;
+        };
+
+    auto task = ds->CacheFiles({fileId1, fileId2}, false, FileCache::Auto, onProgress, nullptr);
+
+    c1.WaitUntilReached();
+    c2.WaitUntilReached();
+
+    progress1(1, 10);
+    progress2(100, 1000);
+    progress1(2, 10);
+    progress2(200, 1000);
+
+    c1.Continue();
+    while (onProgressCount < 5); // Wait for File 1 to send completion progress
+    c2.Continue();
+
+    task->Wait();
+
+    EXPECT_EQ(expectedBytes.size(), onProgressCount);
+    }
+
+TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesAreDownloadingWhenMaxParalelDownloadsIsOne_DownloadsAndReportsProgressInChunks)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+    ds->SetMinTimeBetweenProgressCalls(0);
+    ds->SetMaxParalelFileDownloadLimit(1);
+
+    auto txn = ds->StartCacheTransaction();
+    ObjectId fileId1 {"TestSchema.TestFileClass", "A"};
+    ObjectId fileId2 {"TestSchema.TestFileClass", "B"};
+    StubInstanceInCache(txn.GetCache(), fileId1, {{"TestSize", "10"}});
+    StubInstanceInCache(txn.GetCache(), fileId2, {{"TestSize", "1000"}});
+    txn.Commit();
+
+    // Act & Assert
+    AsyncTestCheckpoint c1, c2;
+    HttpRequest::ProgressCallback progress1, progress2;
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(fileId1, _, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        progress1 = progress;
+        return WorkerThread::Create()->ExecuteAsync<WSFileResult>([&]
+            {
+            c1.CheckinAndWait();
+            return StubWSFileResult();
+            });
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(fileId2, _, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        {
+        progress2 = progress;
+        return WorkerThread::Create()->ExecuteAsync<WSFileResult>([&]
+            {
+            c2.CheckinAndWait();
+            return StubWSFileResult();
+            });
+        }));
+
+    int onProgressCount = 0;
+    bvector<CachingDataSource::Progress::State> expectedBytes = {{1, 1010}, {2, 1010}, {10, 1010}, {110, 1010}, {210, 1010}, {1010, 1010}};
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes()) << "Iteration:" << onProgressCount;
+        onProgressCount++;
+        };
+
+    auto task = ds->CacheFiles({fileId1, fileId2}, false, FileCache::Auto, onProgress, nullptr);
+
+    c1.WaitUntilReached();
+
+    progress1(1, 10);
+    progress1(2, 10);
+
+    EXPECT_FALSE(c2.WasReached());
+    c1.Continue();
+    c2.WaitUntilReached();
+
+    progress2(100, 1000);
+    progress2(200, 1000);
+
+    c2.Continue();
+
+    task->Wait();
+
+    EXPECT_EQ(expectedBytes.size(), onProgressCount);
+    }
+
 TEST_F(CachingDataSourceTests, DownloadAndCacheChildren_SpecificParent_ChildIsCached)
     {
     // Arrange
