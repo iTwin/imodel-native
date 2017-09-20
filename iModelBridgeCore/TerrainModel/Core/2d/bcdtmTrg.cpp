@@ -7717,7 +7717,7 @@ int bcdtmObject_fixTrianglesWhichCrossDtmObject(BC_DTM_OBJ *dtmP, long startPnt,
             startPnt = P1 = P2;
             if (P1 != lastPnt) if (bcdtmTin_getSwapTriangleDtmObject (dtmP, P1, lastPnt, &P2, &P3, &P4))
                 goto errexit;
-            if (P2 == dtmP->nullPnt) goto cleanup;
+            if (P2 == dtmP->nullPnt || P3 == dtmP->nullPnt || P4 == dtmP->nullPnt) goto cleanup;
             }
         else
             {
