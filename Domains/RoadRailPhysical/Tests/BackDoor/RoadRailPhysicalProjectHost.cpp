@@ -365,13 +365,12 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertTestPointNames(RoadwayStandard
 //---------------------------------------------------------------------------------------
 BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortionBreakDownModelCR model)
     {
-    TypicalSectionPortionDefinitionElementPtr definitionPtr = TypicalSectionPortionDefinitionElement::GetForEdit(model.GetDgnDb(), model.GetModeledElement()->GetElementId());
+    auto definitionCPtr = TravelwayDefinitionElement::Get(model.GetDgnDb(), model.GetModeledElement()->GetElementId());
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
     auto clPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "CL"));
 
-    definitionPtr->SetOriginPoint(clPointCPtr.get());
-    definitionPtr->Update();
+    TravelwayDefinitionElement::SetOriginPoint(*definitionCPtr, *clPointCPtr);
 
     auto leftPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
 

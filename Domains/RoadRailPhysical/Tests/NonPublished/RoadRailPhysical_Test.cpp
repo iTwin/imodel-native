@@ -166,4 +166,10 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
 
     auto travelwayDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *roadTravelwayDefPtr, *alignmentPlaceHolderCPtr);
     ASSERT_TRUE(travelwayDefPortionPtr->Insert().IsValid());
+
+    auto rightSideDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *travelwayRightSideDefPtr, *alignmentPlaceHolderCPtr);
+    ASSERT_TRUE(rightSideDefPortionPtr->Insert().IsValid());
+
+    auto rightSideSlopeDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *sideSlopeRightSideDefPtr, *alignmentPlaceHolderCPtr);
+    ASSERT_TRUE(rightSideSlopeDefPortionPtr->Insert().IsValid());
     }

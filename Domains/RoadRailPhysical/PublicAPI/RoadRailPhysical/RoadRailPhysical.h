@@ -136,6 +136,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_TypicalSectionPointConstraint                      "TypicalSectionPointConstraint"
 #define BRRP_REL_TypicalSectionPointOwnsConstraintSource            "TypicalSectionPointOwnsConstraintSource"
 #define BRRP_REL_TypicalSectionPointRefersToName                    "TypicalSectionPointRefersToName"
+#define BRRP_REL_TypicalSectionPortionDefinitionRefersToOriginPoint "TypicalSectionPortionDefinitionRefersToOriginPoint"
 
 
 // Properties

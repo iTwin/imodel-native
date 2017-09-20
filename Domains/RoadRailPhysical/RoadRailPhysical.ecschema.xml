@@ -548,10 +548,10 @@
         <ECProperty propertyName="LastUsed" typeName="dateTime"/>
         <ECProperty propertyName="Thumbnail" typeName="binary"/>
         <ECProperty propertyName="IsFavorite" typeName="boolean"/>
-        <ECNavigationProperty propertyName="MainAlignment" relationshipName="OverallTypicalSectionRefersToMainAlignment" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="OverallTypicalSectionRefersToMainAlignment" strength="referencing" strengthDirection="Backward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by 1 OverallTypicalSection as its Main alignment">
+    <ECRelationshipClass typeName="OverallTypicalSectionRefersToMainAlignment" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="false" roleLabel="may be refered to by 1 OverallTypicalSection as its Main alignment">
             <Class class="OverallTypicalSection"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 Alignment as Main">
@@ -611,10 +611,10 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="OriginPoint" relationshipName="TypicalSectionPortionRefersToOriginPoint" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TypicalSectionPortionRefersToOriginPoint" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered as the origin point of N portions">
+    <ECRelationshipClass typeName="TypicalSectionPortionDefinitionRefersToOriginPoint" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is refered as the origin point of N portions">
             <Class class="TypicalSectionPortionDefinitionElement"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 point as its origin">

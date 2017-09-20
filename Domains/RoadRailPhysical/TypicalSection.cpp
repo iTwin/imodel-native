@@ -44,17 +44,42 @@ TypicalSectionPortionDefinitionElement::TypicalSectionPortionDefinitionElement(C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointCP TypicalSectionPortionDefinitionElement::GetOriginPoint() const
+TypicalSectionPointCPtr TypicalSectionPortionDefinitionElement::QueryOriginPoint() const
     { 
-    return TypicalSectionPoint::Get(GetDgnDb(), GetPropertyValueId<DgnElementId>("OriginPoint")).get(); 
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_TypicalSectionPortionDefinitionRefersToOriginPoint) " WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    return TypicalSectionPoint::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TypicalSectionPortionDefinitionElement::SetOriginPoint(TypicalSectionPointCP point) 
+DgnDbStatus TypicalSectionPortionDefinitionElement::SetOriginPoint(TypicalSectionPortionDefinitionElementCR definition, TypicalSectionPointCR point)
     { 
-    SetPropertyValue("OriginPoint", (point) ? point->GetElementId() : DgnElementId()); 
+    if (point.GetModel()->GetModeledElementId() != definition.GetElementId())
+        return DgnDbStatus::BadArg;
+
+    auto existingOriginCPtr = definition.QueryOriginPoint();
+    if (existingOriginCPtr.IsValid())
+        {
+        if (DbResult::BE_SQLITE_OK != definition.GetDgnDb().DeleteLinkTableRelationship(
+            ECInstanceKey(ECClassId(existingOriginCPtr->GetElementClassId().GetValue()), ECInstanceId(existingOriginCPtr->GetElementId().GetValue()))))
+                return DgnDbStatus::BadElement;
+        }
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != definition.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *definition.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_TypicalSectionPortionDefinitionRefersToOriginPoint)->GetRelationshipClassCP(),
+        definition.GetElementId(), point.GetElementId()))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,7 +316,7 @@ OverallTypicalSectionAlignmentCPtr OverallTypicalSection::QueryMainAlignment() c
 DgnDbStatus OverallTypicalSection::SetMainAlignment(OverallTypicalSectionCR typicalSection, OverallTypicalSectionAlignmentCR alignment)
     {
     auto existingMainAlignmentCPtr = typicalSection.QueryMainAlignment();
-    if (existingMainAlignmentCPtr.IsNull())
+    if (existingMainAlignmentCPtr.IsValid())
         {
         if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
             ECInstanceKey(ECClassId(existingMainAlignmentCPtr->GetElementClassId().GetValue()), ECInstanceId(existingMainAlignmentCPtr->GetElementId().GetValue()))))
@@ -301,7 +326,7 @@ DgnDbStatus OverallTypicalSection::SetMainAlignment(OverallTypicalSectionCR typi
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
         *alignment.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_OverallTypicalSectionRefersToMainAlignment)->GetRelationshipClassCP(),
-        ECInstanceId(typicalSection.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
+        typicalSection.GetElementId(), alignment.GetElementId()))
         return DgnDbStatus::BadElement;
 
     return DgnDbStatus::Success;

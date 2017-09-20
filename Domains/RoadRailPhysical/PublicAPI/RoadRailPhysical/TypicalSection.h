@@ -30,8 +30,9 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionDefinitionElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionPortionDefinitionElement)
 
-    ROADRAILPHYSICAL_EXPORT TypicalSectionPointCP GetOriginPoint() const;
-    ROADRAILPHYSICAL_EXPORT void SetOriginPoint(TypicalSectionPointCP point);
+    ROADRAILPHYSICAL_EXPORT TypicalSectionPointCPtr QueryOriginPoint() const;
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetOriginPoint(TypicalSectionPortionDefinitionElementCR, TypicalSectionPointCR point);
 }; // TypicalSectionPortionDefinitionElement
 
 //=======================================================================================
