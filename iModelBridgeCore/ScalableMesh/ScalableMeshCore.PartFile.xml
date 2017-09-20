@@ -16,6 +16,11 @@
       </Bindings>
     </Part>
 
+    <Part Name="ScalableMeshRDSDependencies" >
+      <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
+      <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+    </Part>
+
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <SubPart PartName="PCLWrapper" />
@@ -37,6 +42,7 @@
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="ScalableMeshRDSDependencies"/>
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>-->
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    

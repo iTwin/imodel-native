@@ -247,7 +247,12 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
+#ifdef VANCOUVER_API
+        // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
+        uint32_t consumerID = 1;
+#else
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+#endif
         m_raster->SetLookAhead(shape, consumerID);
         }
 
@@ -303,12 +308,17 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
     {    
+#ifdef VANCOUVER_API
+    // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
+    return;
+#else
     if (m_streamingRasterFile != nullptr)
         { 
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
+#endif
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)

@@ -179,9 +179,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             return new SMStreamingStore(path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings)
+        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
             {
-            return new SMStreamingStore(settings);
+            return new SMStreamingStore(settings, smRDSProvider);
             }
 #endif
 

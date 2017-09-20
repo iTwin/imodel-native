@@ -1052,7 +1052,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     else
                         {
                         Utf8String projectID, guid;
+#ifndef VANCOUVER_API
                         if (utf8Path.ContainsI("realitydataservices") && utf8Path.ContainsI("S3MXECPlugin"))
+#else
+                        Utf8String lowerPath(utf8Path.c_str());
+                        lowerPath.ToLower();
+                        auto position1 = lowerPath.find("realitydataservices");
+                        auto position2 = lowerPath.find("s3mxecplugin");
+                        if (position1 != Utf8String::npos && position2 != Utf8String::npos)
+#endif
                             { // RDS
                             config_server["type"] = "rds";
                             auto& server_settings = config_server["settings"];
@@ -1122,7 +1130,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 #ifndef VANCOUVER_API                                       
                 dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
 #else
-                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
+                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings, m_smRDSProvider);
 #endif
 
                 m_scmIndexPtr = new MeshIndexType(dataStore,
