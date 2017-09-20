@@ -1800,8 +1800,8 @@ bool ScalableMeshModel::HasClipBoundary(const bvector<DPoint3d>& clipBoundary, u
 
 	CurveVectorPtr curveP = CurveVector::CreateLinear(data);
 	CurveVectorPtr testP = CurveVector::CreateLinear(clipBoundary);
-
-	return curveP->IsSameStructureAndGeometry(*testP, 1e-8);
+   
+	return curveP->IsSameStructureAndGeometry(*testP, 1e-5);
 }
 
 //---------------------------------------------------------------------------------------
