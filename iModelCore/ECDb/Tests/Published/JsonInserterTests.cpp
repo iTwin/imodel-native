@@ -73,6 +73,217 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, InsertNavProps)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsoninserter_navprops.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECEntityClass typeName="Parent" >
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="Child" >
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                            <ECNavigationProperty propertyName="Parent" relationshipName="FkRel" direction="Backward" />
+                                                        </ECEntityClass>
+                                                        <ECRelationshipClass typeName="FkRel" strength="referencing" modifier="None">
+                                                            <Source multiplicity="(0..1)" roleLabel="has" polymorphic="False"><Class class="Parent"/></Source>
+                                                            <Target multiplicity="(0..*)" roleLabel="referenced by" polymorphic="False"><Class class="Child"/></Target>
+                                                        </ECRelationshipClass>
+                                                    </ECSchema>)xml")));
+
+    ECInstanceKey parentKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey,"INSERT INTO ts.Parent(Code) VALUES('parent-1')"));
+
+    ECClassCP childClass = m_ecdb.Schemas().GetClass("TestSchema", "Child");
+    ASSERT_TRUE(childClass != nullptr);
+
+    ECClassId fkRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "FkRel");
+    ASSERT_TRUE(fkRelClassId.IsValid());
+
+    auto validate = [] (ECDbCR ecdb, ECInstanceKey const& childKey, Utf8CP childName, ECInstanceKey const& parentKey, ECClassId relClassId, Utf8CP inputJson)
+        {
+        Utf8String ecsql("SELECT count(*) FROM ts.Child WHERE ECInstanceId=? AND Name=?");
+
+        if (parentKey.IsValid())
+            ecsql.append(" AND Parent.Id=?");
+
+        if (relClassId.IsValid())
+            ecsql.append(" AND Parent.RelECClassId=?");
+
+        ECSqlStatement validateChildStmt;
+        ASSERT_EQ(ECSqlStatus::Success, validateChildStmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str() << " JSON: " << inputJson;
+
+        ASSERT_EQ(ECSqlStatus::Success, validateChildStmt.BindId(1, childKey.GetInstanceId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, validateChildStmt.BindText(2, childName, IECSqlBinder::MakeCopy::No)) << inputJson;
+        if (parentKey.IsValid())
+            ASSERT_EQ(ECSqlStatus::Success, validateChildStmt.BindId(3, parentKey.GetInstanceId())) << inputJson;
+
+        if (relClassId.IsValid())
+            ASSERT_EQ(ECSqlStatus::Success, validateChildStmt.BindId(4, relClassId)) << inputJson;
+
+        ASSERT_EQ(BE_SQLITE_ROW, validateChildStmt.Step()) << inputJson;
+        ASSERT_EQ(1, validateChildStmt.GetValueInt(0)) << inputJson;
+        validateChildStmt.Reset();
+
+        ECSqlStatement validateFkRelStmt;
+        ASSERT_EQ(ECSqlStatus::Success, validateFkRelStmt.Prepare(ecdb, "SELECT count(*) FROM ts.FkRel WHERE SourceECInstanceId=? AND SourceECClassId=? AND TargetECInstanceId=? AND TargetECClassId=?")) << inputJson;
+
+        ASSERT_EQ(ECSqlStatus::Success, validateFkRelStmt.BindId(1, parentKey.GetInstanceId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, validateFkRelStmt.BindId(2, parentKey.GetClassId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, validateFkRelStmt.BindId(3, childKey.GetInstanceId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, validateFkRelStmt.BindId(4, childKey.GetClassId())) << inputJson;
+        ASSERT_EQ(BE_SQLITE_ROW, validateFkRelStmt.Step()) << inputJson;
+        if (relClassId.IsValid())
+            ASSERT_EQ(1, validateFkRelStmt.GetValueInt(0)) << inputJson;
+        else 
+            ASSERT_EQ(0, validateFkRelStmt.GetValueInt(0)) << "RelClassId wasn't inserted which makes the relationship not discoverable with SELECT * FROM Rel. " << inputJson;
+        };
+
+    JsonInserter inserter(m_ecdb, *childClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid()) << childClass->GetFullName();
+
+    ECInstanceKey childKey;
+    Utf8String expectedJsonStr;
+    Json::Value expectedJson;
+    rapidjson::Document expectedRapidJson;
+
+    {
+    expectedJsonStr.Sprintf(R"json({ "name" : "Child 1",
+                                    "parent" : { "id" : "%s", "relClassName" : "TestSchema.FkRel" } })json", parentKey.GetInstanceId().ToHexStr().c_str());
+
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str());
+    }
+
+    {
+    expectedJsonStr.Sprintf(R"json({ "name" : "Child 2", "parent" : { "id" : "%s", "relClassName" : null }})json", parentKey.GetInstanceId().ToHexStr().c_str());
+    expectedJson = Json::nullValue;
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedRapidJson.SetNull();
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str());
+    }
+
+    {
+    expectedJsonStr.assign(R"json({ "name" : "Child 3", "parent" : null })json");
+    expectedJson = Json::nullValue;
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedRapidJson.SetNull();
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    }
+
+    {
+    expectedJsonStr.assign(R"json({ "name" : "Child 4", "parent" : {"id" : null }})json");
+    expectedJson = Json::nullValue;
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedRapidJson.SetNull();
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, InsertLinkTableRels)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsoninserter_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECEntityClass typeName="Parent" >
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="Child" >
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                        </ECEntityClass>
+                                                        <ECRelationshipClass typeName="LinkTableRel" strength="referencing" modifier="None">
+                                                            <Source multiplicity="(0..*)" roleLabel="has" polymorphic="False"><Class class="Parent"/></Source>
+                                                            <Target multiplicity="(0..*)" roleLabel="has" polymorphic="False"><Class class="Child"/></Target>
+                                                        </ECRelationshipClass>
+                                                    </ECSchema>)xml")));
+
+    ECInstanceKey parentKey, childKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Code) VALUES('parent-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Child(Name) VALUES('child-1')"));
+
+    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
+    ASSERT_TRUE(parentClass != nullptr);
+    ECClassCP childClass = m_ecdb.Schemas().GetClass("TestSchema", "Child");
+    ASSERT_TRUE(childClass != nullptr);
+    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("TestSchema", "LinkTableRel");
+    ASSERT_TRUE(linkTableRelClass != nullptr);
+
+    auto validate = [] (ECDbCR ecdb, ECInstanceId relId, ECInstanceKey const& parentKey, ECInstanceKey const& childKey, Utf8CP inputJson)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.LinkTableRel WHERE ECInstanceId=? AND SourceECInstanceId=? AND SourceECClassId=? AND TargetECInstanceId=? AND TargetECClassId=?")) << inputJson;
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, relId)) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, parentKey.GetInstanceId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, parentKey.GetClassId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, childKey.GetInstanceId())) << inputJson;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(5, childKey.GetClassId())) << inputJson;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << inputJson;
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << inputJson;
+        };
+
+    JsonInserter relInserter(m_ecdb, *linkTableRelClass, nullptr);
+    ASSERT_TRUE(relInserter.IsValid()) << linkTableRelClass->GetFullName();
+
+    Utf8String expectedJsonStr;
+    Json::Value expectedJson;
+    rapidjson::Document expectedRapidJson;
+    ECInstanceKey linkTableRelKey;
+
+    {
+    expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "targetId" : "%s"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    }
+
+    {
+    expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "sourceClassName" : "TestSchema.Child", "targetId" : "%s", "targetClassName" : "TestSchema.Child"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
+    expectedJson = Json::nullValue;
+    ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+    expectedRapidJson.SetNull();
+    ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
+
+    ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+
+    ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
+    validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson)
