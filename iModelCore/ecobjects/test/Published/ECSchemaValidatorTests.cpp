@@ -756,6 +756,17 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     ECSchema::ReadFromXmlString(schema, badSchemaXml4, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property type is long";
+
+    Utf8CP badSchemaXml5 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchemaStruct" alias="tss" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECStructClass typeName="AStruct">
+        <ECProperty propertyName="Banana" typeName="long"/>
+    </ECStructClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml5, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as a struct property has type long";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1259,4 +1270,77 @@ TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation as persistence unit is changed";
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                       Colin.Kerr                      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
+    {
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECStructClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECStructClass>
+        <ECStructClass typeName="DerivedClass">
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECStructClass>
+    </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since structs do not have base classes";
+
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECStructClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECStructClass>
+        <ECStructClass typeName="DerivedClass">
+            <BaseClass>BaseClass</BaseClass>
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECStructClass>
+    </ECSchema>)xml";
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema2, badSchemaXml, *context2);
+    ASSERT_TRUE(schema2.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation because structs have base classes";
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                       Colin.Kerr                      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
+    {
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECCustomAttributeClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECCustomAttributeClass>
+        <ECCustomAttributeClass typeName="DerivedClass">
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECCustomAttributeClass>
+    </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since custom attributes do not have base classes";
+
+    Utf8CP badSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECCustomAttributeClass typeName="BaseClass">
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECCustomAttributeClass>
+        <ECCustomAttributeClass typeName="DerivedClass">
+            <BaseClass>BaseClass</BaseClass>
+            <ECProperty propertyName="Length" typeName="double"/>
+        </ECCustomAttributeClass>
+    </ECSchema>)xml";
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema2, badSchemaXml, *context2);
+    ASSERT_TRUE(schema2.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation because custom attributes have base classes";
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -68,6 +68,15 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
         IECClassValidatorPtr entityValidator = new EntityValidator();
         ECSchemaValidatorSingleton->AddClassValidator(entityValidator);
 
+        IECClassValidatorPtr allClassValidator = new AllClassValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(allClassValidator);
+        
+        IECClassValidatorPtr structValidator = new StructValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(structValidator);
+
+        IECClassValidatorPtr customAttributeValidator = new CustomAttributeClassValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(customAttributeValidator);
+
         IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
         ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
 
@@ -272,9 +281,35 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus CustomAttributeClassValidator::Validate(ECClassCR caClass) const
+    {
+    if (caClass.HasBaseClasses())
+        {
+        LOG.errorv("The Custom Attribute class '%s' has base classes, but a custom attribute class should not have base classes", caClass.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StructValidator::Validate(ECClassCR structClass) const
+    {
+    if (structClass.HasBaseClasses())
+        {
+        LOG.errorv("The struct class '%s' has base classes, but structs should not have base classes", structClass.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
+ECObjectsStatus checkPropertiesForLongType(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     for (ECPropertyP prop : ecClass.GetProperties(false))
@@ -285,6 +320,19 @@ ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
             status = ECObjectsStatus::Error;
             }
         }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus AllClassValidator::Validate(ECClassCR ecClass) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    // Validate no properties are of type long
+    status = checkPropertiesForLongType(ecClass);
+    
     return status;
     }
 
@@ -301,11 +349,6 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     status = CheckBisAspects(entity, ElementMultiAspect, ElementOwnsMultiAspects, entityDerivesFromSpecifiedClass);
     if (!entityDerivesFromSpecifiedClass)
         status = CheckBisAspects(entity, ElementUniqueAspect, ElementOwnsUniqueAspect, entityDerivesFromSpecifiedClass);
-
-    // Validate relationship properties of type long and ending in Id
-    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(entity);
-    if (status == ECObjectsStatus::Success)
-        status = propertyLongAndIdStatus;
 
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
     bool foundIParentElement = false;
@@ -418,11 +461,6 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
 
     // Validate relationship strength
     status = CheckStrength(relClass);
-
-    // Validate relationship properties of type long and ending in Id
-    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(ecClass);
-    if (status == ECObjectsStatus::Success)
-        status = propertyLongAndIdStatus;
 
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
