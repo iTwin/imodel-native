@@ -980,3 +980,15 @@ GraphicBuilder::CreateParams GraphicBuilder::CreateParams::View(DgnViewportR vp,
     return View(vp.GetViewController().GetDgnDb(), tf, &vp);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GraphicBuilder::_WantPreBakedBody(IBRepEntityCR body)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return !BRepUtil::HasCurvedFaceOrEdge(body);
+#else
+    return true;
+#endif
+    }
+

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidAttrib.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -10,6 +10,10 @@
 
 static const int HIDDEN_ATTRIBUTE_Visible = 0;
 static const int HIDDEN_ATTRIBUTE_Hidden  = 1;
+
+// Brien claims we shouldn't have to check these attributes, or if for a particular body we must it should be indicated in the flat buffer.
+// Looking them up is a significant multi-threading bottleneck in Parasolid 
+// #define DGN_BREP_IGNORE_ATTRIBS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   05/97
@@ -27,10 +31,12 @@ char const*     pAttribNameIn           // => input attrib type to get
     *ppAttribArrayOut = nullptr;
     *pNumAttribOut = 0;
 
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     if (nullptr == pAttribNameIn || SUCCESS != PK_ATTDEF_find (pAttribNameIn, &attribDefTag) || PK_ENTITY_null == attribDefTag)
         return;
 
     PK_ENTITY_ask_attribs (entityTagIn, attribDefTag, pNumAttribOut, ppAttribArrayOut);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -57,6 +63,7 @@ BentleyStatus   PSolidAttrib::GetHiddenAttribute (bool& isHidden, PK_ENTITY_t en
     {
 	isHidden = false;
 
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;
 
     if (SUCCESS != PK_ATTDEF_find (PKI_HIDDEN_ENTITY_ATTRIB_NAME, &attribDefTag) || PK_ENTITY_null == attribDefTag)
@@ -78,6 +85,9 @@ BentleyStatus   PSolidAttrib::GetHiddenAttribute (bool& isHidden, PK_ENTITY_t en
     PK_MEMORY_free (attributes);
 
     return (numAttributes > 0 ? SUCCESS : ERROR);
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,6 +169,7 @@ bool            PSolidAttrib::HasHiddenEdge (PK_BODY_t entity)
         return false;
 
     bool        hasHiddenEntity = false;
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     int         numEdges = 0;
     int*        edges = NULL;
 
@@ -171,6 +182,7 @@ bool            PSolidAttrib::HasHiddenEdge (PK_BODY_t entity)
         }
 
     PK_MEMORY_free (edges);
+#endif
 
     return hasHiddenEntity;
     }
@@ -184,6 +196,7 @@ bool            PSolidAttrib::HasHiddenFace (PK_BODY_t entity)
         return false;
 
     bool        hasHiddenEntity = false;
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     int         numFaces = 0;
     int*        faces = NULL;
 
@@ -196,7 +209,7 @@ bool            PSolidAttrib::HasHiddenFace (PK_BODY_t entity)
         }
 
     PK_MEMORY_free (faces);
-
+#endif
     return hasHiddenEntity;
     }
 
@@ -206,9 +219,10 @@ bool            PSolidAttrib::HasHiddenFace (PK_BODY_t entity)
 BentleyStatus PSolidAttrib::GetHiddenBodyEdges (bset<PK_EDGE_t>& edges, PK_BODY_t body)
     {
     int         edgeCount = 0;
+    edges.clear();
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     PK_EDGE_t*  pEdgeTagArray = NULL;
 
-    edges.clear();
     if (SUCCESS != PK_BODY_ask_edges (body, &edgeCount, &pEdgeTagArray))
         return ERROR;
 
@@ -217,7 +231,7 @@ BentleyStatus PSolidAttrib::GetHiddenBodyEdges (bset<PK_EDGE_t>& edges, PK_BODY_
             edges.insert (pEdgeTagArray[i]);
 
     PK_MEMORY_free (pEdgeTagArray);
-
+#endif
     return SUCCESS;
     }
 
@@ -227,9 +241,10 @@ BentleyStatus PSolidAttrib::GetHiddenBodyEdges (bset<PK_EDGE_t>& edges, PK_BODY_
 BentleyStatus PSolidAttrib::GetHiddenBodyFaces (bset<PK_FACE_t>& faces, PK_BODY_t body)
     {
     int         faceCount = 0;
+    faces.clear ();
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     PK_FACE_t*  pFaceTagArray = NULL;
 
-    faces.clear ();
     if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray))
         return ERROR;
 
@@ -238,7 +253,7 @@ BentleyStatus PSolidAttrib::GetHiddenBodyFaces (bset<PK_FACE_t>& faces, PK_BODY_
             faces.insert (pFaceTagArray[i]);
 
     PK_MEMORY_free (pFaceTagArray);
-
+#endif
     return SUCCESS;
     }
 
@@ -280,6 +295,7 @@ void            PSolidAttrib::DeleteHiddenAttributeOnFaces (PK_BODY_t entity)
 BentleyStatus   PSolidAttrib::GetUserAttributes (bvector<int32_t>& attributes, PK_ENTITY_t entity, int32_t ownerId, int findIndex)
     {
     bool            found = false;
+#if !defined(DGN_BREP_IGNORE_ATTRIBS)
     int             i, index = 0, numAttrib = 0;
     PK_ATTRIB_t*    pAttribArray = NULL;
 
@@ -310,7 +326,7 @@ BentleyStatus   PSolidAttrib::GetUserAttributes (bvector<int32_t>& attributes, P
         }
 
     PK_MEMORY_free (pAttribArray);
-
+#endif
     return (found ? SUCCESS : ERROR);
     }
 

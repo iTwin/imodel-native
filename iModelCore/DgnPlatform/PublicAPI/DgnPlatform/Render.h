@@ -1415,6 +1415,7 @@ protected:
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
     virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
+    DGNPLATFORM_EXPORT virtual bool _WantPreBakedBody(IBRepEntityCR body); // By default, returns true if parasolid is not supported, or if the body contains no curved faces or edges.
 
     virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
     virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
@@ -1440,6 +1441,7 @@ public:
     bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
     bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
+    bool WantPreBakedBody(IBRepEntityCR body) { return _WantPreBakedBody(body); }
 
     bool IsOpen() const {return _IsOpen();}
 
