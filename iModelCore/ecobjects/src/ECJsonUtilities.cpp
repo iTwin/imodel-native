@@ -720,13 +720,17 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, c
             if (!childJsonValue.isObject() || !childJsonValue.isMember(ECJsonUtilities::json_navId()))
                 return ERROR;
 
-            BeAssert(childJsonValue[ECJsonUtilities::json_navId()].isString());
-            BeInt64Id navId = ECJsonUtilities::JsonToId<BeInt64Id>(childJsonValue[ECJsonUtilities::json_navId()]);
+            JsonValueCR navIdJson = childJsonValue[ECJsonUtilities::json_navId()];
+            if (navIdJson.isNull())
+                continue;
+
+            BeAssert(navIdJson.isString());
+            BeInt64Id navId = ECJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
             if (!navId.IsValid())
                 return ERROR;
 
             ECValue v;
-            if (!childJsonValue.isMember(ECJsonUtilities::json_navRelClassName()))
+            if (!childJsonValue.isMember(ECJsonUtilities::json_navRelClassName()) || childJsonValue[ECJsonUtilities::json_navRelClassName()].isNull())
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     return ERROR;
@@ -1001,12 +1005,16 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
             if (!json.IsObject() || !json.HasMember(ECJsonSystemNames::Navigation::Id()))
                 return ERROR;
 
-            BeInt64Id navId = ECRapidJsonUtilities::JsonToId<BeInt64Id>(json[ECJsonSystemNames::Navigation::Id()]);
+            RapidJsonValueCR navIdJson = json[ECJsonSystemNames::Navigation::Id()];
+            if (navIdJson.IsNull())
+                continue;
+
+            BeInt64Id navId = ECRapidJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
             if (!navId.IsValid())
                 return ERROR;
 
             ECValue v;
-            if (!json.HasMember(ECJsonSystemNames::Navigation::RelClassName()))
+            if (!json.HasMember(ECJsonSystemNames::Navigation::RelClassName()) || json[ECJsonSystemNames::Navigation::RelClassName()].IsNull())
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     return ERROR;
