@@ -388,6 +388,7 @@ struct TMTransformHelper : RefCountedBase
             {
             return value * (m_scale * m_scale * m_scale);
             }
+
         void copyVOLRANGETABFromDTM (VOLRANGETABCopy& volRange, VOLRANGETAB* dest, int numValues)
             {
             if (!m_IsIdentity && dest)
@@ -720,6 +721,11 @@ struct TMTransformHelper : RefCountedBase
             newDtm->Transform (convertTrsf);
             return newDtm;
             }
+        double convertVolumeToDTM (const double& value)
+            {
+            return value / (m_scale * m_scale * m_scale);
+            }
+
         static BcDTMPtr convertDTMToDTM (BcDTMR source, BcDTMR dtm)
             {
             if (source.GetTransformHelper ())
