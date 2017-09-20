@@ -431,3 +431,11 @@ TEST(Utf8StringTest, Compare)
     EXPECT_TRUE(str.EqualsIAscii(" ABC "));
     EXPECT_TRUE(str.EqualsIAscii(Utf8String(" ABC ")));
     }
+//---------------------------------------------------------------------------------------
+// @betest                                      Ridha.Malik                        09/17
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, FlakyTest)
+{
+    // Check Utf8CP
+    EXPECT_TRUE(Utf8String("ABC").Contains("abc"));
+}
