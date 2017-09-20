@@ -117,7 +117,8 @@ OSQLScanner* xxx_pGLOBAL_SQLSCAN = NULL;
 %s PREDICATE_GER
 %s DATE
 %s STRING
-
+%option bison-bridge 
+%option reentrant
 %option noyywrap
 %option never-interactive
 %%

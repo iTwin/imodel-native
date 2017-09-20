@@ -49,7 +49,7 @@
 #endif
 
 }
-
+%define api.pure full
 %{
 static Utf8String aEmptyString;
 
