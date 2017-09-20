@@ -50,8 +50,8 @@ struct CursorScanPoint
         bool IsPoint() { return (m_len == 1) && (m_patt == '.'); }
         bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
         bool IsColon() { return (m_len == 1) && (m_bytes[0] == ':'); }
-        bool IsDoubleColon() { return (m_len == 2) && (m_bytes[0], ':') && (m_bytes[1], ':'); }
-        bool IsTripleColon() { return (m_len == 3) && (m_bytes[0], ':') && (m_bytes[1], ':') && (m_bytes[2], ':'); }
+        bool IsDoubleColon() { return (m_len == 2) && (m_bytes[0], ':') && (m_bytes[1] == ':'); }
+        bool IsTripleColon() { return (m_len == 3) && (m_bytes[0], ':') && (m_bytes[1] == ':') && (m_bytes[2] == ':'); }
         bool IsUline() { return (m_len == 1) && (m_patt == '_'); }
         bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
 
