@@ -1432,6 +1432,15 @@ SyncOptions options
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
+        if (objectsToSync)
+            {
+            auto txn = StartCacheTransaction();
+            for (auto objToSync : *objectsToSync)
+                {
+                txn.GetCache().GetChangeManager().SetUploadActive(objToSync, true);
+                }
+            txn.Commit();
+            }
         m_syncLocalChangesQueue.push_back(syncTask);
         if (m_syncLocalChangesQueue.size() == 1)
             {
