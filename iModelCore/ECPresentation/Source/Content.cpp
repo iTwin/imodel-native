@@ -723,12 +723,29 @@ bool ContentDescriptor::ECInstanceKeyField::_OnFieldRemoved(ContentDescriptor::F
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas               09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECNavigationInstanceIdField::_Equals(Field const& other) const
+    {
+    if (!other.IsSystemField() || !other.AsSystemField()->IsECNavigationInstanceIdField())
+        return false;
+
+    if (*other.AsSystemField()->AsECNavigationInstanceIdField()->m_propertyField != *m_propertyField)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas               08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo)
     {
     auto iter = fieldsRemapInfo.find(m_propertyField);
-    if (fieldsRemapInfo.end() == iter || !iter->second->IsPropertiesField())
+    if (fieldsRemapInfo.end() == iter)
+        return;
+
+    if (!iter->second->IsPropertiesField())
         {
         BeAssert(false);
         return;

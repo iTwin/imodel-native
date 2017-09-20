@@ -705,6 +705,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECNavigationInstanceIdField const* _AsECNavigationInstanceIdField() const override {return this;}
         Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
         Utf8String _GetTypeName() const override {return "ECInstanceId";}
+        ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
     public:

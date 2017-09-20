@@ -5548,3 +5548,58 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
     EXPECT_STREQ("WidgetID", jsonValues2["Gadget_Widget_MyID"].GetString());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications)
+    {
+    // prepare dataset
+    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP gadgetHasSprockets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget, *sprocket);
+
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications", 1, 0, false, "", "", "", true);
+    m_locater->AddRuleSet(*ruleSet);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ruleSet->AddPresentationRule(*rule);
+    ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
+    ContentInstancesOfSpecificClassesSpecificationP sprocketSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Sprocket", true);
+    gadgetSpec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Widget", 1500, true));
+    sprocketSpec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Gadget", 1500, true));
+    rule->GetSpecificationsR().push_back(gadgetSpec);
+    rule->GetSpecificationsR().push_back(sprocketSpec);
+
+    // validate content descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
+
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
+    ECInstanceNodeKeyPtr gadgetKey = ECInstanceNodeKey::Create(*gadget);
+
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->AsJson()["Values"];
+    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
+    EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
+    EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
+    EXPECT_TRUE(jsonValues["Gadget_Widget"].IsNull());
+    }
