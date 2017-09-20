@@ -60,6 +60,7 @@ protected:
 public:
 
     explicit ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
+    virtual ~ScalableMeshRDSProvider();
 };
 
 
