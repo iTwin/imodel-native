@@ -49,6 +49,9 @@ struct CursorScanPoint
         bool IsSpace() { return (m_len == 1) && (m_patt == FormatConstant::SpaceSymbol()); }
         bool IsPoint() { return (m_len == 1) && (m_patt == '.'); }
         bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
+        bool IsColon() { return (m_len == 1) && (m_bytes[0] == ':'); }
+        bool IsDoubleColon() { return (m_len == 2) && (m_bytes[0], ':') && (m_bytes[1], ':'); }
+        bool IsTripleColon() { return (m_len == 3) && (m_bytes[0], ':') && (m_bytes[1], ':') && (m_bytes[2], ':'); }
         bool IsUline() { return (m_len == 1) && (m_patt == '_'); }
         bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
 
@@ -170,6 +173,10 @@ struct FormatParsingSegment
         size_t GetNextindex() { return m_start + m_byteCount; }
         void SetBoundary(size_t s, size_t l) { m_start = s; m_byteCount = l; }
         bool IsNumber() { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
+        bool IsColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), ":") == 0; }
+        bool IsDoubleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), "::") == 0;}
+        bool IsTripleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), ":::") == 0;
+            }
         UNITS_EXPORT Utf8PrintfString ToText(int n);
     };
 

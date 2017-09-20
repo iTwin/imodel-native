@@ -432,6 +432,7 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
     return LookupUnitP(name);
     }
 
+PUSH_MSVC_IGNORE(6385 6386)
 UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     {
     size_t len = (nullptr == name) ? 0 : strlen(name);
@@ -443,7 +444,7 @@ UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     Utf8CP uppName = BeStringUtilities::Strupr(temp);
     return LookupUnitP(uppName);
     }
-
+POP_MSVC_IGNORE
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16

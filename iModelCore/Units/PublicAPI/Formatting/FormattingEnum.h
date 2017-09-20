@@ -500,6 +500,7 @@ struct FormatConstant
         static const Utf8Char NumberSymbol() { return '0'; }
         static const Utf8Char SpaceSymbol() { return 's'; }
         static const Utf8Char WordSymbol() { return 'a'; }
+        static const Utf8Char ColonSymbol() { return ':'; }
         static const Utf8Char SignSymbol() { return '-'; }
         static const Utf8Char UOMLink() { return '_'; }
         static const Utf8Char FractionSymbol() { return 'r'; }

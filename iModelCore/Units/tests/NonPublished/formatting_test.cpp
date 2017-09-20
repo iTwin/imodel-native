@@ -304,6 +304,17 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestSegments("  -22FT 3 1/2IN", 0, "FT");
     FormattingTestFixture::TestSegments("-22' 3 1/2\"", 0, "FT");
 
+    FormattingTestFixture::TestSegments("12:6:5", 0, "FT");
+    FormattingTestFixture::TestSegments("12:6:5", 0, "FT");
+    FormattingTestFixture::TestSegments("12::5", 0, "FT");
+    FormattingTestFixture::TestSegments("12::", 0, "FT");
+    FormattingTestFixture::TestSegments("12 : 6 : 5", 0, "FT");
+    FormattingTestFixture::TestSegments("12 ::", 0, "FT");
+    FormattingTestFixture::TestSegments("12 : :", 0, "FT");
+    FormattingTestFixture::TestSegments(": 12 :", 0, "FT");
+    FormattingTestFixture::TestSegments(":12:5", 0, "FT");
+    FormattingTestFixture::TestSegments(":12 : 5", 0, "FT");
+    FormattingTestFixture::TestSegments("::12", 0, "FT");
     /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());
@@ -319,6 +330,13 @@ TEST(FormattingTest, Pasring)
 
     FormattingTestFixture::ShowSignature(u8"135°", 200);
     FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
+
+    FormattingTestFixture::ShowSignature("12:6:5", 210);
+    FormattingTestFixture::ShowSignature("12:6:5", 211);
+    FormattingTestFixture::ShowSignature("12::5", 212);
+    FormattingTestFixture::ShowSignature("12::", 213);
+
+
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
     //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);

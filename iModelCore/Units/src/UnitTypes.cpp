@@ -474,7 +474,28 @@ size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, U
 //----------------------------------------------------------------------------------------
 bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2)
     {
-    return true;
+    PhenomenonCP p1 = map1.GetPhenomenon();
+    PhenomenonCP p2 = map2.GetPhenomenon();
+    if (nullptr == p1) // objects not to be moved if either one or both do not yield a Phenomenon
+        return false;
+    if (nullptr == p2)
+        return true;
+    int diff = BeStringUtilities::StricmpAscii(p1->GetName(), p2->GetName());
+    if (diff < 0)
+        return true;
+    if (diff > 0)
+        return false;
+    UnitCP un1 = map1.GetUnit();
+    UnitCP un2 = map2.GetUnit();
+    diff = BeStringUtilities::StricmpAscii(un1->GetName(), un2->GetName());
+    if (diff < 0)
+        return true;
+    if (diff > 0)
+        return false;
+    diff = BeStringUtilities::StricmpAscii(map1.GetSynonym(), map2.GetSynonym());
+    if (diff <= 0)
+        return true;
+    return false;
     }
 
 //----------------------------------------------------------------------------------------

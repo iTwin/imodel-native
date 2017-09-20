@@ -1226,8 +1226,8 @@ void CursorScanPoint::ProcessASCII(unsigned char c)
         m_patt = FormatConstant::SignSymbol();
     else if (c == 'e' || c == 'E')
         m_patt = 'x';     // a suspicion of exponent - TBD later
-    else if (c == '.' || c == ',' || c == '/' || c == '_')
-    m_patt = c;
+    else if (c == '.' || c == ',' || c == '/' || c == '_' || c == ':')
+        m_patt = c;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
@@ -1963,7 +1963,20 @@ Utf8String FormatParsingSet::GetSignature(bool distinct)
             buf[i++] = 'F';
         else
             {
-            if (nullptr == fps->GetUnit())
+            if(fps->IsColon())
+                buf[i++] = 'C';
+            else if (fps->IsDoubleColon())
+                {
+                buf[i++] = 'C';
+                buf[i++] = 'C';
+                }
+            else if (fps->IsTripleColon())
+                {
+                buf[i++] = 'C';
+                buf[i++] = 'C';
+                buf[i++] = 'C';
+                }
+            else if (nullptr == fps->GetUnit())
                 buf[i++] = 'W';
             else
                 buf[i++] = 'U';
