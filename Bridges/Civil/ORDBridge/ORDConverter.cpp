@@ -216,8 +216,10 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         {
         Utf8String bimAlignmentName = cifAlignmentName;
         bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+
+        int32_t suffix = 0;
         auto existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
-        if (existingId.IsValid())
+        while (existingId.IsValid())
             {
             auto existingAlgCPtr = AlignmentBim::Alignment::Get(m_bimAlignmentModelPtr->GetDgnDb(), existingId);
 
@@ -231,8 +233,15 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
                 bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
                 bimAlignmentName += "\\";
                 bimAlignmentName += cifAlignmentName;
+
+                if (suffix > 0)
+                    bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
+
                 bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+                suffix++;
                 }
+
+            existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
             }
         }    
 
@@ -594,7 +603,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
         roadwayPtr->SetUserLabel(Utf8String(cifCorridor.GetName().c_str()).c_str());
     
     auto cifAlignmentPtr = cifCorridor.GetCorridorAlignment();
-    if (cifAlignmentPtr->IsFinalElement())
+    if (cifAlignmentPtr.IsValid () && cifAlignmentPtr->IsFinalElement())
         {
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
         iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(iModelBridgeSyncInfoFile::ROWID(), alignmentItem.Kind(), alignmentItem._GetId());
