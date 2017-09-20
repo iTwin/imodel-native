@@ -496,6 +496,145 @@ bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     return set;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool comparePropertyValues(ECValuesCollectionCR lhs, IECInstancePtr rhs)
+    {
+    for (ECPropertyValueCR lhsProp : lhs)
+        {
+        ECValueCR lhsVal = lhsProp.GetValue();
+        ECValue rhsVal;
+        if (ECObjectsStatus::Success != rhs->GetValueUsingAccessor(rhsVal, lhsProp.GetValueAccessor()))
+            return false;
+        if (lhsVal != rhsVal)
+            return false;
+        if (lhsProp.HasChildValues())
+            {
+            if (!comparePropertyValues(*lhsProp.GetChildValues(), rhs))
+                return false;
+            }
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECProperty::_IsSame(ECPropertyCR target) const
+    {
+    if (!GetName().EqualsIAscii(target.GetName().c_str()))
+        return false;
+
+    if (!GetTypeName().Equals(target.GetTypeName()))
+        return false;
+
+    if (GetIsDisplayLabelDefined() && !GetDisplayLabel().Equals(target.GetDisplayLabel()))
+        return false;
+
+    if (!GetDescription().Equals(target.GetDescription()))
+        return false;
+
+    if (IsMinimumValueDefined() != target.IsMinimumValueDefined())
+        return false;
+
+    if (IsMinimumValueDefined())
+        {
+        ECValue left;
+        ECValue right;
+        ECObjectsStatus stat1 = GetMinimumValue(left);
+        ECObjectsStatus stat2 = target.GetMinimumValue(right);
+        if (stat1 != stat2)
+            return false;
+        if (left != right)
+            return false;
+        }
+
+    if (IsMaximumValueDefined() != target.IsMaximumValueDefined())
+        return false;
+
+    if (IsMaximumValueDefined())
+        {
+        ECValue left;
+        ECValue right;
+        GetMaximumValue(left);
+        target.GetMaximumValue(right);
+        if (left != right)
+            return false;
+        }
+
+    if (IsMinimumLengthDefined() != target.IsMinimumLengthDefined())
+        return false;
+    
+    if (IsMinimumLengthDefined() && GetMinimumLength() != target.GetMinimumLength())
+        return false;
+
+    if (IsMaximumLengthDefined() != target.IsMaximumLengthDefined())
+        return false;
+
+    if (IsMaximumLengthDefined() && GetMaximumLength() != target.GetMaximumLength())
+        return false;
+
+    if (IsPriorityLocallyDefined() != target.IsPriorityLocallyDefined())
+        return false;
+
+    if (IsPriorityLocallyDefined() && GetPriority() != target.GetPriority())
+        return false;
+
+    if (GetIsReadOnly() != target.GetIsReadOnly())
+        return false;
+
+    // These are EC 3.1 concepts and currently we are only concerned about comparing 2.0 properties before they are converted
+    //if (IsKindOfQuantityDefinedLocally() != target.IsKindOfQuantityDefinedLocally())
+    //    return false;
+
+    //if (IsKindOfQuantityDefinedLocally())
+    //    {
+    //    KindOfQuantityCP left = GetKindOfQuantity();
+    //    KindOfQuantityCP right = target.GetKindOfQuantity();
+    //    if (*left != *right)
+    //        return false;
+    //    }
+
+    //if (IsCategoryDefinedLocally() != target.IsCategoryDefinedLocally())
+    //    return false;
+
+    //if (IsCategoryDefinedLocally())
+    //    {
+    //    if (nullptr == target.GetCategory())
+    //        return false;
+    //    if (*GetCategory() != *target.GetCategory())
+    //    return false;
+    //    }
+
+    int lhsCount = 0;
+    for (auto ca : GetCustomAttributes(false))
+        {
+        // It is too complicated to try to figure out whether the units are the same before they have been converted to the new system.  Therefore, we just
+        // automatically declare that if the property has a UnitSpecification custom attribute on it, it is different from the other property
+        if (0 == strcmp("Unit_Attributes:UnitSpecificationAttr", ca->GetClass().GetFullName()))
+            return false;
+
+        IECInstancePtr rhs = target.GetCustomAttribute(ca->GetClass());
+        if (!rhs.IsValid())
+            return false;
+
+        ECValuesCollectionPtr lhsValues = ECValuesCollection::Create(*ca);
+        if (!comparePropertyValues(*lhsValues, rhs))
+            return false;
+        lhsCount++;
+        }
+
+    int rhsCount = 0;
+    for (auto ca : target.GetCustomAttributes(false))
+        rhsCount++;
+
+    if (lhsCount != rhsCount)
+        return false;
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -968,6 +1107,27 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool PrimitiveECProperty::_IsSame(ECPropertyCR target) const
+    {
+    PrimitiveECPropertyCP rhs = target.GetAsPrimitiveProperty();
+    if (nullptr == rhs)
+        return false;
+
+    if (!T_Super::_IsSame(target))
+        return false;
+
+    if (GetType() != rhs->GetType())
+        return false;
+    
+    if (IsExtendedTypeDefinedLocally())
+        return false;
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1152,6 +1312,24 @@ Utf8String StructECProperty::_GetTypeName () const
     if (!EXPECTED_CONDITION (NULL != m_structType))
         return EMPTY_STRING;
     return ECClass::GetQualifiedClassName (this->GetClass().GetSchema(), *m_structType);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool StructECProperty::_IsSame(ECPropertyCR target) const
+    {
+    StructECPropertyCP rhs = target.GetAsStructProperty();
+    if (nullptr == rhs)
+        return false;
+
+    if (!T_Super::_IsSame(target))
+        return false;
+
+    if (!GetType().Is(&rhs->GetType()))
+        return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1385,6 +1563,30 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
         return status;
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ArrayECProperty::_IsSame(ECPropertyCR target) const
+    {
+    ArrayECPropertyCP rhs = target.GetAsArrayProperty();
+    if (nullptr == rhs)
+        return false;
+
+    if (!T_Super::_IsSame(target))
+        return false;
+
+    if (GetKind() == rhs->GetKind())
+        return false;
+
+    if (GetMaxOccurs() != rhs->GetMaxOccurs())
+        return false;
+
+    if (GetMinOccurs() != rhs->GetMinOccurs())
+        return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

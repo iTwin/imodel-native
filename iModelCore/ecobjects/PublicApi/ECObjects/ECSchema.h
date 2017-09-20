@@ -763,6 +763,8 @@ protected:
     virtual bool                                _IsCalculated() const {return false;}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
 
+    virtual bool _IsSame(ECPropertyCR target) const;
+
     void                                InvalidateClassLayout();
 
 public:
@@ -947,6 +949,9 @@ public:
     StructArrayECPropertyP      GetAsStructArrayPropertyP()         {return _GetAsStructArrayPropertyP();} //!< Returns the property as a StructArrayECProperty*
     NavigationECPropertyCP      GetAsNavigationProperty() const     {return _GetAsNavigationPropertyCP();} //!< Returns the property as a const NavigationECProperty*
     NavigationECPropertyP       GetAsNavigationPropertyP()          {return _GetAsNavigationPropertyP();} //!< Returns the property as a NavigationECProperty*
+
+    //! Returns whether this property is the same as the target property
+    bool IsSame(ECPropertyCR target) const { return _IsSame(target); }
 };
 
 //=======================================================================================
@@ -980,6 +985,7 @@ protected:
     bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
     bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveProperty;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -1032,6 +1038,7 @@ protected:
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     //! The property type.
@@ -1068,6 +1075,7 @@ protected:
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
     ArrayECPropertyP            _GetAsArrayPropertyP() override {return this;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
