@@ -9,7 +9,6 @@
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />    
     <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH_SHORT" persistenceUnit="M" relativeError="1e-2" />
     <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RAD" relativeError="1e-2" />
-    <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT" relativeError="1e-2" />
     <KindOfQuantity typeName="SLOPE" displayLabel="SLOPE" persistenceUnit="M/M" relativeError="1e-2" />
 
     <ECEntityClass typeName="RoadRailCategoryModel">
@@ -567,11 +566,12 @@
     </ECEntityClass>
     <ECEntityClass typeName="OverallTypicalSectionAlignment" displayLabel="Alignment location in context of an Overall Typical Section" modifier="Sealed">
         <BaseClass>bis:GeometricElement2d</BaseClass>
+        <BaseClass>ITypicalSectionConstraintPoint</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="OverallTypicalSectionPortionElement" displayLabel="Typical Section Portion" modifier="Abstract">
+    <ECEntityClass typeName="OverallTypicalSectionPortion" displayLabel="Typical Section Portion Definition location in context of an Overall Typical Section" modifier="Sealed">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -581,7 +581,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="OverallTypicalSectionPortionRefersToDefinition" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N PlacedTypicalSectionPortion">
-            <Class class="OverallTypicalSectionPortionElement"/>
+            <Class class="OverallTypicalSectionPortion"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Portion Definition">
             <Class class="TypicalSectionPortionDefinitionElement"/>
@@ -589,26 +589,22 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="OverallTypicalSectionPortionRefersToAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="may be refered to by N PlacedTypicalSectionPortion">
-            <Class class="OverallTypicalSectionPortionElement"/>
+            <Class class="OverallTypicalSectionPortion"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 typical section alignment">
             <Class class="OverallTypicalSectionAlignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="OriginBasedOverallTypicalSectionPortion" displayLabel="Overall Typical Section Portion placed relative to its origin" modifier="Sealed">
-        <BaseClass>OverallTypicalSectionPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="OriginHorizontalOffset" typeName="double" displayLabel="Horizontal offset from Alignment" kindOfQuantity="LENGTH" />
-        <ECProperty propertyName="OriginVerticalOffset" typeName="double" displayLabel="Vertical offset from Alignment" kindOfQuantity="LENGTH" />
-    </ECEntityClass>
-    <ECEntityClass typeName="ConnectionBasedOverallTypicalSectionPortion" displayLabel="Overall Typical Section Portion placed relative to connection points" modifier="Sealed">
-        <BaseClass>OverallTypicalSectionPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
+    <ECRelationshipClass typeName="OverallTypicalSectionPortionOriginConstraint" displayLabel="Origin Constraint" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="constrained by N sources">
+            <Class class="TypicalSectionConstraintSource"/>
+        </Source>
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="constrains 1 portion">
+            <Class class="OverallTypicalSectionPortion"/>
+        </Target>
+        <ECProperty propertyName="Priority" typeName="int" displayLabel="Constraint Priority"/>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TypicalSectionPortionDefinitionElement" modifier="Abstract" description="Base class representing the definition of a portion of overall Typical-sections of a Pathway.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
@@ -1037,10 +1033,10 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="TypicalSectionPointConstraint" displayLabel="Point Constraint" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="constrained by N sources">
             <Class class="TypicalSectionConstraintSource"/>
         </Source>
-        <Target multiplicity="(1..*)" polymorphic="false" roleLabel="refers to N parameters">
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="constrains 1 point">
             <Class class="TypicalSectionPoint"/>
         </Target>
         <ECProperty propertyName="Priority" typeName="int" displayLabel="Constraint Priority"/>

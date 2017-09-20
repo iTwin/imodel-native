@@ -14,8 +14,10 @@
 HANDLER_DEFINE_MEMBERS(BarrierComponentHandler)
 HANDLER_DEFINE_MEMBERS(BufferComponentHandler)
 HANDLER_DEFINE_MEMBERS(CurbComponentHandler)
+HANDLER_DEFINE_MEMBERS(OverallTypicalSectionAlignmentHandler)
 HANDLER_DEFINE_MEMBERS(OverallTypicalSectionHandler)
 HANDLER_DEFINE_MEMBERS(OverallTypicalSectionBreakDownModelHandler)
+HANDLER_DEFINE_MEMBERS(OverallTypicalSectionPortionHandler)
 HANDLER_DEFINE_MEMBERS(PavementComponentHandler)
 HANDLER_DEFINE_MEMBERS(RoadLaneComponentHandler)
 HANDLER_DEFINE_MEMBERS(RoadShoulderComponentHandler)
@@ -264,6 +266,88 @@ OverallTypicalSectionCPtr OverallTypicalSection::Insert(OverallTypicalSectionBre
         return nullptr;
         }
 
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OverallTypicalSectionAlignmentCPtr OverallTypicalSection::QueryMainAlignment() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_OverallTypicalSectionRefersToMainAlignment) " WHERE SourceECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    return OverallTypicalSectionAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus OverallTypicalSection::SetMainAlignment(OverallTypicalSectionCR typicalSection, OverallTypicalSectionAlignmentCR alignment)
+    {
+    auto existingMainAlignmentCPtr = typicalSection.QueryMainAlignment();
+    if (existingMainAlignmentCPtr.IsNull())
+        {
+        if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().DeleteLinkTableRelationship(
+            ECInstanceKey(ECClassId(existingMainAlignmentCPtr->GetElementClassId().GetValue()), ECInstanceId(existingMainAlignmentCPtr->GetElementId().GetValue()))))
+            return DgnDbStatus::BadElement;
+        }
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *alignment.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_OverallTypicalSectionRefersToMainAlignment)->GetRelationshipClassCP(),
+        ECInstanceId(typicalSection.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OverallTypicalSectionAlignmentPtr OverallTypicalSectionAlignment::Create(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(origin, AngleInDegrees()));
+
+    return new OverallTypicalSectionAlignment(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OverallTypicalSectionAlignmentCPtr OverallTypicalSectionAlignment::CreateAndInsert(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin)
+    {
+    auto ptr = Create(model, origin);
+    if (ptr.IsNull())
+        return nullptr;
+
+    return ptr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OverallTypicalSectionPortionPtr OverallTypicalSectionPortion::Create(OverallTypicalSectionBreakDownModelCR model, 
+    TypicalSectionPortionDefinitionElementCR refDefinition, OverallTypicalSectionAlignmentCR alignment)
+    {
+    if (!model.GetModelId().IsValid() || !alignment.GetElementId().IsValid() || !refDefinition.GetElementId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d());
+
+    OverallTypicalSectionPortionPtr retVal(new OverallTypicalSectionPortion(createParams));
+    retVal->SetAlignment(alignment);
+    retVal->SetDefinition(refDefinition);
     return retVal;
     }
 

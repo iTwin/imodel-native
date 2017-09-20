@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include "RoadRailPhysical.h"
+#include "TypicalSectionPoint.h"
 
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
@@ -184,6 +185,10 @@ public:
     ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 
     ROADRAILPHYSICAL_EXPORT OverallTypicalSectionCPtr Insert(OverallTypicalSectionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
+
+    ROADRAILPHYSICAL_EXPORT OverallTypicalSectionAlignmentCPtr QueryMainAlignment() const;
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetMainAlignment(OverallTypicalSectionCR, OverallTypicalSectionAlignmentCR alignment);
 }; // OverallTypicalSection
 
 //=======================================================================================
@@ -221,6 +226,55 @@ public:
     static OverallTypicalSectionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< OverallTypicalSectionBreakDownModel >(id); }
     static OverallTypicalSectionBreakDownModelPtr Create(CreateParams const& params) { return new OverallTypicalSectionBreakDownModel(params); }
 }; // OverallTypicalSectionBreakDownModel
+
+//=======================================================================================
+//! Alignment location in context of an Overall Typical Section
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionAlignment : Dgn::GeometricElement2d, ITypicalSectionConstraintPoint
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSectionAlignment, Dgn::GeometricElement2d);
+friend struct OverallTypicalSectionAlignmentHandler;
+
+protected:
+    //! @private
+    explicit OverallTypicalSectionAlignment(CreateParams const& params) : T_Super(params) {}
+
+    virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(OverallTypicalSectionAlignment)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(OverallTypicalSectionAlignment)
+
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentPtr Create(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin);
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentCPtr CreateAndInsert(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin);
+}; // OverallTypicalSectionAlignment
+
+//=======================================================================================
+//! Typical Section Portion Definition location in context of an Overall Typical Section
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionPortion : Dgn::GeometricElement2d
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSectionPortion, Dgn::GeometricElement2d);
+friend struct OverallTypicalSectionPortionHandler;
+
+protected:
+    //! @private
+    explicit OverallTypicalSectionPortion(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(OverallTypicalSectionPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(OverallTypicalSectionPortion)
+
+    OverallTypicalSectionAlignmentCP GetAlignment() const { OverallTypicalSectionAlignment::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("Alignment")).get(); }
+    void SetAlignment(OverallTypicalSectionAlignmentCR alignment) { SetPropertyValue("Alignment", ECN::ECValue(alignment.GetElementId())); }
+    TypicalSectionPortionDefinitionElementCP GetDefinition() const { TypicalSectionPortionDefinitionElement::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("Definition")).get(); }
+    void SetDefinition(TypicalSectionPortionDefinitionElementCR refDefinition) { SetPropertyValue("Definition", ECN::ECValue(refDefinition.GetElementId())); }
+
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionPortionPtr Create(OverallTypicalSectionBreakDownModelCR model, 
+        TypicalSectionPortionDefinitionElementCR refDefinition, OverallTypicalSectionAlignmentCR alignment);
+}; // OverallTypicalSectionPortion
 
 //=======================================================================================
 //! Base class for TypicalSection Components.
@@ -455,13 +509,31 @@ public:
 
 
 //=================================================================================
-//! ElementHandler for TypicalSection Elements
+//! ElementHandler for OverallTypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionHandler : Dgn::dgn_ElementHandler::TemplateRecipe2d
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSection, OverallTypicalSection, OverallTypicalSectionHandler, Dgn::dgn_ElementHandler::TemplateRecipe2d, ROADRAILPHYSICAL_EXPORT)
 }; // OverallTypicalSectionHandler
+
+//=================================================================================
+//! ElementHandler for TypicalSectionAlignment Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionAlignmentHandler : Dgn::dgn_ElementHandler::Geometric2d
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSectionAlignment, OverallTypicalSectionAlignment, OverallTypicalSectionAlignmentHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
+}; // OverallTypicalSectionAlignmentHandler
+
+//=================================================================================
+//! ElementHandler for TypicalSectionPortion Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionPortionHandler : Dgn::dgn_ElementHandler::Geometric2d
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSectionPortion, OverallTypicalSectionPortion, OverallTypicalSectionPortionHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILPHYSICAL_EXPORT)
+}; // OverallTypicalSectionPortionHandler
 
 //=================================================================================
 //! ElementHandler for TypicalSection DefinitionElements

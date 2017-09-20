@@ -155,4 +155,15 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
     InsertFourLanes(*twBreakDownModelPtr);
     InsertShouldersRightSide(*shoulderRBreakDownModelPtr);
     InsertSideSlopeRightSide(*sideSlopeRBreakDownModelPtr);
+
+    auto overallTypicalSectionPtr = OverallTypicalSection::Create(*roadwayStandardsModelPtr, "4 lanes with shoulders");
+
+    OverallTypicalSectionBreakDownModelPtr overallTypicalSectionModelPtr;
+    ASSERT_TRUE(overallTypicalSectionPtr->Insert(overallTypicalSectionModelPtr).IsValid());
+
+    auto alignmentPlaceHolderCPtr = OverallTypicalSectionAlignment::CreateAndInsert(*overallTypicalSectionModelPtr, { 0, 0 });
+    ASSERT_EQ(DgnDbStatus::Success, OverallTypicalSection::SetMainAlignment(*overallTypicalSectionPtr, *alignmentPlaceHolderCPtr));
+
+    auto travelwayDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *roadTravelwayDefPtr, *alignmentPlaceHolderCPtr);
+    ASSERT_TRUE(travelwayDefPortionPtr->Insert().IsValid());
     }

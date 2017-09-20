@@ -49,6 +49,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Models
 #define BRRP_CLASS_DesignSpeedDefinitionModel                       "DesignSpeedDefinitionModel"
+#define BRRP_CLASS_OverallTypicalSectionAlignment                   "OverallTypicalSectionAlignment"
 #define BRRP_CLASS_OverallTypicalSectionBreakDownModel              "OverallTypicalSectionBreakDownModel"
 #define BRRP_CLASS_RoadClassDefinitionModel                         "RoadClassDefinitionModel"
 #define BRRP_CLASS_RoadRailCategoryModel                            "RoadRailCategoryModel"
@@ -66,6 +67,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_DesignSpeedDefinitionTable                       "DesignSpeedDefinitionTable"
 #define BRRP_CLASS_LinearlyLocatedStatus                            "LinearlyLocatedStatus"
 #define BRRP_CLASS_OverallTypicalSection                            "OverallTypicalSection"
+#define BRRP_CLASS_OverallTypicalSectionPortion                     "OverallTypicalSectionPortion"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_PavementComponent                                "PavementComponent"
 #define BRRP_CLASS_Railway                                          "Railway"
@@ -107,7 +109,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_TypicalSectionParameter                          "TypicalSectionParameter"
 #define BRRP_CLASS_TypicalSectionPoint                              "TypicalSectionPoint"
 #define BRRP_CLASS_TypicalSectionPointName                          "TypicalSectionPointName"
-#define BRRP_CLASS_TypicalSectionProxyPoint                   "TypicalSectionProxyPoint"
+#define BRRP_CLASS_TypicalSectionProxyPoint                         "TypicalSectionProxyPoint"
 #define BRRP_CLASS_TypicalSectionPortion                            "TypicalSectionPortion"
 #define BRRP_CLASS_TypicalSectionPortionDefinitionElement           "TypicalSectionPortionDefinitionElement"
 #define BRRP_CLASS_TypicalSectionSlopeConstraint                    "TypicalSectionSlopeConstraint"
@@ -120,6 +122,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Relationships
 #define BRRP_REL_DesignSpeedRefersToDefinition                      "DesignSpeedRefersToDefinition"
+#define BRRP_REL_OverallTypicalSectionRefersToMainAlignment         "OverallTypicalSectionRefersToMainAlignment"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayOwnsDesignSpeeds                            "PathwayOwnsDesignSpeeds"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
@@ -227,7 +230,9 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionTable)
 ROADRAILPHYSICAL_TYPEDEFS(ITypicalSectionConstraintPoint)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(LinearlyLocatedStatus)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSectionAlignment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSectionBreakDownModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSectionPortion)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularTravelwaySegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailCategoryModel)

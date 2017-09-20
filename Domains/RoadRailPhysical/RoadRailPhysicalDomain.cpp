@@ -31,6 +31,8 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
 
     RegisterHandler(TypicalSectionPortionDefinitionElementHandler::GetHandler());
     RegisterHandler(OverallTypicalSectionHandler::GetHandler());
+    RegisterHandler(OverallTypicalSectionAlignmentHandler::GetHandler());
+    RegisterHandler(OverallTypicalSectionPortionHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
     RegisterHandler(TravelwaySideDefinitionHandler::GetHandler());
