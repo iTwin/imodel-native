@@ -359,11 +359,13 @@ struct ConversionCustomAttributesSchemaHolder : RefCountedBase
         ConversionCustomAttributesSchemaHolder();
         ECSchemaPtr _GetSchema() {return m_schema;}
         IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
+        void Initialize();
 
     public:
         static ConversionCustomAttributesSchemaHolderPtr GetHolder();
         static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
+        void Reset();
     };
 
 ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::s_schemaHolder;
@@ -372,6 +374,14 @@ ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
+    {
+    Initialize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributesSchemaHolder::Initialize()
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     SchemaKey key(s_convSchemaName, s_convVersionRead, s_convVersionMinor);
@@ -393,6 +403,14 @@ ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributesSchemaHolder::Reset()
+    {
+    m_schema = nullptr;
+    m_enablers.clear();
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::GetHolder()
@@ -409,7 +427,7 @@ ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder
 IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
     {
     if (!m_schema.IsValid())
-        _GetSchema();
+        Initialize();
 
     auto enablerIterator = m_enablers.find(attribute);
     if (enablerIterator == m_enablers.end())
@@ -435,6 +453,13 @@ IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Ut
     return ConversionCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributeHelper::Reset()
+    {
+    ConversionCustomAttributesSchemaHolder::GetHolder()->Reset();
+    }
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE

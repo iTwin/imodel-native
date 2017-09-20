@@ -649,10 +649,6 @@ TEST_F(StandardValueToEnumConversionTest, DuplicateSDValues)
     EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("C_TitleC")) << "Enumeration C_TitleC should NOT have been created";
     EXPECT_EQ(enumName1, m_schema->GetClassCP("C")->GetPropertyP("TitleC", false)->GetTypeName()) << "Enum type should have been " << enumName1;
 
-    //with same class(including child,parent) and property name, baseclass name trumps
-    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("A_TitleB")) << "Enumeration A_TitleB should NOT have been created";
-    EXPECT_EQ(enumName1, m_schema->GetClassCP("A")->GetPropertyP("TitleB", false)->GetTypeName()) << "Enum type should have been " << enumName1;
-
     Utf8String enumName2 = "C_TitleA";
     CheckTypeName(enumName2.c_str(), *m_schema, "TitleA", { "D", "B", "C" });
 
@@ -1090,50 +1086,84 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSuccess2)
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
         "   <ECClass typeName='C' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"
         "       </ECProperty>"
         "   </ECClass>"
         "   <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <BaseClass>B</BaseClass>"
         "       <BaseClass>C</BaseClass>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"
         "       </ECProperty>"
         "   </ECClass>"
         "   <ECClass typeName='B' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"
         "       </ECProperty>"
         "   </ECClass>"
         "</ECSchema>";
 
-    ECSchemaPtr customAttributesSchema;
-    CreateEditorSchema(customAttributesSchema);
+    Utf8CP instance1Xml = "<ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <MustBeFromList>false</MustBeFromList>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Mr.</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>";
 
-    IECInstancePtr instance1 = GetStandardValuesInstance({ {0, "Mr."} }, customAttributesSchema, true, false);
-    IECInstancePtr instance2 = GetStandardValuesInstance({ { 1, "Sensei" } }, customAttributesSchema, true, false);
+    Utf8CP instance2Xml = "<ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <MustBeFromList>false</MustBeFromList>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Sensei</DisplayString>"
+        "                           <Value>1</Value>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>";
+
     //C and B are parent of A
     //covers combination of having same CA for two but differnet for the third i.e C, B have instance1 and A instance2
-    for (int i = 0; i < 3; i++)
-        {
-        ECSchemaPtr schema;
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *context));
-        bvector<ECClassP> classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema);
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8PrintfString schema1Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1Xml.c_str(), *context));
 
-        int j = (i + 1) % 3;
-        int k = (i + 2) % 3;
-        classes[i]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-        classes[j]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-        classes[k]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance2);
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
+    CheckTypeName("B_TitleA", *schema, "TitleA", {"A", "B", "C"});
+    EXPECT_EQ(1, schema->GetEnumerationCount()) << "Conversion should have created 1 enum";
+    ValidateSchema(*schema);
 
-        EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded";
-        CheckTypeName("B_TitleA", *schema, "TitleA", { "A", "B", "C" });
-        EXPECT_EQ(1, schema->GetEnumerationCount()) << "Conversion should have created 1 enum";
-        ValidateSchema(*schema);
-        }
+    ECSchemaPtr schema2;
+    context = ECSchemaReadContext::CreateContext();
+    Utf8PrintfString schema2Xml(schemaXml, instance2Xml, instance1Xml, instance1Xml);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schema2Xml.c_str(), *context));
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have succeeded";
+    CheckTypeName("B_TitleA", *schema2, "TitleA", {"A", "B", "C"});
+    EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should have created 1 enum";
+    ValidateSchema(*schema2);
+
+    ECSchemaPtr schema3;
+    context = ECSchemaReadContext::CreateContext();
+    Utf8PrintfString schema3Xml(schemaXml, instance1Xml, instance2Xml, instance1Xml);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml.c_str(), *context));
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have succeeded";
+    CheckTypeName("B_TitleA", *schema3, "TitleA", {"A", "B", "C"});
+    EXPECT_EQ(1, schema3->GetEnumerationCount()) << "Conversion should have created 1 enum";
+    ValidateSchema(*schema3);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1141,42 +1171,59 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFailure)
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
         "   <ECClass typeName='C' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"      
         "       </ECProperty>"
         "   </ECClass>"
         "   <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <BaseClass>B</BaseClass>"
         "       <BaseClass>C</BaseClass>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"
         "       </ECProperty>"
         "   </ECClass>"
         "   <ECClass typeName='B' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>"
+        "       %s"
         "       </ECProperty>"
         "   </ECClass>"
         "</ECSchema>";
 
-    ECSchemaPtr customAttributesSchema;
-    CreateEditorSchema(customAttributesSchema);
+    Utf8CP instance1Xml = "<ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <MustBeFromList>true</MustBeFromList>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Mr.</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>";
 
-    IECInstancePtr instance1 = GetStandardValuesInstance({{0, "Mr."}}, customAttributesSchema, true, true);
-    IECInstancePtr instance2 = GetStandardValuesInstance({{1, "Sensei"}}, customAttributesSchema, true, false);
-    
+    Utf8CP instance2Xml = "<ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <MustBeFromList>false</MustBeFromList>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Sensei</DisplayString>"
+        "                           <Value>1</Value>"
+        "                       </ValueMap>"
+        "                   </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>";
+
+    Utf8PrintfString schema1Xml(schemaXml, instance1Xml, instance2Xml, instance1Xml);
     // B and C should have the strict Std Value which will prevent it from converting. 
     // B and A will have different Std Values but since B is strict it won't be able to convert its derived class, A, to the enum
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1Xml.c_str(), *context));
     
-    bvector<ECClassP> classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema);
-    classes[0]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[1]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[2]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance2);
-
     EXPECT_FALSE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have failed";
     CheckTypeName("int", *schema, "TitleA", {"B","C","A"});
     EXPECT_EQ(0, schema->GetEnumerationCount()) << "Conversion should not have created any enums";
@@ -1185,26 +1232,18 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
     // It will try to convert C to the enum and fail, so C then attempts to creates its own enum but also fails and reverts to int
     ECSchemaPtr schema2;
     context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML, *context));
+    Utf8PrintfString schema2Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schema2Xml.c_str(), *context));
 
-    classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema2);
-    classes[1]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[2]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[0]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance2);
-    
     EXPECT_FALSE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion failed";
     EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should not have created any enums";
     CheckTypeName("C_TitleA", *schema2, "TitleA", {"A","C"});
     CheckTypeName("int", *schema2, "TitleA", {"B"});
 
     ECSchemaPtr schema3;
+    Utf8PrintfString schema3Xml(schemaXml, instance2Xml, instance1Xml, instance1Xml);
     context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schemaXML, *context));
-
-    classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema3);
-    classes[2]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[0]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance1);
-    classes[1]->GetPropertyP("TitleA", false)->SetCustomAttribute(*instance2);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml.c_str(), *context));
 
     EXPECT_FALSE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have failed";
     EXPECT_EQ(1, schema3->GetEnumerationCount()) << "Conversion should not have created any enums";
@@ -2691,10 +2730,8 @@ TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited_
     EXPECT_EQ(3, propA->GetPriority());
 
     ECClassCP classB = schema->GetClassCP("B");
-    ECPropertyP propB = classB->GetPropertyP("propWithPriority");
-    CheckForPropertyPriorityCALocally(propB, false);
-    EXPECT_FALSE(propB->IsPriorityLocallyDefined());
-    EXPECT_EQ(3, propB->GetPriority());
+    ECPropertyP propB = classB->GetPropertyP("propWithPriority", false);
+    EXPECT_TRUE(nullptr == propB);
     }
     }
 

@@ -244,6 +244,154 @@ TEST_F(PropertyTest, InheritedPriority)
     EXPECT_EQ(testPriority, derivedProp->GetPriority());
     }
 
+void createECProperty(PrimitiveECPropertyP& prop, ECEntityClassP class1, Utf8CP name, PrimitiveType primitiveType = PRIMITIVETYPE_Integer)
+    {
+    class1->CreatePrimitiveProperty(prop, name, primitiveType);
+    prop->SetDisplayLabel("TestProp Display Label");
+    prop->SetDescription("TestProp Description");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyTest, CompareProperties)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP class1;
+    PrimitiveECPropertyP prop1;
+    PrimitiveECPropertyP stringProp;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    schema->CreateEntityClass(class1, "TestClass");
+    createECProperty(prop1, class1, "TestProp");
+    createECProperty(stringProp, class1, "StringProp", PRIMITIVETYPE_String);
+
+    // Properties have different name
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass2");
+        createECProperty(testProp, testClass, "TestProp2");
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Properties have different type
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass3");
+        createECProperty(testProp, testClass, "TestProp", PRIMITIVETYPE_String);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Properties have different display labels
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass4");
+        createECProperty(testProp, testClass, "TestProp");
+        testProp->SetDisplayLabel("TestProp Display Label2");
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Properties have different descriptions
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass5");
+        createECProperty(testProp, testClass, "TestProp");
+        testProp->SetDescription("TestProp Description2");
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Minimum Value
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass6");
+        createECProperty(testProp, testClass, "TestProp");
+        ECValue min1(1);
+        prop1->SetMinimumValue(min1);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        ECValue min2(2);
+        testProp->SetMinimumValue(min2);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        prop1->SetMinimumValue(min2);
+        EXPECT_TRUE(testProp->IsSame(*prop1));
+        prop1->ResetMinimumValue();
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Maximum Value
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass7");
+        createECProperty(testProp, testClass, "TestProp");
+        ECValue max1(100);
+        prop1->SetMaximumValue(max1);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        ECValue max2(200);
+        testProp->SetMaximumValue(max2);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        prop1->SetMaximumValue(max2);
+        EXPECT_TRUE(testProp->IsSame(*prop1));
+        prop1->ResetMaximumValue();
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        }
+
+    // Minimum Length
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass8");
+        createECProperty(testProp, testClass, "StringProp", PRIMITIVETYPE_String);
+        testProp->SetMinimumLength(2);
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        stringProp->SetMinimumLength(3);
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        testProp->SetMinimumLength(3);
+        EXPECT_TRUE(testProp->IsSame(*stringProp));
+        testProp->ResetMinimumLength();
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        stringProp->ResetMinimumLength();
+        EXPECT_TRUE(testProp->IsSame(*stringProp));
+        }
+
+    // Maximum Length
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass9");
+        createECProperty(testProp, testClass, "StringProp", PRIMITIVETYPE_String);
+        testProp->SetMaximumLength(200);
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        stringProp->SetMaximumLength(300);
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        testProp->SetMaximumLength(300);
+        EXPECT_TRUE(testProp->IsSame(*stringProp));
+        testProp->ResetMaximumLength();
+        EXPECT_FALSE(testProp->IsSame(*stringProp));
+        stringProp->ResetMaximumLength();
+        EXPECT_TRUE(testProp->IsSame(*stringProp));
+        }
+
+    // IsReadOnly
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProp;
+        schema->CreateEntityClass(testClass, "TestClass10");
+        createECProperty(testProp, testClass, "TestProp");
+        prop1->SetIsReadOnly(true);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        testProp->SetIsReadOnly(true);
+        EXPECT_TRUE(testProp->IsSame(*prop1));
+        testProp->SetIsReadOnly(false);
+        EXPECT_FALSE(testProp->IsSame(*prop1));
+        prop1->SetIsReadOnly(false);
+        EXPECT_TRUE(testProp->IsSame(*prop1));
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                       06/17
 //+---------------+---------------+---------------+---------------+---------------+------

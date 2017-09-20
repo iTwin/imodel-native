@@ -657,7 +657,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
     if (NULL != baseProperty)
         {
         Utf8String errMsg;
-        ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty, errMsg);
+        ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errMsg);
         if (ECObjectsStatus::Success != status)
             {
             if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
@@ -688,7 +688,13 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 return ECObjectsStatus::CaseCollision;
                 }
             }
-        pProperty->SetBaseProperty (baseProperty);
+        else if (resolveConflicts && pProperty->IsSame(*baseProperty))
+            {
+            LOG.infov("%s already has a base primitive property %s of the same name.  As no differences were noted, new property will not be added.", pProperty->GetClass().GetFullName(), pProperty->GetName().c_str());
+            return ECObjectsStatus::Success;
+            }
+
+        pProperty->SetBaseProperty(baseProperty);
         }
 
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));

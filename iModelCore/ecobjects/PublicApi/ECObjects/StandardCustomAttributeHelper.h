@@ -115,6 +115,8 @@ struct ConversionCustomAttributeHelper final
         //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
         //! @return An IECInstance of the given custom attribute name, if it is a supported custom attribute. Otherwise, nullptr will be returned.
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+
+        ECOBJECTS_EXPORT static void Reset();
     };
 
 
