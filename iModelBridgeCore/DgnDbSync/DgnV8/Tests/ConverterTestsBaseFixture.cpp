@@ -41,7 +41,6 @@ void ConverterTestBaseFixture::InitializeTheConverter()
 void ConverterTestBaseFixture::SetUp_CreateNewDgnDb()
     {
     CreateDgnDbParams createProjectParams;
-    createProjectParams.m_overwriteExisting = true;
     createProjectParams.SetRootSubjectName("ConverterTestBaseFixture");
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
     ASSERT_TRUE(dgndb.IsValid());
