@@ -1400,6 +1400,10 @@ Converter::~Converter()
         delete m_elementAspectConverter;
 
     Converter::InitV8ForeignFileTypes (nullptr);
+
+    // This is a hack - When a schema that references the ECv3CustomAttributes schema is imported, the copy being held by this helper receives an ECSchemaId.  Since that is a static
+    // helper, if the converter attempts to import that schema into a different ecdb, it will fail.
+    BentleyApi::ECN::ConversionCustomAttributeHelper::Reset();
     }
 
 //---------------------------------------------------------------------------------------
