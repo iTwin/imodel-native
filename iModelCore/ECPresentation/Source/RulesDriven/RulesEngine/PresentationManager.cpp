@@ -244,6 +244,7 @@ public:
 
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_UseCache = "UseCache";
+const Utf8CP RulesDrivenECPresentationManager::ContentDescriptorOptions::OPTION_NAME_CreateFields = "CreateFields";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
@@ -490,7 +491,7 @@ bool RulesDrivenECPresentationManager::_HasChild(ECDbR, NavNodeCR parent, NavNod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentProvider(BeSQLite::EC::ECDbR connection, ContentProviderKey const& key, SelectionInfo const& selectionInfo, ContentOptions const& options)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentProvider(BeSQLite::EC::ECDbR connection, ContentProviderKey const& key, SelectionInfo const& selectionInfo, ContentOptions const& options, bool createFields)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentProvider", NativeLogging::LOG_TRACE);
 
@@ -534,6 +535,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     context->SetLocalizationContext(GetLocalizationProvider());
     context->SetSelectionContext(selectionInfo);
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
+    context->SetCreateFields(createFields);
     _l2 = nullptr;
     
     // get content specifications
@@ -559,7 +561,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
 SpecificationContentProviderPtr RulesDrivenECPresentationManager::GetContentProvider(ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options)
     {
     ContentProviderKey key(connection, options.GetRulesetId(), descriptor.GetPreferredDisplayType(), selectionInfo);
-    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, key, selectionInfo, options);
+    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, key, selectionInfo, options, true);
     if (cachedProvider.IsNull())
         return nullptr;
 
@@ -578,9 +580,9 @@ ContentDescriptorCPtr RulesDrivenECPresentationManager::_GetContentDescriptor(EC
     if (nullptr == preferredDisplayType || 0 == *preferredDisplayType) 
         preferredDisplayType = ContentDisplayType::Undefined;
 
-    ContentOptions options(jsonOptions);
+    ContentDescriptorOptions options(jsonOptions);
     ContentProviderKey key(connection, options.GetRulesetId(), preferredDisplayType, selectionInfo);
-    ContentProviderCPtr provider = GetContentProvider(connection, key, selectionInfo, options);
+    ContentProviderCPtr provider = GetContentProvider(connection, key, selectionInfo, options, options.GetCreateFields());
     if (provider.IsValid())
         return provider->GetContentDescriptor();
     return nullptr;

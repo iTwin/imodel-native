@@ -2785,6 +2785,58 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntCreateFieldsIfSpecifiedSo)
+    {
+    // set up selection
+    NavNodeKeyList keys = {ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId(123ull))};
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesntCreateFieldsIfSpecifiedSo", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    SelectedNodeInstancesSpecification* spec1 = new SelectedNodeInstancesSpecification(1, false, "", "", false);
+    spec1->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "", RelationshipMeaning::RelatedInstance));
+    rule->GetSpecificationsR().push_back(spec1);
+    
+    ContentRelatedInstancesSpecification* spec2 = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, 
+        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket");
+    rule->GetSpecificationsR().push_back(spec2);
+
+    // options
+    RulesDrivenECPresentationManager::ContentDescriptorOptions options(rules->GetRuleSetId().c_str());
+    options.SetCreateFields(false);
+
+    // get the descriptor and verify it has no fields, but has other data
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+
+    EXPECT_TRUE(descriptor->GetAllFields().empty());
+
+    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
+
+    EXPECT_EQ(m_gadgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
+    ASSERT_EQ(2, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths().size());
+    ASSERT_EQ(1, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0].size()); // related instance based on RelatedPropertiesSpecification
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0][0].GetSourceClass());
+    EXPECT_EQ(m_widgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0][0].GetTargetClass());
+    ASSERT_EQ(1, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1].size()); // related instance based on navigation property
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1][0].GetSourceClass());
+    EXPECT_EQ(m_widgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1][0].GetTargetClass());
+
+    EXPECT_EQ(m_sprocketClass, &descriptor->GetSelectClasses()[1].GetSelectClass());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetPrimaryClass());
+    ASSERT_EQ(1, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass().size());
+    EXPECT_EQ(m_sprocketClass, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass()[0].GetSourceClass());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass()[0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecification)

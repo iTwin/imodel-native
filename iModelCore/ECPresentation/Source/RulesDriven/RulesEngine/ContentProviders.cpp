@@ -56,6 +56,7 @@ void ContentProviderContext::Init()
     m_ownsSelectionInfo = false;
     m_propertyFormatter = nullptr;
     m_isNestedContent = false;
+    m_createFields = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,13 +322,12 @@ public:
     ContentSpecificationsVisitor(ContentProviderContext const& context)
         {
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
+        ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
+
         ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetNodesLocater(), 
             context.GetRuleset(), context.GetPreferredDisplayType().c_str(), context.GetUserSettings(), context.GetECExpressionsCache(), 
-            context.GetCategorySupplier(), formatter, context.GetLocalState());
+            context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider, context.GetCreateFields());
         
-        if (context.IsLocalizationContext())
-            params.SetLoacalizationProvider(&context.GetLocalizationProvider());
-
         m_queryBuilder = new ContentQueryBuilder(params);
         }
     virtual ~ContentSpecificationsVisitor() {}

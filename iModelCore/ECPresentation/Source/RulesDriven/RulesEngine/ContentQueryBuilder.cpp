@@ -50,6 +50,7 @@ private:
     IECPropertyFormatter const* m_formatter;
     ECSchemaHelper const& m_helper;
     PresentationRuleSetCR m_ruleset;
+    bool m_createFields;
     bmap<ECClassCP, size_t> m_classCounter;
     bset<ECClassCP> m_handledClasses;
     bmap<ECSchemaCP, bmap<ECClassCP, RelatedPropertiesSpecificationList>> m_relatedPropertySpecifications;
@@ -216,8 +217,8 @@ public:
     * @bsimethod                                    Grigas.Petraitis            04/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
     ContentDescriptorCreateContext(ECSchemaHelper const& helper, IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* formatter, 
-        PresentationRuleSetCR ruleset, ContentSpecificationCP specification)
-        : m_helper(helper), m_categorySupplier(categorySupplier), m_formatter(formatter), m_ruleset(ruleset)
+        PresentationRuleSetCR ruleset, ContentSpecificationCP specification, bool createFields)
+        : m_helper(helper), m_categorySupplier(categorySupplier), m_formatter(formatter), m_ruleset(ruleset), m_createFields(createFields)
         {
         if (nullptr != specification)
             {
@@ -240,6 +241,11 @@ public:
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
     PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            09/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    bool GetCreateFields() const {return m_createFields;}
 
     /*-----------------------------------------------------------------------------**//**
      * @bsimethod                                    Aidas.Vaiksnoras            03/2017
@@ -301,6 +307,8 @@ public:
     Utf8CP GetPropertyEditor(ECPropertyCR ecProperty, ECClassCR ecClass, bool searchForAnyClassEditor = true)
         {
         Utf8StringCR propertyName = ecProperty.GetName();
+
+        // is there an editor that matches the provided class?
         auto specificClassIter = m_propertyEditors.find(&ecClass);
         if (m_propertyEditors.end() != specificClassIter)
             {
@@ -311,6 +319,7 @@ public:
 
         if (searchForAnyClassEditor)
             {
+            // is there an editor that matches any class?
             auto anyClassIter = m_propertyEditors.find(nullptr);
             if (m_propertyEditors.end() != anyClassIter)
                 {
@@ -320,10 +329,12 @@ public:
                 }
             }
 
+        // it's possible that one of the base classes of the provided class has an editor - check that
         for (ECClassCP base : ecClass.GetBaseClasses())
             {
-            if (nullptr != base->GetPropertyP(propertyName))
-                return GetPropertyEditor(ecProperty, *base, false);
+            Utf8CP baseEditor = GetPropertyEditor(ecProperty, *base, false);
+            if (nullptr != baseEditor)
+                return baseEditor;
             }
 
         return nullptr;
@@ -440,10 +451,17 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty)
         {
+        Utf8CP newPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
+
         ContentDescriptor::ECPropertiesField* field = nullptr;
         for (ContentDescriptor::Field* descriptorField : m_descriptor.GetAllFields())
             {
             if (!descriptorField->IsPropertiesField())
+                continue;
+
+            bool areEditorsEqual = (nullptr == newPropertyEditor && descriptorField->GetEditor().empty() 
+                || nullptr != newPropertyEditor && !descriptorField->GetEditor().empty() && descriptorField->GetEditor().Equals(newPropertyEditor));
+            if (!areEditorsEqual)
                 continue;
 
             for (ContentDescriptor::Property const& prop : descriptorField->AsPropertiesField()->GetProperties())
@@ -460,12 +478,6 @@ private:
                 bool isNewPropertyRelated = !m_relatedClassPath.empty();
                 bool areSimilar = ArePropertiesSimilar(ecProperty, prop.GetProperty());
                 areSimilar &= (prop.IsRelated() == isNewPropertyRelated) && (&m_actualClass == &prop.GetPropertyClass() || !isNewPropertyRelated);
-
-                Utf8CP newPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
-                Utf8CP fieldPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(prop.GetProperty(), prop.GetPropertyClass());
-                areSimilar &= (nullptr == newPropertyEditor && nullptr == fieldPropertyEditor) 
-                    || (nullptr != newPropertyEditor && nullptr != fieldPropertyEditor && 0 == strcmp(newPropertyEditor, fieldPropertyEditor));
-
                 if (areSimilar)
                     {
                     field = descriptorField->AsPropertiesField();
@@ -580,10 +592,35 @@ private:
         }
     
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                08/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddNavigationPropertyPath(ECPropertyCR ecProperty, Utf8StringP targetAlias)
+        {
+        RelatedClass relatedClass = m_descriptorCreateContext.GetSchemaHelper().GetForeignKeyClass(ecProperty);
+        relatedClass.SetIsForwardRelationship(!relatedClass.IsForwardRelationship());
+        relatedClass.SetTargetClassAlias(GetNavigationClassAlias(*relatedClass.GetTargetClass(), m_descriptorCreateContext));
+        relatedClass.SetRelationshipAlias(GetNavigationClassAlias(*relatedClass.GetRelationship(), m_descriptorCreateContext));
+        m_navigationPropertiesPaths.push_back({relatedClass});
+
+        if (nullptr != targetAlias)
+            targetAlias->AssignOrClear(relatedClass.GetTargetClassAlias());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool AppendSimpleProperty(ECPropertyCR p)
         {
+        if (!m_descriptorCreateContext.GetCreateFields())
+            {
+            if (p.GetIsNavigation())
+                {
+                // note: have to include navigation property path even if we're not including the property field
+                AddNavigationPropertyPath(p, nullptr);
+                }
+            return true;
+            }
+
         // get the field to append the property to (a new field will be created if necessary)
         ContentDescriptor::ECPropertiesField* field = GetPropertiesField(p);
         if (nullptr == field)
@@ -595,7 +632,7 @@ private:
         if (p.GetIsNavigation())
             {
             Utf8String propertyPrefix;
-            AddNavigationPropertyPath(p, propertyPrefix);
+            AddNavigationPropertyPath(p, &propertyPrefix);
             field->GetProperties().back().SetPrefix(propertyPrefix);
             }
 
@@ -616,6 +653,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool AppendXToManyRelatedProperty(ECPropertyCR p)
         {
+        if (!m_descriptorCreateContext.GetCreateFields())
+            return false;
+
         ContentDescriptor::NestedContentField* field = GetNestedContentField();
         if (nullptr == field)
             return false;
@@ -624,20 +664,6 @@ private:
             ContentDescriptor::Property(m_actualClassAlias, m_actualClass, p));
         field->GetFields().push_back(propertyField);
         return false;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Saulius.Skliutas                08/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddNavigationPropertyPath(ECPropertyCR ecProperty, Utf8StringR targetAlias)
-        {
-        RelatedClass relatedClass = m_descriptorCreateContext.GetSchemaHelper().GetForeignKeyClass(ecProperty);
-        relatedClass.SetIsForwardRelationship(!relatedClass.IsForwardRelationship());
-        targetAlias = GetNavigationClassAlias(*relatedClass.GetTargetClass(), m_descriptorCreateContext);
-        relatedClass.SetTargetClassAlias(targetAlias);
-        relatedClass.SetRelationshipAlias(GetNavigationClassAlias(*relatedClass.GetRelationship(), m_descriptorCreateContext));
-        RelatedClassPath path = {relatedClass};
-        m_navigationPropertiesPaths.push_back(path);
         }
 
 public:
@@ -1047,6 +1073,9 @@ static bool IsECClassAccepted(SelectedNodeInstancesSpecificationCR specification
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void AddCalculatedFieldsFromContentModifiers(ContentDescriptorR descriptor, ECClassCR ecClass, ContentQueryBuilderParameters const& params)
     {
+    if (!params.GetCreateFields())
+        return;
+
     for (ContentModifierCP modifier : params.GetRuleset().GetContentModifierRules())
         {
         ECClassCP modifierClass = params.GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
@@ -1065,7 +1094,7 @@ ContentDescriptorPtr ContentQueryBuilder::CreateDescriptor(SelectedNodeInstances
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(m_params.GetPreferredDisplayType());
     ContentDescriptorCreateContext context(m_params.GetSchemaHelper(), m_params.GetCategorySupplier(), 
-        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification);
+        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification, m_params.GetCreateFields());
     QueryBuilderHelpers::ApplyDefaultContentFlags(*descriptor, m_params.GetPreferredDisplayType(), specification);
     for (ECClassCP ecClass : selection.GetClasses())
         {
@@ -1299,7 +1328,7 @@ ContentDescriptorPtr ContentQueryBuilder::CreateDescriptor(ContentRelatedInstanc
     
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(m_params.GetPreferredDisplayType());
     ContentDescriptorCreateContext context(m_params.GetSchemaHelper(), m_params.GetCategorySupplier(), 
-        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification);
+        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification, m_params.GetCreateFields());
     QueryBuilderHelpers::ApplyDefaultContentFlags(*descriptor, m_params.GetPreferredDisplayType(), specification);
 
     bvector<ECClassCP> modifierClasses = CollectContentModifiers(m_params);
@@ -1375,7 +1404,7 @@ ContentDescriptorPtr ContentQueryBuilder::CreateDescriptor(ContentInstancesOfSpe
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(m_params.GetPreferredDisplayType());
     SupportedEntityClassInfos classInfos = m_params.GetSchemaHelper().GetECClassesFromClassList(specification.GetClassNames(), false);
     ContentDescriptorCreateContext context(m_params.GetSchemaHelper(), m_params.GetCategorySupplier(), 
-        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification);
+        m_params.GetPropertyFormatter(), m_params.GetRuleset(), &specification, m_params.GetCreateFields());
     QueryBuilderHelpers::ApplyDefaultContentFlags(*descriptor, m_params.GetPreferredDisplayType(), specification);
 
     if (specification.GetArePolymorphic())
@@ -1432,7 +1461,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
     {
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(m_params.GetPreferredDisplayType());
     ContentDescriptorCreateContext context(m_params.GetSchemaHelper(), m_params.GetCategorySupplier(), 
-        m_params.GetPropertyFormatter(), m_params.GetRuleset(), nullptr);
+        m_params.GetPropertyFormatter(), m_params.GetRuleset(), nullptr, m_params.GetCreateFields());
 
     for (ContentDescriptor::Field const* field : contentField.GetFields())
         {

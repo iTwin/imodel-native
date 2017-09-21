@@ -158,6 +158,41 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Set whether cache should be used
         void SetUseCache(bool useCache) {AddMember(OPTION_NAME_UseCache, useCache);}
         };
+    
+    //===================================================================================
+    //! A helper class to help create the extended options JSON object for rules-driven 
+    //! presentation manager's content descriptor-related request functions.
+    // @bsiclass                                    Grigas.Petraitis            09/2017
+    //===================================================================================
+    struct ContentDescriptorOptions : ContentOptions
+        {
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_CreateFields;
+
+        //! Constructor. Creates a read-only accessor.
+        ContentDescriptorOptions(JsonValueCR data) : ContentOptions(data) {}
+        //! Constructor. Creates a read-write accessor.
+        ContentDescriptorOptions(JsonValueR data) : ContentOptions(data) {}
+        //! Copy constructor.
+        ContentDescriptorOptions(ContentOptions const& other) : ContentOptions(other) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
+        ContentDescriptorOptions(Utf8CP rulesetId) : ContentOptions(rulesetId) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
+        //! @param[in] useCache Defines whether content caching is enabled
+        ContentDescriptorOptions(Utf8CP rulesetId, bool useCache) : ContentOptions(rulesetId, useCache) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
+        //! @param[in] useCache Defines whether content caching is enabled
+        //! @param[in] createFields Defines whether content fields should be created when creating descriptor
+        ContentDescriptorOptions(Utf8CP rulesetId, bool useCache, bool createFields) : ContentOptions(rulesetId, useCache) {SetCreateFields(createFields);}
+        
+        //! Should content fields be created when creating descriptor
+        bool GetCreateFields() const {return GetJson().isMember(OPTION_NAME_CreateFields) ? GetJson()[OPTION_NAME_CreateFields].asBool() : true;}
+        //! Set whether content fields should be created when creating descriptor
+        //! @note This is an optimization which can only be used when the resulting descriptor is not going the used for getting content.
+        void SetCreateFields(bool value) {AddMember(OPTION_NAME_CreateFields, value);}
+        };
 
 private:
     RuleSetLocaterManager m_locaters;
@@ -185,7 +220,7 @@ private:
 private:
     INavNodesDataSourcePtr GetCachedDataSource(ECDbR, JsonValueCR);
     INavNodesDataSourcePtr GetCachedDataSource(ECDbR, NavNodeCR parent, JsonValueCR);
-    SpecificationContentProviderCPtr GetContentProvider(ECDbR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
+    SpecificationContentProviderCPtr GetContentProvider(ECDbR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&, bool createFields);
     SpecificationContentProviderPtr GetContentProvider(ECDbR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
     ECPRESENTATION_EXPORT NodesCache& GetNodesCacheR() const;
     IPropertyCategorySupplier& GetCategorySupplier() const;

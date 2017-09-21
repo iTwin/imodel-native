@@ -161,12 +161,15 @@ private:
     ILocalizationProvider const* m_localizationProvider;
     IPropertyCategorySupplierR m_categorySupplier;
     IECPropertyFormatter const* m_formatter;
+    bool m_createFields;
 public:
     ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, INavNodeLocaterCR nodesLocater, PresentationRuleSetCR ruleset, 
         Utf8CP preferredDisplayType, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache,
-        IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, ILocalizationProvider const* localizationProvider = nullptr)
+        IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, 
+        ILocalizationProvider const* localizationProvider = nullptr, bool createFields = true)
         : QueryBuilderParameters(schemaHelper, ruleset, userSettings, ecexpressionsCache, localState), m_preferredDisplayType(preferredDisplayType), 
-        m_categorySupplier(categorySupplier), m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider)
+        m_categorySupplier(categorySupplier), m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider),
+        m_createFields(createFields)
         {}
     void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
     void SetLoacalizationProvider(ILocalizationProvider const* localizationProvider) {m_localizationProvider = localizationProvider;}
@@ -175,6 +178,7 @@ public:
     ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     IECPropertyFormatter const* GetPropertyFormatter() const {return m_formatter;}
+    bool GetCreateFields() const {return m_createFields;}
     };
 
 /*=================================================================================**//**
