@@ -425,7 +425,96 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
+    ECInstanceKey pKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));
+    Utf8String pKeyStr = pKey.GetInstanceId().ToHexStr();
+    ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(psaClass != nullptr);
+
+    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PHasP_1NPSA");
+    ASSERT_TRUE(linkTableRelClass != nullptr);
+
+    std::vector<std::tuple<ECClassCP, Utf8String, ECJsonInt64Format>> dataset
+        {
+                {psaClass, Utf8PrintfString(R"json({ "i" : 123,
+                                    "l" : 123,
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsNumber},
+
+                                    {psaClass, Utf8PrintfString(R"json({ "i" : 123,
+                                    "l" : "123",
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                    {psaClass, Utf8PrintfString(R"json({ "i" : 123,
+                                    "l" : "0X123",
+                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "dt" : "2017-09-19T16:59:00.000",
+                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "s_Array" : ["Hello", "world"],
+                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsHexadecimalString},
+
+                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "targetId" : "%s" }")json",
+                                                                         pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                                                         {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "sourceClassName" : "ECSqlTest.P", "targetId" : "%s" , "targetClassName" : "ECSqlTest.P" }")json",
+                                                                                                              pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                                                                                              {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", 
+                                                    "sourceClassName" : "ECSqlTest.P", 
+                                                    "targetId" : "%s" ,
+                                                    "targetClassName" : "ECSqlTest.P",
+                                                    "b_Array" : [true, false, false] }")json",
+                                                                                                                                                   pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString}
+
+        };
+
+    for (std::tuple<ECClassCP, Utf8String, ECJsonInt64Format> const& testItem : dataset)
+        {
+        ECClassCR ecClass = *std::get<0>(testItem);
+        Utf8StringCR expectedJsonStr = std::get<1>(testItem);
+        ECJsonInt64Format int64Format = std::get<2>(testItem);
+        Json::Value expectedJson;
+        ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+
+        JsonInserter inserter(m_ecdb, ecClass, nullptr);
+        ASSERT_TRUE(inserter.IsValid()) << ecClass.GetFullName();
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
+
+        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(int64Format));
+        ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();
+
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(ECJsonUtilities::FormatClassName(ecClass).c_str(), actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+
+        //remove the id and class name members, because the input JSON doesn't have them
+        actualJson.removeMember(ECJsonUtilities::json_id());
+        actualJson.removeMember(ECJsonUtilities::json_className());
+        ASSERT_EQ(0, expectedJson.compare(actualJson)) << "Expected: " << expectedJsonStr << " Actual: " << actualJson.ToString().c_str();
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  04/16
 //+---------------+---------------+---------------+---------------+---------------+------

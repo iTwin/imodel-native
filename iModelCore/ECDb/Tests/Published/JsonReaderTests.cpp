@@ -718,92 +718,118 @@ TEST_F(JsonReaderTests, PartialPoints)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                09/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JsonReaderTests, RoundTrip)
+TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));
-    Utf8String pKeyStr = pKey.GetInstanceId().ToHexStr();
+
     ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(psaClass != nullptr);
 
-    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PHasP_1NPSA");
-    ASSERT_TRUE(linkTableRelClass != nullptr);
+    const ECClassId navRelClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "PSAHasP_N1");
+    ASSERT_TRUE(navRelClassId.IsValid());
 
-    std::vector<std::tuple<ECClassCP, Utf8String, ECJsonInt64Format>> dataset
-        {
-                {psaClass, Utf8PrintfString(R"json({ "i" : 123,
-                                    "l" : 123,
-                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
-                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
-                                    "dt" : "2017-09-19T16:59:00.000",
-                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
-                                    "s_Array" : ["Hello", "world"],
-                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsNumber},
+    const int numericVal = 123;
+    const DPoint2d pt2dVal = DPoint2d::From(1.0, 2.0);
+    const DPoint3d pt3dVal = DPoint3d::From(1.0, 2.0, 3.0);
+    const DateTime dtVal(DateTime::Kind::Utc, 2017, 9, 21, 10, 0);
+    std::vector<Utf8CP> stringArrayVal {"Hello", "world"};
 
-                {psaClass, Utf8PrintfString(R"json({ "i" : 123,
-                                    "l" : "123",
-                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
-                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
-                                    "dt" : "2017-09-19T16:59:00.000",
-                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
-                                    "s_Array" : ["Hello", "world"],
-                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
-
-                {psaClass, Utf8PrintfString(R"json({ "i" : 123,
-                                    "l" : "0X123",
-                                    "p2D" : {"x" : 1.0, "y" : 2.0 },
-                                    "p3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
-                                    "dt" : "2017-09-19T16:59:00.000",
-                                    "p" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
-                                    "s_Array" : ["Hello", "world"],
-                                    "pStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsHexadecimalString},
-
-                {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "targetId" : "%s" }")json", 
-                                                     pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
-
-                 {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "sourceClassName" : "ECSqlTest.P", "targetId" : "%s" , "targetClassName" : "ECSqlTest.P" }")json", 
-                                                      pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
-
-                {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", 
-                                                    "sourceClassName" : "ECSqlTest.P", 
-                                                    "targetId" : "%s" ,
-                                                    "targetClassName" : "ECSqlTest.P",
-                                                    "b_Array" : [true, false, false] }")json",
-                                         pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString}
-
-        };
-
-    for (std::tuple<ECClassCP, Utf8String, ECJsonInt64Format> const& testItem : dataset)
-        {
-        ECClassCR ecClass = *std::get<0>(testItem);
-        Utf8StringCR expectedJsonStr = std::get<1>(testItem);
-        ECJsonInt64Format int64Format = std::get<2>(testItem);
-        Json::Value expectedJson;
-        ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
-
-        JsonInserter inserter(m_ecdb, ecClass, nullptr);
-        ASSERT_TRUE(inserter.IsValid()) << ecClass.GetFullName();
-
-        ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
-
-        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(int64Format));
-        ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
-        Json::Value actualJson;
-        ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();
-
-        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
-        ASSERT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
-        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
-        ASSERT_STREQ(ECJsonUtilities::FormatClassName(ecClass).c_str(), actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
-
-        //remove the id and class name members, because the input JSON doesn't have them
-        actualJson.removeMember(ECJsonUtilities::json_id());
-        actualJson.removeMember(ECJsonUtilities::json_className());
-        ASSERT_EQ(0, expectedJson.compare(actualJson)) << "Expected: " << expectedJsonStr << " Actual: " << actualJson.ToString().c_str();
-        }
+    ECInstanceKey psaKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"INSERT INTO ecsql.PSA(I,L,P2D,P3D,DtUtc,P,S_Array,PStructProp.i) VALUES(?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, numericVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, (int64_t) numericVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(3, pt2dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(4, pt3dVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(5, dtVal));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(6, pKey.GetInstanceId(), navRelClassId));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(7).AddArrayElement().BindText(stringArrayVal[0], IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(7).AddArrayElement().BindText(stringArrayVal[1], IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(8, numericVal));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey));
     }
 
+    auto validate = [&] (ECInstanceId newId)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.PSA WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, newId));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        const int colCount = stmt.GetColumnCount();
+        for (int i = 0; i < colCount; i++)
+            {
+            Utf8StringCR propName = stmt.GetColumnInfo(i).GetProperty()->GetName();
+            if (propName.EqualsIAscii("I"))
+                ASSERT_EQ(numericVal, stmt.GetValueInt(i)) << propName.c_str();
+            else if (propName.EqualsIAscii("L"))
+                ASSERT_EQ((int64_t) numericVal, stmt.GetValueInt64(i)) << propName.c_str();
+            else if (propName.EqualsIAscii("P2D"))
+                ASSERT_TRUE(pt2dVal.AlmostEqual(stmt.GetValuePoint2d(i))) << propName.c_str();
+            else if (propName.EqualsIAscii("P3D"))
+                ASSERT_TRUE(pt3dVal.AlmostEqual(stmt.GetValuePoint3d(i))) << propName.c_str();
+            else if (propName.EqualsIAscii("DtUtc"))
+                ASSERT_EQ(dtVal, stmt.GetValueDateTime(i)) << propName.c_str();
+            else if (propName.EqualsIAscii("P"))
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(pKey.GetInstanceId(), stmt.GetValueNavigation<ECInstanceId>(i, &actualRelClassId)) << propName.c_str();
+                ASSERT_EQ(navRelClassId, actualRelClassId) << propName.c_str();
+                }
+            else if (propName.EqualsIAscii("S_Array"))
+                {
+                IECSqlValue const& val = stmt.GetValue(i);
+                ASSERT_EQ(2, val.GetArrayLength());
+                int arrayIx = 0;
+                for (IECSqlValue const& arrayEl : stmt.GetValue(i).GetArrayIterable())
+                    {
+                    ASSERT_STREQ(stringArrayVal[arrayIx], arrayEl.GetText()) << propName.c_str() << "[" << arrayIx << "]";
+                    arrayIx++;
+                    }
+                }
+            else if (propName.EqualsIAscii("PStructProp"))
+                {
+                IECSqlValue const& val = stmt.GetValue(i);
+                for (IECSqlValue const& memberVal : val.GetStructIterable())
+                    {
+                    if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("i"))
+                        ASSERT_EQ(numericVal, memberVal.GetInt()) << propName.c_str() << ".i";
+                    else
+                        ASSERT_TRUE(memberVal.IsNull()) << propName.c_str() << "." << memberVal.GetColumnInfo().GetProperty()->GetName().c_str();
+                    }
+                }
+            else if (propName.EqualsIAscii("ECInstanceId"))
+                ASSERT_EQ(newId, stmt.GetValueId<ECInstanceId>(i)) << "ECInstanceId";
+            else if (propName.EqualsIAscii("ECClassId"))
+                ASSERT_EQ(psaClass->GetId(), stmt.GetValueId<ECClassId>(i)) << "ECClassId";
+            else
+                ASSERT_TRUE(stmt.IsValueNull(i)) << propName;
+            }
+        };
+
+    JsonInserter inserter(m_ecdb, *psaClass, nullptr);
+    ECInstanceKey newKey;
+    for (ECJsonInt64Format formatOption : {ECJsonInt64Format::AsNumber, ECJsonInt64Format::AsDecimalString, ECJsonInt64Format::AsHexadecimalString})
+        {
+        JsonReader reader(m_ecdb, psaKey.GetClassId(), JsonECSqlSelectAdapter::FormatOptions(formatOption));
+        ASSERT_TRUE(reader.IsValid()) << "ECJsonInt64Format::" << (int) formatOption;
+
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson, psaKey.GetInstanceId())) << "ECJsonInt64Format::" << (int) formatOption;
+
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert read JSON unmodified | ECJsonInt64Format::" << (int) formatOption;
+        validate(newKey.GetInstanceId());
+
+        actualJson.removeMember(ECJsonUtilities::json_id());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert after removing id member from read JSON | ECJsonInt64Format::" << (int) formatOption;
+        validate(newKey.GetInstanceId());
+
+        actualJson.removeMember(ECJsonUtilities::json_className());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert after removing id and className member from read JSON | ECJsonInt64Format::" << (int) formatOption;
+        validate(newKey.GetInstanceId());
+        }
+    }
 END_ECDBUNITTESTS_NAMESPACE

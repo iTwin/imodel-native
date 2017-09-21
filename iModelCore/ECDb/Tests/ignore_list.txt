@@ -14,4 +14,4 @@ ECSqlSelectPrepareTests.LikeOperator
 
 #TFS755409
 JsonInserterTests.InsertLinkTableRels
-JsonReaderTests.RoundTrip
+JsonInserterTests.RoundTrip_InsertThenRead

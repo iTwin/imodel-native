@@ -345,8 +345,8 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
             ECInstanceId oldTargetInstanceId = statement.GetValueId<ECInstanceId>(2);
             ECClassId oldTargetClassId = statement.GetValueId<ECClassId>(3);
 
-            if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() && oldSourceClassId != newSourceClassId &&
-                oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() && oldTargetClassId != newTargetClassId)
+            if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() || oldSourceClassId != newSourceClassId ||
+                oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() || oldTargetClassId != newTargetClassId)
                 return BE_SQLITE_ERROR;
             }
 

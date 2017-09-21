@@ -38,6 +38,9 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) con
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
+    if (!sourceKey.IsValid() || !targetKey.IsValid())
+        return BE_SQLITE_ERROR;
+
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         {
@@ -81,6 +84,9 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
+    if (!sourceKey.IsValid() || !targetKey.IsValid())
+        return BE_SQLITE_ERROR;
+
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         {
