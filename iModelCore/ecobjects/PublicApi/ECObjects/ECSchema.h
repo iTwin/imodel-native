@@ -835,7 +835,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
-    //! Sets the Display Label for this ECProperty
+    //! Sets the Display Label for this ECProperty.
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
     //! Gets the Display Label for this ECProperty.  If no label has been set explicitly, it will return the Name of the property
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
@@ -843,6 +843,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
 
     //! Sets the minimum value for this ECProperty
+    //! @remarks Only supported on PrimitiveECProperty and PrimitiveArrayECProperty for the following primitive types: ::PRIMITIVETYPE_Double, ::PRIMITIVETYPE_Integer, and ::PRIMITIVETYPE_Long
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(ECValueCR min);
     //! Gets whether the minimum value has been defined explicitly
     ECOBJECTS_EXPORT bool               IsMinimumValueDefined() const;
@@ -852,6 +853,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    GetMinimumValue(ECValueR value) const;
 
     //! Sets the maximum value for this ECProperty
+    //! @remarks Only supported on PrimitiveECProperty and PrimitiveArrayECProperty for the following primitive types: ::PRIMITIVETYPE_Double, ::PRIMITIVETYPE_Integer, and ::PRIMITIVETYPE_Long
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(ECValueCR max);
     //! Gets whether the maximum value has been defined explicitly
     ECOBJECTS_EXPORT bool               IsMaximumValueDefined() const;
@@ -1409,7 +1411,7 @@ private:
     void            RemoveBaseClasses();
     static void     SetErrorHandling(bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty=true);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyTypes = false);
 
     void            OnBaseClassPropertyRemoved(ECPropertyCR baseProperty);
     void            OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
@@ -2337,7 +2339,8 @@ public:
     
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
-    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
+    //! @param[in] copyTypes If false, a shallow copy of the source relationship constraint will be made meaning it will not copy over any constraint classes or abstract constraint that does not live within the target schema. Instead it will create a schema reference back to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyTypes = false);
 
     //! Returns whether the relationship is ordered on this constraint.
     ECOBJECTS_EXPORT bool GetIsOrdered() const;
@@ -3517,7 +3520,8 @@ public:
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
     //! @param[in]  sourceClass The class to copy
     //! @param[in]  targetClassName Name to use for the copied class (instead of using the source class's name)
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName);
+    //! @param[in]  copyTypes If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName, bool copyTypes = false);
 
     //! Given a source enumeration, will copy that enumeration into this schema if it does not already exist
     //! @param[out] targetEnumeration If successful, will contain a new ECEnumeration object that is a copy of the sourceEnumeration

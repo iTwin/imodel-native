@@ -1302,7 +1302,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName, bool copyTypes)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1323,8 +1323,8 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
         newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource());
-        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget());
+        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyTypes);
+        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyTypes);
         targetClass = newRelationshipClass;
         }
     else if (nullptr != sourceAsStructClass)
@@ -1370,9 +1370,18 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             targetBaseClass = this->GetClassP(baseClass->GetName().c_str());
             if (nullptr == targetBaseClass)
                 {
-                status = CopyClass(targetBaseClass, *baseClass);
-                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
-                    return status;
+                if (copyTypes)
+                    {
+                    status = CopyClass(targetBaseClass, *baseClass);
+                    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return status;
+                    }
+                else // The base class is not in the target schema and we do not want to copy it.
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*this, baseClass->GetSchema()))
+                        AddReferencedSchema(baseClass->GetSchemaR());
+                    targetBaseClass = baseClass;
+                    }
                 }
             }
             
@@ -1388,7 +1397,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         if (sourceProperty->IsForSupplementation())
             continue;
         ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, true);
+        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyTypes);
         if (ECObjectsStatus::Success != status)
             return status;
         }
@@ -1495,7 +1504,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     for(ECClassP ecClass: m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass);
+        status = schemaOut->CopyClass(copyClass, *ecClass, ecClass->GetName(), true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
