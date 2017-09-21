@@ -987,7 +987,15 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
     status = scmPtr->Open();
     if (status == BSISUCCESS)
         {
-        ScalableMeshLib::GetHost().RegisterScalableMesh(filePath, scmP);
+        bool isFromPWCS = false;
+        WString newFilePath = filePath;
+        if (scmPtr->IsCesium3DTiles())
+            {
+            auto pwcsLink = scmPtr->GetProjectWiseContextShareLink();
+            if (isFromPWCS = !pwcsLink.empty())
+                newFilePath = WString(pwcsLink.c_str(), true);
+            }
+        ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1069,10 +1077,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             server_settings["id"] = Json::Value(serverID.c_str());
                             server_settings["authentication"]["public"] = false;
 
-                            auto guidPos = m_path.find_last_of(L"/") + 1;
+                            auto guidPos = m_path.find(L"RealityData/") + 12;
+                            auto guidLength = m_path.find(L"/", guidPos) - guidPos;
 
                             // guid
-                            guid = Utf8String(m_path.substr(guidPos));
+                            guid = Utf8String(m_path.substr(guidPos, guidLength));
 
                             config["guid"] = Json::Value(guid.c_str());
                             auto projectIDStartPos = m_path.find(L"S3MXECPlugin--") + 14;
@@ -1287,7 +1296,15 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
-    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
+    WString path = m_path;
+    if (this->IsCesium3DTiles())
+        {
+        auto pwcsLink = this->GetProjectWiseContextShareLink();
+        if (!pwcsLink.empty())
+            path = WString(pwcsLink.c_str(), true);
+        }
+
+    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
