@@ -2893,7 +2893,7 @@ struct System
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
 
-    //! Create a Graphic consisting of a list of Graphics, with an optional transform applied to the list
+    //! Create a Graphic consisting of a list of Graphics
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list

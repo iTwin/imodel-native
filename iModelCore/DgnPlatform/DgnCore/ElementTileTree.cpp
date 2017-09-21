@@ -988,12 +988,13 @@ static TileCacheStatistics       s_statistics;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && !defined(SKIP_PMARKS)
+#if defined (BENTLEYCONFIG_PARASOLID)
+#if !defined(SKIP_PMARKS)
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
     PSolidKernelManager::StartSession();
     ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
     ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#else
+#endif
     PSolidKernelManager::StartSession();
 #endif
 
