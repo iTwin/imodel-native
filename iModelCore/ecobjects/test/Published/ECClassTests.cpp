@@ -49,7 +49,7 @@ struct PropertyCopyTest : ECTestFixture
 
     virtual void SetUp() override;
 
-    void CopyProperty(bool copyTypes = true);
+    void CopyProperty(bool copyReferences = true);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -980,9 +980,9 @@ void PropertyCopyTest::SetUp()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void PropertyCopyTest::CopyProperty(bool copyTypes)
+void PropertyCopyTest::CopyProperty(bool copyReferences)
     {
-    if (copyTypes)
+    if (copyReferences)
         {
         ECClassP ecClass;
         EC_EXPECT_SUCCESS(m_schema1->CopyClass(ecClass, *m_entity0, m_entity0->GetName(), true));

@@ -722,7 +722,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyTypes)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences)
     {
     if (nullptr == sourceProperty)
         return ECObjectsStatus::NullPointerValue;
@@ -739,7 +739,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 ECEnumerationP destEnum = this->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
                 if (nullptr == destEnum)
                     {
-                    if (copyTypes)
+                    if (copyReferences)
                         {
                         auto status = this->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
                         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -797,7 +797,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             ECClassP destClass = this->GetSchemaR().GetClassP(structElementType.GetName().c_str());
             if (nullptr == destClass)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     auto status = this->GetSchemaR().CopyClass(destClass, structElementType);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -836,7 +836,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 ECEnumerationP destEnum = this->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
                 if (nullptr == destEnum)
                     {
-                    if (copyTypes)
+                    if (copyReferences)
                         {
                         auto status = this->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
                         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -895,7 +895,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             ECClassP destClass = this->GetSchemaR().GetClassP(sourceType.GetName().c_str());
             if (nullptr == destClass)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     auto status = this->GetSchemaR().CopyClass(destClass, sourceType);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -926,7 +926,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         if (sourceRelClass->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
             {
             ECClassP destClass = this->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
-            if (nullptr == destClass && copyTypes)
+            if (nullptr == destClass && copyReferences)
                 {
                 auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass);
                 if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -962,7 +962,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             PropertyCategoryP destPropCategory = this->GetSchemaR().GetPropertyCategoryP(sourcePropCategory->GetName().c_str());
             if (nullptr == destPropCategory)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     auto status = this->GetSchemaR().CopyPropertyCategory(destPropCategory, *sourcePropCategory);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -991,7 +991,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             KindOfQuantityP destKoq = this->GetSchemaR().GetKindOfQuantityP(sourceKoq->GetName().c_str());
             if (nullptr == destKoq)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -3817,7 +3817,7 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
   /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyTypes)
+ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -3839,7 +3839,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
             ECClassP destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
             if (nullptr == destAbstractConstraint)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
                     if (ECObjectsStatus::Success != status)
@@ -3871,7 +3871,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
             ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
             if (nullptr == destConstraintClass)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     status = destSchema->CopyClass(destConstraintClass, *constraintClass);
                     if (ECObjectsStatus::Success != status)

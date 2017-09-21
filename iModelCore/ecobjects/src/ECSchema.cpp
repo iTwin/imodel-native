@@ -1302,7 +1302,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName, bool copyTypes)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName, bool copyReferences)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1323,8 +1323,8 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
         newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyTypes);
-        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyTypes);
+        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
+        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
         targetClass = newRelationshipClass;
         }
     else if (nullptr != sourceAsStructClass)
@@ -1370,7 +1370,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             targetBaseClass = this->GetClassP(baseClass->GetName().c_str());
             if (nullptr == targetBaseClass)
                 {
-                if (copyTypes)
+                if (copyReferences)
                     {
                     status = CopyClass(targetBaseClass, *baseClass);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
@@ -1397,7 +1397,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         if (sourceProperty->IsForSupplementation())
             continue;
         ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyTypes);
+        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyReferences);
         if (ECObjectsStatus::Success != status)
             return status;
         }

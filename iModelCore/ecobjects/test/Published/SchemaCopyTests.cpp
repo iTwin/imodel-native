@@ -29,7 +29,7 @@ struct ClassCopyTest : CopyTestFixture
 
     protected:
         void SetUp() override;
-        void CopyClass(bool copyTypes);
+        void CopyClass(bool copyReferences);
     };
 
 struct SchemaCopyTest : CopyTestFixture
@@ -584,9 +584,9 @@ void ClassCopyTest::SetUp()
 //---------------------------------------------------------------------------------------
 // @bsimethod                             Caleb.Shafer                           09/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void ClassCopyTest::CopyClass(bool copyTypes)
+void ClassCopyTest::CopyClass(bool copyReferences)
     {
-    EC_EXPECT_SUCCESS(m_targetSchema->CopyClass(m_targetClass, *m_sourceClass, m_sourceClass->GetName().c_str(), copyTypes));
+    EC_EXPECT_SUCCESS(m_targetSchema->CopyClass(m_targetClass, *m_sourceClass, m_sourceClass->GetName().c_str(), copyReferences));
     EXPECT_TRUE(nullptr != m_targetClass);
     }
 
