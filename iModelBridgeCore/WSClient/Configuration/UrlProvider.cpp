@@ -222,6 +222,25 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederati
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveSTSHelperService(
+    "ActiveSTSHelperServiceUrl",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
+    "https://ims.bentley.com/rest/STSHelperService",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
+    "PassiveAuthUrl",
+    "https://qa-ims.bentley.com/SignIn/K",
+    "https://qa-ims.bentley.com/SignIn/K",
+    "https://ims.bentley.com/Account/LoginK",
+    &s_urlRegistry
+    );
+
+
+
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014

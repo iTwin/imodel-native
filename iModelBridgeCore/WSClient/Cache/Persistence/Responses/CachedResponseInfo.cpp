@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,7 +80,7 @@ CacheNodeKey CachedResponseInfo::GetInfoKey() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CachedResponseInfo::IsCached() const
     {
-    return !m_infoJson["$ECInstanceId"].isNull();
+    return !m_infoJson[ECJsonUtilities::json_id()].isNull();
     }
 
 /*--------------------------------------------------------------------------------------+
