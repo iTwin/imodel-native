@@ -2361,7 +2361,7 @@ TEST(CurveVector, GeometricConstructions)
 
 #endif
 
-TEST(LineString,EndFuzz)
+TEST(CPLineString,EndFuzz)
     {
     // "getStartEnd" did not ping the bits on the endpoint ... verify it with various length linestrings
     DPoint3d xyzBase = DPoint3d::From (-9.4347826089999991,0.0,-1.8773913040000001);

@@ -143,30 +143,35 @@ double           param
         /* The usual case.*/
         double delta = 1.0 / (double) (n-1);
         double localParam;
-        DPoint3d point0;
+        DPoint3d point0, point1;
         int iBase;
         /* Establish iBase = index of base point of segment where linear*/
         /* interpolation is applied.*/
         if (param < 0.0)
             {
+            localParam = param / delta;
             iBase = 0;
             }
         else if (param >= 1.0)
             {
+            // treat the endpoint as the anchor
             iBase = n - 2;
+            localParam = 1.0 + (param - 1.0) / delta;   // avoid near-one fuzz
             }
         else
             {
+
             iBase = (int)(param / delta);
             // YES -- this can happen  !!! param = 0.9999999999999999, delta = 0.333333333333333 ==> iBase = n-1 !!!!
             if (iBase == n - 1)
                 iBase = n - 2;
+            localParam = (param - delta * iBase) / delta;
+            tangentA = DVec3d::FromStartEnd (point0, point1);
             }
-
-        localParam = (param - delta * iBase) / delta;
-        point0 = pPointArray [iBase];
-        tangentA = DVec3d::FromStartEnd (point0, pPointArray[iBase+1]);
-        point.SumOf (point0, tangentA, localParam);
+        point0 = pPointArray[iBase];
+        point1 = pPointArray[iBase + 1];
+        tangentA = DVec3d::FromStartEnd (point0, point1);
+        point.Interpolate (point0, localParam, point1);
         tangentB = tangentA;
         // Detect actual interior breakpoints . ..
         size_t k0 = SIZE_MAX;
