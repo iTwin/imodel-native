@@ -1,6 +1,6 @@
 ﻿{
-   "$ECInstanceId" : "0X1",
-   "$ECClassKey" : "JsonTests.Document",
+   "id" : "0X1",
+   "className" : "JsonTests.Document",
    "attributes" : [
       {
          "label" : "Project name",

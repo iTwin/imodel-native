@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //=======================================================================================
-//! Adapts the rows returned by an ECSqlStatement to the JSON format (@see @ref BentleyApi::ECN::ECJsonSystemNames).
+//! Adapts the rows returned by an ECSqlStatement to the JSON format (see @ref BentleyApi::ECN::ECJsonSystemNames).
 //! 
 //! @see ECSqlStatement, BentleyApi::ECN::ECJsonSystemNames
 //! @ingroup ECDbGroup
@@ -56,23 +56,23 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL select clause is what exclusively determines what property name value pairs
         //! the JSON will contain.
-        //! The ECSQL system properties are converted to the respective JSON wire format system members:
+        //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
         //! ------ | ------------| ---------------------
-        //! %ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
-        //! ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "<Schema Name>.<Class Name>"
-        //! SourceECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId" | Hex String
-        //! SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
-        //! TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
-        //! TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
-        //! {%Navigation Property}.Id | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
-        //! {%Navigation Property}.RelECClassId | {navigation Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
-        //! {Point2d/Point3d Property}.X | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
-        //! {Point2d/Point3d Property}.Y | {point2d/point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
-        //! {%Point3d Property}.Z | {point3d Property}.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //! @c %ECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::Id "id" | Hex String
+        //! @c ECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className" | "<Schema Name>.<Class Name>"
+        //! @c SourceECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId" | Hex String
+        //! @c SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
+        //! @c TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
+        //! @c TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
+        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;point2d/point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;point2d/point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
         //! ####Examples
-        //! For the ECSQL <c>SELECT ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
+        //! For the ECSQL <c>SELECT %ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
         //! the returned JSON format would be this:
         //! 
         //!     {
@@ -125,7 +125,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
     };
 
 //=================================================================================
-//! Reads ECInstances in the JSON wire format.
+//! Reads ECInstances as JSON in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
 //! @remarks This is mainly a convenience wrapper over @ref JsonECSqlSelectAdapter
 //! using an ECSQL that selects all properties of the ECClass plus ECInstanceId and ECClassId.
 //! @ingroup ECDbGroup
@@ -171,7 +171,7 @@ struct JsonReader final : NonCopyableClass
 
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Wire Format".
+//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonInserter final : NonCopyableClass
@@ -217,7 +217,7 @@ struct JsonInserter final : NonCopyableClass
 
 //=======================================================================================
 //! Update EC content in the ECDb file through JSON values
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Wire Format".
+//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
