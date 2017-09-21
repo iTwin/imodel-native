@@ -480,7 +480,7 @@ void VerifyJsonRawFormat(JsonValueCR instance)
 
     EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
 
-    EXPECT_TRUE(instance.isMember("TestProperty"));
+    EXPECT_TRUE(instance.isMember("testProperty"));
     }
 
 void VerifyJsonDisplayDataFormat(JsonValueCR instance)
@@ -490,7 +490,7 @@ void VerifyJsonDisplayDataFormat(JsonValueCR instance)
 
     EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
 
-    EXPECT_TRUE(instance.isMember("TestProperty"));
+    EXPECT_TRUE(instance.isMember("testProperty"));
     }
 
 TEST_F(DataSourceCacheTests, GetInstance_RawFormat_ReturnsPlaceholderInstanceWithExpectedFormat)
@@ -515,14 +515,14 @@ TEST_F(DataSourceCacheTests, GetInstance_DisplayFormat_ReturnsDisplayInstanceWit
     EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
     EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
 
-    EXPECT_TRUE(instance.isMember("$DisplayInfo"));
-    EXPECT_TRUE(instance.isMember("$DisplayData"));
-    EXPECT_TRUE(instance.isMember("$RawData"));
+    EXPECT_TRUE(instance.isMember("$displayInfo"));
+    EXPECT_TRUE(instance.isMember("$displayData"));
+    EXPECT_TRUE(instance.isMember("$rawData"));
 
-    EXPECT_TRUE(instance["$DisplayInfo"].isMember("Categories"));
+    EXPECT_TRUE(instance["$displayInfo"].isMember("Categories"));
 
-    VerifyJsonDisplayDataFormat(instance["$DisplayData"]);
-    VerifyJsonRawFormat(instance["$RawData"]);
+    VerifyJsonDisplayDataFormat(instance["$displayData"]);
+    VerifyJsonRawFormat(instance["$rawData"]);
     }
 
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
@@ -551,7 +551,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
     Json::Value updatedInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, updatedInstance));
 
-    EXPECT_EQ(Utf8String("TestValue"), updatedInstance["TestProperty"].asString());
+    EXPECT_EQ(Utf8String("TestValue"), updatedInstance["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceNotCached_IsFullyCachedIsFalse)
@@ -1577,7 +1577,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsJsonInstanceWi
     EXPECT_THAT(cache->ReadInstance(id, instance), CacheStatus::OK);
     EXPECT_THAT(instance.isNull(), false);
     EXPECT_THAT(instance[DataSourceCache_PROPERTY_RemoteId].asString(), Eq("TestId"));
-    EXPECT_THAT(instance["TestProperty"].asString(), Eq("TestValue"));
+    EXPECT_THAT(instance["testProperty"].asString(), Eq("TestValue"));
     }
 
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ReturnsNull)
@@ -1777,9 +1777,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
 
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "A"}, instanceJson));
-    EXPECT_EQ("TestValueA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("TestValueA", instanceJson["testProperty"].asString());
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass2", "B"}, instanceJson));
-    EXPECT_EQ("TestValueB", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("TestValueB", instanceJson["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_RemovesOldQueryResults)
@@ -2086,7 +2086,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesIn
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "A"}, instanceJson));
 
-    EXPECT_EQ("CachedValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("CachedValue", instanceJson["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_RemovesOldRelationship)
@@ -2247,7 +2247,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     Json::Value instance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "FullyCached"}, instance));
 
-    EXPECT_EQ("NewValue", instance["TestProperty"].asString());
+    EXPECT_EQ("NewValue", instance["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "FullyCached"}).IsFullyCached());
     EXPECT_TRUE(rejected.empty());
     }
@@ -2276,7 +2276,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     Json::Value instance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance));
 
-    EXPECT_EQ("PartialValue", instance["TestProperty"].asString());
+    EXPECT_EQ("PartialValue", instance["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     EXPECT_TRUE(rejected.empty());
     }
@@ -2424,7 +2424,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdAndSomeProperiesForFull
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2448,7 +2448,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsSomeProperiesAndIdForFull
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2472,7 +2472,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsOnlyIdForFullyCachedInsta
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
-    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2667,7 +2667,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedPropertyOnlyAndRel
 
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
-    EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", instanceJson["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsIdOnlyInstanceAndCachesRelatedInstances)
@@ -2691,7 +2691,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsId
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
-    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsFull_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
@@ -2716,7 +2716,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
 
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
-    EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", instanceJson["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationship_CachesFullInstances)
@@ -2785,8 +2785,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAll
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "B"} }));
-    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
@@ -2820,9 +2820,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     ObjectId c("TestSchema.TestClass", "C");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { b, c }));
 
-    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("FullC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["testProperty"].asString());
+    EXPECT_EQ("FullC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["testProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2856,9 +2856,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
 
     EXPECT_EQ(0, rejected.size());
 
-    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("NewB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("NewC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
+    EXPECT_EQ("NewB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["testProperty"].asString());
+    EXPECT_EQ("NewC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["testProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2892,8 +2892,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     ObjectId b("TestSchema.TestClass", "B");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { a, b }));
 
-    EXPECT_EQ("FullA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("FullA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["testProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
@@ -2932,7 +2932,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
-    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
     ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
 
     // Assert
@@ -2982,7 +2982,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
-    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
     ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
 
     // Assert
@@ -3023,7 +3023,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponseWithFullAndThen
 
     ASSERT_TRUE(cache->IsResponseCached(responseKey));
     ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
-    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["testProperty"].asString());
     EXPECT_EQ("TagB", cache->ReadResponseCacheTag(responseKey));
     }
 
@@ -3175,7 +3175,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     Json::Value relationshipJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(relationshipJson, relationshipKey));
     EXPECT_NE(Json::Value::GetNull(), relationshipJson);
-    EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
+    EXPECT_EQ("RelationshipValue", relationshipJson["testProperty"].asString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3782,7 +3782,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_
 
     EXPECT_EQ(instance1, instance2);
     Json::Value properties = ReadInstance(*cache, instance2);
-    EXPECT_EQ("NewValue", properties["TestReadOnlyProperty"]);
+    EXPECT_EQ("NewValue", properties["testReadOnlyProperty"]);
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue)
@@ -3795,14 +3795,14 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_Caches
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
-    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"]);
+    EXPECT_EQ("OldValue", properties["testCalculatedProperty"]);
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "NewValue"}});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
-    EXPECT_EQ("NewValue", properties["TestCalculatedProperty"]);
+    EXPECT_EQ("NewValue", properties["testCalculatedProperty"]);
     }
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
@@ -4078,7 +4078,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithInstance_ReturnsInsta
     EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
 
     EXPECT_EQ(1, results.size());
-    EXPECT_EQ("42", results[0]["TestProperty"].asString());
+    EXPECT_EQ("42", results[0]["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
@@ -4095,7 +4095,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPass
     EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey2, results));
 
     EXPECT_EQ(1, results.size());
-    EXPECT_EQ("42", results[0]["TestProperty"].asString());
+    EXPECT_EQ("42", results[0]["testProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeParent_ReturnsParentAlso)
@@ -5477,11 +5477,11 @@ TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalF
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
-    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    auto relativePath = externalFileInfos[0]["relativePath"].asString();
     EXPECT_FALSE(relativePath.empty());
     EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
-    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Persistent), externalFileInfos[0]["RootFolder"].asInt());
-    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Persistent), externalFileInfos[0]["rootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["name"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFileInfoCreated)
@@ -5495,11 +5495,11 @@ TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFi
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
-    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    auto relativePath = externalFileInfos[0]["relativePath"].asString();
     EXPECT_FALSE(relativePath.empty());
     EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
-    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Temporary), externalFileInfos[0]["RootFolder"].asInt());
-    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Temporary), externalFileInfos[0]["rootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["name"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFileInfoCreated)
@@ -5513,11 +5513,11 @@ TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFil
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDbFileInfo.ExternalFileInfo")));
     ASSERT_EQ(1, externalFileInfos.size());
 
-    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    auto relativePath = externalFileInfos[0]["relativePath"].asString();
     EXPECT_FALSE(relativePath.empty());
     EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
-    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::External), externalFileInfos[0]["RootFolder"].asInt());
-    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::External), externalFileInfos[0]["rootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["name"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCreated)
@@ -5542,12 +5542,12 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCr
     ASSERT_TRUE(externalFileInfoKey.IsValid());
 
     ECInstanceKey ownershipOwnerKey(
-        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerECClassId"], -42)),
-        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerId"], -42)));
+        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["ownerECClassId"], -42)),
+        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["ownerId"], -42)));
 
     ECInstanceKey ownershipFileInfoKey(
-        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoECClassId"], -42)),
-        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoId"], -42)));
+        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["fileInfoECClassId"], -42)),
+        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["fileInfoId"], -42)));
 
     EXPECT_EQ(fileKey, ownershipOwnerKey);
     EXPECT_EQ(externalFileInfoKey, ownershipFileInfoKey);
@@ -6233,8 +6233,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyM
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
-    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
-    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    EXPECT_EQ("NewValueA", instanceJson["testProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["testProperty2"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
@@ -6252,7 +6252,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
     auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ASSERT_TRUE(rejected.empty());
 
-    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    auto properties = ToJson(R"({"testProperty" : "A", "testProperty2" : "ModifiedValueB"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     rejected.clear();
@@ -6264,8 +6264,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
-    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
-    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    EXPECT_EQ("NewValueA", instanceJson["testProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["testProperty2"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasLocallyModified_RejectsAndDoesNotUpdateInstance)
@@ -6280,7 +6280,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasL
     auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ASSERT_TRUE(rejected.empty());
 
-    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    auto properties = ToJson(R"({"testProperty" : "A", "testProperty2" : "ModifiedValueB"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     WSQuery query("TestSchema", "TestClass");
@@ -6296,8 +6296,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasL
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
-    EXPECT_EQ("A", instanceJson["TestProperty"].asString());
-    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    EXPECT_EQ("A", instanceJson["testProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["testProperty2"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOnlyThatWasLocallyModified_DoesNotRejectOrUpdateInstance)
@@ -6312,7 +6312,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOn
     auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ASSERT_TRUE(rejected.empty());
 
-    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    auto properties = ToJson(R"({"testProperty" : "A", "testProperty2" : "ModifiedValueB"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     WSQuery query("TestSchema", "TestClass");
@@ -6327,8 +6327,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOn
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
-    EXPECT_EQ("A", instanceJson["TestProperty"].asString());
-    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    EXPECT_EQ("A", instanceJson["testProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["testProperty2"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance)
@@ -6342,7 +6342,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsInstanceThatWas
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
-    auto properties = ToJson(R"({"TestProperty" : "Modified"})");
+    auto properties = ToJson(R"({"testProperty" : "Modified"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
@@ -6396,7 +6396,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyD
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
-    EXPECT_EQ("NewB", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("NewB", instanceJson["testProperty"].asString());
 
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "A"})));
     }
@@ -6420,7 +6420,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasL
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "A"}, instanceJson));
-    EXPECT_EQ("NewA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("NewA", instanceJson["testProperty"].asString());
 
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
@@ -6530,7 +6530,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     Json::Value instanceJson;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
-    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("NewValueA", instanceJson["testProperty"].asString());
     }
 
 #endif
