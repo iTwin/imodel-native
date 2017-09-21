@@ -24,17 +24,10 @@
 
 template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>::SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<HRARASTER> source)
     {
+    assert(source != nullptr);
     m_nodeHeader = nodeHeader;
     m_dataType = dataType;
-    m_smSQLiteFile = smSQLiteFile;
-
-    if (!smSQLiteFile->HasSources())
-        {
-        assert(false && "Trying to use a streamed source but no source found!");
-        return;
-        }
-
-
+    m_smSQLiteFile = smSQLiteFile;    
     m_source = source;
     }
 

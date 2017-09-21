@@ -517,6 +517,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 
 bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, MeshDataDepth, IsTerrain, DataResolution FROM SMMasterHeader WHERE MasterHeaderId = ?");
     size_t id = 0;
@@ -612,6 +613,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
 
 bool SMSQLiteFile::SetProperties(const Json::Value& properties)
 {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     Utf8String propertiesStr(Json::FastWriter().write(properties));
     m_database->GetCachedStatement(stmt, "UPDATE SMFileMetadata SET Properties=?");
@@ -626,6 +628,7 @@ bool SMSQLiteFile::SetProperties(const Json::Value& properties)
 
 bool SMSQLiteFile::GetProperties(Json::Value& properties)
 {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT Properties  FROM SMFileMetadata");
     DbResult status = stmt->Step();
@@ -1241,9 +1244,9 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
 
 
 
-    bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
-{
-
+bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     Utf8String extendedWktUtf8String;
     BeStringUtilities::WCharToUtf8(extendedWktUtf8String, extendedWkt);
 
@@ -1276,10 +1279,11 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
   
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
-}
+    }
 
 bool SMSQLiteFile::HasWkt()
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
     stmt->BindInt64(1, 0);
@@ -1289,30 +1293,33 @@ bool SMSQLiteFile::HasWkt()
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW)); // can be BE_SQLITE_RAW => step has another raw ready (but the true question is why ?
     Utf8String wktStringUtf8 = GET_VALUE_STR(stmt, 0);
     return !wktStringUtf8.empty();
-}
+    }
 
 bool SMSQLiteFile::HasMasterHeader()
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT count(MasterHeaderId) FROM SMMasterHeader");
     DbResult status = stmt->Step();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     int masterHeaderCount = stmt->GetValueInt(0);
     return masterHeaderCount > 0 ? true : false;
-}
+    }
 
 bool SMSQLiteFile::HasPoints()
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMPoint LIMIT 1"); //select count() is not optimized on sqlite
     DbResult status = stmt->Step();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     int nodeIdCount = stmt->GetValueInt(0);
     return nodeIdCount > 0 ? true : false;
-}
+    }
 
 bool SMSQLiteFile::IsSingleFile()
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SingleFile  FROM SMMasterHeader WHERE MasterHeaderId=?");
     stmt->BindInt64(1, 0);
@@ -1321,10 +1328,11 @@ bool SMSQLiteFile::IsSingleFile()
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW)); // can be BE_SQLITE_RAW => step has another raw ready (but the true question is why ?
     int singleFile = stmt->GetValueInt(0);
     return singleFile > 0 ? true : false;
-}
+    }
 
 bool SMSQLiteFile::GetWkt(WString& wktStr)
 {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
     stmt->BindInt64(1, 0);
@@ -1339,6 +1347,7 @@ bool SMSQLiteFile::GetWkt(WString& wktStr)
 
 bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 {
+    std::lock_guard<std::mutex> lock(dbLock);
     BeAssert(m_database->IsTransactionActive());
     Savepoint s(*m_database, "sources");
     s.Begin();
@@ -1499,15 +1508,17 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 }
 
 bool SMSQLiteFile::HasSources()
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(SourceId) FROM SMSources");
     stmtTest->Step();
     return stmtTest->GetValueInt64(0) > 0 ? true : false;
-}
+    }
 
 bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
-{
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
         "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, TypeID, MonikerType, MonikerString, TimeLastModified, "
@@ -1608,10 +1619,11 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     sourcesData.SetLastModifiedCheckTime(stmt2->GetValueInt64(2));
 
     return true;
-}
+    }
 
 bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
 {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");
     size_t id = 0;
