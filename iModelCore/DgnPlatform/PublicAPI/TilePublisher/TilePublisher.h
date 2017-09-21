@@ -275,7 +275,9 @@ struct PublisherContext : TileGenerator::ITileCollector
     typedef bvector<ClassifierInfo>             T_ClassifierInfos;
     typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
     typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
-      
+    typedef bmap<DgnElementId, uint32_t>        T_ScheduleEntryMap;
+    typedef bvector<T_ScheduleEntryMap>         T_ScheduleEntryMaps;
+
     Statistics                                  m_statistics;
 
 protected:
@@ -299,6 +301,8 @@ protected:
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
     bset<DgnSubCategoryId>                      m_usedSubCategories;
+    Json::Value                                 m_schedulesJson;
+    T_ScheduleEntryMaps                         m_scheduleEntryMaps;
 
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
@@ -337,7 +341,8 @@ protected:
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
-    void PublishScheduleSimulations();
+    void ExtractSchedules();
+
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
@@ -351,6 +356,7 @@ public:
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
     WString GetTileExtension (TileNodeCR tile);
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
+    T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
     void RecordUsage(FeatureAttributesMapCR attributes);
 

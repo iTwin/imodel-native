@@ -104,6 +104,9 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
 
     // Unnamed textures are supported
     DgnTexture unnamed1(DgnTexture::CreateParams(dictionary, "", MakeTextureData(ImageSource::Format::Jpeg, 2, 2), 2,2));
+    EXPECT_TRUE(unnamed1.GetTextureName().empty());
+    EXPECT_TRUE(unnamed1.GetCode().IsValid());
+    EXPECT_TRUE(unnamed1.GetCode().IsEmpty());
     EXPECT_TRUE(unnamed1.Insert().IsValid());
 
     // Multiple unnamed textures can exist

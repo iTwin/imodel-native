@@ -247,9 +247,6 @@
     <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RegisteredApp.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RenderUtility.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
     <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RMatrix.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>

@@ -63,6 +63,8 @@ struct IModelJs
     DGNPLATFORM_EXPORT static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     DGNPLATFORM_EXPORT static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
+    DGNPLATFORM_EXPORT static DgnDbStatus UpdateElement(DgnDbR db, Json::Value& props);
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteElement(DgnDbR db, Json::Value& elementId);
     DGNPLATFORM_EXPORT static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static BentleyStatus GetElementPropertiesForDisplay(DgnDbStatus&, JsonValueR results, DgnDbR db, Utf8CP id);
     

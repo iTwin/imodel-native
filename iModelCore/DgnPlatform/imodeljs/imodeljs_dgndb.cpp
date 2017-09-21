@@ -244,20 +244,53 @@ DgnDbStatus IModelJs::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValueR
 
     el->FromJson(inJson);
 
-#if defined (TOFROM_JSON)
-    auto ecclass = dgndb.Schemas().GetClass(ECN::ECClassId(m_classId.GetValue()));
-    for (auto prop : AutoHandledPropertiesCollection(eclass, db, ECSqlClassParams::StatementType::InsertUpdate, false))
-        {
-        autoHandledProperties.push_back(prop);
-        }
-#endif
-
     DgnDbStatus status;
     auto newEl = el->Insert(&status);
     if (newEl.IsValid())
         outJson[json_id()] = newEl->GetElementId().ToHexStr();
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus IModelJs::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
+    {
+    if (!inJson.isMember(DgnElement::json_id()))
+        return DgnDbStatus::BadArg;
+
+    auto idJsonVal = inJson[DgnElement::json_id()];
+    DgnElementId eid(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+    if (!eid.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCPtr elPersist = dgndb.Elements().GetElement(eid);
+    if (!elPersist.IsValid())
+        return DgnDbStatus::MissingId;
+
+    auto el = elPersist->CopyForEdit();
+    el->FromJson(inJson);
+
+    DgnDbStatus status;
+    el->Update(&status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus IModelJs::DeleteElement(DgnDbR dgndb, JsonValueR idJsonVal)
+    {
+    DgnElementId eid(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+    if (!eid.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCPtr elPersist = dgndb.Elements().GetElement(eid);
+    if (!elPersist.IsValid())
+        return DgnDbStatus::MissingId;
+
+    return elPersist->Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**

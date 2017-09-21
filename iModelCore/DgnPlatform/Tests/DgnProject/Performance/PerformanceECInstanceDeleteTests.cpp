@@ -20,7 +20,7 @@ struct PerformanceECInstanceDeleteTestsFixture : public ::testing::Test
 
         BeFileName dgndbFileName;
         BeTest::GetHost().GetOutputRoot(dgndbFileName);
-        dgndbFileName.AppendToPath(testFileName);
+        dgndbFileName.AppendToPath(testFileName );
 
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(sourceFile, dgndbFileName, false));
 
@@ -58,7 +58,7 @@ TEST_F(PerformanceECInstanceDeleteTestsFixture, DeleteInstancesOfDgn_ElementItem
         Utf8String ClassName = Class->GetName();
         //LOG.infov ("\n Class Name = %s \n", ClassName.c_str ());
 
-        Utf8String stat = "Delete FROM ";
+        Utf8String stat = "Delete FROM  ";
         stat.append(SchemaPrefix);
         stat.append(".");
         stat.append(ClassName);

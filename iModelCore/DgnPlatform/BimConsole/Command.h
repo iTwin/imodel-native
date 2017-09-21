@@ -227,13 +227,29 @@ struct SqliteCommand final : public Command
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
-        void ExecuteSelect(BeSQLite::Statement&) const;
+        void ExecuteSelect(BeSQLite::Statement&, Session& session) const;
         void ExecuteNonSelect(Session&, BeSQLite::Statement&) const;
 
     public:
         SqliteCommand() : Command() {}
         ~SqliteCommand() {}
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    09/2017
+//---------------------------------------------------------------------------------------
+struct JsonCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".json"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        JsonCommand() : Command() {}
+        ~JsonCommand() {}
+    };
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    03/2014
