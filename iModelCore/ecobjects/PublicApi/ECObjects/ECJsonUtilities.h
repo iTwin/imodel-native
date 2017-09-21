@@ -74,10 +74,6 @@ enum class ECJsonInt64Format
 //+===============+===============+===============+===============+===============+======
 struct ECJsonSystemNames final
     {
-    private:
-        ECJsonSystemNames() = delete;
-        ~ECJsonSystemNames() = delete;
-
     public:
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
@@ -87,6 +83,8 @@ struct ECJsonSystemNames final
         static constexpr Utf8CP TargetId() { return "targetId"; }
         static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
 
+        //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
+        //! in the EC JSON
         struct Navigation final
             {
             public:
@@ -96,8 +94,12 @@ struct ECJsonSystemNames final
             private:
                 Navigation() = delete;
                 ~Navigation() = delete;
+
+            public:
+                static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(Id()) || memberName.Equals(RelClassName()); }
             };
 
+        //! System member names for the representation of Point property values in the EC JSON
         struct Point final
             {
             public:
@@ -109,7 +111,22 @@ struct ECJsonSystemNames final
             private:
                 Point() = delete;
                 ~Point() = delete;
+
+            public:
+                static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(X()) || memberName.Equals(Y()) || memberName.Equals(Z()); }
             };
+
+    private:
+        ECJsonSystemNames() = delete;
+        ~ECJsonSystemNames() = delete;
+
+    public:
+        //!Checks whether @p topLevelMemberName is a system name for top-level members of the EC JSON object.
+        //! @remarks System names that can only occur in nested members (ECJsonSystemNames::Navigation or ECJsonSystemNames::Point)
+        //! are not considered by the check.
+        //! @param[in] topLevelMemberName Name of top-level member of EC JSON object to check
+        //! @return true or false
+        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
     };
 
 
@@ -451,8 +468,6 @@ struct JsonECInstanceConverter final
         static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR);
         static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR ecValue, RapidJsonValueCR jsonValue, ECN::PrimitiveType primitiveType);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
-
-        static bool IsTopLevelSystemMember(Utf8CP memberName);
 
     public:
         ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);

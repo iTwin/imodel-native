@@ -636,21 +636,7 @@ IGeometryPtr ECRapidJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
 //*************************************************************************************
 // JsonECInstanceConverter
 //*************************************************************************************
-//--------------------------------------------------------------------------------------
-//! Returns true if the member name is a top-level system member name, i.e. it is a system
-//! member which can show up as top-level property in an ECInstance JSON
-// @bsimethod                                    Krischan.Eberle                 09/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool JsonECInstanceConverter::IsTopLevelSystemMember(Utf8CP memberName)
-    {
-    if (Utf8String::IsNullOrEmpty(memberName))
-        return false;
 
-    return strcmp(memberName, ECJsonSystemNames::Id()) == 0 || strcmp(memberName, ECJsonSystemNames::ClassName()) == 0 ||
-        strcmp(memberName, ECJsonSystemNames::SourceId()) == 0 || strcmp(memberName, ECJsonSystemNames::TargetId()) == 0 ||
-        strcmp(memberName, ECJsonSystemNames::SourceClassName()) == 0 || strcmp(memberName, ECJsonSystemNames::TargetClassName()) == 0;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
@@ -674,7 +660,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, c
             continue;
 
         Utf8CP memberName = iter.memberName();
-        if (IsTopLevelSystemMember(memberName))
+        if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
             continue;
 
         Utf8String remappedMemberName(memberName);
@@ -950,7 +936,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
         if (it->value.IsNull())
             continue;
 
-        if (IsTopLevelSystemMember(it->name.GetString()))
+        if (ECJsonSystemNames::IsTopLevelSystemMember(it->name.GetString()))
             continue;
 
         Utf8CP propertyName = it->name.GetString();
