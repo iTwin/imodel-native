@@ -35,7 +35,7 @@ TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
 
 TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
     {
-    auto tokenStr = StubSamlTokenXML();
+    auto tokenStr = StubSamlTokenWithUser("Foo")->AsString();
     Json::Value bodyJson;
     bodyJson["RequestedSecurityToken"] = tokenStr;
 
@@ -46,6 +46,20 @@ TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(tokenStr, result.GetValue()->AsString());
+    }
+
+TEST_F(ImsClientTests, GetToken_MismatchingUserName_ReturnsError)
+    {
+    auto tokenStr = StubSamlTokenWithUser("Boo")->AsString();
+    Json::Value bodyJson;
+    bodyJson["RequestedSecurityToken"] = tokenStr;
+
+    GetHandler().ForFirstRequest(StubHttpResponse(HttpStatus::OK, bodyJson.toStyledString()));
+
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    auto result = client->RequestToken(Credentials("Foo", "Boo"))->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
     }
 
 TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
