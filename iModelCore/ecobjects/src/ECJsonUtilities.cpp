@@ -640,7 +640,7 @@ IGeometryPtr ECRapidJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, const Json::Value& jsonValue, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
     {
     return JsonToECInstance(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, remapper);
     }
@@ -648,17 +648,14 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
     {
-    if (!jsonValue.isObject())
+    if (jsonValue.isNull() || !jsonValue.isObject())
         return ERROR;
 
     for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
         {
         Json::Value& childJsonValue = *iter;
-        if (childJsonValue.isNull())
-            continue;
-
         Utf8CP memberName = iter.memberName();
         if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
             continue;
@@ -703,30 +700,69 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, c
                 return ERROR;
                 }
 
-            if (!childJsonValue.isObject() || !childJsonValue.isMember(ECJsonUtilities::json_navId()))
+            if (!childJsonValue.isNull() && !childJsonValue.isObject())
                 return ERROR;
+
+            //the existence of a nav prop JSON object means we will not ignore it regardless of whether its member exist or not
+            ECValue v;
+            v.SetToNull();
+            if (childJsonValue.isNull())
+                {
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
+                continue;
+                }
+
+            if (!childJsonValue.isMember(ECJsonUtilities::json_navId()))
+                return ERROR; //nav prop JSON requires the id member to be present
 
             JsonValueCR navIdJson = childJsonValue[ECJsonUtilities::json_navId()];
             if (navIdJson.isNull())
-                continue;
+                {
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
 
-            BeAssert(navIdJson.isString());
+                continue;
+                }
+
             BeInt64Id navId = ECJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
             if (!navId.IsValid())
-                return ERROR;
+                return ERROR; //wrong format
 
-            ECValue v;
-            if (!childJsonValue.isMember(ECJsonUtilities::json_navRelClassName()) || childJsonValue[ECJsonUtilities::json_navRelClassName()].isNull())
+            if (!childJsonValue.isMember(ECJsonUtilities::json_navRelClassName()))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     return ERROR;
-                }
-            else
-                {
-                ECClassId relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(childJsonValue[ECJsonUtilities::json_navRelClassName()], classLocater);
-                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                     return ERROR;
+
+                continue;
                 }
+
+            JsonValueCR navRelClassNameJson = childJsonValue[ECJsonUtilities::json_navRelClassName()];
+            if (navRelClassNameJson.isNull())
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                    return ERROR;
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
+                continue;
+                }
+
+            ECClassId relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(navRelClassNameJson, classLocater);
+            if (!relClassId.IsValid())
+                return ERROR;
+
+            if (ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
+                return ERROR;
 
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
             if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
@@ -743,7 +779,10 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, c
 BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, Json::Value const& jsonValue, PrimitiveType primitiveType)
     {
     if (jsonValue.isNull())
+        {
+        ecValue.SetToNull();
         return SUCCESS;
+        }
 
     Json::ValueType jsonValueType = jsonValue.type();
     switch (primitiveType)
@@ -866,9 +905,7 @@ BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance,
     if (!jsonValue.isArray())
         return ERROR;
 
-    uint32_t length = jsonValue.size();
-    if (length == 0)
-        return SUCCESS;
+    const uint32_t length = jsonValue.size();
 
     if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), length))
         return ERROR;
@@ -928,14 +965,11 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, R
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater)
     {
-    if (!jsonValue.IsObject())
+    if (jsonValue.IsNull() || !jsonValue.IsObject())
         return ERROR;
 
     for (rapidjson::Value::ConstMemberIterator it = jsonValue.MemberBegin(); it != jsonValue.MemberEnd(); ++it)
         {
-        if (it->value.IsNull())
-            continue;
-
         if (ECJsonSystemNames::IsTopLevelSystemMember(it->name.GetString()))
             continue;
 
@@ -948,10 +982,13 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
             }
 
         Utf8String accessString = currentAccessString.empty() ? propertyName : currentAccessString + "." + propertyName;
+
+        RapidJsonValueCR childJsonValue = it->value;
+
         if (prop->GetIsPrimitive())
             {
             ECValue ecValue;
-            if (SUCCESS != JsonToPrimitiveECValue(ecValue, it->value, prop->GetAsPrimitiveProperty()->GetType()))
+            if (SUCCESS != JsonToPrimitiveECValue(ecValue, childJsonValue, prop->GetAsPrimitiveProperty()->GetType()))
                 return ERROR;
 
             ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
@@ -963,7 +1000,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
 
         if (prop->GetIsStruct())
             {
-            if (SUCCESS != JsonToECInstance(instance, it->value, prop->GetAsStructProperty()->GetType(), accessString, classLocater))
+            if (SUCCESS != JsonToECInstance(instance, childJsonValue, prop->GetAsStructProperty()->GetType(), accessString, classLocater))
                 return ERROR;
 
             continue;
@@ -971,7 +1008,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
 
         if (prop->GetIsArray())
             {
-            if (SUCCESS != JsonToArrayECValue(instance, it->value, *prop->GetAsArrayProperty(), accessString, classLocater))
+            if (SUCCESS != JsonToArrayECValue(instance, childJsonValue, *prop->GetAsArrayProperty(), accessString, classLocater))
                 return ERROR;
 
             continue;
@@ -986,35 +1023,73 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
                 return ERROR;
                 }
 
-            RapidJsonValueCR json = it->value;
 
-            if (!json.IsObject() || !json.HasMember(ECJsonSystemNames::Navigation::Id()))
+            if (!childJsonValue.IsNull() && !childJsonValue.IsObject())
                 return ERROR;
 
-            RapidJsonValueCR navIdJson = json[ECJsonSystemNames::Navigation::Id()];
-            if (navIdJson.IsNull())
+            //the existence of a nav prop JSON object means we will not ignore it regardless of whether its member exist or not
+            ECValue v;
+            v.SetToNull();
+            if (childJsonValue.IsNull())
+                {
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
                 continue;
+                }
+
+            if (!childJsonValue.HasMember(ECJsonSystemNames::Navigation::Id()))
+                return ERROR; //nav prop JSON requires the id member to be present
+
+            RapidJsonValueCR navIdJson = childJsonValue[ECJsonSystemNames::Navigation::Id()];
+            if (navIdJson.IsNull())
+                {
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
+                continue;
+                }
 
             BeInt64Id navId = ECRapidJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
             if (!navId.IsValid())
-                return ERROR;
+                return ERROR; //wrong format
 
-            ECValue v;
-            if (!json.HasMember(ECJsonSystemNames::Navigation::RelClassName()) || json[ECJsonSystemNames::Navigation::RelClassName()].IsNull())
+            if (!childJsonValue.HasMember(ECJsonSystemNames::Navigation::RelClassName()))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     return ERROR;
-                }
-            else
-                {
-                BeAssert(json[ECJsonSystemNames::Navigation::RelClassName()].IsString());
-                ECClassId relClassId = ECRapidJsonUtilities::GetClassIdFromClassNameJson(json[ECJsonSystemNames::Navigation::RelClassName()], classLocater);
-                if (!relClassId.IsValid() || ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                     return ERROR;
+
+                continue;
                 }
 
-            const ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
-            if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
+            RapidJsonValueCR navRelClassNameJson = childJsonValue[ECJsonSystemNames::Navigation::RelClassName()];
+            if (navRelClassNameJson.IsNull())
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                    return ERROR;
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
+                continue;
+                }
+
+            ECClassId relClassId = ECRapidJsonUtilities::GetClassIdFromClassNameJson(navRelClassNameJson, classLocater);
+            if (!relClassId.IsValid())
+                return ERROR;
+
+            if (ECObjectsStatus::Success != v.SetNavigationInfo(navId, relClassId))
+                return ERROR;
+
+            ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 return ERROR;
             }
         }
@@ -1028,7 +1103,10 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
 BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, RapidJsonValueCR jsonValue, PrimitiveType primitiveType)
     {
     if (jsonValue.IsNull())
+        {
+        ecValue.SetToNull();
         return SUCCESS;
+        }
 
     switch (primitiveType)
         {
