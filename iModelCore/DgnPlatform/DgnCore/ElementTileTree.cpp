@@ -61,9 +61,13 @@ struct TileContext;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
+// These marks are a huge bottleneck, killing performance.
+// #define SKIP_PMARKS
+
 // The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
 // by all threads.
 
+#if !defined(SKIP_PMARKS)
 typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     ThreadedParasolidErrorHandlerInnerMarkPtr;
 
 
@@ -253,6 +257,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
     PK_MARK_delete (getRollbackMarks()->back());
     getRollbackMarks()->pop_back();
     }
+#endif // SKIP_PMARKS
 
 #endif
 
@@ -486,6 +491,8 @@ protected:
     void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
+    bool _WantPreBakedBody(IBRepEntityCR) override;
+
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
 
@@ -762,6 +769,20 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& o
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileBuilder::_WantPreBakedBody(IBRepEntityCR body)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // ###TODO: Take this tile's tolerance into account; also would be nice to detect single planar sheets since the BRepCurveVector should suffice even if curved.
+    bool curved = BRepUtil::HasCurvedFaceOrEdge(body);
+    return !curved;
+#else
+    return true;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part)
@@ -967,11 +988,13 @@ static TileCacheStatistics       s_statistics;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) && !defined(SKIP_PMARKS)
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
     PSolidKernelManager::StartSession();
     ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
     ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#else
+    PSolidKernelManager::StartSession();
 #endif
 
     auto& tile = GetElementTile();
@@ -1219,8 +1242,10 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     Transform transform = Transform::From(centroid);
 
     // ###TODO parasolid...
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
+#if !defined(SKIP_PMARKS)
     ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+#endif
     PSolidKernelManager::StartSession();
 #endif
 
@@ -2454,7 +2479,7 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     return WasAborted() ? nullptr : graphic;
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) && !defined(SKIP_PMARKS)
 // ###TODO: ugh.
 static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerStorageMark;
 #endif

@@ -3520,6 +3520,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
     GeometryStreamEntryId entryId;
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bool usePreBakedBody = false;
+#else
+    bool usePreBakedBody = true;
+#endif
+
     if (nullptr != currEntryId)
         entryId = *currEntryId;
 
@@ -3942,13 +3948,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
-#define WIP_YII_IGNORE_BREPS
-#if defined (BENTLEYCONFIG_PARASOLID)  && !defined(WIP_YII_IGNORE_BREPS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 entryId.Increment();
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
+#if defined (BENTLEYCONFIG_PARASOLID)
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
@@ -3973,21 +3978,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
                     }
 
+                usePreBakedBody = currGraphic->WantPreBakedBody(*entityPtr);
+#endif
+                if (usePreBakedBody)
+                    continue; // Don't exit loop in case we are in a sub-graphic...must add BRepPolyface or BRepCurveVector...
+
+#if defined (BENTLEYCONFIG_PARASOLID)
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBodyR(*entityPtr);
+#endif
                 break;
-                }
-#else
-            case GeometryStreamIO::OpCode::ParasolidBRep:
-                {
-                // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
-                entryId.Increment();
-                currGraphic->SetGeometryStreamEntryId(&entryId);
-                continue; // Don't exit loop in case we are in a sub-graphic...must add BRepPolyface or BRepCurveVector...
                 }
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
+                if (!usePreBakedBody)
+                    break;
+
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
@@ -4003,6 +4010,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
             case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
+                if (!usePreBakedBody)
+                    break;
+
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
@@ -4015,7 +4025,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 currGraphic->AddCurveVectorR(*curvePtr, false);
                 break;
                 };
-#endif
 
             case GeometryStreamIO::OpCode::TextString:
                 {
