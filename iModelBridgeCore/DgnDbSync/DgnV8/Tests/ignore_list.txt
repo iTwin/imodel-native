@@ -13,19 +13,6 @@ ImportConfigTests.embedConfigFile
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 
-# Fails after the merge
-ECSchemaTests.RemapReservedPropertyNames
-
-ConverterAppTests.VerifyConversionApp_CreateBim
-    # bim0200, x64, NDEBUG, random
-    # [ RUN      ] ConverterAppTests.VerifyConversionApp_CreateBim
-    # Command to Run = F:\Bim0200\out.ndebug\Winx64\Product\DgnV8ConverterTests\DgnV8Converter.exe --input=C:\Users\JEFF~1.MAR\AppData\Local\Temp\Bentley\Build\tmp19076\DgnV8ConverterTests\ConverterAppTests\VerifyConversionApp_CreateBim\Output\Test3d.dgn --output=C:\Users\JEFF~1.MAR\AppData\Local\Temp\Bentley\Build\tmp19076\DgnV8ConverterTests\ConverterAppTests\VerifyConversionApp_CreateBim\Output 
-    # status = -1073741819 
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterAppTests.cpp(45): error:       Expected: SUCCESS
-    #       Which is: 0
-    # To be equal to: RunCMD(m_command)
-    #       Which is: 32768
-    # [  FAILED  ] ConverterAppTests.VerifyConversionApp_CreateBim (17856 ms)
 
 #----------------------------------------------------------------------------------------
 #   Tests that are failing only on tiles branch
