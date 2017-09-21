@@ -722,7 +722,7 @@ TEST(Polyface,DrapeOnBoreMesh)
 
     auto range = polyface->PointRange ();
     double dx = 2.0 * range.XLength ();
-    double dy = range.YLength ();
+    //double dy = range.YLength ();
     double dz = 2.0 * range.ZLength ();
 
     //Create the line that will be draped and add it to the model
