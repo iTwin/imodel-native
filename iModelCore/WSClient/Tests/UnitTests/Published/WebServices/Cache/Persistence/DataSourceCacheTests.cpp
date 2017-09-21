@@ -478,8 +478,7 @@ void VerifyJsonRawFormat(JsonValueCR instance)
     EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
     EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
 
-    EXPECT_TRUE(instance.isMember("$ECInstanceId"));
-    EXPECT_TRUE(instance.isMember("$ECInstanceLabel"));
+    EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
 
     EXPECT_TRUE(instance.isMember("TestProperty"));
     }
@@ -489,9 +488,7 @@ void VerifyJsonDisplayDataFormat(JsonValueCR instance)
     EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
     EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
 
-    EXPECT_TRUE(instance.isMember("$ECInstanceId"));
-    EXPECT_TRUE(instance.isMember("$ECInstanceLabel"));
-    EXPECT_TRUE(instance.isMember("$ECClassLabel"));
+    EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
 
     EXPECT_TRUE(instance.isMember("TestProperty"));
     }
