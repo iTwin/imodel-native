@@ -148,7 +148,7 @@ bool AlignmentPairIntersection::ComputeIntersectionPointImpl (DPoint3dR pt, DPoi
 void AlignmentPairIntersection::UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt)
     {
     if (m_secondaryRoad.IsValid ())
-        m_secondaryRoad->UpdateCurveVectors (&hz, vt);
+        m_secondaryRoad->UpdateCurveVectors (hz, vt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,8 +222,8 @@ size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIn
             primitive->GetStartPoint (info.m_point);
             if (_ComputeStations ())
                 {
-                info.m_primaryStation = m_primaryRoad->HorizontalDistanceFromStart (info.m_point);
-                info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceFromStart (info.m_point);
+                info.m_primaryStation = m_primaryRoad->HorizontalDistanceAlongFromStart (info.m_point);
+                info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceAlongFromStart(info.m_point);
 
                 DPoint3d dummy;
                 DVec3d tangent;
@@ -349,7 +349,7 @@ size_t AlignmentIntersection::_ComputePrimaryEndProjection (ICurvePrimitiveR pri
                     primitiveToProject.Length (initLength);
                     double extension = (initLength * fractionOnProjected) - initLength;
                     info.m_primaryStation = m_primaryRoad->LengthXY () + extension;
-                    info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceFromStart (pt);
+                    info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceAlongFromStart(pt);
                     info.m_extendedAmount = extension;
 
                     DPoint3d dummy;
@@ -399,7 +399,7 @@ size_t AlignmentIntersection::_ComputePrimaryStartProjection (ICurvePrimitiveR p
                     primitiveToProject.Length (initLength);
                     double extension = initLength * fractionOnProjected;
                     info.m_primaryStation = 0.0 + extension;
-                    info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceFromStart (pt);
+                    info.m_secondaryStation = m_secondaryRoad->HorizontalDistanceAlongFromStart(pt);
                     info.m_extendedAmount = extension;
 
                     DPoint3d dummy;
@@ -449,7 +449,7 @@ size_t AlignmentIntersection::_ComputeSecondaryStartProjection (ICurvePrimitiveR
                     primitiveToProject.Length (initLength);
                     double extension = initLength * fractionOnProjected;
                     info.m_secondaryStation = 0.0 + extension;
-                    info.m_primaryStation = m_primaryRoad->HorizontalDistanceFromStart (pt);
+                    info.m_primaryStation = m_primaryRoad->HorizontalDistanceAlongFromStart(pt);
                     info.m_extendedAmount = extension;
 
                     DPoint3d dummy;
@@ -499,7 +499,7 @@ size_t AlignmentIntersection::_ComputeSecondaryEndProjection (ICurvePrimitiveR p
                     primitiveToProject.Length (initLength);
                     double extension = ( initLength * fractionOnProjected ) - initLength;
                     info.m_secondaryStation = m_secondaryRoad->LengthXY () + extension;
-                    info.m_primaryStation = m_primaryRoad->HorizontalDistanceFromStart (pt);
+                    info.m_primaryStation = m_primaryRoad->HorizontalDistanceAlongFromStart(pt);
                     info.m_extendedAmount = extension;
 
                     DPoint3d dummy;

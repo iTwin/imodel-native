@@ -32,7 +32,7 @@ RoadAlignmentPairEditor::RoadAlignmentPairEditor (CurveVectorCR vertical, bool i
         Transform flipAxes = Transform::FromOriginAndVectors (origin, u, v, w);
         vt->TransformInPlace (flipAxes);
         }
-    UpdateCurveVectors (hz.get(), vt.get ());
+    UpdateCurveVectors(*hz, vt.get ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -119,7 +119,7 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxili
 
     DPoint3d testPt, testPtOnPrimary;
     testPt = GetPointAtWithZ (3.0);
-    double testStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (testPt);
+    double testStationOnPrimary = primaryRoad.HorizontalDistanceAlongFromStart (testPt);
     testPtOnPrimary = primaryRoad.GetPointAtWithZ (testStationOnPrimary);
 
     AlignmentPairPtr newRoad = AlignmentPair::Create (newHZ, nullptr);
@@ -134,11 +134,11 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxili
     arcPrimitive->GetStartEnd (arcStart, arcEnd);
 
     DPoint3d arcStartOnPrimary, arcEndOnSecondary;
-    double arcStartStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (arcStart);
+    double arcStartStationOnPrimary = primaryRoad.HorizontalDistanceAlongFromStart(arcStart);
     arcStartOnPrimary = primaryRoad.GetPointAtWithZ (arcStartStationOnPrimary);
-    double arcEndStationOnSecondary = HorizontalDistanceFromStart (arcEnd);
+    double arcEndStationOnSecondary = HorizontalDistanceAlongFromStart(arcEnd);
     arcEndOnSecondary = GetPointAtWithZ (arcEndStationOnSecondary);
-    arcEndStationOnSecondary = newRoad->HorizontalDistanceFromStart (arcEnd);
+    arcEndStationOnSecondary = newRoad->HorizontalDistanceAlongFromStart(arcEnd);
     // compute starting z
     double startZ = arcStartOnPrimary.z - (arcStartOnPrimary.DistanceXY(arcStart)) * (( testPtOnPrimary.z - testPt.z ) / testPtOnPrimary.DistanceXY (testPt));
 
@@ -197,7 +197,7 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliar
 
     DPoint3d testPt, testPtOnPrimary;
     testPt = GetPointAtWithZ (3.0);
-    double testStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (testPt);
+    double testStationOnPrimary = primaryRoad.HorizontalDistanceAlongFromStart(testPt);
     testPtOnPrimary = primaryRoad.GetPointAtWithZ (testStationOnPrimary);
 
     AlignmentPairPtr newRoad = AlignmentPair::Create (newHZ, nullptr);
@@ -219,11 +219,11 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliar
         }
 
     DPoint3d arcEndOnPrimary, arcStartOnSecondary;
-    double arcEndStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (arcEnd);
+    double arcEndStationOnPrimary = primaryRoad.HorizontalDistanceAlongFromStart(arcEnd);
     arcEndOnPrimary = primaryRoad.GetPointAtWithZ (arcEndStationOnPrimary);
-    double arcStartStationOnSecondary = HorizontalDistanceFromStart (arcStart);
+    double arcStartStationOnSecondary = HorizontalDistanceAlongFromStart(arcStart);
     arcStartOnSecondary = GetPointAtWithZ (arcStartStationOnSecondary);
-//    arcStartStationOnSecondary = newRoad->HorizontalDistanceFromStart (arcStart);
+//    arcStartStationOnSecondary = newRoad->HorizontalDistanceAlongFromStart (arcStart);
 
     // compute ending z
     double endZ = arcEndOnPrimary.z - ( arcEndOnPrimary.DistanceXY (arcEnd) ) * ( ( testPtOnPrimary.z - testPt.z ) / testPtOnPrimary.DistanceXY (testPt) );

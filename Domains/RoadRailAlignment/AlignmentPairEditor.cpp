@@ -96,7 +96,7 @@ AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR vertical, bool inXY)
         Transform flipAxes = Transform::FromOriginAndVectors (origin, u, v, w);
         vt->TransformInPlace (flipAxes);
         }
-    UpdateCurveVectors (hz.get(), vt.get ());
+    UpdateCurveVectors (*hz, vt.get ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,12 +113,12 @@ AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR horizontalAlignment, Cur
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPairEditor::_GenerateFromSingleVector (CurveVectorCR curveVector)
     {
-    UpdateCurveVectors (&curveVector, nullptr);
+    UpdateCurveVectors (curveVector, nullptr);
     bvector<AlignmentPI> pis = _GetPIs (); // flatten to zero;
     CurveVectorPtr hzAlign = _BuildVectorFromPIS (pis);
     if (!hzAlign.IsValid ()) return false;
 
-    UpdateCurveVectors (hzAlign.get (), nullptr);
+    UpdateCurveVectors (*hzAlign, nullptr);
     
     // now create a vertical...
     bvector<AlignmentPVI> pvis;
@@ -130,7 +130,7 @@ bool AlignmentPairEditor::_GenerateFromSingleVector (CurveVectorCR curveVector)
     for (auto primitive : curveVector)
         {
         primitive->GetStartEnd (start, end);
-        double x = HorizontalDistanceFromStart (end);
+        double x = HorizontalDistanceAlongFromStart (end);
         DPoint3d location2 = DPoint3d::From (x, 0.0, end.z);
         AlignmentPVI pvi2 (location2, 0.0);
         pvis.push_back (pvi);
@@ -138,7 +138,7 @@ bool AlignmentPairEditor::_GenerateFromSingleVector (CurveVectorCR curveVector)
     CurveVectorPtr vtAlign = _BuildVectorFromPVIS (pvis);
     if (!vtAlign.IsValid ()) return false;
     
-    UpdateCurveVectors (hzAlign.get (), vtAlign.get ());
+    UpdateCurveVectors(*hzAlign, vtAlign.get ());
 
     return true;
     }
@@ -1445,8 +1445,8 @@ CurveVectorPtr AlignmentPairEditor::InsertPI (DPoint3d piPt)
         index = pis.size () - 1;
     else
         {
-        double nearestDistFromStart = this->HorizontalDistanceFromStart(pis.at(nearestIndex).location, nullptr);
-        double newPiDistFromStart = this->HorizontalDistanceFromStart(piPt);
+        double nearestDistFromStart = HorizontalDistanceAlongFromStart(pis.at(nearestIndex).location, nullptr);
+        double newPiDistFromStart = HorizontalDistanceAlongFromStart(piPt);
         if (newPiDistFromStart < nearestDistFromStart)
             index = nearestIndex;
         else
@@ -1874,7 +1874,7 @@ CurveVectorPtr AlignmentPairEditor::ValidateVerticalData (bool updateInternalCur
     // rebuild curve vector based on AlignmentPVI
     CurveVectorPtr newVertical = _BuildVectorFromPVIS (pvis);
     if (updateInternalCurveVector && newVertical.IsValid ())
-        UpdateCurveVectors (HorizontalCurveVector ().get (), newVertical.get ());
+        UpdateVerticalCurveVector(newVertical.get());
 
     return newVertical;
     }
@@ -1974,7 +1974,7 @@ CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent (DPoint3d fromPt, DPoint
             CurveVectorPtr newVertical;
             if ((newVertical = vGeom->MovePVI (pvis[i].poles[PVI], newPVILocation, edit1)) == nullptr)
                 return nullptr;
-            vGeom->UpdateCurveVectors (HorizontalCurveVector ().get (), newVertical.get ());
+            vGeom->UpdateVerticalCurveVector(newVertical.get());
             newPVILocation = DPoint3d::From (pvis[i + 1].poles[PVI].x, 0.0, pvis[i + 1].poles[PVI].z + deltaZ);
             if (( newVertical = vGeom->MovePVI (pvis[i + 1].poles[PVI], newPVILocation, edit2) ) == nullptr)
                 return nullptr;
@@ -2554,7 +2554,7 @@ bool AlignmentPairEditor::InsertStartIntersection (CurveVectorCR drapeVector, do
     CurveVectorPtr newCurve = _BuildVectorFromPVIS (newPVIs);
     if (newCurve.IsValid ())
         {
-        UpdateCurveVectors (HorizontalCurveVector ().get (), newCurve.get ());
+        UpdateVerticalCurveVector(newCurve.get());
         return true;
         }
     return false;
@@ -2638,7 +2638,7 @@ bool AlignmentPairEditor::InsertEndIntersection (CurveVectorCR drapeVector, doub
     CurveVectorPtr newCurve = _BuildVectorFromPVIS (newPVIs);
     if (newCurve.IsValid ())
         {
-        UpdateCurveVectors (HorizontalCurveVector ().get (), newCurve.get ());
+        UpdateVerticalCurveVector(newCurve.get());
         return true;
         }
     return false;
@@ -2770,7 +2770,7 @@ bool AlignmentPairEditor::InsertCrossingIntersection (CurveVectorCR drapeVector,
     CurveVectorPtr newCurve = _BuildVectorFromPVIS(newPVIs);
     if (newCurve.IsValid ())
         {
-        UpdateCurveVectors (HorizontalCurveVector ().get (), newCurve.get ());
+        UpdateVerticalCurveVector(newCurve.get());
         return true;
         }
 
@@ -2850,7 +2850,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
             referencePt = nextPI.spiral2.endSpiralPt;
-        rangeEdit.preEditRange.endStation = HorizontalDistanceFromStart (referencePt);
+        rangeEdit.preEditRange.endStation = HorizontalDistanceAlongFromStart(referencePt);
         newHz = MovePI (0, toPt, calcedPI);
         }
     else
@@ -2858,11 +2858,11 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         rangeEdit.preEditRange.endStation = LengthXY ();
         AlignmentPI prevPI = pis[pis.size () - 2];
         if (prevPI.curveType == AlignmentPI::NONE)
-            rangeEdit.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.location);
+            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.location);
         else if (prevPI.curveType == AlignmentPI::ARC)
-            rangeEdit.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.arc.startPoint);
+            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
-            rangeEdit.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.spiral1.beginSpiralPt);
+            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.beginSpiralPt);
         newHz = MovePI (pis.size () - 1, toPt, calcedPI);
         }
     if (!newHz.IsValid ()) return false;
@@ -2872,7 +2872,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
     if (isStart)
         {
         rangeEdit.postEditRange.startStation = 0.0;
-        rangeEdit.postEditRange.endStation = modifiedAlign->HorizontalDistanceFromStart (referencePt);
+        rangeEdit.postEditRange.endStation = modifiedAlign->HorizontalDistanceAlongFromStart(referencePt);
         }
     else
         {
@@ -2898,7 +2898,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         }
 #endif
 
-    UpdateCurveVectors(newHz.get(), newVertical.get());
+    UpdateCurveVectors(*newHz, newVertical.get());
 
 #ifndef NDEBUG
     if (newVertical.IsValid ())
@@ -2992,7 +2992,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
             referencePt = nextPI.spiral2.endSpiralPt;
-        computedRange.preEditRange.endStation = HorizontalDistanceFromStart (referencePt);
+        computedRange.preEditRange.endStation = HorizontalDistanceAlongFromStart(referencePt);
 
         computedRange.postEditRange.startStation = LengthXY () - modifiedAlign->LengthXY ();
         computedRange.postEditRange.endStation = computedRange.preEditRange.endStation;
@@ -3002,11 +3002,11 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         computedRange.preEditRange.endStation = LengthXY ();
         AlignmentPI prevPI = pis[pis.size () - 2];
         if (prevPI.curveType == AlignmentPI::NONE)
-            computedRange.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.location);
+            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.location);
         else if (prevPI.curveType == AlignmentPI::ARC)
-            computedRange.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.arc.startPoint);
+            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
-            computedRange.preEditRange.startStation = HorizontalDistanceFromStart (prevPI.spiral1.beginSpiralPt);
+            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.beginSpiralPt);
 
         computedRange.postEditRange.startStation = computedRange.preEditRange.startStation;
         computedRange.postEditRange.endStation = modifiedAlign->LengthXY ();
@@ -3091,7 +3091,7 @@ AlignmentPairPtr AlignmentPairEditor::GetPartialAlignment (double startStation, 
             CurveVectorPtr newVT = returnAlignment->_BuildVectorFromPVIS (pvis, returnAlignment->LengthXY ());
             if (newVT.IsValid ())
                 {
-                returnAlignment->UpdateCurveVectors (returnAlignment->HorizontalCurveVector ().get (), newVT.get ());
+                returnAlignment->UpdateVerticalCurveVector(newVT.get());
                 return returnAlignment;
                 }
             }

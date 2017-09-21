@@ -18,16 +18,20 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //=======================================================================================
 struct AlignmentPair : NonCopyableClass, RefCountedBase
 {
-ROADRAILALIGNMENT_EXPORT static const double MetersToEnglishFeet;
-ROADRAILALIGNMENT_EXPORT static const double MetersToEnglishSurveyFeet;
+    //! Unit conversion factors
+    ROADRAILALIGNMENT_EXPORT static constexpr const double MetersToEnglishFeet = 3.28083989501;
+    ROADRAILALIGNMENT_EXPORT static constexpr const double MetersToEnglishSurveyFeet = 3.2808333333465;
 
-enum CurveVectorType
-    {
-    CURVE_VECTOR_Horizontal = 0,
-    CURVE_VECTOR_Vertical = 1
-    };
+    enum class CurveVectorType
+        {
+        CURVE_VECTOR_Horizontal = 0,
+        CURVE_VECTOR_Vertical = 1
+        };
 
 private:
+    static constexpr const double DefaultMaxStrokeLength = 0.03;
+
+protected:
     CurveVectorPtr m_horizontalCurveVector;
     CurveVectorPtr m_verticalCurveVector;
 
@@ -37,53 +41,65 @@ private:
 
 protected:
     //! Create and cache the index vector on demand
-    CurveVectorWithDistanceIndexPtr _HorizontalIndexVector() const;
-    CurveVectorWithDistanceIndexPtr _VerticalIndexVector() const;
-    CurveVectorWithXIndexPtr _VerticalXIndexVector() const;
+    CurveVectorWithDistanceIndexPtr HorizontalIndexVector() const;
+    CurveVectorWithDistanceIndexPtr VerticalIndexVector() const;
+    CurveVectorWithXIndexPtr VerticalXIndexVector() const;
 
-    CurveVectorPtr _ConvertedHorizontalVector(double convFactor) const;
-    CurveVectorPtr _ConvertedVerticalVector(double convFactor) const;
+    //! Returns the converted vector
+    CurveVectorPtr GetConvertedCurveVector(CurveVectorCR cv, double convFactor) const;
 
-    //! Return the distance along the alignment to the referencePoint
-    double _DistanceFromStart(CurveLocationDetailCR location) const;
-    CurveVectorPtr _GetPartialAlignment(CurveVectorType cvType, double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
+    //! Returns the distance along the alignment to the referencePoint
+    double DistanceAlongFromStart(CurveLocationDetailCR location) const;
+    CurveVectorPtr GetPartialAlignment(CurveVectorType cvType, double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
 protected:
     ROADRAILALIGNMENT_EXPORT AlignmentPair() { }
-    ROADRAILALIGNMENT_EXPORT AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment);
+    ROADRAILALIGNMENT_EXPORT AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
 
 public:
     //! Return the 3D start and end points of this alignment
+    //! @remarks If the start or end doesn't hit vt alignment, its z-value is set to 0.0
     ROADRAILALIGNMENT_EXPORT void GetStartEnd(DPoint3dR startPt, DPoint3dR endPt) const;
+    //! Returns the start and end station of the hz alignment
     ROADRAILALIGNMENT_EXPORT void GetStartAndEndDistancesAlong(double& startDistanceAlong, double& endDistanceAlong) const;
 
+    //! Returns the length of the hz alignment
     ROADRAILALIGNMENT_EXPORT double LengthXY() const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAt(double distanceAlongFromStart) const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAtWithZ(double distanceAlongFromStart) const;
-    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentAt(DPoint3dR point, DVec3dR tangent, double distanceAlongFromStart) const;
-    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentAtWithZ(DPoint3dR point, DVec3dR tangent, double distanceAlongFromStart) const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAtAndOffset(double distanceAlongFromStart, double offset) const;
+    ROADRAILALIGNMENT_EXPORT ValidatedDPoint3d GetPointAt(double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT ValidatedDPoint3d GetPointAtAndOffset(double distanceAlongFromStart, double offset) const;
+    ROADRAILALIGNMENT_EXPORT ValidatedDPoint3d GetPointAtWithZ(double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT bool GetPointAndTangentAt(DPoint3dR locationPoint, DVec3dR hzTangent, double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT bool GetPointAndTangentAtWithZ(DPoint3dR locationPoint, DVec3dR hzTangent, double distanceAlongFromStart) const;
+
+    //! Returns the elevation at the given station
+    //! @remarks if distanceAlongFromStart is outside the vertical alignment, returns 0.0
     ROADRAILALIGNMENT_EXPORT double GetVerticalElevationAt(double distanceAlongFromStart) const;
 
-    //! Return a point on the alignment relative to the reference point if there is one
-    ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint) const;
-    ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, ICurvePrimitive::CurvePrimitiveType& curveType) const;
+    //! Creates a stroked 3d alignment using the provided max stroke length.
+    //! @remarks For alignment without vertical, the horizontal alignment should be used instead
+    ROADRAILALIGNMENT_EXPORT bvector<DPoint3d> GetStrokedAlignment(double maxStrokeLength = DefaultMaxStrokeLength) const;
 
     //! Return a point on the alignment relative to the reference point if there is one
+    //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end point
+    //! @remarks optionally returns the CurvePrimitiveType
+    ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, ICurvePrimitive::CurvePrimitiveType* pType = nullptr) const;
+
+    //! Return a point on the alignment relative to the reference point if there is one
+    //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end point
     ROADRAILALIGNMENT_EXPORT bool ClosestPointXY(DPoint3dR locationPoint, DPoint3dCR referencePoint) const;
-    ROADRAILALIGNMENT_EXPORT bool ClosestPointAndTangentXY(DPoint3dR locationPoint, DPoint3dCR referencePoint, DVec3dR tangent);
-    //! Return a point on the alignment relative to the reference point if there is one
-    ROADRAILALIGNMENT_EXPORT bool ClosestPointXY(DPoint3dR locationPoint, DPoint3dCR referencePoint, ICurvePrimitive::CurvePrimitiveType& curveType) const;
 
-    //! Get the horizontal distance from the start of the alignment, the reference point does not need to be on the alignment,
-    //! optionally get the offet to the reference point
+    //! Returns the point and tangent on the alignment relative to the reference point if there is one
+    //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end point
+    ROADRAILALIGNMENT_EXPORT bool ClosestPointAndTangentXY(DPoint3dR locationPoint, DVec3dR tangent, DPoint3dCR referencePoint);
+
+    //! Get the horizontal distance from the start of the alignment, the reference point does not need to be on the alignment
+    //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end station
+    //! optionally get the offset to the reference point
     //! @return -1 if failure
-    ROADRAILALIGNMENT_EXPORT double HorizontalDistanceFromStart(DPoint3dCR referencePoint, double * pOffset = nullptr) const;
-    ROADRAILALIGNMENT_EXPORT double HorizontalDistanceFromEnd(DPoint3dCR referencePoint, double * pOffset = nullptr) const;
-    // return the primitive that is found at this point
-    ROADRAILALIGNMENT_EXPORT const ICurvePrimitivePtr GetPrimitiveAtPoint(DPoint3dCR referencePoint) const;
-
-    ROADRAILALIGNMENT_EXPORT AlignmentPairPtr Clone() const;
+    ROADRAILALIGNMENT_EXPORT double HorizontalDistanceAlongFromStart(DPoint3dCR referencePoint, double* pOffset = nullptr) const;
+    ROADRAILALIGNMENT_EXPORT double HorizontalDistanceAlongFromEnd(DPoint3dCR referencePoint, double* pOffset = nullptr) const;
+    //! Returns the primitive that is found at this point, the reference point does not need to be on the alignment
+    ROADRAILALIGNMENT_EXPORT ICurvePrimitiveCPtr GetPrimitiveAtPoint(DPoint3dCR referencePoint) const;
 
     // partial alignments
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
@@ -93,24 +109,33 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr GetPartialAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
     ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
-    ROADRAILALIGNMENT_EXPORT bvector<DPoint3d> GetStrokedAlignment() const;
+#if 1 //&&AG NEEDSWORK TODO this method is fairly inconsistent
+    //! Should be used only when you need a curve vector for display or persistence
+    //! @remarks when called with MetricMeters, returns a reference to the curves used by the RoadAlignment
+    //! @remarks when called with a different unit, returns a deep copy of the curve properly scaled
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr HorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr VerticalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+#endif
 
-    //! Should be used only when you need a curve vector for display or persistenc
-    ROADRAILALIGNMENT_EXPORT const CurveVectorPtr HorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
-    ROADRAILALIGNMENT_EXPORT const CurveVectorPtr VerticalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+    //! Returns a deep-copy of the structure
+    ROADRAILALIGNMENT_EXPORT AlignmentPairPtr Clone() const;
 
     //! Update internal geometry and clear cached objects
-    ROADRAILALIGNMENT_EXPORT void UpdateCurveVectors(CurveVectorCP horizontalAlignment, CurveVectorCP verticalAlignment);
-    ROADRAILALIGNMENT_EXPORT void UpdateHorizontalCurveVector(CurveVectorCP horizontalAlignment);
-    ROADRAILALIGNMENT_EXPORT void UpdateVerticalCurveVector(CurveVectorCP verticalAlignment);
+    ROADRAILALIGNMENT_EXPORT void UpdateCurveVectors(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT void UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    ROADRAILALIGNMENT_EXPORT void UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
     // Find intersection of two alignments in XY. Optionally returns distanceAlong of the intersect. Also optionally locates the intersection
     // closest to the given point if there are multiple intersects (otherwise it will return the first intersect it finds)
     ROADRAILALIGNMENT_EXPORT bool ComputeIntersectionWith(DPoint3dR result, AlignmentPairCP second, DPoint3dCP nearestToReference = nullptr,
         double * primaryDistanceAlongFromStart = nullptr, double * secondaryDistanceAlongFromStart = nullptr);
 
+    //! Safely transform curves that have partial alignments.
+    //! @remarks also works with regular curves
+    ROADRAILALIGNMENT_EXPORT static void TransformCurveWithPartialAlignments(CurveVectorR curve, TransformCR transform);
+
 public:
-    ROADRAILALIGNMENT_EXPORT static AlignmentPairPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment);
+    ROADRAILALIGNMENT_EXPORT static AlignmentPairPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
 }; // AlignmentPair
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

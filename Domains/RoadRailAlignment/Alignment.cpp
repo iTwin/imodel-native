@@ -66,7 +66,7 @@ DistanceExpression Alignment::_ToDistanceExpression(DPoint3dCR point) const
     auto mainPairPtr = QueryMainPair();
 
     double horizOffset;
-    double distanceFromStart = mainPairPtr->HorizontalDistanceFromStart(point, &horizOffset);
+    double distanceFromStart = mainPairPtr->HorizontalDistanceAlongFromStart(point, &horizOffset);
     double vertElev = mainPairPtr->GetVerticalElevationAt(distanceFromStart);
     double vertOffset = (point.z - vertElev);
 
@@ -404,7 +404,8 @@ DgnDbStatus Alignment::GenerateAprox3dGeom()
         }
     else
         {
-        auto strokedPoints = mainPairPtr->GetStrokedAlignment();        
+        bvector<DPoint3d> strokedPoints = mainPairPtr->GetStrokedAlignment();        
+
         if (!geomBuilderPtr->Append(*CurveVector::CreateLinear(strokedPoints), GeometryBuilder::CoordSystem::World))
             return DgnDbStatus::NoGeometry;
         }
