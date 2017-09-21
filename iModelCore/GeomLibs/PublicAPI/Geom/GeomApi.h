@@ -345,6 +345,7 @@ size_t m_tagB;
 
 public:
 
+ValueSizeSize (){}
 ValueSizeSize (T const & value, size_t tagA, size_t tagB) :
     m_value (value),
     m_tagA  (tagA),

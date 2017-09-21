@@ -1982,6 +1982,22 @@ CurveVectorCP paths,            //!< [in] optional additional constraint lines.
 bvector<DPoint3d> const *isolatedPoints,   //!< [in] optional additional isolated points to add to triangulation
 IFacetOptionsP strokeOptions = nullptr //!< [in] options for stroking curves
 );
+
+//! Create a (closed, volumetric) mesh from "bore segment data"
+//!<ul>
+//!<li> Each bore segment is a pair of top and bottom points of the volume.
+//!<li> Ideally the bore data is pure vertical.
+//!<li> "somewhat non vertical" bores are ok.
+//!<li>Severely non vertical bores will cause folded lower and side surfaces.
+//!</ul>
+GEOMDLLIMPEXP static PolyfaceHeaderPtr VolumeFromBoreData
+(
+bvector<DSegment3d> &segments,       //!< [inout] segment bottom and top.  During processing, start and end points are swapped as needed to point[0] is the lower point!!!
+bool &foldedSurfaces,                //!< [out] true if bottom or side surfaces are folded.
+bvector<ptrdiff_t> *topFacetReadIndex,     //!< [out] optional array of read indices of upper surface facets
+bvector<ptrdiff_t> *bottomFacetReadIndex,     //!< [out] optional array of read indices of lower surface facets
+bvector<ptrdiff_t> *sideFacetReadIndex     //!< [out] optional array of read indices of side facets
+);
 //! Create a (smart pointer to a) new (empty) PolyfaceHeader, with each facet defined 
 //! by 3 or 4 unindexed points as indicated by the arg.
 //! @returns invalid if numPerFace is other than 3 or 4.

@@ -627,6 +627,8 @@ $(OUT_DIR)MeshAnnotationVector$(OUT_EXT)            : $(geomSrcPolyface)MeshAnno
 
 $(OUT_DIR)pf_fastCutFill$(OUT_EXT)            : $(geomSrcPolyface)pf_fastCutFill.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)pf_boreVolume$(OUT_EXT)            : $(geomSrcPolyface)pf_boreVolume.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)pf_rangeSearch$(OUT_EXT)            : $(geomSrcPolyface)pf_rangeSearch.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)pf_indexedHeapRangeSearch$(OUT_EXT)            : $(geomSrcPolyface)pf_indexedHeapRangeSearch.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

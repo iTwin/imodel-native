@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/BlockedVector.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -766,7 +766,7 @@ bool BlockedVectorInt::DelimitFace (int numPerFace, size_t iFirst, size_t &iLast
         }
     else
         {
-        // zero terminated.
+        // zero terminated.go b
         // skip over leading zeros ..
         while (iFirst < count && at(iFirst) == 0)
             iFirst++;
@@ -779,7 +779,7 @@ bool BlockedVectorInt::DelimitFace (int numPerFace, size_t iFirst, size_t &iLast
         iLast = iFirst + 1;
         while (iLast < count && at(iLast) != 0)
             iLast++;
-        iNext = iFirst + numPerFace;
+        iNext = iLast + 1;
         iLast--;
         return true;
         }
