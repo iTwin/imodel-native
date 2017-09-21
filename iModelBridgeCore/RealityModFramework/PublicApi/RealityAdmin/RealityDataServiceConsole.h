@@ -47,6 +47,7 @@ enum class Command
     ChangeDir,
     Stat,
     AllStats,
+    AllStatsJson,
     Download,
     Upload,
     FileAccess,
@@ -91,6 +92,8 @@ private:
     void ChangeDir();
     void EnterpriseStat();
     void AllEnterpriseStats();
+    void AllEnterpriseStatsGen(bool displayAsJson);
+    void AllEnterpriseStatsJson();
     void Download();
     void Upload();
     void Details();

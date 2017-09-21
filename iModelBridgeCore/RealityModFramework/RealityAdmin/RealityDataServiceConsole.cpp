@@ -73,6 +73,8 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::Stat;
     else if (args[0].EqualsI("allstats"))
         m_lastCommand = Command::AllStats;
+    else if (args[0].EqualsI("allstatsjson"))
+        m_lastCommand = Command::AllStatsJson;
     else if (args[0].EqualsI("cancel"))
         m_lastCommand = Command::Cancel;
     else if (args[0].EqualsI("details"))
@@ -145,6 +147,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
+    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);
     m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
     m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
@@ -360,6 +363,8 @@ void RealityDataConsole::Usage()
     DisplayInfo("  ListAll             List every file beneath the current location (paged)\n");
     DisplayInfo("  Details             show the details for the location\n");
     DisplayInfo("  Stat                show enterprise statistics\n");
+    DisplayInfo("  AllStats            show statistics for all enterprises (requires priviledge access)\n");
+    DisplayInfo("  AllStatsJson        show statistics for all enterprises in raw JSON format (requires priviledge access)\n");
     DisplayInfo("  Download            Download files from the current location on the server\n");
     DisplayInfo("  Upload              Upload files to the server\n");
     DisplayInfo("  FileAccess <opt>    Prints the URL to use if you wish to request an azure file access (option \"w\" for write access or \"r\" for read access)\n");
@@ -949,6 +954,15 @@ void RealityDataConsole::DisplayStats(const bvector<RealityDataEnterpriseStat>& 
 
 void RealityDataConsole::AllEnterpriseStats()
     {
+    AllEnterpriseStatsGen(false);
+    }
+
+void RealityDataConsole::AllEnterpriseStatsJson()
+    {
+    AllEnterpriseStatsGen(true);
+    }
+void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
+    {
     DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
     DisplayInfo("   ''                   --> current date\n", DisplayOption::Question);
     DisplayInfo("   yyyy-mm-dd           --> Specific date\n", DisplayOption::Question);
@@ -1023,7 +1037,13 @@ void RealityDataConsole::AllEnterpriseStats()
             bvector<RealityDataEnterpriseStat> stats;
             stats = RealityDataService::Request(theCurrentRequest, rawResponse);
 
-            DisplayStats(stats, currentDate);
+            if (displayAsJson)
+                {
+                DisplayInfo(rawResponse.body);
+                DisplayInfo("\n");
+                }
+            else
+                DisplayStats(stats, currentDate);
             }
     
 
@@ -1052,7 +1072,13 @@ void RealityDataConsole::AllEnterpriseStats()
         bvector<RealityDataEnterpriseStat> stats;
         stats = RealityDataService::Request(*ptt, rawResponse);
 
-        DisplayStats(stats, curInfoDate);
+        if (displayAsJson)
+            {
+            DisplayInfo(rawResponse.body);
+            DisplayInfo("\n");
+            }
+        else
+            DisplayStats(stats, curInfoDate);
         }
     }
 
