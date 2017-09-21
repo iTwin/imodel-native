@@ -29,6 +29,7 @@ struct ImsClient : IImsClient
     private:
         ClientInfoPtr m_clientInfo;
         IHttpHandlerPtr m_httpHandler;
+		Utf8String m_ImsActiveSTSHelperServiceAuthKey;
 
     private:
         ImsClient(ClientInfoPtr clientInfo, IHttpHandlerPtr httpHandler);
@@ -43,6 +44,7 @@ struct ImsClient : IImsClient
             );
 
         static Utf8String GetClientRelyingPartyUriForWtrealm(ClientInfoCR clientInfo);
+		
 
     public:
         // TODO: static API for compatibility with old static code (ConnectSpaces, ConnectSetup, etc.)
@@ -82,6 +84,17 @@ struct ImsClient : IImsClient
 
         //! Get URL for WebView sing-in
         WSCLIENT_EXPORT static Utf8String GetFederatedSignInUrl(ClientInfoCR info, Utf8StringCR windowsDomainName = nullptr);
+
+        //! Get Active To Passive Url - craft an url that does passive ims authentication and redirects to the specified url afterwards
+        //! @param url - a url to which to redirect after authentication
+        //! @param token - a valid saml token that will be registered for authentication
+        //! @param tokenGuid - random guid that will be used for token registration and url composition
+        WSCLIENT_EXPORT Utf8String GetA2PUrl(Utf8String url, SamlTokenPtr token, Utf8String tokenGuid);
+
+        //! Set Active To Passive token registration service API key
+        //! @param user - user for the API key
+        //! @param apiKey - api key
+        WSCLIENT_EXPORT Utf8StringCR SetImsActiveSTSHelperServiceAuthKey(Utf8StringCR user, Utf8StringCR apiKey);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

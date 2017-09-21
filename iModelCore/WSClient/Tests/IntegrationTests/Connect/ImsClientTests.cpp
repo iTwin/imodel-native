@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -164,5 +164,37 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     BeTest::SetFailOnAssert(false);
     result = client->RequestToken(credentials, "https://zz-wsg20-eus.cloudapp.net")->GetResult();
     ASSERT_FALSE(result.IsSuccess());
+    BeTest::SetFailOnAssert(true);
+    }
+
+
+TEST_F(ImsClientTests, GetA2PUrl)
+    {
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
+
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
+
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto client = ImsClient::Create(StubClientInfo(), proxy);
+
+    SamlTokenResult result;
+
+    result = client->RequestToken(credentials, "https://connect-wsg20.bentley.com")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    SamlTokenPtr token = result.GetValue();
+
+    //crafting the url should succeed for connect
+    auto url = client->GetA2PUrl("https://qa-connect-webportal.bentley.com/", token, BeGuid(true).ToString());
+    ASSERT_NE("https://qa-connect-webportal.bentley.com/", url);
+
+    //crafting the url should fail for non valid url - thus returning the original url
+    BeTest::SetFailOnAssert(false);
+    url = client->GetA2PUrl("https://thisshouldfail.bentley.com/", token, BeGuid(true).ToString());
+    ASSERT_EQ("https://thisshouldfail.bentley.com/", url);
     BeTest::SetFailOnAssert(true);
     }
