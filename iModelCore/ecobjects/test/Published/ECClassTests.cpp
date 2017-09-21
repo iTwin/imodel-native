@@ -1097,6 +1097,8 @@ TEST_F(PropertyCopyTest, PropertyWithCategoryInRefSchema)
 
     m_prop0 = primProp;
 
+    EC_ASSERT_SUCCESS(m_schema1->AddReferencedSchema(*refSchema));
+
     CopyProperty();
 
     ASSERT_TRUE(nullptr != m_prop1);
@@ -1145,6 +1147,8 @@ TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInRefSchema)
     primProp->SetKindOfQuantity(refKoQ);
 
     m_prop0 = primProp;
+
+    EC_ASSERT_SUCCESS(m_schema1->AddReferencedSchema(*refSchema));
 
     CopyProperty();
 
@@ -1296,6 +1300,8 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInRefSchema)
     EC_ASSERT_SUCCESS(primProp->SetType(*refEnum));
 
     m_prop0 = primProp;
+
+    EC_ASSERT_SUCCESS(m_schema1->AddReferencedSchema(*refSchema));
 
     CopyProperty();
 
@@ -1469,6 +1475,8 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInRefSchema)
     EC_ASSERT_SUCCESS(primArrProp->SetType(*refEnum));
 
     m_prop0 = primArrProp;
+
+    EC_ASSERT_SUCCESS(m_schema1->AddReferencedSchema(*refSchema));
 
     CopyProperty();
 

@@ -479,6 +479,18 @@ PropertyCategoryCP ECProperty::GetCategory() const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECProperty::SetCategory(PropertyCategoryCP propertyCategory)
     {
+    if (nullptr == propertyCategory)
+        {
+        m_propertyCategory = propertyCategory;
+        return ECObjectsStatus::Success;
+        }
+
+    if (&(propertyCategory->GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), propertyCategory->GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
     m_propertyCategory = propertyCategory;
     return ECObjectsStatus::Success;
     }
@@ -818,6 +830,18 @@ KindOfQuantityCP ECProperty::GetKindOfQuantity() const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
     {
+    if (nullptr == kindOfQuantity)
+        {
+        m_kindOfQuantity = kindOfQuantity;
+        return ECObjectsStatus::Success;
+        }
+
+    if (&(kindOfQuantity->GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), kindOfQuantity->GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
     if (!isKindOfQuantityCompatible(*this, this->GetBaseProperty(), kindOfQuantity))
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
@@ -1150,12 +1174,18 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
-    {        
+    {
+    if (&(enumerationType.GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
     auto primitiveType = enumerationType.GetType();
     if (m_primitiveType != primitiveType)
         {
         m_primitiveType = primitiveType;        
-        SetCachedTypeAdapter (NULL);
+        SetCachedTypeAdapter (nullptr);
         InvalidateClassLayout();
         }
 
@@ -1759,11 +1789,17 @@ ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveArrayECProperty::SetType (ECEnumerationCR enumerationType)
     {        
+    if (&(enumerationType.GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
     auto primitiveType = enumerationType.GetType();
     if (m_primitiveType != primitiveType)
         {
         m_primitiveType = primitiveType;        
-        SetCachedTypeAdapter (NULL);
+        SetCachedTypeAdapter (nullptr);
         InvalidateClassLayout();
         }
 

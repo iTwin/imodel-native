@@ -201,6 +201,148 @@ TEST_F(PropertyTest, GetSetInheritedCategory)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetCategoryFromReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    PropertyCategoryP propertyCategory;
+    PrimitiveECPropertyP prop;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*refSchema));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreatePropertyCategory(propertyCategory, "TestPropertyCategory");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EC_EXPECT_SUCCESS(prop->SetCategory(propertyCategory));
+
+    EXPECT_STREQ("RefSchema", prop->GetCategory()->GetSchema().GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetCategoryFromNonReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    PropertyCategoryP propertyCategory;
+    PrimitiveECPropertyP prop;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreatePropertyCategory(propertyCategory, "TestPropertyCategory");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    ASSERT_EQ(ECObjectsStatus::SchemaNotFound, prop->SetCategory(propertyCategory));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetKindOfQuantityFromReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    KindOfQuantityP koq;
+    PrimitiveECPropertyP prop;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*refSchema));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreateKindOfQuantity(koq, "TestKoQ");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    EC_EXPECT_SUCCESS(prop->SetKindOfQuantity(koq));
+
+    EXPECT_STREQ("RefSchema", prop->GetKindOfQuantity()->GetSchema().GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetKindOfQuantityFromNonReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    KindOfQuantityP koq;
+    PrimitiveECPropertyP prop;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreateKindOfQuantity(koq, "TestKoQ");
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    ASSERT_EQ(ECObjectsStatus::SchemaNotFound, prop->SetKindOfQuantity(koq));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetEnumerationFromReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    ECEnumerationP enumeration;
+    PrimitiveECPropertyP prop;
+    PrimitiveArrayECPropertyP arrProp;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*refSchema));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreateEnumeration(enumeration, "TestEnum", PRIMITIVETYPE_Integer);
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    entityClass->CreatePrimitiveArrayProperty(arrProp, "TestArrProp");
+    EC_EXPECT_SUCCESS(prop->SetType(*enumeration));
+    EC_EXPECT_SUCCESS(arrProp->SetType(*enumeration));
+
+    EXPECT_STREQ("RefSchema", prop->GetEnumeration()->GetSchema().GetName().c_str());
+    EXPECT_STREQ("RefSchema", arrProp->GetEnumeration()->GetSchema().GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyTest, SetEnumerationFromNonReferencedSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECEntityClassP entityClass;
+    ECEnumerationP enumeration;
+    PrimitiveECPropertyP prop;
+    PrimitiveArrayECPropertyP arrProp;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 1, 0, 0));
+
+    schema->CreateEntityClass(entityClass, "TestClass");
+    refSchema->CreateEnumeration(enumeration, "TestEnum", PRIMITIVETYPE_Integer);
+
+    entityClass->CreatePrimitiveProperty(prop, "TestProp");
+    entityClass->CreatePrimitiveArrayProperty(arrProp, "TestArrProp");
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, prop->SetType(*enumeration));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, arrProp->SetType(*enumeration));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PropertyTest, GetSetPriority)
