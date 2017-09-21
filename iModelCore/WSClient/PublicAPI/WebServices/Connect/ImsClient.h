@@ -42,7 +42,8 @@ struct ImsClient : IImsClient
             JsonValueR params,
             Utf8StringCR rpUri,
             Utf8StringCR stsUrl,
-            uint64_t lifetime
+            uint64_t lifetime,
+            Utf8StringCR pastUsername
             );
 
         static Utf8String GetClientRelyingPartyUriForWtrealm(ClientInfoCR clientInfo);
