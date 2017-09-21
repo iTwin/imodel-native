@@ -586,7 +586,7 @@ private:
                     if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0 && doPreLoad)
                         {
                         ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), processingQueryPtr->m_toLoadNodes[threadId], false);
-                        }
+                         }
                     }
 
                 HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
@@ -646,25 +646,29 @@ private:
                                 
                 //Load unloaded node
                 //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
-                if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
-                    {                    
-                    nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
-                    }
 
-                if (nodePtr != 0)
-                    {       
-                    IScalableMeshCachedDisplayNodePtr meshNodePtr;
+                while (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
+                    {   
+                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
+                        {                    
+                        nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
+                        }
 
-                    LoadNodeDisplayData(meshNodePtr, nodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);                            
+                    if (nodePtr != 0)
+                        {       
+                        IScalableMeshCachedDisplayNodePtr meshNodePtr;
+
+                        LoadNodeDisplayData(meshNodePtr, nodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);                            
                           
-                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
-                    processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
-                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();  
+                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
+                        processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
+                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();  
 
-                    processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-                    processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
-                    processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-                    }                   
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
+                        processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
+                        }                   
+                    }
 
                 size_t m_nbMissed = 0;
                 static size_t MAX_MISSED = 5;

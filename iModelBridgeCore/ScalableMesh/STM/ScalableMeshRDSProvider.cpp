@@ -65,6 +65,15 @@ ScalableMeshRDSProvider::ScalableMeshRDSProvider(const Utf8String& projectGuid, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+ScalableMeshRDSProvider::~ScalableMeshRDSProvider()
+    {
+    if (m_AzureConnection.m_handshake)
+        delete m_AzureConnection.m_handshake;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::_GetAzureURLAddress()
     {
     if (IsTokenExpired()) UpdateToken();
@@ -137,6 +146,15 @@ bool ScalableMeshRDSProvider::IsTokenExpired()
 void ScalableMeshRDSProvider::UpdateToken()
     {
     InitializeRealityDataService();
+
+    // Make sure the server names matches
+    if (nullptr != m_AzureConnection.m_handshake && !m_AzureConnection.m_handshake->GetServerName().Equals(RealityDataService::GetServerName()))
+        {
+        // Unfortunately, AzureHandshake::SetServerName() is a protected function...
+        //m_AzureConnection.m_handshake->SetServerName(RealityDataService::GetServerName());
+        delete m_AzureConnection.m_handshake;
+        m_AzureConnection.m_handshake = nullptr;
+        }
 
     if (nullptr == m_AzureConnection.m_handshake)
         m_AzureConnection.m_handshake = new AzureHandshake(m_PWCSMeshGuid, false /*writeable*/);
