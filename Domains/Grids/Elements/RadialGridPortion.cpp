@@ -35,14 +35,26 @@ T_Super::CreateParams const& params
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RadialGridPortion::RadialGridPortion
+(
+T_Super::CreateParams const& params,
+DVec3d                      normal
+) : T_Super(params, normal) 
+    {
+
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialGridPortionPtr        RadialGridPortion::Create
 (
-Dgn::SpatialLocationModelCR model
+Dgn::SpatialLocationModelCR model,
+DVec3d                      normal
 )
     {
-    return new RadialGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new RadialGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 //---------------------------------------------------------------------------------------

@@ -26,12 +26,13 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchGridPortion : GridPortion
 
 protected:
     explicit GRIDELEMENTS_EXPORT SketchGridPortion (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT SketchGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct SketchGridPortionHandler;
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchGridPortion, GRIDELEMENTS_EXPORT)
 
-    GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model);
+    GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal);
 };
 
 END_GRIDS_NAMESPACE

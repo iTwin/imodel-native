@@ -16,12 +16,14 @@ USING_NAMESPACE_BUILDING
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPortion)
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
+* @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridPortion::GridPortion
 (
-T_Super::CreateParams const& params
+T_Super::CreateParams const& params,
+DVec3d          normal
 ) : T_Super(params) 
     {
     if (!m_categoryId.IsValid () && m_classId.IsValid()) //really odd tests in platform.. attempts to create elements with 0 class id and 0 categoryId. NEEDS WORK: PLATFORM
@@ -31,7 +33,6 @@ T_Super::CreateParams const& params
             DoSetCategoryId (catId);
         }
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -51,7 +52,8 @@ DgnClassId classId
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridPortionPtr                 GridPortion::Create 
 (
-Dgn::DgnModelCR model
+Dgn::DgnModelCR model,
+DVec3d          normal
 )
     {
     return new GridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));

@@ -82,6 +82,7 @@ public:
 
 protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct OrthogonalGridPortionHandler;
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
@@ -105,7 +106,6 @@ protected:
     GRIDELEMENTS_EXPORT static BentleyStatus ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements);
 
 
-    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr Create(Dgn::SpatialLocationModelCR model);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
 
@@ -114,11 +114,19 @@ public:
     //! @return              GridAxisMap containing the grid planes
     GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(CreateParams params);
 
+    //! Creates orthogonal grid
+    //! @param[out] grid    created grid elements
+    //! @param[in]  params  grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[in]  normal  perpendicularity plane of this Grid
+    //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements/dimensions
+    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
+
     //! Creates orthogonal grid and inserts its elements and dimensions to db
     //! @param[out] grid    created grid elements
     //! @param[in]  params  grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements/dimensions
-    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(GridAxisMap& grid, CreateParams params);
+    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(GridAxisMap& grid, CreateParams params, DVec3d normal);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
     //! @param[in] grid             orthogonal grid to rotate

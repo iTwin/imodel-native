@@ -39,7 +39,12 @@ private:
     BE_PROP_NAME (Normal);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params);
+
+    //! creates the GridPortion.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
+    //! @param[in]          params  params for creation
+    //! @param[in]          normal  perpendicularity plane of this Grid
+    explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params) : T_Super (params) {};
+    explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
     friend struct GridPortionHandler;
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
@@ -49,7 +54,7 @@ protected:
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements
     GRIDELEMENTS_EXPORT static BentleyStatus InsertGridMapElements(GridAxisMap elements);
 
-    GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model);
+    GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model, DVec3d normal);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPortion, GRIDELEMENTS_EXPORT)
 
@@ -66,7 +71,6 @@ public:
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
     GRIDELEMENTS_EXPORT DPlane3d    GetPlane ();
-
     
     };
 

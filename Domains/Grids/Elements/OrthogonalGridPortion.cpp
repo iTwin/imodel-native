@@ -22,13 +22,26 @@ USING_NAMESPACE_BUILDING
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion)
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGridPortion::OrthogonalGridPortion
 (
 T_Super::CreateParams const& params
-) : T_Super(params) 
+) : T_Super(params)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OrthogonalGridPortion::OrthogonalGridPortion
+(
+T_Super::CreateParams const& params,
+DVec3d normal
+) : T_Super(params, normal)
     {
 
     }
@@ -38,10 +51,11 @@ T_Super::CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGridPortionPtr        OrthogonalGridPortion::Create
 (
-Dgn::SpatialLocationModelCR model
+Dgn::SpatialLocationModelCR model,
+DVec3d normal
 )
     {
-    return new OrthogonalGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new OrthogonalGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 //---------------------------------------------------------------------------------------
@@ -161,7 +175,7 @@ GridElementVector OrthogonalGridPortion::CreateGridPreview(CreateParams params)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::CreateAndInsert(GridAxisMap& grid, CreateParams params)
+BentleyStatus OrthogonalGridPortion::CreateAndInsert (GridAxisMap& grid, CreateParams params, DVec3d normal)
     {
     GridElementVector horizontalElements = CreateGridElements(params, true);
     GridElementVector verticalElements = CreateGridElements(params, false);

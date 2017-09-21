@@ -23,15 +23,29 @@ T_Super::CreateParams const& params
 
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchGridPortion::SketchGridPortion
+(
+T_Super::CreateParams const& params,
+DVec3d                      normal
+) : T_Super(params, normal) 
+    {
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SketchGridPortionPtr        SketchGridPortion::Create
 (
-Dgn::DgnModelCR model
+Dgn::DgnModelCR model,
+DVec3d          normal
 )
     {
-    return new SketchGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new SketchGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 END_GRIDS_NAMESPACE

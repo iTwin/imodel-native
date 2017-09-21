@@ -70,9 +70,10 @@ public:
 
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct RadialGridPortionHandler;
 
-    GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create(Dgn::SpatialLocationModelCR model);
+    GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create(Dgn::SpatialLocationModelCR model, DVec3d normal);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion, GRIDELEMENTS_EXPORT)
 
