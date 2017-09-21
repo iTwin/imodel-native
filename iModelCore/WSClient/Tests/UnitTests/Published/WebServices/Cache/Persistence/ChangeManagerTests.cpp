@@ -61,7 +61,7 @@ TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObjec
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}});
     // Act
     Json::Value properties;
-    properties["TestProperty"] = "NewValue";
+    properties["testProperty"] = "NewValue";
     cache->GetChangeManager().SetSyncActive(true);
     auto status = cache->GetChangeManager().ModifyObject(instance, properties);
     cache->GetChangeManager().SetSyncActive(false);
@@ -70,7 +70,7 @@ TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObjec
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value instanceJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(instanceJson, instance));
-    EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("NewValue", instanceJson["testProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, DeleteObject_SyncSetToActiveAndDeletingCreatedObject_Error)
@@ -296,7 +296,7 @@ TEST_F(ChangeManagerTests, CreateObject_PropertiesPassed_InstanceSavedToCache)
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     // Act
     Json::Value properties;
-    properties["TestProperty"] = "TestValue";
+    properties["testProperty"] = "TestValue";
     auto instance = cache->GetChangeManager().CreateObject(*testClass, properties);
     // Assert
     ASSERT_TRUE(instance.IsValid());
@@ -304,7 +304,7 @@ TEST_F(ChangeManagerTests, CreateObject_PropertiesPassed_InstanceSavedToCache)
     EXPECT_EQ(1, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
     Json::Value instanceJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(instanceJson, instance));
-    EXPECT_EQ("TestValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("TestValue", instanceJson["testProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, ModifyObject_NotExistingObject_Error)
@@ -327,15 +327,15 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}, {"TestProperty2", "OldValue"}});
     // Act
     Json::Value properties;
-    properties["TestProperty"] = "NewValue";
+    properties["testProperty"] = "NewValue";
     auto status = cache->GetChangeManager().ModifyObject(instance, properties);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value instanceJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(instanceJson, instance));
-    EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
-    EXPECT_EQ("OldValue", instanceJson["TestProperty2"].asString());
+    EXPECT_EQ("NewValue", instanceJson["testProperty"].asString());
+    EXPECT_EQ("OldValue", instanceJson["testProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, ModifyObject_CreatedObject_SuccessAndLeavesStatusCreatedAndSameNumber)
@@ -1411,7 +1411,7 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithProperties_Retu
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     Json::Value properties;
-    properties["TestProperty2"] = "A";
+    properties["testProperty2"] = "A";
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::Value(properties));
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
@@ -1427,7 +1427,7 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStruct
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClassWithStruct");
     Json::Value properties;
-    properties["TestProperty"] = "Foo";
+    properties["testProperty"] = "Foo";
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::Value(properties));
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
@@ -1443,10 +1443,10 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStruct
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClassWithStruct");
     Json::Value properties;
-    properties["TestProperty"] = "A";
-    properties["TestStructProperty"]["TestStringProperty"] = "B";
-    properties["TestStructProperty"]["TestArrayProperty"][0] = "C";
-    properties["TestStructProperty"]["TestArrayProperty"][1] = "D";
+    properties["testProperty"] = "A";
+    properties["testStructProperty"]["testStringProperty"] = "B";
+    properties["testStructProperty"]["testArrayProperty"][0] = "C";
+    properties["testStructProperty"]["testArrayProperty"][1] = "D";
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::Value(properties));
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
@@ -1500,8 +1500,8 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithProperties_Ret
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
     Json::Value properties;
-    properties["TestProperty"] = "A";
-    properties["TestProperty2"] = "NewValue";
+    properties["testProperty"] = "A";
+    properties["testProperty2"] = "NewValue";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::Value(properties)));
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
@@ -1509,7 +1509,7 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithProperties_Ret
     ASSERT_NE(nullptr, revision);
     ASSERT_NE(nullptr, revision->GetChangedProperties());
     Json::Value expected;
-    expected["TestProperty2"] = "NewValue";
+    expected["testProperty2"] = "NewValue";
     EXPECT_EQ(expected, *revision->GetChangedProperties());
     }
 
@@ -2087,7 +2087,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithSameClassAndId_Upda
 
     Json::Value jsonInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance(objectId, jsonInstance));
-    EXPECT_THAT(jsonInstance["TestProperty"], Eq("TestValue"));
+    EXPECT_THAT(jsonInstance["testProperty"], Eq("TestValue"));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "Foo"}), Eq(oldInstanceKey));
 
     EXPECT_THAT(changedKeys, IsEmpty());
@@ -2119,7 +2119,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentClassAndSa
 
     Json::Value jsonInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass2", "Foo"}, jsonInstance));
-    EXPECT_THAT(jsonInstance["TestProperty"], Eq("TestValue"));
+    EXPECT_THAT(jsonInstance["testProperty"], Eq("TestValue"));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "NewId"}), Not(Eq(oldInstanceKey)));
 
     EXPECT_THAT(changedKeys, SizeIs(1));
@@ -2299,22 +2299,22 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_MultipleModifiedObjects_Commit
     {
     // Arrange
     auto cache = GetTestCache();
-    auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "A"}});
-    auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "B"}});
-    auto c = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"}, {{"TestProperty", "C"}});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"A"})")));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"B"})")));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"TestProperty":"C"})")));
+    auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"testProperty", "A"}});
+    auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"testProperty", "B"}});
+    auto c = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"}, {{"testProperty", "C"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"testProperty":"A"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"testProperty":"B"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"testProperty":"C"})")));
 
-    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["TestProperty"]);
-    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, b)["TestProperty"]);
-    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["testProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, b)["testProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["testProperty"]);
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(b);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
     // Assert
-    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["TestProperty"]);
-    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["testProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["testProperty"]);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedObject_RemovesChangeStatus)
@@ -2400,10 +2400,10 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCacheJson(*cache, {"TestSchema.TestClass", "Foo"}, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1", "TestProperty3":"C1"})"));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B2", "TestProperty3":"C1"})")));
+    auto instance = StubInstanceInCacheJson(*cache, {"TestSchema.TestClass", "Foo"}, ToJson(R"({"testProperty":"A1", "testProperty2":"B1", "testProperty3":"C1"})"));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B2", "testProperty3":"C1"})")));
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B2", "TestProperty3":"C2"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B2", "testProperty3":"C2"})")));
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     // Act
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
@@ -2411,7 +2411,7 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(ToJson(R"({"TestProperty3":"C2"})"), properties);
+    EXPECT_EQ(ToJson(R"({"testProperty3":"C2"})"), properties);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasRead_PreservesNewChangesThatChangedSameProperties)
@@ -2419,16 +2419,16 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B1"})")));
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A2", "TestProperty2":"B2"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A2", "testProperty2":"B2"})")));
     // Act
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
     // Assert
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(ToJson(R"({"TestProperty":"A2", "TestProperty2":"B2"})"), properties);
+    EXPECT_EQ(ToJson(R"({"testProperty":"A2", "testProperty2":"B2"})"), properties);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasReadAndCommittedSecondTime_LeavesAsNoChange)
@@ -2436,9 +2436,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A"})")));
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"B"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"B"})")));
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
@@ -2449,7 +2449,7 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     ASSERT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(properties, instance));
-    EXPECT_EQ("B", properties["TestProperty"].asString());
+    EXPECT_EQ("B", properties["testProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectDeletedAfterRevisionWasRead_LeavesAsDeleted)
@@ -2491,9 +2491,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     // Arrange
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto instance = cache->GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})"));
+    auto instance = cache->GetChangeManager().CreateObject(*testClass, ToJson(R"({"testProperty":"A1", "testProperty2":"B1"})"));
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B2"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B2"})")));
     ASSERT_EQ(IChangeManager::ChangeStatus::Created, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     // Act
     revision->SetRemoteId("NewId");
@@ -2502,7 +2502,7 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     ASSERT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(ToJson(R"({"TestProperty2":"B2"})"), properties);
+    EXPECT_EQ(ToJson(R"({"testProperty2":"B2"})"), properties);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevisionWasReadAndCommitedSecondTime_LeavesAsNoChange)
@@ -2510,9 +2510,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     // Arrange
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto instance = cache->GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})"));
+    auto instance = cache->GetChangeManager().CreateObject(*testClass, ToJson(R"({"testProperty":"A1", "testProperty2":"B1"})"));
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B2"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B2"})")));
     ASSERT_EQ(IChangeManager::ChangeStatus::Created, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     revision->SetRemoteId("NewId");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
@@ -2525,8 +2525,8 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "NewId"}).IsInCache());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(properties, instance));
-    EXPECT_EQ("A1", properties["TestProperty"].asString());
-    EXPECT_EQ("B2", properties["TestProperty2"].asString());
+    EXPECT_EQ("A1", properties["testProperty"].asString());
+    EXPECT_EQ("B2", properties["testProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectDeletedAfterRevisionWasRead_LeavesAsDeleted)
@@ -2705,17 +2705,17 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_DeletedRelationship_DoesNotRe
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedPropertyInstance_ReturnsChangedPropertiesOnly)
     {
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"testProperty", "A"}, {"testProperty2", "B"}});
     Json::Value properties;
-    properties["TestProperty"] = "A";
-    properties["TestProperty2"] = "ModifiedValue";
+    properties["testProperty"] = "A";
+    properties["testProperty2"] = "ModifiedValue";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
 
     Json::Value expected;
-    expected["TestProperty2"] = "ModifiedValue";
+    expected["testProperty2"] = "ModifiedValue";
     EXPECT_EQ(expected, modifiedProperties);
     }
 
@@ -2725,14 +2725,14 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_MultipleModifiedInstancesWithS
     auto cache = GetTestCache();
     auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "A"}});
     auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "B"}});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"A"})")));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"B"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"testProperty":"A"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"testProperty":"B"})")));
     // Assert
     Json::Value ca, cb;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(a, ca));
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(b, cb));
-    EXPECT_EQ(Json::Value::GetNull(), ca["TestProperty"]);
-    EXPECT_EQ(Json::Value::GetNull(), cb["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ca["testProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), cb["testProperty"]);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_ReturnsChangedPropertiesOnly)
@@ -2740,15 +2740,15 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_Retu
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
     Json::Value properties;
-    properties["TestProperty"] = "ModifiedValue";
-    properties["TestProperty2"] = "B";
+    properties["testProperty"] = "ModifiedValue";
+    properties["testProperty2"] = "B";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
 
     Json::Value expected;
-    expected["TestProperty"] = "ModifiedValue";
+    expected["testProperty"] = "ModifiedValue";
     EXPECT_EQ(expected, modifiedProperties);
     }
 
@@ -2758,17 +2758,17 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedTwiceToOriginalVersion
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OriginalValue"}});
 
     Json::Value properties;
-    properties["TestProperty"] = "SomeOtherValue";
+    properties["testProperty"] = "SomeOtherValue";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
-    properties["TestProperty"] = "OriginalValue";
+    properties["testProperty"] = "OriginalValue";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
 
     Json::Value expected;
-    expected["TestProperty"] = "OriginalValue";
+    expected["testProperty"] = "OriginalValue";
     EXPECT_EQ(expected, properties);
     }
 
@@ -2777,33 +2777,37 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedInstanceLabel_ReturnsC
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestLabeledClass", "Foo"}, {{"Name", "Old"}});
     Json::Value properties;
-    properties["Name"] = "New";
+    properties["name"] = "New";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
 
     Json::Value expected;
-    expected["Name"] = "New";
+    expected["name"] = "New";
     EXPECT_EQ(expected, modifiedProperties);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModification_ReturnsChangesBetweenLatestAndLocalVersions)
     {
+    //temprorary Solution
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"}, {"TestProperty2", "OldB"}, {"TestProperty3", "OldC"}});
-    auto properties = ToJson(R"({"TestProperty":"OldA", "TestProperty2":"NewB", "TestProperty3":"OtherC"})");
+    auto instance = StubInstanceInCache(*cache, {"testSchema.TestClass", "Foo"}, {{"testProperty", "OldA"}, {"testProperty2", "OldB"}, {"tesTProperty3", "OldC"}});
+    auto properties = ToJson(R"({"testProperty":"OldA", "testProperty2":"NewB", "testProperty3":"OtherC"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
+    Json::Value modifiedProperties1;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties1));
+
     StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewA"}, {"TestProperty2", "NewB"}, {"TestProperty3", "NewC"}});
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"testProperty", "NewA"}, {"testProperty2", "NewB"}, {"testProperty3", "NewC"}});
     ASSERT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
     // Act
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
     // Assert
-    auto expected = ToJson(R"({"TestProperty3":"OtherC"})");
+    auto expected = ToJson(R"({"testProperty3":"OtherC"})");
     EXPECT_EQ(expected, modifiedProperties);
     }
 
@@ -2843,7 +2847,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedAfterInstanceWasCreate
     auto instance = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
 
     Json::Value properties;
-    properties["TestProperty"] = "SomeOtherValue";
+    properties["testProperty"] = "SomeOtherValue";
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
     Json::Value modifiedProperties;
@@ -2932,15 +2936,15 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstance_RevertsToCached
     {
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B1"})")));
 
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().RevertModifiedObject(instance));
 
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(properties, instance));
-    EXPECT_EQ("A", properties["TestProperty"].asString());
-    EXPECT_EQ("B", properties["TestProperty2"].asString());
+    EXPECT_EQ("A", properties["testProperty"].asString());
+    EXPECT_EQ("B", properties["testProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, RevertModifiedObject_MultipleModifiedObjects_RemovesChangeForSpecifiedObjectOnly)
@@ -2950,22 +2954,22 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_MultipleModifiedObjects_RemovesC
     auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "OldA"}});
     auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldB"}});
     auto c = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"}, {{"TestProperty", "OldC"}});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"NewA"})")));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"NewB"})")));
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"TestProperty":"NewC"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"testProperty":"NewA"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"testProperty":"NewB"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"testProperty":"NewC"})")));
     // Act
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().RevertModifiedObject(b));
     // Assert
-    EXPECT_EQ("NewA", ReadInstance(*cache, a)["TestProperty"].asString());
-    EXPECT_EQ("OldB", ReadInstance(*cache, b)["TestProperty"].asString());
-    EXPECT_EQ("NewC", ReadInstance(*cache, c)["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, a)["testProperty"].asString());
+    EXPECT_EQ("OldB", ReadInstance(*cache, b)["testProperty"].asString());
+    EXPECT_EQ("NewC", ReadInstance(*cache, c)["testProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Error)
     {
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"testProperty":"A1", "testProperty2":"B1"})")));
 
     cache->GetChangeManager().SetSyncActive(true);
     BeTest::SetFailOnAssert(false);
@@ -2976,8 +2980,8 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Er
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(properties, instance));
-    EXPECT_EQ("A1", properties["TestProperty"].asString());
-    EXPECT_EQ("B1", properties["TestProperty2"].asString());
+    EXPECT_EQ("A1", properties["testProperty"].asString());
+    EXPECT_EQ("B1", properties["testProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotExistingInstance_Error)
