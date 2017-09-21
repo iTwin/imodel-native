@@ -43,7 +43,7 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1_241"/>
     </Part>
     <Part Name="PsolidShimIos" OnlyPlatforms="iOSARM64,iOSx64" WipPartEnable="ParasolidIos">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha1"/>
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha2"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
