@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/JsonUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,6 +21,11 @@ void JsonUtil::RemoveECMembers(JsonValueR instanceJson)
         {
         if (!memberName.empty() && '$' == memberName[0])
             {
+            instanceJson.removeMember(memberName);
+            }
+        //Todo: Needs update
+        if (memberName == "id" || memberName == "className" || memberName == "sourceId" || memberName == "sourceClassName" || memberName == "targetId" || memberName == "targetClassName")
+             {
             instanceJson.removeMember(memberName);
             }
         }
@@ -292,6 +297,7 @@ bool JsonUtil::StringValuesEqual(RapidJsonValueCR a, RapidJsonValueCR b)
 
     const UTF8<>::Ch* const str1 = a.GetString();
     const UTF8<>::Ch* const str2 = b.GetString();
+    
     if (str1 == str2)
         {
         return true;
