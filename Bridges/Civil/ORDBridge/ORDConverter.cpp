@@ -143,6 +143,7 @@ private:
     ORDAlignmentsConverter(DgnDbSync::DgnV8::ConverterLibrary& converterLib, TransformCR unitsScaleTransform);
 
     BentleyStatus Marshal(CurveVectorPtr& bimCurveVector, Bentley::CurveVectorCR v8CurveVector);
+    BentleyStatus MarshalVertical(CurveVectorPtr& bimCurveVector, Bentley::CurveVectorCR v8CurveVector);
     BentleyStatus CreateNewBimVerticalAlignment(ProfileCR, AlignmentBim::AlignmentCR alignment,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
         AlignmentBim::VerticalAlignmentCPtr& verticalAlignment);
@@ -182,6 +183,67 @@ BentleyStatus ORDAlignmentsConverter::Marshal(CurveVectorPtr& bimCurveVectorPtr,
     DgnDbSync::DgnV8::Converter::ConvertCurveVector(bimCurveVectorPtr, v8CurveVector, &m_unitsScaleTransform);
     if (!bimCurveVectorPtr->TransformInPlace(m_unitsScaleTransform))
         return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+static DPoint3d SwapYZ(DPoint3dCR source) { return DPoint3d::From(source.x, source.z, source.y); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDAlignmentsConverter::MarshalVertical(CurveVectorPtr& bimCurveVectorXZPtr, Bentley::CurveVectorCR v8CurveVector)
+    {
+    CurveVectorPtr bimCurveVectorXYPtr;
+    DgnDbSync::DgnV8::Converter::ConvertCurveVector(bimCurveVectorXYPtr, v8CurveVector, nullptr); // TODO: CIF seems to return horizontal and vertical points in different units
+
+    bimCurveVectorXZPtr = CurveVector::Create((CurveVector::BoundaryType) bimCurveVectorXYPtr->GetBoundaryType());
+
+    for (ICurvePrimitivePtr bimCurve : *bimCurveVectorXYPtr)
+        {
+        if (!bimCurve.IsValid())
+            continue;
+
+        switch (bimCurve->GetCurvePrimitiveType())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                {
+                DSegment3dCP segment = (DSegment3dCP) bimCurve->GetLineCP();
+
+                DPoint3d start, end;
+                segment->GetEndPoints(start, end);
+                bimCurveVectorXZPtr->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(SwapYZ(start), SwapYZ(end))));
+                break;
+                }
+
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                bvector<DPoint3d> const* bimPoints = bimCurve->GetLineStringCP();
+                bvector<DPoint3d> points;
+
+                for (auto const& bim : *bimPoints)
+                    points.push_back(SwapYZ(bim));
+
+                if (points.size() > 1)
+                    bimCurveVectorXZPtr->push_back(ICurvePrimitive::CreateLineString(points));
+                break;
+                }
+
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+                {
+                MSBsplineCurveCP bcurve = (MSBsplineCurveCP) bimCurve->GetProxyBsplineCurveCP();
+
+                bimCurveVectorXZPtr->push_back(BentleyApi::ICurvePrimitive::CreateBsplineCurve(*bcurve));
+                break;
+                }
+
+            default:
+                {
+                BeAssert(false && "Unexpected entry in CurveVector.");
+                break;
+                }
+            }
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -311,7 +373,7 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
         return BentleyStatus::ERROR;
 
     CurveVectorPtr bimVertGeometryPtr;
-    if (BentleyStatus::SUCCESS != Marshal(bimVertGeometryPtr, *vertGeometryPtr))
+    if (BentleyStatus::SUCCESS != MarshalVertical(bimVertGeometryPtr, *vertGeometryPtr))
         return BentleyStatus::ERROR;
 
     AlignmentBim::VerticalAlignmentModelPtr verticalModelPtr;
@@ -352,7 +414,7 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignmen
         dynamic_cast<AlignmentBim::HorizontalAlignmentP>(alignmentCPtr->QueryHorizontal()->CopyForEdit().get());
 
     CurveVectorPtr bimHorizGeometryPtr;
-    if (BentleyStatus::SUCCESS != Marshal(bimHorizGeometryPtr, *horizGeometryPtr))
+    if (BentleyStatus::SUCCESS != MarshalVertical(bimHorizGeometryPtr, *horizGeometryPtr))
         return BentleyStatus::ERROR;
 
     horizAlignmentPtr->SetGeometry(*bimHorizGeometryPtr);
@@ -397,8 +459,6 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
     if (activeProfilePtr.IsValid())
         activeProfileId = activeProfilePtr->GetSyncId();
 
-    auto mainVerticalId = alignment.QueryMainVerticalId();
-
     auto cifProfilesPtr = cifAlignment.GetProfiles();
     while (cifProfilesPtr.IsValid() && cifProfilesPtr->MoveNext())
         {
@@ -416,7 +476,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
             }
         else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == profileChange.GetChangeType())
             {
-            return CreateNewBimVerticalAlignment(*cifProfilePtr, alignment, changeDetector, profileChange, verticalAlignmCPtr);
+            CreateNewBimVerticalAlignment(*cifProfilePtr, alignment, changeDetector, profileChange, verticalAlignmCPtr);
             }
         else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == profileChange.GetChangeType())
             {
@@ -429,7 +489,8 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
             if (verticalAlignmCPtr.IsNull())
                 verticalAlignmCPtr = AlignmentBim::VerticalAlignment::Get(alignment.GetDgnDb(), profileChange.GetSyncInfoRecord().GetDgnElementId());
 
-            AlignmentBim::Alignment::SetMainVertical(alignment, *verticalAlignmCPtr);
+            if (verticalAlignmCPtr.IsValid())
+                AlignmentBim::Alignment::SetMainVertical(alignment, *verticalAlignmCPtr);
             }
         }
 
