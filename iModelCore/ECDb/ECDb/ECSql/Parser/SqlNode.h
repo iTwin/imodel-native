@@ -123,15 +123,11 @@ namespace connectivity
     class OOO_DLLPUBLIC_DBTOOLS OSQLParseNode
         {
         friend class OSQLParser;
-
-        OSQLParseNodes                    m_aChildren;
-        OSQLParseNode*                     m_pParent;        // pParent fuer Reuckverkettung im Baum
-        Utf8String                          m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
-        // Utf8String, INT, usw. -Werten
-        SQLNodeType                     m_eNodeType;    // s. o.
-        sal_uInt32                        m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
-        // ::com::sun::star::chaos::Rule IDs und Token IDs koennen nicht anhand des Wertes
-        // unterschieden werden, dafuer ist IsRule() abzufragen!
+        OSQLParseNodes m_aChildren;
+        OSQLParseNode* m_pParent;        // pParent fuer Reuckverkettung im Baum
+        Utf8String m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
+        SQLNodeType m_eNodeType;    // s. o.
+        sal_uInt32 m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
 
         public:
             enum Rule

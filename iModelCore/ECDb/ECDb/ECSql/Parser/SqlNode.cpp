@@ -40,21 +40,6 @@
 //#include <com/sun/star/beans/XPropertySet.hpp>
 //#include <com/sun/star/sdbc/XDatabaseMetaData.hpp>
 #include "DataType.h"
-//#include <com/sun/star/sdb/XQueriesSupplier.hpp>
-//#include <com/sun/star/sdb/ErrorCondition.hpp>
-//#include <com/sun/star/util/XNumberFormatter.hpp>
-//#include <com/sun/star/util/XNumberFormatsSupplier.hpp>
-//#include <com/sun/star/util/XNumberFormats.hpp>
-//#include <com/sun/star/util/NumberFormat.hpp>
-//#include <com/sun/star/util/XNumberFormatTypes.hpp>
-//#include <com/sun/star/lang/Locale.hpp>
-//#include <com/sun/star/i18n/KParseType.hpp>
-//#include <com/sun/star/i18n/KParseTokens.hpp>
-//#include "connectivity/dbconversion.hxx"
-//#include <com/sun/star/util/DateTime.hpp>
-//#include <com/sun/star/util/Time.hpp>
-//#include <com/sun/star/util/Date.hpp>
-//#include "TConnection.hxx"
 #include "SqlScan.h"
 //#include <comphelper/numbers.hxx>
 //#include <comphelper/processfactory.hxx>
@@ -83,9 +68,9 @@ using namespace ::dbtools;
 using namespace ::comphelper;
 
 
-extern int SQLyyparse(void);
+extern int SQLyyparse(connectivity::OSQLParser*);
 extern Utf8String ConvertLikeToken(const ::connectivity::OSQLParseNode* pTokenNode, const ::connectivity::OSQLParseNode* pEscapeNode, sal_Bool bInternational);
-extern void setParser(::connectivity::OSQLParser*);
+//extern void setParser(::connectivity::OSQLParser*);
 
 namespace
     {
@@ -778,73 +763,32 @@ namespace connectivity
         const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
         const RefCountedPtr< XPropertySet > & xField)
         {
-
-        // must be reset
-        setParser(this);
-
         // reset the parser
         m_xField = xField;
         m_xFormatter = xFormatter;
-
+        m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(rStatement.c_str(), m_pContext, sal_True));
         if (m_xField.IsValid())
             {
-
-            if (m_xFormatter.IsValid())
-                {
-                //           try
-                //           {
-                ///*               RefCountedPtr< ::com::sun::star::util::XNumberFormatsSupplier >  xFormatSup = m_xFormatter->getNumberFormatsSupplier();
-                //               if ( xFormatSup.IsValid() )
-                //               {
-                //                   RefCountedPtr< ::com::sun::star::util::XNumberFormats >  xFormats = xFormatSup->getNumberFormats();
-                //                   if ( xFormats.IsValid() )
-                //                   {
-                //                       ::com::sun::star::lang::Locale aLocale;
-                //                       aLocale.Language = Utf8String(RTL_CONSTASCII_USTRINGPARAM("en"));
-                //                       aLocale.Country = Utf8String(RTL_CONSTASCII_USTRINGPARAM("US"));
-                //                       Utf8String sFormat(RTL_CONSTASCII_USTRINGPARAM("YYYY-MM-DD"));
-                //                       m_nDateFormatKey = xFormats->queryKey(sFormat,aLocale,sal_False);
-                //                       if ( m_nDateFormatKey == sal_Int32(-1) )
-                //                           m_nDateFormatKey = xFormats->addNew(sFormat, aLocale);
-                //                   }
-                //               }
-                //*/           }
-                //           catch ( Exception& )
-                //           {
-                //               OSL_ENSURE(0,"DateFormatKey");
-                //           }
-                }
-
-
-            TODO_ConvertCode();
             }
         else
-            s_pScanner->SetRule(s_pScanner->GetSQLRule());
+            m_scanner->SetRule(m_scanner->GetSQLRule());
 
-        s_pScanner->prepareScan(rStatement, m_pContext, sal_True);
-
-        SQLyylval.pParseNode = NULL;
+       // SQLyylval->pParseNode = NULL;
         //    SQLyypvt = NULL;
         m_pParseTree = NULL;
         m_sErrorMessage = Utf8String();
-
-        // ... und den Parser anwerfen ...
-        if (SQLyyparse() != 0)
+        if (SQLyyparse(this) != 0)
             {
             m_sFieldName = Utf8String();
-            /*   m_xField.clear();
-               m_xFormatter.clear();
-               */     m_nFormatKey = 0;
+            m_nFormatKey = 0;
             m_nDateFormatKey = 0;
 
             if (!m_sErrorMessage.size())
-                m_sErrorMessage = s_pScanner->getErrorMessage();
+                m_sErrorMessage = m_scanner->getErrorMessage();
             if (!m_sErrorMessage.size())
                 m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
 
             rErrorMessage = m_sErrorMessage;
-
-            // clear the garbage collector
             (*s_pGarbageCollector)->clearAndDelete();
             return NULL;
             }
@@ -884,14 +828,13 @@ namespace connectivity
         SQLyydebug = 1;
 #endif
 
-        setParser(this);
+        //setParser(this);
 
 
         // do we have to initialize the data
         if (s_nRefCount == 0)
             {
-            s_pScanner = new OSQLScanner();
-            s_pScanner->setScanner();
+         
             s_pGarbageCollector = new OSQLParseNodesGarbageCollector(new OSQLParseNodesContainer());
 
             //if(!s_xLocaleData.IsValid())
@@ -1051,9 +994,6 @@ namespace connectivity
         OSL_ENSURE(s_nRefCount > 0, "OSQLParser::~OSQLParser() : suspicious call : have a refcount of 0 !");
         if (!--s_nRefCount)
             {
-            s_pScanner->setScanner(sal_True);
-            delete s_pScanner;
-            s_pScanner = NULL;
 
             delete s_pGarbageCollector;
             s_pGarbageCollector = NULL;

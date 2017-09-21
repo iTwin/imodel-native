@@ -49,7 +49,7 @@
 #endif
 
 }
-%define api.pure full
+
 %{
 static Utf8String aEmptyString;
 
@@ -74,23 +74,23 @@ static connectivity::OSQLInternalNode* newNode(const Utf8String& _NewValue,
 #define SQL_NEW_COMMALISTRULE   newNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
 #define SQL_NEW_DOTLISTRULE   newNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
 
-
-connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
-
 #if !(defined MACOSX && defined PPC)
 #define YYERROR_VERBOSE
 #endif
 
-#define SQLyyerror(s)                        \
-{                                            \
-    xxx_pGLOBAL_SQLPARSER->error(s);        \
-}
+#define SQLyyerror(alloc, context, s) \
+    {                                 \
+    context->error(s);                \
+    }
 
 using namespace connectivity;
-#define SQLyylex xxx_pGLOBAL_SQLPARSER->SQLlex
+#define SQLyylex context->SQLlex
 %}
     /* symbolic tokens */
 
+%define api.pure full
+%locations
+%parse-param { connectivity::OSQLParser* context }
 %union {
     connectivity::OSQLParseNode * pParseNode;
 }
@@ -249,9 +249,9 @@ using namespace connectivity;
  */
 sql_single_statement:
         sql
-        { xxx_pGLOBAL_SQLPARSER->setParseTree( $1 ); }
+        { context->setParseTree( $1 ); }
     |    sql ';'
-        { xxx_pGLOBAL_SQLPARSER->setParseTree( $1 ); }
+        { context->setParseTree( $1 ); }
     ;
 
     /* schema definition language */
@@ -782,10 +782,10 @@ comparison_predicate:
         }
     |    comparison row_value_constructor
         {
-            if(xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // comparison_predicate: rule 2
+            if(context->inPredicateCheck()) // comparison_predicate: rule 2
             {
                 $$ = SQL_NEW_RULE;
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule($$,$2,$1);
+                sal_Int16 nErg = context->buildPredicateRule($$,$2,$1);
                 if(nErg == 1)
                 {
                     OSQLParseNode* pTemp = $$;
@@ -821,11 +821,11 @@ comparison:
 between_predicate_part_2:
     sql_not SQL_TOKEN_BETWEEN row_value_constructor SQL_TOKEN_AND row_value_constructor
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // between_predicate: rule 2 
+            if (context->inPredicateCheck()) // between_predicate: rule 2 
             {
                 $$ = SQL_NEW_RULE;
                 
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule($$,$3,$2,$5);
+                sal_Int16 nErg = context->buildPredicateRule($$,$3,$2,$5);
                 if(nErg == 1)
                 {
                     OSQLParseNode* pTemp = $$;
@@ -899,17 +899,17 @@ like_predicate:
         }
     |    character_like_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())  // like_predicate: rule 5
+            if (context->inPredicateCheck())  // like_predicate: rule 5
             {
                 OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                pColumnRef->append(newNode(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
                 $$->append($1);
                 OSQLParseNode* p2nd = $1->removeAt(2);
                 OSQLParseNode* p3rd = $1->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule($1,p2nd,p3rd) )
+                if ( !context->buildLikeRule($1,p2nd,p3rd) )
                 {
                     delete $$;
                     YYABORT;
@@ -921,17 +921,17 @@ like_predicate:
         }
     |    other_like_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // like_predicate: rule 6
+            if (context->inPredicateCheck()) // like_predicate: rule 6
             {
                 OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                pColumnRef->append(newNode(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
                 $$->append($1);
                 OSQLParseNode* p2nd = $1->removeAt(2);
                 OSQLParseNode* p3rd = $1->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule($1,p2nd,p3rd) )
+                if ( !context->buildLikeRule($1,p2nd,p3rd) )
                 {
                     delete $$;
                     YYABORT;
@@ -969,10 +969,10 @@ test_for_null:
         }
     |    null_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())// test_for_null: rule 2
+            if (context->inPredicateCheck())// test_for_null: rule 2
             {
                 OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                pColumnRef->append(newNode(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
@@ -1012,10 +1012,10 @@ in_predicate:
         }
     |    in_predicate_part_2
         {
-            if ( xxx_pGLOBAL_SQLPARSER->inPredicateCheck() )// in_predicate: rule 2
+            if ( context->inPredicateCheck() )// in_predicate: rule 2
             {
                 OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                pColumnRef->append(newNode(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
@@ -1122,48 +1122,48 @@ literal:
 /*    rules for predicate check */
     |    literal SQL_TOKEN_STRING
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_INT
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_REAL_NUM
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_APPROXNUM
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
@@ -2110,7 +2110,7 @@ value_exp_commalist:
     /*    this rule is only valid if we check predicates */
     |   value_exp_commalist ';' value_exp
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $1->append($3);
                 $$ = $1;
@@ -2157,7 +2157,7 @@ function_args_commalist:
     /*    this rule is only valid if we check predicates */
     |   function_args_commalist ';' function_arg
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $1->append($3);
                 $$ = $1;
@@ -2463,7 +2463,7 @@ property_path:
 				{
 				if (last->getFirst()->getNodeType() == SQL_NODE_PUNCTUATION) //'*'
 					{
-					SQLyyerror("'*' can only occur at the end of property path\n");
+					SQLyyerror(nullptr, context, "'*' can only occur at the end of property path\n");
 					YYERROR;
 					}
 				}
@@ -2649,7 +2649,7 @@ range_variable:
 sql:
         search_condition /* checking predicats */
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // sql: rule 1
+            if (context->inPredicateCheck()) // sql: rule 1
             {
                 $$ = $1;
                 if ( SQL_ISRULE($$,search_condition) )
@@ -2988,14 +2988,7 @@ OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
 sal_Int32                  OSQLParser::s_nRefCount    = 0;
-OSQLScanner*            OSQLParser::s_pScanner = 0;
-OSQLParseNodesGarbageCollector*        OSQLParser::s_pGarbageCollector = 0;
 RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
-//-----------------------------------------------------------------------------
-void setParser(OSQLParser* _pParser)
-{
-    xxx_pGLOBAL_SQLPARSER = _pParser;
-}
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
 {
@@ -3068,51 +3061,30 @@ OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
                                      Utf8String const& rStatement,
                                      sal_Bool bInternational)
 {
-
-
-    // must be reset
-    setParser(this);
-
     // delete comments before parsing
     Utf8String sTemp = delComment(rStatement);
     // defines how to scan
-    s_pScanner->SetRule(s_pScanner->GetSQLRule()); // initial
-    s_pScanner->prepareScan(sTemp, m_pContext, bInternational);
-
-    SQLyylval.pParseNode = NULL;
+    m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(rStatement.c_str(), m_pContext, sal_True));
+    m_scanner->SetRule(m_scanner->GetSQLRule()); // initial
+    //SQLyylval.pParseNode = NULL;
     //    SQLyypvt = NULL;
     m_pParseTree = NULL;
     m_sErrorMessage = Utf8String();
 
     // ... und den Parser anwerfen ...
-    if (SQLyyparse() != 0)
+    if (SQLyyparse(this) != 0)
     {
         // only set the error message, if it's not already set
         if (!m_sErrorMessage.size())
-            m_sErrorMessage = s_pScanner->getErrorMessage();
+            m_sErrorMessage = m_scanner->getErrorMessage();
         if (!m_sErrorMessage.size())
             m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
 
         rErrorMessage = m_sErrorMessage;
-
-        // clear the garbage collector
-        (*s_pGarbageCollector)->clearAndDelete();
         return NULL;
     }
     else
     {
-        (*s_pGarbageCollector)->clear();
-
-        // Das Ergebnis liefern (den Root Parse Node):
-
-        //    OSL_ENSURE(Sdbyyval.pParseNode != NULL,"OSQLParser: Parser hat keinen ParseNode geliefert");
-        //    return Sdbyyval.pParseNode;
-        // geht nicht wegen Bug in MKS YACC-erzeugtem Code (es wird ein falscher ParseNode
-        // geliefert).
-
-        // Stattdessen setzt die Parse-Routine jetzt den Member pParseTree
-        // - einfach diesen zurueckliefern:
-        OSL_ENSURE(m_pParseTree != NULL,"OSQLParser: Parser hat keinen ParseTree geliefert");
         return m_pParseTree;
     }
 }
@@ -3310,7 +3282,7 @@ void OSQLParser::error( const sal_Char* fmt)
         else
             m_sErrorMessage = sStr;
 
-        Utf8String aError = s_pScanner->getErrorMessage();
+        Utf8String aError = m_scanner->getErrorMessage();
         if(aError.size())
         {
             m_sErrorMessage += ", ";
@@ -3319,9 +3291,9 @@ void OSQLParser::error( const sal_Char* fmt)
     }
 }
 // -------------------------------------------------------------------------
-int OSQLParser::SQLlex()
+int OSQLParser::SQLlex(void*,void*)
 {
-    return s_pScanner->SQLlex();
+    return m_scanner->SQLlex();
 }
 
 #if defined __SUNPRO_CC

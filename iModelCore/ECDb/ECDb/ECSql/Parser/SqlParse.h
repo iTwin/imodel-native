@@ -142,26 +142,24 @@ namespace connectivity
         private:
             typedef ::std::map< sal_uInt32, OSQLParseNode::Rule >   RuleIDMap;
             //    static parts for parsers
-            static sal_uInt32           s_nRuleIDs[OSQLParseNode::rule_count + 1];
-            static RuleIDMap            s_aReverseRuleIDLookup;
-            static OParseContext        s_aDefaultContext;
+            static sal_uInt32 s_nRuleIDs[OSQLParseNode::rule_count + 1];
+            static RuleIDMap s_aReverseRuleIDLookup;
+            static OParseContext s_aDefaultContext;
 
-            static OSQLScanner*                     s_pScanner;
-            static OSQLParseNodesGarbageCollector*  s_pGarbageCollector;
-            static sal_Int32                        s_nRefCount;
+            std::unique_ptr<OSQLScanner> m_scanner;
+            static OSQLParseNodesGarbageCollector* s_pGarbageCollector;
+            static sal_Int32 s_nRefCount;
 
             // informations on the current parse action
-            const IParseContext*        m_pContext;
-            OSQLParseNode*              m_pParseTree;    // result from parsing
-            Utf8String                     m_sFieldName;    // current field name for a predicate
-            Utf8String                     m_sErrorMessage;// current error msg
+            const IParseContext* m_pContext;
+            OSQLParseNode* m_pParseTree;    // result from parsing
+            Utf8String m_sFieldName;    // current field name for a predicate
+            Utf8String m_sErrorMessage;// current error msg
 
-            RefCountedPtr< ::com::sun::star::beans::XPropertySet >
-                m_xField;        // current field
-            RefCountedPtr< ::com::sun::star::util::XNumberFormatter >
-                m_xFormatter;    // current number formatter
-            sal_Int32                   m_nFormatKey;    // numberformat, which should be used
-            sal_Int32                   m_nDateFormatKey;
+            RefCountedPtr< ::com::sun::star::beans::XPropertySet > m_xField;        // current field
+            RefCountedPtr< ::com::sun::star::util::XNumberFormatter > m_xFormatter;    // current number formatter
+            sal_Int32 m_nFormatKey;    // numberformat, which should be used
+            sal_Int32 m_nDateFormatKey;
             RefCountedPtr< ::com::sun::star::lang::XMultiServiceFactory >    m_xServiceFactory;
             RefCountedPtr< ::com::sun::star::i18n::XCharacterClassification> m_xCharClass;
             static RefCountedPtr< ::com::sun::star::i18n::XLocaleData>       s_xLocaleData;
@@ -226,7 +224,7 @@ namespace connectivity
             static sal_Int32 getFunctionParameterType (sal_uInt32 _nTokenId, sal_uInt32 _nPos);
 
             void error (const sal_Char* pFormat);
-            int SQLlex ();
+            int SQLlex (void*,void*);
             //#ifdef YYBISON
             void setParseTree (OSQLParseNode * pNewParseTree);
 

@@ -27,6 +27,11 @@
 #include "IParseContext.h"
 #include "SqlTypes.h"
 
+#ifndef YY_TYPEDEF_YY_SCANNER_T
+#define YY_TYPEDEF_YY_SCANNER_T
+typedef void* yyscan_t;
+#endif
+
 namespace connectivity
     {
     //==========================================================================
@@ -36,56 +41,44 @@ namespace connectivity
     */
     class OOO_DLLPUBLIC_DBTOOLS OSQLScanner
         {
-        const IParseContext*    m_pContext;                    // context for parse, knows all international stuff
-        Utf8String                m_sStatement;                // statement to parse
-        Utf8String                    m_sErrorMessage;
-
-        sal_Int32                m_nCurrentPos;             // next position to read from the statement
-        sal_Bool                m_bInternational;           // do we have a statement which may uses
-        sal_Int32                m_nRule;                   // rule to be set
+        private:
+            const IParseContext* m_pContext; // context for parse, knows all international stuff
+            const Utf8String m_sStatement; // statement to parse
+            Utf8String m_sErrorMessage;
+            sal_Int32 m_nCurrentPos; // next position to read from the statement
+            sal_Bool m_bInternational; // do we have a statement which may uses
+            sal_Int32 m_nRule; // rule to be set
 
         public:
-            OSQLScanner ();
-            virtual ~OSQLScanner ();
+            yyscan_t  yyscanner; //do not add m_ with this var as it used in macros;
 
-            inline static void * SAL_CALL operator new(size_t nSize) SAL_THROW (())
-                {
-                return malloc (nSize);
-                }
-            inline static void * SAL_CALL operator new(size_t, void* _pHint) SAL_THROW (())
-                {
-                return _pHint;
-                }
-            inline static void SAL_CALL operator delete(void * pMem) SAL_THROW (())
-                {
-                free (pMem);
-                }
-            inline static void SAL_CALL operator delete(void *, void*) SAL_THROW (())
-                {  }
+        public:
+            OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
+            virtual ~OSQLScanner();
 
-            virtual sal_Int32 SQLyygetc (void);
-            virtual void SQLyyerror (const char *fmt);
-            virtual void output (sal_Int32) { OSL_ASSERT ("Internal error in sdblex.l: output not possible"); }
-            virtual void ECHO (void) { OSL_ASSERT ("Internal error in sdblex.l: ECHO not possible"); }
-            virtual IParseContext::InternationalKeyCode getInternationalTokenID (const char* sToken) const;
-
+            inline static void * SAL_CALL operator new(size_t nSize) SAL_THROW(()) { return malloc(nSize); }
+            inline static void * SAL_CALL operator new(size_t, void* _pHint) SAL_THROW(()) { return _pHint; }
+            inline static void SAL_CALL operator delete(void * pMem) SAL_THROW(()) { free(pMem); }
+            inline static void SAL_CALL operator delete(void *, void*) SAL_THROW(()) {}
+            virtual void SQLyyerror(const char *fmt);
+            virtual void output(sal_Int32) { OSL_ASSERT("Internal error in sdblex.l: output not possible"); }
+            virtual void ECHO(void) { OSL_ASSERT("Internal error in sdblex.l: ECHO not possible"); }
+            virtual IParseContext::InternationalKeyCode getInternationalTokenID(const char* sToken) const;
             // setting the new information before scanning
-            void prepareScan (const Utf8String & rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
-            const Utf8String& getErrorMessage () const { return m_sErrorMessage; }
-            Utf8String getStatement () const { return m_sStatement; }
-
-            sal_Int32 SQLlex ();
+            const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
+            sal_Int32 SQLyygetc(void);
+            Utf8String getStatement() const { return m_sStatement; }
+            sal_Int32 SQLlex();
             // set this as scanner for flex
-            void setScanner (sal_Bool _bNull = sal_False);
             // rules settings
-            void SetRule (sal_Int32 nRule) { m_nRule = nRule; }
-            sal_Int32    GetCurrentRule () const;
-            sal_Int32    GetGERRule () const;
-            sal_Int32    GetENGRule () const;
-            sal_Int32    GetSQLRule () const;
-            sal_Int32    GetDATERule () const;
-            sal_Int32    GetSTRINGRule () const;
-            inline sal_Int32 GetCurrentPos () const { return m_nCurrentPos; }
+            void SetRule(sal_Int32 nRule) { m_nRule = nRule; }
+            sal_Int32    GetCurrentRule() const;
+            sal_Int32    GetGERRule() const;
+            sal_Int32    GetENGRule() const;
+            sal_Int32    GetSQLRule() const;
+            sal_Int32    GetDATERule() const;
+            sal_Int32    GetSTRINGRule() const;
+            inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
         };
     }
 
