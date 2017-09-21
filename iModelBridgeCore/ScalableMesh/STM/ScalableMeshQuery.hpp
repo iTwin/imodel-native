@@ -1224,6 +1224,14 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             }
         }
 
+    DPoint3d*       toLoadPoints = 0;
+    size_t          toLoadNbPoints = 0;
+    int32_t*        toLoadFaceIndexes = 0;
+    size_t          toLoadNbFaceIndexes = 0;
+    DPoint2d*        toLoadUv = 0;
+    const int32_t*  toLoadUvIndex = 0;
+    size_t          toLoadUvCount = 0;
+
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
 
     if (flags->ShouldLoadGraph())
@@ -1273,29 +1281,82 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             vector<DPoint3d> dataPoints(pointsPtr->size());
             pointsPtr->get(&dataPoints[0], dataPoints.size());
 
-            int status = meshPtr->AppendMesh(pointsPtr->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
-                                               
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes;            
+            vector<int32_t> dataFaceIndexes;
+            vector<int32_t> dataUVIndexes;
+            vector<DPoint2d> dataUVCoords;
+
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices;
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes;
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords;
 
             if (flags->ShouldLoadIndices())
                 {
-                faceIndexes = m_meshNode->GetPtsIndicePtr();            
+                ptIndices = m_meshNode->GetPtsIndicePtr();
+                dataFaceIndexes.resize(ptIndices->size());
+                if (ptIndices->size() > 0) ptIndices->get(&dataFaceIndexes[0], dataFaceIndexes.size());
                 }
             
             if (flags->ShouldLoadTexture())
                 {
                 assert(flags->ShouldLoadIndices() == true);
-                uvIndexes = m_meshNode->GetUVsIndicesPtr();
-                uvCoords = m_meshNode->GetUVCoordsPtr();
+                if ((uvIndexes = m_meshNode->GetUVsIndicesPtr()) != nullptr)
+                    {
+                    dataUVIndexes.resize(uvIndexes->size());
+                    if (uvIndexes->size() > 0) uvIndexes->get(&dataUVIndexes[0], dataUVIndexes.size());
+                    }
+
+                if ((uvCoords = m_meshNode->GetUVCoordsPtr()) != nullptr)
+                    {
+                    dataUVCoords.resize(uvCoords->size());
+                    if (uvCoords->size() > 0) uvCoords->get(&dataUVCoords[0], dataUVCoords.size());
+                    }
                 }
 
-            if (faceIndexes.IsValid() && faceIndexes->size() > 0)
+            bool clipsLoaded = false;
+            if (flags->ShouldLoadClips())
                 {
-                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, uvCoords.IsValid()? uvCoords->size() : 0,
-                                             uvCoords.IsValid() && uvCoords->size() > 0 ? &(*uvCoords)[0] : 0,
-                                             uvIndexes.IsValid() && uvIndexes->size() > 0 ? &(*uvIndexes)[0] : 0);
+                m_meshNode->ComputeMergedClips();
+                uint64_t clipId = 0;
+                if (m_meshNode->HasClip(clipId))
+                    {
+                    for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                        {
+                        if (diffSet.clientID == clipId)
+                            {
+                            diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                                           toLoadUv, toLoadUvIndex, toLoadUvCount, 
+                                                           dataPoints.data(), dataPoints.size(),
+                                                           dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                           dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                            clipsLoaded = true;
+                            }
+                        }
+
+                    }
+                }
+
+            if (!clipsLoaded)
+                {
+                toLoadPoints = dataPoints.data();
+                toLoadNbPoints = dataPoints.size();
+                if (ptIndices.IsValid() && ptIndices->size() > 0)
+                    {
+                    toLoadFaceIndexes = dataFaceIndexes.data();
+                    toLoadNbFaceIndexes = dataFaceIndexes.size();
+                    }
+                if (uvCoords.IsValid())
+                    {
+                    toLoadUv = dataUVCoords.data();
+                    toLoadUvIndex = dataUVIndexes.data();
+                    toLoadUvCount = dataUVCoords.size();
+                    }
+                }
+
+            int status = meshPtr->AppendMesh(toLoadNbPoints, toLoadPoints, 0, 0, 0, 0, 0, 0, 0, 0);
+
+            if (ptIndices.IsValid() && ptIndices->size() > 0)
+                {
+                status = meshPtr->AppendMesh(0, 0, toLoadNbFaceIndexes, toLoadFaceIndexes, 0, 0, 0, toLoadUvCount, toLoadUv, toLoadUvIndex);
                 }
             
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
@@ -1330,6 +1391,200 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     return meshP;    
     }
 
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clipId, bool isClipBoundary) const
+    {
+    LOAD_NODE
+
+        auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+
+    IScalableMeshMeshPtr meshP;
+    if (flags->ShouldSaveToCache())
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>> poolMemItemPtr;
+        if (SMMemoryPool::GetInstance()->GetItem<IScalableMeshMeshPtr>(poolMemItemPtr, m_meshNode->m_smMeshPoolItemId, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex))
+            {
+            return *(poolMemItemPtr->GetData());
+            }
+        }
+
+    DPoint3d*       toLoadPoints = 0;
+    size_t          toLoadNbPoints = 0;
+    int32_t*        toLoadFaceIndexes = 0;
+    size_t          toLoadNbFaceIndexes = 0;
+    DPoint2d*        toLoadUv = 0;
+    const int32_t*  toLoadUvIndex = 0;
+    size_t          toLoadUvCount = 0;
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
+
+    if (flags->ShouldLoadGraph())
+        {
+        //        m_meshNode->PinGraph();
+#ifdef SCALABLE_MESH_ATP
+        int64_t loadAttempts;
+        int64_t loadMisses;
+        IScalableMeshATP::GetInt(L"nOfGraphLoadAttempts", loadAttempts);
+        IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
+        loadAttempts++;
+#endif
+
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+#ifdef SCALABLE_MESH_ATP
+        IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", loadAttempts);
+        IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", loadMisses);
+#endif
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
+
+        ScalableMeshMeshWithGraphPtr meshPtr;
+        if (graphPtr->GetSize() > 1)
+            meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
+        else
+            {
+            MTGGraph * graph = new MTGGraph();
+            bvector<int> componentPointsId;
+            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+
+            meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
+            }
+
+
+
+        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+        assert(status == SUCCESS);
+        meshP = meshPtr.get();
+        }
+    else
+        {
+        //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly  
+
+        if (pointsPtr->size() > 0)
+            {
+            ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
+
+            vector<DPoint3d> dataPoints(pointsPtr->size());
+            pointsPtr->get(&dataPoints[0], dataPoints.size());
+
+            vector<int32_t> dataFaceIndexes;
+            vector<int32_t> dataUVIndexes;
+            vector<DPoint2d> dataUVCoords;
+
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices;
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes;
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords;
+
+            if (flags->ShouldLoadIndices())
+                {
+                ptIndices = m_meshNode->GetPtsIndicePtr();
+                dataFaceIndexes.resize(ptIndices->size());
+                if (ptIndices->size() > 0) ptIndices->get(&dataFaceIndexes[0], dataFaceIndexes.size());
+                }
+
+            if (flags->ShouldLoadTexture())
+                {
+                assert(flags->ShouldLoadIndices() == true);
+                if ((uvIndexes = m_meshNode->GetUVsIndicesPtr()) != nullptr)
+                    {
+                    dataUVIndexes.resize(uvIndexes->size());
+                    if (uvIndexes->size() > 0) uvIndexes->get(&dataUVIndexes[0], dataUVIndexes.size());
+                    }
+
+                if ((uvCoords = m_meshNode->GetUVCoordsPtr()) != nullptr)
+                    {
+                    dataUVCoords.resize(uvCoords->size());
+                    if (uvCoords->size() > 0) uvCoords->get(&dataUVCoords[0], dataUVCoords.size());
+                    }
+                }
+
+            bool mustAppendDefaultMesh = true;
+            if (flags->ShouldLoadClips())
+                {
+                const DifferenceSet* clipDiffSet = nullptr;
+                bool anythingToApply = false;
+                mustAppendDefaultMesh = false;
+                if (m_meshNode->m_nbClips > 0)
+                    {
+                    m_meshNode->ComputeMergedClips();
+                    if (clipId == 0 || m_meshNode->HasClip(clipId))
+                        {
+                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                            {
+                            if (diffSet.clientID == clipId)
+                                {
+                                anythingToApply = true;
+                                clipDiffSet = &diffSet;
+                                }
+                            }
+                        }
+                    }
+
+                if (anythingToApply)
+                    {
+                    clipDiffSet->ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                        dataPoints.data(), dataPoints.size(),
+                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                    }
+                else
+                    {
+                    mustAppendDefaultMesh = !isClipBoundary;
+                    }
+                }
+            if (mustAppendDefaultMesh)
+                {
+                toLoadPoints = dataPoints.data();
+                toLoadNbPoints = dataPoints.size();
+                if (ptIndices.IsValid() && ptIndices->size() > 0)
+                    {
+                    toLoadFaceIndexes = dataFaceIndexes.data();
+                    toLoadNbFaceIndexes = dataFaceIndexes.size();
+                    }
+                if (uvCoords.IsValid())
+                    {
+                    toLoadUv = dataUVCoords.data();
+                    toLoadUvIndex = dataUVIndexes.data();
+                    toLoadUvCount = dataUVCoords.size();
+                    }
+                }
+
+            int status = meshPtr->AppendMesh(toLoadNbPoints, toLoadPoints, 0, 0, 0, 0, 0, 0, 0, 0);
+
+            if (ptIndices.IsValid() && ptIndices->size() > 0)
+                {
+                status = meshPtr->AppendMesh(0, 0, toLoadNbFaceIndexes, toLoadFaceIndexes, 0, 0, 0, toLoadUvCount, toLoadUv, toLoadUvIndex);
+                }
+
+            if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
+                {
+                return nullptr;
+                }
+
+            assert(status == SUCCESS || m_node->GetNbPoints() == 0);
+
+
+            if (flags->ShouldPrecomputeBoxes())
+                meshPtr->StoreTriangleBoxes();
+            meshP = meshPtr.get();
+            }
+        }
+
+    if (meshP == nullptr || ((meshP->GetNbFaces() == 0) && flags->ShouldLoadIndices())) return nullptr;
+
+    if (flags->ShouldSaveToCache())
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API   
+            new SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>(new IScalableMeshMeshPtr(meshP), 0, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<IScalableMeshMeshPtr>::CreateItem(new IScalableMeshMeshPtr(meshP), 0, m_meshNode->GetBlockID().m_integerID, SMStoreDataType::Mesh3D, (uint64_t)m_meshNode->m_SMIndex)
+#endif
+        );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+        m_meshNode->m_smMeshPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        }
+
+    return meshP;
+    }
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clipId) const
     {
@@ -1585,115 +1840,115 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
     m_loadedTexture = __super::_GetTexture();                 
     }
 
-typedef struct {float x, y;} FloatXY;
-typedef struct {float x, y, z;} FloatXYZ;
-
-inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints, 
-                                   int32_t*& faceIndexes, size_t& nbFaceIndexes, 
-                                   FloatXY*& pUv, const int32_t*& pUvIndex, size_t& uvCount,
-                                   FloatXYZ const* inPoints, size_t inNbPoints, 
-                                   int32_t const*  inFaceIndexes, size_t inNbFaceIndexes, 
-                                   const DPoint2d* pInUv, const int32_t* pInUvIndex, size_t inUvCount, 
-                                   const DifferenceSet& d, 
-                                   const DPoint3d& ptTranslation)
-    {       
-    points = new FloatXYZ[d.addedVertices.size() + inNbPoints];    
-
-    for (size_t ind = inNbPoints; ind < d.addedVertices.size() + inNbPoints; ind++)    
-        {
-        points[ind].x = (float)(d.addedVertices[ind - inNbPoints].x - ptTranslation.x);
-        points[ind].y = (float)(d.addedVertices[ind - inNbPoints].y - ptTranslation.y);
-        points[ind].z = (float)(d.addedVertices[ind - inNbPoints].z - ptTranslation.z);        
-        }
-    
-    if (inNbPoints > 0)
-        {
-        memcpy(points, inPoints, sizeof(FloatXYZ) * inNbPoints);        
-        }    
-
-    if (d.addedUvIndices.size() > 0)
-        {
-        pUv = new FloatXY[d.addedUvs.size() + inUvCount];
-
-        for (size_t ind = inUvCount; ind < d.addedUvs.size() + inUvCount; ind++)
-            {
-            pUv[ind].x = d.addedUvs[ind - inUvCount].x;
-            pUv[ind].y = d.addedUvs[ind - inUvCount].y;
-            }
-        
-        if (inUvCount > 0)
-            {
-            for (size_t ind = 0; ind < inUvCount; ind++)
-                {
-                pUv[ind].x = pInUv[ind].x;
-                pUv[ind].y = pInUv[ind].y;
-                }            
-            }
-                
-        for (size_t uvI = 0; uvI < d.addedUvs.size() + inUvCount; ++uvI)
-            { 
-            if (pUv[uvI].x < 0)  pUv[uvI].x = 0;
-            if (pUv[uvI].y < 0)  pUv[uvI].y = 0;
-            if (pUv[uvI].x > 1)  pUv[uvI].x = 1;
-            if (pUv[uvI].y > 1)  pUv[uvI].y = 1;
-            }
-        }
-    else if (pInUvIndex)
-        {        
-        pUvIndex = 0;
-        }
-
-    if (d.addedFaces.size() >= 3 && d.addedFaces.size() < 1024 * 1024)
-        {
-        size_t newMaxNIndexes = d.addedFaces.size();
-        int32_t* newfaceIndexes = new int32_t[newMaxNIndexes];
-        size_t newNIndexes = 0;
-        int32_t* newUvIndices = d.addedUvIndices.size() > 0? new int32_t[newMaxNIndexes] : nullptr;
-        for (int i = 0; i + 2 < d.addedFaces.size(); i += 3)
-            {
-            if (!(d.addedFaces[i] - 1 >= 0 && d.addedFaces[i] - 1 < inNbPoints + d.addedVertices.size() && d.addedFaces[i + 1] - 1 >= 0 && d.addedFaces[i + 1] - 1 < inNbPoints + d.addedVertices.size()
-                && d.addedFaces[i + 2] - 1 >= 0 && d.addedFaces[i + 2] - 1 < inNbPoints + d.addedVertices.size()))
-                {
-#if SM_TRACE_CLIP_MESH
-                std::string s;
-                s += "INDICES " + std::to_string(d.addedFaces[i]) + " " + std::to_string(d.addedFaces[i + 1]) + " " + std::to_string(d.addedFaces[i + 2]);
-#endif
-                continue;
-                }
-             assert(d.addedFaces[i] - 1 >= 0 && d.addedFaces[i] - 1 < inNbPoints + d.addedVertices.size() && d.addedFaces[i + 1] - 1 >= 0 && d.addedFaces[i + 1] - 1 < inNbPoints + d.addedVertices.size()
-            && d.addedFaces[i + 2] - 1 >= 0 && d.addedFaces[i + 2] - 1 < inNbPoints + d.addedVertices.size());
-            for (size_t j = 0; j < 3 && newNIndexes <newMaxNIndexes; ++j)
-                {
-                int32_t idx = (int32_t)(d.addedFaces[i + j] >= d.firstIndex ? d.addedFaces[i + j] - d.firstIndex + inNbPoints + 1 : d.addedFaces[i + j]);
-                assert(idx > 0 && idx <= inNbPoints + d.addedVertices.size());
-                newfaceIndexes[newNIndexes] = idx;
-
-                if (d.addedUvIndices.size() > 0)
-                    {
-                    if (i + j > d.addedUvIndices.size()) newUvIndices[newNIndexes] = 1;
-                    newUvIndices[newNIndexes] = d.addedUvIndices[i + j] + (int32_t)inUvCount;
-                    assert(newUvIndices[newNIndexes] <= inUvCount + d.addedUvs.size());
-                    }
-                newNIndexes++;
-                }
-            }
-        nbFaceIndexes = newNIndexes;        
-        faceIndexes = newfaceIndexes;
-        if (d.addedUvIndices.size() > 0)
-            {            
-            pUvIndex = newUvIndices;
-            }
-        }
-    else
-        {
-        nbFaceIndexes = 0;        
-        faceIndexes = nullptr;
-        }
-
-    nbPoints = inNbPoints + d.addedVertices.size();
-
-    if (d.addedUvIndices.size() > 0) uvCount = inUvCount + d.addedUvs.size();
-    }
+//typedef struct {float x, y;} FloatXY;
+//typedef struct {float x, y, z;} FloatXYZ;
+//
+//inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints, 
+//                                   int32_t*& faceIndexes, size_t& nbFaceIndexes, 
+//                                   FloatXY*& pUv, const int32_t*& pUvIndex, size_t& uvCount,
+//                                   FloatXYZ const* inPoints, size_t inNbPoints, 
+//                                   int32_t const*  inFaceIndexes, size_t inNbFaceIndexes, 
+//                                   const DPoint2d* pInUv, const int32_t* pInUvIndex, size_t inUvCount, 
+//                                   const DifferenceSet& d, 
+//                                   const DPoint3d& ptTranslation)
+//    {       
+//    points = new FloatXYZ[d.addedVertices.size() + inNbPoints];    
+//
+//    for (size_t ind = inNbPoints; ind < d.addedVertices.size() + inNbPoints; ind++)    
+//        {
+//        points[ind].x = (float)(d.addedVertices[ind - inNbPoints].x - ptTranslation.x);
+//        points[ind].y = (float)(d.addedVertices[ind - inNbPoints].y - ptTranslation.y);
+//        points[ind].z = (float)(d.addedVertices[ind - inNbPoints].z - ptTranslation.z);        
+//        }
+//    
+//    if (inNbPoints > 0)
+//        {
+//        memcpy(points, inPoints, sizeof(FloatXYZ) * inNbPoints);        
+//        }    
+//
+//    if (d.addedUvIndices.size() > 0)
+//        {
+//        pUv = new FloatXY[d.addedUvs.size() + inUvCount];
+//
+//        for (size_t ind = inUvCount; ind < d.addedUvs.size() + inUvCount; ind++)
+//            {
+//            pUv[ind].x = d.addedUvs[ind - inUvCount].x;
+//            pUv[ind].y = d.addedUvs[ind - inUvCount].y;
+//            }
+//        
+//        if (inUvCount > 0)
+//            {
+//            for (size_t ind = 0; ind < inUvCount; ind++)
+//                {
+//                pUv[ind].x = pInUv[ind].x;
+//                pUv[ind].y = pInUv[ind].y;
+//                }            
+//            }
+//                
+//        for (size_t uvI = 0; uvI < d.addedUvs.size() + inUvCount; ++uvI)
+//            { 
+//            if (pUv[uvI].x < 0)  pUv[uvI].x = 0;
+//            if (pUv[uvI].y < 0)  pUv[uvI].y = 0;
+//            if (pUv[uvI].x > 1)  pUv[uvI].x = 1;
+//            if (pUv[uvI].y > 1)  pUv[uvI].y = 1;
+//            }
+//        }
+//    else if (pInUvIndex)
+//        {        
+//        pUvIndex = 0;
+//        }
+//
+//    if (d.addedFaces.size() >= 3 && d.addedFaces.size() < 1024 * 1024)
+//        {
+//        size_t newMaxNIndexes = d.addedFaces.size();
+//        int32_t* newfaceIndexes = new int32_t[newMaxNIndexes];
+//        size_t newNIndexes = 0;
+//        int32_t* newUvIndices = d.addedUvIndices.size() > 0? new int32_t[newMaxNIndexes] : nullptr;
+//        for (int i = 0; i + 2 < d.addedFaces.size(); i += 3)
+//            {
+//            if (!(d.addedFaces[i] - 1 >= 0 && d.addedFaces[i] - 1 < inNbPoints + d.addedVertices.size() && d.addedFaces[i + 1] - 1 >= 0 && d.addedFaces[i + 1] - 1 < inNbPoints + d.addedVertices.size()
+//                && d.addedFaces[i + 2] - 1 >= 0 && d.addedFaces[i + 2] - 1 < inNbPoints + d.addedVertices.size()))
+//                {
+//#if SM_TRACE_CLIP_MESH
+//                std::string s;
+//                s += "INDICES " + std::to_string(d.addedFaces[i]) + " " + std::to_string(d.addedFaces[i + 1]) + " " + std::to_string(d.addedFaces[i + 2]);
+//#endif
+//                continue;
+//                }
+//             assert(d.addedFaces[i] - 1 >= 0 && d.addedFaces[i] - 1 < inNbPoints + d.addedVertices.size() && d.addedFaces[i + 1] - 1 >= 0 && d.addedFaces[i + 1] - 1 < inNbPoints + d.addedVertices.size()
+//            && d.addedFaces[i + 2] - 1 >= 0 && d.addedFaces[i + 2] - 1 < inNbPoints + d.addedVertices.size());
+//            for (size_t j = 0; j < 3 && newNIndexes <newMaxNIndexes; ++j)
+//                {
+//                int32_t idx = (int32_t)(d.addedFaces[i + j] >= d.firstIndex ? d.addedFaces[i + j] - d.firstIndex + inNbPoints + 1 : d.addedFaces[i + j]);
+//                assert(idx > 0 && idx <= inNbPoints + d.addedVertices.size());
+//                newfaceIndexes[newNIndexes] = idx;
+//
+//                if (d.addedUvIndices.size() > 0)
+//                    {
+//                    if (i + j > d.addedUvIndices.size()) newUvIndices[newNIndexes] = 1;
+//                    newUvIndices[newNIndexes] = d.addedUvIndices[i + j] + (int32_t)inUvCount;
+//                    assert(newUvIndices[newNIndexes] <= inUvCount + d.addedUvs.size());
+//                    }
+//                newNIndexes++;
+//                }
+//            }
+//        nbFaceIndexes = newNIndexes;        
+//        faceIndexes = newfaceIndexes;
+//        if (d.addedUvIndices.size() > 0)
+//            {            
+//            pUvIndex = newUvIndices;
+//            }
+//        }
+//    else
+//        {
+//        nbFaceIndexes = 0;        
+//        faceIndexes = nullptr;
+//        }
+//
+//    nbPoints = inNbPoints + d.addedVertices.size();
+//
+//    if (d.addedUvIndices.size() > 0) uvCount = inUvCount + d.addedUvs.size();
+//    }
 
 
 #define QV_RGBA_FORMAT   0
@@ -2136,6 +2391,14 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         }
                     }
 
+                auto const& extent = meshNode->GetContentExtent();
+                DPoint3d point = DPoint3d::From(336951.048, 4732062.981, 306.845);
+                if (!ExtentPointOp<Extent3dType, DPoint3d>::IsPointOutterIn3D(extent, point))
+                    {
+                    int i = 0;
+                    i++;
+                    }
+
                 DifferenceSet clipDiffSet;
                 bool isClipped = false;
                 bvector<uint64_t> appliedClips;
@@ -2147,13 +2410,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     if (anythingToApply) 
                         {
-                        ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints,
+                        clipDiffSet.ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints,
                                            toLoadFaceIndexes, toLoadNbFaceIndexes,
                                            toLoadUv, toLoadUvIndex, toLoadUvCount,
                                            &dataPoints[0], dataPoints.size(),
                                            indicesP, nbFaceIndices,
                                            uvPtr, uvIndicesP, nbUvs,
-                                           clipDiffSet,
                                            centroid);
 
 #ifndef NDEBUG

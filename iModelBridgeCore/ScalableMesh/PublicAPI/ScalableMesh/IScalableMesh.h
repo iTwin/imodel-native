@@ -143,6 +143,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool          _IsCesium3DTiles() = 0;
 
+        virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
+
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
         virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) = 0;
@@ -202,7 +204,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr) const = 0;
+        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
@@ -329,6 +331,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 
+        BENTLEY_SM_EXPORT Utf8String    GetProjectWiseContextShareLink();
+
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
         BENTLEY_SM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
@@ -447,7 +451,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr) const;
+        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, bool withClips = false) const;
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 

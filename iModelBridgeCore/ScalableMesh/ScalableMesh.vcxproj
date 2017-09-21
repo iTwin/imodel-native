@@ -451,7 +451,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="STM\ISMDataStore.h" />
     <ClInclude Include="STM\ISMDataStore.hpp" />
-    <ClInclude Include="stm\MapBoxTextureProvider.h" />
     <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\RasterUtilities.h" />
     <ClInclude Include="stm\ReprojectionModel.h" />
@@ -567,6 +566,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="stm\Stores\SMStreamedSourceStore.hpp" />
     <ClInclude Include="STM\Stores\SMStreamingDataStore.h" />
     <ClInclude Include="STM\Stores\SMStreamingDataStore.hpp" />
+    <ClInclude Include="STM\StreamTextureProvider.h" />
     <ClInclude Include="STM\Threading\LightThreadPool.h" />
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
@@ -644,7 +644,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="STM\ImportPlugins\PODImporter_dgndb.cpp" />
-    <ClCompile Include="stm\MapboxTextureProvider.cpp" />
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
@@ -731,6 +730,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
+    <ClCompile Include="STM\StreamTextureProvider.cpp" />
     <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />

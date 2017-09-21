@@ -241,7 +241,8 @@ bool ScalableMeshProgress::_AddListener(const IScalableMeshProgressListener& lis
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshProgress::_UpdateListeners()
     {
-    m_listener->CheckContinueOnProgress(this);
+	if(m_listener != nullptr)
+		m_listener->CheckContinueOnProgress(this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -132,9 +132,10 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
     //    }
     }
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
     : SMSQLiteSisterFile(nullptr),
-      m_settings(settings)
+      m_settings(settings),
+      m_smRDSProvider(smRDSProvider)
     {
     m_transform.InitIdentity();
 
@@ -178,7 +179,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceAccount::AccountKey               account_key;
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
-    std::unique_ptr<std::function<string()>> wsgCallback = nullptr;
     std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
@@ -204,44 +204,23 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         account_name = L"LocalFileAccount";
         account_prefix = DataSourceURL(settings->GetURL().c_str());
         }
-    else if (!settings->IsPublic())
-        {
-        service_name = L"DataSourceServiceWSG";
-        account_name = L"WSGAccount";
-        account_prefix = DataSourceURL(settings->GetURL().c_str());
-        account_identifier = settings->GetServerID().c_str();
-
-        Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
-        assert(!tokenUtf8.empty());
-
-        account_key = WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str(); // WSG token in this case
-
-        sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
-        assert(!sslCertificatePath.empty());
-
-        wsgCallback.reset(new std::function<string()>([]() -> std::string
-            {
-            return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
-            }));
-        }
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
         //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
         account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
-        BeFileName url(settings->GetURL().c_str());
+
+        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([this](const Utf8String& docGuid) -> std::string
+            {
+            return m_smRDSProvider->GetToken().c_str();
+            }));
+
+        BeFileName url(m_smRDSProvider->GetAzureURLAddress());
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
         account_prefix = DataSourceURL(settings->GetGUID().c_str());
-        account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
-        account_identifier = settings->GetServerID().c_str();
-
-        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
-            {
-            if (ScalableMesh::ScalableMeshLib::IsInitialized())
-                return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
-            return std::string();
-            }));
+        auto firstSeparatorPos = url.find(L".");
+        account_identifier = DataSourceAccount::AccountIdentifier(url.substr(8, firstSeparatorPos - 8).c_str());
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -269,7 +248,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-    if (wsgCallback != nullptr) account->setWSGTokenGetterCallback(*wsgCallback.get());
     if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
     account->setPrefixPath(account_prefix);
@@ -1120,12 +1098,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
@@ -1349,9 +1329,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             }
 
         if (nodeHeader.isMember("nodeCount")) header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
-        //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
-        header->m_arePoints3d = true; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
-        //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
+
+        header->m_arePoints3d = nodeHeader.isMember("arePoints3d") ? nodeHeader["arePoints3d"].asBool() : false;
 
         //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
 
@@ -2489,11 +2468,12 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
 
         if (m_tileData.textureSize > 3 * sizeof(uint32_t))
             {
+            int nbChannels = 3;
             m_tileData.textureOffset = m_tileData.uvOffset + m_tileData.numUvs * sizeof(DPoint2d);
             m_tileData.m_textureData = reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
             memcpy(m_tileData.m_textureData, &imageWidth, sizeof(uint32_t));
             memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
-            memset(m_tileData.m_textureData + 2 * sizeof(uint32_t), 0, sizeof(uint32_t));
+            memcpy(m_tileData.m_textureData + 2 * sizeof(nbChannels), &nbChannels, sizeof(nbChannels));
 
             // Decompress texture
             try {

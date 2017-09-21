@@ -51,6 +51,8 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             m_textureGeneratorPtr = textureGenerator;        
             }
 
+        virtual Utf8String _GetProjectID() const { return Utf8String(); }
+
     #ifdef VANCOUVER_API
         virtual DgnModelRefP _GetActiveModelRef() const
             {
@@ -60,55 +62,6 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 		//virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const;
     #endif
 };
-
-struct WsgTokenAdmin
-    {
-    private:
-        std::function<Utf8String(void)> m_getToken;
-
-    public:
-    WsgTokenAdmin() {}
-    WsgTokenAdmin(std::function<Utf8String(void)> tokenGetter)
-        : m_getToken(tokenGetter)
-        {}
-    Utf8String GetToken()
-        {
-        return m_getToken();
-        }
-    };
-
-struct SASTokenAdmin
-    {
-    private:
-        typedef std::function<Utf8String(const Utf8String& guid)> TokenFromGUID;
-        TokenFromGUID m_getToken;
-
-    public:
-        SASTokenAdmin() {}
-        SASTokenAdmin(TokenFromGUID tokenGetter)
-            : m_getToken(tokenGetter)
-            {}
-        Utf8String GetToken(const Utf8String& guid)
-            {
-            return m_getToken(guid);
-            }
-    };
-
-struct SSLCertificateAdmin
-    {
-    private:
-        std::function<Utf8String(void)> m_getSSLCertificatePath;
-
-    public:
-        SSLCertificateAdmin() {}
-        SSLCertificateAdmin(std::function<Utf8String(void)> SSLCertificatePathGetter)
-            : m_getSSLCertificatePath(SSLCertificatePathGetter)
-            {}
-        Utf8String GetSSLCertificatePath()
-            {
-            return m_getSSLCertificatePath();
-            }
-    };
 
 #ifdef VANCOUVER_API
 struct STMAdmin

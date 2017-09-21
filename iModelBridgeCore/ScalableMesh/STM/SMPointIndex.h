@@ -1096,7 +1096,7 @@ protected:
     /**----------------------------------------------------------------------------
     Publishes node header and point data in Cesium 3D tile format.
     -----------------------------------------------------------------------------*/
-    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
+    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, const uint64_t& clipID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1595,6 +1595,16 @@ public:
         return m_isCanceled;
         }
 
+    void SetRootNodeGroup(SMNodeGroupPtr rootNodeGroup)
+        {
+        m_rootNodeGroup = rootNodeGroup;
+        }
+
+    SMNodeGroupPtr     GetRootNodeGroup()
+        {
+        return m_rootNodeGroup;
+        }
+
     void               SetProgressCallback(IScalableMeshProgressPtr progress);
 
     IScalableMeshProgressPtr m_progress = nullptr;
@@ -1653,6 +1663,7 @@ protected:
 
     std::atomic<bool>       m_isCanceled;
 
+    SMNodeGroupPtr m_rootNodeGroup = nullptr;
 
     //progress info
     bvector<size_t> m_countsOfNodesAtLevel;

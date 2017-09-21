@@ -29,9 +29,6 @@ public:
         protected:
 
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
-            WsgTokenAdmin*                m_wsgTokenAdmin;
-            SASTokenAdmin*                m_sasTokenAdmin;
-            SSLCertificateAdmin*          m_sslCertificateAdmin;
 
 #ifdef VANCOUVER_API
 			STMAdmin*    m_stmAdmin; 
@@ -41,12 +38,6 @@ public:
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
-
-            BENTLEY_SM_EXPORT virtual WsgTokenAdmin& _SupplyWsgTokenAdmin();
-
-            BENTLEY_SM_EXPORT virtual SASTokenAdmin& _SupplySASTokenAdmin();
-
-            BENTLEY_SM_EXPORT virtual SSLCertificateAdmin& _SupplySSLCertificateAdmin();
 
 #ifdef VANCOUVER_API
 			BENTLEY_SM_EXPORT virtual STMAdmin& _SupplySTMAdmin();
@@ -58,9 +49,7 @@ public:
                 }
 
             ScalableMeshAdmin&      GetScalableMeshAdmin()              { return *m_scalableTerrainModelAdmin; }
-            WsgTokenAdmin&          GetWsgTokenAdmin()                  { return *m_wsgTokenAdmin; }
-            SASTokenAdmin&          GetSASTokenAdmin()                  { return *m_sasTokenAdmin; }
-            SSLCertificateAdmin&    GetSSLCertificateAdmin()            { return *m_sslCertificateAdmin; }
+
 #ifdef VANCOUVER_API
 			STMAdmin&    GetSTMAdmin() { return *m_stmAdmin; }
 #endif           

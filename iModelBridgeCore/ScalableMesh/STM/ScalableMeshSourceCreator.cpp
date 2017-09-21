@@ -511,6 +511,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_IMPORT_SOURCE;
     GetProgress()->ProgressStepIndex() = 1;
     GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
@@ -525,6 +526,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
 #ifdef SCALABLE_MESH_ATP
     s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
     s_getNbImportedPoints = pDataIndex->m_nbInputPoints;
@@ -551,6 +553,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_BALANCE;
     GetProgress()->ProgressStepIndex() = 2;
     GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
     if (pDataIndex->GetRootNode() == 0)
         {
 #ifdef SCALABLE_MESH_ATP
@@ -572,6 +575,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
 #ifdef SCALABLE_MESH_ATP
     s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -584,6 +588,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_MESH;
     GetProgress()->ProgressStepIndex() = 3;
     GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
     if (s_mesh)
         {
         // Mesh data             
@@ -592,6 +597,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP
@@ -608,6 +614,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
         GetProgress()->ProgressStepIndex() = 4;
         GetProgress()->Progress() = 0.0;
+		GetProgress()->UpdateListeners();
 
         CachedDataEventTracer::GetInstance()->start();
 
@@ -640,6 +647,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             }
 
         GetProgress()->Progress() = 1.0;
+		GetProgress()->UpdateListeners();
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = s_getLastStitchingDuration / CLOCKS_PER_SEC / 60.0;
         s_getLastFilteringDuration = s_getLastFilteringDuration / CLOCKS_PER_SEC / 60.0;
@@ -685,10 +693,12 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
     GetProgress()->Progress() = 0.0;
     GetProgress()->ProgressStepIndex() = 5;
+	GetProgress()->UpdateListeners();
     ImportRasterSourcesTo(pDataIndex);
     ApplyEditsFromSources(pDataIndex);
 
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
 #ifdef ACTIVATE_TEXTURE_DUMP
     pDataIndex->DumpAllNodeTextures();
 #endif
@@ -705,6 +715,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_SAVE;
     GetProgress()->ProgressStepIndex() = 6;
     GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
 
     pDataIndex->Store();
     m_smSQLitePtr->Save();
@@ -712,6 +723,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     pDataIndex = 0;
 
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
 
     if (RasterUtilities::s_rasterMemPool != nullptr)
         {

@@ -24,6 +24,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ScalableMesh\IScalableMeshRDSProvider.h>
 #include "ScalableMeshDraping.h"
 
 /*----------------------------------------------------------------------+
@@ -210,6 +211,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         Transform                     m_reprojectionTransform; //approximation of reprojection used for live transforms.
 
+        IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
+
+
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
 
@@ -263,6 +267,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool          _IsTextured() override;
 
         virtual bool          _IsCesium3DTiles() override;
+
+        virtual Utf8String    _GetProjectWiseContextShareLink() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -330,7 +336,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const override;
+        virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const override;
         virtual void                               _ImportTerrainSM(WString terrainPath) override;
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
@@ -445,6 +451,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual bool           _IsCesium3DTiles() override { return false; }
 
+        virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
+
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
@@ -533,7 +541,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
         
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
-        virtual int                    _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const override { return ERROR; }
+        virtual int                    _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {};
         virtual IScalableMeshPtr                    _GetTerrainSM() override
             {

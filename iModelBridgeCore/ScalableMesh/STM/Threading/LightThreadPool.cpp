@@ -1,6 +1,8 @@
 #include "ScalableMeshPCH.h" 
 #include "../ImagePPHeaders.h"
+#include <ScalableMesh/IScalableMeshProgress.h>
 #include "LightThreadPool.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -112,7 +114,7 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
     }
 
 
-void WaitForThreadStop()
+void WaitForThreadStop(IScalableMeshProgress* p)
     {
     bool notAllThreadsStopped = true;
     while (notAllThreadsStopped)
@@ -121,6 +123,7 @@ void WaitForThreadStop()
         std::thread* arrayT = LightThreadPool::GetInstance()->m_threads;
         volatile uint64_t ptr = (uint64_t)arrayT;
         ptr = ptr;
+		if (p != nullptr) p->UpdateListeners();
         for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
             {
             if (!LightThreadPool::GetInstance()->m_areThreadsBusy[t] || !LightThreadPool::GetInstance()->m_threads[t].joinable()) ++n;

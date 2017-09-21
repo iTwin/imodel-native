@@ -7574,7 +7574,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
             }        
         }
         if (m_nodeHeader.m_level == 0 && s_useThreadsInFiltering)
-            WaitForThreadStop();
+            WaitForThreadStop(m_SMIndex->m_progress.get());
     // Now filtering can be performed using the sub-nodes filtered data. This data
     // accessed using the HPMPooledVector interface the Node is a descendant of.
     // Do not hesitate to increase the HPMPooledVector interface if required.
@@ -7888,7 +7888,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     GetRootNode()->SaveGroupedNodeHeaders(group, nullptr /*no progress*/);
 
     // Handle all open groups 
-    strategy->SaveAllOpenGroups();
+    strategy->SaveAllOpenGroups(true /*save root*/);
 
     // Save group master file which contains info about all the generated groups (groupID and blockID)
     BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());

@@ -467,7 +467,7 @@ private:
     IScalableMeshFrom3MXGCSHandler& m_gcsHandler;
     IScalableMeshProgressPtr m_progressHandler;
 
-    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float& dataResolution, float beginProgress, float endProgress)
+    SMFrom3MXStatus ConvertRecursive(BeFileName filename, IScalableMeshNodeEditPtr scParentNode, DRange3d& contentExtent, float& dataResolution, float beginProgress, float endProgress, SMFrom3MXWarnings& warnings)
     {
         // Report progress
         if (m_progressHandler != nullptr)
@@ -492,6 +492,15 @@ private:
 
         // Isolate this in a block to avoid useless memory consumption in the recursion
         {
+            // If the 3MXB file is missing, do not fail but record a warning
+            ifstream file(filename.c_str());
+            if (!file.is_open())
+            {
+                warnings.push_back({ SMFrom3MXWarningCode::Missing3MXB, filename.c_str() });
+                return SMFrom3MXStatus::Success;
+            }
+            file.close();
+
             // Read the 3MXB file
             Convert3MXBFile conv3MXB(m_scMesh, m_pOrigin, m_gcsHandler);
             string sError;
@@ -553,7 +562,7 @@ private:
 
                 // Traverse the child files
                 DRange3d childContentExtent = DRange3d::NullRange();
-                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, dataResolution, beginChildProgress, endChildProgress);
+                SMFrom3MXStatus convertStatus = ConvertRecursive(child3MXBPath, node.scNode, childContentExtent, dataResolution, beginChildProgress, endChildProgress, warnings);
                 if (convertStatus != SMFrom3MXStatus::Success)
                     return convertStatus;
 
@@ -611,7 +620,7 @@ public:
     Convert3MXModel(IScalableMeshFrom3MXGCSHandler& gcsHandler, IScalableMeshProgressPtr progressHandler) : m_gcsHandler(gcsHandler), m_progressHandler(progressHandler) {}
 
     // Run conversion
-    SMFrom3MXStatus Convert(BeFileNameCR input3MXPath, BeFileNameCR output3SMPath)
+    SMFrom3MXStatus Convert(BeFileNameCR input3MXPath, BeFileNameCR output3SMPath, SMFrom3MXWarnings& warnings)
     {
         if (m_progressHandler != nullptr)
         {
@@ -673,7 +682,7 @@ public:
 
         DRange3d contentExtent;
         float dataResolution = std::numeric_limits<float>::max();
-        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, dataResolution, 0.f, 0.95f);
+        SMFrom3MXStatus convertStatus = ConvertRecursive(root3MXBPath, nullptr, contentExtent, dataResolution, 0.f, 0.95f, warnings);
         if (convertStatus != SMFrom3MXStatus::Success)
             return convertStatus;
 
@@ -708,11 +717,12 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     IScalableMeshFrom3MXGCSHandler& gcsHandler,
-    IScalableMeshProgressPtr progressHandler
+    IScalableMeshProgressPtr progressHandler,
+    SMFrom3MXWarnings& warnings
 )
 {
     Convert3MXModel  converter(gcsHandler, progressHandler);
-    return converter.Convert(input3MXPath, output3SMPath);
+    return converter.Convert(input3MXPath, output3SMPath, warnings);
 }
 
 
@@ -721,11 +731,12 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,
     BeFileNameCR output3SMPath,
     GeoCoordinates::BaseGCSPtr outputGCS,
-    IScalableMeshProgressPtr progressHandler
+    IScalableMeshProgressPtr progressHandler,
+    SMFrom3MXWarnings& warnings
 )
 {
     ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
-    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler);
+    return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler, warnings);
 }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

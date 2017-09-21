@@ -9,7 +9,7 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), tranform/*Transform::FromIdentity()*/, siblingIndex, parent);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), tranform/*Transform::FromIdentity()*/, siblingIndex, parent, -1, false);
     auto meshes = tileNode->GenerateMeshes();
     if (!meshes.empty())
         {
@@ -18,11 +18,11 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
         }
     }
 
-void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
+void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const uint64_t& clipID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clipID, isClipBoundary);
     TilePublisher publisher(*tileNode, sourceGCS, destinationGCS);
     publisher.Publish(outData);
     }
