@@ -148,6 +148,14 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNext()
     {
     if (IsTaskCanceled()) return CreateCompletedAsyncTask();
 
+    if (m_currentChangeGroup && m_currentChangeGroup->GetFileChange().IsValid())
+        {
+        if (nullptr != m_options.GetFileUploadFinishCallback())
+            {
+            (m_options.GetFileUploadFinishCallback())(m_currentChangeGroup->GetFileChange().GetInstanceKey());
+            }
+        }
+
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
         ReportFinalProgress();
@@ -270,6 +278,22 @@ bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ICancellationTokenPtr SyncLocalChangesTask::GetFileCancellationToken() const
+    {
+    ICancellationTokenPtr cancellationToken;
+
+    if (m_currentChangeGroup && m_currentChangeGroup->GetFileChange().IsValid())
+        cancellationToken = m_options.GetFileCancellationToken(m_currentChangeGroup->GetFileChange().GetInstanceKey());
+
+    if (cancellationToken)
+        return MergeCancellationToken::Create(cancellationToken, GetCancellationToken());
+
+    return GetCancellationToken();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperately(ChangeGroupPtr changeGroup)
@@ -299,7 +323,7 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
     query.SetSelect("$id");
     query.SetFilter("Name+eq+'SupportsFileAccessUrl'+and+Supported+eq+true");
 
-    return m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
+    return m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetFileCancellationToken())
         ->Then<bool>(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
         {
         if (!result.IsSuccess())
@@ -314,6 +338,9 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
         });
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
     {
     m_changeGroupIndexToSyncNext++;
@@ -416,7 +443,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 
                 auto txn = m_ds->StartCacheTransaction();
                 auto fileId = txn.GetCache().FindInstance(changeGroup->GetFileChange().GetInstanceKey());
-                m_ds->CacheObject(fileId, GetCancellationToken())
+                m_ds->CacheObject(fileId, GetFileCancellationToken())
                     ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
                     {
                     if (!result.IsSuccess())
@@ -531,7 +558,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
                 ObjectId newObjectId = txn.GetCache().FindInstance(changeGroup->GetObjectChange().GetInstanceKey());
                 if (m_serverInfo.GetVersion() < BeVersion(2, 0))
                     {
-                    m_ds->CacheObject(newObjectId, GetCancellationToken())
+                    m_ds->CacheObject(newObjectId, GetFileCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
                         {
                         if (!result.IsSuccess())
@@ -548,7 +575,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
                     WSQuery query(*newInstanceClass, true);
                     query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
 
-                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
+                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetFileCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
                         {
                         if (!result.IsSuccess())
@@ -590,6 +617,12 @@ void SyncLocalChangesTask::HandleSyncError(WSErrorCR error, ChangeGroupPtr chang
         {
         auto txn = m_ds->StartCacheTransaction();
         RegisterFailedSync(txn.GetCache(), *changeGroup, error, objectLabel);
+        }
+    else if (WSError::Status::Canceled == error.GetStatus() && !IsTaskCanceled())
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        RegisterFailedSync(txn.GetCache(), *changeGroup, CachingDataSource::Error(ICachingDataSource::Status::FileCancelled), objectLabel);
+        return;
         }
     else
         {
@@ -986,7 +1019,7 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, b
     if (isFileBeingUploaded)
         onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, labelPtr, currentFileTotalBytes);
 
-    return ResponseGuard::Create(GetCancellationToken(), onProgress);
+    return ResponseGuard::Create(GetFileCancellationToken(), onProgress);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -2727,6 +2727,191 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     ASSERT_TRUE(r2.IsSuccess());
     }
 
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_AllFileTokensCancelled)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), true));
+    txn.Commit();
+    auto mainCt = SimpleCancellationToken::Create();
+    auto fileCt = SimpleCancellationToken::Create();
+    auto options = SyncOptions();
+    options.AddFileCancellationToken(instance, fileCt);
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        mainCt->SetCanceled();
+        EXPECT_TRUE(ct->IsCanceled());
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubWSCanceledError()));
+        }));
+    auto result = ds->SyncLocalChanges(nullptr, mainCt, options)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSingleFileSync_AllFilesExceptOneSynced)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    auto instance2 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance1, StubFile(), true));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance2, StubFile(), true));
+    txn.Commit();
+    SyncOptions options;
+    options.AddFileCancellationToken(instance1, SimpleCancellationToken::Create(true));
+    options.AddFileCancellationToken(instance2, SimpleCancellationToken::Create());
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _)).Times(2)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_TRUE(ct->IsCanceled());
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}));
+        }))
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_FALSE(ct->IsCanceled());
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}));
+        }));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()))));
+
+    auto result = ds->SyncLocalChanges(nullptr, SimpleCancellationToken::Create(), options)->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(options.GetFileCancellationToken(instance1)->IsCanceled());
+    EXPECT_FALSE(options.GetFileCancellationToken(instance2)->IsCanceled());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreateObjectWithFiles_CallbacksCalled)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    auto instance2 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance1, StubFile(), true));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance2, StubFile(), true));
+    txn.Commit();
+
+    auto mainCt = SimpleCancellationToken::Create();
+    auto fileCt1 = SimpleCancellationToken::Create();
+    auto fileCt2 = SimpleCancellationToken::Create();
+    auto options = SyncOptions();
+    options.AddFileCancellationToken(instance1, fileCt1);
+    options.AddFileCancellationToken(instance2, fileCt2);
+
+    auto mockFunction = MockFunction<void(ECInstanceKeyCR)>();
+
+    options.SetFileUploadFinishCallaback(std::function<void(ECInstanceKeyCR)>([&] (ECInstanceKeyCR key)
+        {
+        mockFunction.Call(key);
+        }));
+
+    EXPECT_CALL(mockFunction, Call(_)).Times(2)
+    .WillOnce(Invoke([&] (ECInstanceKeyCR key)
+        {
+        EXPECT_EQ(instance1, key);
+        }))
+    .WillOnce(Invoke([&] (ECInstanceKeyCR key)
+        {
+        EXPECT_EQ(instance2, key);
+        }));
+
+    ON_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}))));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()))));
+
+    auto result = ds->SyncLocalChanges(nullptr, mainCt, options)->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_NoFileCancellationTokens_UsesMainCancellationToken)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance1, StubFile(), true));
+    txn.Commit();
+    SyncOptions options;
+    auto mainCt = SimpleCancellationToken::Create();
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_FALSE(ct->IsCanceled());
+        mainCt->SetCanceled();
+        EXPECT_TRUE(ct->IsCanceled());
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}));
+        }));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()))));
+
+    auto result = ds->SyncLocalChanges(nullptr, mainCt, options)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_NonUploadingFileCancelled_Success)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    auto instance2 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance1, StubFile(), true));
+    txn.Commit();
+    SyncOptions options;
+    auto mainCt = SimpleCancellationToken::Create();
+    auto fileCt2 = SimpleCancellationToken::Create();
+    options.AddFileCancellationToken(instance2, fileCt2);
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _)).Times(2)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_FALSE(ct->IsCanceled());
+        EXPECT_FALSE(fileCt2->IsCanceled());
+        fileCt2->SetCanceled();
+        EXPECT_FALSE(ct->IsCanceled());
+        EXPECT_TRUE(fileCt2->IsCanceled());
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}));
+        }))
+        .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "TestId"}))));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()))));
+
+    auto result = ds->SyncLocalChanges(nullptr, mainCt, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_FileCancelled_FailureRegistered)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance1, StubFile(), true));
+    txn.Commit();
+    SyncOptions options;
+    auto mainCt = SimpleCancellationToken::Create();
+    auto fileCt1 = SimpleCancellationToken::Create(true);
+    options.AddFileCancellationToken(instance1, fileCt1);
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_TRUE(ct->IsCanceled());
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubWSCanceledError()));
+        }));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()))));
+
+    auto result = ds->SyncLocalChanges(nullptr, mainCt, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    auto resultValues = result.GetValue();
+    ASSERT_EQ(1, resultValues.size());
+    auto resultValue = resultValues[0];
+    ASSERT_EQ(ICachingDataSource::Status::FileCancelled, resultValue.GetError().GetStatus());
+    }
+
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
     {
     // Arrange

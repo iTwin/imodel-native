@@ -44,7 +44,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             DependencyNotSynced,
             ApplicationError, //! Used by application logic to pass user-readable error messages
             SchemaError,
-            FileLocked
+            FileLocked,
+            FileCancelled
             };
 
         enum DataOrigin
