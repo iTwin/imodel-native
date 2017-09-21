@@ -10,6 +10,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 static Utf8String s_lastEcdbIssue;
 static BeFileName s_addonDllDir;
@@ -140,17 +141,15 @@ Utf8String IModelJs::GetLastEcdbIssue()
     return s_lastEcdbIssue;
     }
 
-static bmap<BeFileName, DgnDbPtr> s_dbs;
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  05/17
+// @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, BeFileNameCR fn, DgnDb::OpenMode mode)
+DbResult IModelJs::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)
     {
-    BeFileName dbfilename;
-    if (!fn.GetDirectoryName().empty())
+    BeFileName pathname;
+    if (!fileOrPathname.GetDirectoryName().empty())
         {
-        dbfilename = fn;
+        pathname = fileOrPathname;
         }
     else
         {
@@ -170,21 +169,146 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, BeFileNameCR fn, DgnDb::OpenMode
             dbDir.AppendToPath(L"briefcases");
 
             if (!dbDir.DoesPathExist())
-                {
-                dbres = DbResult::BE_SQLITE_NOTFOUND;
-                return nullptr;
-                }
+                return DbResult::BE_SQLITE_NOTFOUND;
             }
-        dbfilename = dbDir;
-        dbfilename.AppendToPath(fn.c_str());
+        pathname = dbDir;
+        pathname.AppendToPath(fileOrPathname.c_str());
         }
 
-    auto db = DgnDb::OpenDgnDb(&dbres, dbfilename, DgnDb::OpenParams(mode));
-    if (!db.IsValid())
-        return nullptr;
+    DbResult result;
+    db = DgnDb::OpenDgnDb(&result, pathname, DgnDb::OpenParams(mode));
+    if (db.IsValid())
+        db->AddIssueListener(s_listener);
 
-    db->AddIssueListener(s_listener); 
-    return db;
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
+    {
+    /*
+    * Structure of JSON: 
+    *     <IModelId1>
+    *         <BriefcaseId1>
+    *             pathname
+    *             parentChangeSetId
+    *         <BriefcaseId2>
+    *         ...
+    *     <IModelId2>
+    *     ...
+    */
+    BeFileName iModelPath;
+    bool isDir;
+    jsonBriefcaseInfos = Json::objectValue;
+    for (BeDirectoryIterator iModelPaths(cachePath); iModelPaths.GetCurrentEntry(iModelPath, isDir, true /*fullpath*/) == SUCCESS; iModelPaths.ToNext())
+        {
+        if (!isDir)
+            continue;
+        Json::Value jsonIModelBriefcases = Json::objectValue;
+        BeFileName briefcasePath;
+        for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
+            {
+            if (!isDir)
+                continue;
+            BeFileName briefcasePathname;
+            BeDirectoryIterator briefcasePathnames(briefcasePath);
+            if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
+                continue;
+
+            DbResult result;
+            DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+            DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+            if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+                {
+                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
+                continue;
+                }
+
+            Json::Value jsonBriefcase = Json::objectValue;
+            jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
+            jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
+            jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
+            }
+        jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+DbResult IModelJs::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens)
+    {
+    PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
+    PRECONDITION(briefcaseToken.isMember("pathname") && briefcaseToken.isMember("briefcaseId") && briefcaseToken.isMember("openMode"), BE_SQLITE_ERROR);
+    PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), BE_SQLITE_ERROR);
+
+    BeFileName briefcasePathname(briefcaseToken["pathname"].asCString(), true);
+    int briefcaseId = briefcaseToken["briefcaseId"].asInt();
+    DgnDb::OpenMode mode = (DgnDb::OpenMode) briefcaseToken["openMode"].asInt();
+
+    /** Open the first time to set the briefcase id and get the DbGuid (used for creating change sets) */
+    DbResult result;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+    if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+        return result;
+
+    BeBriefcaseId newBriefcaseId((uint32_t) briefcaseId);
+    if (db->IsMasterCopy())
+        result = db->SetAsBriefcase(newBriefcaseId);
+    else if (!EXPECTED_CONDITION(db->GetBriefcaseId() == newBriefcaseId))
+        return BE_SQLITE_ERROR;
+
+    if (changeSetTokens.size() == 0)
+        {
+        outDb = db;
+        return result;
+        }
+
+    /** Setup the revisions */
+    Utf8String dbGuid = db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+    for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
+        {
+        JsonValueCR changeSetToken = changeSetTokens[ii];
+        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), BE_SQLITE_ERROR);
+
+        Utf8String id = changeSetToken["id"].asString();
+        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : "";
+
+        RevisionStatus revStatus;
+        DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
+        if (!EXPECTED_CONDITION(revStatus == RevisionStatus::Success))
+            return result;
+        BeAssert(revision.IsValid());
+
+        BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
+        PRECONDITION(changeSetPathname.DoesPathExist(), BE_SQLITE_ERROR);
+
+        revision->SetRevisionChangesFile(changeSetPathname);
+        revisionPtrs.push_back(revision);
+        revisions.push_back(revision.get());
+        }
+
+    /** Reopen the Db merging in the revisions (need to reopen to accommodate potential schema changes) */
+    db->CloseDb();
+    db = nullptr;
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+    if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+        return result;
+
+    if (db.IsValid())
+        db->AddIssueListener(s_listener);
+
+    outDb = db;
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -481,8 +605,6 @@ BeSQLite::DbResult IModelJs::ExecuteStatement(Utf8StringR instanceId, ECSqlState
 //---------------------------------------------------------------------------------------
 JsECDbPtr IModelJs::OpenECDb(DbResult &dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
     {
-    BeSystemMutexHolder threadSafeInScope;
-
     if (!pathname.DoesPathExist())
         {
         dbres = DbResult::BE_SQLITE_NOTFOUND;
@@ -503,8 +625,6 @@ JsECDbPtr IModelJs::OpenECDb(DbResult &dbres, BeFileNameCR pathname, BeSQLite::D
 //---------------------------------------------------------------------------------------
 JsECDbPtr IModelJs::CreateECDb(DbResult &dbres, BeFileNameCR pathname)
     {
-    BeSystemMutexHolder threadSafeInScope;
-    
     BeFileName path = pathname.GetDirectoryName();
     if (!path.DoesPathExist())
         {
@@ -527,8 +647,6 @@ JsECDbPtr IModelJs::CreateECDb(DbResult &dbres, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 DbResult IModelJs::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
     {
-    BeSystemMutexHolder threadSafeInScope;
-
     if (!pathname.DoesPathExist())
         return BE_SQLITE_NOTFOUND;
 
