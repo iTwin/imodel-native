@@ -518,7 +518,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
             m_status = IModelJs::DeleteInstance(*m_addon->m_ecdb, m_jsonInstanceKey);
             }
-        bool _HadError() override {return m_status != BE_SQLITE_OK;}
+        bool _HadError() override {return m_status != BE_SQLITE_DONE;}
         };
 
     struct ContainsInstanceWorker : WorkerBase<DbResult>
@@ -1196,6 +1196,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 }
             bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
+
     //=======================================================================================
     //  Execute a query and return all rows, if any
     //! @bsiclass
@@ -1271,6 +1272,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         {
         Nan::HandleScope scope;
         NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        IModelJs::CloseDgnDb(*db->m_dgndb);
         db->m_dgndb = nullptr;
         }
     

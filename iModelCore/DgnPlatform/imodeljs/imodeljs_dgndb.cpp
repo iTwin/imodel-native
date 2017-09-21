@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include "imodeljs.h"
-//DgnECPersistence is deprecated -> use PresentationRules instead
-//#include <DgnPlatform/DgnECPersistence.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -216,6 +215,8 @@ DgnDbStatus IModelJs::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValue
 
     elementJson = elem->ToJson(inOpts);
 
+    //Utf8String elementJsonStr = Json::FastWriter::ToString(elementJson);
+    //printf("Element: %s\n", elementJsonStr.c_str());
     return DgnDbStatus::Success;
     }
 
@@ -340,4 +341,69 @@ BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Json
 
     //DgnECPersistence is deprecated -> use PresentationRules instead
     return BSIERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+void IModelJs::CloseDgnDb(DgnDbR dgndb)
+    {
+    if (dgndb.Txns().HasChanges())
+        dgndb.SaveChanges();
+    dgndb.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
+    {
+    /*
+    * Structure of JSON:
+    *     <IModelId1>
+    *         <BriefcaseId1>
+    *             pathname
+    *             parentChangeSetId
+    *         <BriefcaseId2>
+    *         ...
+    *     <IModelId2>
+    *     ...
+    */
+    BeFileName iModelPath;
+    bool isDir;
+    jsonBriefcaseInfos = Json::objectValue;
+    for (BeDirectoryIterator iModelPaths(cachePath); iModelPaths.GetCurrentEntry(iModelPath, isDir, true /*fullpath*/) == SUCCESS; iModelPaths.ToNext())
+        {
+        if (!isDir)
+            continue;
+        Json::Value jsonIModelBriefcases = Json::objectValue;
+        BeFileName briefcasePath;
+        for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
+            {
+            if (!isDir)
+                continue;
+            BeFileName briefcasePathname;
+            BeDirectoryIterator briefcasePathnames(briefcasePath);
+            if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
+                continue;
+
+            DbResult result;
+            DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+            DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+            if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+                {
+                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
+                continue;
+                }
+
+            Json::Value jsonBriefcase = Json::objectValue;
+            jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
+            jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
+            jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
+            }
+        jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
+        }
+
+    return BE_SQLITE_OK;
     }

@@ -60,6 +60,7 @@ struct IModelJs
     DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenDgnDb(DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenBriefcase(DgnDbPtr& db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens);
+    DGNPLATFORM_EXPORT static void CloseDgnDb(DgnDbR dgndb);
     DGNPLATFORM_EXPORT static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     DGNPLATFORM_EXPORT static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
@@ -74,7 +75,7 @@ struct IModelJs
     DGNPLATFORM_EXPORT static BeSQLite::DbResult InsertInstance(Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult UpdateInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ReadInstance(JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(JsECDbR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ContainsInstance(bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteQuery(JsonValueR results, BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteStatement(Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings);

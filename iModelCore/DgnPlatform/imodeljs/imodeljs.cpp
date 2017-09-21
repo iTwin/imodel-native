@@ -10,7 +10,6 @@
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
-#include <Bentley/BeDirectoryIterator.h>
 
 static Utf8String s_lastEcdbIssue;
 static BeFileName s_addonDllDir;
@@ -189,60 +188,6 @@ DbResult IModelJs::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::O
         db->AddIssueListener(s_listener);
 
     return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 09/17
-//---------------------------------------------------------------------------------------
-DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
-    {
-    /*
-    * Structure of JSON: 
-    *     <IModelId1>
-    *         <BriefcaseId1>
-    *             pathname
-    *             parentChangeSetId
-    *         <BriefcaseId2>
-    *         ...
-    *     <IModelId2>
-    *     ...
-    */
-    BeFileName iModelPath;
-    bool isDir;
-    jsonBriefcaseInfos = Json::objectValue;
-    for (BeDirectoryIterator iModelPaths(cachePath); iModelPaths.GetCurrentEntry(iModelPath, isDir, true /*fullpath*/) == SUCCESS; iModelPaths.ToNext())
-        {
-        if (!isDir)
-            continue;
-        Json::Value jsonIModelBriefcases = Json::objectValue;
-        BeFileName briefcasePath;
-        for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
-            {
-            if (!isDir)
-                continue;
-            BeFileName briefcasePathname;
-            BeDirectoryIterator briefcasePathnames(briefcasePath);
-            if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
-                continue;
-
-            DbResult result;
-            DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
-            DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
-            if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
-                {
-                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
-                continue;
-                }
-
-            Json::Value jsonBriefcase = Json::objectValue;
-            jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
-            jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
-            jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
-            }
-        jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
-        }
-
-    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -762,26 +707,24 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult IModelJs::DeleteInstance(ECDbCR ecdb, JsonValueCR instanceKey)
+DbResult IModelJs::DeleteInstance(JsECDbR ecdb, JsonValueCR instanceKey)
     {
     ECClassCP ecClass = GetClassFromInstance(ecdb, instanceKey);
     if (!ecClass)
         return BE_SQLITE_ERROR;
 
-    if (!instanceKey.isMember(ECJsonUtilities::json_id()))
+    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
+    if (!instanceId.IsValid())
         return BE_SQLITE_ERROR;
 
-    Utf8CP instanceId = instanceKey[ECJsonUtilities::json_id()].asCString();
-    BeAssert(Utf8String::IsNullOrEmpty(instanceId));
-
-    Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId=%s", ecClass->GetECSqlName().c_str(), instanceId);
-
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str(), nullptr))
+    Utf8PrintfString ecsql("DELETE FROM ONLY %s WHERE ECInstanceId=?", ecClass->GetECSqlName().c_str());
+    CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
         return BE_SQLITE_ERROR;
 
-    return stmt.Step();
+    stmt->BindId(1, instanceId);
+
+    return stmt->Step();
     }
 
 //---------------------------------------------------------------------------------------
@@ -789,20 +732,15 @@ DbResult IModelJs::DeleteInstance(ECDbCR ecdb, JsonValueCR instanceKey)
 //---------------------------------------------------------------------------------------
 DbResult IModelJs::ContainsInstance(bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey)
     {
-    BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that I have a chance to get last ECDb error message
-
-    if (!instanceKey.isMember(ECJsonUtilities::json_className()))
-        return BE_SQLITE_ERROR;
-
-    Utf8String classKey = instanceKey[ECJsonUtilities::json_className()].asString();
-    if (classKey.empty())
+    ECClassCP ecClass = GetClassFromInstance(ecdb, instanceKey);
+    if (!ecClass)
         return BE_SQLITE_ERROR;
 
     ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
     if (!instanceId.IsValid())
         return BE_SQLITE_ERROR;
 
-    Utf8PrintfString ecsql("SELECT NULL FROM %s WHERE ECInstanceId=?", classKey.c_str());
+    Utf8PrintfString ecsql("SELECT NULL FROM %s WHERE ECInstanceId=?", ecClass->GetECSqlName().c_str());
     CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(ecsql.c_str());
     if (!stmt.IsValid())
         return BE_SQLITE_ERROR;
