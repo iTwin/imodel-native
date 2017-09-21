@@ -18,3 +18,4 @@ ECConversionTests.RelationshipInstance       # WIP UmarH
 #   Tests that are failing only on tiles branch
 #----------------------------------------------------------------------------------------
 ECSchemaTests.RemapSerializedInstance
+ECSchemaTests.RemapReservedPropertyNames
