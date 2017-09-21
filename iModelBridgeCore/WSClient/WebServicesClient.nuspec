@@ -39,7 +39,7 @@
         <file src="SubParts\libs\BeJsonCpp.lib"                     target="lib\native\BeJsonCpp.lib" />
 
         <file src="SubParts\VendorNotices\*.txt"                    target="notices\" />
-        <file src="Delivery\PublishedAPI\**\*"                      target="include"/>
+        <file src="Delivery\PublishedAPI\**\*"                      target="include"                               exclude="Delivery\PublishedAPI\WebServices\iModelHub\**\*" />
         <file src="..\BeHttp\Delivery\http\cabundle.pem"            target="Assets\http\cabundle.pem" />
         <file src="Delivery\sqlang\WSClient_en.sqlang.db3"          target="Assets\sqlang\WSClient_en.sqlang.db3" />
     </files>
