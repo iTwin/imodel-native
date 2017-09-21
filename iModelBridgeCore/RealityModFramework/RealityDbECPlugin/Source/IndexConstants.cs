@@ -32,6 +32,7 @@ namespace IndexECPlugin.Source
         //Earth Explorer Constants
         public const string EEBaseApiURL = "https://earthexplorer.usgs.gov/inventory/json/v/1.4.0/";
         public const string EEBaseMetadataURL = "https://earthexplorer.usgs.gov/metadata/xml/";
+        public const string EEFgdcMetadataURL = "https://earthexplorer.usgs.gov/fgdc/{0}/{1}/save_xml";
         public const string EELegalString = "Data available from the U.S. Geological Survey.";
         public const string EETermsOfUse = "https://lta.cr.usgs.gov/citation";
         public const string EEDownloadURL = "https://earthexplorer.usgs.gov/download/{0}/{1}/STANDARD/EE";

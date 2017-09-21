@@ -1,0 +1,58 @@
+{
+    "errorCode": null,
+    "error": "",
+    "data": {
+        "numberReturned": 1,
+        "totalHits": 1,
+        "firstRecord": 1,
+        "lastRecord": 1,
+        "nextRecord": 1,
+        "results": [
+            {
+                "acquisitionDate": "2002-02-18",
+                "startTime": "2002-02-18",
+                "endTime": "2002-02-18",
+                "spatialFootprint": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [
+                                -73.983410994844,
+                                40.863802613528
+                            ],
+                            [
+                                -73.96533337731,
+                                40.863720236241
+                            ],
+                            [
+                                -73.965222965646,
+                                40.877444411207
+                            ],
+                            [
+                                -73.983304315898,
+                                40.877526828118
+                            ],
+                            [
+                                -73.983410994844,
+                                40.863802613528
+                            ]
+                        ]
+                    ]
+                },
+                "sceneBounds": "-73.983410994844,40.863720236241,-73.965222965647,40.877526828118",
+                "browseUrl": "https://earthexplorer.usgs.gov/browse/hro/NJ/2002/200202_new_jersey_state_nj_1ft_sp_cir/vol272/l5c2.jpg",
+                "dataAccessUrl": "https://earthexplorer.usgs.gov/order/process?dataset_name=HIGH_RES_ORTHO&ordered=1160860_L5C2&node=INVSVC",
+                "downloadUrl": "https://earthexplorer.usgs.gov/download/external/options/HIGH_RES_ORTHO/1160860_L5C2/INVSVC/",
+                "entityId": "1160860_L5C2",
+                "displayId": "1160860_L5C2",
+                "metadataUrl": "https://earthexplorer.usgs.gov/metadata/xml/3411/1160860_L5C2/",
+                "fgdcMetadataUrl": "https://earthexplorer.usgs.gov/fgdc/3411/1160860_L5C2/save_xml",
+                "modifiedDate": "2009-09-18",
+                "orderUrl": null,
+                "bulkOrdered": false,
+                "ordered": false,
+                "summary": "Entity ID: 1160860_L5C2, Acquisition Date: 18-FEB-02, State: NJ"
+            }
+        ]
+    }
+}

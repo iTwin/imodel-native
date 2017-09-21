@@ -75,6 +75,7 @@ CurlConstructor::CurlConstructor()
     exeDir = exeDir.substr(0, pos + 1);
     BeFileName caBundlePath = BeFileName(exeDir);
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
+    m_tokenRefreshTimer = 0;
     }
 
 //-------------------------------------------------------------------------------------
@@ -115,8 +116,6 @@ Utf8String CurlConstructor::GetToken() const
 //-------------------------------------------------------------------------------------
 void CurlConstructor::RefreshToken() const
     {
-    m_tokenRefreshTimer = std::time(nullptr);
-
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
 
@@ -169,6 +168,7 @@ void CurlConstructor::RefreshToken() const
 
     m_token = "Authorization: Token ";
     m_token.append(charToken);
+    m_tokenRefreshTimer = std::time(nullptr);
     
     delete lpwstrToken;
     delete charToken;

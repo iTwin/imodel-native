@@ -1,0 +1,9 @@
+{
+    "errorCode": null,
+    "error": "",
+    "data": true,
+    "api_version": "1.4.0",
+    "access_level": "guest",
+    "catalog_id": "default",
+    "executionTime": 0.046985864639282
+}

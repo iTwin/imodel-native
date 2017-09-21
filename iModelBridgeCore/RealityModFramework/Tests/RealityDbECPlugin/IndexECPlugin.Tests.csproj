@@ -152,6 +152,27 @@
     <Ressources Include="Ressources\**" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Ressources\EarthExplorerDatasetsResponse.txt">
+      <LogicalName>EarthExplorerDatasetsResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerLoginErrorResponse.txt">
+      <LogicalName>EarthExplorerLoginErrorResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerLoginResponse.txt">
+      <LogicalName>EarthExplorerLoginResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerLogoutResponse.txt">
+      <LogicalName>EarthExplorerLogoutResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerSpatialQueryErrorResponse.txt">
+      <LogicalName>EarthExplorerSpatialQueryErrorResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerSpatialQueryResponse.txt">
+      <LogicalName>EarthExplorerSpatialQueryResponse.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\EarthExplorerXmlDocResponse.txt">
+      <LogicalName>EarthExplorerXmlDocResponse.txt</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Ressources\ScienceBaseJsonNED1m.txt">
       <LogicalName>ScienceBaseJsonNED1m.txt</LogicalName>
     </EmbeddedResource>
@@ -220,6 +241,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Ressources\TnmApiNAIP.txt">
       <LogicalName>TnmApiNAIP.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ressources\TokenExample.txt">
+      <LogicalName>TokenExample.txt</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

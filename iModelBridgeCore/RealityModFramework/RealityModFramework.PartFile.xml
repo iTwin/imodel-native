@@ -120,7 +120,7 @@
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="BeXml"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPackage$(libext)</Libs>
@@ -137,7 +137,7 @@
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
@@ -255,14 +255,14 @@
         </Bindings>
     </Part>
 
-  <!--<Part Name="AustraliaUploader" BentleyBuildMakeFile="RealityAdmin\AustraliaUploader\AustraliaUploader.mke">
+  <Part Name="AustraliaUploader" BentleyBuildMakeFile="RealityAdmin\AustraliaUploader\AustraliaUploader.mke">
     <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
     <SubPart PartName="RealityPackage"/>
     <SubPart PartName="RealityAdmin"/>
     <Bindings>
       <Assemblies>Delivery/AustraliaUploader.exe</Assemblies>
     </Bindings>
-  </Part>-->
+  </Part>
     
     <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityAdmin\Example\DataHandlerTool.mke">
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
@@ -294,7 +294,7 @@
     
     <Part Name="RealityAdmin-Applications">
         <SubPart PartName="ConversionToolsTester"/>
-        <!--<SubPart PartName="AustraliaUploader"/>-->
+        <SubPart PartName="AustraliaUploader"/>
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="GCSLoadTest"/>
