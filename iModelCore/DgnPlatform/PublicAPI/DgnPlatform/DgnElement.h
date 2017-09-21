@@ -692,14 +692,6 @@ public:
         template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(m_id.GetValueUnchecked());}
     };
 
-    //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
-    enum class Hilited : uint8_t
-    {
-        None         = 0, //!< the element is displayed normally (not hilited)
-        Normal       = 1, //!< the element is displayed using the normal hilite appearance
-        Background   = 2, //!< the element is displayed with the background color
-    };
-
     //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of DgnElement.
     struct RestrictedAction : DgnDomain::Handler::RestrictedAction
     {
@@ -1110,7 +1102,7 @@ protected:
         uint32_t m_persistent:1;
         uint32_t m_preassignedId:1;
         uint32_t m_inSelectionSet:1;
-        uint32_t m_hilited:3;
+        uint32_t m_hilited:1;
         uint32_t m_undisplayed:1;
         uint32_t m_propState:2; // See PropState
         Flags() {memset(this, 0, sizeof(*this));}
@@ -2130,8 +2122,8 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
-    virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
-    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    virtual bool _IsHilited() const {if (nullptr == ToElement()) return false; else return ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DGNPLATFORM_EXPORT virtual void _SetHilited(bool hilited) const; //!< Change the current Hilited state of this element
 
     friend struct GeometricElement;
 public:
@@ -2151,10 +2143,10 @@ public:
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-    DgnElement::Hilited IsHilited() const {return _IsHilited();}
-    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
+    bool IsHilited() const {return _IsHilited();} //!< @private
+    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;} //!< @private
     bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
-    void SetHilited(DgnElement::Hilited newState) const {_SetHilited(newState);} //!< Change the current Hilited state of this element
+    void SetHilited(bool hilited) const {_SetHilited(hilited);} //!< @private
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
@@ -3395,6 +3387,7 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     DgnElementIdSet m_undisplayedSet;
+    DgnElementIdSet m_hilitedSet;
     mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
@@ -3583,6 +3576,8 @@ public:
 
     DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;}
     void SetUndisplayed(DgnElementR, bool isUndisplayed);
+    DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
+    void SetHilited(DgnElementR, bool hilited);
 
     //! Returns the time of the most recent modification to the elements table in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;

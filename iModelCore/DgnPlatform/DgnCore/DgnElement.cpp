@@ -1767,14 +1767,38 @@ void DgnElements::SetUndisplayed(DgnElementR el, bool isUndisplayed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::_SetHilited(DgnElement::Hilited newState) const
+void GeometrySource::_SetHilited(bool hilited) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
+    if (nullptr != el)
+        el->GetDgnDb().Elements().SetHilited(*el, hilited);
+    }
 
-    if (nullptr == el)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetHilited(DgnElementR el, bool hilited)
+    {
+    DgnDb::VerifyClientThread();
+    auto elemId = el.GetElementId();
+    if (!elemId.IsValid())
+        {
+        BeAssert(false);
         return;
+        }
 
-    el->m_flags.m_hilited = (uint8_t) newState;
+    if (el.m_flags.m_hilited != hilited)
+        {
+        el.m_flags.m_hilited = hilited;
+        if (hilited)
+            m_hilitedSet.insert(elemId);
+        else
+            m_hilitedSet.erase(elemId);
+
+        T_HOST._OnHilitedSetChanged(GetDgnDb());
+        }
+
+    BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1788,7 +1812,7 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
         return;
 
     el->m_flags.m_inSelectionSet = yesNo; 
-    el->m_flags.m_hilited = (uint8_t) (yesNo ? DgnElement::Hilited::Normal : DgnElement::Hilited::None);
+    SetHilited(yesNo);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -514,6 +514,7 @@ public:
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
+        virtual void _OnHilitedSetChanged(DgnDbR) {}
 
         Host()
             {
