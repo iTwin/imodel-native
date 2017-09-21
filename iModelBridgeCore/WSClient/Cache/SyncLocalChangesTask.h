@@ -106,6 +106,8 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel = nullptr);
         void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
 
+        ICancellationTokenPtr GetFileCancellationToken() const;
+
     public:
         SyncLocalChangesTask
             (
