@@ -270,7 +270,7 @@ DbResult IModelJs::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, Js
 void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
-    adapter.GetRow(rowJson);
+    adapter.GetRow(rowJson, true);
     }
 
 //---------------------------------------------------------------------------------------
