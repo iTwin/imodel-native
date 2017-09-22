@@ -48,6 +48,7 @@ private:
     bool        IsTokenExpired();
     void        UpdateToken();
     Utf8String  GetBuddiUrl();
+    Utf8String  GetRootDocumentName();
 
 protected:
 
