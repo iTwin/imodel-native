@@ -1422,7 +1422,7 @@ struct PostInstancePartCacheAppData: BeSQLite::Db::AppData
 {
 protected:
 
-typedef bmap<DgnGeometryPartId, DgnGeometryPartCPtr> T_PartIdToGeom;
+typedef bmap<DgnGeometryPartId, GeometricPrimitivePtr> T_PartIdToGeom;
 T_PartIdToGeom m_map;
 
 public:
@@ -1433,7 +1433,7 @@ static BeSQLite::Db::AppData::Key const& GetKey()
     return s_key;
     }
 
-static DgnGeometryPartCPtr GetPart(DgnGeometryPartId partId, DgnDbR db)
+static GeometricPrimitivePtr GetPart(DgnGeometryPartId partId, DgnDbR db)
     {
     auto cache = (PostInstancePartCacheAppData*) db.FindAppData(GetKey());
 
@@ -1447,7 +1447,28 @@ static DgnGeometryPartCPtr GetPart(DgnGeometryPartId partId, DgnDbR db)
 
     if (found == cache->m_map.end())
         {
-        cache->m_map[partId] = db.Elements().Get<DgnGeometryPart>(partId);
+        DgnGeometryPartCPtr partGeom = db.Elements().Get<DgnGeometryPart>(partId);
+        GeometricPrimitivePtr geom;
+
+        if (partGeom.IsValid())
+            {
+            GeometryCollection collection(partGeom->GetGeometryStream(), db);
+
+            for (auto iter : collection)
+                {
+                GeometricPrimitivePtr thisGeom = iter.GetGeometryPtr();
+
+                if (geom.IsValid())
+                    {
+                    geom = nullptr; // Post instance parts should only have a single geometric primitive...
+                    break;
+                    }
+
+                geom = thisGeom;
+                }
+            }
+
+        cache->m_map[partId] = geom;
         found = cache->m_map.find(partId);
         }
 
@@ -2285,31 +2306,32 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPath const& path)
     {
-#if defined (NOT_NOW_TOO_SLOW_TFS_752781)
     if (!m_model.Is3d())
         return false;
 
-    // Reject text as instancing may have undesirable ramifications for editing, etc.
-    if (GeometricPrimitive::GeometryType::TextString == geometry.GetGeometryType())
-        return false;
-            
-    Bentley::ElementRefP elRef = path.GetCursorElem();
+    // NOTE: Determine if geometry is worth instancing.
+    //       Always reject text. Instancing may have undesirable ramifications for editing, etc.
+    //       Always reject point strings! The None type CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
+    switch (geometry.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+        case GeometricPrimitive::GeometryType::Polyface:
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            break;
 
-    // XGraphics symbols have already had their chance...don't want to attempt post-instance of those rejected for non-uniform scale, etc.
-    if (DgnV8Api::XGraphicsContainer::IsXGraphicsSymbol(elRef))
-        return false;
+        default:
+            return false;
+        }
+
+    Bentley::ElementRefP elRef = path.GetCursorElem();
 
     if (elRef->IsComplexComponent())
         elRef = elRef->GetOutermostParentOrSelf();
 
-    // Shared cells have already had their chance...
-    if (DgnV8Api::SHARED_CELL_ELM == elRef->GetElementType() || DgnV8Api::SHAREDCELL_DEF_ELM == elRef->GetElementType())
-        return false;
-
-    // Normal cell components are good candidates for post-instancing...
+    // Normal cell components are good candidates for post-instancing...and it shouldn't be a huge problem if we create a part and don't find other instances...
     if (DgnV8Api::CELL_HEADER_ELM == elRef->GetElementType() && !elRef->GetUnstableMSElementCP()->hdr.dhdr.props.b.h)
         return true;
-#endif
 
     return false;
     }
@@ -2319,73 +2341,12 @@ bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPat
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsMatchingPartGeometry(DgnGeometryPartId partId, DgnDbR db, GeometricPrimitiveR geometry)
     {
-    GeometricPrimitive::GeometryType geomType = geometry.GetGeometryType();
+    GeometricPrimitivePtr partGeometry = PostInstancePartCacheAppData::GetPart(partId, db);
 
-    if (GeometricPrimitive::GeometryType::TextString == geomType)
-        return false; // Don't post-instance text...
-
-    DgnGeometryPartCPtr partGeometry = PostInstancePartCacheAppData::GetPart(partId, db);
-
-    if (!partGeometry.IsValid())
+    if (!partGeometry.IsValid() || !partGeometry->IsSameStructureAndGeometry(geometry, 1.0e-5))
         return false;
 
-    bool foundMatch = false;
-    GeometryCollection collection(partGeometry->GetGeometryStream(), db);
-
-    for (auto iter : collection)
-        {
-        if (foundMatch)
-            return false; // Shouldn't be anything else in GeometryStream after a matching GeometricPrimitive...
-
-        // First do a quick type compare to avoid unnecessary deserialization of part geometry...
-        switch (iter.GetEntryType())
-            {
-            case GeometryCollection::Iterator::EntryType::CurvePrimitive:
-                if (GeometricPrimitive::GeometryType::CurvePrimitive != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::CurveVector:
-                if (GeometricPrimitive::GeometryType::CurveVector != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::SolidPrimitive:
-                if (GeometricPrimitive::GeometryType::SolidPrimitive != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::BsplineSurface:
-                if (GeometricPrimitive::GeometryType::BsplineSurface != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::Polyface:
-                if (GeometricPrimitive::GeometryType::Polyface != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::BRepEntity:
-                if (GeometricPrimitive::GeometryType::BRepEntity != geomType)
-                    return false;
-                break;
-
-            default:
-                return false;
-            }
-
-        GeometricPrimitivePtr instanceGeom = iter.GetGeometryPtr();
-
-        if (!instanceGeom.IsValid())
-            return false;
-
-        if (!instanceGeom->IsSameStructureAndGeometry(geometry, 1.0e-5))
-            return false;
-
-        foundMatch = true;
-        }
-
-    return foundMatch;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

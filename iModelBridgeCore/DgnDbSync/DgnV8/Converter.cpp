@@ -1522,7 +1522,7 @@ void Converter::_OnConversionComplete()
 
 #if defined (BENTLEYCONFIG_PARASOLID)
     // NOTE: Terminate V8 frustum before trying to use DgnDb to render thumbnails...    
-    if (true) // DgnV8Api::PSolidKernelManager::IsSessionStarted()) <- Need SDK update to avoid loading pskernel unnecessarily...
+    if (DgnV8Api::PSolidKernelManager::IsSessionStarted())
         DgnV8Api::PSolidKernelManager::StopSession();
 
     DgnDbApi::PSolidKernelManager::SetExternalFrustrum(false);
