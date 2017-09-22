@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/JsonDiff.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,7 @@ struct JsonDiff
 
         void CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapidjson::Value::AllocatorType& allocator);
 
+        bool HasMemberI(RapidJsonValueCR json, CharCP searchMember, CharCP& memberOut);
         static RapidJsonValueCR ValidateObject(RapidJsonValueCR value);
 
     public:
