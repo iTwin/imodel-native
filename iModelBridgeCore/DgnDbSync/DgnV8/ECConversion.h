@@ -132,6 +132,7 @@ private:
 public:
     static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
     static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, SyncInfo::V8FileSyncInfoId);
+    static void Reset();
     };
 
 //=======================================================================================
