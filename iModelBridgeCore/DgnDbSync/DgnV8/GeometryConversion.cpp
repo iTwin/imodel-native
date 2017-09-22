@@ -2311,7 +2311,7 @@ bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPat
 
     // NOTE: Determine if geometry is worth instancing.
     //       Always reject text. Instancing may have undesirable ramifications for editing, etc.
-    //       Always reject point strings! The None type CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
+    //       Always reject line/point strings! The CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
     switch (geometry.GetGeometryType())
         {
         case GeometricPrimitive::GeometryType::SolidPrimitive:
@@ -2379,8 +2379,28 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
 
         partBuilder->Append(geometry);
 
-        if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+        if (SUCCESS == partBuilder->Finish(*geomPart))
+            {
+            bool isValidInstance = (GeometricPrimitive::GeometryType::BRepEntity != geometry.GetGeometryType());
+
+            // NOTE: Don't create instance for a bad/failed brep. Polyface/CurveVector from part will never match so we'd end up with singleton parts...
+            if (!isValidInstance)
+                {
+                GeometryCollection collection(geomPart->GetGeometryStream(), m_model.GetDgnDb());
+
+                for (auto iter : collection)
+                    {
+                    if (GeometryCollection::Iterator::EntryType::BRepEntity != iter.GetEntryType())
+                        continue;
+
+                    isValidInstance = true;
+                    break;
+                    }
+                }
+
+            if (isValidInstance && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+            }
         }
 
     builder.Append(params);
