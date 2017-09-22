@@ -85,6 +85,10 @@ bool          ScalableMeshGroup::_IsTextured()
     return false;
     }
 
+StatusInt ScalableMeshGroup::_GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {
+    return ERROR;
+    }
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface(DTMAnalysisType type)
     {

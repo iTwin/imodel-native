@@ -39,11 +39,10 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh\IScalableMeshSources.h>
 
 #include "ScalableMesh\ScalableMeshLib.h"
-
-
 #include <CloudDataSource/DataSourceManager.h>
 
 #include "ScalableMeshDraping.h"
+#include "ScalableMeshInfo.h"
 #include "ScalableMeshVolume.h"
 
 #include "Edits\ClipRegistry.h"
@@ -53,6 +52,7 @@ extern bool   GET_HIGHEST_RES;
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
+#include <ImagePP\all\h\HRFVirtualEarthFile.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include "ScalableMeshAnalysis.h"
@@ -163,6 +163,11 @@ bool IScalableMesh::IsTerrain()
 bool IScalableMesh::IsTextured()
     {
     return _IsTextured();
+    }
+
+StatusInt IScalableMesh::GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {
+    return _GetTextureInfo(textureInfo);
     }
 
 bool IScalableMesh::IsCesium3DTiles()
@@ -1828,10 +1833,52 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTextured()
 
     if (m_scmIndexPtr != 0)
         {
-        return m_scmIndexPtr->IsTextured() != IndexTexture::None;
+        return m_scmIndexPtr->IsTextured() != SMTextureType::None;
         }
     return false;
+    }
 
+template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {    
+    if (m_scmIndexPtr == 0)
+        {
+        return ERROR;        
+        }
+
+    SMTextureType textureType = m_scmIndexPtr->IsTextured();
+    bool isUsingBingMap = false;
+
+    if (textureType == SMTextureType::Streaming)
+        {
+        assert(m_smSQLitePtr != nullptr);
+
+        SourcesDataSQLite sourcesData;
+        m_smSQLitePtr->LoadSources(sourcesData);
+        
+        IDTMSourceCollection sources;
+        DocumentEnv sourceEnv(L"");
+        bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
+        assert(success == true);
+                
+        for (IDTMSourceCollection::const_iterator sourceIt = sources.Begin(), sourcesEnd = sources.End(); sourceIt != sourcesEnd; ++sourceIt)
+            {
+            const IDTMSource& source = *sourceIt;
+            if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
+                {                
+                HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+
+                if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+                    {
+                    isUsingBingMap = true;
+                    break;
+                    }                                
+                }
+            }        
+        }
+    
+    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap));
+
+    return SUCCESS;
     }
 
 template <class POINT> bool ScalableMesh<POINT>::_IsCesium3DTiles()

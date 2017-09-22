@@ -1018,6 +1018,12 @@
     <ClInclude Include="STM\StreamTextureProvider.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshInfo.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshInfo.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1484,6 +1490,9 @@
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
     <ClCompile Include="STM\StreamTextureProvider.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshInfo.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>

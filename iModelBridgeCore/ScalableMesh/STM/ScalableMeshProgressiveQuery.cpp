@@ -409,7 +409,7 @@ void ScalableMeshProgressiveQueryEngine::CancelPreload(ScalableMesh<DPoint3d>* s
 void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
     {
     //Currently the preload is just use for streaming texture source.
-    if (IndexTexture::Streaming != smP->GetMainIndexP()->IsTextured())
+    if (SMTextureType::Streaming != smP->GetMainIndexP()->IsTextured())
         return;    
     
     bvector<DRange3d> tileRanges;
@@ -581,7 +581,7 @@ private:
                 {
                 if (s_preloadInQueryThread)
                     {
-                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == IndexTexture::Streaming);// && processingQueryPtr->m_loadTexture;
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming);// && processingQueryPtr->m_loadTexture;
 
                     if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0 && doPreLoad)
                         {
@@ -606,7 +606,7 @@ private:
                     ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();                   
                     
-                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == IndexTexture::Streaming);// && processingQueryPtr->m_loadTexture;
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming);// && processingQueryPtr->m_loadTexture;
 
                     if (doPreLoad)
                         {                        

@@ -529,7 +529,7 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_rootNodeBlockID = stmt->GetValueInt(1);
     header.m_SplitTreshold = stmt->GetValueInt(2);
     header.m_depth = (size_t)stmt->GetValueInt(3);
-    header.m_textured = (IndexTexture) stmt->GetValueInt(4);
+    header.m_textured = (SMTextureType) stmt->GetValueInt(4);
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
     header.m_terrainDepth = stmt->GetValueInt64(6);
     header.m_isTerrain = stmt->GetValueInt(7) ? true : false;
