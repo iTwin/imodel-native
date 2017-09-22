@@ -73,10 +73,14 @@ protected:
     explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct RadialGridPortionHandler;
 
-    GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create(Dgn::SpatialLocationModelCR model, DVec3d normal);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion, GRIDELEMENTS_EXPORT)
 
+    //! Creates an empty radial grid
+    //! @param[in]  model   model for the radialgridportion
+    //! @param[in]  normal  perpendicularity plane of this Grid
+    //! @return             BentleyStatus::SUCCESS if no error has occured
+    GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
 
     //! Creates radial grid and returns it as a map where DEFAULT_AXIS maps to grid elements
     //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
