@@ -53,11 +53,11 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
 
         double ComputeTextureResolution();
 
-        StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);        
+		SMStatus CreateSmTerrain(const BeFileName& coverageTempDataFolder);
 
     protected:                   
 
-        virtual StatusInt                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;     
+        virtual SMStatus                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;
 
         virtual StatusInt                   _SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs) override;
 
