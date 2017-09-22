@@ -2889,6 +2889,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->HasTexture(db);  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
 
+            if (0 != polyface->NormalIndex().size() && polyface->GetPointIndexCount() != polyface->NormalIndex().size())
+                {
+                BeAssert(false && "mismatched Normal and Point index counts");        // Crash in ChinaPlant...
+                continue;
+                }
+
             if (0 == polyface->GetPointCount())
                 continue;
 
