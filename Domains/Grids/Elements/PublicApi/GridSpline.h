@@ -36,6 +36,10 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSpline, GRIDELEMENTS_EXPORT)
 
+    //! Creates a grid spline
+    //! @param[in]  model   model for the grid spline
+    //! @param[in]  curve   curve geometry
+    //! @return             Grid spline
     GRIDELEMENTS_EXPORT static GridSplinePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
 };
 

@@ -31,6 +31,8 @@ DVec3d          normal
         Dgn::DgnCategoryId catId = SpatialCategory::QueryCategoryId (params.m_dgndb.GetDictionaryModel (), GRIDS_CATEGORY_CODE_GridSurface);
         if (catId.IsValid ())
             DoSetCategoryId (catId);
+
+        SetPropertyValue (prop_Normal (), normal);
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +58,7 @@ Dgn::DgnModelCR model,
 DVec3d          normal
 )
     {
-    return new GridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new GridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 //---------------------------------------------------------------------------------------

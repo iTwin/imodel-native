@@ -36,6 +36,10 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridLine, GRIDELEMENTS_EXPORT)
 
+    //! Creates a grid line
+    //! @param[in]  model   model for the gridline
+    //! @param[in]  curve   curve geometry
+    //! @return             Grid line
     GRIDELEMENTS_EXPORT static GridLinePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
 };
 

@@ -51,9 +51,22 @@ public:
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
+    //! Creates a grid surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  surfaceVector   surface geometry
+    //! @return                     Grid surface
     GRIDELEMENTS_EXPORT static GridSurfacePtr Create(Dgn::SpatialLocationModelCR model, CurveVectorPtr surfaceVector);
+
+    //! Creates a grid surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  surface         surface geometry
+    //! @return                     Grid surface
     GRIDELEMENTS_EXPORT static GridSurfacePtr Create(Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr surface);
 
+    //! Creates a grid surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  extDetail       surface geometry
+    //! @return                     Grid surface
     GRIDELEMENTS_EXPORT static GridSurfacePtr Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail);
 };
 

@@ -39,9 +39,20 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridCurve, GRIDELEMENTS_EXPORT)
 
+    //! gets the intersecting GridSurface which creates this GridCurve (not the baseSurface)
+    //! @return             gridsurface, if exists
     GRIDELEMENTS_EXPORT GridSurfacePtr GetIntersectingSurface () const;
 
+    //! Creates a gridcurve
+    //! @param[in]  model   model for the gridcurve
+    //! @param[in]  curve   curve geometry
+    //! @return             GridCurve
     GRIDELEMENTS_EXPORT static GridCurvePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+
+    //! Creates a gridcurve
+    //! @param[in]  model   model for the gridcurve
+    //! @param[in]  curve   curve geometry
+    //! @return             GridCurve
     GRIDELEMENTS_EXPORT static GridCurvePtr Create (Dgn::DgnModelCR model, CurveVectorPtr curve);
 };
 

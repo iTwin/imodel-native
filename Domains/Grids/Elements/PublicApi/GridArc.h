@@ -36,6 +36,10 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArc, GRIDELEMENTS_EXPORT)
 
+    //! Creates a grid arc
+    //! @param[in]  model   model for the grid arc
+    //! @param[in]  curve   curve geometry
+    //! @return             Grid arc
     GRIDELEMENTS_EXPORT static GridArcPtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
 };
 

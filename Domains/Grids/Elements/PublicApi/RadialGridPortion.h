@@ -79,7 +79,7 @@ public:
     //! Creates an empty radial grid
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
-    //! @return             BentleyStatus::SUCCESS if no error has occured
+    //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
 
     //! Creates radial grid and returns it as a map where DEFAULT_AXIS maps to grid elements

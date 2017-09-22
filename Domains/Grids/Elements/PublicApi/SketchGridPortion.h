@@ -32,6 +32,10 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchGridPortion, GRIDELEMENTS_EXPORT)
 
+    //! Creates an empty sketch grid
+    //! @param[in]  model   model for the radialgridportion
+    //! @param[in]  normal  perpendicularity plane of this Grid
+    //! @return             sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal);
 };
 

@@ -36,14 +36,29 @@ protected:
     friend struct GridPlaneSurfaceHandler;
 
 public:
+    //IConstrainable TODO: remove IConstrainable
+    GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane (int geomId, DPlane3dR planeOut) const override;
+    GRIDELEMENTS_EXPORT virtual bool StretchGeomIdToPlane (int geomId, DPlane3dR targetPlane) override;
+
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPlaneSurface, GRIDELEMENTS_EXPORT)
 
-    //IConstrainable
-    GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane(int geomId, DPlane3dR planeOut) const override;
-    GRIDELEMENTS_EXPORT virtual bool StretchGeomIdToPlane(int geomId, DPlane3dR targetPlane) override;
 
+    //! Creates a gridplane surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  surfaceVector   surface geometry
+    //! @return                     gridplane surface
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, CurveVectorPtr surfaceVector);
+
+    //! Creates a gridplane surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  surface         surface geometry
+    //! @return                     gridplane surface
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr  surface);
+
+    //! Creates a gridplane surface
+    //! @param[in]  model           model for the grid surface
+    //! @param[in]  extDetail       surface geometry
+    //! @return                     gridplane surface
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, DgnExtrusionDetail  extDetail);
 
 
