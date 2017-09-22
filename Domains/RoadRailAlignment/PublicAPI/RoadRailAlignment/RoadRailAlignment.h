@@ -13,7 +13,6 @@
 #include <ECDb/ECDbApi.h>
 #include <ECUnits/Units.h>
 #include <ECObjects/ECSchema.h>
-#include <BeSqlite/BeSqlite.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
