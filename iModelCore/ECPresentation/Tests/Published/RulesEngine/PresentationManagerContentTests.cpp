@@ -2790,7 +2790,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
 TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntCreateFieldsIfSpecifiedSo)
     {
     // set up selection
-    NavNodeKeyList keys = {ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId(123ull))};
+    NavNodeKeyList keys = {ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId((uint64_t)123))};
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
 
     // create the rule set
