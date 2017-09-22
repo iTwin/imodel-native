@@ -130,6 +130,12 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     if (strcmp("NUNUNU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
     if (strcmp("NUNUNFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNFU;
     if (strcmp("NUNUFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
+    if (strcmp("NCNCN", name) == 0) return FormatSpecialCodes::SignatureNCNCN;
+    if (strcmp("NCCN", name) == 0) return FormatSpecialCodes::SignatureNCCN;
+    if (strcmp("NCC", name) == 0) return FormatSpecialCodes::SignatureNCC;
+    if (strcmp("CNCN", name) == 0) return FormatSpecialCodes::SignatureCNCN;
+    if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;
+    if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;
     return FormatSpecialCodes::SignatureInvalid;
     }
 

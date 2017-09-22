@@ -1997,7 +1997,7 @@ BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
     //  1/3 FT  FU
     BEU::UnitCP majP, midP;
     FormatProblemCode locCode;
-
+    double sign = 1.0;
     if (nullptr == probCode)
         probCode = &locCode;
 
@@ -2011,50 +2011,62 @@ BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
             qty = BEU::Quantity(m_segs[0].GetReal(), *m_unit);
             break;
         case Formatting::FormatSpecialCodes::SignatureNF:
-            qty = BEU::Quantity(m_segs[0].GetReal() + m_segs[1].GetReal(), *m_unit);
+            sign = m_segs[0].GetSign();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *m_unit);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNU:
             majP = m_segs[1].GetUnit();
             qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
             break;
         case Formatting::FormatSpecialCodes::SignatureNFU:
+            sign = m_segs[0].GetSign();
             majP = m_segs[2].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal() + m_segs[1].GetReal(), *majP);
+            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNU:
+            sign = m_segs[0].GetSign();
             majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
             midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNFU:
+            sign = m_segs[0].GetSign();
             majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
             midP = m_segs[4].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetReal() + m_segs[3].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal() + m_segs[3].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNUNU:
+            sign = m_segs[0].GetSign();
             majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
             midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
             midP = m_segs[5].GetUnit();
-            tmp = BEU::Quantity(m_segs[4].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[4].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNUNFU:
+            sign = m_segs[0].GetSign();
             majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
             midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
             midP = m_segs[6].GetUnit();
-            tmp = BEU::Quantity(m_segs[4].GetReal() + m_segs[5].GetReal(), *midP);
+            tmp = BEU::Quantity(m_segs[4].GetAbsReal() + m_segs[5].GetAbsReal(), *midP);
             qty = qty.Add(tmp);
+            qty.Scale(sign);
             break;
+
 
         default:
             *probCode = FormatProblemCode::QT_InvalidSyntax;

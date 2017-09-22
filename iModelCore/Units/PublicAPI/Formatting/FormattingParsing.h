@@ -168,6 +168,8 @@ struct FormatParsingSegment
         size_t SetLength(size_t s) { return m_byteCount = s; }
         ParsingSegmentType GetType() { return m_type; }
         double GetReal() { return m_dval; }
+        double GetAbsReal() { return fabs(m_dval); }
+        double GetSign() { return (m_dval < 0) ? -1.0 : 1.0; }
         int GetInteger() { return m_ival; }
         BEU::UnitCP GetUnit() { return m_unit; }
         size_t GetNextindex() { return m_start + m_byteCount; }

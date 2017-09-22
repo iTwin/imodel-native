@@ -315,6 +315,10 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestSegments(":12:5", 0, "FT");
     FormattingTestFixture::TestSegments(":12 : 5", 0, "FT");
     FormattingTestFixture::TestSegments("::12", 0, "FT");
+    FormattingTestFixture::TestSegments("5'-8\"", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "M");
+    FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "IN");
     /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());

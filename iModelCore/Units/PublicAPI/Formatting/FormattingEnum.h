@@ -336,6 +336,12 @@ enum class FormatSpecialCodes
     SignatureNUNFU = 7,
     SignatureNUNUNU= 8,
     SignatureNUNUNFU = 9,
+    SignatureNCNCN = 10,
+    SignatureNCCN = 11,
+    SignatureNCC  = 12,
+    SignatureCNCN = 13,
+    SignatureCNC = 14,
+    SignatureCCN = 13,
     SignatureInvalid = 100
     };
 

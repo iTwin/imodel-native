@@ -46,6 +46,7 @@ public:
     //UNITS_EXPORT static QuantityPtr Create(double magnitude, UnitCP unit);
     bool ISValid() { return (nullptr != m_unit); }
     double GetMagnitude() const { return m_magnitude; }
+    double Scale(double scale) { m_magnitude *= scale;  return m_magnitude; }
     UnitCP GetUnit () const { return m_unit; }
     Utf8CP GetUnitName() const { return (nullptr == m_unit)? nullptr : m_unit->GetName(); }
     UNITS_EXPORT Quantity ConvertTo(UnitCP unit) const;
