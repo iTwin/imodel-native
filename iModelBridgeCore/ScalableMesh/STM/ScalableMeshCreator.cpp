@@ -201,9 +201,9 @@ IScalableMeshCreator::~IScalableMeshCreator ()
     }
   
 
-StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
+SMStatus IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
-    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation, doPartialUpdate);
+    return (SMStatus)m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation, doPartialUpdate);
     }
 
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
