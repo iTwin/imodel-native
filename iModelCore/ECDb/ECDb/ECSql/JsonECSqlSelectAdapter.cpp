@@ -44,13 +44,18 @@ struct ECSqlToJsonConverter final : NonCopyableClass
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson) const
+BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJson) const
     {
     ECSqlToJsonConverter converter(m_ecsqlStatement, m_formatOptions);
     if (SUCCESS != converter.ValidatePreconditions())
         return ERROR;
 
-    if (!rowJson.isObject())
+    if (appendToJson)
+        {
+        if (rowJson.isNull() || !rowJson.isObject()) //explicit null check is necessary, as isObject returns true for null as well
+            return ERROR;
+        }
+    else
         rowJson = Json::Value(Json::objectValue);
 
     const int count = m_ecsqlStatement.GetColumnCount();

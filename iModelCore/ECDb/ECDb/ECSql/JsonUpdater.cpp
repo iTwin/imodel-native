@@ -23,6 +23,12 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) con
         return BE_SQLITE_ERROR;
         }
 
+    if (jsonValue.isNull() || !jsonValue.isObject())
+        return BE_SQLITE_ERROR;
+
+    if (jsonValue.size() == 0)
+        return BE_SQLITE_OK;
+
     IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
 
     if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
@@ -39,6 +45,9 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) con
 DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
     if (!sourceKey.IsValid() || !targetKey.IsValid())
+        return BE_SQLITE_ERROR;
+
+    if (jsonValue.isNull() || !jsonValue.isObject())
         return BE_SQLITE_ERROR;
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
@@ -69,6 +78,12 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
         return BE_SQLITE_ERROR;
         }
 
+    if (jsonValue.IsNull() || !jsonValue.IsObject())
+        return BE_SQLITE_ERROR;
+
+    if (jsonValue.MemberCount() == 0)
+        return BE_SQLITE_OK;
+
     IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
 
     if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
@@ -85,6 +100,9 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
     if (!sourceKey.IsValid() || !targetKey.IsValid())
+        return BE_SQLITE_ERROR;
+
+    if (jsonValue.IsNull() || !jsonValue.IsObject())
         return BE_SQLITE_ERROR;
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();

@@ -95,8 +95,12 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @note When using expressions in the SELECT clause it is recommended to assign a column alias to them.
         //! The JSON member name will then be the alias instead of the full expression.
         //! @param [out] json current row as JSON object of property name value pairs
+        //! @param[in] appendToJson If true, the JSON property name value pairs of the retrieved row will
+        //! be appended to @p json. In this case, @p json must have be a JSON object.
+        //! If false, @p json will just contain the retrieved row data. If @p json contained
+        //! members before the call, those will be cleared.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus GetRow(JsonValueR json) const;
+        ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
         //! Gets only the columns from the current row that refer to the specified ECClass
         //!

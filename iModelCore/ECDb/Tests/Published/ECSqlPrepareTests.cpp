@@ -1969,6 +1969,9 @@ TEST_F(ECSqlUpdatePrepareTests, Relationships)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasPSA SET SourceECInstanceId=? WHERE SourceECClassId =123 AND TargetECClassId = 124")) << "Cannot update Source/TargetECInstanceId";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasPSA SET SourceECInstanceId=? WHERE SourceECClassId = 123 + 1 AND TargetECClassId = 124")) << "Cannot update Source/TargetECInstanceId";
 
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasPSA SET SourceECClassId=? WHERE ECInstanceId =123")) << "Cannot update Source/TargetECClassId";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasPSA SET TargetECClassId=? WHERE ECInstanceId =123")) << "Cannot update Source/TargetECClassId";
+
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE B = true"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE B = false"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE B = false AND D = 3.14"));
