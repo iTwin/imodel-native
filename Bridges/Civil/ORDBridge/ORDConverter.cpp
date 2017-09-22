@@ -187,63 +187,15 @@ BentleyStatus ORDAlignmentsConverter::Marshal(CurveVectorPtr& bimCurveVectorPtr,
     return BentleyStatus::SUCCESS;
     }
 
-static DPoint3d SwapYZ(DPoint3dCR source) { return DPoint3d::From(source.x, source.z, source.y); }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDAlignmentsConverter::MarshalVertical(CurveVectorPtr& bimCurveVectorXZPtr, Bentley::CurveVectorCR v8CurveVector)
     {
-    CurveVectorPtr bimCurveVectorXYPtr;
-    DgnDbSync::DgnV8::Converter::ConvertCurveVector(bimCurveVectorXYPtr, v8CurveVector, nullptr); // TODO: CIF seems to return horizontal and vertical points in different units
+    DgnDbSync::DgnV8::Converter::ConvertCurveVector(bimCurveVectorXZPtr, v8CurveVector, nullptr); // TODO: CIF seems to return horizontal and vertical points in different units
 
-    bimCurveVectorXZPtr = CurveVector::Create((CurveVector::BoundaryType) bimCurveVectorXYPtr->GetBoundaryType());
-
-    for (ICurvePrimitivePtr bimCurve : *bimCurveVectorXYPtr)
-        {
-        if (!bimCurve.IsValid())
-            continue;
-
-        switch (bimCurve->GetCurvePrimitiveType())
-            {
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-                {
-                DSegment3dCP segment = (DSegment3dCP) bimCurve->GetLineCP();
-
-                DPoint3d start, end;
-                segment->GetEndPoints(start, end);
-                bimCurveVectorXZPtr->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(SwapYZ(start), SwapYZ(end))));
-                break;
-                }
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                {
-                bvector<DPoint3d> const* bimPoints = bimCurve->GetLineStringCP();
-                bvector<DPoint3d> points;
-
-                for (auto const& bim : *bimPoints)
-                    points.push_back(SwapYZ(bim));
-
-                if (points.size() > 1)
-                    bimCurveVectorXZPtr->push_back(ICurvePrimitive::CreateLineString(points));
-                break;
-                }
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-                {
-                MSBsplineCurveCP bcurve = (MSBsplineCurveCP) bimCurve->GetProxyBsplineCurveCP();
-
-                bimCurveVectorXZPtr->push_back(BentleyApi::ICurvePrimitive::CreateBsplineCurve(*bcurve));
-                break;
-                }
-
-            default:
-                {
-                BeAssert(false && "Unexpected entry in CurveVector.");
-                break;
-                }
-            }
-        }
+    Transform flipAxes = Transform::FromOriginAndVectors(DPoint3d::FromZero(), DVec3d::UnitX(), DVec3d::UnitZ(), DVec3d::UnitY());
+    bimCurveVectorXZPtr->TransformInPlace(flipAxes);
 
     return BentleyStatus::SUCCESS;
     }
