@@ -11,7 +11,7 @@
 
 #include <StructuralDomain/StructuralCommon/StructuralCommonDefinitions.h>
 #include <StructuralDomain/StructuralDomainApi.h>
-#include "SurfaceMember.h"
+#include <StructuralDomain/StructuralPhysical/SurfaceMember.h>
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 

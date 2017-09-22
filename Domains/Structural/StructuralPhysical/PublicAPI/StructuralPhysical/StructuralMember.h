@@ -8,7 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "StructuralElement.h"
+#include <StructuralDomain/StructuralPhysical/StructuralElement.h>
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 
@@ -29,6 +29,10 @@ protected:
 public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(StructuralMember)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(StructuralMember)
+
+    STRUCTURAL_DOMAIN_EXPORT static StructuralMemberPtr Create(Structural::StructuralPhysicalModelCPtr model);
+    STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Insert(Dgn::DgnDbStatus* insertStatus = nullptr);
+    STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Update(Dgn::DgnDbStatus* updateStatus = nullptr);
     };
 
 //=======================================================================================

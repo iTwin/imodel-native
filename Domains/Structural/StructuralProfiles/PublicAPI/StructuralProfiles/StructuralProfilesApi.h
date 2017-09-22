@@ -19,4 +19,9 @@
 #include "PublishedProfile.h"
 #include "VaryingProfile.h"
 #include "VaryingProfileByZone.h"
-//#include "VaryingProfileZone.h"
+#include "ProfiledExtrusion.h"
+#include "CurvedExtrusion.h"
+#include "StraightExtrusion.h"
+#include "Loft.h"
+
+

@@ -98,6 +98,10 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructProfilesPublicAPI)Profile.h \
     $(StructProfilesPublicAPI)PublishedProfile.h \
     $(StructProfilesPublicAPI)VaryingProfile.h \
+    $(StructProfilesPublicAPI)Profiledextrusion.h \
+    $(StructProfilesPublicAPI)CurvedExtrusion.h \
+    $(StructProfilesPublicAPI)StraightExtrusion.h \
+    $(StructProfilesPublicAPI)Loft.h \
     $(StructProfilesPublicAPI)VaryingProfileByZone.h \
     $(StructMaterialPublicAPI)MaterialProperties.h \
     $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
@@ -161,6 +165,34 @@ $(o)SurfaceMember$(oext) : $(StructPhys)SurfaceMember.cpp \
 
 $(o)Form$(oext) : $(StructCommon)Form.cpp \
     ${MultiCompileDepends} \
+    $(StructCommonPublicAPI)Form.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)ProfiledExtrusion$(oext) : $(StructProfiles)ProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
+    $(StructCommonPublicAPI)Form.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)CurvedExtrusion$(oext) : $(StructProfiles)CurvedExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)CurvedExtrusion.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
+    $(StructCommonPublicAPI)Form.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Loft$(oext) : $(StructProfiles)Loft.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)Loft.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
+    $(StructCommonPublicAPI)Form.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)StraightExtrusion$(oext) : $(StructProfiles)StraightExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)StraightExtrusion.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
     $(StructCommonPublicAPI)Form.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 

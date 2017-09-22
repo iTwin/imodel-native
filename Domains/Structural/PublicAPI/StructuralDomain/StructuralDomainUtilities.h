@@ -19,10 +19,11 @@ struct StructuralDomainUtilities
     {
     STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                    RegisterDomainHandlers();
 
+    STRUCTURAL_DOMAIN_EXPORT static BeSQLite::DbResult               InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey, Dgn::DgnDbR db, Utf8StringCR schemaName, Utf8StringCR relationshipClassName, BeSQLite::EC::ECInstanceKey source, BeSQLite::EC::ECInstanceKey target);
+
     STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildDynamicSchemaName(Utf8StringCR modelCodeName);
     STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildPhysicalModelCode(Utf8StringCR modelCodeName);
     STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildTypeDefinitionModelCode(Utf8StringCR modelCodeName);
-
 
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  GetStructuralDynamicSchema(StructuralPhysicalModelCPtr model);
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaPtr                 GetUpdateableSchema(StructuralPhysicalModelCPtr model);

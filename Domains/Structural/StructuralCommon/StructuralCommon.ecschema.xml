@@ -14,7 +14,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Form" displayLabel="Structural Form Aspect">
+    <ECEntityClass typeName="Form" displayLabel="Structural Form Aspect" modifier="none">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -55,7 +55,6 @@
         <ECProperty propertyName="ElasticModulus" typeName="double"/>
         <ECProperty propertyName="YieldStress" typeName="double" description="Fy in AISC nomenclature" displayLabel="Yield Stress" kindOfQuantity="NONE"/>
     </ECEntityClass>
-
     <ECRelationshipClass typeName="PhysicalSteelOwnsStructuralSteelProperties" displayLabel="Physical Steel Owns Structural Steel Properties" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="Physical Steel Owns Structural Steel Properties" polymorphic="true">

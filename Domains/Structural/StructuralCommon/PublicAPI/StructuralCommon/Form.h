@@ -11,7 +11,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Form : Dgn::DgnElement::UniqueAspect
     DGNASPECT_DECLARE_MEMBERS(BENTLEY_STRUCTURAL_COMMON_SCHEMA_NAME, STRUCTURAL_COMMON_CLASS_FormAspect, Dgn::DgnElement::UniqueAspect)
 
         friend struct  FormHandler;
-    private:
+    protected:
         Form() {};
     public:
         STRUCTURAL_DOMAIN_EXPORT static FormPtr Create() { return new Form(); };

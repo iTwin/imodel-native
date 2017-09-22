@@ -66,9 +66,13 @@
     <ClCompile Include="StructuralProfiles\BuiltUpProfile.cpp" />
     <ClCompile Include="StructuralProfiles\BuiltUpProfileComponent.cpp" />
     <ClCompile Include="StructuralProfiles\ConstantProfile.cpp" />
+    <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp" />
+    <ClCompile Include="StructuralProfiles\Loft.cpp" />
     <ClCompile Include="StructuralProfiles\ParametricProfile.cpp" />
     <ClCompile Include="StructuralProfiles\Profile.cpp" />
+    <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp" />
     <ClCompile Include="StructuralProfiles\PublishedProfile.cpp" />
+    <ClCompile Include="StructuralProfiles\StraightExtrusion.cpp" />
     <ClCompile Include="StructuralProfiles\StructuralProfilesDomain.cpp" />
     <ClCompile Include="StructuralProfiles\VaryingProfile.cpp" />
     <ClCompile Include="StructuralProfiles\VaryingProfileByZone.cpp" />
@@ -107,9 +111,13 @@
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfile.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfileComponent.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ConstantProfile.h" />
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h" />
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Loft.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ParametricProfile.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Profile.h" />
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\PublishedProfile.h" />
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StraightExtrusion.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesApi.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDefinitions.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDomain.h" />

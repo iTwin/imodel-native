@@ -167,6 +167,18 @@
     <ClCompile Include="StructuralCommon\Form.cpp">
       <Filter>StructuralCommon</Filter>
     </ClCompile>
+    <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp">
+      <Filter>StructuralProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralProfiles\Loft.cpp">
+      <Filter>StructuralProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp">
+      <Filter>StructuralProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralProfiles\StraightExtrusion.cpp">
+      <Filter>StructuralProfiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -291,6 +303,18 @@
     </ClInclude>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\Form.h">
       <Filter>StructuralCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h">
+      <Filter>StructuralProfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Loft.h">
+      <Filter>StructuralProfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h">
+      <Filter>StructuralProfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StraightExtrusion.h">
+      <Filter>StructuralProfiles</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

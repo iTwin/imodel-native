@@ -498,6 +498,25 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
      return BentleyStatus::SUCCESS;
      }
 
+ BeSQLite::DbResult StructuralDomainUtilities::InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey, Dgn::DgnDbR db, Utf8StringCR schemaName, Utf8StringCR relationshipClassName, BeSQLite::EC::ECInstanceKey source, BeSQLite::EC::ECInstanceKey target)
+    {
+    BeSQLite::DbResult returnStatus(BeSQLite::DbResult::BE_SQLITE_ERROR); //pesimistic point of view
 
+    ECN::ECClassCP relClass = db.GetClassLocater().LocateClass(schemaName.c_str(), relationshipClassName.c_str());
+
+    ECN::StandaloneECRelationshipInstancePtr relInstance = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass->GetRelationshipClassCP())->CreateRelationshipInstance();
+    BeAssert(relInstance.IsValid());
+
+    BeSQLite::EC::ECInstanceId sourceId = source.GetInstanceId();
+    BeAssert(sourceId.IsValid());
+    BeSQLite::EC::ECInstanceId targetId = target.GetInstanceId();
+    BeAssert(targetId.IsValid());
+     
+    returnStatus = db.InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceId, targetId, relInstance.get());
+    BeAssert(BeSQLite::DbResult::BE_SQLITE_OK == returnStatus);
+
+    return returnStatus;
+    }
+ 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 

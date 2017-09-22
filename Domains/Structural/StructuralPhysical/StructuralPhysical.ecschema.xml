@@ -95,7 +95,7 @@
             <Class class="bis:PhysicalMaterial"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="StructuralMemberOwnsStructuralAdditionRelationship" displayLabel="StructuralMember Owns StructuralAddition Relationship" modifier="None" strength="embedding">
+    <ECRelationshipClass typeName="StructuralMemberOwnsStructuralAddition" displayLabel="StructuralMember Owns StructuralAddition Relationship" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="Structural Member Owns Structural Addition" polymorphic="true">
             <Class class="StructuralMember"/>
@@ -104,7 +104,7 @@
             <Class class="StructuralAddition"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="StructuralMemberRefersToStructuralSubtractionRelationship" displayLabel="StructuralMember refers to StructuralSubtraction" modifier="None" strength="referencing">
+    <ECRelationshipClass typeName="StructuralMemberRefersToStructuralSubtraction" displayLabel="StructuralMember refers to StructuralSubtraction" modifier="None" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="Structural Member Owns Structural Addition" polymorphic="true">
             <Class class="StructuralMember"/>

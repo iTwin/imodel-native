@@ -32,6 +32,12 @@
 #define STRUCTURAL_PROFILES_CLASS_VaryingProfile "VaryingProfile"
 #define STRUCTURAL_PROFILES_CLASS_VaryingProfileByZone "VaryingProfileByZone"
 
+#define STRUCTURAL_COMMON_CLASS_ProfiledExtrusion                    "ProfiledExtrusion"
+#define STRUCTURAL_COMMON_CLASS_CurvedExtrusion                      "CurvedExtrusion"
+#define STRUCTURAL_COMMON_CLASS_StraightExtrusion                    "StraightExtrusion"
+#define STRUCTURAL_COMMON_CLASS_Loft                                 "Loft"
+
+
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
@@ -59,3 +65,7 @@ STRUCTURAL_POINTER_TYPEDEFS(VaryingProfileZone)
 STRUCTURAL_POINTER_TYPEDEFS(PublishedProfile)
 STRUCTURAL_POINTER_TYPEDEFS(VaryingProfile)
 STRUCTURAL_POINTER_TYPEDEFS(VaryingProfileByZone)
+STRUCTURAL_POINTER_TYPEDEFS(ProfiledExtrusion)
+STRUCTURAL_POINTER_TYPEDEFS(CurvedExtrusion)
+STRUCTURAL_POINTER_TYPEDEFS(StraightExtrusion)
+STRUCTURAL_POINTER_TYPEDEFS(Loft)

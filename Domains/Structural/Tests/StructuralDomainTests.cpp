@@ -10,6 +10,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
+#include <Bentley\BeAssert.h>
 
 
 #define MODEL_TEST_NAME              "SampleModel"
@@ -674,7 +675,7 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
 
 
 #define CONSTANTPROFILE_CODE_VALUE2       "CONSTANTPROFILE-002"
-TEST_F(StructuralDomainTestFixture, ProfileComponentUsesProfileTests)//incorrect name
+TEST_F(StructuralDomainTestFixture, BuiltUpProfileComponentUsesConstantProfileTest)
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
@@ -791,5 +792,79 @@ TEST_F(StructuralDomainTestFixture, FormClassTests)
     Form::SetAspect(*pw, *formAspect); //set aspect to wall
 
     pw->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }
 
+TEST_F(StructuralDomainTestFixture, StructuralMemberRefersToStructuralSubtractionTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode subtrCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralSubtractionTests - code for subtraction 1");
+    StructuralSubtractionPtr psub1 = StructuralSubtraction::Create(physicalModel);
+    status = psub1->SetCode(subtrCode1);
+    psub1->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode subtrCode2 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralAdditionTests - code for addition 2");
+    StructuralSubtractionPtr psub2 = StructuralSubtraction::Create(physicalModel);
+    status = psub2->SetCode(subtrCode2);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    psub2->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode memberCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralSubtractionTests - code for structural member 1");
+    WallPtr pstructMember1 = Wall::Create(physicalModel);
+    pstructMember1->SetCode(memberCode1);
+    pstructMember1->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode memberCode2 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralSubtractionTests - code for structural member 2");
+    WallPtr pstructMember2 = Wall::Create(physicalModel);
+    pstructMember2->SetCode(memberCode2);
+    pstructMember2->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    
+    //many to many relationship
+    BeSQLite::EC::ECInstanceKey key;
+    BeSQLite::DbResult sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "StructuralMemberRefersToStructuralSubtraction", pstructMember1->GetECInstanceKey(), psub1->GetECInstanceKey());
+    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+
+    sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "StructuralMemberRefersToStructuralSubtraction", pstructMember2->GetECInstanceKey(), psub1->GetECInstanceKey());
+    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+
+    sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "StructuralMemberRefersToStructuralSubtraction", pstructMember1->GetECInstanceKey(), psub2->GetECInstanceKey());
+    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+
+    sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "StructuralMemberRefersToStructuralSubtraction", pstructMember2->GetECInstanceKey(), psub2->GetECInstanceKey());
+    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+    }
+
+TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode addCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralAdditionTests - code for subtraction 1");
+    StructuralAdditionPtr padd1 = StructuralAddition::Create(physicalModel);
+    status = padd1->SetCode(addCode1);
+    padd1->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnCode memberCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralAdditionTests - code for structural member 1");
+    WallPtr pstructMember1 = Wall::Create(physicalModel);
+    pstructMember1->SetCode(memberCode1);//not sure it is correct...
+    pstructMember1->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    status = padd1->SetParentId(pstructMember1->GetElementId(), pstructMember1->GetElementClassId());
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    }

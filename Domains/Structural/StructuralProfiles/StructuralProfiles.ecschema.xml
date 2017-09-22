@@ -4,9 +4,15 @@
     <ECSchemaReference name="StructuralCommon" version="01.00.00" alias="sc" />        
     <ECEntityClass typeName="Profile" description="A structural cross section profile (2D shape)." modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ConstantProfile" description="A Profile that does not varying along its length (unlike Varying Profile).">
         <BaseClass>Profile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <!--<ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.ISurfaceGroup"/>
         <ECProperty propertyName="StandardizedProperties" typeName="string" description="JSON storage of section properties using BIS-standard names and BIS-standard units."/>
         <ECArrayProperty propertyName="AlternateShapeClassification" typeName="string" description="Alternative ways shape can be classified. See ShapeClassification for list of standard values." minOccurs="1" maxOccurs="1"/>
@@ -14,6 +20,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="BuiltUpProfile" description="A Constant Profile that is built up from other Constant Profiles.">
         <BaseClass>ConstantProfile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="BuiltUpProfileComponent">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
@@ -46,10 +55,16 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="ParametricProfile" description="A Constant Profile that can be defined by a small set of dimensions and a known profile type.">
         <BaseClass>ConstantProfile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <ECProperty propertyName="InputProperties" typeName="string" description="JSON storage of input properties for the parametric shape."/>
     </ECEntityClass> 
     <ECEntityClass typeName="VaryingProfileZone" description="This aspect defines a zone of a VaryingProfileByZone.">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order of zones within the VaryingProfileByZone."/>
         <ECProperty propertyName="Transition" typeName="string" description="The transition of the profile between StartProfile and EndProfile along this zone. Standard values are &quot;Linear&quot;, &quot;ParabolicAtStart&quot;, &quot;ParabolicAtEnd&quot;, &quot;ParabolicAtBothEnds&quot;"/>
         <ECNavigationProperty propertyName="EndProfile" relationshipName="ProfileZoneUsesEndProfile" direction="Forward" description="The using MultiAspect">
@@ -79,15 +94,24 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="PublishedProfile" description="A Constant Profile that is defined by a standards organization or other publisher.">
         <BaseClass>ConstantProfile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <ECProperty propertyName="Publisher" typeName="string" description="Name of the organization that published this profile."/>
         <ECProperty propertyName="Document" typeName="string" description="The name of the document, catalog or standard that this profile was published in."/>
         <ECProperty propertyName="Version" typeName="string" description="The version of the document, catalog or standard that that published this profile."/>
     </ECEntityClass>
     <ECEntityClass typeName="VaryingProfile" description="A Profile that varies along its length (unlike Constant Profile)." modifier="Abstract">
         <BaseClass>Profile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="VaryingProfileByZone" description="A Varying Profile that is defined using zones along its length.">
         <BaseClass>VaryingProfile</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="VaryingProfileOwnsZone" description="VaryingProfileByZone's ownership of VaryingProfileZone." modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>                    
@@ -98,12 +122,33 @@
             <Class class="VaryingProfileZone"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="ProfiledExtrusion" description="Profiled Extrusion">
+    <ECEntityClass typeName="ProfiledExtrusion" description="Profiled Extrusion" modifier="none">
         <BaseClass>sc:Form</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="Profile" relationshipName="ProfiledExtrusionHasProfile" direction="Forward" description="The using UniqueAspect">
             <ECCustomAttributes>
             </ECCustomAttributes>
         </ECNavigationProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="CurvedExtrusion" description="Curved Extrusion">
+        <BaseClass>ProfiledExtrusion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="StraightExtrusion" description="Straight Extrusion">
+        <BaseClass>ProfiledExtrusion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Loft" description="Loft">
+        <BaseClass>ProfiledExtrusion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ProfiledExtrusionHasProfile" description="TODO" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="TODO1" polymorphic="true">
