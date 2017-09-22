@@ -26,9 +26,6 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) con
     if (jsonValue.isNull() || !jsonValue.isObject())
         return BE_SQLITE_ERROR;
 
-    if (jsonValue.size() == 0)
-        return BE_SQLITE_OK;
-
     IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
 
     if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
@@ -80,9 +77,6 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 
     if (jsonValue.IsNull() || !jsonValue.IsObject())
         return BE_SQLITE_ERROR;
-
-    if (jsonValue.MemberCount() == 0)
-        return BE_SQLITE_OK;
 
     IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
 
