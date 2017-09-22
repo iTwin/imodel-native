@@ -650,7 +650,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
     {
-    if (jsonValue.isNull() || !jsonValue.isObject())
+    if (!jsonValue.isObject())
         return ERROR;
 
     for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
@@ -965,7 +965,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, R
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater)
     {
-    if (jsonValue.IsNull() || !jsonValue.IsObject())
+    if (!jsonValue.IsObject())
         return ERROR;
 
     for (rapidjson::Value::ConstMemberIterator it = jsonValue.MemberBegin(); it != jsonValue.MemberEnd(); ++it)
