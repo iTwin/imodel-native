@@ -50,7 +50,8 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson) const
     if (SUCCESS != converter.ValidatePreconditions())
         return ERROR;
 
-    rowJson = Json::Value(Json::objectValue);
+    if (!rowJson.isObject())
+        rowJson = Json::Value(Json::objectValue);
 
     const int count = m_ecsqlStatement.GetColumnCount();
     bmap<Utf8String, int> columnNameCollisions;
