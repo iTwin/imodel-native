@@ -201,7 +201,7 @@ DbResult IModelJs::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, Js
 
     BeFileName briefcasePathname(briefcaseToken["pathname"].asCString(), true);
     int briefcaseId = briefcaseToken["briefcaseId"].asInt();
-    DgnDb::OpenMode mode = (DgnDb::OpenMode) briefcaseToken["openMode"].asInt();
+    //DgnDb::OpenMode mode = (DgnDb::OpenMode) briefcaseToken["openMode"].asInt();
 
     /** Open the first time to set the briefcase id and get the DbGuid (used for creating change sets) */
     DbResult result;
