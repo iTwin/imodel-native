@@ -13,6 +13,7 @@
 #include <ECDb/ECDbApi.h>
 #include <ECUnits/Units.h>
 #include <ECObjects/ECSchema.h>
+#include <BeSqlite/BeSqlite.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
@@ -207,8 +208,9 @@ struct StationRange
         if (!rhs.IsValid())
             return;
 
-        startStation = MIN(startStation, rhs.startStation);
-        endStation = MAX(endStation, rhs.endStation);
+        // MIN, MAX macros causing problems on iOS.
+        startStation = startStation <= rhs.startStation ? startStation : rhs.startStation;
+        endStation = endStation > rhs.endStation ? endStation : rhs.endStation;
         }
 
     //! Calculates the distance to the closest station of the range
