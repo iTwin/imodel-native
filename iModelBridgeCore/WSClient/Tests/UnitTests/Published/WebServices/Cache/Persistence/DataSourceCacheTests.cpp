@@ -3357,6 +3357,70 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOne
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "C"}).IsFullyCached());
     }
 
+/*---------------------------------------------------------------------------------**//**
++* @bsimethod                                julius.cepukenas                     09/17
+++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToManyRelationship_ChangesRelationshipWithoutErrors)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToManyRelationshipClass");
+
+    // Prepare cache with A -> B, D -> C and D instnaces
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToManyRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassA", "D"})
+        .AddRelated({"TestSchema.TestOneToManyRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    instances.Add({"TestSchema.TestClassA", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "D"}, {"TestSchema.TestClassB", "C"}));
+
+    // Update relathionship of A -> B to D -> B. Relathionship can have many sources
+    instances.Clear();
+    instances.Add({"TestSchema.TestClassA", "D"})
+        .AddRelated({"TestSchema.TestOneToManyRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassA", "D"})
+        .AddRelated({"TestSchema.TestOneToManyRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    instances.Add({"TestSchema.TestClassA", "A"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "D"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "D"}, {"TestSchema.TestClassB", "C"}));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedManyToOneRelationship_ChangesRelationshipWithoutErrors)
+    {
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestManyToOneRelationshipClass");
+
+    //Prepare cache with instnaces and relathionships
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestManyToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instances.Add({"TestSchema.TestClassA", "C"})
+        .AddRelated({"TestSchema.TestManyToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "C"}, {"TestSchema.TestClassB", "B"}));
+
+    //Update relathionships. Relathionship can have one source many targets
+    instances.Clear();
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestManyToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "D"});
+    instances.Add({"TestSchema.TestClassA", "C"})
+        .AddRelated({"TestSchema.TestManyToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "D"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "C"}, {"TestSchema.TestClassB", "B"}));
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
     {
     auto cache = GetTestCache();

@@ -32,16 +32,17 @@ struct HierarchyManager
 
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
-        BentleyStatus DeleteForOneOneRelate
+        BentleyStatus DeleteForCardinalityViolatingRelate
             (
             ECRelationshipClassCP relationshipClass,
-            ECRelationshipConstraintR relathionshipConstrain,
+            RelationshipMultiplicityCR relatedInstanceCardinality,
             ECInstanceKeyCR instance,
-            std::function <BentleyStatus (ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&) > getRelatedKeysFunction,
-            std::function <BentleyStatus (ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR) > deleteRelathionshipFunction,
+            std::function <BentleyStatus(ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&) > getRelatedKeysFunction,
+            std::function <BentleyStatus(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR) > deleteRelathionshipFunction,
             ECInstanceKeyCR newRelatedInstance,
             ECInstanceKeyR deletedInstanceOut
             );
+
         //! Will only delete relationship without affecting source or target
         BentleyStatus DeleteRelationshipOnly
             (
@@ -105,8 +106,8 @@ struct HierarchyManager
         BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, bvector<ECInstanceKey>& sourcesOut);
         BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, ECInstanceKeyMultiMap& sourcesOut);
 
-        //! For one to one relathionsip deletes constraining relathionships
-        BentleyStatus DeleteForOneOneRelate
+        //! Deletes constraining relathionships
+        BentleyStatus DeleteForCardinalityViolatingRelate
             (
             ECInstanceKeyCR source,
             ECInstanceKeyCR target,
