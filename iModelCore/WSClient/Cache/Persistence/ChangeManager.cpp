@@ -1269,8 +1269,8 @@ void ChangeManager::RemoveCacheSpecificProperties(JsonValueR propertiesJson)
             {
             propertiesJson.removeMember(member);
             }
-        //Todo: get reserved json EC members from EC framework
-        if (member == "id" || member == "className" || member == "sourceId" || member == "sourceClassName" || member == "targetId" || member == "targetClassName")
+
+        if (ECJsonSystemNames::IsTopLevelSystemMember(member))
             {
             propertiesJson.removeMember(member);
             }

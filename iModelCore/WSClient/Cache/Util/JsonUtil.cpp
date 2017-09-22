@@ -8,6 +8,7 @@
 
 #include <WebServices/Cache/Util/JsonUtil.h>
 #include <rapidjson/prettywriter.h>
+#include <WebServices/Cache/Util/ECDbHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
@@ -23,9 +24,9 @@ void JsonUtil::RemoveECMembers(JsonValueR instanceJson)
             {
             instanceJson.removeMember(memberName);
             }
-        //Todo: Needs update
-        if (memberName == "id" || memberName == "className" || memberName == "sourceId" || memberName == "sourceClassName" || memberName == "targetId" || memberName == "targetClassName")
-             {
+
+        if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+            {
             instanceJson.removeMember(memberName);
             }
         }
@@ -43,6 +44,12 @@ void JsonUtil::RemoveECMembers(RapidJsonValueR instanceJson)
             {
             membersToRemove.push_back(it->name.GetString());
             }
+
+        if (0 != it->name.GetStringLength() && ECJsonSystemNames::IsTopLevelSystemMember(it->name.GetString()))
+            {
+            membersToRemove.push_back(it->name.GetString());
+            }
+
         }
     for (auto& memberName : membersToRemove)
         {
