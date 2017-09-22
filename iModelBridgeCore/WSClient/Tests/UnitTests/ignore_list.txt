@@ -356,3 +356,7 @@ UrlProviderTests.GetUrl_ValidateAllGetters
     #          Expected: to be called once
     #            Actual: never called - unsatisfied and active
     # [  FAILED  ] UrlProviderTests.GetUrl_ValidateAllGetters (893 ms)
+
+UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl
+    # bim2-0r1, x64, NDEBUG, random PRG failure
+    # Crash (no output)
