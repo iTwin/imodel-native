@@ -593,10 +593,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         params.SetWeight(paramsV8.GetWeight());
         }
 
-    //  NEEDSWORK LineStyles How do line style overrides interact with STYLE_BYLEVEL, overrides?
-    //  NEEDSWORK LineStyles what do we do with LINECODE?
-
-    DgnModelRefP        styleModelRef;
+    DgnModelRefP styleModelRef;
 
     if (nullptr != ovr && ovr->GetFlags().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef()) ? context.GetCurrentModel() :ovr->GetLineStyleModelRef()))
         {
@@ -605,9 +602,13 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
             InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
             }
         }
-    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
+    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
         {
-        InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), paramsV8.GetLineStyleParams());
+        DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams();
+
+        // Ugh...still need modifiers like start/end width for STYLE_BYLEVEL... :(
+        if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
+            InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
         }
 
     params.SetTransparency(paramsV8.GetTransparency());
