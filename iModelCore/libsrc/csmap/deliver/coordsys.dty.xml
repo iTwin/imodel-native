@@ -13354,6 +13354,66 @@
                               <Member>
                                 <KeyName>EPSG:3428</KeyName>
                               </Member>
+                              <Member>
+                                <KeyName>KRCS-01-Goodland</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-02-Colby</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-03-Oberlin</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-04-Hays</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-05-GreatBend</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-06-Beloit</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-07-Salina</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-08-Manhattan</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-09-Emporia</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-10-Atchison</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-11-KansasCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-12-Ulysses</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-13-GardenCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-14-DodgeCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-15-Larned</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-16-Pratt</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-17-Wichita</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-18-ArkansasCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-19-Coffeyville</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-20-Pittsburg</KeyName>
+                              </Member>
                             </Members>
                           </Group>
                           <Group>
