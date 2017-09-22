@@ -132,7 +132,7 @@ public:
 
     //! Safely transform curves that have partial alignments.
     //! @remarks also works with regular curves
-    ROADRAILALIGNMENT_EXPORT static void TransformCurveWithPartialAlignments(CurveVectorR curve, TransformCR transform);
+    ROADRAILALIGNMENT_EXPORT static void TransformCurveWithPartialCurves(CurveVectorR curve, TransformCR transform);
 
 public:
     ROADRAILALIGNMENT_EXPORT static AlignmentPairPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);

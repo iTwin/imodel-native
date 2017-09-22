@@ -314,7 +314,7 @@ CurveVectorPtr AlignmentPair::GetConvertedCurveVector(CurveVectorCR cv, double c
     {
     CurveVectorPtr returnVector = cv.Clone();
     Transform trans = Transform::FromScaleFactors(convFactor, convFactor, convFactor);
-    TransformCurveWithPartialAlignments(*returnVector, trans);
+    TransformCurveWithPartialCurves(*returnVector, trans);
     return returnVector;
     }
 
@@ -649,7 +649,7 @@ CurveVectorPtr AlignmentPair::GetPartialVerticalAlignment(double startDistanceAl
     if (retVal.IsValid() && fabs(0.0 - startDistanceAlongFromStart) > DBL_EPSILON)
         {
         Transform trans = Transform::From(0.0 - startDistanceAlongFromStart, 0.0, 0.0);
-        TransformCurveWithPartialAlignments(*retVal, trans);
+        TransformCurveWithPartialCurves(*retVal, trans);
 
         DPoint3d start, end;
         retVal->GetStartEnd (start, end);
@@ -660,7 +660,7 @@ CurveVectorPtr AlignmentPair::GetPartialVerticalAlignment(double startDistanceAl
             {
             BeAssert(end.x < start.x);
             Transform xAxisSignTransform = Transform::FromScaleFactors(-1, 1.0, 1.0);
-            TransformCurveWithPartialAlignments(*retVal, xAxisSignTransform);
+            TransformCurveWithPartialCurves(*retVal, xAxisSignTransform);
             }
         }
 
@@ -879,7 +879,7 @@ bool AlignmentPair::ComputeIntersectionWith (DPoint3dR result, AlignmentPairCP s
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPair::TransformCurveWithPartialAlignments(CurveVectorR cv, TransformCR transform)
+void AlignmentPair::TransformCurveWithPartialCurves(CurveVectorR cv, TransformCR transform)
     {
     for (auto& primitive : cv)
         {
