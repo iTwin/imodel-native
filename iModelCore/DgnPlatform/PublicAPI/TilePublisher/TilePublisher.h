@@ -319,7 +319,8 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteModelMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet);
+    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels);
+    void AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds);
     WString GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const;
     ClassifierInfo const* GetCurrentClassifier() const { return m_currentClassifier; }
 

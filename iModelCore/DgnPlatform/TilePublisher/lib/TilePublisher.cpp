@@ -3617,33 +3617,50 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
+Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
     bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
         auto attachment = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-        DrawingViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<DrawingViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
+        ViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<ViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
         if (view.IsNull())
             continue;
 
+        // Handle wacky 'spatial' views created for 2d models by DgnV8Converter...
+        DgnModelIdSet viewedModels;
+        GetViewedModelsFromView(viewedModels, attachment->GetAttachedViewId());
+        BeAssert(1 == viewedModels.size());
+        if (viewedModels.empty())
+            continue;
+
+        DgnModelId baseModelId = *viewedModels.begin();
+        attachedModels.insert(baseModelId);
+
         Json::Value viewJson;
-        viewJson["baseModelId"] = view->GetBaseModelId().ToString();
+        viewJson["baseModelId"] = baseModelId.ToString();
         viewJson["categorySelector"] = view->GetCategorySelectorId().ToString();
         viewJson["displayStyle"] = view->GetDisplayStyleId().ToString();
 
         DPoint3d            viewOrigin = view->GetOrigin();
         AxisAlignedBox3d    sheetRange = attachment->GetPlacement().CalculateRange();
         double              sheetScale = sheetRange.XLength() / view->GetExtents().x;
+
+        // HACK: For some reason, attachments to drawings of 3D models, and attachments with any scaling factor, end up as 'spatial' views of 'spatial' models in the converter.
+        // Revert the ECEF transform we apply to such models so they will render on the sheet, which is not itself transformed.
+        Transform ecefToSheet;
+        if (view->IsSpatialView() && !m_spatialToEcef.IsIdentity())
+            ecefToSheet.InverseOf(m_spatialToEcef);
+        else
+            ecefToSheet.InitIdentity();
+
         Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
                             viewRotation = Transform::From(view->GetRotation()),
                             scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
-                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0)),
-                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)),
-                            sheetToTile;
+                            addSheetOrigin = Transform::FromProduct(ecefToSheet, Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0))),
+                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
 
-        sheetToTile.InverseOf(tileToSheet);
         viewJson["transform"] = TransformToJson(tileToSheet);
 
         attachmentsJson.append(std::move(viewJson));
@@ -4035,76 +4052,88 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
     {
-    Json::Value     modelsJson (Json::objectValue);
-    
-    for (auto& modelId : modelIds)
-        {
-        auto const&  model = GetDgnDb().Models().GetModel (modelId);
-        if (model.IsValid())
-            {
-            auto spatialModel = model->ToSpatialModel();
-            auto model2d = nullptr == spatialModel ? dynamic_cast<GraphicalModel2dCP>(model.get()) : nullptr;
-            if (nullptr == spatialModel && nullptr == model2d)
-                {
-                BeAssert(false && "Unsupported model type");
-                continue;
-                }
-
-            auto modelRangeIter = m_modelRanges.find(modelId);
-            if (m_modelRanges.end() == modelRangeIter)
-                continue; // this model produced no tiles. ignore it.
-
-            ModelRange modelRange = modelRangeIter->second;
-            if (modelRange.m_range.IsNull())
-                {
-                BeAssert(false && "Null model range");
-                continue;
-                }
-
-            Json::Value modelJson(Json::objectValue);
-
-            auto        sheetModel = model->ToSheetModel();
-
-            // The reality models (Point Clouds and Reality meshes) do not contain elements and therefore
-            // no categories etc.   They unfortunately do not have their own base class and therefore no
-            // good way to detect - except that they do not extend physical model.
-            bool        isRealityModel = nullptr != spatialModel && nullptr == model->ToPhysicalModel();
-
-            modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? (isRealityModel ? "reality" : "spatial") : (nullptr != sheetModel ? "sheet" : "drawing");
-
-            if (nullptr != spatialModel)
-                {
-                if (modelRange.m_isEcef)
-                    {
-                    modelJson["transform"] = TransformToJson(Transform::FromIdentity());
-                    }
-                else
-                    {
-                    m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
-                    modelJson["transform"] = TransformToJson(m_spatialToEcef);
-                    }
-                }
-            else if (nullptr != sheetModel)
-                {
-                modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
-                }
-
-            modelJson["extents"] = RangeToJson(modelRange.m_range);
-            modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
-
-#ifdef PER_MODEL_CLASSIFIER
-            // Cesium doesn't support classifying a single model as we do in JSon.
-            auto const& foundClassifier = m_classifierMap.find(modelId);
-            if (foundClassifier != m_classifierMap.end())
-                modelJson["classifiers"] = GetClassifiersJson(foundClassifier->second);
-#endif
-
-            modelsJson[modelId.ToString()] = modelJson;
-            }
-        }
+    Json::Value modelsJson(Json::objectValue);
+    for (auto const& modelId : modelIds)
+        AddModelJson(modelsJson, modelId, modelIds);
 
     return modelsJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds)
+    {
+    auto const&  model = GetDgnDb().Models().GetModel (modelId);
+    if (model.IsValid())
+        {
+        auto spatialModel = model->ToSpatialModel();
+        auto model2d = nullptr == spatialModel ? dynamic_cast<GraphicalModel2dCP>(model.get()) : nullptr;
+        if (nullptr == spatialModel && nullptr == model2d)
+            {
+            BeAssert(false && "Unsupported model type");
+            return;
+            }
+
+        auto modelRangeIter = m_modelRanges.find(modelId);
+        if (m_modelRanges.end() == modelRangeIter)
+            return; // this model produced no tiles. ignore it.
+
+        ModelRange modelRange = modelRangeIter->second;
+        if (modelRange.m_range.IsNull())
+            {
+            BeAssert(false && "Null model range");
+            return;
+            }
+
+        Json::Value modelJson(Json::objectValue);
+
+        auto        sheetModel = model->ToSheetModel();
+
+        // The reality models (Point Clouds and Reality meshes) do not contain elements and therefore
+        // no categories etc.   They unfortunately do not have their own base class and therefore no
+        // good way to detect - except that they do not extend physical model.
+        bool        isRealityModel = nullptr != spatialModel && nullptr == model->ToPhysicalModel();
+
+        modelJson["name"] = model->GetName();
+        modelJson["type"] = nullptr != spatialModel ? (isRealityModel ? "reality" : "spatial") : (nullptr != sheetModel ? "sheet" : "drawing");
+
+        if (nullptr != spatialModel)
+            {
+            if (modelRange.m_isEcef)
+                {
+                modelJson["transform"] = TransformToJson(Transform::FromIdentity());
+                }
+            else
+                {
+                m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
+                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                }
+            }
+        else if (nullptr != sheetModel)
+            {
+            DgnModelIdSet attachedModels;
+            modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel, attachedModels);
+
+            // Ensure all attached models are included in the models array
+            // NB: No in-place version of std::set_difference...
+            for (auto const& attachedModelId : attachedModels)
+                if (modelIds.end() == modelIds.find(attachedModelId))
+                    AddModelJson(modelsJson, attachedModelId, modelIds);
+            }
+
+        modelJson["extents"] = RangeToJson(modelRange.m_range);
+        modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
+
+#ifdef PER_MODEL_CLASSIFIER
+        // Cesium doesn't support classifying a single model as we do in JSon.
+        auto const& foundClassifier = m_classifierMap.find(modelId);
+        if (foundClassifier != m_classifierMap.end())
+            modelJson["classifiers"] = GetClassifiersJson(foundClassifier->second);
+#endif
+
+        modelsJson[modelId.ToString()] = modelJson;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
