@@ -209,7 +209,10 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 #define QUERY_ID 0 
 
 static double s_minScreenPixelsPerPoint = 800;
+
+//For now keep the old value (i.e. : 1) for already support sources but set a higher level for streaming texture source because 1 seems a bit too low anyway.
 static double s_maxPixelError = 1;
+static double s_maxPixelErrorStreamingTexture = 2;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -980,7 +983,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
         viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-        viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
+                
+        if (m_isUsingBingMap)
+            {
+            viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
+            }
+        else
+            {
+            viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
+            }
             
         ClipVectorCP clip;
         clip = context.GetTransformClipStack().GetClip();
@@ -1251,6 +1262,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_subModel = false;
     m_loadedAllModels = false;
     m_startClipCount = 0;
+    m_isUsingBingMap = false;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1504,7 +1516,13 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, fileId, basePath);
 
+    IScalableMeshTextureInfoPtr textureInfo;
 
+    StatusInt result = m_smPtr->GetTextureInfo(textureInfo);
+
+    assert(result == SUCCESS);
+
+    m_isUsingBingMap = textureInfo->IsUsingBingMap();
     }
 
 //----------------------------------------------------------------------------------------

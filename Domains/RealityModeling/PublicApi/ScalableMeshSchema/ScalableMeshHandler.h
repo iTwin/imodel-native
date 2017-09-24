@@ -132,7 +132,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         IScalableMeshPtr                        m_smPtr;
         Transform                               m_smToModelUorTransform;
         Transform                               m_modelUorToSmTransform;
-        bool                                    m_tryOpen;         
+        bool                                    m_tryOpen;        
+        bool                                    m_isUsingBingMap; 
 
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
         IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
