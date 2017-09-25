@@ -59,6 +59,7 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOn
     auto expectedJson = ToJson(R"({
         "instance":
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"A"
@@ -113,6 +114,7 @@ TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJso
     auto expectedJson = ToJson(R"({
         "instances":[
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"Foo"
@@ -134,6 +136,7 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneExistingIn
     auto expectedJson = ToJson(R"({
         "instance":
             {
+            "changeState":"existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"Foo"
