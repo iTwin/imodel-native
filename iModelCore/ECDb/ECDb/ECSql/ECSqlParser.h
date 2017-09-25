@@ -83,9 +83,7 @@ private:
 
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
-
     //No need to free this as it is a static member (See http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific)
-    static connectivity::OSQLParser* s_sharedParser;
     static BeMutex s_mutex;
 
     //root nodes

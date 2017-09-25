@@ -52,6 +52,7 @@ namespace connectivity
             sal_Bool m_bInternational; // do we have a statement which may uses
             sal_Int32 m_nRule; // rule to be set
             OSQLParseNodesContainer m_pGarbageCollector;
+            void* m_pval;
         public:
             yyscan_t  yyscanner; //do not add m_ with this var as it used in macros;
 

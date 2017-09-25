@@ -28,6 +28,7 @@
 //#define BISON_INCLUDED
 #include "SqlBison.h"
 //#endif
+
 #include "SqlParse.h"
 #include "DataType.h"
 #include "SqlScan.h"

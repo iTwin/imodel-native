@@ -18,7 +18,6 @@ USING_NAMESPACE_BENTLEY_EC
 // @bsimethod                                    Krischan.Eberle                    04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-OSQLParser* ECSqlParser::s_sharedParser = nullptr;
 BeMutex ECSqlParser::s_mutex;
 
 //-----------------------------------------------------------------------------------------
@@ -29,7 +28,8 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
     ScopedContext scopedContext(*this, ecdb);
     //Parse statement
     Utf8String error;
-    std::unique_ptr<OSQLParseNode> parseTree(GetSharedParser().parseTree(error, ecsql));
+    OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
+    std::unique_ptr<OSQLParseNode> parseTree(parser.parseTree(error, ecsql));
 
     if (parseTree == nullptr || !error.empty())
         {
@@ -2642,22 +2642,6 @@ Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
                 BeAssert(false && "TokenId unhandled by ECSqlParser::SqlKeywordToString");
                 return "";
         }
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    05/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-OSQLParser& ECSqlParser::GetSharedParser()
-    {
-    if (s_sharedParser == nullptr)
-        {
-        BeMutexHolder lock(GetMutex());
-        if (nullptr == s_sharedParser)
-            s_sharedParser = new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
-        }
-
-    return *s_sharedParser;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -669,13 +669,14 @@ OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sa
     BEGIN(m_nRule);
     //yy_scan_string(rNewStatement, yyscanner);
     yyset_extra(this, yyscanner);
+    m_pval = SQLyyalloc(sizeof(YYSTYPE), yyscanner);
+    memset(m_pval, 0x00, sizeof(union YYSTYPE));
     }
 
 //------------------------------------------------------------------------------
 OSQLScanner::~OSQLScanner()
     {
-    //struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    //yy_delete_buffer(YY_CURRENT_BUFFER);
+    SQLyyfree(m_pval, yyscanner);
     yylex_destroy(&yyscanner);
     }
 
@@ -766,7 +767,7 @@ sal_Int32	OSQLScanner::GetSTRINGRule() const	{ return STRING; }
 // -------------------------------------------------------------------------
 sal_Int32 OSQLScanner::SQLlex()
     {
-    return SQLyylex(nullptr, yyscanner);
+    return SQLyylex((YYSTYPE*)m_pval, yyscanner);
     }
 
 // -------------------------------------------------------------------------
