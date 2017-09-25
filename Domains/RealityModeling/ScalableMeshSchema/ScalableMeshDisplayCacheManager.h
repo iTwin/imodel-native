@@ -44,6 +44,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         //Inherited from IScalableMeshDisplayCacheManager
         virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
+                                                size_t&                 usedMemInBytes,
+                                                bool&                   isStoredOnGpu,
                                                 size_t                  nbVertices,
                                                 DPoint3d const*         positionOrigin,
                                                 float*                  positions,
@@ -58,6 +60,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) override;
 
         virtual BentleyStatus _CreateCachedTexture(SmCachedDisplayTexture*& cachedDisplayTexture,
+                                                   size_t&                  usedMemInBytes,
+                                                   bool&                    isStoredOnGpu,
                                                    int                      xSize,
                                                    int                      ySize,
                                                    int                      enableAlpha,
