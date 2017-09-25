@@ -1258,12 +1258,8 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
             m_geometry->TransformInPlace(goopTrans);
 
             // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
-            //       LineStyleParams only needs to be rotated for placement, the scale has already been accounted for...
+            //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
             m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
-
-            // NOTE: Part scale does need to be accounted for in linestyle scale...
-            if (0.0 != m_partScale && 1.0 != m_partScale && m_geomParams.IsTransformable())
-                m_geomParams.ApplyTransform(Transform::FromScaleFactors(m_partScale, m_partScale, m_partScale));
             }
 
         // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -1545,6 +1541,19 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+
+    // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
+    //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok 
+    //       that we only account for scale here in _ProcessCurveVector.
+    if (pathEntry.m_geomParams.IsTransformable())
+        {
+        RotMatrix   rMatrix, rotation, skewFactor;
+
+        DoInterop(m_currentTransform).GetMatrix(rMatrix);
+
+        if (rMatrix.RotateAndSkewFactors(rotation, skewFactor, 0, 1) && !skewFactor.IsIdentity())
+            pathEntry.m_geomParams.ApplyTransform(Transform::From(skewFactor));
+        }
 
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
