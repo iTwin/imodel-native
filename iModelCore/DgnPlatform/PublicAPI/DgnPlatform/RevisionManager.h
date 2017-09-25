@@ -36,7 +36,6 @@ private:
     DgnCodeSet  m_discardedCodes;
     DgnLockSet  m_usedLocks;
 
-    void SetRevisionChangesFile(BeFileNameCR revChangesFile) { m_revChangesFile = revChangesFile; }
     static BeFileName BuildRevisionChangesPathname(Utf8String revisionId);
 
 protected:    
@@ -70,8 +69,10 @@ public:
     //! Get the GUID of the DB that the revision belongs to
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
 
-    //! Get the name of the file that should contain the change contents of this revision
+    //! Get or set the name of the file that should contain the change contents of this revision
+    //! @remarks A default path is setup based on the id of the revision
     BeFileNameCR GetRevisionChangesFile() const { return m_revChangesFile; }
+    void SetRevisionChangesFile(BeFileNameCR revChangesFile) { m_revChangesFile = revChangesFile; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
