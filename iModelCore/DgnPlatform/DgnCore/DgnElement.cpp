@@ -1270,7 +1270,7 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         }
         
     JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
-    adapter.GetRow(elementJson);
+    adapter.GetRow(elementJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
