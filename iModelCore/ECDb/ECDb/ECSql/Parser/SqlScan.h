@@ -22,15 +22,18 @@
 
 #ifndef _CONNECTIVITY_SQLSCAN_HXX
 #define _CONNECTIVITY_SQLSCAN_HXX
+#pragma once
 
 #include <stdarg.h>
 #include "IParseContext.h"
 #include "SqlTypes.h"
+#include "SqlParse.h"
 
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T
 typedef void* yyscan_t;
 #endif
+
 
 namespace connectivity
     {
@@ -48,14 +51,14 @@ namespace connectivity
             sal_Int32 m_nCurrentPos; // next position to read from the statement
             sal_Bool m_bInternational; // do we have a statement which may uses
             sal_Int32 m_nRule; // rule to be set
-
+            OSQLParseNodesContainer m_pGarbageCollector;
         public:
             yyscan_t  yyscanner; //do not add m_ with this var as it used in macros;
 
         public:
             OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
             virtual ~OSQLScanner();
-
+            OSQLParseNodesContainer& GetContainer() { return m_pGarbageCollector; }
             inline static void * SAL_CALL operator new(size_t nSize) SAL_THROW(()) { return malloc(nSize); }
             inline static void * SAL_CALL operator new(size_t, void* _pHint) SAL_THROW(()) { return _pHint; }
             inline static void SAL_CALL operator delete(void * pMem) SAL_THROW(()) { free(pMem); }
@@ -79,6 +82,11 @@ namespace connectivity
             sal_Int32    GetDATERule() const;
             sal_Int32    GetSTRINGRule() const;
             inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
+
+            OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
+            OSQLParseNode* NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
+
+
         };
     }
 

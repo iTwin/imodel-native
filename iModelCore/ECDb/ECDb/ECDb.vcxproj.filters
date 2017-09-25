@@ -741,6 +741,9 @@
     <ClCompile Include="JsonPersistenceHelper.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
+    <ClCompile Include="ECSql\Parser\SqlParse.cpp">
+      <Filter>ECSql\OSQLParser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">

@@ -35,8 +35,6 @@ OSQLInternalNode::OSQLInternalNode (const sal_Char* pNewValue,
     sal_uInt32 nNodeID)
     : OSQLParseNode (pNewValue, eNodeType, nNodeID)
     {
-    OSL_ENSURE (OSQLParser::s_pGarbageCollector, "Collector not initialized");
-    (*OSQLParser::s_pGarbageCollector)->push_back (this);
     }
 
 //-----------------------------------------------------------------------------
@@ -45,17 +43,11 @@ OSQLInternalNode::OSQLInternalNode (Utf8String const& _NewValue,
     sal_uInt32 nNodeID)
     :OSQLParseNode (_NewValue, eNodeType, nNodeID)
     {
-    OSL_ENSURE (OSQLParser::s_pGarbageCollector, "Collector not initialized");
-    (*OSQLParser::s_pGarbageCollector)->push_back (this);
     }
 
 //-----------------------------------------------------------------------------
 OSQLInternalNode::~OSQLInternalNode ()
     {
-    // remove the node from the garbage list
-
-    OSL_ENSURE (OSQLParser::s_pGarbageCollector, "Collector not initialized");
-    (*OSQLParser::s_pGarbageCollector)->erase (this);
     }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

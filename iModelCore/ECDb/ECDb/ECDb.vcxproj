@@ -93,6 +93,7 @@
     <ClCompile Include="ECSql\Parser\SqlFlex.cpp" />
     <ClCompile Include="ECSql\Parser\SqlNode.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementImpl.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlParse.cpp" />
     <ClCompile Include="ECSql\PointECSqlBinder.cpp" />
     <ClCompile Include="ECSql\PointECSqlField.cpp" />
     <ClCompile Include="ECSql\PrimitiveECSqlBinder.cpp" />

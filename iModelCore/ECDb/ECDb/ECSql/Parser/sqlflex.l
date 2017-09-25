@@ -84,24 +84,24 @@ static sal_Int32	gatherName(yyscan_t yyscanner, const sal_Char*);
 static sal_Int32	gatherNamePre(yyscan_t yyscanner, const sal_Char* );
 static sal_Int32    parseString(yyscan_t yyscanner);
 
-#define SQL_NEW_NODE(text, token)	\
-		SQLyyget_lval(yyscanner)->pParseNode = new OSQLInternalNode(text, token);	    
+#define SQL_NEW_NODE(text, token) \
+		SQLyyget_lval(yyscanner)->pParseNode=yyget_extra(yyscanner)->NewNode(text, token);	    
 
-#define SQL_NEW_KEYWORD(token)						\
-		SQLyyget_lval(yyscanner)->pParseNode = new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, (token));		return token;
+#define SQL_NEW_KEYWORD(token) \
+		SQLyyget_lval(yyscanner)->pParseNode=yyget_extra(yyscanner)->NewNode(aEmptyString, SQL_NODE_KEYWORD, (token)); return token;
 
 #define SQL_NEW_INTNUM 		SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_INTNUM); return SQL_TOKEN_INTNUM;
 #define SQL_NEW_APPROXNUM 	SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_APPROXNUM); return SQL_TOKEN_APPROXNUM;
 #define SQL_NEW_DATE 		SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_ACCESS_DATE); return SQL_TOKEN_ACCESS_DATE;
 #define YY_EXTRA_TYPE OSQLScanner*
-#define YY_INPUT(buf,result,max_size)               \
-{                                                   \
-    int c = yyget_extra(yyscanner)->SQLyygetc();       \
-    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1);\
+#define YY_INPUT(buf,result,max_size) \
+{ \
+    int c = yyget_extra(yyscanner)->SQLyygetc(); \
+    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 }
-#define YY_FATAL_ERROR(msg)							\
-{													\
-	yyget_extra(yyscanner)->SQLyyerror(msg);			\
+#define YY_FATAL_ERROR(msg) \
+{ \
+	yyget_extra(yyscanner)->SQLyyerror(msg); \
 }													
 
 //
@@ -768,6 +768,26 @@ sal_Int32 OSQLScanner::SQLlex()
     {
     return SQLyylex(nullptr, yyscanner);
     }
+
+// -------------------------------------------------------------------------
+OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
+    {
+    auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
+    m_pGarbageCollector.push_back(newNode);
+    newNode->m_container = &m_pGarbageCollector;
+    return newNode;
+    }
+
+// -------------------------------------------------------------------------
+OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
+    {
+    auto newNode = new OSQLParseNode(_rNewValue, eNodeType, nNodeID);
+    m_pGarbageCollector.push_back(newNode);
+    newNode->m_container = &m_pGarbageCollector;
+    return newNode;
+    }
+
+// -------------------------------------------------------------------------
 
 #if defined __SUNPRO_CC
 #pragma enable_warn

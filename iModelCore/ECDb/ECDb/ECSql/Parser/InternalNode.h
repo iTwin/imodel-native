@@ -35,7 +35,11 @@ namespace connectivity
     */
     class OSQLInternalNode : public OSQLParseNode
         {
-        public:
+        friend class OSQLScanner;
+
+        private:
+            OSQLParseNodesContainer* m_container;
+
             OSQLInternalNode (const sal_Char* pNewValue,
                 SQLNodeType eNodeType,
                 sal_uInt32 nNodeID = 0);
