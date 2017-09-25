@@ -1269,6 +1269,11 @@ void ChangeManager::RemoveCacheSpecificProperties(JsonValueR propertiesJson)
             {
             propertiesJson.removeMember(member);
             }
+
+        if (ECJsonSystemNames::IsTopLevelSystemMember(member))
+            {
+            propertiesJson.removeMember(member);
+            }
         }
     }
 
@@ -1295,7 +1300,7 @@ void ChangeManager::RemoveCalculatedProperties(JsonValueR propertiesJson, ECClas
     for (Utf8StringCR member : propertiesJson.getMemberNames())
         {
         ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
-        if (nullptr != ecProperty->GetCalculatedPropertySpecification())
+        if (nullptr != ecProperty->GetCalculatedPropertySpecification()) 
             {
             propertiesJson.removeMember(member);
             }
