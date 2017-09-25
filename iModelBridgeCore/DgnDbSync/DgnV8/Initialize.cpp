@@ -473,138 +473,22 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 {
                 return false;
                 }
+
+            virtual Utf8String _GetProjectID() const override
+                {
+                Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+                Bentley::WString projectGUIDw;
+
+                if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                    {
+                    projectGUID.Assign(projectGUIDw.c_str());
+                    }
+                return projectGUID;
+                }
             };
         return *new CsScalableMeshAdmin;
         };
-
-
-    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin()
-        {
-
-        auto getTokenFunction = []() -> Utf8String
-            {
-            Utf8String emptyToken;
-            return emptyToken;
-            };
-        return *new ScalableMesh::WsgTokenAdmin(getTokenFunction);
-        }
-
-
-    ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
-        {
-        auto getTokenFunction = [this](const Utf8String& realityDataGuid) -> Utf8String
-            {
-            SMHost::initializeRealityDataService();
-            if (m_sasConnections.find(realityDataGuid) == m_sasConnections.end())
-                {
-                SASConnection newConnection;
-                newConnection.m_handshake = new AzureHandshake(realityDataGuid, false /*writeable*/);
-                m_sasConnections[realityDataGuid] = newConnection;
-                }
-            assert(m_sasConnections.find(realityDataGuid) != m_sasConnections.end());
-            auto& sasConnection = m_sasConnections[realityDataGuid];
-            assert(sasConnection.m_handshake != nullptr);
-            int64_t currentTime;
-            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-            if ((sasConnection.m_azureTokenTimer - currentTime) < 0)
-                {
-                // Request Azure URL of the reality data
-                RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)sasConnection.m_handshake);
-                if (rawResponse.status != RequestStatus::BADREQ)
-                    {
-                    // The handshake status with Azure need not be checked, if the request fails the current token will be used until it expires (or return an empty token)
-                    /*BentleyStatus handshakeStatus = */
-                    sasConnection.m_handshake->ParseResponse(rawResponse.body, sasConnection.m_azureServer, sasConnection.m_azureToken, sasConnection.m_azureTokenTimer);
-                    }
-                else
-                    {
-                    // Try again after 50 minutes...
-                    sasConnection.m_azureTokenTimer = currentTime + 1000 * 60 * 50;
-                    assert(!"Problem with the handshake");
-                    }
-                }
-            return sasConnection.m_azureToken;
-            };
-        return *new ScalableMesh::SASTokenAdmin(getTokenFunction);
-        }
-
-
-    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
-        {
-        auto getSSLCertificatePath = []() -> Utf8String
-            {
-            Utf8String certificatePath;
-            return certificatePath;
-            };
-
-        return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
-        }
-
-
-    private:
-
-        struct SASConnection
-            {
-            int64_t m_azureTokenTimer = 0;
-            Utf8String m_azureToken;
-            Utf8String m_azureServer;
-            AzureHandshake* m_handshake;
-            };
-
-        bmap<Utf8String, SASConnection> m_sasConnections;
-
-        static StatusInt initializeRealityDataService()
-            {
-            if (RealityDataService::AreParametersSet()) return SUCCESS;
-
-            WString serverUrl;
-
-#if 0 
-            //WString serverUrl = L"connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
-            serverUrl = L"qa-connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
-#endif
-
-            try {
-                Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-                std::wstring buddiUrl;
-                connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-
-                serverUrl.assign(buddiUrl.c_str());
-                }
-            catch (...)
-                {
-                }
-
-            serverUrl.ReplaceI(L"https://", L"");  // remove scheme prefix 
-                    
-            if (0 == serverUrl.size())
-                return ERROR;
-
-
-            RealityDataService::SetServerComponents(Utf8String(serverUrl.c_str()),
-                RealityDataService::GetWSGProtocol(),
-                RealityDataService::GetRepoName(),
-                RealityDataService::GetSchemaName());
-
-            //hardcoded the one for RM Internal for now. Need a UI of some sort to pick the project if
-            //user has multiples, etc
-            //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-            //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-            //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
-
-            Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
-
-            Bentley::WString projectGUIDw;
-
-            if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
-                {
-                projectGUID.Assign(projectGUIDw.c_str());
-                }                            
-            
-            RealityDataService::SetProjectId(projectGUID);
-
-            return SUCCESS;
-            }
 
     };
 
