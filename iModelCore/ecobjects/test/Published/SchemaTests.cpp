@@ -545,14 +545,18 @@ TEST_F(SchemaSearchTest, FindSchemaByFileName)
     // Test failure when a non xml file is passed
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    BeTest::SetFailOnAssert(false);
     ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema").c_str(), *schemaContext);
+    BeTest::SetFailOnAssert(true);
     ASSERT_FALSE(schema.IsValid());
     }
 
     // Test failure when schema xml file does not exist
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    BeTest::SetFailOnAssert(false);
     ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema.xml").c_str(), *schemaContext);
+    BeTest::SetFailOnAssert(true);
     ASSERT_FALSE(schema.IsValid());
     }
 
