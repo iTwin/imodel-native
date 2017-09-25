@@ -853,7 +853,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
             }
 
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
-        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
+        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint32_t));
         }
 
     featureTableData.PadBinaryDataToBoundary(4);
@@ -1301,7 +1301,7 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
 
             default:
                 {
-                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::Cyan() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
+                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::White() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
 
                 for (auto& curr : attributes)
                     m_elementColors[curr.first.GetElementId()] = s_colors[m_classifier.GetInsideDisplay()].GetValue();
@@ -2530,11 +2530,91 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& attributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
+    {
+    Utf8String suffix(name);
+    suffix.append(idStr);
+
+    Utf8String bvId = Concat("bv", suffix);
+    Utf8String accId = Concat("acc", suffix);
+
+    primitive["attributes"][semantic] = accId;
+
+    uint32_t      maxAttribute = 0;
+
+    for (auto attribute : attributes)
+        if (attribute > maxAttribute)
+            maxAttribute = attribute;
+
+    uint32_t  componentType;
+
+    if (maxAttribute > 0xffff)
+        componentType = GLTF_FLOAT;
+    else if (maxAttribute > 0xff)
+        componentType = GLTF_UNSIGNED_SHORT;
+    else
+        componentType = GLTF_UNSIGNED_BYTE;
+
+    bvector<uint8_t> attributes8;
+    bvector<uint16_t> attributes16;
+    bvector<uint32_t> attributesFloat;
+
+    void*       pData = nullptr;
+    size_t      dataSize = 0;
+
+    switch (componentType)
+        {
+        case GLTF_FLOAT:
+            dataSize = sizeof(float);
+            attributesFloat.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributesFloat.push_back(static_cast<float>(attribute));
+            pData = attributesFloat.data();
+            break;
+
+        case GLTF_UNSIGNED_SHORT:
+            dataSize = sizeof(uint16_t);
+            attributes16.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributes16.push_back(static_cast<uint16_t>(attribute));
+            pData = attributes16.data();
+            break;
+
+        case GLTF_UNSIGNED_BYTE:
+            dataSize = sizeof(uint8_t);
+            attributes8.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributes8.push_back(static_cast<uint8_t>(attribute));
+            pData = attributes8.data();
+            break;
+        }
+
+
+    auto&   bv = tileData.m_json["bufferViews"][bvId];
+    size_t  nBytes = attributes.size() * dataSize;
+
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+    tileData.AddBinaryData(pData, nBytes);
+
+    auto& acc = tileData.m_json["accessors"][accId];
+    acc["bufferView"] = bvId;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = componentType;
+    acc["count"] = attributes.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
+void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& batchIds, Utf8StringCR idStr)
     {
-    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "_BATCHID");
+    AddMeshUInt32Attributes(tileData, primitive, batchIds, idStr, "Batch_", "_BATCHID");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2697,7 +2777,7 @@ struct  PolylineTesselation
     bvector<double>             m_distances;
     bvector<DPoint2d>           m_params;
     bvector<DPoint3d>           m_scalePoints;
-    bvector<uint16_t>           m_attributes;
+    bvector<uint32_t>           m_attributes;
     bvector<uint16_t>           m_colors;
     bvector<uint32_t>           m_indices;
 
@@ -2709,7 +2789,7 @@ struct  PolylineTesselation
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint16_t attrib, uint16_t color, DPoint3dCR center)
+    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint32_t attrib, uint16_t color, DPoint3dCR center)
         {
         m_points.push_back(point);
         m_prevDirs.push_back(prev);
@@ -2733,7 +2813,7 @@ struct  PolylineTesselation
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     02/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DVec3dCR prev, DVec3dCR next, uint16_t attribute, uint16_t color, double param, DPoint3dCR center)
+    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DVec3dCR prev, DVec3dCR next, uint32_t attribute, uint16_t color, double param, DPoint3dCR center)
         {
         static size_t   s_nPoints = 4;
         double          paramDelta = 1.0 / (double) (s_nPoints - 1);
@@ -2749,7 +2829,7 @@ struct  PolylineTesselation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>&  polylineColors, bvector<uint16_t>& polylineAttributes, TilePolylineCR polyline, TileMeshCR mesh, bool doColors, bool doBatchIds)
+static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>&  polylineColors, bvector<uint32_t>& polylineAttributes, TilePolylineCR polyline, TileMeshCR mesh, bool doColors, bool doBatchIds)
     {
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
@@ -2806,7 +2886,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     for (auto const& polyline : mesh.Polylines())
         {
         bvector<DPoint3d>       polylinePoints;
-        bvector<uint16_t>       polylineColors, polylineAttributes;
+        bvector<uint16_t>       polylineColors;
+        bvector<uint32_t>       polylineAttributes;
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
@@ -2827,7 +2908,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                 length1 = (cumulativeLength += thisLength);
             bool                isStart  = (i == 0),
                                 isEnd    = (i == last - 1);
-            uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
+            uint16_t            colors0 = 0, colors1 = 0;
+            uint32_t            attributes0 = 0, attributes1 = 1;
             static double       s_extendDistance = .1;
             DVec3d              thisDir = DVec3d::FromStartEndNormalize(p0, p1), negatedThisDir = DVec3d::FromScale(thisDir, -1.0),
                                 prevDir0 = isStart ? (isClosed ?  DVec3d::FromStartEndNormalize(p0,  polylinePoints[last-1]) : negatedThisDir) : DVec3d::FromStartEndNormalize(p0,  polylinePoints[i-1]),
@@ -2945,8 +3027,8 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     Utf8String idStr(std::to_string(index).c_str());
     PolylineMaterial            mat = AddSimplePolylineMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     bvector<DPoint3d>           points, scalePoints;
-    bvector<uint16_t>           attributes, colors;
-    bvector<uint32_t>           indices;
+    bvector<uint16_t>           colors;
+    bvector<uint32_t>           attributes, indices;
     bvector<double>             distances;
     double                      minLength = 0.0, maxLength = 0.0;
     bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
@@ -2954,7 +3036,8 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     for (auto const& polyline : mesh.Polylines())
         {
         bvector<DPoint3d>       polylinePoints;
-        bvector<uint16_t>       polylineColors, polylineAttributes;
+        bvector<uint16_t>       polylineColors;
+        bvector<uint32_t>       polylineAttributes;
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 

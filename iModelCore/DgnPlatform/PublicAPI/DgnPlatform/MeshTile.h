@@ -213,15 +213,15 @@ public:
 //! For a tile, records unique attribute values and associates each with a 16-bit index.
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-template<typename T> struct AttributeIndexMap
+template<typename T, typename INDEX> struct AttributeIndexMap
 {
-    typedef bmap<T, uint16_t> Map;
+    typedef bmap<T, INDEX> Map;
 protected:
     Map     m_map;
 
-    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+    static constexpr INDEX GetMaxIndex() { return static_cast <INDEX> (-1); }
 
-    uint16_t GetOrCreateIndex(T const& value)
+    INDEX GetOrCreateIndex(T const& value)
         {
         auto iter = m_map.find(value);
         if (m_map.end() != iter)
@@ -235,7 +235,7 @@ protected:
         }
 public:
     bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
-    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+    INDEX GetNumIndices() const { return static_cast<INDEX>(size()); }
 
     typedef typename Map::const_iterator const_iterator;
     typedef const_iterator iterator;
@@ -249,7 +249,7 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct ColorIndexMap : AttributeIndexMap<uint32_t>
+struct ColorIndexMap : AttributeIndexMap<uint32_t, uint16_t>
 {
 private:
     bool    m_hasAlpha = false;
@@ -305,15 +305,15 @@ public:
 //! Index 0 always corresponds to an undefined attribute.
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct FeatureAttributesMap : AttributeIndexMap<FeatureAttributes>
+struct FeatureAttributesMap : AttributeIndexMap<FeatureAttributes, uint32_t>
 {
-    DEFINE_T_SUPER(AttributeIndexMap<FeatureAttributes>);
+//    DEFINE_T_SUPER(AttributeIndexMap<FeatureAttributes, uint32_t>);
 public:
     DGNPLATFORM_EXPORT FeatureAttributesMap();
 
-    uint16_t GetIndex(FeatureAttributesCR value) { return GetOrCreateIndex(value); }
-    DGNPLATFORM_EXPORT uint16_t GetIndex(TileGeometryCR geom);
-    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
+    uint32_t GetIndex(FeatureAttributesCR value) { return GetOrCreateIndex(value); }
+    DGNPLATFORM_EXPORT uint32_t GetIndex(TileGeometryCR geom);
+    uint32_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
 
     bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
     DGNPLATFORM_EXPORT void RemoveUndefined();
@@ -411,7 +411,7 @@ private:
     bvector<DPoint3d>           m_points;
     bvector<DVec3d>             m_normals;
     bvector<DPoint2d>           m_uvParams;
-    bvector<uint16_t>           m_attributes;
+    bvector<uint32_t>           m_attributes;
     bvector<uint16_t>           m_colors;
     ColorIndexMap               m_colorIndex;
     bool                        m_validIdsPresent = false;
@@ -433,12 +433,12 @@ public:
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<uint16_t> const& Attributes() const { return m_attributes; } //!< Vertex attribute array specifying the subcategory, element, and class associated with the vertex
+    bvector<uint32_t> const& Attributes() const { return m_attributes; } //!< Vertex attribute array specifying the subcategory, element, and class associated with the vertex
     bvector<uint16_t> const& Colors() const { return m_colors; } //!< Indices into ColorIndexMap, for untextured meshes
     bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<uint16_t>& AttributesR() { return m_attributes; }
+    bvector<uint32_t>& AttributesR() { return m_attributes; }
     bvector<uint16_t>& ColorsR() { return m_colors; }
     ColorIndexMap const& GetColorIndexMap() const { return m_colorIndex; }
 
@@ -447,9 +447,9 @@ public:
     DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
 
-    uint16_t GetAttributesIndex(uint32_t index) const { auto pAttr = GetMember(m_attributes, index); return nullptr != pAttr ? *pAttr : 0; }
-    uint16_t GetTriangleAttributesIndex(TileTriangleCR triangle) const { return GetAttributesIndex(triangle.m_indices[0]); }
-    uint16_t GetPolylineAttributesIndex(TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? 0 : GetAttributesIndex(polyline.GetIndices().front()); }
+    uint32_t GetAttributesIndex(uint32_t index) const { auto pAttr = GetMember(m_attributes, index); return nullptr != pAttr ? *pAttr : 0; }
+    uint32_t GetTriangleAttributesIndex(TileTriangleCR triangle) const { return GetAttributesIndex(triangle.m_indices[0]); }
+    uint32_t GetPolylineAttributesIndex(TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? 0 : GetAttributesIndex(polyline.GetIndices().front()); }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     DRange3d GetRange() const { return DRange3d::From(m_points); }
@@ -463,7 +463,7 @@ public:
     void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam);
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color);
+    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t attribute, uint32_t color);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -877,8 +877,8 @@ public:
 
     FeatureAttributesMapCR GetAttributes() const { return m_attributes; }
     FeatureAttributesMapR GetAttributes() { return m_attributes; }
-    uint16_t GetAttributesIndex(FeatureAttributesCR attr) { return GetAttributes().GetIndex(attr); }
-    uint16_t GetAttributesIndex(TileGeometryCR geometry) { return GetAttributes().GetIndex(geometry.GetAttributes()); }
+    uint32_t GetAttributesIndex(FeatureAttributesCR attr) { return GetAttributes().GetIndex(attr); }
+    uint32_t GetAttributesIndex(TileGeometryCR geometry) { return GetAttributes().GetIndex(geometry.GetAttributes()); }
 
     TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }

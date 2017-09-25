@@ -3523,7 +3523,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
     {
     bool isSimplify = mainGraphic.IsSimplifyGraphic();
     bool geomParamsChanged = activateParams || isSimplify; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
-    bool allowPartLinestyles = true;
+    bool allowStrokedLinestyles = activateParams; // Don't allow stroked linestyles in GeometryParts...
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
@@ -3657,7 +3657,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (FB::BoundaryType_None != boundary)
                     {
-                    bool strokeLineStyle = (allowPartLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                    bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                     if (strokeLineStyle)
                         {
@@ -3721,7 +3721,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (FB::BoundaryType_None != boundary)
                     {
-                    bool strokeLineStyle = (allowPartLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                    bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                     if (strokeLineStyle)
                         {
@@ -3777,7 +3777,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         }
                     }
 
-                bool strokeLineStyle = (allowPartLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {
@@ -3841,7 +3841,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // A single curve primitive (that isn't a point string) is always open...
-                bool strokeLineStyle = (allowPartLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {
@@ -3888,7 +3888,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         }
                     }
 
-                bool strokeLineStyle = (allowPartLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {
