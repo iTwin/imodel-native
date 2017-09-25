@@ -36,6 +36,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiSourceDir)Logging.h                          \
                                 $(iModelHubClientMkiSourceDir)Utils.h                            \
                                 $(iModelHubClientMkiSourceDir)FileLock.h                         \
+                                $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.h     \
                                 $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
@@ -54,6 +55,8 @@ $(o)Logging$(oext)                         : $(iModelHubClientMkiSourceDir)Loggi
 $(o)BreakHelper$(oext)                     : $(iModelHubClientMkiSourceDir)BreakHelper.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)Utils$(oext)                           : $(iModelHubClientMkiSourceDir)Utils.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)MultiProgressCallbackHandler$(oext)    : $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)Error$(oext)                           : $(iModelHubClientMkiSourceDir)Error.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

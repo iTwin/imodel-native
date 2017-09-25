@@ -72,6 +72,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\iModelHub\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\iModelHub\iModelHubTests.h" />
     <ClInclude Include="IMHSClientExe\IMHSClientExe.h" />
+    <ClInclude Include="Integration\EventParserTests.h" />
     <ClInclude Include="Integration\IntegrationTestsBase.h" />
     <ClInclude Include="Integration\IntegrationTestsHelper.h" />
     <ClInclude Include="Integration\MockHttpHandler.h" />
@@ -82,9 +83,11 @@
     <ClCompile Include="IMHSClientExe\IMHSClientExe.cpp" />
     <ClCompile Include="Integration\Briefcase_Tests.cpp" />
     <ClCompile Include="Integration\Client_Tests.cpp" />
+    <ClCompile Include="Integration\EventParserTests.cpp" />
     <ClCompile Include="Integration\Events_Tests.cpp" />
     <ClCompile Include="Integration\Failure_Tests.cpp" />
     <ClCompile Include="Integration\LRP_Tests.cpp" />
+    <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
     <ClCompile Include="Integration\Performance_Tests.cpp" />
     <ClCompile Include="Integration\iModelManager_Tests.cpp" />
     <ClCompile Include="Integration\Retry_Tests.cpp" />
