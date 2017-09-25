@@ -612,7 +612,7 @@ Utf8CP WSChangeset::Instance::GetChangeStateStr(ChangeState state)
     switch (state)
         {
         case ChangeState::Existing:
-            return nullptr;
+            return "existing";
         case ChangeState::Created:
             return "new";
         case ChangeState::Modified:
