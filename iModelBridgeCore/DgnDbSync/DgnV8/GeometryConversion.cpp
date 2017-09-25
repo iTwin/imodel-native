@@ -593,10 +593,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         params.SetWeight(paramsV8.GetWeight());
         }
 
-    //  NEEDSWORK LineStyles How do line style overrides interact with STYLE_BYLEVEL, overrides?
-    //  NEEDSWORK LineStyles what do we do with LINECODE?
-
-    DgnModelRefP        styleModelRef;
+    DgnModelRefP styleModelRef;
 
     if (nullptr != ovr && ovr->GetFlags().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef()) ? context.GetCurrentModel() :ovr->GetLineStyleModelRef()))
         {
@@ -605,9 +602,13 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
             InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
             }
         }
-    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
+    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
         {
-        InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), paramsV8.GetLineStyleParams());
+        DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams();
+
+        // Ugh...still need modifiers like start/end width for STYLE_BYLEVEL... :(
+        if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
+            InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
         }
 
     params.SetTransparency(paramsV8.GetTransparency());
@@ -2311,7 +2312,7 @@ bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPat
 
     // NOTE: Determine if geometry is worth instancing.
     //       Always reject text. Instancing may have undesirable ramifications for editing, etc.
-    //       Always reject point strings! The None type CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
+    //       Always reject line/point strings! The CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
     switch (geometry.GetGeometryType())
         {
         case GeometricPrimitive::GeometryType::SolidPrimitive:
@@ -2379,8 +2380,28 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
 
         partBuilder->Append(geometry);
 
-        if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+        if (SUCCESS == partBuilder->Finish(*geomPart))
+            {
+            bool isValidInstance = (GeometricPrimitive::GeometryType::BRepEntity != geometry.GetGeometryType());
+
+            // NOTE: Don't create instance for a bad/failed brep. Polyface/CurveVector from part will never match so we'd end up with singleton parts...
+            if (!isValidInstance)
+                {
+                GeometryCollection collection(geomPart->GetGeometryStream(), m_model.GetDgnDb());
+
+                for (auto iter : collection)
+                    {
+                    if (GeometryCollection::Iterator::EntryType::BRepEntity != iter.GetEntryType())
+                        continue;
+
+                    isValidInstance = true;
+                    break;
+                    }
+                }
+
+            if (isValidInstance && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+            }
         }
 
     builder.Append(params);
