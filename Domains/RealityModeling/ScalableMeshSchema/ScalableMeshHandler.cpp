@@ -1774,9 +1774,13 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             }
         }
 
-    m_path = ScalableMeshLib::GetHost().GetProjectWiseContextShareLink(smFilename);
-    if (m_path.empty())
-        m_path = Utf8String(smFilename.c_str());
+    m_path = Utf8String(smFilename.c_str());
+    if (m_smPtr->IsCesium3DTiles())
+        {
+        auto pwcsLink = m_smPtr->GetProjectWiseContextShareLink();
+        if (!pwcsLink.empty())
+            m_path = pwcsLink;
+        }
 
     const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
 
@@ -1860,9 +1864,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
        T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
        */
 
-    m_properties.m_fileId = smFilename.GetNameUtf8();
-
-    //m_properties.m_fileId = smFilename.GetNameUtf8();
+    m_properties.m_fileId = m_path;
     }
 
 //----------------------------------------------------------------------------------------
