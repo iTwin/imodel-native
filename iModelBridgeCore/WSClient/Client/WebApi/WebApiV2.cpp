@@ -557,9 +557,12 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([this] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([this, instanceId] (HttpResponse& httpResponse)
         {
-        return ResolveCreateObjectResponse(httpResponse);
+        if (instanceId.empty())
+            return ResolveCreateObjectResponse(httpResponse);
+        else
+            return ResolveUpdateObjectResponse(httpResponse);
         });
     }
 
