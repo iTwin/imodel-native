@@ -361,7 +361,8 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
                ind++);
 
 
-    HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(outputFileName));
+    // NEEDS_WORK_SM : Imagepp needs update on bim02
+    HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(Utf8String(outputFileName)));
 
     HFCPtr<HRPPixelType> pPixelTypeBMP(new HRPPixelTypeV24B8G8R8());
 

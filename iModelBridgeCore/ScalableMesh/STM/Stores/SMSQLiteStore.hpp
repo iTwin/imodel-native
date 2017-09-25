@@ -247,7 +247,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
-        uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+        // NEEDS_WORK_SM : Imagepp needs update on bim02
+        uint32_t consumerID = 1;
+        //uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_raster->SetLookAhead(shape, consumerID);
         }
 
@@ -302,13 +304,18 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
-    {    
+    {
+#if 1
+    // NEEDS_WORK_SM : Imagepp needs to be updated on bim02
+    return;
+#else
     if (m_streamingRasterFile != nullptr)
         { 
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
+#endif
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)

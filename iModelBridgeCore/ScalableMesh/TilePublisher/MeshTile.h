@@ -484,12 +484,7 @@ public:
 
     void AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId,*/ bool doVertexClustering, bool duplicateTwoSidedTriangles);
     void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-
-#ifndef VANCOUVER_API
-    void AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
-#else
     void AddPolyface(PolyfaceQueryCR polyface, bool duplicateTwoSidedTriangles);
-#endif
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);

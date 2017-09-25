@@ -988,14 +988,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef VANCOUVER_API
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
-#else
 void TileMeshBuilder::AddPolyface(PolyfaceQueryCR polyface, bool twoSidedTriangles)
-#endif
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, /*materialId, dgnDb, entityId,*/ false, twoSidedTriangles);
+        AddTriangle(*visitor, false, twoSidedTriangles);
     }
 
 
