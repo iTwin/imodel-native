@@ -173,29 +173,6 @@ namespace Db
         }
     }
 
-//=======================================================================================
-//@bsiclass                                      Karolis.Dziedzelis             11/2015
-//=======================================================================================
-struct CallbackQueue
-    {
-    private:
-        void Notify();
-        struct Callback
-            {
-            Http::Request::ProgressCallback callback;
-            CallbackQueue& m_queue;
-            double m_bytesTransfered;
-            double m_bytesTotal;
-            Callback(CallbackQueue& queue);
-            };
-        friend struct CallbackQueue::Callback;
-        bvector<std::shared_ptr<CallbackQueue::Callback>> m_callbacks;
-        Http::Request::ProgressCallbackCR m_callback;
-    public:
-        CallbackQueue(Http::Request::ProgressCallbackCR callback);
-
-        Http::Request::ProgressCallbackCR NewCallback();
-    };
 bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);
 bool AddLockInfoToListFromErrorJson(DgnLockInfoSet& lockInfos, RapidJsonValueCR serverJson);

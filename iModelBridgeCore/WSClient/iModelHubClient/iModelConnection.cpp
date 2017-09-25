@@ -15,6 +15,7 @@
 #include "Events/EventManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
+#include "MultiProgressCallbackHandler.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -1601,6 +1602,7 @@ StatusTaskPtr iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, I
             if (!setResult.IsSuccess())
                 {
                 finalResult->SetError(setResult.GetError());
+                return;
                 }
 
             finalResult->SetSuccess();
@@ -2138,11 +2140,16 @@ ICancellationTokenPtr                  cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
+    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback);
+    double singleCallbackPercentage = changeSets.empty() ? 100.0f : 100.0f / changeSets.size();
+
     bset<std::shared_ptr<AsyncTask>> tasks;
     bmap<Utf8String, int64_t> changeSetIdIndexMap;
     for (auto& changeSet : changeSets)
         {
-        tasks.insert(DownloadChangeSetFile(changeSet, callback, cancellationToken));
+        Http::Request::ProgressCallback changeSetCallback;
+        callbacksHandlerPtr->AddCallback(changeSetCallback, singleCallbackPercentage);
+        tasks.insert(DownloadChangeSetFile(changeSet, changeSetCallback, cancellationToken));
         changeSetIdIndexMap.Insert(changeSet->GetId(), changeSet->GetIndex());
         }
 
@@ -2174,6 +2181,7 @@ ICancellationTokenPtr                  cancellationToken
             return itemA->second < itemB->second;
             });
 
+        callbacksHandlerPtr->SetFinished();
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return ChangeSetsResult::Success(resultChangeSets);
@@ -2357,7 +2365,7 @@ ICancellationTokenPtr             cancellationToken
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
-        return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), callback, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), nullptr, cancellationToken)
             ->Then([=] (const WSCreateObjectResult& initializePushResult)
             {
     #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -2394,7 +2402,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
                         ->Then([=] (StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2423,7 +2431,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
                         ->Then([=] (StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2492,7 +2500,6 @@ Dgn::DgnDbCR                    dgndb,
 JsonValueR                      pushJson,
 ObjectId                        changeSetObjectId,
 bool                            relinquishCodesLocks,
-Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
