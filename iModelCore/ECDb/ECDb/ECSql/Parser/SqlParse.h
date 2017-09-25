@@ -123,11 +123,8 @@ namespace connectivity
             RefCountedPtr< ::com::sun::star::i18n::XLocaleData>               xDummy; // can be deleted after 627
 
             // convert a string into double trim it to scale of _nscale and than transform it back to string
-            Utf8String         stringToDouble(const Utf8String& _rValue, sal_Int16 _nScale);
-            OSQLParseNode*  buildDate(sal_Int32 _nType, OSQLParseNode*& pLiteral);
             bool            extractDate(OSQLParseNode* pLiteral, double& _rfValue);
             void            killThousandSeparator(OSQLParseNode* pLiteral);
-            OSQLParseNode*  convertNode(sal_Int32 nType, OSQLParseNode*& pLiteral);
 
         public:
             // if NULL, a default context will be used
@@ -177,7 +174,7 @@ namespace connectivity
             static sal_Int32 getFunctionParameterType(sal_uInt32 _nTokenId, sal_uInt32 _nPos);
 
             void error(const sal_Char* pFormat);
-            int SQLlex(void*, void*);
+            int SQLlex(YYSTYPE* val);
             //#ifdef YYBISON
             void setParseTree(OSQLParseNode * pNewParseTree);
 

@@ -66,7 +66,7 @@ static Utf8String aEmptyString;
 #define YYERROR_VERBOSE
 #endif
 
-#define SQLyyerror(alloc, context, s) \
+#define SQLyyerror(context, s) \
     {                                 \
     context->error(s);                \
     }
@@ -77,7 +77,6 @@ using namespace connectivity;
     /* symbolic tokens */
 
 %define api.pure full
-%locations
 %parse-param { connectivity::OSQLParser* context }
 %union {
     connectivity::OSQLParseNode * pParseNode;
@@ -2423,7 +2422,7 @@ property_path:
 				{
 				if (last->getFirst()->getNodeType() == SQL_NODE_PUNCTUATION) //'*'
 					{
-					SQLyyerror(nullptr, context, "'*' can only occur at the end of property path\n");
+					SQLyyerror(context, "'*' can only occur at the end of property path\n");
 					YYERROR;
 					}
 				}
@@ -3188,9 +3187,9 @@ void OSQLParser::error( const sal_Char* fmt)
     }
 }
 // -------------------------------------------------------------------------
-int OSQLParser::SQLlex(void*,void*)
+int OSQLParser::SQLlex(YYSTYPE* val)
 {
-    return m_scanner->SQLlex();
+    return m_scanner->SQLlex(val);
 }
 
 #if defined __SUNPRO_CC

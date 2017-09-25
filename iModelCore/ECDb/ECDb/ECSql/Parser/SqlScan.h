@@ -52,7 +52,6 @@ namespace connectivity
             sal_Bool m_bInternational; // do we have a statement which may uses
             sal_Int32 m_nRule; // rule to be set
             OSQLParseNodesContainer m_pGarbageCollector;
-            void* m_pval;
         public:
             yyscan_t  yyscanner; //do not add m_ with this var as it used in macros;
 
@@ -72,7 +71,7 @@ namespace connectivity
             const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
             sal_Int32 SQLyygetc(void);
             Utf8String getStatement() const { return m_sStatement; }
-            sal_Int32 SQLlex();
+            sal_Int32 SQLlex(YYSTYPE* val);
             // set this as scanner for flex
             // rules settings
             void SetRule(sal_Int32 nRule) { m_nRule = nRule; }

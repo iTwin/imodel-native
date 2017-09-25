@@ -1,4 +1,3 @@
-
 %top{
 //------------------------------------------------------------
 // 
@@ -54,8 +53,6 @@
 #ifndef _INC_STRING
 #include <string.h>
 #endif
-
-#include "InternalNode.h"
 
 #ifndef _CONNECTIVITY_SQLYACC_HXX
 #define _CONNECTIVITY_SQLYACC_HXX
@@ -114,6 +111,7 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 %s PREDICATE_GER
 %s DATE
 %s STRING
+%option debug
 %option bison-bridge 
 %option reentrant
 %option noyywrap
@@ -312,27 +310,22 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 <SQL>[0-9]+[eE][+-]?[0-9]+   |
 <SQL>[0-9]+"."[0-9]*[eE][+-]?[0-9]+ |
 <SQL>"."[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
-
 <PREDICATE_GER,PREDICATE_ENG,DATE>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375][A-Za-z0-9_%.,*?\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375]* {return gatherNamePre(yyscanner,yytext);}
-
 <PREDICATE_GER,PREDICATE_ENG>([0-9]+)		{SQL_NEW_INTNUM; }
 <PREDICATE_ENG>([0-9]{1,3}(","[0-9]{3})+) 	{SQL_NEW_INTNUM; }
 <PREDICATE_GER>([0-9]{1,3}("."[0-9]{3})+)	{SQL_NEW_INTNUM; }
-
 <PREDICATE_ENG>([0-9]+"."[0-9]+) |
 <PREDICATE_ENG>([0-9]{1,3}(","[0-9]{3})+"."[0-9]+) | 
 <PREDICATE_ENG>("."[0-9]+)					{SQL_NEW_APPROXNUM;  }
 <PREDICATE_ENG>[0-9]+[eE][+-]?[0-9]+   |
 <PREDICATE_ENG>[0-9]+"."[0-9]*[eE][+-]?[0-9]+ |
 <PREDICATE_ENG>"."[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
-
 <PREDICATE_GER>([0-9]+","[0-9]+) |
 <PREDICATE_GER>([0-9]{1,3}("."[0-9]{3})+","[0-9]+) | 
 <PREDICATE_GER>(","[0-9]+)					{SQL_NEW_APPROXNUM;  }
 <PREDICATE_GER>[0-9]+[eE][+-]?[0-9]+   |
 <PREDICATE_GER>[0-9]+","[0-9]*[eE][+-]?[0-9]+ |
 <PREDICATE_GER>","[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
-
 <PREDICATE_GER,PREDICATE_ENG>[0-9.,][A-Za-z0-9_.,%]* {return gatherNamePre(yyscanner, yytext);}
 
 <SQL>\"	{ return gatherString(yyscanner, '\"',0); }
@@ -346,13 +339,9 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 <STRING>["-""+""*""/"":""("")"",""."";""?""{""}"]		{ return yytext[0]; } /*  */
 <STRING>"["					{ return gatherString(yyscanner,']' ,0, true); }
 <STRING>[^ ':["?"]*			{ return gatherNamePre(yyscanner,yytext); }
-
 \n              {}
-
 [ \t\r]+        {}
-
 "--".*$         {}
-
 .				{
 				Utf8String tmp; 
 				tmp.Sprintf("Invalid symbol (char=%c, hex=%0x, dec=%" PRIu64 ")", yytext[0], yytext[0], (uint64_t) yytext[0]); 
@@ -378,8 +367,9 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 
 // Versions of flex apparently differ in whether input() resp. yyinput() returns
 // zero or EOF upon end of file:
+//------------------------------------------------------------------------------
 inline bool checkeof(int c) { return c == 0 || c == EOF || c == 0xff; }
-
+//------------------------------------------------------------------------------
 sal_Int32 parseString (yyscan_t yyscanner)
     {
     sal_Char ch;
@@ -449,6 +439,7 @@ sal_Int32 parseString (yyscan_t yyscanner)
  * nTyp == 1 -> SQL_NODE_STRING
  * nTyp == 2 -> SQL_NODE_ACCESS_DATE
  */
+//------------------------------------------------------------------------------
 sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 {
 	sal_Char ch;
@@ -532,6 +523,7 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool 
 	return SQL_TOKEN_INVALIDSYMBOL;
 }
 
+//------------------------------------------------------------------------------
 sal_Int32 mapEnumToToken(IParseContext::InternationalKeyCode _eKeyCode )
     {
     sal_Int32 nTokenID = 0;
@@ -559,11 +551,13 @@ sal_Int32 mapEnumToToken(IParseContext::InternationalKeyCode _eKeyCode )
         }
     return nTokenID;
     }
+
 /*
  * Read SQL Name literal
  * Valid Names or international keywords:
  *  As we have international keywords, we test first on them
  */
+ //------------------------------------------------------------------------------
 sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
     {
 	sal_Int32 nToken;
@@ -599,11 +593,14 @@ sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
 			return SQL_TOKEN_NAME;
 	    }
     }
+
 /**
  Read SQL Name literal for predicate check
  Valid Names or internatioanl keywords:
  As we have international keywords, we test first on them  
 */
+
+//------------------------------------------------------------------------------
 sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 { 
 	sal_Int32 nToken;
@@ -656,8 +653,8 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 }
 
 using namespace connectivity;
-
 static bool IN_SQLyyerror;
+
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
     : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(0), m_sStatement(rNewStatement)
@@ -667,16 +664,12 @@ OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sa
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     YY_FLUSH_BUFFER;
     BEGIN(m_nRule);
-    //yy_scan_string(rNewStatement, yyscanner);
     yyset_extra(this, yyscanner);
-    m_pval = SQLyyalloc(sizeof(YYSTYPE), yyscanner);
-    memset(m_pval, 0x00, sizeof(union YYSTYPE));
     }
 
 //------------------------------------------------------------------------------
 OSQLScanner::~OSQLScanner()
     {
-    SQLyyfree(m_pval, yyscanner);
     yylex_destroy(&yyscanner);
     }
 
@@ -747,14 +740,14 @@ void OSQLScanner::SQLyyerror(const char *fmt)
     IN_SQLyyerror = false;
     YY_FLUSH_BUFFER;
     }
-
-
+    
 //------------------------------------------------------------------------------
 IParseContext::InternationalKeyCode OSQLScanner::getInternationalTokenID(const sal_Char* sToken) const
     {		
     OSL_ENSURE(m_pContext, "OSQLScanner::getInternationalTokenID: No Context set");			
     return (m_bInternational) ? m_pContext->getIntlKeyCode(Utf8String(sToken) ) : IParseContext::KEY_NONE;	
     }
+
 // -------------------------------------------------------------------------
 sal_Int32	OSQLScanner::GetCurrentRule() const { return m_nRule; }
 sal_Int32	OSQLScanner::GetGERRule() const		{ return PREDICATE_GER; }
@@ -762,12 +755,11 @@ sal_Int32	OSQLScanner::GetENGRule() const		{ return PREDICATE_ENG; }
 sal_Int32	OSQLScanner::GetSQLRule() const		{ return SQL; }
 sal_Int32	OSQLScanner::GetDATERule() const	{ return DATE; }
 sal_Int32	OSQLScanner::GetSTRINGRule() const	{ return STRING; }
-// -------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------
-sal_Int32 OSQLScanner::SQLlex()
+sal_Int32 OSQLScanner::SQLlex(YYSTYPE* val)
     {
-    return SQLyylex((YYSTYPE*)m_pval, yyscanner);
+    return SQLyylex(val, yyscanner);
     }
 
 // -------------------------------------------------------------------------
