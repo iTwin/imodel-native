@@ -13,48 +13,238 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
+// @bsimethod                                   Krischan.Eberle      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const
+JsonInserter::JsonInserter(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecdb(ecdb), m_ecClass(ecClass)
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-    BeAssert(ecInstance.IsValid());
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
-        return BE_SQLITE_ERROR;
+    Initialize(writeToken);
+    }
 
-    return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void JsonInserter::Initialize(ECCrudWriteToken const* writeToken)
+    {
+    m_jsonClassName = ECJsonUtilities::FormatClassName(m_ecClass);
+
+    Utf8String ecsql("INSERT INTO ");
+    //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one
+    ecsql.append(m_ecClass.GetECSqlName()).append("(" ECDBSYS_PROP_ECInstanceId);
+    Utf8String valuesClause(") VALUES(?");
+
+    int parameterIndex = 1;
+    //cache the binding info as we later need to set the user provided instance id (if available)
+    m_bindingMap[ECJsonSystemNames::Id()] = JsonAdapterBindingInfo(parameterIndex);
+    parameterIndex++;
+
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    for (ECPropertyCP ecProperty : m_ecClass.GetProperties(true))
+        {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
+        ecsql.append(",[").append(ecProperty->GetName()).append("]");
+        valuesClause.append(",?");
+        Utf8String jsonPropName(ecProperty->GetName());
+        ECJsonUtilities::LowerFirstChar(jsonPropName);
+        m_bindingMap[jsonPropName] = JsonAdapterBindingInfo(parameterIndex, *ecProperty);
+        parameterIndex++;
+        }
+
+    if (m_ecClass.IsRelationshipClass())
+        {
+        //SourceECClassId and TargetECClassId are not needed during insert
+        ecsql.append("," ECDBSYS_PROP_SourceECInstanceId);
+        valuesClause.append(",?");
+        m_bindingMap[ECJsonSystemNames::SourceId()] = JsonAdapterBindingInfo(parameterIndex);
+
+        parameterIndex++;
+        ecsql.append("," ECDBSYS_PROP_TargetECInstanceId);
+        valuesClause.append(",?");
+        m_bindingMap[ECJsonSystemNames::TargetId()] = JsonAdapterBindingInfo(parameterIndex);
+        }
+
+    ecsql.append(valuesClause).append(")");
+    m_isValid = ECSqlStatus::Success == m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonInserter::Insert(JsonValueR jsonValue) const
+DbResult JsonInserter::Insert(ECInstanceKey& key, JsonValueCR json) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-    BeAssert(ecInstance.IsValid());
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (!m_isValid)
         return BE_SQLITE_ERROR;
 
-    ECInstanceKey newInstanceKey;
-    DbResult stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
+    if (json.isNull() || !json.isObject())
+        {
+        LOG.errorv("JsonInserter failure. The JSON to insert is null or not an object: %s", json.ToString().c_str());
+        return BE_SQLITE_ERROR;
+        }
+
+    for (Json::Value::iterator it = json.begin(); it != json.end(); it++)
+        {
+        Utf8CP memberName = it.memberName();
+        JsonValueCR memberJson = *it;
+
+        if (strcmp(ECJsonSystemNames::ClassName(), memberName) == 0)
+            {
+            if (memberJson.isNull() || !memberJson.isString() || !m_jsonClassName.EqualsIAscii(memberJson.asCString()))
+                {
+                LOG.errorv("JsonInserter failure. The '%s' member of the JSON to insert has an invalid value: %s",
+                           ECJsonSystemNames::ClassName(), memberJson.ToString().c_str());
+                return BE_SQLITE_ERROR;
+                }
+
+            continue;
+            }
+
+        auto bindingMapLookupIt = m_bindingMap.find(memberName);
+        if (bindingMapLookupIt == m_bindingMap.end())
+            {
+            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' for .",
+                       memberName, m_ecClass.GetFullName());
+            return BE_SQLITE_ERROR;
+            }
+
+        JsonAdapterBindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (bindingInfo.IsSystemProperty())
+            {
+            BeAssert(strcmp(memberName, ECJsonSystemNames::Id()) == 0 || 
+                     strcmp(memberName, ECJsonSystemNames::SourceId()) == 0 ||
+                     strcmp(memberName, ECJsonSystemNames::TargetId()) == 0);
+
+            BeInt64Id id = ECJsonUtilities::JsonToId<BeInt64Id>(memberJson);
+            if (!id.IsValid())
+                return BE_SQLITE_ERROR;
+
+            if (ECSqlStatus::Success != m_statement.BindId(bindingInfo.GetParameterIndex(), id))
+                return BE_SQLITE_ERROR;
+
+            continue;
+            }
+
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, *bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+            {
+            LOG.errorv("JsonInserter failure. Could not bind JSON member '%s' to parameter %d for EC JSON %s,",
+                       memberName, bindingInfo.GetParameterIndex(), json.ToString().c_str());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    //now execute statement
+    const DbResult stepStatus = m_statement.Step(key);
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 9/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult JsonInserter::Insert(JsonValueR json) const
+    {
+    ECInstanceKey key;
+    const DbResult stat = Insert(key, json);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    jsonValue[ECJsonUtilities::json_id()] = newInstanceKey.GetInstanceId().ToHexStr();
+    //this overload expects the ECInstanceId of the new row to be written into the input JSON
+    if (!json.isMember(ECJsonUtilities::json_id()))
+        {
+        if (SUCCESS != ECJsonUtilities::IdToJson(json[ECJsonUtilities::json_id()], key.GetInstanceId()))
+            return BE_SQLITE_ERROR;
+        }
+
     return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Shaun.Sewall                    01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonInserter::Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const
+DbResult JsonInserter::Insert(ECInstanceKey& key, RapidJsonValueCR json) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-    BeAssert(ecInstance.IsValid());
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
+    if (!m_isValid)
         return BE_SQLITE_ERROR;
 
-    return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
+    if (json.IsNull() || !json.IsObject())
+        {
+        LOG.error("JsonInserter failure. The JSON to insert is null or not an object.");
+        return BE_SQLITE_ERROR;
+        }
+
+
+    for (rapidjson::Value::ConstMemberIterator it = json.MemberBegin(); it != json.MemberEnd(); ++it)
+        {
+        Utf8CP memberName = it->name.GetString();
+        RapidJsonValueCR memberJson = it->value;
+
+        if (strcmp(ECJsonSystemNames::ClassName(), memberName) == 0)
+            {
+            if (memberJson.IsNull() || !memberJson.IsString() || !m_jsonClassName.EqualsIAscii(memberJson.GetString()))
+                {
+                rapidjson::StringBuffer jsonStr;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+                memberJson.Accept(writer);
+                LOG.errorv("JsonInserter failure. The '%s' member of the JSON to insert has an invalid value: %s",
+                           ECJsonSystemNames::ClassName(), jsonStr.GetString());
+                return BE_SQLITE_ERROR;
+                }
+
+            continue;
+            }
+
+        auto bindingMapLookupIt = m_bindingMap.find(memberName);
+        if (bindingMapLookupIt == m_bindingMap.end())
+            {
+            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' for .",
+                       memberName, m_ecClass.GetFullName());
+            return BE_SQLITE_ERROR;
+            }
+
+        JsonAdapterBindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (bindingInfo.IsSystemProperty())
+            {
+            BeAssert(strcmp(memberName, ECJsonSystemNames::Id()) == 0 ||
+                     strcmp(memberName, ECJsonSystemNames::SourceId()) == 0 ||
+                     strcmp(memberName, ECJsonSystemNames::TargetId()) == 0);
+
+            BeInt64Id id = ECRapidJsonUtilities::JsonToId<BeInt64Id>(memberJson);
+            if (!id.IsValid())
+                return BE_SQLITE_ERROR;
+
+            if (ECSqlStatus::Success != m_statement.BindId(bindingInfo.GetParameterIndex(), id))
+                return BE_SQLITE_ERROR;
+
+            continue;
+            }
+
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, *bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+            {
+            rapidjson::StringBuffer jsonStr;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+            memberJson.Accept(writer);
+            LOG.errorv("JsonInserter failure. Could not bind JSON member '%s' to parameter %d for EC JSON %s,",
+                       memberName, bindingInfo.GetParameterIndex(), jsonStr.GetString());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    //now execute statement
+    const DbResult stepStatus = m_statement.Step(key);
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -820,9 +820,6 @@ TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
         Json::Value actualJson;
         ASSERT_EQ(SUCCESS, reader.Read(actualJson, psaKey.GetInstanceId())) << "ECJsonInt64Format::" << (int) formatOption;
 
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert read JSON unmodified | ECJsonInt64Format::" << (int) formatOption;
-        validate(newKey.GetInstanceId());
-
         actualJson.removeMember(ECJsonUtilities::json_id());
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert after removing id member from read JSON | ECJsonInt64Format::" << (int) formatOption;
         validate(newKey.GetInstanceId());

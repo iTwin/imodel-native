@@ -111,6 +111,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
+                $(baseDir)ECSql/JsonECSqlBinder.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
@@ -299,6 +300,8 @@ $(o)JsonReader$(oext):                                        $(baseDir)ECSql/Js
 $(o)JsonInserter$(oext):                                      $(baseDir)ECSql/JsonInserter.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)JsonUpdater$(oext):                                       $(baseDir)ECSql/JsonUpdater.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)JsonECSqlBinder$(oext):                                   $(baseDir)ECSql/JsonECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementNoopImpls$(oext):                           $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

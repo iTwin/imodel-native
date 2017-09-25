@@ -11,7 +11,3 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
-
-#TFS755409
-JsonInserterTests.InsertLinkTableRels
-JsonInserterTests.RoundTrip_InsertThenRead

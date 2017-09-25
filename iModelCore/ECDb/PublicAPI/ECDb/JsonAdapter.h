@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECSqlStatement.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <json/json.h>
 #include <rapidjson/BeRapidJson.h>
 #include <Bentley/NonCopyableClass.h>
 
@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! 
 //! @see ECSqlStatement, BentleyApi::ECN::ECJsonSystemNames
 //! @ingroup ECDbGroup
-//! @bsiclass                                                 08/2012
+//! @bsiclass                                                               08/2012
 //+===============+===============+===============+===============+===============+======
 struct JsonECSqlSelectAdapter final: NonCopyableClass
     {
@@ -133,7 +133,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
 //! @remarks This is mainly a convenience wrapper over @ref JsonECSqlSelectAdapter
 //! using an ECSQL that selects all properties of the ECClass plus ECInstanceId and ECClassId.
 //! @ingroup ECDbGroup
-// @bsiclass                                                 Ramanujam.Raman      09/2013
+// @bsiclass                                                                09/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonReader final : NonCopyableClass
     {
@@ -173,17 +173,42 @@ struct JsonReader final : NonCopyableClass
         ECDB_EXPORT BentleyStatus Read(JsonValueR jsonInstance, ECInstanceId ecInstanceId) const;
     };
 
+#if !defined (DOCUMENTATION_GENERATOR)
+struct JsonAdapterBindingInfo final
+    {
+private:
+    int m_parameterIndex = 0;
+    ECN::ECPropertyCP m_property = nullptr;
+
+public:
+    //ctors are intentionally not exported as the class is only used internally
+    JsonAdapterBindingInfo();
+    JsonAdapterBindingInfo(int paramIndex, ECN::ECPropertyCR);
+    JsonAdapterBindingInfo(int systemParamIndex);
+
+    bool IsSystemProperty() const { return m_property == nullptr; }
+    int GetParameterIndex() const { return m_parameterIndex; }
+    ECN::ECPropertyCP GetProperty() const { return m_property; }
+    };
+#endif
+
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
 //! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
-//@bsiclass                                                 Ramanujam.Raman      02/2013
+//@bsiclass                                                                   02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonInserter final : NonCopyableClass
     {
     private:
         ECDbCR m_ecdb;
         ECN::ECClassCR m_ecClass;
-        ECInstanceInserter m_ecinstanceInserter;
+        Utf8String m_jsonClassName;
+
+        mutable ECSqlStatement m_statement;
+        bmap<Utf8String, JsonAdapterBindingInfo> m_bindingMap;
+        bool m_isValid = false;
+
+        void Initialize(ECCrudWriteToken const* writeToken);
 
     public:
         //! Initializes a new JsonInserter instance for the specified class. 
@@ -194,35 +219,41 @@ struct JsonInserter final : NonCopyableClass
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @remarks Holds some cached state to speed up future inserts of the same class. Keep the 
         //! inserter around when inserting many instances of the same class. 
-        JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass, writeToken) {}
+        ECDB_EXPORT JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken);
 
         //! Indicates whether this JsonInserter is valid and can be used to insert JSON instances.
         //! It is not valid, if the underlying ECClass is not mapped or not instantiable for example.
         //! @return true if the inserter is valid and can be used for inserting. false if it cannot be used for inserting.
-        bool IsValid() const { return m_ecinstanceInserter.IsValid(); }
+        bool IsValid() const { return m_isValid; }
 
-        //! Inserts the instance
-        //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
-        //! @param[in] jsonValue the instance data
+        //! Inserts a row from the specified EC JSON object
+        //! @remarks if the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member is set in the @p json,
+        //! ECDb will not generate an ECInstanceId but use the member's value instead.
+        //! @param[out] key the ECInstanceKey generated for the inserted instance
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(ECInstanceKey& key, JsonValueCR json) const;
 
-        //! Inserts the instance and updates the $ECInstanceId field with the generated ECInstanceId
-        //! @param[in] jsonValue the instance data
+        //! Inserts a row from the specified EC JSON object
+        //! Inserts the row and adds the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member with the generated ECInstanceId
+        //! to @p json
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(JsonValueR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(JsonValueR json) const;
 
         //! Insert an instance created from the specified jsonValue
-        //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
-        //! @param[in] jsonValue the instance data
+        //! @remarks if the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member is set in the @p json,
+        //! ECDb will not generate an ECInstanceId but use the member's value instead.
+        //! @param[out] key the ECInstanceKey generated for the inserted instance
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(ECInstanceKey& key, RapidJsonValueCR json) const;
     };
 
 //=======================================================================================
 //! Update EC content in the ECDb file through JSON values
 //! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
-//@bsiclass                                                 Ramanujam.Raman      02/2013
+//@bsiclass                                                           02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
     {
@@ -285,6 +316,5 @@ struct JsonUpdater final : NonCopyableClass
         //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

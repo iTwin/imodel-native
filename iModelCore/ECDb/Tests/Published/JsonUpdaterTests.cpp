@@ -559,13 +559,13 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     //Insert test instance
     ECInstanceKey key;
     Json::Value properties;
-    properties["Num"] = oldNum;
-    properties["Square"] = oldSquare;
+    properties["num"] = oldNum;
+    properties["square"] = oldSquare;
     JsonInserter inserter(m_ecdb, *ecClass, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, properties));
 
     //Update test instance
-    properties["Num"] = newNum;
+    properties["num"] = newNum;
 
     ECSqlStatement validateStmt;
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(m_ecdb, "SELECT Num, Square FROM ts.Foo WHERE ECInstanceId=?"));

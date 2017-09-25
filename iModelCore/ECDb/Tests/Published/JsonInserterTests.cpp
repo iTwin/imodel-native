@@ -57,11 +57,12 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     JsonECSqlSelectAdapter jsonAdapter(statement);
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
-
     /* Validate */
+    actualJson.removeMember(ECJsonUtilities::json_id());
     ASSERT_EQ(0, expectedJson.compare(actualJson)) << actualJson.ToString().c_str();
 
     //verify Json Insertion using the other Overload
+    actualJson.removeMember(ECJsonUtilities::json_id()); //remove id member as it would insert the new row with the existing id
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(actualJson));
     m_ecdb.SaveChanges();
 
@@ -331,6 +332,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     statement.Finalize();
 
     /* Validate */
+    actualJson.removeMember(ECJsonUtilities::json_id());
     ASSERT_EQ(0, expectedJsonCpp.compare(actualJson)) << actualJson.ToString().c_str();
     }
 
@@ -352,7 +354,7 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
 
     rapidjson::Document rapidJsonVal;
     rapidJsonVal.SetObject();
-    rapidJsonVal.AddMember("Price", 3.0003, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("price", 3.0003, rapidJsonVal.GetAllocator());
     rapidJsonVal.AddMember("s", "StringVal", rapidJsonVal.GetAllocator());
 
     //add point2d member
@@ -373,18 +375,19 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
     ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
     ASSERT_TRUE(parentClass != nullptr);
     JsonInserter inserter(m_ecdb, *parentClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, rapidJsonVal));
     m_ecdb.SaveChanges();
 
     ECSqlStatement stmt;
-    ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?"));
     stmt.BindPoint2d(1, DPoint2d::From(0, 0));
     stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
-    DbResult stepStatus = stmt.Step();
-    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle           01/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -538,10 +541,11 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
 
     // Insert one instnace
     Json::Value rootInstance;
-    rootInstance["Name"] = rootName;
-    rootInstance["Persistance"] = 0;
+    rootInstance["name"] = rootName;
+    rootInstance["persistance"] = 0;
 
     JsonInserter inserter(m_ecdb, *rootClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rootInstance));
 
     // Try again
