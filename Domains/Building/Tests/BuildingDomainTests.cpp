@@ -801,7 +801,7 @@ TEST_F(BuildingDomainTestFixture, RadialTests)
 
     Grids::GridAxisMap grid2;
 
-    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1);
+    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1,DVec3d::From(0.0,0.0,1.0));
     ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
 

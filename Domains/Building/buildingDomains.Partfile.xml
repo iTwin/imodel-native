@@ -56,8 +56,8 @@
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"          Repository="DgnPlatform" />
         <SubPart PartName="BuildingDomain"/>
         <SubPart PartName="StructuralDomainDLL"  PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
-        <SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
-        <SubPart PartName="Grids"                 PartFile="Grids"                    Repository="DgnDomains-Grids"/>
+        <SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"    Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                 PartFile="Grids"               Repository="DgnDomains-Grids"/>
         <Bindings>
               <Assemblies>Delivery/$(shlibprefix)BuildingDomainTests.exe</Assemblies>
               <Files ProductDirectoryName="Assets"> Delivery/BuildingDomainTests.logging.config.xml</Files>
