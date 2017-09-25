@@ -133,7 +133,18 @@ struct ScalableMeshModel : IMeshSpatialModel
         Transform                               m_smToModelUorTransform;
         Transform                               m_modelUorToSmTransform;
         bool                                    m_tryOpen;        
+
         bool                                    m_isUsingBingMap; 
+
+        // Imagery brand logo that we display in view, plot...  The one from we receive from bing maps server. 
+        WString       m_brandLogoURI;        // The brand logo. "Powered by..." 
+        DPoint2d      m_logoSize;
+        bvector<Byte> m_pLogoRgba;
+        int32_t       m_logoRetryCount;
+                
+        void        DrawBingLogo(ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
+        Byte const* GetImageryLogo(DPoint2d& size);
+
 
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
         IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
@@ -169,11 +180,12 @@ struct ScalableMeshModel : IMeshSpatialModel
         void Cleanup(bool isModelDelete);
 
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
-
+        
 		void InitializeTerrainRegions(Dgn::ViewContextR);
 		
 		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
-      
+
+           
 
     protected:
 

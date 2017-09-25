@@ -36,7 +36,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema  </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c
 BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>

@@ -19,7 +19,7 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 
 #include <DgnPlatform\TextString.h>
-
+#include <DgnPlatform\ImageUtilities.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -212,7 +212,7 @@ static double s_minScreenPixelsPerPoint = 800;
 
 //For now keep the old value (i.e. : 1) for already support sources but set a higher level for streaming texture source because 1 seems a bit too low anyway.
 static double s_maxPixelError = 1;
-static double s_maxPixelErrorStreamingTexture = 2;
+static double s_maxPixelErrorStreamingTexture = 2.5;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -759,6 +759,138 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 
+
+void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
+    {
+    DPoint3d lowRect;
+    DPoint3d highRect;
+    context.GetViewport()->GetViewCorners(lowRect, highRect);    
+
+    DPoint2d nonPrintableMargin = { 0,0 };
+    
+    // CorrectedViewToView transform: adjust for swapped y and non-printable margin.
+    if (lowRect.y > highRect.y)
+        {
+        correctedViewToView.InitFrom(nonPrintableMargin.x, lowRect.y - nonPrintableMargin.y, 0);
+        correctedViewToView.form3d[1][1] = -1;
+        }
+    else
+        {
+        correctedViewToView.InitFrom(nonPrintableMargin.x, nonPrintableMargin.y, 0);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.St-Pierre  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DownloadBitmapToRgba(bvector<Byte>& imageData, DPoint2d& size, WChar const* pURI, DPoint2d* pRequestedSize)
+    {
+    WChar localFilename[MAX_PATH];
+
+    if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
+        return false;
+    
+    ImageUtilities::RgbImageInfo info;
+    BeFile pngFile;    
+    
+    BeFileStatus fileStatus = pngFile.Open(localFilename, BeFileAccess::Read);
+    
+    if (fileStatus != BeFileStatus::Success)
+        return false;        
+
+    BentleyStatus status = ImageUtilities::ReadImageFromPngFile(imageData, info, pngFile);
+
+    if (status != SUCCESS)
+        {
+        return false;
+        }
+
+    size.x = info.width;
+    size.y = info.height;
+       
+    return true;        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.St-Pierre  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Byte const* ScalableMeshModel::GetImageryLogo(DPoint2d& size)
+    {
+    if (m_brandLogoURI.empty() || m_logoRetryCount > 2)  // Stop trying after 3 attempts.
+        return NULL;
+
+    if (m_pLogoRgba.size() == 0 && !DownloadBitmapToRgba(m_pLogoRgba, m_logoSize, m_brandLogoURI.c_str(), NULL))
+        {
+        // An error occurred, we should not try over and over. 
+        ++m_logoRetryCount;
+        return NULL;
+        }
+
+    size = m_logoSize;
+    return &m_pLogoRgba[0];
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  08/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize)
+    {
+    if (NULL == pBitmapRGBA)
+        return;
+
+    // SetToViewCoords is only valid during overlay mode aka DecorateScreen
+    //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (true);
+
+    DPoint2d bitmapDrawSize = { bitmapSize.x, bitmapSize.y };
+
+/*
+    if (context.GetDrawPurpose() == DrawPurpose::Plot)
+        {
+        // Adjust logo size to look like the size they use during print at www.bing.com/maps
+        bitmapDrawSize.y = max(1.0, m_dpi.y*s_logoHeightInch);
+        bitmapDrawSize.x = max(1.0, bitmapSize.x * (bitmapDrawSize.y / bitmapSize.y));
+        }
+*/
+
+    DPoint3d bitmapInView[4];
+    bitmapInView[0].x = 0;
+    bitmapInView[0].y = bitmapDrawSize.y;
+    bitmapInView[1].x = bitmapDrawSize.x;
+    bitmapInView[1].y = bitmapDrawSize.y;
+    bitmapInView[2].x = 0;
+    bitmapInView[2].y = 0;
+    bitmapInView[3].x = bitmapDrawSize.x;
+    bitmapInView[3].y = 0;
+    bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0;
+
+    Transform correctedViewToView;
+    
+    GetBingLogoInfo(correctedViewToView, context);
+
+    correctedViewToView.Multiply(bitmapInView, 4);
+
+    DPoint3d bitmapInLocal[4];
+    context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
+
+    bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0/*context.GetViewport()->GetActiveZRoot()*/;
+
+    // When raster is drawn by D3D, the texture is modulated by the active color (the materal fill color). 
+    // Override the material fill color for raster to white so that the appearance won't mysteriously change in the future.
+    ElemMatSymbP matSymb = context.GetElemMatSymb();
+
+    ColorDef color(0xff, 0xff, 0xff, 0x01);    
+    matSymb->SetLineColor(color);
+    matSymb->SetFillColor(color);
+    context.GetIDrawGeom().ActivateMatSymb(matSymb);
+
+    //ok to call this here? m_viewContext.GetViewport ()->GetIViewOutput ()->ShowTransparent();
+    //m_viewContext.GetIViewDraw()->SetSymbology (0x00FFFFFF, 0x00FFFFFF, 0, 0);
+    context.GetIViewDraw().DrawRaster(bitmapInLocal, (int)(bitmapSize.x * 4), (int)bitmapSize.x, (int)bitmapSize.y, true, QV_RGBA_FORMAT, pBitmapRGBA, NULL);
+
+    // SetToViewCoords is only valid during overlay mode aka DecorateScreen
+    //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (false);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  12/2016
 //----------------------------------------------------------------------------------------
@@ -894,6 +1026,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     if (m_smPtr == 0) return; //if open failed, we can't draw anything
 
+    // BingMaps Brand logo for legal purpose.
+    if (m_isUsingBingMap)
+        {
+        DPoint2d bitmapSize;
+        Byte const* pBitmap = GetImageryLogo(bitmapSize);
+        if (NULL != pBitmap)
+            DrawBingLogo(context, pBitmap, bitmapSize);
+        }
 
     if (DrawPurpose::Pick == context.GetDrawPurpose() && m_currentDrawingInfoPtr.IsValid())
         {        
@@ -1112,8 +1252,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());        
         ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_smPtr->ShouldInvertClips() ? m_notActiveClips :m_activeClips);
-        }
-
+        }    
     }                 
 
 //---------------------------------------------------------------------------------------
@@ -1262,7 +1401,14 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_subModel = false;
     m_loadedAllModels = false;
     m_startClipCount = 0;
+
     m_isUsingBingMap = false;
+
+
+    m_logoSize.x = m_logoSize.y = 0;
+    m_logoRetryCount = 0;
+
+    m_brandLogoURI = WString(L"http://dev.virtualearth.net/Branding/logo_powered_by.png");
     }
 
 //----------------------------------------------------------------------------------------

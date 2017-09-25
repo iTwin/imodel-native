@@ -2,11 +2,13 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshSchemaPCH.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __SCALABLEMESH_SCHEMAINTERNAL_H__
 #define __SCALABLEMESH_SCHEMAINTERNAL_H__
+
+#include <Urlmon.h>
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
