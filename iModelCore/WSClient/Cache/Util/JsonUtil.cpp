@@ -2,12 +2,13 @@
 |
 |     $Source: Cache/Util/JsonUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/JsonUtil.h>
 #include <rapidjson/prettywriter.h>
+#include <WebServices/Cache/Util/ECDbHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
@@ -20,6 +21,11 @@ void JsonUtil::RemoveECMembers(JsonValueR instanceJson)
     for (auto& memberName : instanceJson.getMemberNames())
         {
         if (!memberName.empty() && '$' == memberName[0])
+            {
+            instanceJson.removeMember(memberName);
+            }
+
+        if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
             {
             instanceJson.removeMember(memberName);
             }
@@ -38,6 +44,12 @@ void JsonUtil::RemoveECMembers(RapidJsonValueR instanceJson)
             {
             membersToRemove.push_back(it->name.GetString());
             }
+
+        if (0 != it->name.GetStringLength() && ECJsonSystemNames::IsTopLevelSystemMember(it->name.GetString()))
+            {
+            membersToRemove.push_back(it->name.GetString());
+            }
+
         }
     for (auto& memberName : membersToRemove)
         {
@@ -292,6 +304,7 @@ bool JsonUtil::StringValuesEqual(RapidJsonValueCR a, RapidJsonValueCR b)
 
     const UTF8<>::Ch* const str1 = a.GetString();
     const UTF8<>::Ch* const str2 = b.GetString();
+    
     if (str1 == str2)
         {
         return true;
