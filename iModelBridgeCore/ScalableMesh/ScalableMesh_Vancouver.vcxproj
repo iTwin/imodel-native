@@ -395,6 +395,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReferenceVisitor.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />

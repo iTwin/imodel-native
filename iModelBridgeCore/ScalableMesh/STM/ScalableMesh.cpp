@@ -478,7 +478,7 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution)
+SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution)
     {
     return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution);
     }
@@ -987,7 +987,15 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
     status = scmPtr->Open();
     if (status == BSISUCCESS)
         {
-        ScalableMeshLib::GetHost().RegisterScalableMesh(filePath, scmP);
+        bool isFromPWCS = false;
+        WString newFilePath = filePath;
+        if (scmPtr->IsCesium3DTiles())
+            {
+            auto pwcsLink = scmPtr->GetProjectWiseContextShareLink();
+            if (isFromPWCS = !pwcsLink.empty())
+                newFilePath = WString(pwcsLink.c_str(), true);
+            }
+        ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1052,7 +1060,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     else
                         {
                         Utf8String projectID, guid;
+#ifndef VANCOUVER_API
                         if (utf8Path.ContainsI("realitydataservices") && utf8Path.ContainsI("S3MXECPlugin"))
+#else
+                        Utf8String lowerPath(utf8Path.c_str());
+                        lowerPath.ToLower();
+                        auto position1 = lowerPath.find("realitydataservices");
+                        auto position2 = lowerPath.find("s3mxecplugin");
+                        if (position1 != Utf8String::npos && position2 != Utf8String::npos)
+#endif
                             { // RDS
                             config_server["type"] = "rds";
                             auto& server_settings = config_server["settings"];
@@ -1061,10 +1077,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             server_settings["id"] = Json::Value(serverID.c_str());
                             server_settings["authentication"]["public"] = false;
 
-                            auto guidPos = m_path.find_last_of(L"/") + 1;
+                            auto guidPos = m_path.find(L"RealityData/") + 12;
+                            auto guidLength = m_path.find(L"/", guidPos) - guidPos;
 
                             // guid
-                            guid = Utf8String(m_path.substr(guidPos));
+                            guid = Utf8String(m_path.substr(guidPos, guidLength));
 
                             config["guid"] = Json::Value(guid.c_str());
                             auto projectIDStartPos = m_path.find(L"S3MXECPlugin--") + 14;
@@ -1122,7 +1139,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 #ifndef VANCOUVER_API                                       
                 dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
 #else
-                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
+                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings, m_smRDSProvider);
 #endif
 
                 m_scmIndexPtr = new MeshIndexType(dataStore,
@@ -1279,7 +1296,15 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
-    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
+    WString path = m_path;
+    if (this->IsCesium3DTiles())
+        {
+        auto pwcsLink = this->GetProjectWiseContextShareLink();
+        if (!pwcsLink.empty())
+            path = WString(pwcsLink.c_str(), true);
+        }
+
+    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
@@ -3003,7 +3028,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return status;
     }
 
-template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
+template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
     {    
     BeFileName terrainAbsName;
 
@@ -3038,7 +3063,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
 		if (status != SUCCESS)
-			return status == SUCCESS ? SUCCESS : ERROR;
+			return status == SUCCESS ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
 /*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
@@ -3056,7 +3081,7 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
 
 
     createdTerrain = terrainAbsName;
-    return SUCCESS;
+	return SMStatus::S_SUCCESS;
     }
 
 

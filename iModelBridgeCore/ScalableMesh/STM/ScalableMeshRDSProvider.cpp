@@ -78,16 +78,7 @@ Utf8String ScalableMeshRDSProvider::_GetAzureURLAddress()
     {
     if (IsTokenExpired()) UpdateToken();
 
-    // Get root document name
-    RawServerResponse rawResponse;
-    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_PWCSMeshGuid); //at this point I request the RealityData's information to know the root document's path
-    RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
-
-    if (entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
-        return Utf8String();
-
-    Utf8String rootDocument = entity->GetRootDocument();
-    return m_AzureConnection.m_url + "/" + rootDocument;
+    return m_AzureConnection.m_url + "/" + GetRootDocumentName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,6 +96,7 @@ Utf8String ScalableMeshRDSProvider::_GetRDSURLAddress()
     rdsUrl += "/Repositories/" + RealityDataService::GetRepoName();
     rdsUrl += "/" + RealityDataService::GetSchemaName();
     rdsUrl += "/RealityData/" + m_PWCSMeshGuid;
+    rdsUrl += "/" + GetRootDocumentName();
 
     return rdsUrl;
     }
@@ -195,6 +187,18 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         }
 
     return Utf8String(serverUrl.c_str());
+    }
+
+Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
+    {
+    RawServerResponse rawResponse;
+    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_PWCSMeshGuid);
+    RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
+
+    if (entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
+        return Utf8String();
+
+    return entity->GetRootDocument();
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

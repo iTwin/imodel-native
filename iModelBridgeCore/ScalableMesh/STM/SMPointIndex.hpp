@@ -896,6 +896,18 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
+//=======================================================================================
+// @bsimethod                                                 Elenie.Godzaridis 09/17
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData()
+{
+	if (GetBlockID().IsValid())
+	{
+		SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
+		m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+	}
+}
+
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
     {
@@ -5028,7 +5040,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             }
        
-        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex, are3dPoints, isRegularGrid);
+        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex - startPointIndex, are3dPoints, isRegularGrid);
 
 
         if (endPointIndex < countPoints)

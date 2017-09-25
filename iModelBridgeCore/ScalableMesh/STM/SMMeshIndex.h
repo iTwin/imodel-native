@@ -183,6 +183,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void Unload() override;
 
+	virtual void RemoveNonDisplayPoolData() override;
+
     virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false) override;
 
     virtual bool IsGraphLoaded() const;

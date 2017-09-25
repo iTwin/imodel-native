@@ -212,7 +212,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
 
 int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
-    int status = BSISUCCESS;
+    int status = SMStatus::S_SUCCESS;
 
     //MS : Some cleanup needs to be done here.
     try
@@ -220,7 +220,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         if (m_scmPtr != 0)
             {
             if (SCM_STATE_UP_TO_DATE == m_scmPtr->GetState())
-                return BSIERROR;
+                return SMStatus::S_ERROR;
 
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
@@ -229,7 +229,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         SetupFileForCreation(doPartialUpdate);
 
         if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
-            return BSIERROR;
+            return SMStatus::S_ERROR;
 
 
         // Sync only when there are sources with which to sync
@@ -239,9 +239,11 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
         if (0 < m_sources.GetCount() &&
-            BSISUCCESS != SyncWithSources(restrictLevelForPropagation))
-            return BSIERROR;
+            S_SUCCESS != SyncWithSources(restrictLevelForPropagation))
+            return SMStatus::S_ERROR;
 
+		if (GetProgress()->IsCanceled())
+			return SMStatus::S_ERROR_CANCELED_BY_USER;
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
@@ -250,12 +252,12 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         if (BSISUCCESS != UpdateLastModified() ||
             (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
             BSISUCCESS != SaveGCS())
-            status = BSIERROR;
+            status = SMStatus::S_ERROR;
 
         }
     catch (...)
         {
-        return BSIERROR;
+        return SMStatus::S_ERROR;
         }
 
     return status;

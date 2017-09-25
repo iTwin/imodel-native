@@ -943,8 +943,8 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId mate
         newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+    //BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
+    //BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
 
     AddTriangle(newTriangle);
     ++m_triangleIndex;

@@ -33,6 +33,7 @@ SMProgressReport::SMProgressReport()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Stephane.Nullans                  05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+// Progression implementation
 SMProgressReport::~SMProgressReport()
     {
     }
@@ -40,6 +41,84 @@ SMProgressReport::~SMProgressReport()
 bool SMProgressReport::_CheckContinueOnProgress(ISMProgressReport const& report)
     {
     return m_pProgressListener->_CheckContinueOnProgress(report);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Stephane.Nullans                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ // IScalableMeshAnalysis implementation
+
+DTMStatusInt IScalableMeshAnalysis::ComputeDiscreteVolume(const bvector<DPoint3d>& polygon,
+                                                            double resolution,
+                                                            ISMGridVolume& grid,
+                                                            ISMAnalysisProgressListener* pProgressListener)
+    {
+    return _ComputeDiscreteVolume(polygon, resolution, grid, pProgressListener);
+    }
+
+DTMStatusInt IScalableMeshAnalysis::ComputeDiscreteVolume(const bvector<DPoint3d>& polygon,
+                                                            IScalableMesh* anotherMesh,
+                                                            double resolution, ISMGridVolume& grid,
+                                                            ISMAnalysisProgressListener* pProgressListener)
+    {
+    return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid, pProgressListener);
+    }
+
+void IScalableMeshAnalysis::SetMaxThreadNumber(int num)
+    {
+    return _SetMaxThreadNumber(num);
+    }
+
+void IScalableMeshAnalysis::SetUnitToMeter(double val)
+    {
+    return _SetUnitToMeter(val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                   Stephane.Nullans                  05/2017
+ +---------------+---------------+---------------+---------------+---------------+------*/
+// ISMGridVolume implementation
+ISMGridVolume::ISMGridVolume() 
+    {
+    m_direction = DVec3d::From(0, 0, 1); // fixed to Z for now
+    m_resolution = 1.0; // 1 meter
+    m_gridSizeLimit = 5000;
+    m_totalVolume = m_cutVolume = m_fillVolume = 0;
+    m_VolSegments = NULL;
+    m_bInitialised = false;
+    }
+
+ISMGridVolume::~ISMGridVolume() 
+    {
+    delete[] m_VolSegments;
+    m_VolSegments = NULL;
+    }
+
+bool ISMGridVolume::GetGridSize(int &_xSize, int &_ySize)
+    {
+    if (!m_bInitialised)
+        return false;
+    _xSize = m_xSize;
+    _ySize = m_ySize;
+    return true;
+    }
+
+bool ISMGridVolume::InitGrid(int _xSize, int _ySize)
+    {
+    m_xSize = _xSize;
+    m_ySize = _ySize;
+
+    if (m_VolSegments != NULL)
+        delete[] m_VolSegments; // delete the previous data
+
+    // reserve memory for segments
+    m_VolSegments = new SMVolumeSegment[m_xSize*m_ySize];
+    if (m_VolSegments == nullptr)
+        m_bInitialised = false; // failed allocating memory for the grid
+    else
+        m_bInitialised = true;
+    return m_bInitialised;
     }
 
 //=======================================================================================

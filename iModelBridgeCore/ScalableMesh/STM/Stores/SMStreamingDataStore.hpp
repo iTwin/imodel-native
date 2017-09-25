@@ -216,7 +216,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return m_smRDSProvider->GetToken().c_str();
             }));
 
-        WString url (m_smRDSProvider->GetAzureURLAddress().c_str(), BentleyCharEncoding::Utf8);
+        WString url(m_smRDSProvider->GetAzureURLAddress().c_str(), BentleyCharEncoding::Utf8);
         m_masterFileName = BEFILENAME(GetFileNameAndExtension, BeFileName(url.c_str()));
         account_prefix = DataSourceURL(settings->GetGUID().c_str());
         auto firstSeparatorPos = url.find(L".");
