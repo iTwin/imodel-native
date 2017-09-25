@@ -1333,7 +1333,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
 
-        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clip, bool isClipBoundary) const override;
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 

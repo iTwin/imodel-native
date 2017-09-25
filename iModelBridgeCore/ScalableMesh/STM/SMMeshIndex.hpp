@@ -437,7 +437,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
 
 extern std::mutex s_createdNodeMutex;
 
-template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const uint64_t& clipID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress)
+template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress)
     {
     assert(pi_pDataStore != nullptr);
 
@@ -464,49 +464,79 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     if (this->m_nodeHeader.m_level == 0)
         {
         startTime = clock();
-        auto nodeDataSaver = [pi_pDataStore, clipID, isClipBoundary, sourceGCS, destinationGCS, progress](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
+        bvector<DRange3d> ranges;
+        bool allClipsAreMasks = true;
+
+        if (clips.IsValid())
+            {
+            for (ClipPrimitivePtr const& primitive : *clips)
+                {
+                DRange3d        thisRange;
+                if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+                    {
+                    ranges.push_back(thisRange);
+                    }
+                if (!primitive->IsMask())
+                    allClipsAreMasks = false;
+                }
+            }
+
+        //(*clips)[0]->GetRange(range, nullptr, true);
+        auto nodeDataSaver = [pi_pDataStore, ranges, allClipsAreMasks, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
             {
             if (progress != nullptr  && progress->IsCanceled()) return;
 
-            // Gather all data in one place
-            double t = clock();
-            node->GetPointsPtr();
-            node->GetPtsIndicePtr();
-            node->GetUVCoordsPtr();
-            node->GetUVsIndicesPtr();
-            node->GetTextureCompressedPtr();
+            bool hasMSClips = false;
+            for (auto const& range : ranges)
+                {
+                if (node->m_nodeHeader.m_contentExtentDefined && range.IntersectsWith(node->m_nodeHeader.m_contentExtent))
+                    hasMSClips = true;
+                }
 
-            loadDataTime += clock() - t;
+            if (hasMSClips || allClipsAreMasks)
+                {
 
-            // Convert data
-            t = clock();
+                // Gather all data in one place
+                double t = clock();
+                node->GetPointsPtr();
+                node->GetPtsIndicePtr();
+                node->GetUVCoordsPtr();
+                node->GetUVsIndicesPtr();
+                node->GetTextureCompressedPtr();
 
-            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
-            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+                loadDataTime += clock() - t;
 
-            IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
-            bvector<Byte> cesiumData;
-            cesiumPublisher->Publish(nodeP, clipID, isClipBoundary, sourceGCS, destinationGCS, cesiumData);
+                // Convert data
+                t = clock();
+
+                auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
+                IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+
+                IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
+                bvector<Byte> cesiumData;
+                cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, sourceGCS, destinationGCS, cesiumData);
 
 
-            convertTime += clock() - t;
+                convertTime += clock() - t;
 
-            // Store data
-            t = clock();
-            ISMTileMeshDataStorePtr tileStore;
-            bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
-            assert(result == true); // problem getting the tile mesh data store
+                // Store data
+                t = clock();
+                ISMTileMeshDataStorePtr tileStore;
+                bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
+                assert(result == true); // problem getting the tile mesh data store
 
-            if (!cesiumData.empty())
-                tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
-            storeTime += clock() - t;
-            //// Store header
-            //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
+                if (!cesiumData.empty())
+                    tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
+                storeTime += clock() - t;
+                //// Store header
+                //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
-            //{
-            //std::lock_guard<mutex> clk(s_consoleMutex);
-            //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
-            //}
+                //{
+                //std::lock_guard<mutex> clk(s_consoleMutex);
+                //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
+                //}
+                }
+
             node = nullptr;
 
             if (progress != nullptr)
@@ -552,7 +582,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     if (m_pSubNodeNoSplit != nullptr)
         {
         assert(GetNumberOfSubNodesOnSplit() == 1 || GetNumberOfSubNodesOnSplit() == 4);
-        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, clipID, isClipBoundary, sourceGCS, destinationGCS, progress)) return false;
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress)) return false;
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
         //this->m_pSubNodeNoSplit = nullptr;
@@ -567,7 +597,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
                 if (this->m_apSubNodes[indexNode] != nullptr)
                     {
-                    if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, clipID, isClipBoundary, sourceGCS, destinationGCS, progress)) return false;
+                    if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress)) return false;
                     loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
                     //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                     //this->m_apSubNodes[indexNode] = nullptr;
@@ -5196,7 +5226,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::SaveGro
 /**----------------------------------------------------------------------------
 Publish Cesium ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(const WString& path, const uint64_t& clipID, const GeoCoordinates::BaseGCSCPtr sourceGCS)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(const WString& path, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, const GeoCoordinates::BaseGCSCPtr sourceGCS)
     {
     if (m_progress != nullptr)
         {
@@ -5206,11 +5236,11 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
         }
 
     bool isClipBoundary = false;
-    if (clipID != -2 && clipID != -1)
+    if (coverageID != -2 && coverageID != -1)
         {
         for (const auto& diffSet : *static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->GetDiffSetPtr())
             {
-            if (diffSet.clientID == clipID)
+            if (diffSet.clientID == coverageID)
                 {
                 bvector<bvector<DPoint3d>> polys;
                 polys.push_back(bvector<DPoint3d>());
@@ -5264,7 +5294,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 
     auto strategy = m_rootNodeGroup->GetStrategy<EXTENT>();
     strategy->SetOldMasterHeader(oldMasterHeader);
-    strategy->SetClipInfo(clipID, isClipBoundary);
+    strategy->SetClipInfo(coverageID, isClipBoundary);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     strategy->AddGroup(m_rootNodeGroup.get());
 
@@ -5299,7 +5329,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
         m_progress->ProgressStepIndex() = 2;
         m_progress->Progress() = 0.0f;
         }
-    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, clipID, isClipBoundary, sourceGCS, destinationGCS, m_progress);
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, m_progress);
 
     if (m_progress != nullptr) m_progress->Progress() = 1.0f;
     

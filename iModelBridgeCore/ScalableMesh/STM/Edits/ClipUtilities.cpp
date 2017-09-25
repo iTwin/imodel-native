@@ -1689,7 +1689,20 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
     triangleBoxes.resize(clippedMesh->GetPointIndexCount() / 3, DRange3d::NullRange());
     DRange3d polyBox;
-    clip->GetRange(polyBox, nullptr);
+    polyBox.Init();
+
+    for (ClipPrimitivePtr const& primitive : *clip)
+        {
+        DRange3d        thisRange;
+
+        if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+            {
+            if (polyBox.IsEmpty())
+                polyBox = thisRange;
+            else
+                polyBox.UnionOf(polyBox, thisRange);
+            }
+        }
     ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
     InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox);
     bvector<ClipVectorPtr> clipPolys;

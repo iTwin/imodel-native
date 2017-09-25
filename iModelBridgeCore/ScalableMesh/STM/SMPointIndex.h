@@ -1101,7 +1101,7 @@ protected:
     /**----------------------------------------------------------------------------
     Publishes node header and point data in Cesium 3D tile format.
     -----------------------------------------------------------------------------*/
-    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, const uint64_t& clipID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
+    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 

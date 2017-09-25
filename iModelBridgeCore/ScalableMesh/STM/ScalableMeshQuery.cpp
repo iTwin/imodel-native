@@ -2667,9 +2667,9 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsP
     return _GetMeshUnderClip(flags, clip);
     }
 
-IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clip, bool isClipBoundary) const
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const
     {
-    return _GetMeshUnderClip2(flags, clip, isClipBoundary);
+    return _GetMeshUnderClip2(flags, clips, coverageID, isClipBoundary);
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow) const
