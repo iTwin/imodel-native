@@ -89,22 +89,26 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, JsonValueCR json) const
         Utf8CP memberName = it.memberName();
         JsonValueCR memberJson = *it;
 
-        if (strcmp(ECJsonSystemNames::ClassName(), memberName) == 0)
-            {
-            if (memberJson.isNull() || !memberJson.isString() || !m_jsonClassName.EqualsIAscii(memberJson.asCString()))
-                {
-                LOG.errorv("JsonInserter failure. The '%s' member of the JSON to insert has an invalid value: %s",
-                           ECJsonSystemNames::ClassName(), memberJson.ToString().c_str());
-                return BE_SQLITE_ERROR;
-                }
-
-            continue;
-            }
-
         auto bindingMapLookupIt = m_bindingMap.find(memberName);
         if (bindingMapLookupIt == m_bindingMap.end())
             {
-            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' for .",
+            if (strcmp(ECJsonSystemNames::ClassName(), memberName) == 0)
+                {
+                if (memberJson.isNull() || !memberJson.isString() || !m_jsonClassName.EqualsIAscii(memberJson.asCString()))
+                    {
+                    LOG.errorv("JsonInserter failure. The '%s' member of the JSON to insert has an invalid value: %s",
+                               ECJsonSystemNames::ClassName(), memberJson.ToString().c_str());
+                    return BE_SQLITE_ERROR;
+                    }
+
+                continue;
+                }
+
+            if (strcmp(ECJsonSystemNames::SourceClassName(), memberName) == 0 ||
+                strcmp(ECJsonSystemNames::TargetClassName(), memberName) == 0)
+                continue; //those two are ignored as ECSQL doesn't validate them anyways
+
+            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s'.",
                        memberName, m_ecClass.GetFullName());
             return BE_SQLITE_ERROR;
             }
@@ -203,7 +207,27 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, RapidJsonValueCR json) const
         auto bindingMapLookupIt = m_bindingMap.find(memberName);
         if (bindingMapLookupIt == m_bindingMap.end())
             {
-            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' for .",
+            if (strcmp(ECJsonSystemNames::ClassName(), memberName) == 0)
+                {
+                if (memberJson.IsNull() || !memberJson.IsString() || !m_jsonClassName.EqualsIAscii(memberJson.GetString()))
+                    {
+                    rapidjson::StringBuffer jsonStr;
+                    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+                    memberJson.Accept(writer);
+
+                    LOG.errorv("JsonInserter failure. The '%s' member of the JSON to insert has an invalid value: %s",
+                               ECJsonSystemNames::ClassName(), jsonStr.GetString());
+                    return BE_SQLITE_ERROR;
+                    }
+
+                continue;
+                }
+
+            if (strcmp(ECJsonSystemNames::SourceClassName(), memberName) == 0 ||
+                strcmp(ECJsonSystemNames::TargetClassName(), memberName) == 0)
+                continue; //those two are ignored as ECSQL doesn't validate them anyways
+
+            LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s'.",
                        memberName, m_ecClass.GetFullName());
             return BE_SQLITE_ERROR;
             }

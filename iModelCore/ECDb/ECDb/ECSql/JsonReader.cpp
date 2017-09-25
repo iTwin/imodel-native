@@ -59,6 +59,10 @@ BentleyStatus JsonReader::Initialize(ECClassId ecClassId)
 BentleyStatus JsonReader::Initialize(ECClassCR ecClass)
     {
     Utf8String ecsql("SELECT ECInstanceId,ECClassId");
+
+    if (ecClass.IsRelationshipClass())
+        ecsql.append(",SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId");
+
     for (ECPropertyCP prop : ecClass.GetProperties())
         {
         ecsql.append(",[").append(prop->GetName()).append("]");

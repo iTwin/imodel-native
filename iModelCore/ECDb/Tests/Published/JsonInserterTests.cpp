@@ -226,12 +226,8 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 
     ECInstanceKey parentKey, childKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Code) VALUES('parent-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Child(Name) VALUES('child-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, "INSERT INTO ts.Child(Name) VALUES('child-1')"));
 
-    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
-    ASSERT_TRUE(parentClass != nullptr);
-    ECClassCP childClass = m_ecdb.Schemas().GetClass("TestSchema", "Child");
-    ASSERT_TRUE(childClass != nullptr);
     ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("TestSchema", "LinkTableRel");
     ASSERT_TRUE(linkTableRelClass != nullptr);
 
@@ -257,16 +253,21 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
     rapidjson::Document expectedRapidJson;
     ECInstanceKey linkTableRelKey;
 
+    Savepoint sp(m_ecdb, "sp", false);
+
     {
     expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "targetId" : "%s"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
     ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
-
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
     }
 
     {
@@ -276,11 +277,15 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
     }
     }
 
@@ -499,6 +504,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
         JsonInserter inserter(m_ecdb, ecClass, nullptr);
         ASSERT_TRUE(inserter.IsValid()) << ecClass.GetFullName();
 
+        Savepoint sp(m_ecdb, "sp");
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
 
@@ -506,6 +512,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
         ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
         Json::Value actualJson;
         ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();
+        ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
         ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
         ASSERT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
@@ -515,6 +522,13 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
         //remove the id and class name members, because the input JSON doesn't have them
         actualJson.removeMember(ECJsonUtilities::json_id());
         actualJson.removeMember(ECJsonUtilities::json_className());
+
+        if (!expectedJson.isMember(ECJsonUtilities::json_sourceClassName()))
+            actualJson.removeMember(ECJsonUtilities::json_sourceClassName());
+
+        if (!expectedJson.isMember(ECJsonUtilities::json_targetClassName()))
+            actualJson.removeMember(ECJsonUtilities::json_targetClassName());
+
         ASSERT_EQ(0, expectedJson.compare(actualJson)) << "Expected: " << expectedJsonStr << " Actual: " << actualJson.ToString().c_str();
         }
     }
