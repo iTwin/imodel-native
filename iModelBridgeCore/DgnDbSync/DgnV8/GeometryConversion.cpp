@@ -687,6 +687,8 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
                 }
             }
         }
+
+    params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
     }
 
 /*=================================================================================**//**
@@ -1258,6 +1260,10 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
             // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
             //       LineStyleParams only needs to be rotated for placement, the scale has already been accounted for...
             m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
+
+            // NOTE: Part scale does need to be accounted for in linestyle scale...
+            if (0.0 != m_partScale && 1.0 != m_partScale && m_geomParams.IsTransformable())
+                m_geomParams.ApplyTransform(Transform::FromScaleFactors(m_partScale, m_partScale, m_partScale));
             }
 
         // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -2203,6 +2209,9 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             {
             if (0.0 == pathEntry.m_partScale)
                 return; // Not suitable for creating a part, ex. non-uniform scale...
+
+            if (pathEntry.m_geomParams.HasStrokedLineStyle())
+                return;
             }
         }
 
@@ -2853,7 +2862,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 pathEntry.m_geomParams.ApplyTransform(geomToLocal, 0x01); // <- Don't scale linestyles...
                 }
 
-            if (IsValidForPostInstancing(*geometry, *pathGeom.m_path) && !DisablePostInstancing(v8eh))
+            if (IsValidForPostInstancing(*geometry, *pathGeom.m_path) && !DisablePostInstancing(v8eh) && !pathEntry.m_geomParams.HasStrokedLineStyle())
                 {
                 // Create parts for geometry that wasn't instanced in V8 but was deemed worth instancing...
                 PostInstanceGeometry(*builder, *geometry, pathEntry.m_geomParams, iPathEntry, pathGeom.m_path->GetCursorElem());
