@@ -2219,7 +2219,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             if (0.0 == pathEntry.m_partScale)
                 return; // Not suitable for creating a part, ex. non-uniform scale...
 
-            if (pathEntry.m_geomParams.HasStrokedLineStyle())
+            if (pathEntry.m_curve.IsValid() && pathEntry.m_geomParams.HasStrokedLineStyle())
                 return;
             }
         }
@@ -2871,7 +2871,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 pathEntry.m_geomParams.ApplyTransform(geomToLocal, 0x01); // <- Don't scale linestyles...
                 }
 
-            if (IsValidForPostInstancing(*geometry, *pathGeom.m_path) && !DisablePostInstancing(v8eh) && !pathEntry.m_geomParams.HasStrokedLineStyle())
+            if (IsValidForPostInstancing(*geometry, *pathGeom.m_path) && !DisablePostInstancing(v8eh))
                 {
                 // Create parts for geometry that wasn't instanced in V8 but was deemed worth instancing...
                 PostInstanceGeometry(*builder, *geometry, pathEntry.m_geomParams, iPathEntry, pathGeom.m_path->GetCursorElem());
