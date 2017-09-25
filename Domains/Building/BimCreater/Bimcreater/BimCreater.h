@@ -16,7 +16,7 @@
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct BimCreater : Dgn::DgnPlatformLib::Host
+struct BimCreater : Dgn::DgnPlatformLib::Host, Dgn::DgnPlatformLib::Host::RepositoryAdmin
     {
     private:
         BeFileName m_outputFileName;
