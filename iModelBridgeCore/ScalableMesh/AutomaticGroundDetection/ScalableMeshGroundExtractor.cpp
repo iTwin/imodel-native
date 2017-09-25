@@ -406,7 +406,7 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
 SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
-	SMStatus status;
+	SMStatus status = SMStatus::S_SUCCESS;
             
 	StatusInt statusOpen;
     IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), statusOpen));
