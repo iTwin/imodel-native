@@ -3977,6 +3977,9 @@ TEST(Polyface,CulvertPunchB)
     Check::ClearGeometry ("Polyface.CulvertPunchB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,PunchOverlap)
     {
     PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();

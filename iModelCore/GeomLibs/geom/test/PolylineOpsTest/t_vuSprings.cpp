@@ -1526,6 +1526,9 @@ bvector<DPoint3d> &wallPoints   // (closed) area for wall clip.
     Check::SaveTransformed (*voronoiClippedToCirclesAndWalls);
     Check::SaveTransformedMarkers (stations, 0.2);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu, DirectWallAndRadiusClips)
     {
     bvector<DPoint3d> stations

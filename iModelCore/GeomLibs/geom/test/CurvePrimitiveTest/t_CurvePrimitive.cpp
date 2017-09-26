@@ -2361,6 +2361,9 @@ TEST(CurveVector, GeometricConstructions)
 
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString,EndFuzz)
     {
     // "getStartEnd" did not ping the bits on the endpoint ... verify it with various length linestrings

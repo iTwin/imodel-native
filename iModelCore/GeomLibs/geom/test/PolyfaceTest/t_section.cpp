@@ -129,6 +129,9 @@ void VerifySectionMatch (PolyfaceHeaderR meshA, PolyfaceHeaderR meshB, DPlane3dC
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TrivialSection, Rectangular)
     {
     for (int numX = 1; numX < 10; numX += 4)
@@ -156,6 +159,9 @@ TEST(TrivialSection, Rectangular)
     
 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TrivialSection, Cube)
     {
     IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
@@ -277,6 +283,9 @@ void TestLargeMesh (int numX, int numY, int numCall, double globalScale, DrapeAc
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DoDrapeXY,ExtendBothEnds)
     {
     //static bool s_noisy = false;
@@ -292,6 +301,9 @@ TEST(DoDrapeXY,ExtendBothEnds)
       }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, LargeMesh)
     {
     TestLargeMesh (20,20, 1, 1.0, DrapeAction::ClassicDrape);
@@ -311,6 +323,9 @@ TEST(SweepLinestring, LargeMesh)
     TestLargeMesh (numB, numB, s_numCallLongTest, 10.0, DrapeAction::FastDrape);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, PointSelect)
     {
     TestLargeMesh (20,20, 1, 1.0, DrapeAction::FastDrapeWithPick);
@@ -318,6 +333,9 @@ TEST(SweepLinestring, PointSelect)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, Test6)
     {
     int numX = 4;
@@ -387,6 +405,9 @@ void CheckDrape (int iMax, int jMax, double edgeLengthX, double edgeLengthY, bve
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, Test2)
     {
     bvector<DPoint3d> linestring;
@@ -400,6 +421,9 @@ TEST(SweepLinestring, Test2)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, Test3)
     {
     bvector<DPoint3d> linestring;
@@ -410,6 +434,9 @@ TEST(SweepLinestring, Test3)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, Test4)
     {
     bvector<DPoint3d> linestring;
@@ -419,6 +446,9 @@ TEST(SweepLinestring, Test4)
     CheckDrape (1,1, edgeLength, edgeLength, linestring, 5.0, "1x1 facets grid partially contained drape");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring, Test4a)
     {
     bvector<DPoint3d> linestring;
@@ -437,6 +467,9 @@ void TestLargeMeshXYRangeConstruction (int numX, int numY, double globalScale)
     PolyfaceIndexedHeapRangeTreePtr tree = PolyfaceIndexedHeapRangeTree::CreateForPolyfaceXYSort (*mesh);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RangeTreeConstruction,XYGrid)
     {
     TestLargeMeshXYRangeConstruction (7,5, 1.0);
@@ -477,6 +510,9 @@ void LoadOuter (int numX, int numY, bvector<DPoint2d> &xyz)
         }
       xyz.push_back (corners[0]);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RangeTreeConstruction,Bsurf1)
     {
 
@@ -583,6 +619,9 @@ void TestDrapeZ1 (bvector<DPoint3d> &basePoints)
     Check::Near (PolylineOps::Length (chainA0), PolylineOps::Length (chainA1), "compressed chain length");
     Check::Near (PolylineOps::Length (chainB0), PolylineOps::Length (chainB1), "compressed chain length");
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring,Test1000)
     {
     bvector<DPoint3d> basePoints
@@ -594,6 +633,9 @@ TEST(SweepLinestring,Test1000)
     TestDrapeZ1 (basePoints);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepLinestring,Test1010)
     {
     bvector<DPoint3d> basePoints
@@ -611,6 +653,9 @@ TEST(SweepLinestring,Test1010)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DrapePointsXY,Test1)
     {
     bvector<DPoint3d> basePoints
@@ -676,6 +721,9 @@ void doDrapes (bvector<DPoint3d> &alignmentPts, PolyfaceHeaderPtr &polyface, dou
     Check::Shift (0, 0, -2.0 *dz);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,DrapeOnBoreMesh)
     {
 
@@ -1310,6 +1358,9 @@ void exerciseCleanup (bvector<PolyfaceHeaderPtr> &source)
     }
 
 // test the full set of 4 meshes ...
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CleanupVisiblesA)
     {
     DPoint3d origin = DPoint3d::From (0,0,0);
@@ -1330,6 +1381,9 @@ TEST(Polyface,CleanupVisiblesA)
 
     }
 // isolate the problem area
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CleanupVisiblesB)
     {
     DPoint3d origin = DPoint3d::From (0,0,0);
@@ -1393,6 +1447,9 @@ void doUndercut (PolyfaceHeaderPtr &meshA, PolyfaceHeaderPtr &meshB)
     Check::Shift (2.0 * dX, -dY, 0);
     }
 // test a single pair
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CleanupByUndercutAndPunchA)
     {
     DPoint3d origin = DPoint3d::From (0,0,0);
@@ -1405,6 +1462,9 @@ TEST(Polyface,CleanupByUndercutAndPunchA)
     Check::ClearGeometry ("Polyface.CleanupByUndercutAndPunchA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CleanupByUndercutAndPunchMany)
     {
     DPoint3d origin = DPoint3d::From (0,0,0);
