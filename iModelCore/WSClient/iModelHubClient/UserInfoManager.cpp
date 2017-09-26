@@ -26,7 +26,7 @@ Utf8StringCR userId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryUserInfoById";
+    const Utf8String methodName = "UserInfoManager::QueryUserInfoById";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
@@ -85,7 +85,7 @@ UsersInfoTaskPtr UserInfoManager::QueryAllUsersInfo
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryAllUsersInfo";
+    const Utf8String methodName = "UserInfoManager::QueryAllUsersInfo";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
@@ -128,7 +128,7 @@ bvector<Utf8String> userIds,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryUsersInfoByIds";
+    const Utf8String methodName = "UserInfoManager::QueryUsersInfoByIds";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 

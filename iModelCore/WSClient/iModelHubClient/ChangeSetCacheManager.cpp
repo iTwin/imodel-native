@@ -210,7 +210,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
     {
-    const Utf8String methodName = "PredownloadManager::PredownloadChangeSet";
+    const Utf8String methodName = "ChangeSetCacheManager::PredownloadChangeSet";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (changeSetId.empty())
         {
@@ -232,7 +232,7 @@ ICancellationTokenPtr             cancellationToken
         {
         if (!changeSetResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
             finalResult->SetError(changeSetResult.GetError());
             return;
             }
@@ -243,7 +243,7 @@ ICancellationTokenPtr             cancellationToken
             {
             if (!downloadResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, downloadResult.GetError().GetMessage().c_str());
                 finalResult->SetError(downloadResult.GetError());
                 return;
                 }
