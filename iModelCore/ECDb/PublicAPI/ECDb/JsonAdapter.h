@@ -193,7 +193,7 @@ public:
 #endif
 
 //======================================================================================
-//! Helper API to bind values from EC JSON members to ECSQL parameters
+//! Helper API to bind ECJSON values to ECSQL parameters
 // @bsiclass                                                  09/2017
 //+===============+===============+===============+===============+===============+======
 struct JsonECSqlBinder final
@@ -212,24 +212,24 @@ struct JsonECSqlBinder final
         /// @name Methods to bind JSON values from the JsonCpp API
         /// @{
 
-        //! Binds a EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
-        //! @param[in] json EC JSON value to be bound to @p binder
+        //! @param[in] json ECJSON value to be bound to @p binder
         //! @param[in] prop ECProperty of the parameter expression
-        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
+        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from ECJSON class names (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindValue(IECSqlBinder& binder, JsonValueCR json, ECN::ECPropertyCR prop, ECN::IECClassLocater& classLocater);
 
-        //! Binds a primitive EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a primitive ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the primitive ECSQL parameter to which the value is bound to
-        //! @param[in] primitiveJson Primitive EC JSON value to be bound to @p binder
-        //! @param[in] primitiveType Primitive type of the JSON value
+        //! @param[in] primitiveJson Primitive ECJSON value to be bound to @p binder
+        //! @param[in] primitiveType Primitive type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindPrimitiveValue(IECSqlBinder& binder, JsonValueCR primitiveJson, ECN::PrimitiveType primitiveType);
         
-        //! Binds a struct EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a struct ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
-        //! @param[in] structJson Struct EC JSON value to be bound to @p binder
+        //! @param[in] structJson Struct ECJSON value to be bound to @p binder
         //! @param[in] structType Struct type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindStructValue(IECSqlBinder& binder, JsonValueCR structJson, ECN::ECStructClassCR structType);
@@ -241,17 +241,17 @@ struct JsonECSqlBinder final
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindPrimitiveArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECN::PrimitiveType arrayElementType);
         
-        //! Binds a struct array EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a struct array ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
-        //! @param[in] arrayJson Struct array EC JSON value to be bound to @p binder
+        //! @param[in] arrayJson Struct array ECJSON value to be bound to @p binder
         //! @param[in] arrayElementType Array element type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindStructArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECN::ECStructClassCR arrayElementType);
 
-        //! Binds an EC JSON navigation property value to the specified ECSQL statement's binder.
+        //! Binds an ECJSON navigation property value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the navigation property ECSQL parameter to which the value is bound to
-        //! @param[in] navJson EC JSON navigation property value to be bound to @p binder
-        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
+        //! @param[in] navJson ECJSON navigation property value to be bound to @p binder
+        //! @param[in] classLocater Class locater needed to look up the relationship class from the @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" member (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, ECN::IECClassLocater& classLocater);
         
@@ -260,46 +260,46 @@ struct JsonECSqlBinder final
         /// @name Methods to bind JSON values from the RapidJson API
         //! @{
 
-        //! Binds a EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
-        //! @param[in] json EC JSON value to be bound to @p binder
+        //! @param[in] json ECJSON value to be bound to @p binder
         //! @param[in] prop ECProperty of the parameter expression
-        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
+        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from ECJSON class names (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindValue(IECSqlBinder& binder, RapidJsonValueCR json, ECN::ECPropertyCR prop, ECN::IECClassLocater& classLocater);
 
-        //! Binds a primitive EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a primitive ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the primitive ECSQL parameter to which the value is bound to
-        //! @param[in] primitiveJson Primitive EC JSON value to be bound to @p binder
-        //! @param[in] primitiveType Primitive type of the JSON value
+        //! @param[in] primitiveJson Primitive ECJSON value to be bound to @p binder
+        //! @param[in] primitiveType Primitive type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindPrimitiveValue(IECSqlBinder& binder, RapidJsonValueCR primitiveJson, ECN::PrimitiveType primitiveType);
         
-        //! Binds a struct EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a struct ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
-        //! @param[in] structJson Struct EC JSON value to be bound to @p binder
-        //! @param[in] structType Struct type of the JSON value
+        //! @param[in] structJson Struct ECJSON value to be bound to @p binder
+        //! @param[in] structType Struct type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindStructValue(IECSqlBinder& binder, RapidJsonValueCR structJson, ECN::ECStructClassCR structType);
         
-        //! Binds a primitive array EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a primitive array ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
-        //! @param[in] arrayJson Primitive array EC JSON value to be bound to @p binder
+        //! @param[in] arrayJson Primitive array ECJSON value to be bound to @p binder
         //! @param[in] arrayElementType Array element type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindPrimitiveArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECN::PrimitiveType arrayElementType);
 
-        //! Binds a struct array EC JSON value to the specified ECSQL statement's binder.
+        //! Binds a struct array ECJSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
-        //! @param[in] arrayJson Struct array EC JSON value to be bound to @p binder
+        //! @param[in] arrayJson Struct array ECJSON value to be bound to @p binder
         //! @param[in] arrayElementType Array element type
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindStructArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECN::ECStructClassCR arrayElementType);
 
-        //! Binds an EC JSON navigation property value to the specified ECSQL statement's binder.
+        //! Binds an ECJSON navigation property value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the navigation property ECSQL parameter to which the value is bound to
-        //! @param[in] navJson EC JSON navigation property value to be bound to @p binder
-        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
+        //! @param[in] navJson ECJSON navigation property value to be bound to @p binder
+        //! @param[in] classLocater Class locater needed to look up the relationship class from the @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" member (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, ECN::IECClassLocater& classLocater);
 
