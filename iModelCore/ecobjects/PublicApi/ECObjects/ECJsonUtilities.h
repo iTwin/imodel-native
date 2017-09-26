@@ -31,9 +31,9 @@ enum class ECJsonInt64Format
     };
 
 //=================================================================================
-//! An ECInstance in the EC JSON Format is formatted as JSON object made up of property value pairs.
+//! An ECInstance in the ECJSON Format is formatted as JSON object made up of property value pairs.
 //!
-//! ### EC JSON Format Description
+//! ### ECJSON Format Description
 //!     - All member names start with a <b>lower-case</b> character.
 //!     - <b>Reserved member names</b>:
 //!         - "id": ECInstanceId of the instance or the navigation id within a %Navigation property
@@ -85,7 +85,7 @@ struct ECJsonSystemNames final
         static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
 
         //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
-        //! in the EC JSON
+        //! in the ECJSON
         struct Navigation final
             {
             public:
@@ -100,7 +100,7 @@ struct ECJsonSystemNames final
                 static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(Id()) || memberName.Equals(RelClassName()); }
             };
 
-        //! System member names for the representation of Point property values in the EC JSON
+        //! System member names for the representation of Point property values in the ECJSON
         struct Point final
             {
             public:
@@ -122,10 +122,10 @@ struct ECJsonSystemNames final
         ~ECJsonSystemNames() = delete;
 
     public:
-        //!Checks whether @p topLevelMemberName is a system name for top-level members of the EC JSON object.
+        //!Checks whether @p topLevelMemberName is a system name for top-level members of the ECJSON object.
         //! @remarks System names that can only occur in nested members (ECJsonSystemNames::Navigation or ECJsonSystemNames::Point)
         //! are not considered by the check.
-        //! @param[in] topLevelMemberName Name of top-level member of EC JSON object to check
+        //! @param[in] topLevelMemberName Name of top-level member of ECJSON object to check
         //! @return true or false
         static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
     };
@@ -177,9 +177,9 @@ private:
 
 public:
 
-    //! Generates the fully qualified name of an ECClass as used in the EC JSON format: &lt;schema name&gt;.&lt;class name&gt;
+    //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
-    //! @return Fully qualified class name for the EC JSON format
+    //! @return Fully qualified class name for the ECJSON format
     static Utf8String FormatClassName(ECClassCR ecClass) { return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str()); }
 
     //! Lowers the first char of the specified string.
@@ -318,7 +318,7 @@ public:
 
     //! Converts the IGeometry JSON to an IGeometry object
     //! @param[in] json the JSON value
-    //! @return The deserialized IGeometry object or nullptr in case of errors
+    //! @return The IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
     ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(JsonValueCR json);
 
@@ -470,7 +470,7 @@ public:
 
     
 //=================================================================================
-//! Populates an ECInstance from a JSON in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
+//! Populates an ECInstance from a JSON in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
 // @bsiclass                                                 Ramanujam.Raman      01/2014
 //+===============+===============+===============+===============+===============+======
 struct JsonECInstanceConverter final
