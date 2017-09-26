@@ -133,7 +133,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         Transform                               m_smToModelUorTransform;
         Transform                               m_modelUorToSmTransform;
         bool                                    m_tryOpen;        
-
+        bool                                    m_displayTexture;
+        
         bool                                    m_isUsingBingMap; 
 
         // Imagery brand logo that we display in view, plot...  The one from we receive from bing maps server. 
@@ -283,8 +284,10 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT bool HasTerrain();
 
-        SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);        
+        SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);  
 
+        SCALABLEMESH_SCHEMA_EXPORT void SetDisplayTexture(bool displayTexture);
+        
         SCALABLEMESH_SCHEMA_EXPORT void ClearAllDisplayMem();
                 
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data

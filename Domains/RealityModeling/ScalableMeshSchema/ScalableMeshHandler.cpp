@@ -288,7 +288,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                              ViewContextR                                context, 
                              const Transform&                            smToDgnUorTransform,
                              ScalableMeshDisplayCacheManager*            mgr, 
-                             bset<uint64_t>&                             activeClips)
+                             bset<uint64_t>&                             activeClips, 
+                             bool                                        displayTexture)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -351,8 +352,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                 matSymbP->Init();
                 ColorDef white(0xff, 0xff, 0xff);
                 ColorDef green(0, 0x77, 0);
-                matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
-                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);                
+                matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
+                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
                 matSymbP->SetFillTransparency(s_transparency);
                 matSymbP->SetLineTransparency(s_transparency);
 
@@ -554,8 +555,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                                                     matSymbP->Init();
                                                     ColorDef white(0xff, 0xff, 0xff);
                                                     ColorDef green(0, 0x77, 0);
-                                                    matSymbP->SetLineColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
-                                                    matSymbP->SetFillColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
+                                                    matSymbP->SetLineColor(meshNodes[nodeInd]->IsTextured() != 0 && displayTexture ? white : green);
+                                                    matSymbP->SetFillColor(meshNodes[nodeInd]->IsTextured() != 0 && displayTexture ? white : green);
                                                     context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
                                                     context.GetIDrawGeom().ActivateMatSymb(matSymbP);
                                                         }
@@ -621,13 +622,15 @@ protected:
     bool                                    m_hasFetchedFinalTerrainNode;
     IScalableMeshDisplayCacheManager*       m_displayNodesCache;
     bset<uint64_t>                          m_activeClips;
+    bool                                    m_displayTexture;
 
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                     ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                                     Transform&                              smToDgnUorTransform,
                                     IScalableMeshDisplayCacheManagerPtr&    cacheManager, 
-                                    bset<uint64_t>                          activeClips)
+                                    bset<uint64_t>                          activeClips, 
+                                    bool                                    displayTexture)
     : m_smToDgnUorTransform(smToDgnUorTransform), 
       m_activeClips(activeClips)
         { 
@@ -636,7 +639,8 @@ protected:
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_hasFetchedFinalNode = false;     
-        m_displayNodesCache = cacheManager.get();        
+        m_displayNodesCache = cacheManager.get();                
+        m_displayTexture = displayTexture;
         }
 
 public:
@@ -703,7 +707,7 @@ virtual Completion _Process(ViewContextR viewContext) override
     else    
     if (s_drawInProcess)
         {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache,  m_activeClips);
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache,  m_activeClips, m_displayTexture);
         }
             
     return completionStatus;
@@ -717,13 +721,15 @@ static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEn
                       Transform&                              smToDgnUorTransform,
                       ViewContextR                            context,
                       IScalableMeshDisplayCacheManagerPtr&    cacheManager, 
-                      bset<uint64_t>                          activeClips)
+                      bset<uint64_t>                          activeClips, 
+                      bool                                    displayTexture)
     {
     RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
                                                                                                         currentDrawingInfoPtr,
                                                                                                         smToDgnUorTransform,
                                                                                                         cacheManager, 
-                                                                                                        activeClips));
+                                                                                                        activeClips, 
+                                                                                                        displayTexture));
     
     context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
     }
@@ -755,7 +761,6 @@ bool ShouldDrawInContext (ViewContextR context)
     return true;
     }
 
-static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 
@@ -903,7 +908,7 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
             {
             return nullptr;
             }
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache, m_displayTexture);
         }
 
     return m_progressiveQueryEngine;
@@ -1063,7 +1068,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips);
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture);
             
             return;                        
             }   
@@ -1166,7 +1171,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         status = GetProgressiveQueryEngine()->StartQuery(queryId,
                                                           viewDependentQueryParams, 
                                                           m_currentDrawingInfoPtr->m_meshNodes, 
-                                                          true, //No wireframe mode, so always load the texture.
+                                                          m_displayTexture, //No wireframe mode, so always load the texture.
                                                           clips,
                                                           m_smPtr); 
 
@@ -1245,13 +1250,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }                         
 
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips);
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture);
 
 
     if (needProgressive)
         {
         IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());        
-        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_smPtr->ShouldInvertClips() ? m_notActiveClips :m_activeClips);
+        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_smPtr->ShouldInvertClips() ? m_notActiveClips :m_activeClips, m_displayTexture);
         }    
     }                 
 
@@ -1403,6 +1408,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_startClipCount = 0;
 
     m_isUsingBingMap = false;
+    m_displayTexture = true;
 
 
     m_logoSize.x = m_logoSize.y = 0;
@@ -1882,7 +1888,7 @@ void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips)
     {
-
+    
     bset<uint64_t> clips = activeClips;
 
     m_activeClips = clips;
@@ -1897,7 +1903,7 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     if (tryProgressiveQueryEngine.get() == nullptr) return;
     GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
     GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
-
+    
     m_forceRedraw = true;
     }
 
@@ -2298,9 +2304,21 @@ bool ScalableMeshModel::IsTerrain()
 // @bsimethod                                                 Elenie.Godzaridis     4/2017
 //----------------------------------------------------------------------------------------
 bool ScalableMeshModel::HasTerrain()
-{
+    {
     return m_terrainParts.size() > 0;
-}
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre    09/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetDisplayTexture(bool displayTexture)
+    {
+    if (m_displayTexture != displayTexture)
+        { 
+        m_displayTexture = displayTexture;
+        ClearAllDisplayMem();
+        }   
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre    10/2016
