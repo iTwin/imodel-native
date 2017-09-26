@@ -1151,6 +1151,18 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
+    if (m_dgndb.IsReadonly())
+        {
+        BeAssert(false && "Cannot merge changes into a Readonly database");
+        return RevisionStatus::CannotMergeIntoReadonly;
+        }
+
+    if (m_dgndb.IsMasterCopy())
+        {
+        BeAssert(false && "Cannot merge changes into the Master copy of a database");
+        return RevisionStatus::CannotMergeIntoMaster;
+        }
+
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     if (txnMgr.HasChanges())
