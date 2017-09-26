@@ -249,3 +249,46 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     cache2.Close();
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataDownloadTestFixture, AuthInfoHeader)
+    {
+    AString dl1 = "https://scihub.copernicus.eu/dhus/odata/v1/Products('16902fd3-f323-4014-a950-853ac602e22f')/Nodes('S1A_IW_SLC__1SDV_20141101T165548_20141101T165616_003091_0038AA_558F.SAFE')/Nodes('manifest.safe')/$value";
+
+    AString dl2 = "https://scihub.copernicus.eu/dhus/odata/v1/Products('16902fd3-f323-4014-a950-853ac602e22f')/Nodes('S1A_IW_SLC__1SDV_20141101T165548_20141101T165616_003091_0038AA_558F.SAFE')/Nodes('preview')/Nodes('quick-look.png')/$value";
+
+    WString directory(GetDirectory());
+    directory.append(L"AuthInfoHeader");
+    InitTestDirectory(directory.c_str());
+
+    WString filename1(directory);
+    RealityDataDownload::ExtractFileName(filename1, L"manifest.safe");
+    WString filename2(directory);
+    RealityDataDownload::ExtractFileName(filename2, L"quick-look.png");
+
+    RealityDataDownload::Link_File_wMirrors dlList = bvector<bvector<RealityDataDownload::url_file_pair>>();
+    RealityDataDownload::mirrorVector ufPair = bvector<RealityDataDownload::url_file_pair>();
+
+    RealityDataDownload::AuthInfo auth = RealityDataDownload::AuthInfo();
+    auth.headers.push_back("Authorization: Basic U3BlbmNlckJlbnRsZXk6c0JlbnRsZXkx==");
+    RealityDataDownload::DownloadCap cap = RealityDataDownload::DownloadCap("scihub", 1, auth);
+
+    ufPair.push_back(RealityDataDownload::url_file_pair(dl1, filename1, "", &cap));
+    dlList.push_back(ufPair);
+
+    ufPair.clear();
+    ufPair.push_back(RealityDataDownload::url_file_pair(dl2, filename2, "", &cap));
+    dlList.push_back(ufPair);
+
+    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(dlList);
+    ASSERT_TRUE(pDownload != nullptr);
+    pDownload->SetCertificatePath(GetPemLocation());
+
+    pDownload->Perform();
+    ASSERT_TRUE(BeFileName::DoesPathExist(filename1.c_str()));
+    ASSERT_TRUE(BeFileName::DoesPathExist(filename2.c_str()));
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    }

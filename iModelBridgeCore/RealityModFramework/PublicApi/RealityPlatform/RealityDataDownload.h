@@ -15,6 +15,7 @@
 #include <BeXml/BeXml.h>
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
+#include <RealityPlatform/WSGServices.h>
 #include "RealityPlatformAPI.h"
 
 //! Callback function to follow the download progression.
@@ -91,14 +92,58 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
     
+    struct LoginInfo
+        {
+        Utf8String          loginUrl;
+        bvector<Utf8String> headers;
+        Utf8String          postBody;
+        //Utf8String          cookie;
+        };
+
+    struct AuthInfo
+        {
+        bvector<Utf8String> headers;
+        Utf8String          postBody;
+        Utf8String          cookie;
+
+        AuthInfo():headers(bvector<Utf8String>()), postBody(""), cookie(""){}
+        };
+
+    struct DownloadCap
+        {
+        Utf8String      sourceId;
+        int             concurrentDownloadCap;
+        int             currentDownloads;
+        LoginInfo*      login;
+        AuthInfo        auth;
+
+        DownloadCap(const DownloadCap& cap) 
+            {
+            sourceId = cap.sourceId;
+            concurrentDownloadCap = cap.concurrentDownloadCap;
+            currentDownloads = cap.currentDownloads;
+            login = cap.login;
+            auth = cap.auth;
+            }
+
+        DownloadCap() : sourceId(""), concurrentDownloadCap(0), currentDownloads(0),
+            login(nullptr), auth(AuthInfo()){}
+
+        DownloadCap(Utf8String id, int downloadCap, AuthInfo authInfo, LoginInfo* loginParams = nullptr): 
+            sourceId(id), concurrentDownloadCap(downloadCap), currentDownloads(0),
+            login(loginParams), auth(authInfo) {}
+        };
+
     struct url_file_pair
         {   
         AString m_url;
         WString m_filePath;
         Utf8String m_tokenType;
 
-        url_file_pair(AString url, WString filePath, Utf8String tokenType = "") :
-            m_url(url), m_filePath(filePath), m_tokenType(tokenType)
+        DownloadCap* m_cap;
+
+        url_file_pair(AString url, WString filePath, Utf8String tokenType = "", DownloadCap* cap = nullptr) :
+            m_url(url), m_filePath(filePath), m_tokenType(tokenType), m_cap(cap)
             {}
         };    
     
@@ -113,10 +158,12 @@ public:
         AString url;
         WString filename;
         Utf8String tokenType;
-        FileTransfer* nextSister;
+        FileTransfer* nextSister = nullptr;
         size_t sisterIndex;
         size_t totalSisters;
         std::time_t DownloadStart;
+
+        DownloadCap* cap = nullptr;
         };
 
     struct FileTransfer 
@@ -146,6 +193,7 @@ public:
             ms.nextSister = nullptr;
             ms.totalSisters = sisterCount;
             ms.sisterIndex = 0;
+            ms.cap = ufPair.m_cap;
             mirrors.push_back(ms);
             }
 
@@ -289,6 +337,7 @@ private:
     void InitEntry(size_t i);
 
     void SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds);
+    SetupCurlStatus Login(LoginInfo& loginInfo, AuthInfo& authInfo);
     SetupCurlStatus SetupCurlandFile(FileTransfer* ft, bool isRetry = false);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
@@ -311,7 +360,8 @@ private:
     RealityDataDownload_ProxyCallBack       m_pProxyFunc;
     RealityDataDownload_TokenCallBack       m_pTokenFunc;
     DownloadReport                          m_dlReport;
-
+    bmap<Utf8String, DownloadCap>           m_caps;
+    bvector<bpair<Utf8String, FileTransfer*>> m_waitingList;
     };
     
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

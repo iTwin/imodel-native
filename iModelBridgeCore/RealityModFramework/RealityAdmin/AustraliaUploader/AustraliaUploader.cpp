@@ -157,8 +157,8 @@ int ZipFile(BeFileNameR fileName)
 
     if (status == 0) //no errors encountered
         {
-        if (memorySaverMode)
-            BeFileName::BeDeleteFile(fileName.GetName());
+        /*if (memorySaverMode)
+            BeFileName::BeDeleteFile(fileName.GetName());*/
         fileName = zipFileName;
         }
     else
@@ -303,7 +303,7 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
             ur.ToXml(report);
             if(report.ContainsI("error"))
                 std::cout << zippedFile.GetNameUtf8() << " failed to upload\n" << std::endl;
-            //else if (memorySaverMode)
+            else if (memorySaverMode)
                 BeFileName::BeDeleteFile(zippedFile.GetName());
             std::cout << report << std::endl;
             break;
@@ -457,10 +457,9 @@ int main(int argc, char *argv[])
     else
         tempPath = uploadPath;
 
-    /*std::cout << "minimize memory use (delete extracted files, after upload)? (\"y\", \"n\")\n" << std::endl;
+    std::cout << "minimize memory use (delete zips, after upload)? (\"y\", \"n\")\n" << std::endl;
     std::getline(std::cin, str);
-    memorySaverMode = str == "y";*/
-    memorySaverMode = false; 
+    memorySaverMode = str == "y";
 
     if (uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {

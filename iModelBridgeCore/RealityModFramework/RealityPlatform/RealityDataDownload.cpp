@@ -113,6 +113,20 @@ static int callback_progress_func(void *pClient,
     return 0;
 }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Francis Boily                   09/2015
+//* writes the body of a curl reponse to a Utf8String
+//+---------------+---------------+---------------+---------------+---------------+------*/
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+    {
+    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+    }
+
+/*static bvector<downloadCap>::itterator findInCap(const Utf8String& capId, const downloadCap& caps)
+    {
+    return std::find_if(caps.begin(), caps.end(), [&capId](const downloadCap& obj) {return obj.sourceId == capId; })
+    }*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Donald.Morissette  9/2015
@@ -209,6 +223,7 @@ void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair
     ms.nextSister = nullptr;
     ms.totalSisters = sisterCount;
     ms.sisterIndex = sisterIndex;
+    ms.cap = sisters[index].m_cap;
     sisFT->mirrors.clear();
     sisFT->mirrors.push_back(ms);
 
@@ -265,6 +280,8 @@ RealityDataDownload::~RealityDataDownload()
 RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     {
     m_dlReport = DownloadReport();
+    //m_caps = bvector<downloadCap>();
+    m_caps = bmap<Utf8String, DownloadCap>();
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
@@ -330,6 +347,14 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 
                 if (pFileTrans->fileStream.IsOpen())
                     pFileTrans->fileStream.Close();
+
+                if(pFileTrans->mirrors[0].cap != nullptr)
+                    {
+                    DownloadCap* cap = pFileTrans->mirrors[0].cap;
+                    //bvector<downloadCap>::itterator it = findInCap(cap->sourceId, m_caps);
+                    if(m_caps.find(cap->sourceId) != m_caps.end())
+                        m_caps[cap->sourceId].currentDownloads --;
+                    }
 
                 // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
@@ -399,11 +424,30 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 #endif
                 }
 
-            // Other URL to download ?
-            if (m_curEntry < m_nbEntry)
+            if (still_running < MAX_NB_CONNECTIONS)
                 {
-                if (SetupNextEntry())
-                    still_running++;
+                // Other URL to download ?
+                if(m_waitingList.size() > 0)
+                    {
+                    bpair<Utf8String, FileTransfer*> waiter;
+                    for (int i = 0; i < m_waitingList.size(); i++)
+                        {
+                        waiter = m_waitingList[i];
+                        //bvector<downloadCap>::itterator it = findInCap(waiter->first, m_caps);
+                        if ((m_caps.find(waiter.first) != m_caps.end()) && (m_caps[waiter.first].currentDownloads < m_caps[waiter.first].concurrentDownloadCap))
+                            {
+                            SetupCurlandFile(waiter.second, false);
+                            still_running++;
+                            m_waitingList.erase(m_waitingList.begin() + i);
+                            break;
+                            }
+                        }
+                    }  
+                else if (m_curEntry < m_nbEntry)
+                    {
+                    if (SetupNextEntry())
+                        still_running++;
+                    }
                 }
             }
 
@@ -420,6 +464,72 @@ void RealityDataDownload::SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8Strin
         {
         curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
         }
+    }
+
+SetupCurlStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& authInfo)
+    {
+    RawServerResponse response = RawServerResponse();
+    CURL* curl = curl_easy_init();
+    if (nullptr == curl)
+        {
+        response.curlCode = CURLcode::CURLE_FAILED_INIT;
+        return SetupCurlStatus::Error;
+        }
+
+    //Adjusting headers for the POST method
+    struct curl_slist *headers = NULL;
+    if (loginInfo.postBody.length() > 0)
+        {
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, loginInfo.postBody.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, loginInfo.postBody.length());
+        }
+    
+    if (!m_proxyUrl.empty())
+        SetProxy(curl, m_proxyUrl, m_proxyCreds);
+
+    for (Utf8String header : loginInfo.headers)
+        headers = curl_slist_append(headers, header.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, loginInfo.loginUrl);
+
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+
+    curl_easy_setopt(curl, CURLOPT_CAINFO, Utf8String(m_certPath));
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    //capture full response for debugging
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &(response.header));
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(response.body));
+
+    if (response.curlCode == CURLcode::CURLE_FAILED_INIT)
+        return SetupCurlStatus::Error;
+
+    response.curlCode = (int)curl_easy_perform(curl);
+    if(!response.curlCode)
+        {
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.responseCode));
+        struct curl_slist *cookies = NULL;
+        response.curlCode = curl_easy_getinfo(curl, CURLINFO_COOKIELIST, &cookies);
+        if(!response.curlCode && cookies)
+            {
+            while(cookies)
+                {
+                authInfo.cookie.append(cookies->data);
+                cookies = cookies->next;
+                }
+            curl_slist_free_all(cookies);
+            }
+        }
+    curl_easy_cleanup(curl);
+
+    if (response.curlCode != CURLE_OK)
+        return SetupCurlStatus::Error; 
+    else
+        return SetupCurlStatus::Success;
     }
 
 //
@@ -453,6 +563,36 @@ SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isR
     pCurl = curl_easy_init();
     Mirror_struct& currentMirror = ft->mirrors.front();
 
+    DownloadCap* currentCap = nullptr;
+
+    if (currentMirror.cap != nullptr)
+        {
+        Utf8String& capId = currentMirror.cap->sourceId;
+        //auto it = std::find_if(m_caps.begin(), m_caps.end(), [&capId] (const downloadCap& obj) {return obj.sourceId == capId;})
+        //auto it = findInCap(capId, m_caps);
+        if(m_caps.find(capId) != m_caps.end())
+            {
+            if (m_caps[capId].currentDownloads < m_caps[capId].concurrentDownloadCap)
+                m_caps[capId].currentDownloads++;
+            else
+                {
+                m_waitingList.push_back(make_bpair(capId, ft));
+                return SetupCurlStatus::Success;
+                }
+            }
+        else
+            {
+            currentMirror.cap->currentDownloads = 1;
+            if(currentMirror.cap->login != nullptr)
+                {
+                if(Login(*(currentMirror.cap->login), currentMirror.cap->auth) != SetupCurlStatus::Success)
+                    return SetupCurlStatus::Error;
+                }
+            m_caps[capId] = *(currentMirror.cap);
+            }
+        currentCap = &m_caps[capId];
+        }
+
     if (pCurl)
         {
         Utf8String header = "";
@@ -468,15 +608,30 @@ SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isR
             curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
             }
 
+        struct curl_slist *headers = NULL;
         if(!header.empty())
-            {
-            struct curl_slist *headers = NULL;
             headers = curl_slist_append(headers, header.c_str());
+        if(currentCap != nullptr)
+            {
+            for(Utf8String header : currentCap->auth.headers)
+                headers = curl_slist_append(headers, header.c_str());
+            }
+        if(headers != NULL)
+            {
             curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(pCurl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
             }
         else
             curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
+
+        if(currentCap != nullptr && currentCap->auth.cookie.length() > 0)
+            curl_easy_setopt(pCurl, CURLOPT_COOKIE, currentCap->auth.cookie);
+        if(currentCap != nullptr && currentCap->auth.postBody.length() > 0)
+            {
+            curl_easy_setopt(pCurl, CURLOPT_POST, 1);
+            curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, currentCap->auth.postBody.c_str());
+            curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, currentCap->auth.postBody.length());
+            }
 
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
