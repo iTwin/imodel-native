@@ -88,12 +88,11 @@
     <ClCompile Include="ECSql\NavigationPropertyECSqlBinder.cpp" />
     <ClCompile Include="ECSql\NavigationPropertyECSqlField.cpp" />
     <ClCompile Include="ECSql\OptionsExp.cpp" />
-    <ClCompile Include="ECSql\Parser\InternalNode.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp" />
-    <ClCompile Include="ECSql\Parser\SqlError.cpp" />
     <ClCompile Include="ECSql\Parser\SqlFlex.cpp" />
     <ClCompile Include="ECSql\Parser\SqlNode.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementImpl.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlParse.cpp" />
     <ClCompile Include="ECSql\PointECSqlBinder.cpp" />
     <ClCompile Include="ECSql\PointECSqlField.cpp" />
     <ClCompile Include="ECSql\PrimitiveECSqlBinder.cpp" />
@@ -191,10 +190,8 @@
     <ClInclude Include="ECSql\OptionsExp.h" />
     <ClInclude Include="ECSql\Parser\DataType.h" />
     <ClInclude Include="ECSql\Parser\ErrorCondition.h" />
-    <ClInclude Include="ECSql\Parser\InternalNode.h" />
     <ClInclude Include="ECSql\Parser\IParseContext.h" />
     <ClInclude Include="ECSql\Parser\SqlBison.h" />
-    <ClInclude Include="ECSql\Parser\SqlError.h" />
     <ClInclude Include="ECSql\Parser\SqlNode.h" />
     <ClInclude Include="ECSql\Parser\SqlParse.h" />
     <ClInclude Include="ECSql\Parser\SqlScan.h" />

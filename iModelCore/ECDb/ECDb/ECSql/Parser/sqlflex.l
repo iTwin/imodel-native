@@ -1,4 +1,3 @@
-
 %top{
 //------------------------------------------------------------
 // 
@@ -55,8 +54,6 @@
 #include <string.h>
 #endif
 
-#include "InternalNode.h"
-
 #ifndef _CONNECTIVITY_SQLYACC_HXX
 #define _CONNECTIVITY_SQLYACC_HXX
 
@@ -79,34 +76,31 @@ using namespace connectivity;
 
 static Utf8String aEmptyString;
 
-static sal_Int32	gatherString(sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex = false);
-static sal_Int32	gatherName(const sal_Char*);
-static sal_Int32	gatherNamePre(const sal_Char* );
-static sal_Int32    parseString();
-// has to be set before the parser starts
-OSQLScanner* xxx_pGLOBAL_SQLSCAN = NULL;
+static sal_Int32	gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex = false);
+static sal_Int32	gatherName(yyscan_t yyscanner, const sal_Char*);
+static sal_Int32	gatherNamePre(yyscan_t yyscanner, const sal_Char* );
+static sal_Int32    parseString(yyscan_t yyscanner);
 
-#define SQL_NEW_NODE(text, token)	\
-		SQLyylval.pParseNode = new OSQLInternalNode(text, token);	    
+#define SQL_NEW_NODE(text, token) \
+		SQLyyget_lval(yyscanner)->pParseNode=yyget_extra(yyscanner)->NewNode(text, token);	    
 
-#define SQL_NEW_KEYWORD(token)						\
-		SQLyylval.pParseNode = new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, (token));		return token;
+#define SQL_NEW_KEYWORD(token) \
+		SQLyyget_lval(yyscanner)->pParseNode=yyget_extra(yyscanner)->NewNode(aEmptyString, SQL_NODE_KEYWORD, (token)); return token;
 
-#define SQL_NEW_INTNUM 		SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_INTNUM); return SQL_TOKEN_INTNUM;
-#define SQL_NEW_APPROXNUM 	SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_APPROXNUM); return SQL_TOKEN_APPROXNUM;
-#define SQL_NEW_DATE 		SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_ACCESS_DATE); return SQL_TOKEN_ACCESS_DATE;
-
-#define YY_INPUT(buf,result,max_size)               \
-{                                                   \
-    int c = xxx_pGLOBAL_SQLSCAN->SQLyygetc();       \
-    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1);\
+#define SQL_NEW_INTNUM 		SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_INTNUM); return SQL_TOKEN_INTNUM;
+#define SQL_NEW_APPROXNUM 	SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_APPROXNUM); return SQL_TOKEN_APPROXNUM;
+#define SQL_NEW_DATE 		SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_ACCESS_DATE); return SQL_TOKEN_ACCESS_DATE;
+#define YY_EXTRA_TYPE OSQLScanner*
+#define YY_INPUT(buf,result,max_size) \
+{ \
+    int c = yyget_extra(yyscanner)->SQLyygetc(); \
+    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 }
-
-#define YY_FATAL_ERROR(msg)							\
-{													\
-	xxx_pGLOBAL_SQLSCAN->SQLyyerror(msg);			\
+#define YY_FATAL_ERROR(msg) \
+{ \
+	yyget_extra(yyscanner)->SQLyyerror(msg); \
 }													
-	
+
 //
 //=============================================================================
 
@@ -117,7 +111,8 @@ OSQLScanner* xxx_pGLOBAL_SQLSCAN = NULL;
 %s PREDICATE_GER
 %s DATE
 %s STRING
-
+%option bison-bridge 
+%option reentrant
 %option noyywrap
 %option never-interactive
 %%
@@ -291,20 +286,20 @@ WORK                {SQL_NEW_KEYWORD(SQL_TOKEN_WORK);  }
 YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 
 
-"<"                  { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_LESS);return SQL_LESS;}
-">"                  { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_GREAT);return SQL_GREAT;}
-"="                  { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_EQUAL);return SQL_EQUAL;}
-"<="                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_LESSEQ);return SQL_LESSEQ;}
-">="                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_GREATEQ);return SQL_GREATEQ;}
-"<>"                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
-"!="                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
-"||"                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
+"<"                  { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESS);return SQL_LESS;}
+">"                  { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_GREAT);return SQL_GREAT;}
+"="                  { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_EQUAL);return SQL_EQUAL;}
+"<="                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESSEQ);return SQL_LESSEQ;}
+">="                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_GREATEQ);return SQL_GREATEQ;}
+"<>"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
+"!="                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
+"||"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
 
 
-[-+*/%:(),.;?{}&|~]    { return SQLyytext[0]; }
+[-+*/%:(),.;?{}&|~]    { return yytext[0]; }
 
 
-<SQL>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*      {return gatherName( SQLyytext);}
+<SQL>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*      {return gatherName(yyscanner, yytext);}
 
 <SQL>([0-9]+)                   {SQL_NEW_INTNUM; }
 <SQL>(0[Xx][0-9a-fA-F]+)          {SQL_NEW_INTNUM; }
@@ -314,50 +309,41 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 <SQL>[0-9]+[eE][+-]?[0-9]+   |
 <SQL>[0-9]+"."[0-9]*[eE][+-]?[0-9]+ |
 <SQL>"."[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
-
-<PREDICATE_GER,PREDICATE_ENG,DATE>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375][A-Za-z0-9_%.,*?\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375]* {return gatherNamePre(SQLyytext);}
-
+<PREDICATE_GER,PREDICATE_ENG,DATE>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375][A-Za-z0-9_%.,*?\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375]* {return gatherNamePre(yyscanner,yytext);}
 <PREDICATE_GER,PREDICATE_ENG>([0-9]+)		{SQL_NEW_INTNUM; }
 <PREDICATE_ENG>([0-9]{1,3}(","[0-9]{3})+) 	{SQL_NEW_INTNUM; }
 <PREDICATE_GER>([0-9]{1,3}("."[0-9]{3})+)	{SQL_NEW_INTNUM; }
-
 <PREDICATE_ENG>([0-9]+"."[0-9]+) |
 <PREDICATE_ENG>([0-9]{1,3}(","[0-9]{3})+"."[0-9]+) | 
 <PREDICATE_ENG>("."[0-9]+)					{SQL_NEW_APPROXNUM;  }
 <PREDICATE_ENG>[0-9]+[eE][+-]?[0-9]+   |
 <PREDICATE_ENG>[0-9]+"."[0-9]*[eE][+-]?[0-9]+ |
 <PREDICATE_ENG>"."[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
-
 <PREDICATE_GER>([0-9]+","[0-9]+) |
 <PREDICATE_GER>([0-9]{1,3}("."[0-9]{3})+","[0-9]+) | 
 <PREDICATE_GER>(","[0-9]+)					{SQL_NEW_APPROXNUM;  }
 <PREDICATE_GER>[0-9]+[eE][+-]?[0-9]+   |
 <PREDICATE_GER>[0-9]+","[0-9]*[eE][+-]?[0-9]+ |
 <PREDICATE_GER>","[0-9]*[eE][+-]?[0-9]+		{SQL_NEW_APPROXNUM;  }
+<PREDICATE_GER,PREDICATE_ENG>[0-9.,][A-Za-z0-9_.,%]* {return gatherNamePre(yyscanner, yytext);}
 
-<PREDICATE_GER,PREDICATE_ENG>[0-9.,][A-Za-z0-9_.,%]* {return gatherNamePre(SQLyytext);}
+<SQL>\"	{ return gatherString(yyscanner, '\"',0); }
+<SQL>`	{ return gatherString(yyscanner, '`' ,0); }											 
+\'		{ return parseString(yyscanner); }
 
-<SQL>\"	{ return gatherString('\"',0); }
-<SQL>`	{ return gatherString('`' ,0); }											 
-\'		{ return parseString(); }
-
-<PREDICATE_GER,PREDICATE_ENG,DATE,SQL>"["		{ return gatherString(']' , 0, true);}
-<PREDICATE_GER,PREDICATE_ENG,DATE>#	{ return gatherString('#' ,2); }	
+<PREDICATE_GER,PREDICATE_ENG,DATE,SQL>"["		{ return gatherString(yyscanner,']' , 0, true);}
+<PREDICATE_GER,PREDICATE_ENG,DATE>#	{ return gatherString(yyscanner,'#' ,2); }	
 <DATE>[0-9]{1,4}[^ ]*[0-9] |
 <DATE>[0-9]{1,4}[^ ]*[0-9][ ][0-9]{1,4}[^ ]*[0-9]		{ SQL_NEW_DATE; }
-<STRING>["-""+""*""/"":""("")"",""."";""?""{""}"]		{ return SQLyytext[0]; } /*  */
-<STRING>"["					{ return gatherString(']' ,0, true); }
-<STRING>[^ ':["?"]*			{ return gatherNamePre(SQLyytext); }
-
+<STRING>["-""+""*""/"":""("")"",""."";""?""{""}"]		{ return yytext[0]; } /*  */
+<STRING>"["					{ return gatherString(yyscanner,']' ,0, true); }
+<STRING>[^ ':["?"]*			{ return gatherNamePre(yyscanner,yytext); }
 \n              {}
-
 [ \t\r]+        {}
-
 "--".*$         {}
-
 .				{
 				Utf8String tmp; 
-				tmp.Sprintf("Invalid symbol (char=%c, hex=%0x, dec=%" PRIu64 ")", SQLyytext[0], SQLyytext[0], (uint64_t) SQLyytext[0]); 
+				tmp.Sprintf("Invalid symbol (char=%c, hex=%0x, dec=%" PRIu64 ")", yytext[0], yytext[0], (uint64_t) yytext[0]); 
 				YY_FATAL_ERROR(tmp.c_str()); 
 				return SQL_TOKEN_INVALIDSYMBOL;
 				}
@@ -373,29 +359,30 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
   #endif 
  
   #ifndef yytext_ptr 
-    #define yytext_ptr SQLyytext 
+    #define yytext_ptr yytext 
   #endif 
  
 #endif 
 
 // Versions of flex apparently differ in whether input() resp. yyinput() returns
 // zero or EOF upon end of file:
+//------------------------------------------------------------------------------
 inline bool checkeof(int c) { return c == 0 || c == EOF || c == 0xff; }
-
-sal_Int32 parseString ()
+//------------------------------------------------------------------------------
+sal_Int32 parseString (yyscan_t yyscanner)
     {
     sal_Char ch;
     sal_Char delim = '\''; //'' ''
     Utf8String sBuffer;
     sBuffer.reserve(256);
-
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     int s = 1;
-    while (!checkeof (ch = yyinput ()))
+    while (!checkeof (ch = yyinput (yyscanner)))
         {
         if (ch == delim)
             {
             s++;
-            ch = yyinput ();
+            ch = yyinput (yyscanner);
             if (checkeof (ch))
                 {
                 SQL_NEW_NODE (sBuffer, SQL_NODE_STRING);
@@ -403,7 +390,7 @@ sal_Int32 parseString ()
                 }
             else if (ch == ' ')
                 {
-                ch = yyinput ();
+                ch = yyinput (yyscanner);
                 if (ch == delim)
                     {
                     sBuffer.append (&delim, 1);
@@ -451,17 +438,18 @@ sal_Int32 parseString ()
  * nTyp == 1 -> SQL_NODE_STRING
  * nTyp == 2 -> SQL_NODE_ACCESS_DATE
  */
-sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
+//------------------------------------------------------------------------------
+sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 {
 	sal_Char ch;
 	Utf8String sBuffer;
     sBuffer.reserve(256);
-
-	while (!checkeof(ch = yyinput())) 
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	while (!checkeof(ch = yyinput(yyscanner))) 
 	{
 		if (ch == delim) 
 		{
-			if ((ch = yyinput()) != delim) 
+			if ((ch = yyinput(yyscanner)) != delim) 
 			{
 				if (!checkeof(ch))
 					unput(ch);
@@ -534,11 +522,12 @@ sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 	return SQL_TOKEN_INVALIDSYMBOL;
 }
 
+//------------------------------------------------------------------------------
 sal_Int32 mapEnumToToken(IParseContext::InternationalKeyCode _eKeyCode )
-{
+    {
     sal_Int32 nTokenID = 0;
     switch( _eKeyCode )
-    {
+        {
         case IParseContext::KEY_LIKE:       nTokenID = SQL_TOKEN_LIKE;      break;
         case IParseContext::KEY_NOT:        nTokenID = SQL_TOKEN_NOT;       break;
         case IParseContext::KEY_NULL:       nTokenID = SQL_TOKEN_NULL;      break;
@@ -558,21 +547,23 @@ sal_Int32 mapEnumToToken(IParseContext::InternationalKeyCode _eKeyCode )
         case IParseContext::KEY_SOME:       nTokenID = SQL_TOKEN_SOME;      break;
         default:
             OSL_FAIL( "mapEnumToToken: unsupported key!" );
-    }
+        }
     return nTokenID;
-}
+    }
+
 /*
  * Read SQL Name literal
  * Valid Names or international keywords:
  *  As we have international keywords, we test first on them
  */
-sal_Int32 gatherName(const sal_Char* text)
-{
+ //------------------------------------------------------------------------------
+sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
+    {
 	sal_Int32 nToken;
-	OSL_ENSURE(xxx_pGLOBAL_SQLSCAN,"You forgot to set the scanner!");
-	IParseContext::InternationalKeyCode eKeyCode = xxx_pGLOBAL_SQLSCAN->getInternationalTokenID(text);
+	OSL_ENSURE(yyget_extra(yyscanner),"You forgot to set the scanner!");
+	IParseContext::InternationalKeyCode eKeyCode = yyget_extra(yyscanner)->getInternationalTokenID(text);
 	switch (eKeyCode)
-	{
+	    {
 		case IParseContext::KEY_LIKE:
 		case IParseContext::KEY_NOT:
 		case IParseContext::KEY_NULL:
@@ -599,18 +590,21 @@ sal_Int32 gatherName(const sal_Char* text)
 		default:
 			SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME); 
 			return SQL_TOKEN_NAME;
-	}
-}
+	    }
+    }
+
 /**
  Read SQL Name literal for predicate check
  Valid Names or internatioanl keywords:
  As we have international keywords, we test first on them  
 */
-sal_Int32 gatherNamePre(const sal_Char* text)
+
+//------------------------------------------------------------------------------
+sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
 { 
 	sal_Int32 nToken;
-	OSL_ENSURE(xxx_pGLOBAL_SQLSCAN,"You forgot to set the scanner!");
-	IParseContext::InternationalKeyCode eKeyCode = xxx_pGLOBAL_SQLSCAN->getInternationalTokenID(text);
+	OSL_ENSURE(yyget_extra(yyscanner),"You forgot to set the scanner!");
+	IParseContext::InternationalKeyCode eKeyCode = yyget_extra(yyscanner)->getInternationalTokenID(text);
 	switch (eKeyCode)
 	{
 		case IParseContext::KEY_LIKE:
@@ -638,129 +632,121 @@ sal_Int32 gatherNamePre(const sal_Char* text)
 			break;
 		default:
 		// we need a special handling for parameter
-		{
-			Utf8String sStmt = xxx_pGLOBAL_SQLSCAN->getStatement();
-			size_t nLength = strlen(text);
-			size_t nPos = xxx_pGLOBAL_SQLSCAN->GetCurrentPos() - nLength - 2;
-			if (sStmt[nPos] == ':')
-			{
-				SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME); 
-				nToken = SQL_TOKEN_NAME; 				
-			}
-			else
-			{
-				SQL_NEW_NODE(Utf8String(text), SQL_NODE_STRING);
-				nToken = SQL_TOKEN_STRING;			
-			}
-		}
+		    {
+		    Utf8String sStmt = yyget_extra(yyscanner)->getStatement();
+		    size_t nLength = strlen(text);
+		    size_t nPos = yyget_extra(yyscanner)->GetCurrentPos() - nLength - 2;
+		    if (sStmt[nPos] == ':')
+		        {
+			    SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME); 
+			    nToken = SQL_TOKEN_NAME; 				
+		        }
+		    else
+		        {
+			    SQL_NEW_NODE(Utf8String(text), SQL_NODE_STRING);
+			    nToken = SQL_TOKEN_STRING;			
+		        }
+		    }
 	}
 	return nToken;
 }
 
 using namespace connectivity;
-
 static bool IN_SQLyyerror;
+
 //------------------------------------------------------------------------------
-OSQLScanner::OSQLScanner()
-			: m_nCurrentPos(0)
-		    , m_bInternational(sal_False)
-			, m_pContext(NULL)
-			, m_nRule(0) // 0 is INITIAL
-{
-	IN_SQLyyerror = false;
-}
+OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
+    {
+    IN_SQLyyerror = false;
+    yylex_init(&yyscanner);
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    YY_FLUSH_BUFFER;
+    BEGIN(m_nRule);
+    yyset_extra(this, yyscanner);
+    }
 
 //------------------------------------------------------------------------------
 OSQLScanner::~OSQLScanner()
-{
-}
-//------------------------------------------------------------------------------
-void OSQLScanner::SQLyyerror(const char *fmt)
-{
+    {
+    yylex_destroy(yyscanner);
+    }
 
-	if(IN_SQLyyerror)
-		return;
-	IN_SQLyyerror = true;
-
-	OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");	
-	m_sErrorMessage = fmt;
-	if (m_nCurrentPos < (sal_Int32)m_sStatement.size())
-	{
-		m_sErrorMessage.append(": ");
-		
-		Utf8String aError;
-		static sal_Int32 BUFFERSIZE = 256;
-		static sal_Char* Buffer = 0;
-		if(!Buffer)
-			Buffer = new sal_Char[BUFFERSIZE];
-
-		sal_Char *s = Buffer;
-		sal_Int32 nPos = 1;
-		sal_Int32 ch = SQLyytext ? (SQLyytext[0] == 0 ? ' ' : SQLyytext[0]): ' ';
-		*s++ = ch;
-		while (!checkeof(ch = yyinput())) 
-		{
-			if (ch == ' ') 
-			{
-				if ((ch = yyinput()) != ' ') 
-				{
-					if (!checkeof(ch))
-						unput(ch);
-				}
-				*s = '\0';
-				aError.assign(Buffer);
-				break;
-			}
-			else
-			{
-				*s++ = ch;
-				if (++nPos == BUFFERSIZE)
-				{
-					Utf8String aBuf(Buffer);
-					delete[] Buffer;
-					BUFFERSIZE *=2;
-					Buffer = new sal_Char[BUFFERSIZE];
-                    for(sal_Int32 i=0;i< (sal_Int32)aBuf.size();++i,++Buffer)
-						*Buffer = aBuf[i];
-					s = &Buffer[nPos];
-				}
-			}
-		}
-		m_sErrorMessage += aError;
-		delete[] Buffer;
-		Buffer = NULL;
-	}
-	IN_SQLyyerror = false;
-	YY_FLUSH_BUFFER;
-}
-
-//------------------------------------------------------------------------------
-void OSQLScanner::prepareScan(const Utf8String & rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-{
-	YY_FLUSH_BUFFER;
-	BEGIN(m_nRule);
-
-	m_sErrorMessage = Utf8String();	
-	m_sStatement	= rNewStatement;
-	m_nCurrentPos	= 0;
-	m_bInternational = bInternational;
-	m_pContext		= pContext;
-}
-
-//------------------------------------------------------------------------------
+ //------------------------------------------------------------------------
 sal_Int32 OSQLScanner::SQLyygetc(void)
-{
-	sal_Int32 nPos = (static_cast<size_t>(m_nCurrentPos) >= m_sStatement.size()) ? -1 : m_sStatement[m_nCurrentPos];
+    {
+    sal_Int32 nPos = (static_cast<size_t>(m_nCurrentPos) >= m_sStatement.size()) ? -1 : m_sStatement[m_nCurrentPos];
     m_nCurrentPos++;
     return nPos;
-}
+    }
 
 //------------------------------------------------------------------------------
+void OSQLScanner::SQLyyerror(const char *fmt)
+    {
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    if(IN_SQLyyerror)
+	    return;
+
+    IN_SQLyyerror = true;
+    OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");	
+    m_sErrorMessage = fmt;
+    if (m_nCurrentPos < (sal_Int32)m_sStatement.size())
+        {
+	    m_sErrorMessage.append(": ");
+	    Utf8String aError;
+	    static sal_Int32 BUFFERSIZE = 256;
+	    static sal_Char* Buffer = 0;
+	    if(!Buffer)
+		    Buffer = new sal_Char[BUFFERSIZE];
+
+	    sal_Char *s = Buffer;
+	    sal_Int32 nPos = 1;
+	    sal_Int32 ch = yytext ? (yytext[0] == 0 ? ' ' : yytext[0]): ' ';
+	    *s++ = ch;
+	    while (!checkeof(ch = yyinput(yyscanner))) 
+	        {
+		    if (ch == ' ') 
+		        {
+			    if ((ch = yyinput(yyscanner)) != ' ') 
+			        {
+				    if (!checkeof(ch))
+					    unput(ch);
+			        }
+			    *s = '\0';
+			    aError.assign(Buffer);
+			    break;
+		        }
+		    else
+		        {
+			    *s++ = ch;
+			    if (++nPos == BUFFERSIZE)
+			        {
+				    Utf8String aBuf(Buffer);
+				    delete[] Buffer;
+				    BUFFERSIZE *=2;
+				    Buffer = new sal_Char[BUFFERSIZE];
+                    for(sal_Int32 i=0;i< (sal_Int32)aBuf.size();++i,++Buffer)
+					    *Buffer = aBuf[i];
+				    s = &Buffer[nPos];
+			        }
+		        }
+	        }
+
+	    m_sErrorMessage += aError;
+	    delete[] Buffer;
+	    Buffer = NULL;
+        }
+    IN_SQLyyerror = false;
+    YY_FLUSH_BUFFER;
+    }
+    
+//------------------------------------------------------------------------------
 IParseContext::InternationalKeyCode OSQLScanner::getInternationalTokenID(const sal_Char* sToken) const
-{		
-	OSL_ENSURE(m_pContext, "OSQLScanner::getInternationalTokenID: No Context set");			
-	return (m_bInternational) ? m_pContext->getIntlKeyCode(Utf8String(sToken) ) : IParseContext::KEY_NONE;	
-}
+    {		
+    OSL_ENSURE(m_pContext, "OSQLScanner::getInternationalTokenID: No Context set");			
+    return (m_bInternational) ? m_pContext->getIntlKeyCode(Utf8String(sToken) ) : IParseContext::KEY_NONE;	
+    }
+
 // -------------------------------------------------------------------------
 sal_Int32	OSQLScanner::GetCurrentRule() const { return m_nRule; }
 sal_Int32	OSQLScanner::GetGERRule() const		{ return PREDICATE_GER; }
@@ -768,16 +754,32 @@ sal_Int32	OSQLScanner::GetENGRule() const		{ return PREDICATE_ENG; }
 sal_Int32	OSQLScanner::GetSQLRule() const		{ return SQL; }
 sal_Int32	OSQLScanner::GetDATERule() const	{ return DATE; }
 sal_Int32	OSQLScanner::GetSTRINGRule() const	{ return STRING; }
+
 // -------------------------------------------------------------------------
-void OSQLScanner::setScanner(sal_Bool _bNull)
-{
-	xxx_pGLOBAL_SQLSCAN = _bNull ? NULL : this;
-}
+sal_Int32 OSQLScanner::SQLlex(YYSTYPE* val)
+    {
+    return SQLyylex(val, yyscanner);
+    }
+
 // -------------------------------------------------------------------------
-sal_Int32 OSQLScanner::SQLlex()
-{
-	return SQLyylex();
-}
+OSQLParseNode* OSQLScanner::NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
+    {
+    auto newNode = new OSQLParseNode(pNewValue, eNodeType, nNodeID);
+    m_pGarbageCollector.push_back(newNode);
+    newNode->m_container = &m_pGarbageCollector;
+    return newNode;
+    }
+
+// -------------------------------------------------------------------------
+OSQLParseNode* OSQLScanner::NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID)
+    {
+    auto newNode = new OSQLParseNode(_rNewValue, eNodeType, nNodeID);
+    m_pGarbageCollector.push_back(newNode);
+    newNode->m_container = &m_pGarbageCollector;
+    return newNode;
+    }
+
+// -------------------------------------------------------------------------
 
 #if defined __SUNPRO_CC
 #pragma enable_warn

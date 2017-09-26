@@ -21,7 +21,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
 
     BeMutexHolder lock(ecdb.GetImpl().GetMutex());
 
-    OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
+    OSQLParser parser;
     Utf8String error;
     std::unique_ptr<OSQLParseNode> parseNode(parser.parseTree(error, ecsql));
     if (parseNode == nullptr)
