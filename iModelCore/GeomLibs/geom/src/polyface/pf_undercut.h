@@ -163,6 +163,65 @@ PolyfaceHeaderPtr &undercutPolyface
         undercutPolyface = result[0];
     }
 
+// test condition for distinguishing barrier polygons.
+void PolyfaceQuery::ComputeOverAndUnderXY
+(
+PolyfaceHeaderCR polyfaceA,
+IPolyfaceVisitorFilter *filterA,
+PolyfaceHeaderCR polyfaceB,
+IPolyfaceVisitorFilter *filterB,
+PolyfaceHeaderPtr &polyfaceAOverB,
+PolyfaceHeaderPtr &polyfaceBOverA
+)
+    {
+    polyfaceAOverB = nullptr;
+    polyfaceBOverA = nullptr;
+    DRange3d rangeA = polyfaceA.PointRange ();
+    DRange3d rangeB = polyfaceB.PointRange ();
+
+    if (rangeA.high.z < rangeB.low.z)
+        return;
+
+    DRange3d inputRange;
+    inputRange.UnionOf (rangeA, rangeB);
+
+    TaggedPolygonVector polygonA, polygonB ;
+
+    polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
+    polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
+
+    double planarityAbsTol = s_planarityLocalRelTol * inputRange.low.Distance (inputRange.high);
+    DPoint3d rangeCenter;
+    rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
+
+    Transform localToWorld, worldToLocal;
+    localToWorld.InitFrom (rangeCenter);
+    worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+
+    PolygonVectorOps::Multiply (polygonA, worldToLocal);
+    PolygonVectorOps::Multiply (polygonB, worldToLocal);
+
+    worldToLocal.Multiply (inputRange, inputRange);    // worldToLocal is just translation, so this is exact.
+
+    PolygonVectorOps::TriangulateNonPlanarPolygons (polygonA, planarityAbsTol);
+    PolygonVectorOps::TriangulateNonPlanarPolygons (polygonB, planarityAbsTol);
+    bvector <TaggedPolygonVector> debugPolygons;
+    TaggedPolygonVector out1, out2;
+    PolygonVectorOps__ComputeUndercut_direct (polygonA, polygonB, out1, out2);
+
+    PolygonVectorOps::Multiply (out1, localToWorld);
+    PolygonVectorOps::Multiply (out2, localToWorld);
+    bvector<PolyfaceHeaderPtr> result;
+    SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
+    if (result.size () > 0)
+        polyfaceAOverB = result[0];
+    result.clear ();
+    SavePolygons(result, out2, nullptr);
+    if (result.size () > 0)
+        polyfaceBOverA = result[0];
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
         ShardHealer bodies
 +----------------------------------------------------------------------*/
@@ -702,7 +761,5 @@ TaggedPolygonVector* debugPolygons
         );
 #endif
     }
-
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE
