@@ -41,7 +41,7 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, JsonValueCR memberJ
     if (!prop.GetIsNavigation())
         return BindValue(binder, memberJson, prop);
 
-    return BindNavigationValue(binder, memberJson, *prop.GetAsNavigationProperty(), classLocater);
+    return BindNavigationValue(binder, memberJson, classLocater);
     }
 
 //---------------------------------------------------------------------------------------
@@ -60,8 +60,14 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, JsonValueCR memberJ
     if (prop.GetIsStruct())
         return BindStructValue(binder, memberJson, prop.GetAsStructProperty()->GetType());
 
-    if (prop.GetIsArray())
-        return BindArrayValue(binder, memberJson, *prop.GetAsArrayProperty());
+    if (prop.GetIsPrimitiveArray())
+        {
+        PrimitiveType arrayElementType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+        return BindArrayValue(binder, memberJson, &arrayElementType, nullptr);
+        }
+
+    if (prop.GetIsStructArray())
+        return BindArrayValue(binder, memberJson, nullptr, &prop.GetAsStructArrayProperty()->GetStructElementType());
 
     BeAssert(false);
     return ECSqlStatus::Error;
@@ -202,23 +208,18 @@ ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, JsonValueCR s
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECN::ArrayECPropertyCR arrayProp)
+ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
-    if (!arrayJson.isArray())
+    if (!arrayJson.isArray() || (primType == nullptr && structType == nullptr))
         return ECSqlStatus::Error;
 
-    const bool isPrimitive = arrayProp.GetIsPrimitiveArray();
-    PrimitiveType primElementType = PRIMITIVETYPE_Binary;
-    ECStructClassCP structType = nullptr;
-    if (isPrimitive)
-        primElementType = arrayProp.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-    else
-        structType = &arrayProp.GetAsStructArrayProperty()->GetStructElementType();
+    BeAssert(primType == nullptr || structType == nullptr);
 
+    const bool isPrimitive = primType != nullptr;
     for (JsonValueCR arrayElemJson : arrayJson)
         {
         ECSqlStatus stat = isPrimitive ?
-            BindPrimitiveValue(binder.AddArrayElement(), arrayElemJson, primElementType) :
+            BindPrimitiveValue(binder.AddArrayElement(), arrayElemJson, *primType) :
             BindStructValue(binder.AddArrayElement(), arrayElemJson, *structType);
 
         if (!stat.IsSuccess())
@@ -232,13 +233,10 @@ ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR ar
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, ECN::NavigationECPropertyCR navProp, IECClassLocater& classLocater)
+ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, IECClassLocater& classLocater)
     {
-    //the existence of a nav prop JSON object means we will not ignore it regardless of whether its member exist or not
-
     if (!navJson.isObject())
         return ECSqlStatus::Error;
-
 
     if (navJson.isMember(ECJsonUtilities::json_navId()))
         {
@@ -290,7 +288,7 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, RapidJsonValueCR me
     if (!prop.GetIsNavigation())
         return BindValue(binder, memberJson, prop);
 
-    return BindNavigationValue(binder, memberJson, *prop.GetAsNavigationProperty(), classLocater);
+    return BindNavigationValue(binder, memberJson, classLocater);
     }
 
 //---------------------------------------------------------------------------------------
@@ -309,8 +307,14 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, RapidJsonValueCR me
     if (prop.GetIsStruct())
         return BindStructValue(binder, memberJson, prop.GetAsStructProperty()->GetType());
 
-    if (prop.GetIsArray())
-        return BindArrayValue(binder, memberJson, *prop.GetAsArrayProperty());
+    if (prop.GetIsPrimitiveArray())
+        {
+        PrimitiveType arrayElementType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+        return BindArrayValue(binder, memberJson, &arrayElementType, nullptr);
+        }
+
+    if (prop.GetIsStructArray())
+        return BindArrayValue(binder, memberJson, nullptr, &prop.GetAsStructArrayProperty()->GetStructElementType());
 
     BeAssert(false);
     return ECSqlStatus::Error;
@@ -456,24 +460,19 @@ ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, RapidJsonValu
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECN::ArrayECPropertyCR arrayProp)
+ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
-    if (!arrayJson.IsArray())
+    if (!arrayJson.IsArray() || (primType == nullptr && structType == nullptr))
         return ECSqlStatus::Error;
 
-    const bool isPrimitive = arrayProp.GetIsPrimitiveArray();
-    PrimitiveType primElementType = PRIMITIVETYPE_Binary;
-    ECStructClassCP structType = nullptr;
-    if (isPrimitive)
-        primElementType = arrayProp.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-    else
-        structType = &arrayProp.GetAsStructArrayProperty()->GetStructElementType();
+    BeAssert(primType == nullptr || structType == nullptr);
 
+    const bool isPrimitive = primType != nullptr;
     for (RapidJsonValueCR arrayElemJson : arrayJson.GetArray())
         {
-        ECSqlStatus stat = isPrimitive ? 
-                        BindPrimitiveValue(binder.AddArrayElement(), arrayElemJson, primElementType) :
-                        BindStructValue(binder.AddArrayElement(), arrayElemJson, *structType);
+        ECSqlStatus stat = isPrimitive ?
+            BindPrimitiveValue(binder.AddArrayElement(), arrayElemJson, *primType) :
+            BindStructValue(binder.AddArrayElement(), arrayElemJson, *structType);
 
         if (!stat.IsSuccess())
             return stat;
@@ -486,13 +485,10 @@ ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValue
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, ECN::NavigationECPropertyCR navProp, IECClassLocater& classLocater)
+ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, IECClassLocater& classLocater)
     {
-    //the existence of a nav prop JSON object means we will not ignore it regardless of whether its member exist or not
-
     if (!navJson.IsObject())
         return ECSqlStatus::Error;
-
 
     if (navJson.HasMember(ECJsonSystemNames::Navigation::Id()))
         {

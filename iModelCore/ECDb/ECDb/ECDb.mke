@@ -111,7 +111,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
-                $(baseDir)ECSql/JsonECSqlBinder.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \

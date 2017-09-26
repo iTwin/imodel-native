@@ -112,4 +112,3 @@
 #include "ECSql/ECSqlStatementNoopImpls.h"
 
 #include "ECSql/ECInstanceAdapterHelper.h"
-#include "ECSql/JsonECSqlBinder.h"

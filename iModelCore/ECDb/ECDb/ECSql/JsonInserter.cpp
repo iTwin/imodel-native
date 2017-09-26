@@ -47,9 +47,7 @@ void JsonInserter::Initialize(ECCrudWriteToken const* writeToken)
 
         ecsql.append(",[").append(ecProperty->GetName()).append("]");
         valuesClause.append(",?");
-        Utf8String jsonPropName(ecProperty->GetName());
-        ECJsonUtilities::LowerFirstChar(jsonPropName);
-        m_bindingMap[jsonPropName] = JsonAdapterBindingInfo(parameterIndex, *ecProperty);
+        m_bindingMap[ecProperty->GetName().c_str()] = JsonAdapterBindingInfo(parameterIndex, *ecProperty);
         parameterIndex++;
         }
 
