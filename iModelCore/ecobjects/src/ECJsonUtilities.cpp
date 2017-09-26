@@ -1017,7 +1017,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
             NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
             if (navProp->IsMultiple())
                 {
-                LOG.error("NavigationECProperties with IsMultiple == true not supported by ECRapidJsonUtilities");
+                LOG.error("NavigationECProperties with IsMultiple == true not supported by JsonECInstanceConverter");
                 return ERROR;
                 }
 
