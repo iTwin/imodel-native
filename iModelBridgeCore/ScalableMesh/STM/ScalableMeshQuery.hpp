@@ -2163,7 +2163,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
     return true;
     }
 
-template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
+template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const
     {    
 	if (m_node->GetNbPoints() == 0) return true;
 
@@ -2174,7 +2174,8 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
         if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
         }
 
-	if(!IsTextured()) return true;
+	if(!IsTextured() || !isTextureRequired) return true;
+
     for (auto& textureData : m_cachedDisplayTextureData)
         {
         if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr || textureData->GetData() == nullptr)
@@ -2185,7 +2186,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
     return true;
     }
 
-template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr) const
+template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const
     {
 	if (m_node->GetNbPoints() == 0) return true;
 
@@ -2197,7 +2198,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
             if (!(*m_cachedDisplayMeshData)[i].IsInVRAM() && mgr->_IsUsingVideoMemory()) return false;
         }
 
-        if (!IsTextured()) return true;        
+        if (!IsTextured() || !isTextureRequired) return true;
 
         if (m_cachedDisplayTextureData.size() == 0) 
             return false;

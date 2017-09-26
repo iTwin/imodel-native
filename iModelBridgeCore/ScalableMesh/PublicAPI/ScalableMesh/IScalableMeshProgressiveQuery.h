@@ -133,7 +133,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
-        BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+        BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture = true);
 
         BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
 
