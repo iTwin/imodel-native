@@ -1072,7 +1072,10 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
     if (!m_descriptor->OnlyDistinctValues())
         {
-        contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+        if (0 != GetId())
+            contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+        else
+            contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", "ContractId", false));
         contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
         }
 
