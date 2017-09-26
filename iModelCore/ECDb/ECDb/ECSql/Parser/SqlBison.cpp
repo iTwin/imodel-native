@@ -50,7 +50,7 @@
 #define YYSKELETON_NAME "yacc.c"
 
 /* Pure parsers.  */
-#define YYPURE 0
+#define YYPURE 2
 
 /* Push parsers.  */
 #define YYPUSH 0
@@ -94,9 +94,6 @@
 #ifndef _CONNECTIVITY_SQLPARSE_HXX
 #include "SqlParse.h"
 #endif
-#ifndef _CONNECTIVITY_SQLINTERNALNODE_HXX
-#include "InternalNode.h"
-#endif
 #ifndef _CONNECTIVITY_SQLSCAN_HXX
 #include "SqlScan.h"
 #endif
@@ -128,41 +125,26 @@
 
 static Utf8String aEmptyString;
 
-static connectivity::OSQLInternalNode* newNode(const sal_Char* pNewValue,
-                                 const connectivity::SQLNodeType eNodeType,
-                                 const sal_uInt32 nNodeID = 0)
-{
-    return new connectivity::OSQLInternalNode(pNewValue, eNodeType, nNodeID);
-}
-
-static connectivity::OSQLInternalNode* newNode(const Utf8String& _NewValue,
-                                const connectivity::SQLNodeType eNodeType,
-                                const sal_uInt32 nNodeID = 0)
-{
-    return new connectivity::OSQLInternalNode(_NewValue, eNodeType, nNodeID);
-}
+#define CREATE_NODE  context->GetScanner()->NewNode
 
 // yyi ist die interne Nr. der Regel, die gerade reduziert wird.
 // Ueber die Mapping-Tabelle yyrmap wird daraus eine externe Regel-Nr.
-#define SQL_NEW_RULE             newNode(aEmptyString, SQL_NODE_RULE, yyr1[yyn])
-#define SQL_NEW_LISTRULE         newNode(aEmptyString, SQL_NODE_LISTRULE, yyr1[yyn])
-#define SQL_NEW_COMMALISTRULE   newNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
-#define SQL_NEW_DOTLISTRULE   newNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
-
-
-connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
+#define SQL_NEW_RULE             context->GetScanner()->NewNode(aEmptyString, SQL_NODE_RULE, yyr1[yyn])
+#define SQL_NEW_LISTRULE         context->GetScanner()->NewNode(aEmptyString, SQL_NODE_LISTRULE, yyr1[yyn])
+#define SQL_NEW_COMMALISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
+#define SQL_NEW_DOTLISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
 
 #if !(defined MACOSX && defined PPC)
 #define YYERROR_VERBOSE
 #endif
 
-#define SQLyyerror(s)                        \
-{                                            \
-    xxx_pGLOBAL_SQLPARSER->error(s);        \
-}
+#define SQLyyerror(context, s) \
+    {                                 \
+    context->error(s);                \
+    }
 
 using namespace connectivity;
-#define SQLyylex xxx_pGLOBAL_SQLPARSER->SQLlex
+#define SQLyylex context->SQLlex
 
 
 
@@ -184,8 +166,8 @@ using namespace connectivity;
 
 /* In a future release of Bison, this section will be replaced
    by #include "SqlBison.h".  */
-#ifndef YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
-# define YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+#ifndef YY_SQLYY_E_BSW_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+# define YY_SQLYY_E_BSW_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -386,7 +368,6 @@ typedef union YYSTYPE
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
-extern YYSTYPE SQLyylval;
 
 #ifdef YYPARSE_PARAM
 #if defined __STDC__ || defined __cplusplus
@@ -396,13 +377,13 @@ int SQLyyparse ();
 #endif
 #else /* ! YYPARSE_PARAM */
 #if defined __STDC__ || defined __cplusplus
-int SQLyyparse (void);
+int SQLyyparse (connectivity::OSQLParser* context);
 #else
 int SQLyyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
+#endif /* !YY_SQLYY_E_BSW_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
@@ -885,54 +866,54 @@ static const yytype_int16 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   251,   251,   253,   261,   266,   271,   279,   284,   294,
-     295,   303,   304,   315,   316,   326,   331,   339,   347,   356,
-     357,   358,   362,   363,   369,   370,   371,   372,   373,   374,
-     375,   379,   384,   395,   396,   397,   400,   407,   419,   428,
-     438,   443,   451,   454,   459,   469,   480,   481,   482,   486,
-     489,   495,   502,   503,   506,   518,   521,   527,   531,   532,
-     540,   548,   552,   557,   560,   561,   564,   565,   573,   582,
-     597,   607,   610,   616,   617,   621,   624,   633,   634,   638,
-     645,   653,   656,   665,   666,   674,   675,   683,   684,   685,
-     686,   689,   690,   691,   706,   714,   715,   725,   726,   734,
-     735,   744,   745,   755,   756,   757,   758,   759,   760,   761,
-     762,   763,   769,   776,   783,   808,   809,   810,   811,   812,
-     813,   814,   822,   860,   868,   878,   888,   894,   900,   922,
-     947,   948,   955,   964,   970,   986,   990,   998,  1007,  1013,
-    1029,  1038,  1047,  1056,  1066,  1067,  1068,  1072,  1080,  1086,
-    1097,  1102,  1109,  1113,  1117,  1118,  1119,  1120,  1121,  1123,
-    1135,  1147,  1159,  1175,  1176,  1182,  1185,  1195,  1205,  1206,
-    1207,  1210,  1218,  1229,  1239,  1249,  1254,  1259,  1266,  1271,
-    1278,  1279,  1283,  1295,  1296,  1299,  1300,  1301,  1302,  1303,
-    1304,  1305,  1306,  1307,  1308,  1311,  1312,  1319,  1326,  1334,
-    1348,  1361,  1364,  1368,  1372,  1373,  1378,  1387,  1394,  1395,
-    1396,  1397,  1398,  1401,  1411,  1414,  1417,  1418,  1421,  1422,
-    1428,  1438,  1439,  1443,  1455,  1456,  1459,  1462,  1465,  1468,
-    1469,  1472,  1483,  1484,  1487,  1488,  1491,  1505,  1506,  1509,
-    1515,  1523,  1526,  1527,  1530,  1533,  1534,  1537,  1545,  1548,
-    1553,  1562,  1565,  1574,  1575,  1578,  1579,  1582,  1583,  1586,
-    1592,  1595,  1604,  1607,  1612,  1620,  1621,  1624,  1633,  1634,
-    1637,  1638,  1641,  1647,  1648,  1656,  1664,  1674,  1677,  1680,
-    1681,  1687,  1690,  1698,  1705,  1711,  1717,  1727,  1736,  1744,
-    1756,  1757,  1758,  1759,  1760,  1761,  1762,  1766,  1771,  1776,
-    1783,  1791,  1792,  1795,  1796,  1801,  1802,  1810,  1822,  1832,
-    1841,  1846,  1860,  1861,  1862,  1865,  1866,  1869,  1881,  1882,
-    1886,  1889,  1893,  1894,  1895,  1896,  1897,  1898,  1899,  1900,
-    1901,  1902,  1903,  1904,  1905,  1906,  1907,  1908,  1912,  1917,
-    1927,  1936,  1937,  1941,  1953,  1954,  1955,  1956,  1957,  1958,
-    1959,  1966,  1970,  1971,  1975,  1976,  1982,  1991,  1992,  1999,
-    2006,  2016,  2017,  2024,  2038,  2045,  2051,  2056,  2062,  2072,
-    2079,  2087,  2095,  2096,  2097,  2098,  2099,  2104,  2107,  2111,
-    2124,  2151,  2154,  2158,  2171,  2172,  2173,  2176,  2184,  2185,
-    2188,  2195,  2205,  2206,  2209,  2217,  2218,  2226,  2227,  2230,
-    2237,  2250,  2274,  2281,  2284,  2285,  2286,  2291,  2298,  2299,
-    2307,  2318,  2328,  2329,  2332,  2342,  2352,  2364,  2377,  2386,
-    2391,  2396,  2403,  2410,  2419,  2427,  2437,  2445,  2446,  2454,
-    2459,  2477,  2483,  2491,  2498,  2499,  2509,  2513,  2517,  2518,
-    2522,  2533,  2543,  2548,  2555,  2565,  2568,  2573,  2574,  2575,
-    2576,  2577,  2578,  2581,  2586,  2593,  2603,  2604,  2612,  2616,
-    2619,  2623,  2629,  2637,  2640,  2650,  2664,  2668,  2669,  2673,
-    2682,  2687,  2695,  2701,  2711,  2712,  2713
+       0,   235,   235,   237,   245,   250,   255,   263,   268,   278,
+     279,   287,   288,   299,   300,   310,   315,   323,   331,   340,
+     341,   342,   346,   347,   353,   354,   355,   356,   357,   358,
+     359,   363,   368,   379,   380,   381,   384,   391,   403,   412,
+     422,   427,   435,   438,   443,   453,   464,   465,   466,   470,
+     473,   479,   486,   487,   490,   502,   505,   511,   515,   516,
+     524,   532,   536,   541,   544,   545,   548,   549,   557,   566,
+     581,   591,   594,   600,   601,   605,   608,   617,   618,   622,
+     629,   637,   640,   649,   650,   658,   659,   667,   668,   669,
+     670,   673,   674,   675,   690,   698,   699,   709,   710,   718,
+     719,   728,   729,   739,   740,   741,   742,   743,   744,   745,
+     746,   747,   753,   760,   767,   792,   793,   794,   795,   796,
+     797,   798,   806,   816,   824,   834,   844,   850,   856,   878,
+     903,   904,   911,   920,   926,   942,   946,   954,   963,   969,
+     985,   994,  1003,  1012,  1022,  1023,  1024,  1028,  1036,  1042,
+    1053,  1058,  1065,  1069,  1073,  1074,  1075,  1076,  1077,  1079,
+    1091,  1103,  1115,  1131,  1132,  1138,  1141,  1151,  1161,  1162,
+    1163,  1166,  1174,  1185,  1195,  1205,  1210,  1215,  1222,  1227,
+    1234,  1235,  1239,  1251,  1252,  1255,  1256,  1257,  1258,  1259,
+    1260,  1261,  1262,  1263,  1264,  1267,  1268,  1275,  1282,  1290,
+    1304,  1317,  1320,  1324,  1328,  1329,  1334,  1343,  1350,  1351,
+    1352,  1353,  1354,  1357,  1367,  1370,  1373,  1374,  1377,  1378,
+    1384,  1394,  1395,  1399,  1411,  1412,  1415,  1418,  1421,  1424,
+    1425,  1428,  1439,  1440,  1443,  1444,  1447,  1461,  1462,  1465,
+    1471,  1479,  1482,  1483,  1486,  1489,  1490,  1493,  1501,  1504,
+    1509,  1518,  1521,  1530,  1531,  1534,  1535,  1538,  1539,  1542,
+    1548,  1551,  1560,  1563,  1568,  1576,  1577,  1580,  1589,  1590,
+    1593,  1594,  1597,  1603,  1604,  1612,  1620,  1630,  1633,  1636,
+    1637,  1643,  1646,  1654,  1661,  1667,  1673,  1683,  1692,  1700,
+    1712,  1713,  1714,  1715,  1716,  1717,  1718,  1722,  1727,  1732,
+    1739,  1747,  1748,  1751,  1752,  1757,  1758,  1766,  1778,  1788,
+    1797,  1802,  1816,  1817,  1818,  1821,  1822,  1825,  1837,  1838,
+    1842,  1845,  1849,  1850,  1851,  1852,  1853,  1854,  1855,  1856,
+    1857,  1858,  1859,  1860,  1861,  1862,  1863,  1864,  1868,  1873,
+    1883,  1892,  1893,  1897,  1909,  1910,  1911,  1912,  1913,  1914,
+    1915,  1922,  1926,  1927,  1931,  1932,  1938,  1947,  1948,  1955,
+    1962,  1972,  1973,  1980,  1994,  2001,  2007,  2012,  2018,  2028,
+    2035,  2043,  2051,  2052,  2053,  2054,  2055,  2060,  2063,  2067,
+    2080,  2107,  2110,  2114,  2127,  2128,  2129,  2132,  2140,  2141,
+    2144,  2151,  2161,  2162,  2165,  2173,  2174,  2182,  2183,  2186,
+    2193,  2206,  2230,  2237,  2240,  2241,  2242,  2247,  2254,  2255,
+    2263,  2274,  2284,  2285,  2288,  2298,  2308,  2320,  2333,  2342,
+    2347,  2352,  2359,  2366,  2375,  2383,  2393,  2401,  2402,  2410,
+    2415,  2433,  2439,  2447,  2454,  2455,  2465,  2469,  2473,  2474,
+    2478,  2489,  2499,  2504,  2511,  2521,  2524,  2529,  2530,  2531,
+    2532,  2533,  2534,  2537,  2542,  2549,  2559,  2560,  2568,  2572,
+    2575,  2579,  2585,  2593,  2596,  2606,  2620,  2624,  2625,  2629,
+    2638,  2643,  2651,  2657,  2667,  2668,  2669
 };
 #endif
 
@@ -2226,7 +2207,7 @@ do                                                              \
     }                                                           \
   else                                                          \
     {                                                           \
-      yyerror (YY_("syntax error: cannot back up")); \
+      yyerror (context, YY_("syntax error: cannot back up")); \
       YYERROR;							\
     }								\
 while (YYID (0))
@@ -2244,9 +2225,9 @@ while (YYID (0))
 
 /* YYLEX -- calling `yylex' with the right arguments.  */
 #ifdef YYLEX_PARAM
-# define YYLEX yylex (YYLEX_PARAM)
+# define YYLEX yylex (&yylval, YYLEX_PARAM)
 #else
-# define YYLEX yylex ()
+# define YYLEX yylex (&yylval)
 #endif
 
 /* Enable debugging if requested.  */
@@ -2269,7 +2250,7 @@ do {									  \
     {									  \
       YYFPRINTF (stderr, "%s ", Title);					  \
       yy_symbol_print (stderr,						  \
-		  Type, Value); \
+		  Type, Value, context); \
       YYFPRINTF (stderr, "\n");						  \
     }									  \
 } while (YYID (0))
@@ -2283,19 +2264,21 @@ do {									  \
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 static void
-yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, connectivity::OSQLParser* context)
 #else
 static void
-yy_symbol_value_print (yyoutput, yytype, yyvaluep)
+yy_symbol_value_print (yyoutput, yytype, yyvaluep, context)
     FILE *yyoutput;
     int yytype;
     YYSTYPE const * const yyvaluep;
+    connectivity::OSQLParser* context;
 #endif
 {
   FILE *yyo = yyoutput;
   YYUSE (yyo);
   if (!yyvaluep)
     return;
+  YYUSE (context);
 # ifdef YYPRINT
   if (yytype < YYNTOKENS)
     YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
@@ -2317,13 +2300,14 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 static void
-yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, connectivity::OSQLParser* context)
 #else
 static void
-yy_symbol_print (yyoutput, yytype, yyvaluep)
+yy_symbol_print (yyoutput, yytype, yyvaluep, context)
     FILE *yyoutput;
     int yytype;
     YYSTYPE const * const yyvaluep;
+    connectivity::OSQLParser* context;
 #endif
 {
   if (yytype < YYNTOKENS)
@@ -2331,7 +2315,7 @@ yy_symbol_print (yyoutput, yytype, yyvaluep)
   else
     YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
 
-  yy_symbol_value_print (yyoutput, yytype, yyvaluep);
+  yy_symbol_value_print (yyoutput, yytype, yyvaluep, context);
   YYFPRINTF (yyoutput, ")");
 }
 
@@ -2374,12 +2358,13 @@ do {								\
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 static void
-yy_reduce_print (YYSTYPE *yyvsp, int yyrule)
+yy_reduce_print (YYSTYPE *yyvsp, int yyrule, connectivity::OSQLParser* context)
 #else
 static void
-yy_reduce_print (yyvsp, yyrule)
+yy_reduce_print (yyvsp, yyrule, context)
     YYSTYPE *yyvsp;
     int yyrule;
+    connectivity::OSQLParser* context;
 #endif
 {
   int yynrhs = yyr2[yyrule];
@@ -2393,7 +2378,7 @@ yy_reduce_print (yyvsp, yyrule)
       YYFPRINTF (stderr, "   $%d = ", yyi + 1);
       yy_symbol_print (stderr, yyrhs[yyprhs[yyrule] + yyi],
 		       &(yyvsp[(yyi + 1) - (yynrhs)])
-		       		       );
+		       		       , context);
       YYFPRINTF (stderr, "\n");
     }
 }
@@ -2401,7 +2386,7 @@ yy_reduce_print (yyvsp, yyrule)
 # define YY_REDUCE_PRINT(Rule)		\
 do {					\
   if (yydebug)				\
-    yy_reduce_print (yyvsp, Rule); \
+    yy_reduce_print (yyvsp, Rule, context); \
 } while (YYID (0))
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
@@ -2681,16 +2666,18 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, connectivity::OSQLParser* context)
 #else
 static void
-yydestruct (yymsg, yytype, yyvaluep)
+yydestruct (yymsg, yytype, yyvaluep, context)
     const char *yymsg;
     int yytype;
     YYSTYPE *yyvaluep;
+    connectivity::OSQLParser* context;
 #endif
 {
   YYUSE (yyvaluep);
+  YYUSE (context);
 
   if (!yymsg)
     yymsg = "Deleting";
@@ -2705,25 +2692,6 @@ yydestruct (yymsg, yytype, yyvaluep)
 }
 
 
-
-
-/* The lookahead symbol.  */
-int yychar;
-
-
-#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END
-#endif
-#ifndef YY_INITIAL_VALUE
-# define YY_INITIAL_VALUE(Value) /* Nothing. */
-#endif
-
-/* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
-
-/* Number of syntax errors so far.  */
-int yynerrs;
 
 
 /*----------.
@@ -2744,14 +2712,46 @@ yyparse (YYPARSE_PARAM)
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 int
-yyparse (void)
+yyparse (connectivity::OSQLParser* context)
 #else
 int
-yyparse ()
-
+yyparse (context)
+    connectivity::OSQLParser* context;
 #endif
 #endif
 {
+/* The lookahead symbol.  */
+int yychar;
+
+
+#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
+/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma ("GCC diagnostic push") \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
+    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
+    _Pragma ("GCC diagnostic pop")
+#else
+/* Default value used for initialization, for pacifying older GCCs
+   or non-GCC compilers.  */
+static YYSTYPE yyval_default;
+# define YY_INITIAL_VALUE(Value) = Value
+#endif
+#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END
+#endif
+#ifndef YY_INITIAL_VALUE
+# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#endif
+
+/* The semantic value of the lookahead symbol.  */
+YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
+
+    /* Number of syntax errors so far.  */
+    int yynerrs;
+
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
     int yyerrstatus;
@@ -2986,12 +2986,12 @@ yyreduce:
     {
         case 2:
 
-    { xxx_pGLOBAL_SQLPARSER->setParseTree( (yyvsp[(1) - (1)].pParseNode) ); }
+    { context->setParseTree( (yyvsp[(1) - (1)].pParseNode) ); }
     break;
 
   case 3:
 
-    { xxx_pGLOBAL_SQLPARSER->setParseTree( (yyvsp[(1) - (2)].pParseNode) ); }
+    { context->setParseTree( (yyvsp[(1) - (2)].pParseNode) ); }
     break;
 
   case 5:
@@ -3034,9 +3034,9 @@ yyreduce:
   case 10:
 
     {(yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));}
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));}
     break;
 
   case 11:
@@ -3047,9 +3047,9 @@ yyreduce:
   case 12:
 
     {(yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));}
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));}
     break;
 
   case 13:
@@ -3162,9 +3162,9 @@ yyreduce:
 
     {(yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3273,7 +3273,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = newNode("*", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3428,9 +3428,9 @@ yyreduce:
 
     { // boolean_primary: rule 2
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3504,10 +3504,10 @@ yyreduce:
   case 114:
 
     {
-            if(xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // comparison_predicate: rule 2
+            if(context->inPredicateCheck()) // comparison_predicate: rule 2
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule((yyval.pParseNode),(yyvsp[(2) - (2)].pParseNode),(yyvsp[(1) - (2)].pParseNode));
+                sal_Int16 nErg = context->buildPredicateRule((yyval.pParseNode),(yyvsp[(2) - (2)].pParseNode),(yyvsp[(1) - (2)].pParseNode));
                 if(nErg == 1)
                 {
                     OSQLParseNode* pTemp = (yyval.pParseNode);
@@ -3539,40 +3539,12 @@ yyreduce:
   case 122:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // between_predicate: rule 2 
-            {
-                (yyval.pParseNode) = SQL_NEW_RULE;
-                
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule((yyval.pParseNode),(yyvsp[(3) - (5)].pParseNode),(yyvsp[(2) - (5)].pParseNode),(yyvsp[(5) - (5)].pParseNode));
-                if(nErg == 1)
-                {
-                    OSQLParseNode* pTemp = (yyval.pParseNode);
-                    (yyval.pParseNode) = pTemp->removeAt((sal_uInt32)0);
-                    OSQLParseNode* pColumnRef = (yyval.pParseNode)->removeAt((sal_uInt32)0);
-                    (yyval.pParseNode)->insert(0,(yyvsp[(1) - (5)].pParseNode));
-                    OSQLParseNode* pBetween_predicate = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate));
-                    pBetween_predicate->append(pColumnRef);
-                    pBetween_predicate->append((yyval.pParseNode));
-                    (yyval.pParseNode) = pBetween_predicate;
-                    
-                    delete pTemp;
-                    delete (yyvsp[(4) - (5)].pParseNode);
-                }
-                else
-                {
-                    delete (yyval.pParseNode);
-                    YYABORT;
-                }
-            }
-            else
-            {
-                (yyval.pParseNode) = SQL_NEW_RULE; // between_predicate: rule 1
-                (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode));
-            }
+            (yyval.pParseNode) = SQL_NEW_RULE; // between_predicate: rule 1
+            (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode));
+            (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
+            (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode));
+            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode));
         }
     break;
 
@@ -3628,17 +3600,17 @@ yyreduce:
   case 128:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())  // like_predicate: rule 5
+            if (context->inPredicateCheck())  // like_predicate: rule 5
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append(pColumnRef);
                 (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode));
                 OSQLParseNode* p2nd = (yyvsp[(1) - (1)].pParseNode)->removeAt(2);
                 OSQLParseNode* p3rd = (yyvsp[(1) - (1)].pParseNode)->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule((yyvsp[(1) - (1)].pParseNode),p2nd,p3rd) )
+                if ( !context->buildLikeRule((yyvsp[(1) - (1)].pParseNode),p2nd,p3rd) )
                 {
                     delete (yyval.pParseNode);
                     YYABORT;
@@ -3653,17 +3625,17 @@ yyreduce:
   case 129:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // like_predicate: rule 6
+            if (context->inPredicateCheck()) // like_predicate: rule 6
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append(pColumnRef);
                 (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode));
                 OSQLParseNode* p2nd = (yyvsp[(1) - (1)].pParseNode)->removeAt(2);
                 OSQLParseNode* p3rd = (yyvsp[(1) - (1)].pParseNode)->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule((yyvsp[(1) - (1)].pParseNode),p2nd,p3rd) )
+                if ( !context->buildLikeRule((yyvsp[(1) - (1)].pParseNode),p2nd,p3rd) )
                 {
                     delete (yyval.pParseNode);
                     YYABORT;
@@ -3709,10 +3681,10 @@ yyreduce:
   case 134:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())// test_for_null: rule 2
+            if (context->inPredicateCheck())// test_for_null: rule 2
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append(pColumnRef);
@@ -3733,9 +3705,9 @@ yyreduce:
   case 136:
 
     {(yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3761,10 +3733,10 @@ yyreduce:
   case 139:
 
     {
-            if ( xxx_pGLOBAL_SQLPARSER->inPredicateCheck() )// in_predicate: rule 2
+            if ( context->inPredicateCheck() )// in_predicate: rule 2
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append(pColumnRef);
@@ -3833,9 +3805,9 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3858,12 +3830,12 @@ yyreduce:
   case 159:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode));
                 (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral((yyval.pParseNode), sal_True);
+                context->reduceLiteral((yyval.pParseNode), sal_True);
             }
             else
                 YYERROR;
@@ -3873,12 +3845,12 @@ yyreduce:
   case 160:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode));
                 (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral((yyval.pParseNode), sal_True);
+                context->reduceLiteral((yyval.pParseNode), sal_True);
             }
             else
                 YYERROR;
@@ -3888,12 +3860,12 @@ yyreduce:
   case 161:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode));
                 (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral((yyval.pParseNode), sal_True);
+                context->reduceLiteral((yyval.pParseNode), sal_True);
             }
             else
                 YYERROR;
@@ -3903,12 +3875,12 @@ yyreduce:
   case 162:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode));
                 (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral((yyval.pParseNode), sal_True);
+                context->reduceLiteral((yyval.pParseNode), sal_True);
             }
             else
                 YYERROR;
@@ -3934,11 +3906,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3947,9 +3919,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3958,9 +3930,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3969,9 +3941,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3980,9 +3952,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -3991,9 +3963,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4042,11 +4014,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4055,8 +4027,8 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4065,8 +4037,8 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4075,9 +4047,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4088,9 +4060,9 @@ yyreduce:
             {
                 (yyval.pParseNode) = SQL_NEW_RULE;
                 (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+                (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
                 (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-                (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+                (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             }
             else
                 YYERROR;
@@ -4102,10 +4074,10 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4124,8 +4096,8 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4134,9 +4106,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
     }
     break;
 
@@ -4149,7 +4121,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = newNode(",", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
         }
     break;
@@ -4158,9 +4130,9 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode) = newNode(",", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode) = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode) = newNode(",", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode) = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode));
         }
     break;
@@ -4175,10 +4147,10 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode));
     }
     break;
@@ -4188,9 +4160,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode));
     }
     break;
@@ -4205,11 +4177,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (8)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (8)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (8)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (8)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (8)].pParseNode) = newNode(",", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (8)].pParseNode) = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(5) - (8)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (8)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (8)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(7) - (8)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(8) - (8)].pParseNode));
     }
@@ -4273,9 +4245,9 @@ yyreduce:
 
     {
         (yyval.pParseNode) = SQL_NEW_RULE;
-        (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+        (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
         (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-        (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+        (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
     }
     break;
 
@@ -4439,10 +4411,10 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4451,9 +4423,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
-            (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode) = newNode("*", SQL_NODE_PUNCTUATION));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode) = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4462,10 +4434,10 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4583,9 +4555,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4607,7 +4579,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode(".", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4626,11 +4598,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4638,9 +4610,9 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4648,7 +4620,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = newNode("-", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = CREATE_NODE("-", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
         }
     break;
@@ -4657,7 +4629,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = newNode("+", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
         }
     break;
@@ -4667,7 +4639,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("*", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4677,7 +4649,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("/", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("/", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4687,7 +4659,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("%", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("%", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4697,7 +4669,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("+", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4707,7 +4679,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("-", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("-", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4793,7 +4765,7 @@ yyreduce:
   case 379:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyvsp[(1) - (3)].pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
                 (yyval.pParseNode) = (yyvsp[(1) - (3)].pParseNode);
@@ -4818,7 +4790,7 @@ yyreduce:
   case 383:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 (yyvsp[(1) - (3)].pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
                 (yyval.pParseNode) = (yyvsp[(1) - (3)].pParseNode);
@@ -4833,7 +4805,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode("+", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4879,12 +4851,12 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (7)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (7)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (7)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(6) - (7)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(7) - (7)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(7) - (7)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4944,12 +4916,12 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (7)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (7)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (7)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (7)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(6) - (7)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(7) - (7)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(7) - (7)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4958,9 +4930,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4969,9 +4941,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (4)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (4)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (4)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4980,11 +4952,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -4993,11 +4965,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode(",", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -5006,11 +4978,11 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = newNode("(", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (6)].pParseNode) = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(4) - (6)].pParseNode));
             (yyval.pParseNode)->append((yyvsp[(5) - (6)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = newNode(")", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(6) - (6)].pParseNode) = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -5052,7 +5024,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode(".", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -5062,7 +5034,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode(":", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -5072,7 +5044,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode(".", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -5082,7 +5054,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = newNode(":", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -5124,7 +5096,7 @@ yyreduce:
 				{
 				if (last->getFirst()->getNodeType() == SQL_NODE_PUNCTUATION) //'*'
 					{
-					SQLyyerror("'*' can only occur at the end of property path\n");
+					SQLyyerror(context, "'*' can only occur at the end of property path\n");
 					YYERROR;
 					}
 				}
@@ -5147,7 +5119,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = newNode("*", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -5271,7 +5243,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
-            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = newNode(":", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (2)].pParseNode) = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(2) - (2)].pParseNode));
             }
     break;
@@ -5280,7 +5252,7 @@ yyreduce:
 
     {
             (yyval.pParseNode) = SQL_NEW_RULE; // test
-            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = newNode("?", SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(1) - (1)].pParseNode) = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
         }
     break;
 
@@ -5303,13 +5275,13 @@ yyreduce:
   case 465:
 
     {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // sql: rule 1
+            if (context->inPredicateCheck()) // sql: rule 1
             {
                 (yyval.pParseNode) = (yyvsp[(1) - (1)].pParseNode);
                 if ( SQL_ISRULE((yyval.pParseNode),search_condition) )
                 {
-                    (yyval.pParseNode)->insert(0,newNode("(", SQL_NODE_PUNCTUATION));
-                    (yyval.pParseNode)->append(newNode(")", SQL_NODE_PUNCTUATION));
+                    (yyval.pParseNode)->insert(0,CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+                    (yyval.pParseNode)->append(CREATE_NODE(")", SQL_NODE_PUNCTUATION));
                 }
             }
             else
@@ -5416,7 +5388,7 @@ yyerrlab:
     {
       ++yynerrs;
 #if ! YYERROR_VERBOSE
-      yyerror (YY_("syntax error"));
+      yyerror (context, YY_("syntax error"));
 #else
 # define YYSYNTAX_ERROR yysyntax_error (&yymsg_alloc, &yymsg, \
                                         yyssp, yytoken)
@@ -5443,7 +5415,7 @@ yyerrlab:
                 yymsgp = yymsg;
               }
           }
-        yyerror (yymsgp);
+        yyerror (context, yymsgp);
         if (yysyntax_error_status == 2)
           goto yyexhaustedlab;
       }
@@ -5467,7 +5439,7 @@ yyerrlab:
       else
 	{
 	  yydestruct ("Error: discarding",
-		      yytoken, &yylval);
+		      yytoken, &yylval, context);
 	  yychar = YYEMPTY;
 	}
     }
@@ -5523,7 +5495,7 @@ yyerrlab1:
 
 
       yydestruct ("Error: popping",
-		  yystos[yystate], yyvsp);
+		  yystos[yystate], yyvsp, context);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -5560,7 +5532,7 @@ yyabortlab:
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (YY_("memory exhausted"));
+  yyerror (context, YY_("memory exhausted"));
   yyresult = 2;
   /* Fall through.  */
 #endif
@@ -5572,7 +5544,7 @@ yyreturn:
          user semantic actions for why this is necessary.  */
       yytoken = YYTRANSLATE (yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yytoken, &yylval);
+                  yytoken, &yylval, context);
     }
   /* Do not reclaim the symbols of the rule which action triggered
      this YYABORT or YYACCEPT.  */
@@ -5581,7 +5553,7 @@ yyreturn:
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-		  yystos[*yyssp], yyvsp);
+		  yystos[*yyssp], yyvsp, context);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -5873,20 +5845,11 @@ sal_uInt32                OSQLParser::s_nRuleIDs[OSQLParseNode::rule_count + 1];
 OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
-sal_Int32                  OSQLParser::s_nRefCount    = 0;
-OSQLScanner*            OSQLParser::s_pScanner = 0;
-OSQLParseNodesGarbageCollector*        OSQLParser::s_pGarbageCollector = 0;
-RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
-//-----------------------------------------------------------------------------
-void setParser(OSQLParser* _pParser)
-{
-    xxx_pGLOBAL_SQLPARSER = _pParser;
-}
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
-{
-    m_pParseTree = pNewParseTree;
-}
+    {
+    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    }
 //-----------------------------------------------------------------------------
 
 /** Delete all comments in a query.
@@ -5949,59 +5912,24 @@ static Utf8String delComment(Utf8String const& rQuery)
     }
     return aBuf;
 }
-
-OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
-                                     Utf8String const& rStatement,
-                                     sal_Bool bInternational)
-{
-
-
-    // must be reset
-    setParser(this);
-
-    // delete comments before parsing
+//-----------------------------------------------------------------------------
+std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
-    // defines how to scan
-    s_pScanner->SetRule(s_pScanner->GetSQLRule()); // initial
-    s_pScanner->prepareScan(sTemp, m_pContext, bInternational);
-
-    SQLyylval.pParseNode = NULL;
-    //    SQLyypvt = NULL;
-    m_pParseTree = NULL;
-    m_sErrorMessage = Utf8String();
-
-    // ... und den Parser anwerfen ...
-    if (SQLyyparse() != 0)
-    {
+    m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
+    m_pParseTree = nullptr;
+    m_sErrorMessage.clear();
+    if (SQLyyparse(this) != 0)
+        {
         // only set the error message, if it's not already set
         if (!m_sErrorMessage.size())
-            m_sErrorMessage = s_pScanner->getErrorMessage();
-        if (!m_sErrorMessage.size())
-            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
+            m_sErrorMessage = m_scanner->getErrorMessage();
 
         rErrorMessage = m_sErrorMessage;
+        return nullptr;
+        }
 
-        // clear the garbage collector
-        (*s_pGarbageCollector)->clearAndDelete();
-        return NULL;
+    return std::move(m_pParseTree);
     }
-    else
-    {
-        (*s_pGarbageCollector)->clear();
-
-        // Das Ergebnis liefern (den Root Parse Node):
-
-        //    OSL_ENSURE(Sdbyyval.pParseNode != NULL,"OSQLParser: Parser hat keinen ParseNode geliefert");
-        //    return Sdbyyval.pParseNode;
-        // geht nicht wegen Bug in MKS YACC-erzeugtem Code (es wird ein falscher ParseNode
-        // geliefert).
-
-        // Stattdessen setzt die Parse-Routine jetzt den Member pParseTree
-        // - einfach diesen zurueckliefern:
-        OSL_ENSURE(m_pParseTree != NULL,"OSQLParser: Parser hat keinen ParseTree geliefert");
-        return m_pParseTree;
-    }
-}
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)
 {
@@ -6088,68 +6016,6 @@ sal_uInt32 OSQLParser::RuleID(OSQLParseNode::Rule eRule)
 {
     return s_nRuleIDs[(sal_uInt16)eRule];
 }
-// -------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildNode(OSQLParseNode*& pAppend,OSQLParseNode* pCompare,OSQLParseNode* pLiteral,OSQLParseNode* pLiteral2)
-{
-    OSQLParseNode* pColumnRef = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-    pColumnRef->append(new OSQLInternalNode(m_sFieldName,SQL_NODE_NAME));
-    OSQLParseNode* pComp = NULL;
-    if ( SQL_ISTOKEN( pCompare, BETWEEN) && pLiteral2 )
-        pComp = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate_part_2));
-    else
-        pComp = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::comparison_predicate));
-    
-    pComp->append(pColumnRef);
-    pComp->append(pCompare);
-    pComp->append(pLiteral);
-    if ( pLiteral2 )
-    {
-        pComp->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD,SQL_TOKEN_AND));
-        pComp->append(pLiteral2);        
-    }
-    pAppend->append(pComp);
-    return 1;
-}
-//-----------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
-{
-    if(!pLiteral)
-        return 1;
-
-    if(SQL_ISRULE(pLiteral,fct_spec) || SQL_ISRULE(pLiteral,general_set_fct) || SQL_ISRULE(pLiteral,column_ref)
-        || SQL_ISRULE(pLiteral,subquery))
-        return 1; // here I have a function that I can't transform into a string
-
-    if(pLiteral->getNodeType() == SQL_NODE_INTNUM || pLiteral->getNodeType() == SQL_NODE_APPROXNUM || pLiteral->getNodeType() == SQL_NODE_ACCESS_DATE)
-    {
-        OSQLParseNode* pParent = pLiteral->getParent();
-
-        OSQLParseNode* pNewNode = new OSQLInternalNode(pLiteral->getTokenValue(), SQL_NODE_STRING);
-        pParent->replace(pLiteral, pNewNode);
-        delete pLiteral;
-        pLiteral = NULL;
-        return 1;
-    }
-
-    for(sal_uInt32 i=0;i<pLiteral->count();++i)
-    {
-        OSQLParseNode* pChild = pLiteral->getChild(i);
-        buildStringNodes(pChild);
-    }
-    if(SQL_ISRULE(pLiteral,term) || SQL_ISRULE(pLiteral,value_exp_primary))
-    {
-        m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_COMPARE);
-        return 0;
-    }
-    return 1;
-}
-//-----------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildComparsionRule(OSQLParseNode*& pAppend,OSQLParseNode* pLiteral)
-{
-    OSQLParseNode* pComp = new OSQLInternalNode(Utf8String("="), SQL_NODE_EQUAL);
-    return buildPredicateRule(pAppend,pLiteral,pComp);
-}
-
 
 //-----------------------------------------------------------------------------
 void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
@@ -6165,7 +6031,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
     
     aValue.append(pLiteral->getChild(1)->getTokenValue());
 
-    pLiteral = new OSQLInternalNode(aValue,SQL_NODE_STRING);
+    pLiteral = m_scanner->NewNode(aValue,SQL_NODE_STRING);
     delete pTemp;
 }
 
@@ -6196,7 +6062,7 @@ void OSQLParser::error( const sal_Char* fmt)
         else
             m_sErrorMessage = sStr;
 
-        Utf8String aError = s_pScanner->getErrorMessage();
+        Utf8String aError = m_scanner->getErrorMessage();
         if(aError.size())
         {
             m_sErrorMessage += ", ";
@@ -6205,9 +6071,9 @@ void OSQLParser::error( const sal_Char* fmt)
     }
 }
 // -------------------------------------------------------------------------
-int OSQLParser::SQLlex()
+int OSQLParser::SQLlex(YYSTYPE* val)
 {
-    return s_pScanner->SQLlex();
+    return m_scanner->SQLlex(val);
 }
 
 #if defined __SUNPRO_CC
