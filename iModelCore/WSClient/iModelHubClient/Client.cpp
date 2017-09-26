@@ -12,6 +12,7 @@
 #include "Logging.h"
 #include "Utils.h"
 #include <WebServices/iModelHub/Client/BreakHelper.h>
+#include "MultiProgressCallbackHandler.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -765,10 +766,15 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return StatusResult::Error(seedFileInfoResult.GetError());
         }
 
+    MultiProgressCallbackHandler handler(callback);
+    Http::Request::ProgressCallback changeSetsCallback, briefcaseCallback;
+    handler.AddCallback(changeSetsCallback, 20.0f);
+    handler.AddCallback(briefcaseCallback, 80.0f);
+    
     Utf8String mergedChangeSetId = seedFileInfoResult.GetValue()->GetMergedChangeSetId();
-    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), callback, cancellationToken);
+    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
 
-    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
+    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), briefcaseCallback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
@@ -813,6 +819,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
     ChangeSets changeSets = pullChangeSetsTask->GetResult().GetValue();
+    handler.SetFinished();
 
     return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);
     }
@@ -1218,7 +1225,12 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
         }
 
-    auto SeedFileResult = connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), callback, cancellationToken)->GetResult();
+    MultiProgressCallbackHandler handler(callback);
+    Http::Request::ProgressCallback changeSetsCallback, seedFileCallback;
+    handler.AddCallback(changeSetsCallback, 20.0f);
+    handler.AddCallback(seedFileCallback, 80.0f);
+
+    auto SeedFileResult = connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), seedFileCallback, cancellationToken)->GetResult();
     if (!SeedFileResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, SeedFileResult.GetError().GetMessage().c_str());
@@ -1233,7 +1245,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
         }
 
-    auto changeSetsResult = connection->DownloadChangeSetsInternal(changeSetsToMerge, callback, cancellationToken)->GetResult();
+    auto changeSetsResult = connection->DownloadChangeSetsInternal(changeSetsToMerge, changeSetsCallback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
@@ -1257,6 +1269,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(margeStatus.GetError()));
         }
 
+    handler.SetFinished();
     BeFileName::SetFileReadOnly(filePath, true);
 
     return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Success(filePath));

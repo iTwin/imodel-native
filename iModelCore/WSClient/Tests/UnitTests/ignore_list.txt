@@ -417,5 +417,9 @@ UrlProviderTests.GetUrl_ValidateAllGetters
     #            Actual: never called - unsatisfied and active
     # [  FAILED  ] UrlProviderTests.GetUrl_ValidateAllGetters (893 ms)
 
+UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl
+    # bim2-0r1, x64, NDEBUG, random PRG failure
+    # Crash (no output)
+    
 ConnectTokenProviderTests.UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken
     # bim0200dev, x64, DEBUG, randomly hangs
