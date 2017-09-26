@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <json/json.h>
 #include <rapidjson/BeRapidJson.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/ByteStream.h>
@@ -136,33 +137,58 @@ struct ECJsonSystemNames final
 struct ECJsonUtilities
     {
 public:
+
     //don't use BE_JSON_NAME here so that we can maintain a master definition of the reserved words
     //which each JSON API adoption can use
 
+    //! @name Methods for JSON values of the JsonCpp API
+    //! @{
+
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Id "ECJsonSystemNames::Id" as JsonCpp StaticString
     static constexpr Json::StaticString json_id() { return Json::StaticString(ECJsonSystemNames::Id()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_className() { return Json::StaticString(ECJsonSystemNames::ClassName()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceId() { return Json::StaticString(ECJsonSystemNames::SourceId()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceClassName() { return Json::StaticString(ECJsonSystemNames::SourceClassName()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "ECJsonSystemNames::TargetId" as JsonCpp StaticString
     static constexpr Json::StaticString json_targetId() { return Json::StaticString(ECJsonSystemNames::TargetId()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "ECJsonSystemNames::TargetClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_targetClassName() { return Json::StaticString(ECJsonSystemNames::TargetClassName()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "ECJsonSystemNames::Navigation::Id" as JsonCpp StaticString
     static constexpr Json::StaticString json_navId() { return Json::StaticString(ECJsonSystemNames::Navigation::Id()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "ECJsonSystemNames::Navigation::RelClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_navRelClassName() { return Json::StaticString(ECJsonSystemNames::Navigation::RelClassName()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::X "ECJsonSystemNames::Point::X" as JsonCpp StaticString
     static constexpr Json::StaticString json_x() { return Json::StaticString(ECJsonSystemNames::Point::X()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "ECJsonSystemNames::Point::Y" as JsonCpp StaticString
     static constexpr Json::StaticString json_y() { return Json::StaticString(ECJsonSystemNames::Point::Y()); }
+    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "ECJsonSystemNames::Point::Z" as JsonCpp StaticString
     static constexpr Json::StaticString json_z() { return Json::StaticString(ECJsonSystemNames::Point::Z()); }
+    //! @}
 
 private:
     ECJsonUtilities() = delete;
     ~ECJsonUtilities() = delete;
 
     static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Json::StaticString const& coordinateKey);
+    static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
 public:
 
-    //! Generates the fully qualified name of an ECClass as used in the EC JSON format: {schema name}.{class name}
+    //! Generates the fully qualified name of an ECClass as used in the EC JSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
     //! @return Fully qualified class name for the EC JSON format
     static Utf8String FormatClassName(ECClassCR ecClass) { return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str()); }
+
+    //! Lowers the first char of the specified string.
+    //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.
+    //! @param[in,out] str String to lower its first character
+    static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
+
+    //! @name Methods for JSON values of the JsonCpp API
+    //! @{
 
     //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
     //! @param[out] json JSON value
@@ -211,6 +237,7 @@ public:
 
         return TBeInt64Id(idVal);
         }
+
     //! Converts an Int64 into a JSON value.
     //! @param[out] json resulting JSON value. 
     //! @param[in] int64Val Int64 value to format
@@ -295,21 +322,11 @@ public:
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
     ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(JsonValueCR json);
 
-    static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
-    };
+    //! @}
 
-/*=================================================================================**//**
-* @bsiclass                                     Shaun.Sewall                    01/2014
-+===============+===============+===============+===============+===============+======*/
-struct ECRapidJsonUtilities final
-    {
-private:
-    ECRapidJsonUtilities() = delete;
-    ~ECRapidJsonUtilities() = delete;
+    //! @name Methods for JSON values of the RapidJson API
+    //! @{
 
-    static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
-
-public:
     //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
@@ -334,9 +351,9 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus JsonToInt64(int64_t& val, RapidJsonValueCR json);
 
     //! Converts the specified Int64 value to a RapidJson value
-    //! @param[out] json the resulting string JSON
+    //! @param[out] json the resulting JSON
     //! @param[in] val the Int64 value
-    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
+    //! @param[in] allocator Allocator to use to copy into the RapidJson value.
     //! @param[in] int64Format Options for how to format the Int64 value
     ECOBJECTS_EXPORT static void Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::MemoryPoolAllocator<>& allocator, ECJsonInt64Format int64Format = ECJsonInt64Format::AsDecimalString);
 
@@ -345,10 +362,10 @@ public:
     //! (@see BentleyApi::BeInt64Id::ToHexStr)
     //! @param[out] json resulting JSON value
     //! @param[in] id BeInt64Id to convert
-    //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
+    //! @param[in] allocator Allocator to use to copy into the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator);
-  
+
     //! Converts an id from a JSON value to a BeInt64Id
     //! @remarks Because JavaScript has issues with Int64 values, the id in the JSON value must have been
     //! serialized as <b>hex string</b> (@see BentleyApi::BeInt64Id::ToHexStr)
@@ -370,8 +387,8 @@ public:
 
         return TBeInt64Id(idVal);
         }
- 
-     //! Converts the specified DateTime to a JSON value as ISO8601 string
+
+    //! Converts the specified DateTime to a JSON value as ISO8601 string
     //! @param[out] json the resulting ISO8601 string JSON value
     //! @param[in] dateTime DateTime to convert
     //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
@@ -448,6 +465,7 @@ public:
     //! @return The resulting IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
     ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(RapidJsonValueCR json);
+    //! @}
     };
 
     

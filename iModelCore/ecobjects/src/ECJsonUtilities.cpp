@@ -303,16 +303,11 @@ IGeometryPtr ECJsonUtilities::JsonToIGeometry(JsonValueCR json)
     return geometry[0];
     }
 
-
-//=======================================================================================
-//  ECRapidJsonUtility
-//=======================================================================================
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     if (!id.IsValid())
         return ERROR;
@@ -326,7 +321,7 @@ BentleyStatus ECRapidJsonUtilities::IdToJson(RapidJsonValueR json, BeInt64Id id,
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-void ECRapidJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator)
+void ECJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     Utf8String fullName = ECJsonUtilities::FormatClassName(ecClass);
     json.SetString(fullName.c_str(), (rapidjson::SizeType) fullName.size(), allocator);
@@ -336,7 +331,7 @@ void ECRapidJsonUtilities::ClassToJson(RapidJsonValueR json, ECClassCR ecClass, 
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-ECClassCP ECRapidJsonUtilities::GetClassFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
+ECClassCP ECJsonUtilities::GetClassFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
     {
     if (!json.IsString())
         return nullptr;
@@ -354,7 +349,7 @@ ECClassCP ECRapidJsonUtilities::GetClassFromClassNameJson(RapidJsonValueCR json,
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECRapidJsonUtilities::GetClassIdFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
+ECClassId ECJsonUtilities::GetClassIdFromClassNameJson(RapidJsonValueCR json, IECClassLocaterR classLocater)
     {
     if (!json.IsString())
         return ECClassId();
@@ -371,7 +366,7 @@ ECClassId ECRapidJsonUtilities::GetClassIdFromClassNameJson(RapidJsonValueCR jso
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECRapidJsonUtilities::Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::MemoryPoolAllocator<>& allocator, ECJsonInt64Format int64Format)
+void ECJsonUtilities::Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::MemoryPoolAllocator<>& allocator, ECJsonInt64Format int64Format)
     {
     switch (int64Format)
         {
@@ -405,7 +400,7 @@ void ECRapidJsonUtilities::Int64ToJson(RapidJsonValueR json, int64_t val, rapidj
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECRapidJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
     {
     if (json.IsNull())
         return ERROR;
@@ -439,7 +434,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR j
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToDateTime(DateTime& dateTime, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToDateTime(DateTime& dateTime, RapidJsonValueCR json)
     {
     if (!json.IsString())
         return ERROR;
@@ -451,7 +446,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToDateTime(DateTime& dateTime, RapidJson
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte const* binary, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte const* binary, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     if (binarySize == 0)
         {
@@ -470,7 +465,7 @@ BentleyStatus ECRapidJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte cons
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJsonValueCR json)
     {
     if (!json.IsString())
         return ERROR;
@@ -488,7 +483,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJso
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToBinary(ByteStream& binary, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToBinary(ByteStream& binary, RapidJsonValueCR json)
     {
     if (!json.IsString())
         return ERROR;
@@ -507,7 +502,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToBinary(ByteStream& binary, RapidJsonVa
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
@@ -521,7 +516,7 @@ BentleyStatus ECRapidJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
         return ERROR;
@@ -541,7 +536,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
@@ -557,7 +552,7 @@ BentleyStatus ECRapidJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json)
+BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
         return ERROR;
@@ -580,7 +575,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::PointCoordinateFromJson(double& coordinate, RapidJsonValueCR json, Utf8CP coordinateKey)
+BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, RapidJsonValueCR json, Utf8CP coordinateKey)
     {
     auto it = json.FindMember(coordinateKey);
     if (it == json.MemberEnd() || it->value.IsNull() || !it->value.IsNumber())
@@ -594,8 +589,10 @@ BentleyStatus ECRapidJsonUtilities::PointCoordinateFromJson(double& coordinate, 
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator)
     {
+    json.SetObject();
+
     Utf8String jsonStr;
     if (!BentleyGeometryJson::TryGeometryToJsonString(jsonStr, geom, false) || jsonStr.empty())
         return ERROR;
@@ -617,7 +614,7 @@ BentleyStatus ECRapidJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeome
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
-IGeometryPtr ECRapidJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
+IGeometryPtr ECJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
     {
     if (!json.IsObject())
         return nullptr;
@@ -632,6 +629,7 @@ IGeometryPtr ECRapidJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
 
     return geometry[0];
     }
+
 
 //*************************************************************************************
 // JsonECInstanceConverter
@@ -1052,7 +1050,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
                 continue;
                 }
 
-            BeInt64Id navId = ECRapidJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
+            BeInt64Id navId = ECJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
             if (!navId.IsValid())
                 return ERROR; //wrong format
 
@@ -1081,7 +1079,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
                 continue;
                 }
 
-            ECClassId relClassId = ECRapidJsonUtilities::GetClassIdFromClassNameJson(navRelClassNameJson, classLocater);
+            ECClassId relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(navRelClassNameJson, classLocater);
             if (!relClassId.IsValid())
                 return ERROR;
 
@@ -1113,7 +1111,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(point2d, jsonValue))
+            if (SUCCESS != ECJsonUtilities::JsonToPoint2d(point2d, jsonValue))
                 return ERROR;
 
             return ecValue.SetPoint2d(point2d);
@@ -1121,7 +1119,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(point3d, jsonValue))
+            if (SUCCESS != ECJsonUtilities::JsonToPoint3d(point3d, jsonValue))
                 return ERROR;
 
             return ecValue.SetPoint3d(point3d);
@@ -1140,7 +1138,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             case PRIMITIVETYPE_Long:
             {
             int64_t val;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToInt64(val, jsonValue))
+            if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
                 return ERROR;
 
             return ecValue.SetLong(val);
@@ -1157,7 +1155,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
                 return ERROR;
 
             DateTime dt;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToDateTime(dt, jsonValue))
+            if (SUCCESS != ECJsonUtilities::JsonToDateTime(dt, jsonValue))
                 return ERROR;
 
             return ecValue.SetDateTime(dt);
@@ -1179,7 +1177,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             {
             if (jsonValue.IsObject())
                 {
-                IGeometryPtr geom = ECRapidJsonUtilities::JsonToIGeometry(jsonValue);
+                IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(jsonValue);
                 if (geom == nullptr)
                     return ERROR;
 
@@ -1189,7 +1187,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             if (jsonValue.IsString())
                 {
                 bvector<Byte> flatBufferBlob;
-                if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(flatBufferBlob, jsonValue))
+                if (SUCCESS != ECJsonUtilities::JsonToBinary(flatBufferBlob, jsonValue))
                     return ERROR;
 
                 return ecValue.SetBinary(flatBufferBlob.data(), flatBufferBlob.size(), true);
@@ -1200,7 +1198,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blob, jsonValue))
+            if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
                 return ERROR;
 
             return ecValue.SetBinary(blob.data(), blob.size(), true);
