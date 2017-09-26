@@ -655,7 +655,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
 
     for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
         {
-        Json::Value& childJsonValue = *iter;
+        Json::Value const& childJsonValue = *iter;
         Utf8CP memberName = iter.memberName();
         if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
             continue;

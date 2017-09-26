@@ -33,7 +33,7 @@ enum class ECJsonInt64Format
 //! An ECInstance in the EC JSON Format is formatted as JSON object made up of property value pairs.
 //!
 //! ### EC JSON Format Description
-//!     - All member names are <b>camel-cased</b>.
+//!     - All member names start with a <b>lower-case</b> character.
 //!     - <b>Reserved member names</b>:
 //!         - "id": ECInstanceId of the instance or the navigation id within a %Navigation property
 //!         - "className": Fully qualified class name ("<schema name>.<class name>")
@@ -201,7 +201,7 @@ public:
         TBeInt64Id invalidId;
         invalidId.Invalidate();
 
-        if (!json.isString())
+        if (json.isNull() || !json.isString())
             return invalidId;
 
         BentleyStatus parseStat = SUCCESS;
@@ -294,6 +294,8 @@ public:
     //! @return The deserialized IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
     ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(JsonValueCR json);
+
+    static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
     };
 
 /*=================================================================================**//**
@@ -358,7 +360,7 @@ public:
         TBeInt64Id invalidId;
         invalidId.Invalidate();
 
-        if (!json.IsString())
+        if (json.IsNull() || !json.IsString())
             return invalidId;
 
         BentleyStatus parseStat = SUCCESS;
