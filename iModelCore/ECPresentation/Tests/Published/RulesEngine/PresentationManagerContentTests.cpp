@@ -2076,6 +2076,87 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
     }
 
+#ifdef wip_grigas
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ClassMap xmlns="ECDbMap.2.0">
+            <MapStrategy>TablePerHierarchy</MapStrategy>
+        </ClassMap>
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="BaseRelatedClass">
+        <ClassMap xmlns="ECDbMap.2.0">
+            <MapStrategy>TablePerHierarchy</MapStrategy>
+        </ClassMap>
+        <ECProperty propertyName="RelatedProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedRelatedClass">
+        <BaseClass>BaseRelatedClass</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasRelatedInstances" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
+            <Class class="Element" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="classifies" polymorphic="true">
+            <Class class="BaseRelatedClass"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseRelatedClass = GetClass("BaseRelatedClass");
+    ECClassCP derivedRelatedClass = GetClass("DerivedRelatedClass");
+    ECRelationshipClassCP rel = GetRelationshipClass("ElementHasRelatedInstances");
+
+    // set up the dataset
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
+    IECInstancePtr relatedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element, *relatedInstance);
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false);
+    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+        rel->GetFullName(), baseRelatedClass->GetFullName(), "RelatedProperty", RelationshipMeaning::RelatedInstance));
+    rule->GetSpecificationsR().push_back(spec);
+    
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + DerivedRelatedClass.RelatedProperty
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+    
+    ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+        
+    ContentSetItemCPtr record = contentSet.Get(0);
+    bvector<ECInstanceKey> keys = record->GetPropertyValueKeys(fp);
+    ASSERT_EQ(1, keys.size());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance), keys[0]);
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
