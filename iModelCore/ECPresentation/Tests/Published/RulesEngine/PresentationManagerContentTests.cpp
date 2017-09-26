@@ -2076,21 +2076,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
     }
 
-#ifdef wip_grigas
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances, R"*(
     <ECEntityClass typeName="Element">
-        <ClassMap xmlns="ECDbMap.2.0">
-            <MapStrategy>TablePerHierarchy</MapStrategy>
-        </ClassMap>
         <ECProperty propertyName="ElementProperty" typeName="int" />
     </ECEntityClass>
     <ECEntityClass typeName="BaseRelatedClass">
-        <ClassMap xmlns="ECDbMap.2.0">
-            <MapStrategy>TablePerHierarchy</MapStrategy>
-        </ClassMap>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
         <ECProperty propertyName="RelatedProperty" typeName="int" />
     </ECEntityClass>
     <ECEntityClass typeName="DerivedRelatedClass">
@@ -2113,9 +2111,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ECRelationshipClassCP rel = GetRelationshipClass("ElementHasRelatedInstances");
 
     // set up the dataset
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
-    IECInstancePtr relatedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedRelatedClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element, *relatedInstance);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
+    IECInstancePtr relatedInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element1, *relatedInstance1);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
+    IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *baseRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element2, *relatedInstance2);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2136,9 +2137,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::PropertyPane, 
+        selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + DerivedRelatedClass.RelatedProperty
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + <BaseRelatedClass.RelatedProperty, DerivedRelatedClass.RelatedProperty>
 
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
@@ -2152,10 +2154,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
         
     ContentSetItemCPtr record = contentSet.Get(0);
     bvector<ECInstanceKey> keys = record->GetPropertyValueKeys(fp);
-    ASSERT_EQ(1, keys.size());
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance), keys[0]);
+    ASSERT_EQ(2, keys.size());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance1), keys[0]);
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance2), keys[1]);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017

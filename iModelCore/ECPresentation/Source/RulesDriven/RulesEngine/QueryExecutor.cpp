@@ -426,6 +426,7 @@ public:
 struct FieldValueInstanceKeyReader
 {
 private:
+    ECDbCR m_db;
     bmap<ContentDescriptor::ECPropertiesField const*, bvector<ECInstanceKey>> m_relatedFieldKeys;
     bmap<ContentDescriptor::ECPropertiesField const*, int> m_fieldProperties;
     bvector<ECInstanceKey> const& m_primaryKeys;
@@ -447,7 +448,9 @@ public:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldValueInstanceKeyReader(bvector<ECInstanceKey> const& primaryKeys) : m_primaryKeys(primaryKeys) {}
+    FieldValueInstanceKeyReader(ECDbCR db, bvector<ECInstanceKey> const& primaryKeys)
+        : m_db(db), m_primaryKeys(primaryKeys) 
+        {}
 
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
@@ -525,7 +528,8 @@ public:
                     ContentSetItem::FieldProperty fieldProperty(*pair.first, propertyIndex++);
                     for (ECInstanceKeyCR key : *sourceVector)
                         {
-                        if (p.GetPropertyClass().GetId() == key.GetClassId())
+                        ECClassCP keyClass = m_db.Schemas().GetClass(key.GetClassId());
+                        if (keyClass->Is(&p.GetPropertyClass()))
                             keys[fieldProperty].push_back(key);
                         }
                     }
@@ -566,7 +570,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         }
     
     ContentValueAppender values;
-    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(primaryRecordKeys);
+    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetDb(), primaryRecordKeys);
     Utf8String displayLabel, imageId;
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))
