@@ -248,13 +248,12 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
 TEST_F(BriefcaseTests, SuccessfulAcquireAndMergeBriefcase)
     {
     InitializeWithChangeSets();
-    // TFS#735814 CreateProgressCallback()
-    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), true)->GetResult();
+    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), true, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(result);
     auto dbPath = result.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
-    // TFS#735814 CheckProgressNotified();
+    CheckProgressNotified();
 
     auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(db.IsValid());
@@ -274,10 +273,9 @@ TEST_F(BriefcaseTests, SuccessfulOpenAndMergeBriefcase)
     InitializeWithChangeSets();
     DgnDbPtr db = OpenBriefcaseFile();
 
-    // TFS#735814 CreateProgressCallback()
-    auto result = m_client->OpenBriefcase(db, true)->GetResult();
+    auto result = m_client->OpenBriefcase(db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
-    // TFS#735814 CheckProgressNotified();
+    CheckProgressNotified();
 
     Utf8String lastChangeSetId = db->Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
@@ -311,11 +309,10 @@ TEST_F(BriefcaseTests, PullAndMerge)
     EXPECT_SUCCESS(upToDateResult);
     EXPECT_FALSE(upToDateResult.GetValue());
         {
-        // TFS#735814 CreateProgressCallback()
-        auto result = briefcase->PullAndMerge()->GetResult();
+        auto result = briefcase->PullAndMerge(CreateProgressCallback())->GetResult();
         EXPECT_SUCCESS(result);
         EXPECT_EQ(2, result.GetValue().size());
-        // TFS#735814 CheckProgressNotified();
+        CheckProgressNotified();
 
         lastChangeSetId = db.Revisions().GetParentRevisionId();
         EXPECT_FALSE(lastChangeSetId.empty());
@@ -396,10 +393,9 @@ TEST_F(BriefcaseTests, TwoPulls)
     EXPECT_FALSE(lastChangeSetId.empty());
 
     InitializeWithChangeSets();
-    // TFS#735814 CreateProgressCallback()
-    result = briefcase->PullAndMerge()->GetResult();
+    result = briefcase->PullAndMerge(CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
-    // TFS#735814 CheckProgressNotified();
+    CheckProgressNotified();
 
     Utf8String lastChangeSetId2 = db.Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId2.empty());
@@ -618,7 +614,8 @@ TEST_F(BriefcaseTests, DownloadStandaloneBriefcase)
         filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
         filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
         return filePath;
-        })->GetResult();
+        }, CreateProgressCallback())->GetResult();
+    CheckProgressNotified();
     EXPECT_SUCCESS(acquireResult);
 
     auto dbPath = acquireResult.GetValue();
