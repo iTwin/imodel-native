@@ -111,7 +111,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 %s PREDICATE_GER
 %s DATE
 %s STRING
-%option debug
 %option bison-bridge 
 %option reentrant
 %option noyywrap
@@ -657,7 +656,7 @@ static bool IN_SQLyyerror;
 
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(0), m_sStatement(rNewStatement)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
     {
     IN_SQLyyerror = false;
     yylex_init(&yyscanner);
@@ -670,7 +669,7 @@ OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sa
 //------------------------------------------------------------------------------
 OSQLScanner::~OSQLScanner()
     {
-    yylex_destroy(&yyscanner);
+    yylex_destroy(yyscanner);
     }
 
  //------------------------------------------------------------------------

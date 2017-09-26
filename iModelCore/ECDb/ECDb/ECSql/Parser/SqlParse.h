@@ -85,6 +85,8 @@ namespace connectivity
             bool empty() const;
             void clear();
             void clearAndDelete();
+            size_t size() const { return m_aNodes.size(); }
+            OSQLParseNode* front() const { return m_aNodes.front(); }
         };
 
 
@@ -96,7 +98,6 @@ namespace connectivity
     class OOO_DLLPUBLIC_DBTOOLS OSQLParser
         {
         friend class OSQLParseNode;
-        friend class OSQLInternalNode;
         friend struct SQLParseNodeParameter;
 
         private:
@@ -109,7 +110,7 @@ namespace connectivity
 
             // informations on the current parse action
             const IParseContext* m_pContext;
-            OSQLParseNode* m_pParseTree;    // result from parsing
+            std::unique_ptr<OSQLParseNode> m_pParseTree;    // result from parsing
             Utf8String m_sFieldName;    // current field name for a predicate
             Utf8String m_sErrorMessage;// current error msg
 
@@ -122,9 +123,6 @@ namespace connectivity
             static RefCountedPtr< ::com::sun::star::i18n::XLocaleData>       s_xLocaleData;
             RefCountedPtr< ::com::sun::star::i18n::XLocaleData>               xDummy; // can be deleted after 627
 
-            // convert a string into double trim it to scale of _nscale and than transform it back to string
-            bool            extractDate(OSQLParseNode* pLiteral, double& _rfValue);
-            void            killThousandSeparator(OSQLParseNode* pLiteral);
 
         public:
             // if NULL, a default context will be used
@@ -133,14 +131,8 @@ namespace connectivity
             ~OSQLParser();
 
             // Parsing an SQLStatement
-            OSQLParseNode* parseTree(Utf8String& rErrorMessage,
-                                     Utf8String const& rStatement,
-                                     sal_Bool bInternational = sal_False);
+            std::unique_ptr<OSQLParseNode> parseTree(Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational = sal_False);
 
-            // Check a Predicate
-            OSQLParseNode* predicateTree(Utf8String& rErrorMessage, const Utf8String& rStatement,
-                                         const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
-                                         const RefCountedPtr< ::com::sun::star::beans::XPropertySet > & xField);
             OSQLScanner* GetScanner() { return m_scanner.get(); }
             // Access to the context
             const IParseContext& getContext() const { return *m_pContext; }

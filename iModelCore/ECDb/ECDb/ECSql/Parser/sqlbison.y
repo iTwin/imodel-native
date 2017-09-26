@@ -32,9 +32,6 @@
 #ifndef _CONNECTIVITY_SQLPARSE_HXX
 #include "SqlParse.h"
 #endif
-#ifndef _CONNECTIVITY_SQLINTERNALNODE_HXX
-#include "InternalNode.h"
-#endif
 #ifndef _CONNECTIVITY_SQLSCAN_HXX
 #include "SqlScan.h"
 #endif
@@ -2949,9 +2946,9 @@ OParseContext            OSQLParser::s_aDefaultContext;
 RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
-{
-    m_pParseTree = pNewParseTree;
-}
+    {
+    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    }
 //-----------------------------------------------------------------------------
 
 /** Delete all comments in a query.
@@ -3014,24 +3011,14 @@ static Utf8String delComment(Utf8String const& rQuery)
     }
     return aBuf;
 }
-
-OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
-                                     Utf8String const& rStatement,
-                                     sal_Bool bInternational)
-{
-    // delete comments before parsing
+//-----------------------------------------------------------------------------
+std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
-    // defines how to scan
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(rStatement.c_str(), m_pContext, sal_True));
-    m_scanner->SetRule(m_scanner->GetSQLRule()); // initial
-    //SQLyylval.pParseNode = NULL;
-    //    SQLyypvt = NULL;
     m_pParseTree = NULL;
     m_sErrorMessage = Utf8String();
-
-    // ... und den Parser anwerfen ...
     if (SQLyyparse(this) != 0)
-    {
+        {
         // only set the error message, if it's not already set
         if (!m_sErrorMessage.size())
             m_sErrorMessage = m_scanner->getErrorMessage();
@@ -3039,13 +3026,11 @@ OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
             m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
 
         rErrorMessage = m_sErrorMessage;
-        return NULL;
+        return nullptr;
+        }
+
+    return std::move(m_pParseTree);
     }
-    else
-    {
-        return m_pParseTree;
-    }
-}
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)
 {

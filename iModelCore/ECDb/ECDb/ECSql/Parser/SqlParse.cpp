@@ -22,7 +22,6 @@
 #include "ECDbPch.h"
 #include "ErrorCondition.h"
 #include "SqlNode.h"
-#include "InternalNode.h"
 //#define YYBISON      1
 //#ifndef BISON_INCLUDED
 //#define BISON_INCLUDED
@@ -52,15 +51,6 @@ extern int SQLyyparse(connectivity::OSQLParser*);
 namespace connectivity
     {
     // -----------------------------------------------------------------------------
-    void OSQLParser::killThousandSeparator(OSQLParseNode* pLiteral)
-        {
-        if (pLiteral)
-            {
-            ///affan for us its just one local right now . is decimal
-            pLiteral->m_aNodeValue.ReplaceAll(",", "");
-            }
-        }
-    // -----------------------------------------------------------------------------
     // -----------------------------------------------------------------------------
     sal_Int16 OSQLParser::buildPredicateRule(OSQLParseNode*& pAppend, OSQLParseNode* pLiteral, OSQLParseNode*& pCompare, OSQLParseNode* pLiteral2)
         {
@@ -86,51 +76,10 @@ namespace connectivity
         return nErg;
         }
 
-    //-----------------------------------------------------------------------------
-    OSQLParseNode* OSQLParser::predicateTree(Utf8String& rErrorMessage, const Utf8String& rStatement,
-                                             const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
-                                             const RefCountedPtr< XPropertySet > & xField)
-        {
-        // reset the parser
-        m_xField = xField;
-        m_xFormatter = xFormatter;
-        m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(rStatement.c_str(), m_pContext, sal_True));
-        if (m_xField.IsValid())
-            {
-            }
-        else
-            m_scanner->SetRule(m_scanner->GetSQLRule());
-        // SQLyylval->pParseNode = NULL;
-        //    SQLyypvt = NULL;
-        m_pParseTree = NULL;
-        m_sErrorMessage = Utf8String();
-        if (SQLyyparse(this) != 0)
-            {
-            m_sFieldName = Utf8String();
-            m_nFormatKey = 0;
-            m_nDateFormatKey = 0;
-
-            if (!m_sErrorMessage.size())
-                m_sErrorMessage = m_scanner->getErrorMessage();
-            if (!m_sErrorMessage.size())
-                m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
-
-            rErrorMessage = m_sErrorMessage;
-            return NULL;
-            }
-        else
-            {
-            OSL_ENSURE(m_pParseTree != NULL, "OSQLParser: Parser hat keinen ParseTree geliefert");
-            return m_pParseTree;
-            }
-        }
-
     //=============================================================================
     //-----------------------------------------------------------------------------
     OSQLParser::OSQLParser(const RefCountedPtr< ::com::sun::star::lang::XMultiServiceFactory >& _xServiceFactory, const IParseContext* _pContext)
         :m_pContext(_pContext)
-        , m_pParseTree(NULL)
-        //, m_pData(new OSQLParser_Data(_xServiceFactory))
         , m_nFormatKey(0)
         , m_nDateFormatKey(0)
         , m_xServiceFactory(_xServiceFactory)
@@ -285,17 +234,8 @@ namespace connectivity
     //-----------------------------------------------------------------------------
     OSQLParser::~OSQLParser()
         {
-        m_pParseTree = NULL;
+        }
 
-        }
-    // -----------------------------------------------------------------------------
-    bool OSQLParser::extractDate(OSQLParseNode* pLiteral, double& _rfValue)
-        {
-        //Affan: DateTime::FromString()
-        Utf8String sValue = pLiteral->getTokenValue();
-        DateTime dateTime;
-        return DateTime::FromString(dateTime, Utf8String(sValue).c_str()) == SUCCESS;
-        }
     //-----------------------------------------------------------------------------
     sal_Int32 OSQLParser::getFunctionReturnType(const Utf8String& _sFunctionName, const IParseContext* pContext)
         {

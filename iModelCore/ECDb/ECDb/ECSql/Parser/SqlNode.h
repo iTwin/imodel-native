@@ -242,7 +242,7 @@ namespace connectivity
             void insert(sal_uInt32 nPos, OSQLParseNode* pNewSubTree);
             OSQLParseNode* replace(OSQLParseNode* pOldSubTree, OSQLParseNode* pNewSubTree);
             OSQLParseNode* removeAt(sal_uInt32 nPos);
-            void detach();
+            OSQLParseNode* detach();
             bool parseNodeToExecutableStatement(Utf8String& _out_rString,
                                                 const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
                                                 OSQLParser& _rParser,

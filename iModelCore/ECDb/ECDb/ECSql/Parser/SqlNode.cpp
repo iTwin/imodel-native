@@ -25,8 +25,6 @@
 #include "ECDbPch.h"
 #include "ErrorCondition.h"
 #include "SqlNode.h"
-//#include <connectivity/sqlerror.hxx>
-#include "InternalNode.h"
 //#define YYBISON      1
 //#ifndef BISON_INCLUDED
 //#define BISON_INCLUDED
@@ -558,7 +556,7 @@ namespace connectivity
             m_container->erase(this);
         }
     //-----------------------------------------------------------------------------
-    void OSQLParseNode::detach()
+    OSQLParseNode* OSQLParseNode::detach()
         {
         if (m_pParent != nullptr)
             {
@@ -573,6 +571,8 @@ namespace connectivity
             m_container->erase(this);
             m_container = nullptr;
             }
+
+        return this;
         }
 
     //-----------------------------------------------------------------------------

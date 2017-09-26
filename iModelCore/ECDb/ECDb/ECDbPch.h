@@ -63,7 +63,6 @@
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"
 #include "ECSql/Parser/IParseContext.h"
-#include "ECSql/Parser/InternalNode.h"
 #include "ECSql/Parser/SqlParse.h"
 #include "ECSql/ECSqlParser.h"
 #include "ECSql/ClassRefExp.h"

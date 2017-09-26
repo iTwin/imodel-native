@@ -1,3 +1,4 @@
+#line 2 "E:\\BSW\\Bim0200Dev\\src\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 // 
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -53,12 +54,6 @@
 
 
 
-/* %not-for-header */
-/* %if-c-only */
-/* %if-not-reentrant */
-/* %endif */
-/* %endif */
-/* %ok-for-header */
 
 
 #define FLEX_SCANNER
@@ -81,10 +76,7 @@
 
 
 
-/* %if-c++-only */
-/* %endif */
 
-/* %if-c-only */
     #define yy_create_buffer SQLyy_create_buffer
 
     #define yy_delete_buffer SQLyy_delete_buffer
@@ -151,7 +143,6 @@
     
     #define yywrap SQLyywrap
 
-/* %endif */
 
 
     #define yyget_lval SQLyyget_lval
@@ -170,9 +161,7 @@
     #define yyfree SQLyyfree
 
 
-/* %if-c-only */
 
-/* %endif */
 
 
 
@@ -180,18 +169,13 @@
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
 /* begin standard C headers. */
-/* %if-c-only */
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-/* %endif */
 
-/* %if-tables-serialization */
-/* %endif */
 /* end standard C headers. */
 
-/* %if-c-or-c++ */
 /* flex integer type definitions */
 
 #ifndef FLEXINT_H
@@ -256,10 +240,7 @@ typedef unsigned int flex_uint32_t;
 
 #endif /* ! FLEXINT_H */
 
-/* %endif */
 
-/* %if-c++-only */
-/* %endif */
 
 /* TODO: this is always defined, so inline it */
 #define yyconst const
@@ -270,23 +251,18 @@ typedef unsigned int flex_uint32_t;
 #define yynoreturn
 #endif
 
-/* %not-for-header */
 /* Returned upon end-of-file. */
 #define YY_NULL 0
-/* %ok-for-header */
 
 
-/* %not-for-header */
 /* Promotes a possibly negative, possibly signed char to an
  *   integer in range [0..255] for use as an array index.
  */
 #define YY_SC_TO_UI(c) ((YY_CHAR) (c))
-/* %ok-for-header */
 
 
 
 
-/* %if-reentrant */
 
 /* An opaque pointer. */
 #ifndef YY_TYPEDEF_YY_SCANNER_T
@@ -323,12 +299,9 @@ typedef void* yyscan_t;
 
 
 
-/* %endif */
 
 
 
-/* %if-not-reentrant */
-/* %endif */
 
 
 
@@ -384,13 +357,7 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 typedef size_t yy_size_t;
 #endif
 
-/* %if-not-reentrant */
-/* %endif */
 
-/* %if-c-only */
-/* %if-not-reentrant */
-/* %endif */
-/* %endif */
 
 
 #define EOB_ACT_CONTINUE_SCAN 0
@@ -420,12 +387,8 @@ typedef size_t yy_size_t;
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
 	{
-/* %if-c-only */
 	FILE *yy_input_file;
-/* %endif */
 
-/* %if-c++-only */
-/* %endif */
 
 
 	char *yy_ch_buf;		/* input buffer */
@@ -488,13 +451,7 @@ struct yy_buffer_state
 	};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
-/* %if-c-only Standard (non-C++) definition */
-/* %not-for-header */
-/* %if-not-reentrant */
-/* %endif */
-/* %ok-for-header */
 
-/* %endif */
 
 
 /* We provide macros for accessing buffer states in case in the
@@ -512,13 +469,8 @@ struct yy_buffer_state
 #define YY_CURRENT_BUFFER_LVALUE yyg->yy_buffer_stack[yyg->yy_buffer_stack_top]
 
 
-/* %if-c-only Standard (non-C++) definition */
 
-/* %if-not-reentrant */
-/* %not-for-header */
-/* %ok-for-header */
 
-/* %endif */
 
 void SQLyyrestart ( FILE *input_file , yyscan_t yyscanner );
 void SQLyy_switch_to_buffer ( YY_BUFFER_STATE new_buffer , yyscan_t yyscanner );
@@ -539,7 +491,6 @@ YY_BUFFER_STATE SQLyy_scan_buffer ( char *base, yy_size_t size , yyscan_t yyscan
 YY_BUFFER_STATE SQLyy_scan_string ( const char *yy_str , yyscan_t yyscanner );
 YY_BUFFER_STATE SQLyy_scan_bytes ( const char *bytes, int len , yyscan_t yyscanner );
 
-/* %endif */
 
 void *SQLyyalloc ( yy_size_t , yyscan_t yyscanner );
 void *SQLyyrealloc ( void *, yy_size_t , yyscan_t yyscanner );
@@ -568,13 +519,10 @@ void SQLyyfree ( void * , yyscan_t yyscanner );
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
 
-/* %% [1.0] yytext/yyin/yyout/yy_state_type/yylineno etc. def's & init go here */
 /* Begin user sect3 */
 
 #define SQLyywrap(yyscanner) (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
-
-#define FLEX_DEBUG
 typedef flex_uint8_t YY_CHAR;
 
 
@@ -583,10 +531,8 @@ typedef int yy_state_type;
 #define yytext_ptr yytext_r
 
 
-/* %% [1.5] DFA */
 
 
-/* %if-c-only Standard (non-C++) definition */
 
 
 static yy_state_type yy_get_previous_state ( yyscan_t yyscanner );
@@ -595,7 +541,6 @@ static int yy_get_next_buffer ( yyscan_t yyscanner );
 static void yynoreturn yy_fatal_error ( const char* msg , yyscan_t yyscanner );
 
 
-/* %endif */
 
 
 /* Done after the current pattern has been matched and before the
@@ -603,13 +548,10 @@ static void yynoreturn yy_fatal_error ( const char* msg , yyscan_t yyscanner );
  */
 #define YY_DO_BEFORE_ACTION \
 	yyg->yytext_ptr = yy_bp; \
-/* %% [2.0] code to fiddle yytext and yyleng for yymore() goes here \ */\
 	yyleng = (int) (yy_cp - yy_bp); \
 	yyg->yy_hold_char = *yy_cp; \
 	*yy_cp = '\0'; \
-/* %% [3.0] code to copy yytext_ptr to yytext[] goes here, if %array \ */\
 	yyg->yy_c_buf_p = yy_cp;
-/* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
 #define YY_NUM_RULES 193
 #define YY_END_OF_BUFFER 194
 /* This struct is not used in this scanner,
@@ -2782,32 +2724,6 @@ static const flex_int16_t yy_chk[5686] =
      2563, 2563, 2563, 2563, 2563
     } ;
 
-static const flex_int16_t yy_rule_linenum[193] =
-    {   0,
-      121,  122,  123,  124,  125,  126,  127,  129,  131,  132,
-      133,  134,  135,  136,  138,  139,  140,  141,  142,  143,
-      144,  145,  146,  147,  148,  149,  150,  151,  152,  153,
-      154,  155,  157,  158,  159,  160,  161,  162,  163,  164,
-      166,  167,  168,  169,  170,  171,  172,  173,  174,  176,
-      177,  178,  179,  180,  181,  182,  183,  185,  186,  187,
-      189,  191,  192,  194,  195,  196,  197,  198,  199,  200,
-      201,  202,  204,  206,  207,  208,  209,  210,  211,  212,
-      213,  214,  216,  217,  218,  219,  220,  222,  223,  224,
-      225,  226,  227,  228,  229,  231,  232,  233,  234,  235,
-
-      236,  237,  238,  239,  241,  242,  243,  245,  246,  247,
-      248,  249,  250,  251,  252,  254,  255,  256,  257,  258,
-      259,  260,  262,  263,  264,  265,  266,  268,  269,  270,
-      271,  272,  273,  274,  276,  277,  278,  280,  281,  282,
-      283,  284,  285,  287,  290,  291,  292,  293,  294,  295,
-      296,  297,  300,  303,  305,  306,  308,  309,  310,  311,
-      312,  313,  314,  315,  316,  317,  318,  319,  320,  321,
-      322,  323,  324,  325,  326,  327,  328,  329,  331,  332,
-      333,  335,  336,  337,  338,  339,  340,  341,  342,  343,
-      344,  345
-
-    } ;
-
 /* The intent behind this definition is that it'll catch
  * any uses of REJECT which flex missed.
  */
@@ -2900,11 +2816,7 @@ static sal_Int32    parseString(yyscan_t yyscanner);
  * down here because we want the user's section 1 to have been scanned first.
  * The user has a chance to override it with an option.
  */
-/* %if-c-only */
 #include <unistd.h>
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 #endif
     
 
@@ -2916,8 +2828,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 
 
 
-/* %if-c-only Reentrant structure and macros (non-C++). */
-/* %if-reentrant */
 
 
 /* Holds the entire state of the reentrant scanner. */
@@ -2966,13 +2876,10 @@ struct yyguts_t
 
 
 
-/* %if-c-only */
 
 static int yy_init_globals ( yyscan_t yyscanner );
 
-/* %endif */
 
-/* %if-reentrant */
 
 
     
@@ -2988,9 +2895,7 @@ int SQLyylex_init (yyscan_t* scanner);
 
 int SQLyylex_init_extra ( YY_EXTRA_TYPE user_defined, yyscan_t* scanner);
 
-/* %endif */
 
-/* %endif End reentrant structures and macros. */
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
@@ -3059,7 +2964,6 @@ void SQLyyset_column ( int _column_no , yyscan_t yyscanner );
 
 
 
-/* %if-bison-bridge */
 
 YYSTYPE * SQLyyget_lval ( yyscan_t yyscanner );
 
@@ -3067,7 +2971,6 @@ YYSTYPE * SQLyyget_lval ( yyscan_t yyscanner );
 void SQLyyset_lval ( YYSTYPE * yylval_param , yyscan_t yyscanner );
 
 
-/* %endif */
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -3081,15 +2984,12 @@ extern int SQLyywrap ( yyscan_t yyscanner );
 #endif
 #endif
 
-/* %not-for-header */
 #ifndef YY_NO_UNPUT
     
     static void yyunput ( int c, char *buf_ptr  , yyscan_t yyscanner);
     
 #endif
-/* %ok-for-header */
 
-/* %endif */
 
 #ifndef yytext_ptr
 static void yy_flex_strncpy ( char *, const char *, int , yyscan_t yyscanner);
@@ -3100,26 +3000,20 @@ static int yy_flex_strlen ( const char * , yyscan_t yyscanner);
 #endif
 
 #ifndef YY_NO_INPUT
-/* %if-c-only Standard (non-C++) definition */
-/* %not-for-header */
 #ifdef __cplusplus
 static int yyinput ( yyscan_t yyscanner );
 #else
 static int input ( yyscan_t yyscanner );
 #endif
-/* %ok-for-header */
 
-/* %endif */
 #endif
 
 
-/* %if-c-only */
 
 
 
 
 
-/* %endif */
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
@@ -3134,14 +3028,10 @@ static int input ( yyscan_t yyscanner );
 
 /* Copy whatever the last rule matched to the standard output. */
 #ifndef ECHO
-/* %if-c-only Standard (non-C++) definition */
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
 #define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
-/* %endif */
-/* %if-c++-only C++ definition */
-/* %endif */
 #endif
 
 
@@ -3151,7 +3041,6 @@ static int input ( yyscan_t yyscanner );
  */
 #ifndef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
-/* %% [5.0] fread()/read() definition of YY_INPUT goes here unless we're doing C++ \ */\
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
@@ -3180,8 +3069,6 @@ static int input ( yyscan_t yyscanner );
 			} \
 		}\
 \
-/* %if-c++-only C++ definition \ */\
-/* %endif */
 
 #endif
 
@@ -3204,24 +3091,13 @@ static int input ( yyscan_t yyscanner );
 
 /* Report a fatal error. */
 #ifndef YY_FATAL_ERROR
-/* %if-c-only */
 #define YY_FATAL_ERROR(msg) yy_fatal_error( msg , yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 #endif
 
 
-/* %if-tables-serialization structures and prototypes */
-/* %not-for-header */
-/* %ok-for-header */
 
-/* %not-for-header */
-/* %tables-yydmap generated elements */
-/* %endif */
 /* end tables serialization structures and prototypes */
 
-/* %ok-for-header */
 
 
 /* Default declaration of generated scanner - a define so the user can
@@ -3229,7 +3105,6 @@ static int input ( yyscan_t yyscanner );
  */
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
-/* %if-c-only Standard (non-C++) definition */
 
 
 
@@ -3248,9 +3123,6 @@ extern int SQLyylex \
 
 #define YY_DECL int SQLyylex \
                (YYSTYPE * yylval_param , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only C++ definition */
-/* %endif */
 #endif /* !YY_DECL */
 
 
@@ -3270,12 +3142,10 @@ extern int SQLyylex \
 
 
 
-/* %% [6.0] YY_RULE_SETUP definition goes here */
 #define YY_RULE_SETUP \
 	YY_USER_ACTION
 
 
-/* %not-for-header */
 /** The main scanner function which does all the work.
  */
 YY_DECL
@@ -3307,18 +3177,10 @@ YY_DECL
 			yyg->yy_start = 1;	/* first start state */
 
 		if ( ! yyin )
-/* %if-c-only */
 			yyin = stdin;
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 
 		if ( ! yyout )
-/* %if-c-only */
 			yyout = stdout;
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 
 		if ( ! YY_CURRENT_BUFFER ) {
 			SQLyyensure_buffer_stack (yyscanner);
@@ -3330,13 +3192,11 @@ YY_DECL
 		}
 
 	{
-/* %% [7.0] user's declarations go here */
 
 
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
-/* %% [8.0] yymore()-related code goes here */
 		yy_cp = yyg->yy_c_buf_p;
 
 		/* Support of yytext. */
@@ -3347,7 +3207,6 @@ YY_DECL
 		 */
 		yy_bp = yy_cp;
 
-/* %% [9.0] code to set up and find next match goes here */
 		yy_current_state = yyg->yy_start;
 yy_match:
 		do
@@ -3372,36 +3231,17 @@ yy_match:
 		yy_current_state = yyg->yy_last_accepting_state;
 
 yy_find_action:
-/* %% [10.0] code to find the action number goes here */
 		yy_act = yy_accept[yy_current_state];
 
 		YY_DO_BEFORE_ACTION;
 
-/* %% [11.0] code for yylineno update goes here */
 
 
 do_action:	/* This label is used only to access EOF actions. */
 
-/* %% [12.0] debug code goes here */
-		if ( yy_flex_debug )
-			{
-			if ( yy_act == 0 )
-				fprintf( stderr, "--scanner backing up\n" );
-			else if ( yy_act < 193 )
-				fprintf( stderr, "--accepting rule at line %ld (\"%s\")\n",
-				         (long)yy_rule_linenum[yy_act], yytext );
-			else if ( yy_act == 193 )
-				fprintf( stderr, "--accepting default rule (\"%s\")\n",
-				         yytext );
-			else if ( yy_act == 194 )
-				fprintf( stderr, "--(end of buffer or a NUL)\n" );
-			else
-				fprintf( stderr, "--EOF (start condition %d)\n", YY_START );
-			}
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
-/* %% [13.0] actions go here */
 			case 0: /* must back up */
 			/* undo the effects of YY_DO_BEFORE_ACTION */
 			*yy_cp = yyg->yy_hold_char;
@@ -4183,11 +4023,7 @@ case YY_STATE_EOF(STRING):
 			 * back-up) that will match for the new input source.
 			 */
 			yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-/* %if-c-only */
 			YY_CURRENT_BUFFER_LVALUE->yy_input_file = yyin;
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
 			}
 
@@ -4229,7 +4065,6 @@ case YY_STATE_EOF(STRING):
 
 			else
 				{
-/* %% [14.0] code to do back-up for compressed tables and set up yy_cp goes here */
 				yy_cp = yyg->yy_last_accepting_cpos;
 				yy_current_state = yyg->yy_last_accepting_state;
 				goto yy_find_action;
@@ -4297,14 +4132,9 @@ case YY_STATE_EOF(STRING):
 		} /* end of scanning one token */
 	} /* end of user's declarations */
 } /* end of SQLyylex */
-/* %ok-for-header */
 
 
-/* %if-c++-only */
-/* %not-for-header */
-/* %ok-for-header */
 
-/* %endif */
 
 
 /* yy_get_next_buffer - try to read in a new buffer
@@ -4314,11 +4144,7 @@ case YY_STATE_EOF(STRING):
  *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
  *	EOB_ACT_END_OF_FILE - end of file
  */
-/* %if-c-only */
 static int yy_get_next_buffer (yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
@@ -4454,23 +4280,16 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
-/* %if-c-only */
-/* %not-for-header */
     static yy_state_type yy_get_previous_state (yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	yy_state_type yy_current_state;
 	char *yy_cp;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-/* %% [15.0] code to get the start state into yy_current_state goes here */
 	yy_current_state = yyg->yy_start;
 
 	for ( yy_cp = yyg->yytext_ptr + YY_MORE_ADJ; yy_cp < yyg->yy_c_buf_p; ++yy_cp )
 		{
-/* %% [16.0] code to find the next state goes here */
 		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
@@ -4495,15 +4314,10 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
  * synopsis
  *	next_state = yy_try_NUL_trans( current_state );
  */
-/* %if-c-only */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	int yy_is_jam;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner; /* This var may be unused depending upon options. */
-/* %% [17.0] code to find the next state, and perhaps do backing up, goes here */
 	char *yy_cp = yyg->yy_c_buf_p;
 
 	YY_CHAR yy_c = 1;
@@ -4527,12 +4341,8 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 
 #ifndef YY_NO_UNPUT
-/* %if-c-only */
 
     static void yyunput (int c, char * yy_bp , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	char *yy_cp;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -4565,19 +4375,15 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 	*--yy_cp = (char) c;
 
-/* %% [18.0] update yylineno here */
 
 
 	yyg->yytext_ptr = yy_bp;
 	yyg->yy_hold_char = *yy_cp;
 	yyg->yy_c_buf_p = yy_cp;
 }
-/* %if-c-only */
 
-/* %endif */
 #endif
 
-/* %if-c-only */
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
     static int yyinput (yyscan_t yyscanner)
@@ -4585,9 +4391,6 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
     static int input  (yyscan_t yyscanner)
 #endif
 
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	int c;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -4652,24 +4455,17 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	*yyg->yy_c_buf_p = '\0';	/* preserve yytext */
 	yyg->yy_hold_char = *++yyg->yy_c_buf_p;
 
-/* %% [19.0] update BOL and yylineno */
 
 	return c;
 }
-/* %if-c-only */
 #endif	/* ifndef YY_NO_INPUT */
-/* %endif */
 
 /** Immediately switch to a different input stream.
  * @param input_file A readable stream.
  * @param yyscanner The scanner object.
  * @note This function does not reset the start condition to @c INITIAL .
  */
-/* %if-c-only */
     void SQLyyrestart  (FILE * input_file , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -4683,18 +4479,12 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	SQLyy_load_buffer_state(yyscanner );
 }
 
-/* %if-c++-only */
-/* %endif */
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * @param yyscanner The scanner object.
  */
-/* %if-c-only */
     void SQLyy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -4727,20 +4517,12 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 }
 
 
-/* %if-c-only */
 static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
 	yyg->yytext_ptr = yyg->yy_c_buf_p = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
-/* %if-c-only */
 	yyin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 	yyg->yy_hold_char = *yyg->yy_c_buf_p;
 }
 
@@ -4750,11 +4532,7 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the allocated buffer state.
  */
-/* %if-c-only */
     YY_BUFFER_STATE SQLyy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	YY_BUFFER_STATE b;
     
@@ -4778,18 +4556,12 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
 	return b;
 }
 
-/* %if-c++-only */
-/* %endif */
 
 /** Destroy the buffer.
  * @param b a buffer created with SQLyy_create_buffer()
  * @param yyscanner The scanner object.
  */
-/* %if-c-only */
     void SQLyy_delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -4810,11 +4582,7 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
  * This function is sometimes called more than once on the same buffer,
  * such as during a SQLyyrestart() or at EOF.
  */
-/* %if-c-only */
     static void SQLyy_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 
 {
 	int oerrno = errno;
@@ -4822,11 +4590,7 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
 
 	SQLyy_flush_buffer(b ,yyscanner);
 
-/* %if-c-only */
 	b->yy_input_file = file;
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 	b->yy_fill_buffer = 1;
 
     /* If b is the current buffer, then SQLyy_init_buffer was _probably_
@@ -4838,15 +4602,11 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
         b->yy_bs_column = 0;
     }
 
-/* %if-c-only */
 
     
         b->yy_is_interactive = 0;
     
 
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 	errno = oerrno;
 }
 
@@ -4854,11 +4614,7 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * @param yyscanner The scanner object.
  */
-/* %if-c-only */
     void SQLyy_flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if ( ! b )
@@ -4882,18 +4638,13 @@ static void SQLyy_load_buffer_state  (yyscan_t yyscanner)
 		SQLyy_load_buffer_state(yyscanner );
 }
 
-/* %if-c-or-c++ */
 /** Pushes the new state onto the stack. The new state becomes
  *  the current state. This function will allocate the stack
  *  if necessary.
  *  @param new_buffer The new state.
  *  @param yyscanner The scanner object.
  */
-/* %if-c-only */
 void SQLyypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (new_buffer == NULL)
@@ -4919,19 +4670,13 @@ void SQLyypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 	SQLyy_load_buffer_state(yyscanner );
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
-/* %endif */
 
 
-/* %if-c-or-c++ */
 /** Removes and deletes the top of the stack, if present.
  *  The next element becomes the new top.
  *  @param yyscanner The scanner object.
  */
-/* %if-c-only */
 void SQLyypop_buffer_state (yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (!YY_CURRENT_BUFFER)
@@ -4947,18 +4692,12 @@ void SQLyypop_buffer_state (yyscan_t yyscanner)
 		yyg->yy_did_buffer_switch_on_eof = 1;
 	}
 }
-/* %endif */
 
 
-/* %if-c-or-c++ */
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-/* %if-c-only */
 static void SQLyyensure_buffer_stack (yyscan_t yyscanner)
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 {
 	yy_size_t num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -5002,13 +4741,11 @@ static void SQLyyensure_buffer_stack (yyscan_t yyscanner)
 		yyg->yy_buffer_stack_max = num_to_alloc;
 	}
 }
-/* %endif */
 
 
 
 
 
-/* %if-c-only */
 /** Setup the input buffer state to scan directly from a user-specified character buffer.
  * @param base the character buffer
  * @param size the size in bytes of the character buffer
@@ -5043,12 +4780,10 @@ YY_BUFFER_STATE SQLyy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yysc
 
 	return b;
 }
-/* %endif */
 
 
 
 
-/* %if-c-only */
 /** Setup the input buffer state to scan a string. The next call to SQLyylex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
@@ -5062,12 +4797,10 @@ YY_BUFFER_STATE SQLyy_scan_string (const char * yystr , yyscan_t yyscanner)
     
 	return SQLyy_scan_bytes(yystr,(int) strlen(yystr) ,yyscanner);
 }
-/* %endif */
 
 
 
 
-/* %if-c-only */
 /** Setup the input buffer state to scan the given bytes. The next call to SQLyylex() will
  * scan from a @e copy of @a bytes.
  * @param yybytes the byte buffer to scan
@@ -5104,7 +4837,6 @@ YY_BUFFER_STATE SQLyy_scan_bytes  (const char * yybytes, int  _yybytes_len , yys
 
 	return b;
 }
-/* %endif */
 
 
 
@@ -5120,7 +4852,6 @@ YY_BUFFER_STATE SQLyy_scan_bytes  (const char * yybytes, int  _yybytes_len , yys
 #define YY_EXIT_FAILURE 2
 #endif
 
-/* %if-c-only */
 static void yynoreturn yy_fatal_error (const char* msg , yyscan_t yyscanner)
 {
 	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -5128,9 +4859,6 @@ static void yynoreturn yy_fatal_error (const char* msg , yyscan_t yyscanner)
 	(void) fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
-/* %endif */
-/* %if-c++-only */
-/* %endif */
 
 /* Redefine yyless() so it works in section 3 code. */
 
@@ -5153,8 +4881,6 @@ static void yynoreturn yy_fatal_error (const char* msg , yyscan_t yyscanner)
 
 /* Accessor  methods (get/set functions) to struct members. */
 
-/* %if-c-only */
-/* %if-reentrant */
 
 /** Get the user-defined data for this scanner.
  * @param yyscanner The scanner object.
@@ -5165,7 +4891,6 @@ YY_EXTRA_TYPE SQLyyget_extra  (yyscan_t yyscanner)
     return yyextra;
 }
 
-/* %endif */
 
 
 /** Get the current line number.
@@ -5245,7 +4970,6 @@ char *SQLyyget_text  (yyscan_t yyscanner)
 }
 
 
-/* %if-reentrant */
 
 /** Set the user-defined data. This data is never touched by the scanner.
  * @param user_defined The data to be associated with this scanner.
@@ -5257,7 +4981,6 @@ void SQLyyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
     yyextra = user_defined ;
 }
 
-/* %endif */
 
 
 /** Set the current line number.
@@ -5336,12 +5059,9 @@ void SQLyyset_debug (int  _bdebug , yyscan_t yyscanner)
     yy_flex_debug = _bdebug ;
 }
 
-/* %endif */
 
-/* %if-reentrant */
 /* Accessor methods for yylval and yylloc */
 
-/* %if-bison-bridge */
 
 YYSTYPE * SQLyyget_lval  (yyscan_t yyscanner)
 {
@@ -5360,7 +5080,6 @@ void SQLyyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 
 
 
-/* %endif */
 
 
 /* User-visible API */
@@ -5424,9 +5143,7 @@ int SQLyylex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
     return yy_init_globals ( *ptr_yy_globals );
 }
 
-/* %endif if-c-only */
 
-/* %if-c-only */
 static int yy_init_globals (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -5466,10 +5183,8 @@ static int yy_init_globals (yyscan_t yyscanner)
      */
     return 0;
 }
-/* %endif */
 
 
-/* %if-c-only SNIP! this currently causes conflicts with the c++ scanner */
 /* SQLyylex_destroy is for both reentrant and non-reentrant scanners. */
 int SQLyylex_destroy  (yyscan_t yyscanner)
 {
@@ -5498,14 +5213,11 @@ int SQLyylex_destroy  (yyscan_t yyscanner)
      * SQLyylex() is called, initialization will occur. */
     yy_init_globals( yyscanner);
 
-/* %if-reentrant */
     /* Destroy the main struct (reentrant only). */
     SQLyyfree ( yyscanner , yyscanner );
     yyscanner = NULL;
-/* %endif */
     return 0;
 }
-/* %endif */
 
 
 
@@ -5576,15 +5288,11 @@ void SQLyyfree (void * ptr , yyscan_t yyscanner)
 }
 
 
-/* %if-tables-serialization definitions */
-/* %define-yytables   The name for this specific scanner's tables. */
 #define YYTABLES_NAME "yytables"
-/* %endif */
 
 
 
 
-/* %ok-for-header */
 
 
 
@@ -5895,7 +5603,7 @@ static bool IN_SQLyyerror;
 
 //------------------------------------------------------------------------------
 OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational)
-    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(0), m_sStatement(rNewStatement)
+    : m_nCurrentPos(0), m_bInternational(bInternational), m_pContext(pContext), yyscanner(nullptr), m_nRule(GetSQLRule()), m_sStatement(rNewStatement)
     {
     IN_SQLyyerror = false;
     yylex_init(&yyscanner);
@@ -5908,7 +5616,7 @@ OSQLScanner::OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sa
 //------------------------------------------------------------------------------
 OSQLScanner::~OSQLScanner()
     {
-    yylex_destroy(&yyscanner);
+    yylex_destroy(yyscanner);
     }
 
  //------------------------------------------------------------------------
