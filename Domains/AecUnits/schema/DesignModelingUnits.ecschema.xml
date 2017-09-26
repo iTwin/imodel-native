@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="DesignModelingUnits" alias="DMU" version="01.00.00" description="This contains the unit definitions that are use across Design Modeling Schemas" displayLabel="Design Modeling Units" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
-    <KindOfQuantity typeName="LENGTH_LONG" displayLabel="LENGTH_LONG" persistenceUnit="KM(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="LENGTH"      displayLabel="LENGTH"      persistenceUnit="M(DefaultReal)"  relativeError="0.00001"/>
+    <KindOfQuantity typeName="AREA"          displayLabel="Area"           persistenceUnit="SQ.M(DefaultReal)"   relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA_SMALL"    displayLabel="Small Area"     persistenceUnit="SQ.MM(DefaultReal)"  relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA_LARGE"    displayLabel="Large Area"     persistenceUnit="SQ.KM(DefaultReal)"  relativeError="0.01"/>
+    <KindOfQuantity typeName="LENGTH"        displayLabel="Length"         persistenceUnit="M(DefaultReal)"      relativeError="0.00001"/>
+    <KindOfQuantity typeName="LENGTH_LONG"   displayLabel="Long Length"    persistenceUnit="KM(DefaultReal)"     relativeError="0.0001"/>
+    <KindOfQuantity typeName="LENGTH_SHORT"  displayLabel="Short Length"   persistenceUnit="MM(DefaultReal)"     relativeError="0.01"/>
+    <KindOfQuantity typeName="VOLUME"        displayLabel="Volume"         persistenceUnit="CUB.M(DefaultReal)"  relativeError="0.0001"/>
+    <KindOfQuantity typeName="VOLUME_SMALL"  displayLabel="Small Volume"   persistenceUnit="CUB.MM(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VOLUME_LARGE"  displayLabel="Large Volume"   persistenceUnit="CUB.KM(DefaultReal)" relativeError="0.01"/>
 </ECSchema>
