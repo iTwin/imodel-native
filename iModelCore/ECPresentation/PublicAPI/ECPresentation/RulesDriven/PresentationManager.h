@@ -143,8 +143,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ContentOptions(Utf8CP rulesetId) : JsonCppAccessor() {SetRulesetId(rulesetId);}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
+        ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         //! @param[in] useCache Defines whether content caching is enabled
-        ContentOptions(Utf8CP rulesetId, bool useCache) : JsonCppAccessor() {SetRulesetId(rulesetId); SetUseCache(useCache);}
+        ContentOptions(Utf8CP rulesetId, bool useCache) : ContentOptions(rulesetId) {SetUseCache(useCache);}
         
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}

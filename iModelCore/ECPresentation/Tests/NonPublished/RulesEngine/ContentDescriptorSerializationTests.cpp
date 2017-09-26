@@ -59,31 +59,51 @@ ECDbTestProject* ContentDescriptorSerializationTests::s_project = nullptr;
 TEST_F(ContentDescriptorSerializationTests, ECPropertiesFieldWithSimplePrimitiveProperty)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass("TestSchema", "ClassA");
+    ContentDescriptor::ECPropertiesField field(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("String")));
+    rapidjson::Document actual = field.AsJson();
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("String"))));
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "Category": {
+            "Name": "",
+            "DisplayLabel": "",
+            "Description": "",
+            "Expand": false,
+            "Priority": 0
+        },
+        "Name": "ClassA_String",
+        "DisplayLabel": "String",
+        "Editor": "",
+        "Priority": 0,
+        "Type": {
+            "ValueFormat": "Primitive",
+            "TypeName": "string"
+            },
+        "IsReadOnly": false,
+        "Properties": [{
+            "Property": {
+                "BaseClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "ActualClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "Name": "String",
+                "Type": "string"
+                },
+            "RelatedClassPath": []
+            }]
+        })");
+    expected["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
 
-    rapidjson::Document doc = descriptor->AsJson();
-    ASSERT_TRUE(doc.HasMember("Fields"));
-    ASSERT_TRUE(doc["Fields"].IsArray());
-    ASSERT_EQ(1, doc["Fields"].GetArray().Size());
-    RapidJsonValueCR field = doc["Fields"][0];
-
-    EXPECT_STREQ("ClassA_String",field["Name"].GetString());
-    EXPECT_STREQ("String", field["DisplayLabel"].GetString());
-    EXPECT_STREQ("", field["Editor"].GetString());
-    EXPECT_EQ(0, field["Priority"].GetInt());
-    EXPECT_STREQ("string", field["Type"].GetString());
-    EXPECT_FALSE(field["IsReadOnly"].GetBool());
-
-    ASSERT_TRUE(field.HasMember("Properties"));
-    ASSERT_TRUE(field["Properties"].IsArray());
-    ASSERT_EQ(1, field["Properties"].GetArray().Size());
-    ASSERT_TRUE(field["Properties"][0].HasMember("Property"));
-    RapidJsonValueCR propertyJson = field["Properties"][0]["Property"];
-
-    EXPECT_STREQ("String", propertyJson["Name"].GetString());
-    EXPECT_STREQ("string", propertyJson["Type"].GetString());
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,39 +112,62 @@ TEST_F(ContentDescriptorSerializationTests, ECPropertiesFieldWithSimplePrimitive
 TEST_F(ContentDescriptorSerializationTests, ECPropertiesFieldWithEnumProperty)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass("TestSchema", "ClassA");
+    ContentDescriptor::ECPropertiesField field(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("EnumProperty")));
+    rapidjson::Document actual = field.AsJson();
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("EnumProperty"))));
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "Category": {
+            "Name": "",
+            "DisplayLabel": "",
+            "Description": "",
+            "Expand": false,
+            "Priority": 0
+        },
+        "Name": "ClassA_EnumProperty",
+        "DisplayLabel": "EnumProperty",
+        "Editor": "",
+        "Priority": 0,
+        "Type": {
+            "ValueFormat": "Primitive",
+            "TypeName": "enum"
+            },
+        "IsReadOnly": false,
+        "Properties": [{
+            "Property": {
+                "BaseClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "ActualClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "Name": "EnumProperty",
+                "Type": "enum",
+                "IsStrict": true,
+                "Choices": [{
+                    "Label": "A",
+                    "Value": 1
+                    },{
+                    "Label": "B",
+                    "Value": 2
+                    },{
+                    "Label": "C",
+                    "Value": 3
+                    }]
+                },
+            "RelatedClassPath": []
+            }]
+        })");
+    expected["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
 
-    rapidjson::Document doc = descriptor->AsJson();
-    ASSERT_TRUE(doc.HasMember("Fields"));
-    ASSERT_TRUE(doc["Fields"].IsArray());
-    ASSERT_EQ(1, doc["Fields"].GetArray().Size());
-    RapidJsonValueCR field = doc["Fields"][0];
-
-    EXPECT_STREQ("ClassA_EnumProperty", field["Name"].GetString());
-    EXPECT_STREQ("EnumProperty", field["DisplayLabel"].GetString());
-    EXPECT_STREQ("enum", field["Type"].GetString());
-
-    ASSERT_TRUE(field.HasMember("Properties"));
-    ASSERT_TRUE(field["Properties"].IsArray());
-    ASSERT_EQ(1, field["Properties"].GetArray().Size());
-    ASSERT_TRUE(field["Properties"][0].HasMember("Property"));
-    RapidJsonValueCR propertyJson = field["Properties"][0]["Property"];
-
-    EXPECT_STREQ("EnumProperty", propertyJson["Name"].GetString());
-    EXPECT_STREQ("enum", propertyJson["Type"].GetString());
-    EXPECT_TRUE(propertyJson["IsStrict"].GetBool());
-
-    ASSERT_TRUE(propertyJson["Choices"].IsArray());
-    ASSERT_EQ(3, propertyJson["Choices"].GetArray().Size());
-    RapidJsonValueCR choices = propertyJson["Choices"];
-    EXPECT_STREQ("A", choices[0]["Label"].GetString());
-    EXPECT_STREQ("B", choices[1]["Label"].GetString());
-    EXPECT_STREQ("C", choices[2]["Label"].GetString());
-    EXPECT_EQ(1, choices[0]["Value"].GetInt());
-    EXPECT_EQ(2, choices[1]["Value"].GetInt());
-    EXPECT_EQ(3, choices[2]["Value"].GetInt());
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,39 +176,56 @@ TEST_F(ContentDescriptorSerializationTests, ECPropertiesFieldWithEnumProperty)
 TEST_F(ContentDescriptorSerializationTests, ECPropertiesFieldWithKOQProperty)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass("TestSchema", "ClassA");
+    ContentDescriptor::ECPropertiesField field(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("KOQProperty")));
+    rapidjson::Document actual = field.AsJson();
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(*classA, ContentDescriptor::Property("this", *classA, *classA->GetPropertyP("KOQProperty"))));
+    rapidjson::Document expected;
+    expected.Parse(R"*({
+        "Category": {
+            "Name": "",
+            "DisplayLabel": "",
+            "Description": "",
+            "Expand": false,
+            "Priority": 0
+            },
+        "Name": "ClassA_KOQProperty",
+        "DisplayLabel": "KOQProperty",
+        "Editor": "",
+        "Priority": 0,
+        "Type": {
+            "ValueFormat": "Primitive",
+            "TypeName": "int"
+            },
+        "IsReadOnly": false,
+        "Properties": [{
+            "Property": {
+                "BaseClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "ActualClassInfo": {
+                    "Id": "",
+                    "Name": "TestSchema:ClassA",
+                    "Label": "ClassA"
+                },
+                "Name": "KOQProperty",
+                "Type": "int",
+                "KindOfQuantity": {
+                    "Name": "TestSchema:TestKOQ",
+                    "DisplayLabel": "Test",
+                    "PersistenceUnit": "MM(real)",
+                    "CurrentUnit": "MM(real)",
+                    "PresentationUnits": ["MM(real)", "CM(real)"]
+                    }
+                },
+            "RelatedClassPath": []
+            }]
+        })*");
+    expected["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(classA->GetId().ToString().c_str(), expected.GetAllocator());
 
-    rapidjson::Document doc = descriptor->AsJson();
-    ASSERT_TRUE(doc.HasMember("Fields"));
-    ASSERT_TRUE(doc["Fields"].IsArray());
-    ASSERT_EQ(1, doc["Fields"].GetArray().Size());
-    RapidJsonValueCR field = doc["Fields"][0];
-
-    EXPECT_STREQ("ClassA_KOQProperty",field["Name"].GetString());
-    EXPECT_STREQ("KOQProperty", field["DisplayLabel"].GetString());
-    EXPECT_STREQ("int", field["Type"].GetString());
-
-    ASSERT_TRUE(field.HasMember("Properties"));
-    ASSERT_TRUE(field["Properties"].IsArray());
-    ASSERT_EQ(1, field["Properties"].GetArray().Size());
-    ASSERT_TRUE(field["Properties"][0].HasMember("Property"));
-    RapidJsonValueCR propertyJson = field["Properties"][0]["Property"];
-
-    EXPECT_STREQ("KOQProperty", propertyJson["Name"].GetString());
-    EXPECT_STREQ("int", propertyJson["Type"].GetString());
-
-    ASSERT_TRUE(propertyJson.HasMember("KindOfQuantity"));
-    RapidJsonValueCR koq = propertyJson["KindOfQuantity"];
-    EXPECT_STREQ("TestSchema:TestKOQ", koq["Name"].GetString());
-    EXPECT_STREQ("Test", koq["DisplayLabel"].GetString());
-    EXPECT_STREQ("MM(real)", koq["PersistenceUnit"].GetString());
-    EXPECT_STREQ("MM(real)", koq["CurrentUnit"].GetString());
-
-    ASSERT_TRUE(koq["PresentationUnits"].IsArray());
-    ASSERT_EQ(2, koq["PresentationUnits"].GetArray().Size());
-    RapidJsonValueCR units = koq["PresentationUnits"];
-    EXPECT_STREQ("MM(real)", units[0].GetString());
-    EXPECT_STREQ("CM(real)", units[1].GetString());
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
     }

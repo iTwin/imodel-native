@@ -13,9 +13,13 @@
 #include "TestHelpers.h"
 #include "TestLocalizationProvider.h"
 
+BEGIN_ECPRESENTATIONTESTS_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
+
+#define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(ExpectedQueries, name, schema_xml)
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
@@ -130,3 +134,5 @@ struct ContentQueryBuilderTests : ::testing::Test
     ECClassCP GetECClass(Utf8CP className);
     ContentQueryCPtr GetExpectedQuery();
     };
+
+END_ECPRESENTATIONTESTS_NAMESPACE

@@ -551,7 +551,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     {
-    ContentDescriptorCR descriptor = m_query->GetContract()->GetDescriptor();
+    ContentQueryContractCPtr contract = m_query->GetContract();
+    ContentDescriptorCR descriptor = contract->GetDescriptor();
     bool resultsMerged = (0 != ((int)ContentFlags::MergeResults & descriptor.GetContentFlags()));
     int columnIndex = 0;
     uint64_t contractId = 0;
@@ -601,6 +602,9 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             else if (field->IsPropertiesField())
                 {
                 ContentDescriptor::ECPropertiesField const& propertiesField = *field->AsPropertiesField();
+                if (contract->ShouldSkipCompositePropertyFields() && propertiesField.IsCompositePropertiesField())
+                    continue; // do not increase columnIndex if we didn't use the field
+
                 ContentDescriptor::Property const* matchingProperty = nullptr;
                 if (resultsMerged)
                     {
@@ -650,6 +654,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId, 
         values.GetValues(), values.GetDisplayValues(), values.GetMergedFieldNames(), fieldValueInstanceKeyReader.GetKeys());
     record->SetClass(recordClass);
+    ContentSetItemExtendedData(*record).SetContractId(contractId);
 
     m_records.push_back(record);
     }

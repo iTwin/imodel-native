@@ -156,39 +156,64 @@ enum class ContentRequest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int GetSerializationFlags(bool isMerged, bool isNested, ContentRequest req)
+static int GetSerializationFlags(bool isRelated, bool isMerged, bool isNested, ContentRequest req)
     {
+    if (!isRelated)
+        {
+        switch (req)
+            {
+            case ContentRequest::Values: return ContentSetItem::SERIALIZE_Values;
+            case ContentRequest::DisplayValues: return ContentSetItem::SERIALIZE_DisplayValues;
+            default: BeAssert(false); return ContentSetItem::SERIALIZE_All;
+            }
+        }
+
     if (isMerged || !isNested)
         return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues;
-
     if (ContentRequest::Values == req)
         return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values;
     if (ContentRequest::DisplayValues == req)
         return ContentSetItem::SERIALIZE_DisplayValues;
-
+    
     BeAssert(false);
-    return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues;
+    return ContentSetItem::SERIALIZE_All;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document GetNestedContent(ContentProviderCR provider, int serializationflags, rapidjson::Document::AllocatorType* allocator = nullptr)
+static rapidjson::Document GetNestedContent(NestedContentProviderCR provider, ContentRequest req, 
+    bool isMergedContent, bool isNestedContent, bool isRelatedContent, rapidjson::Document::AllocatorType* allocator = nullptr)
     {
+    int serializationFlags = GetSerializationFlags(isRelatedContent, isMergedContent, isNestedContent, req);
+
     rapidjson::Document json(allocator);
     json.SetArray();
+
     size_t index = 0;
     ContentSetItemPtr item;
     while (provider.GetContentSetItem(item, index++))
-        json.PushBack(item->AsJson(serializationflags, &json.GetAllocator()), json.GetAllocator());
+        {
+        rapidjson::Document itemJson = item->AsJson(serializationFlags, &json.GetAllocator());
+        if (!isRelatedContent && ContentRequest::Values == req)
+            json.CopyFrom(itemJson["Values"][provider.GetContentField().GetName().c_str()], json.GetAllocator());
+        else if (!isRelatedContent && ContentRequest::DisplayValues == req)
+            json.CopyFrom(itemJson["DisplayValues"][provider.GetContentField().GetName().c_str()], json.GetAllocator());
+        else
+            json.PushBack(itemJson, json.GetAllocator());
+        }
+
     return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool AreContentValuesEqual(RapidJsonValueCR lhs, RapidJsonValueCR rhs)
+static bool AreContentValuesEqual(RapidJsonValueCR lhs, RapidJsonValueCR rhs, bool isRelatedContent)
     {
+    if (!isRelatedContent)
+        return lhs == rhs;
+
     BeAssert(lhs.IsArray() && rhs.IsArray());
     if (lhs.Size() != rhs.Size())
         return false;
@@ -226,23 +251,120 @@ static void MergePrimaryKeys(RapidJsonValueR target, RapidJsonValueCR source, ra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NestedContentProviderPtr ContentProvider::GetNestedContentProvider(ContentDescriptor::NestedContentField const& field) const
+NestedContentProviderPtr ContentProvider::GetNestedContentProvider(ContentDescriptor::NestedContentField const& field, bool cacheable) const
     {
-    auto iter = m_nestedContentProviders.find(&field);
-    if (m_nestedContentProviders.end() == iter)
+    if (cacheable)
         {
-        ContentProviderContextPtr context = ContentProviderContext::Create(GetContext());
-        context->SetIsNestedContent(true);
-        NestedContentProviderPtr provider = NestedContentProvider::Create(*context, field);
-        iter = m_nestedContentProviders.Insert(&field, provider).first;
+        auto iter = m_nestedContentProviders.find(&field);
+        if (m_nestedContentProviders.end() != iter)
+            return iter->second;
         }
-    return iter->second;
+
+    ContentProviderContextPtr context = ContentProviderContext::Create(GetContext());
+    context->SetIsNestedContent(true);
+    NestedContentProviderPtr provider = NestedContentProvider::Create(*context, field);
+    if (cacheable)
+        m_nestedContentProviders.Insert(&field, provider);
+    return provider;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentDescriptor::NestedContentField const& field, bool cacheable) const
+    {
+    ContentDescriptorCR descriptor = *GetContentDescriptor();
+    Utf8CP fieldName = field.GetName().c_str();
+    bool isRelatedContent = !field.GetRelationshipPath().empty();
+    NestedContentProviderPtr provider = GetNestedContentProvider(field, cacheable);
+    if (descriptor.MergeResults())
+        {
+        // if records are merged, have to query nested content for each merged record individually 
+        // and merge them one after one
+        rapidjson::Document content;
+        for (ECInstanceKeyCR key : item.GetKeys())
+            {
+            provider->SetPrimaryInstanceKey(key);
+            rapidjson::Document instanceContent = GetNestedContent(*provider, ContentRequest::Values, true, GetContext().IsNestedContent(), isRelatedContent);
+            if (content.IsNull())
+                {
+                // first pass - save the instance content
+                content = std::move(instanceContent);
+                }
+            else if (AreContentValuesEqual(content, instanceContent, isRelatedContent))
+                {
+                if (isRelatedContent)
+                    {
+                    // values are equal - merge PrimaryKeys arrays (only for related fields)
+                    MergePrimaryKeys(content, instanceContent, content.GetAllocator());
+                    }
+                }
+            else
+                {
+                // values are different - set the "varies" string
+                Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
+                Utf8String prelocalizedLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
+                Utf8String localizedLabel = prelocalizedLabel;
+                LocalizationHelper(GetContext().GetLocalizationProvider()).LocalizeString(localizedLabel);
+                content.SetString(localizedLabel.c_str(), content.GetAllocator());
+                item.GetMergedFieldNames().push_back(fieldName);
+                break;
+                }
+            }
+        item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), 
+            rapidjson::Value(content, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
+        item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), 
+            rapidjson::Value(content, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
+        }
+    else
+        {
+        // if not merging, can query nested content without any additional work afterwards
+        provider->SetPrimaryInstanceKeys(item.GetKeys());
+        item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), 
+            GetNestedContent(*provider, ContentRequest::Values, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetValues().GetAllocator()), 
+            item.GetValues().GetAllocator());
+        item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), 
+            GetNestedContent(*provider, ContentRequest::DisplayValues, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetDisplayValues().GetAllocator()), 
+            item.GetDisplayValues().GetAllocator());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, ContentDescriptor::ECPropertiesField const& field) const
+    {
+    BeAssert(field.IsCompositePropertiesField());
+
+    // find the field property that's appropriate for this item
+    uint64_t contractId = ContentSetItemExtendedData(item).GetContractId();
+    ContentQueryContract const* contract = _GetQuery()->GetContract(contractId);
+    if (nullptr == contract)
+        {
+        BeAssert(false);
+        return;
+        }
+    ContentDescriptor::Property const* matchingProperty = contract->FindMatchingProperty(field, item.GetClass());
+    if (nullptr == matchingProperty)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    // create a nested content provider for it
+    ContentDescriptor::ECPropertiesField* nestedField = new ContentDescriptor::ECPropertiesField(*item.GetClass(), *matchingProperty);
+    nestedField->SetName(field.GetName());
+    ContentDescriptor::NestedContentField nestingField(field.GetCategory(), field.GetName(), field.GetLabel(),
+        *item.GetClass(), "this", RelatedClassPath(), {nestedField}, field.GetPriority());
+
+    // get the nested content
+    return LoadNestedContentFieldValue(item, nestingField, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProvider::LoadNestedContentFieldValues(ContentSetItemR item) const
+void ContentProvider::LoadNestedContent(ContentSetItemR item) const
     {
     ContentDescriptorCP descriptor = GetContentDescriptor();
     if (nullptr == descriptor)
@@ -250,60 +372,10 @@ void ContentProvider::LoadNestedContentFieldValues(ContentSetItemR item) const
 
     for (ContentDescriptor::Field const* field : descriptor->GetAllFields())
         {
-        if (!field->IsNestedContentField())
-            continue;
-        
-        Utf8CP fieldName = field->GetName().c_str();
-        NestedContentProviderPtr provider = GetNestedContentProvider(*field->AsNestedContentField());
-        if (descriptor->MergeResults())
-            {
-            // if records are merged, have to query nested content for each merged record individually 
-            // and merge them one after one
-            rapidjson::Document content;
-            for (ECInstanceKeyCR key : item.GetKeys())
-                {
-                provider->SetPrimaryInstanceKey(key);
-                rapidjson::Document instanceContent = GetNestedContent(*provider, 
-                    GetSerializationFlags(true, GetContext().IsNestedContent(), ContentRequest::Values));
-                if (content.IsNull())
-                    {
-                    // first pass - save the instance content
-                    content = std::move(instanceContent);
-                    }
-                else if (AreContentValuesEqual(content, instanceContent))
-                    {
-                    // values are equal - merge PrimaryKeys arrays
-                    MergePrimaryKeys(content, instanceContent, content.GetAllocator());
-                    }
-                else
-                    {
-                    // values are different - set the "varies" string
-                    Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
-                    Utf8String prelocalizedLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
-                    Utf8String localizedLabel = prelocalizedLabel;
-                    LocalizationHelper(GetContext().GetLocalizationProvider()).LocalizeString(localizedLabel);
-                    content.Clear();
-                    content.SetString(localizedLabel.c_str(), content.GetAllocator());
-                    item.GetMergedFieldNames().push_back(fieldName);
-                    break;
-                    }
-                }
-            item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), 
-                rapidjson::Value(content, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
-            item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), 
-                rapidjson::Value(content, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
-            }
-        else
-            {
-            // if not merging, can query nested content without any additional work afterwards
-            provider->SetPrimaryInstanceKeys(item.GetKeys());
-            item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), 
-                GetNestedContent(*provider, GetSerializationFlags(false, GetContext().IsNestedContent(), ContentRequest::Values), &item.GetValues().GetAllocator()), 
-                item.GetValues().GetAllocator());
-            item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), 
-                GetNestedContent(*provider, GetSerializationFlags(false, GetContext().IsNestedContent(), ContentRequest::DisplayValues), &item.GetDisplayValues().GetAllocator()), 
-                item.GetDisplayValues().GetAllocator());
-            }
+        if (field->IsNestedContentField())
+            LoadNestedContentFieldValue(item, *field->AsNestedContentField(), true);
+        else if (field->IsPropertiesField() && field->AsPropertiesField()->IsCompositePropertiesField() && !item.GetValues().HasMember(field->GetName().c_str()))
+            LoadCompositePropertiesFieldValue(item, *field->AsPropertiesField());
         }
     }
 
@@ -663,7 +735,7 @@ void ContentProvider::Initialize()
     ContentSetItemPtr item;
     while ((item = m_executor.GetRecord(index++)).IsValid())
         {
-        LoadNestedContentFieldValues(*item);
+        LoadNestedContent(*item);
         m_records.push_back(item);
         }
     }
@@ -796,12 +868,12 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
 
     if (m_adjustedQuery.IsNull())
         {
+        Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
         ContentQueryPtr query = m_query->Clone();
-        Utf8StringCR primaryInstanceClassAlias = m_field.GetRelationshipPath().front().GetTargetClassAlias();
         if (m_primaryInstanceKeys.size() > 100)
             {
             Utf8String whereClause("InVirtualSet(?, [");
-            whereClause.append(primaryInstanceClassAlias).append("].[ECInstanceId])");
+            whereClause.append(idFieldAlias).append("].[ECInstanceId])");
             QueryBuilderHelpers::Where(query, whereClause.c_str(), {new BoundQueryIdSet(m_primaryInstanceKeys)});
             }
         else
@@ -810,7 +882,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             for (size_t i = 1; i < m_primaryInstanceKeys.size(); i += 2)
                 idsArg[i] = ',';
             Utf8String whereClause;
-            whereClause.append("[").append(primaryInstanceClassAlias).append("].[ECInstanceId] IN (");
+            whereClause.append("[").append(idFieldAlias).append("].[ECInstanceId] IN (");
             whereClause.append(idsArg).append(")");
             bvector<BoundQueryValue const*> boundIds;
             for (ECInstanceKeyCR key : m_primaryInstanceKeys)

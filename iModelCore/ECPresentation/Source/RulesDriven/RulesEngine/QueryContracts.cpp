@@ -842,8 +842,8 @@ Utf8CP ContentQueryContract::DisplayLabelFieldName = "DisplayLabel";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
-    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo)
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bool skipCompositePropertyFields)
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo), m_skipCompositePropertyFields(skipCompositePropertyFields)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
@@ -1092,18 +1092,21 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             else if (descriptorField->IsPropertiesField())
                 {
                 ContentDescriptor::ECPropertiesField const& propertiesField = *descriptorField->AsPropertiesField();
-                ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, m_class);
-                if (nullptr != fieldPropertyForThisContract)
+                if (!m_skipCompositePropertyFields || !propertiesField.IsCompositePropertiesField())
                     {
-                    Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
-                    ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
-                    contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), 
-                        fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
-                    }
-                else
-                    {
-                    ECPropertyCR ecProperty = propertiesField.GetProperties().front().GetProperty();
-                    contractField = CreateNullPropertySelectField(propertiesField.GetName().c_str(), ecProperty);
+                    ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, m_class);
+                    if (nullptr != fieldPropertyForThisContract)
+                        {
+                        Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
+                        ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
+                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(),
+                            fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
+                        }
+                    else
+                        {
+                        ECPropertyCR ecProperty = propertiesField.GetProperties().front().GetProperty();
+                        contractField = CreateNullPropertySelectField(propertiesField.GetName().c_str(), ecProperty);
+                        }
                     }
                 }
             else if (descriptorField->IsCalculatedPropertyField())

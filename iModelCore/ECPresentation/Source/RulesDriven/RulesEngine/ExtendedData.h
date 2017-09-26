@@ -49,6 +49,7 @@ struct ItemExtendedData : RapidJsonAccessor
     void SetCheckboxBoundPropertyInversed(bool value) {AddMember(ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed, rapidjson::Value(value));}
 };
 
+#define CONTENTSETITEM_EXTENDEDDATA_ContractId                  "ContractId"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -60,6 +61,10 @@ struct ContentSetItemExtendedData : ItemExtendedData
     ContentSetItemExtendedData(ContentSetItemExtendedData const& other) : ItemExtendedData(other) {}
     ContentSetItemExtendedData(ContentSetItemR item) : ItemExtendedData(item) {}
     ContentSetItemExtendedData(ContentSetItemCR item) : ItemExtendedData(item) {}
+    
+    bool HasContractId() const {return GetJson().HasMember(CONTENTSETITEM_EXTENDEDDATA_ContractId);}
+    uint64_t GetContractId() const {return GetJson()[CONTENTSETITEM_EXTENDEDDATA_ContractId].GetUint64();}
+    void SetContractId(uint64_t id) {AddMember(CONTENTSETITEM_EXTENDEDDATA_ContractId, rapidjson::Value(id));}
 };
 
 #define NAVNODE_EXTENDEDDATA_SpecificationId                    "SpecificationId"

@@ -8,8 +8,9 @@
 #include "ECPresentationTest.h"
 #include <ECPresentation/RulesDriven/UserSettings.h>
 
+BEGIN_ECPRESENTATIONTESTS_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
-USING_NAMESPACE_ECPRESENTATIONTESTS
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2017
@@ -47,3 +48,5 @@ protected:
         return iter->second;
         }
 };
+
+END_ECPRESENTATIONTESTS_NAMESPACE

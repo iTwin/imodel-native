@@ -17,7 +17,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithSingleStepRelationshipP
     ECRelationshipClassCP rel = GetECClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
     ContentDescriptor::Category category("name", "label", "", 1);
-    ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *sprocketClass, 
+    ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *sprocketClass, "sprocket", 
         {RelatedClass(*sprocketClass, *gadgetClass, *rel, false, "primary_instance", "rel")}, 
         {
         new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
@@ -51,7 +51,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithMultiStepRelationshipPa
         RelatedClass(*gadgetClass, *widgetClass, *relWG, false, "primary_instance", "rel_wg")
         };
     ContentDescriptor::NestedContentField field(category, "field_name", "field_label", 
-        *sprocketClass, path,
+        *sprocketClass, "sprocket", path,
         {
         new ContentDescriptor::ECPropertiesField(*widgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
         new ContentDescriptor::ECPropertiesField(*widgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
@@ -81,13 +81,13 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithNestedContentFields)
     ContentDescriptor::Category category("name", "label", "", 1);
 
     ContentDescriptor::NestedContentField field(category, "gadget_field_name", "gadget_field_label", 
-        *gadgetClass, 
+        *gadgetClass, "gadget",
         {RelatedClass(*gadgetClass, *widgetClass, *relWG, false, "widget_instance", "rel_wg")},
         {
         new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("MyID"))),
         new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("Description"))),
         new ContentDescriptor::NestedContentField(category, "sprocket_field_name", "sprocket_field_label", 
-            *sprocketClass, 
+            *sprocketClass, "sprocket",
             {RelatedClass(*sprocketClass, *gadgetClass, *relGS, false, "gadget_instance", "rel_gs")},
             {
             new ContentDescriptor::ECPropertiesField(*sprocketClass, ContentDescriptor::Property("sprocket_instance", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),

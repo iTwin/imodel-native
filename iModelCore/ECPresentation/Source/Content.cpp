@@ -16,6 +16,113 @@ const Utf8CP ContentDisplayType::Grid = "Grid";
 const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
 const Utf8CP ContentDisplayType::Graphics = "Graphics";
 
+static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR);
+
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+rapidjson::Document ContentDescriptor::Field::TypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("TypeName", rapidjson::Value(m_typeName.c_str(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct PrimitiveTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Primitive", json.GetAllocator());
+        return json;
+        }
+public:
+    PrimitiveTypeDescription(Utf8String type) : TypeDescription(type) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct ArrayTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ContentDescriptor::Field::TypeDescriptionPtr m_memberType;
+private:
+    static Utf8String CreateTypeName(TypeDescription const& memberType)
+        {
+        Utf8String typeName = memberType.GetTypeName();
+        typeName.append("[]");
+        return typeName;
+        }
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Array", json.GetAllocator());
+        json.AddMember("MemberType", m_memberType->AsJson(&json.GetAllocator()), json.GetAllocator());
+        return json;
+        }
+public:
+    ArrayTypeDescription(TypeDescription& memberType) : TypeDescription(CreateTypeName(memberType)), m_memberType(&memberType) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct StructTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ECStructClassCR m_struct;
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
+        rapidjson::Value members(rapidjson::kArrayType);
+        for (ECPropertyCP prop : m_struct.GetProperties())
+            {
+            rapidjson::Value member(rapidjson::kObjectType);
+            member.AddMember("Name", rapidjson::StringRef(prop->GetName().c_str()), json.GetAllocator());
+            member.AddMember("Label", rapidjson::StringRef(prop->GetDisplayLabel().c_str()), json.GetAllocator());
+            member.AddMember("Type", CreateTypeDescription(*prop)->AsJson(&json.GetAllocator()), json.GetAllocator());
+            members.PushBack(member, json.GetAllocator());
+            }
+        json.AddMember("Members", members, json.GetAllocator());
+        return json;
+        }
+public:
+    StructTypeDescription(ECStructClassCR structClass) : TypeDescription(structClass.GetName()), m_struct(structClass) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct NestedContentTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ContentDescriptor::NestedContentField const& m_field;
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
+        rapidjson::Value members(rapidjson::kArrayType);
+        for (ContentDescriptor::Field const* nestedField : m_field.GetFields())
+            {
+            rapidjson::Value member(rapidjson::kObjectType);
+            member.AddMember("Name", rapidjson::StringRef(nestedField->GetName().c_str()), json.GetAllocator());
+            member.AddMember("Label", rapidjson::StringRef(nestedField->GetLabel().c_str()), json.GetAllocator());
+            member.AddMember("Type", nestedField->GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
+            members.PushBack(member, json.GetAllocator());
+            }
+        json.AddMember("Members", members, json.GetAllocator());
+        return json;
+        }
+public:
+    NestedContentTypeDescription(ContentDescriptor::NestedContentField const& field) : TypeDescription(field.GetContentClass().GetDisplayLabel()), m_field(field) {}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -489,6 +596,16 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTypeDescription() const
+    {
+    if (m_type.IsNull())
+        m_type = _CreateTypeDescription();
+    return *m_type;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
@@ -498,11 +615,70 @@ rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAlloc
     json.AddMember("Category", GetCategory().AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Type", rapidjson::Value(_GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Type", GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember("IsReadOnly", _IsReadOnly(), json.GetAllocator());
     json.AddMember("Priority", _GetPriority(), json.GetAllocator());
     json.AddMember("Editor", rapidjson::Value(GetEditor().c_str(), json.GetAllocator()), json.GetAllocator());
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::DisplayLabelField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("string");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedPropertyField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("string");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR prop) 
+    {
+    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
+        return new PrimitiveTypeDescription("enum");
+
+    if (prop.GetIsNavigation())
+        return new PrimitiveTypeDescription("navigation");
+    
+    if (prop.GetIsPrimitiveArray())
+        return new ArrayTypeDescription(*new PrimitiveTypeDescription(prop.GetTypeName()));
+
+    if (prop.GetIsStructArray())
+        return new ArrayTypeDescription(*new StructTypeDescription(prop.GetAsStructArrayProperty()->GetStructElementType()));
+
+    if (prop.GetIsStruct())
+        return new StructTypeDescription(prop.GetAsStructProperty()->GetType());
+
+    return new PrimitiveTypeDescription(prop.GetTypeName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::_CreateTypeDescription() const
+    {
+    return CreateTypeDescription(m_properties.front().GetProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECPropertiesField::IsCompositePropertiesField() const
+    {
+    if (m_properties.empty())
+        return false;
+
+    ECPropertyCR prop = m_properties.front().GetProperty();
+    return prop.GetIsStruct() || prop.GetIsArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -551,21 +727,6 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
         return true;
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContentDescriptor::ECPropertiesField::_GetTypeName() const
-    {
-    ECPropertyCR prop = m_properties.front().GetProperty();
-    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
-        return "enum";
-
-    if (prop.GetIsNavigation())
-        return "navigation";
-
-    return prop.GetTypeName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -622,6 +783,14 @@ int ContentDescriptor::ECPropertiesField::_GetPriority() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::NestedContentField::_CreateTypeDescription() const
+    {
+    return new NestedContentTypeDescription(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
@@ -664,6 +833,14 @@ rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::Me
     json.AddMember("NestedFields", nestedFieldsJson, json.GetAllocator());
 
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECInstanceKeyField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("ECInstanceKey");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,6 +911,14 @@ bool ContentDescriptor::ECNavigationInstanceIdField::_Equals(Field const& other)
         return false;
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInstanceIdField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("ECInstanceId");
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -380,6 +380,16 @@ static RelatedClassPath GetPathDifference(RelatedClassPathCR lhs, RelatedClassPa
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                06/2017
 //=======================================================================================
+enum class FieldCreateAction
+    {
+    Skip,
+    Merge,
+    Create,
+    };
+
+//=======================================================================================
+// @bsiclass                                    Grigas.Petraitis                06/2017
+//=======================================================================================
 struct PropertyAppender
 {
 private:
@@ -449,29 +459,28 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty)
+    FieldCreateAction GetActionForPropertyField(ContentDescriptor::ECPropertiesField*& mergeField, bvector<ContentDescriptor::Field*> const& fields, ECPropertyCR ecProperty)
         {
         Utf8CP newPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
 
-        ContentDescriptor::ECPropertiesField* field = nullptr;
-        for (ContentDescriptor::Field* descriptorField : m_descriptor.GetAllFields())
+        for (ContentDescriptor::Field* field : fields)
             {
-            if (!descriptorField->IsPropertiesField())
+            if (!field->IsPropertiesField())
                 continue;
 
-            bool areEditorsEqual = (nullptr == newPropertyEditor && descriptorField->GetEditor().empty() 
-                || nullptr != newPropertyEditor && !descriptorField->GetEditor().empty() && descriptorField->GetEditor().Equals(newPropertyEditor));
+            bool areEditorsEqual = (nullptr == newPropertyEditor && field->GetEditor().empty() 
+                || nullptr != newPropertyEditor && !field->GetEditor().empty() && field->GetEditor().Equals(newPropertyEditor));
             if (!areEditorsEqual)
                 continue;
 
-            for (ContentDescriptor::Property const& prop : descriptorField->AsPropertiesField()->GetProperties())
+            for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
                 {
                 // skip if already included in descriptor
                 if (&ecProperty == &prop.GetProperty() 
                     && &m_actualClass == &prop.GetPropertyClass()
                     && m_actualClassAlias.Equals(prop.GetPrefix()))
                     {
-                    return nullptr;
+                    return FieldCreateAction::Skip;
                     }
 
                 // if properties in this field are similar, the new property should be included in this field
@@ -480,16 +489,25 @@ private:
                 areSimilar &= (prop.IsRelated() == isNewPropertyRelated) && (&m_actualClass == &prop.GetPropertyClass() || !isNewPropertyRelated);
                 if (areSimilar)
                     {
-                    field = descriptorField->AsPropertiesField();
-                    m_keyField = FindKeyField(*field);
-                    break;
+                    mergeField = field->AsPropertiesField();
+                    m_keyField = FindKeyField(*mergeField);
+                    return FieldCreateAction::Merge;
                     }
                 }
-
-            if (nullptr != field)
-                break;
             }
-        
+
+        return FieldCreateAction::Create;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                06/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty)
+        {
+        ContentDescriptor::ECPropertiesField* field = nullptr;
+        if (FieldCreateAction::Skip == GetActionForPropertyField(field, m_descriptor.GetAllFields(), ecProperty))
+            return nullptr;
+                
         // did not find a field with similar properties - create a new one
         if (nullptr == field)
             {
@@ -518,7 +536,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::NestedContentField* GetNestedContentField()
+    ContentDescriptor::NestedContentField* GetXToManyNestedContentField()
         {
         if (nullptr == m_nestedContentField)
             {
@@ -544,7 +562,7 @@ private:
             ContentDescriptor::Category fieldCategory = m_descriptorCreateContext.GetCategorySupplier().GetCategory(primaryClass, 
                 relationshipPath, m_actualClass);
             m_nestedContentField = new ContentDescriptor::NestedContentField(fieldCategory, CreateNestedContentFieldName(relationshipPath), 
-                m_actualClass.GetDisplayLabel(), m_actualClass, relationshipPath);
+                m_actualClass.GetDisplayLabel(), m_actualClass, m_actualClassAlias, relationshipPath);
             if (nullptr != nestingField)
                 {
                 // if the field is nested, add it to the nesting field
@@ -656,7 +674,10 @@ private:
         if (!m_descriptorCreateContext.GetCreateFields())
             return false;
 
-        ContentDescriptor::NestedContentField* field = GetNestedContentField();
+        if (p.GetIsNavigation())
+            return false;
+
+        ContentDescriptor::NestedContentField* field = GetXToManyNestedContentField();
         if (nullptr == field)
             return false;
 
@@ -689,14 +710,10 @@ public:
         // don't append binary and igeometry properties
         if (p.GetIsPrimitive() && (PRIMITIVETYPE_Binary == p.GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_IGeometry == p.GetAsPrimitiveProperty()->GetType()))
             return false;
-
-        // WIP TFS#711829 and TFS#711828
-        if (p.GetIsArray() || p.GetIsStruct())
-            return false;
         
         if (IsXToManyRelated())
             return AppendXToManyRelatedProperty(p);
-        
+
         return AppendSimpleProperty(p);
         }
 };
@@ -1469,12 +1486,10 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
             {
             ContentDescriptor::ECPropertiesField const* propertiesField = field->AsPropertiesField();
             BeAssert(1 == propertiesField->GetProperties().size());
-            if (propertiesField->GetProperties().front().GetProperty().GetIsNavigation())
-                continue;
-
             bvector<RelatedClassPath> navigationPropertiesPaths;
-            PropertyAppender appender(*descriptor, context, contentField.GetContentClass(), "this", RelatedClassPath(), navigationPropertiesPaths, RelationshipMeaning::SameInstance);
+            PropertyAppender appender(*descriptor, context, contentField.GetContentClass(), contentField.GetContentClassAlias(), RelatedClassPath(), navigationPropertiesPaths, RelationshipMeaning::SameInstance);
             appender.Append(propertiesField->GetProperties().front().GetProperty());
+            descriptor->GetAllFields().back()->SetName(field->GetName());
             }
         else if (field->IsNestedContentField())
             {
@@ -1486,10 +1501,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
             BeAssert(false && "Unexpected type of field");
             }
         }
-        
+    
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query), "this");
-    query->From(contentField.GetContentClass(), true, "this");
+    ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, false);
+    query->SelectContract(*contract, contentField.GetContentClassAlias().c_str());
+    query->From(contentField.GetContentClass(), true, contentField.GetContentClassAlias().c_str());
 
     RelatedClassPath relationshipPath;
     for (auto iter = contentField.GetRelationshipPath().rbegin(); iter != contentField.GetRelationshipPath().rend(); ++iter)
