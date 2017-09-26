@@ -1138,8 +1138,8 @@ PolyfaceHeaderCR polyfaceA,             //!< [in] upper surface of lower geometr
 IPolyfaceVisitorFilter *filterA,        //!< [in] optional filter object
 PolyfaceHeaderCR polyfaceB,             //!< [in] lower surface of upper geometry (for instance, downward facing facets of bridge)
 IPolyfaceVisitorFilter *filterB,        //!< [in] optional filter object
-PolyfaceHeaderPtr &polyfaceAOverB,
-PolyfaceHeaderPtr &polyfaceBUnderA
+PolyfaceHeaderPtr &polyfaceAOverB,      //!< [out] parts of polyfaceA that are over polyfaceB
+PolyfaceHeaderPtr &polyfaceBUnderA      //!< [out] parts of polyfaceB that are over polyfaceA
 );
 template <typename T>
 struct AnnotatedMesh
