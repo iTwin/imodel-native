@@ -890,4 +890,102 @@ BentleyStatus GeometricTools::CreateAnnotationTextGeometry(Dgn::DrawingGraphicR 
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::Create3dPipeGeometry(Dgn::PhysicalElementR pipe, Dgn::DgnCategoryId categoryId, double length, double diameter)
+    {
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(pipe);
+    if (!builder.IsValid())
+        return BentleyStatus::BSIERROR;
+
+
+    Dgn::Render::GeometryParams params;
+    params.SetCategoryId(categoryId);
+    params.SetLineColor(Dgn::ColorDef::Green());
+    params.SetFillColor(Dgn::ColorDef::Green());
+    builder->Append(params);
+
+    // The pipe will be just a Cylinder along the x axis. The calling app will transform into world location
+    DPoint3d points[2];
+
+    points[0] = DPoint3d::From(0, 0, 0);
+    points[1] = DPoint3d::From(length, 0, 0);
+
+    DgnConeDetail coneDetail(points[0], points[1], diameter / 2.0, diameter / 2.0, false);
+
+    ISolidPrimitivePtr pipeCylinder = ISolidPrimitive::CreateDgnCone(coneDetail);
+
+    if (!pipeCylinder.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    builder->Append(*pipeCylinder);
+
+    // Create the centerline
+
+    params.SetWeight(2);
+    builder->Append(params);
+
+    CurveVectorPtr line = CurveVector::CreateLinear(points, 2, CurveVector::BOUNDARY_TYPE_None, true);
+    if (!line.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    builder->Append(*line);
+
+    if (BentleyStatus::SUCCESS != builder->Finish(pipe))
+        return  BentleyStatus::BSIERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr GeometricTools::CreateContainmentBuildingGeometry(/*Dgn::DgnCategoryId categoryId,*/ double radius, double height)
+    {
+
+//    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(pipe);
+//    if (!builder.IsValid())
+//        return BentleyStatus::BSIERROR;
+
+
+   // Dgn::Render::GeometryParams params;
+  //  params.SetCategoryId(categoryId);
+ //   params.SetLineColor(Dgn::ColorDef::Green());
+  //  params.SetFillColor(Dgn::ColorDef::Green());
+  //  builder->Append(params);
+
+    DPoint3d points[5];
+    points[0] = DPoint3d::From(0.0,    0.0);
+    points[1] = DPoint3d::From(0.0,    radius);
+    points[2] = DPoint3d::From(radius, 0.0);
+
+    DEllipse3d ellipse = DEllipse3d::FromPoints(points[0], points[1], points[2], 0, 2.0*PI);
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+
+    if (!arc.IsValid())
+        return  nullptr;
+
+    return arc;
+
+
+    // The pipe will be just a Cylinder along the x axis. The calling app will transform into world location
+    //DPoint3d points[2];
+
+    //points[0] = DPoint3d::From(0, 0, 0);
+    //points[1] = DPoint3d::From(height, 0, 0);
+
+    //DgnConeDetail coneDetail(points[0], points[1], radius, radius, false);
+
+    //ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(coneDetail);
+
+    //if (!cylinder.IsValid())
+    //    return  nullptr;
+
+    //return cylinder;
+    }
+
+
     

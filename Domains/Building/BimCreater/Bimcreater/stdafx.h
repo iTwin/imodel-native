@@ -11,6 +11,11 @@
 #include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
 #include <PlantPrototype\CommonPipingPhysical.h>
 #include <PlantPrototype\CommonPipingFunctional.h>
+#include <Plant\CommonPlantFunctional.h>
+#include <SpacePlanning\Domain\SpacePlanningDomain.h>
+#include <SpacePlanning\Elements\ElementsApi.h>
+#include <SpacePlanning\Handlers\HandlersApi.h>
+
 #include "Geometry.h"
 #include "DoorTools.h"
 

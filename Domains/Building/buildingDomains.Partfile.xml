@@ -19,15 +19,18 @@
 
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
+        <SubPart PartName="DesignModelingUnitsDomain"  PartFile="DesignModelingUnits"   Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)</Assemblies>
-            <!-- <Files ProductDirectoryName="Libs" >
+            <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)BuildingDomain$(libext)
                 Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)
-            </Files> -->
+            </Files>
         </Bindings>
     </Part>   
 
@@ -51,13 +54,14 @@
 
 
     <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
-        <SubPart PartName="google_gtest_lib"     PartFile="gtest"                Repository="util-gtest"  />
-        <SubPart PartName="DgnView"              PartFile="DgnDisplay"           Repository="DgnDisplay"  />
-        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"          Repository="DgnPlatform" />
+        <SubPart PartName="google_gtest_lib"           PartFile="gtest"                 Repository="util-gtest"  />
+        <SubPart PartName="DgnView"                    PartFile="DgnDisplay"            Repository="DgnDisplay"  />
+        <SubPart PartName="DgnPlatformSqlang"          PartFile="DgnPlatform"           Repository="DgnPlatform" />
         <SubPart PartName="BuildingDomain"/>
-        <SubPart PartName="StructuralDomainDLL"  PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
-        <SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"    Repository="DgnDomains-ConstraintSystem"/>
-        <SubPart PartName="Grids"                 PartFile="Grids"               Repository="DgnDomains-Grids"/>
+        <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
+        <SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
+        <SubPart PartName="DesignModelingUnitsDomain"  PartFile="DesignModelingUnits"   Repository="DgnDomains-DesignModelingUnits"/>
         <Bindings>
               <Assemblies>Delivery/$(shlibprefix)BuildingDomainTests.exe</Assemblies>
               <Files ProductDirectoryName="Assets"> Delivery/BuildingDomainTests.logging.config.xml</Files>
@@ -104,8 +108,10 @@
         <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
         <SubPart PartName="BuildingDomain"/>
         <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
+        <SubPart PartName="ElectricalDomains"               PartFile="ElectricalDomains"        Repository="DgnDomains-Electrical"/>
         <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
         <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
+        <SubPart PartName="DesignModelingUnitsDomain"       PartFile="DesignModelingUnits"      Repository="DgnDomains-DesignModelingUnits"/>
         <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>

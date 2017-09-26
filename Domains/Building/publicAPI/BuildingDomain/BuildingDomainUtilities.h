@@ -92,7 +92,14 @@ namespace BuildingDomain
 		template <class T> static RefCountedPtr<T>                                     QueryByCode(Dgn::DgnModelCR model, Dgn::DgnCodeCR code) { Dgn::DgnDbR  db = model.GetDgnDb(); return QueryById<T>(model, db.Elements().QueryElementIdByCode(code)); }
 		template <class T> static RefCountedPtr<T>									   QueryByCodeValue(Dgn::DgnModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = CreateCode(model, codeValue); return QueryByCode<T>(model, code); }
 
-		};
+        BUILDING_DOMAIN_EXPORT static Units::UnitCP                                    GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName);
+
+        
+
+        BUILDING_DOMAIN_EXPORT static BentleyStatus                                    SetDoublePropertyFromStringWithUnits(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR propertyValueString);
+        BUILDING_DOMAIN_EXPORT static BentleyStatus                                    SetDoublePropertyUsingUnitString(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR unitString, double value);
+        BUILDING_DOMAIN_EXPORT static BentleyStatus                                    GetDoublePropertyUsingUnitString(Dgn::DgnElementCR element, Utf8StringCR propertyName, Utf8StringCR unitString, double& value);
+        };
 
 	//=======================================================================================
 	// @bsiclass                                    BentleySystems

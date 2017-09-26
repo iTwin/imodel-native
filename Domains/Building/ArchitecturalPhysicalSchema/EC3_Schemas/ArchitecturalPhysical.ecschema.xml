@@ -3,6 +3,7 @@
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
+    <ECSchemaReference name="DesignModelingUnits" version="01.00.00" alias="DMU"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
@@ -69,14 +70,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="LENGTH">
+        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="DMU:LENGTH">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="LENGTH">
+        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="DMU:LENGTH">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
@@ -123,24 +124,24 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="VOLUME"/>
-        <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="VOLUME"/>
-        <ECProperty propertyName="GrossSideArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Gross Side Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="NetSideArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Side Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="GrossFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Gross Footprint Area" kindOfQuantity="AREA"/>
-        <ECProperty propertyName="NetFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Footprint Area" kindOfQuantity="AREA"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="DMU:LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="DMU:VOLUME"/>
+        <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="DMU:VOLUME"/>
+        <ECProperty propertyName="GrossSideArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Gross Side Area" kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="NetSideArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Side Area" kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="GrossFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Gross Footprint Area" kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="NetFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Footprint Area" kindOfQuantity="DMU:AREA"/>
     </ECEntityClass>
     <ECEntityClass typeName="WallLeaf" description="Wall" displayLabel="Wall Leaf">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="DMU:LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
@@ -162,14 +163,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="LENGTH_MM">
+        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="DMU:LENGTH_SHORT">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="LENGTH_MM">
+        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="DMU:LENGTH_SHORT">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.03">
                     <Standard>8</Standard>
@@ -184,8 +185,4 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="SQ.M(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="LENGTH_MM" displayLabel="LENGTH_MM" persistenceUnit="MM(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="VOLUME" displayLabel="VOLUME" persistenceUnit="CUB.M(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

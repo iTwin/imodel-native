@@ -30,6 +30,9 @@ struct GeometricTools
 		static  BentleyStatus CreatePidVesselGeometry         (Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId);
         static  BentleyStatus CreateAnnotationTextGeometry    (Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Utf8StringCR textValue);
 
+        static  BentleyStatus Create3dPipeGeometry            (Dgn::PhysicalElementR element, Dgn::DgnCategoryId categoryId, double length, double diameter);
+
+        static  ICurvePrimitivePtr CreateContainmentBuildingGeometry (/*Dgn::DgnCategoryId categoryId,*/ double radius, double height);
 
 
     };

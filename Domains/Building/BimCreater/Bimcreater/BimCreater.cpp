@@ -12,6 +12,49 @@
 
 #define BUILDING_MODEL_NAME "SamplePlantModel"
 #define USERLABEL_NAME  "UserLabel"
+
+
+#ifdef USE_PROTOTYPE
+    #define PIPING_DOMAIN      DOMAIN_PIPING_FUNCTIONAL
+    #define EQUIPMENT_DOMAIN   DOMAIN_EQUIPMENT_FUNCTIONAL
+    #define BREAKDOWN_DOMAIN   DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL
+
+
+    #define CONCENTRIC_REDUCER_CLASS PPF_Class_ConcentricPipeReducer
+    #define GATE_VALVE_CLASS         PPF_Class_GateValve
+    #define THREE_WAY_VALVE_CLASS    PPF_Class_ThreeWayValve
+    #define PIPERUN_CLASS            PPF_Class_PipeRun
+    #define PIPELINE_CLASS           PPF_Class_Pipeline
+    #define NOZZLE_CLASS             PPF_Class_Nozzle
+    #define UNIT_CLASS               PBF_Class_Unit
+    #define PUMP_CLASS               PEF_CLASS_CentrifugalPump
+    #define DRUM_CLASS               PEF_CLASS_Drum
+    #define TANK_CLASS               "Tank"
+    #define VESSEL_CLASS             PEF_CLASS_Vessel
+
+    #define UNIT_HAS_PIPELINE_REL_CLASS  PBF_Rel_FunctionalBreakdownGroupsFunctionalElements
+
+#else
+    #define PIPING_DOMAIN       DOMAIN_PLANT_FUNCTIONAL
+    #define EQUIPMENT_DOMAIN    DOMAIN_PLANT_FUNCTIONAL
+    #define BREAKDOWN_DOMAIN    DOMAIN_PLANT_FUNCTIONAL
+
+    #define CONCENTRIC_REDUCER_CLASS "CONCENTRIC_PIPE_REDUCER"
+    #define GATE_VALVE_CLASS         "GATE_VALVE"
+    #define THREE_WAY_VALVE_CLASS    "THREE_WAY_VALVE"
+    #define PIPERUN_CLASS            "PIPING_NETWORK_SEGMENT"
+    #define PIPELINE_CLASS           "PIPING_NETWORK_SYSTEM"
+    #define NOZZLE_CLASS             "NOZZLE"
+    #define UNIT_CLASS               "UNIT"
+    #define PUMP_CLASS               "CENTRIFUGAL_PUMP"
+    #define DRUM_CLASS               "DRUM"
+    #define TANK_CLASS               "TANK"
+    #define VESSEL_CLASS             "VESSEL"
+
+    #define UNIT_HAS_PIPELINE_REL_CLASS  "UNIT_HAS_NAMED_ITEM"
+
+#endif
+
 template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U> const & p) { return dynamic_cast<T const *>(p.get()); }
 
 
@@ -249,15 +292,20 @@ BentleyStatus BimCreater::DoUpdateSchema(Dgn::DgnDbPtr db)
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
+PIPERUN_TYPEPTR BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
     {
 
     // Create the functional Instance
-    Dgn::FunctionalBreakdownElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_PipeRun, functionalModel);
+#ifdef USE_PROTOTYPE
+    PIPERUN_TYPEPTR functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_PipeRun, functionalModel);
+#else
+    PIPERUN_TYPEPTR functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, PIPERUN_CLASS, functionalModel);
+#endif
 
     Utf8String shortCode;
+    int        number;
 
-    SetCodeFromParent1(shortCode, *functionalElement, pipeline, "PS");
+    SetCodeFromParent1(number, shortCode, *functionalElement, pipeline, "PS");
     PopulateElementProperties(functionalElement);
 
     ECN::ECClassCP relClass;
@@ -265,11 +313,13 @@ Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr
     BeSQLite::EC::ECInstanceKey rkey;
 
     // Relate this PipeRun to the input Pipeline 
+#ifdef USE_PROTOTYPE
     if (pipeline.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipelineOwnsPipeRuns);
         functionalElement->SetParentId(pipeline->GetElementId(), relClass->GetId());
         }
+#endif
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
@@ -289,7 +339,18 @@ Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, fe->GetElementId(), fromId);
         }
 
-    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalBreakdownElement>(functionalModel, fe->GetElementId());
+
+#ifndef USE_PROTOTYPE
+    if (pipeline.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(PIPING_DOMAIN, "PIPELINE_HAS_SEGMENT");
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeline->GetElementId(), fe->GetElementId());
+        }
+#endif
+
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<PIPERUN_TYPE>(functionalModel, fe->GetElementId());
 
     return functionalElement;
 
@@ -323,8 +384,8 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(Dgn::FunctionalBreakdownElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
-    {
+    Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(PIPERUN_TYPECPTR pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
+        {
 
     // Now create each of the graphical line instances.
 
@@ -370,11 +431,12 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
 
     // Create Nozzle Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_Nozzle, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, NOZZLE_CLASS, functionalModel);
 
     Utf8String shortCode;
+    int        number;
 
-    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "N");
+    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "N");
 
     PopulateElementProperties(functionalElement);
 
@@ -401,11 +463,14 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
 
 
     ECN::ECClassCP relClass;
+#ifdef USE_PROTOTYPE
+
     if (equipmentId.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_EquipmentOwnsNozzles);
         functionalElement->SetParentId(equipmentId, relClass->GetId());
         }
+#endif
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
@@ -415,6 +480,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
 
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
 
+#ifdef USE_PROTOTYPE
     if (pipeRunId.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunConnectsToPipingComponents);
@@ -423,6 +489,19 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
 
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
         }
+#endif
+
+
+#ifndef USE_PROTOTYPE
+    if (equipmentId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(PIPING_DOMAIN, "EQUIPMENT_HAS_NOZZLE");
+        ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+        BeSQLite::EC::ECInstanceKey rkey;
+
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, equipmentId, fe->GetElementId());
+        }
+#endif
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel,fe->GetElementId());
 
@@ -439,10 +518,13 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId sub
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, "Tank", functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, TANK_CLASS, functionalModel);
     Utf8String shortCode;
-    SetCodeFromParent1( shortCode, *functionalElement, parentElement, "T");
+    int        number;
+
+    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "T");
     PopulateElementProperties(functionalElement);
+    PopulateEquipmentProperties(functionalElement, "T", "Holding Tank", number);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     Dgn::DrawingGraphicPtr tankGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
@@ -470,7 +552,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId sub
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -490,11 +572,14 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_Drum, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, DRUM_CLASS, functionalModel);
 
     Utf8String shortCode;
-    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "T");
+    int        number;
+
+    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "T");
     PopulateElementProperties(functionalElement);
+    PopulateEquipmentProperties(functionalElement, "T", "Retaining Tank", number);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the Graphic Element
@@ -525,7 +610,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -543,14 +628,16 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
     {
 
     // Create Tank Functional Component
+    
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_Vessel, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, VESSEL_CLASS, functionalModel);
 
     Utf8String shortCode;
+    int        number;
 
-    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "V");
+    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "V");
     PopulateElementProperties(functionalElement);
-
+    PopulateEquipmentProperties(functionalElement, "V", "Horizontal Vessel", number);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the graphics for the Vessel
@@ -581,7 +668,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -600,12 +687,14 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
 
     // Create Pump Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_CentrifugalPump, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, PUMP_CLASS, functionalModel);
 
     Utf8String shortCode;
-    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "PMP");
-    PopulateElementProperties(functionalElement);
+    int        number;
 
+    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "PMP");
+    PopulateElementProperties(functionalElement);
+    PopulateEquipmentProperties(functionalElement, "PMP", "Primary Pump", number);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the graphics for the Pump
@@ -635,9 +724,9 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
         relationShipClass = relClass->GetRelationshipClassCP();
-        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, fe->GetElementId());
         }
 
 
@@ -669,7 +758,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateReducer(Dgn::DgnCategoryId 
 
     // Create Reducer Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_ConcentricPipeReducer, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, CONCENTRIC_REDUCER_CLASS, functionalModel);
 
     functionalElement->SetPropertyValue(USERLABEL_NAME, value);
 
@@ -698,19 +787,23 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
 
     // Create the functional component for the Gate Valve
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_GateValve, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, GATE_VALVE_CLASS, functionalModel);
 
     Utf8String shortCode;
-    SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
+    int        number;
+    SetCodeFromParent1(number, shortCode, *functionalElement, nullptr, "HV");
 
     PopulateElementProperties(functionalElement);
 
     ECN::ECClassCP relClass;
+
+#ifdef USE_PROTOTYPE
     if (pipeRunId.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunOwnsFunctionalPipingComponents);
         functionalElement->SetParentId(pipeRunId, relClass->GetId());
         }
+#endif
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
@@ -740,6 +833,13 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
 
+#ifndef USE_PROTOTYPE
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(PIPING_DOMAIN, "SEGMENT_HAS_PIPING_COMPONENT");
+    relationShipClass = relClass->GetRelationshipClassCP();
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
+#endif
+
+
     return functionalElement;
 
     }
@@ -753,17 +853,20 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
     {
 
     // Create the functional component for the three way valve
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_ThreeWayValve, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, THREE_WAY_VALVE_CLASS, functionalModel);
 
     Utf8String shortCode;
-    SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
+    int        number;
+    SetCodeFromParent1(number, shortCode, *functionalElement, nullptr, "HV");
 
     ECN::ECClassCP relClass;
+#ifdef USE_PROTOTYPE
     if (pipeRunId.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunOwnsFunctionalPipingComponents);
         functionalElement->SetParentId(pipeRunId, relClass->GetId());
         }
+#endif
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
@@ -790,6 +893,13 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+#ifndef USE_PROTOTYPE
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(PIPING_DOMAIN, "SEGMENT_HAS_PIPING_COMPONENT");
+    relationShipClass = relClass->GetRelationshipClassCP();
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
+#endif
+
 
     return functionalElement;
 
@@ -879,14 +989,21 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     // Create the pipeline breakdown element. 
 
-    Dgn::FunctionalBreakdownElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_Pipeline, functionalModel);
-    Utf8String shortCode;
+#ifdef USE_PROTOTYPE
+    Dgn::FunctionalBreakdownElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(PIPING_DOMAIN, PIPELINE_CLASS, functionalModel);
+#else
+    Dgn::FunctionalComponentElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, PIPELINE_CLASS, functionalModel);
+#endif
 
-    SetCodeFromParent1(shortCode, *pipeline, subUnit, "L");
+    Utf8String shortCode;
+    int        number;
+
+    SetCodeFromParent1(number, shortCode, *pipeline, subUnit, "L");
+    PopulateElementProperties(pipeline);
 
     Dgn::DgnElementCPtr pl = pipeline->Insert();
 
-    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
     relationShipClass = relClass->GetRelationshipClassCP();
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnit->GetElementId(), pl->GetElementId());
 
@@ -902,15 +1019,15 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     // PipeRun from Tank to the reducer
 
-    Dgn::FunctionalBreakdownElementPtr pipeRun1 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, reducer->GetElementId(), tankNozzle->GetElementId(), functionalModel);
+    PIPERUN_TYPEPTR pipeRun1 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, reducer->GetElementId(), tankNozzle->GetElementId(), functionalModel);
 
     // PipeRun from Reducer to the Pump
 
-    Dgn::FunctionalBreakdownElementPtr pipeRun2 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, pumpNozzle1->GetElementId(), reducer->GetElementId(), functionalModel);
+    PIPERUN_TYPEPTR pipeRun2 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, pumpNozzle1->GetElementId(), reducer->GetElementId(), functionalModel);
 
     // PipeRun from Round Tank to the Vessel
 
-    Dgn::FunctionalBreakdownElementPtr pipeRun4 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
+    PIPERUN_TYPEPTR pipeRun4 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
 
     // **** Add 3 way Valve ****
 
@@ -922,7 +1039,7 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     // PipeRun from Pump to the 3 way valves
 
-    Dgn::FunctionalBreakdownElementPtr pipeRun3 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
+    PIPERUN_TYPEPTR pipeRun3 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
 
     // ******** Add the Gate Valve ******
 
@@ -1006,6 +1123,11 @@ BentleyStatus BimCreater::DoCreate()
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
 
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPlantFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Building::SpacePlanning::SpacePlanningDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
@@ -1021,40 +1143,62 @@ BentleyStatus BimCreater::DoCreate()
 	BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel         (BUILDING_MODEL_NAME, *db);
 	BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel  (BUILDING_MODEL_NAME, *db);
 	Dgn::DocumentListModelPtr                        docListModel        = BuildingDomain::BuildingDomainUtilities::CreateBuildingDocumentListModel (BUILDING_MODEL_NAME, *db);
-	Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel   (BUILDING_MODEL_NAME, *db);
+	Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel   ("Functional-Tag",    *db);
 	Dgn::DefinitionModelR                            dictionary          = db->GetDictionaryModel();
 
 	Dgn::CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
 	Dgn::DisplayStyle2dPtr displayStyle1 = CreateDisplayStyle2d(dictionary);
 
     Utf8String shortCode;
+    int        number;
 
     // This is where we create add the information to the BIM file. You can control the number of Units, SubUnits and P&ID. 
 
     int numberOfUnits = 5;
-    int numberOfSubunits = 5;
-    int numberOfPids = 5;
+    int numberOfSubunits = 1;
+    int numberOfPids = 10;
 
     for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)
         {
 
-        Dgn::FunctionalBreakdownElementPtr unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_Unit, *functionalModel);
+#ifdef USE_PROTOTYPE
+        PIPERUN_TYPEPTR unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, UNIT_CLASS, *functionalModel);
+#else
+        PIPERUN_TYPEPTR unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BREAKDOWN_DOMAIN, UNIT_CLASS, *functionalModel);
+#endif
 
-        SetCodeFromParent1(shortCode, *unit, nullptr, "U");
+        PopulateElementProperties(unit);
+
+        SetCodeFromParent1(number, shortCode, *unit, nullptr, "U");
         Dgn::DgnElementCPtr un = unit->Insert();
+
+        ICurvePrimitivePtr buildingGeometry = GeometricTools::CreateContainmentBuildingGeometry(50, 250);
+
+        CurveVectorPtr a = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+        
+        a->Add(buildingGeometry);
+
+        Building::SpacePlanning::BuildingPtr containmentBuilding = Building::SpacePlanning::Building::Create ( *physicalModel, a, 250.0);
+
+        Building::SpacePlanning::BuildingRequirementPtr building = Building::SpacePlanning::BuildingRequirement::Create(*db, functionalModel->GetModelId());
+
+        Dgn::DgnElementCPtr bldg = containmentBuilding->Insert();
+        Dgn::DgnElementCPtr fbldg = building->Insert();
+
 
         for (int subUnitNum = 0; subUnitNum < numberOfSubunits; subUnitNum++)
             {
 
+#ifdef USE_PROTOTYPE
             Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_SubUnit, *functionalModel);
-            SetCodeFromParent1(shortCode, *subUnit, un, "SU");
+            SetCodeFromParent1(number, shortCode, *subUnit, un, "SU");
 
             Dgn::DgnElementCPtr subUn = subUnit->Insert();
-
             ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
             ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
             BeSQLite::EC::ECInstanceKey rkey;
             db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
+#endif
 
             static int pidNum = 1;
             for (int j = 1; j < numberOfPids; j++)
@@ -1062,7 +1206,13 @@ BentleyStatus BimCreater::DoCreate()
                 Utf8String pidName;
                 pidName.Sprintf("PID-%0.3d", pidNum);
                 pidNum++;
+
+                Dgn::DgnElementCPtr a = unit;
+#ifdef USE_PROTOTYPE
                 Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, subUn);
+#else
+                Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, a);
+#endif
 
                 Dgn::DgnViewId viewId = CreateView2d(dictionary, pidName.c_str(), *categorySelector, drawingModel->GetModelId(), *displayStyle1);
 
@@ -1200,6 +1350,87 @@ BentleyStatus BimCreater::PopulateInstanceProperties(ECN::IECInstancePtr instanc
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
+BentleyStatus BimCreater::PopulateEquipmentProperties(Dgn::DgnElementPtr element, Utf8StringCR deviceTypeCode, Utf8StringCR description, int number)
+    {
+
+    ECN::ECValue stringValue;
+    ECN::ECValue doubleValue;
+    ECN::ECValue intValue;
+
+    stringValue.SetUtf8CP(deviceTypeCode.c_str());
+    element->SetPropertyValue("DeviceTypeCode", stringValue);
+    element->SetPropertyValue("DEVICE_TYPE_CODE", stringValue);
+    stringValue.SetUtf8CP(description.c_str());
+    element->SetPropertyValue("Description", stringValue);
+    element->SetPropertyValue("DESCRIPTION", stringValue);
+    stringValue.SetUtf8CP("");
+    element->SetPropertyValue("Comment", stringValue);
+    element->SetPropertyValue("Alias", stringValue);
+    element->SetPropertyValue("AdditionalCode", stringValue);
+    element->SetPropertyValue("UnitClassification", stringValue);
+    element->SetPropertyValue("UnitCode", stringValue);
+
+    element->SetPropertyValue("COMMENT", stringValue);
+    element->SetPropertyValue("ALIAS", stringValue);
+    element->SetPropertyValue("ADDITIONAL_CODE", stringValue);
+    element->SetPropertyValue("UNIT_CLASSIFICATION", stringValue);
+    element->SetPropertyValue("UNIT_CODE", stringValue);
+
+    Utf8String num;
+    num.Sprintf("%.5d", number);
+    stringValue.SetUtf8CP(num.c_str());
+    element->SetPropertyValue("Number", stringValue);
+    element->SetPropertyValue("NUMBER", stringValue);
+
+
+    doubleValue.SetDouble(2.0);
+    element->SetPropertyValue("Height", doubleValue);
+    element->SetPropertyValue("Width", doubleValue);
+    element->SetPropertyValue("HEIGHT", doubleValue);
+    element->SetPropertyValue("WIDTH", doubleValue);
+
+    doubleValue.SetDouble(200);
+    element->SetPropertyValue("Diameter", doubleValue);
+    element->SetPropertyValue("DIAMETER", doubleValue);
+
+   
+
+    doubleValue.SetDouble(65.0);
+    element->SetPropertyValue("OperatingTemperature", doubleValue);
+    element->SetPropertyValue("OPERATING_TEMPERATURE", doubleValue);
+
+    doubleValue.SetDouble(80.0);
+    element->SetPropertyValue("UpperLimitDesignTemperature", doubleValue);
+    element->SetPropertyValue("UPPER_LIMIT_DESIGN_TEMPERATURE", doubleValue);
+
+    doubleValue.SetDouble(60.0);
+    element->SetPropertyValue("AmbientOperatingTemperature", doubleValue);
+    element->SetPropertyValue("AMBIENT_OPERATING_TEMPERATURE", doubleValue);
+
+    doubleValue.SetDouble(6.0);
+    element->SetPropertyValue("LowerLimitDesignPressure", doubleValue);
+    element->SetPropertyValue("LOWER_LIMIT_DESIGN_PRESSURE", doubleValue);
+
+    doubleValue.SetDouble(6.0);
+    element->SetPropertyValue("OperatingPressure", doubleValue);
+    element->SetPropertyValue("OPERATING_PRESSURE", doubleValue);
+
+    doubleValue.SetDouble(12.0);
+    element->SetPropertyValue("UpperLimitDesignPressure", doubleValue);
+    element->SetPropertyValue("UpperLimitPressure", doubleValue);
+    element->SetPropertyValue("UPPER_LIMIT_DESIGN_PRESSURE", doubleValue);
+    element->SetPropertyValue("UPPER_LIMIT_PRESSURE", doubleValue);
+
+    
+    return BentleyStatus::SUCCESS;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
 BentleyStatus BimCreater::PopulateElementProperties(Dgn::DgnElementPtr element)
     {
     ECN::ECClassCP ecClass = element->GetElementClass();
@@ -1210,20 +1441,60 @@ BentleyStatus BimCreater::PopulateElementProperties(Dgn::DgnElementPtr element)
         if (nullptr == prop || prop->GetName() == "Roll" || prop->GetName() == "Pitch" || prop->GetName() == "Yaw" || prop->GetName() == "UserLabel" || prop->GetName() == "CodeValue" || prop->GetName() == "JsonProperties")
             continue;
 
+        BeSQLite::BeGuid federationGuid;
+        
+        federationGuid.Create();
+
+        element->SetFederationGuid(federationGuid);
+
         Utf8String typeName = prop->GetTypeName();
 
         if (typeName == "double")
             {
             ECN::ECValue doubleValue;
 
-            doubleValue.SetDouble((i + 1) * 10.0);
+            if (prop->GetName() == "InsulationThickness" || prop->GetName() == "INSULATION_THICKNESS")
+                doubleValue.SetDouble( 50.0 );
+            else if (prop->GetName() == "DryWeight" || prop->GetName() == "DRY_WEIGHT")
+                doubleValue.SetDouble(900.0);
+            else if (prop->GetName() == "TotalWeight" || prop->GetName() == "TOTAL_WEIGHT")
+                doubleValue.SetDouble(1500.0);
+            else
+                doubleValue.SetDouble((i + 1) * 10.0);
+
             element->SetPropertyValue(prop->GetName().c_str(), doubleValue);
             }
         else if (typeName == "string")
             {
             ECN::ECValue stringValue;
 
-            stringValue.SetWCharCP(L"String Value");
+            if (prop->GetName() == "Material" || prop->GetName() == "MATERIAL")
+                stringValue.SetWCharCP(L"Carbon Steel");
+            else if (prop->GetName() == "Designer" || prop->GetName() == "DESIGNER") 
+                stringValue.SetWCharCP(L"John Doe");
+            else if (prop->GetName() == "Manufacturer" || prop->GetName() == "MANUFACTURER")
+                stringValue.SetWCharCP(L"ACME Equipment");
+            else if (prop->GetName() == "ModelNumber" || prop->GetName() == "MODEL_NUMBER")
+                stringValue.SetWCharCP(L"E-123456");
+            else if (prop->GetName() == "PaintCode" || prop->GetName() == "PAINT_CODE")
+                stringValue.SetWCharCP(L"1969 X44");
+            else if (prop->GetName() == "InsulationMaterial" || prop->GetName() == "INSULATION_MATERIAL")
+                stringValue.SetWCharCP(L"Super-X");
+            else if (prop->GetName() == "Insulation" || prop->GetName() == "INSULATION")
+                stringValue.SetWCharCP(L"Super-X");
+            else if (prop->GetName() == "OrderNumber" || prop->GetName() == "ORDER_NUMBER")
+                stringValue.SetWCharCP(L"ON-34567");
+            else if (prop->GetName() == "Rating" || prop->GetName() == "RATING")
+                stringValue.SetWCharCP(L"10");
+            else if (prop->GetName() == "FluidCode" || prop->GetName() == "FLUID_CODE")
+                stringValue.SetUtf8CP("C10");
+            else if (prop->GetName() == "Fluid" || prop->GetName() == "FLUID")
+                stringValue.SetUtf8CP("C10");
+            else if (prop->GetName() == "FluidDescription" || prop->GetName() == "FLUID_DESCRIPTION")
+                stringValue.SetUtf8CP("C10");
+            else
+                stringValue.SetWCharCP(L"String Value");
+
             element->SetPropertyValue(prop->GetName().c_str(), stringValue);
             }
         else if (typeName == "boolean")
@@ -1555,10 +1826,10 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DgnCode BimCreater::SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode)
+Dgn::DgnCode BimCreater::SetCodeFromParent1(int& number, Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode)
     {
 
-    int number;
+    //int number;
 
     static bmap<Utf8String, int> s_numberMap;
 
@@ -1584,7 +1855,7 @@ Dgn::DgnCode BimCreater::SetCodeFromParent1(Utf8StringR shortCode, Dgn::Function
 
     Utf8String codeValue;
 
-    shortCode.Sprintf("%s%0.3d", deviceCode.c_str(), number);
+    shortCode.Sprintf("%s%0.5d", deviceCode.c_str(), number);
 
     if (parentElement.IsValid())
         codeValue.Sprintf("%s-%s", parentElement->GetCode().GetValueUtf8CP(), shortCode.c_str());

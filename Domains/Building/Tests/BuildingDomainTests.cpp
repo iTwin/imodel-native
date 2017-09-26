@@ -461,15 +461,18 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetCode(code));
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(GROSS_FOOTPRINT_AREA, DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(NET_FOOTPRINT_AREA,   DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(GROSS_SIDE_AREA,      DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(NET_SIDE_AREA,        DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(GROSS_VOLUME,         DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(NET_VOLUME,           DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(HEIGHT,               DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(LENGTH,               DOUBLE_TEST_VALUE));
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetPropertyValue(WIDTH,                DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_FOOTPRINT_AREA, "SQ.IN", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_FOOTPRINT_AREA,   "SQ.FT", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_SIDE_AREA,      "SQ.M",  DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_SIDE_AREA,        "SQ.KM", DOUBLE_TEST_VALUE));
+
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_VOLUME, "CUB.M",  DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_VOLUME,   "CUB.FT", DOUBLE_TEST_VALUE));
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, HEIGHT, "FT", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, LENGTH, "M",  DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, WIDTH,  "IN", DOUBLE_TEST_VALUE));
 
 	Dgn::DgnDbStatus status;
 
@@ -482,41 +485,33 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 	ASSERT_TRUE(queriedWall.IsValid());
 
 	ECN::ECValue propVal;
+    double testValue;
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, GROSS_FOOTPRINT_AREA));
-	double testValue = propVal.GetDouble();
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_FOOTPRINT_AREA, "SQ.IN", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, NET_FOOTPRINT_AREA));
-	testValue = propVal.GetDouble();
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_FOOTPRINT_AREA, "SQ.FT", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, GROSS_SIDE_AREA));
-	testValue = propVal.GetDouble();
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_SIDE_AREA, "SQ.M", testValue));
+    ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_SIDE_AREA, "SQ.KM", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, NET_SIDE_AREA));
-	testValue = propVal.GetDouble();
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_VOLUME, "CUB.M", testValue));
+    ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_VOLUME, "CUB.FT", testValue));
+    ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, HEIGHT, "FT", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, GROSS_VOLUME));
-	testValue = propVal.GetDouble();
-	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, LENGTH, "M", testValue));
+    ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, NET_VOLUME));
-	testValue = propVal.GetDouble();
-	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, HEIGHT));
-	testValue = propVal.GetDouble();
-	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, LENGTH));
-	testValue = propVal.GetDouble();
-	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-
-	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, WIDTH));
-	testValue = propVal.GetDouble();
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, WIDTH, "IN", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
 	}
@@ -801,7 +796,7 @@ TEST_F(BuildingDomainTestFixture, RadialTests)
 
     Grids::GridAxisMap grid2;
 
-    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1,DVec3d::From(0.0,0.0,1.0));
+    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1, DVec3d::From(0, 0, 1));
     ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
 

@@ -68,6 +68,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -110,7 +111,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(DesignModelingDomainsSDKLocation)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BuildingElements.lib;SpacePlanningDomain.lib;GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;plantDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /s /y $(DesignModelingDomainsSdkLocation)Assemblies\*  $(outdir)

@@ -23,7 +23,11 @@ namespace BuildingDomain
 
 	BentleyStatus  BuildingDomainUtilities::RegisterDomainHandlers()
 		{
-		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::DesignModelingUnits::DesignModelingUnitsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
@@ -38,11 +42,11 @@ namespace BuildingDomain
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
-//        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-//            return BentleyStatus::ERROR;
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
 
-//        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Grids::GridsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-//            return BentleyStatus::ERROR;
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Grids::GridsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
 
 		return BentleyStatus::SUCCESS;
 		}
@@ -88,9 +92,9 @@ namespace BuildingDomain
 
 		// Create the partition and the BuildingPhysicalModel.
 
-		Utf8String phyModelCode = BuildFucntionalModelCode(modelCodeName);
+		//Utf8String phyModelCode = BuildFucntionalModelCode(modelCodeName);
 
-		Dgn::FunctionalPartitionCPtr partition = Dgn::FunctionalPartition::CreateAndInsert(*parentSubject, phyModelCode);
+		Dgn::FunctionalPartitionCPtr partition = Dgn::FunctionalPartition::CreateAndInsert(*parentSubject, modelCodeName);
 
 		if (!partition.IsValid())
 			return nullptr;
@@ -924,7 +928,138 @@ namespace BuildingDomain
 
 		}
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
 
+    Units::UnitCP    BuildingDomainUtilities::GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName)
+        {
+        ECN::ECClassCP elementClass = element.GetElementClass();
+
+        if (nullptr == elementClass)
+            return nullptr;
+
+        ECN::ECPropertyP prop = elementClass->GetPropertyP(propertyName);
+
+        if (nullptr == prop)
+            return nullptr;
+
+        ECN::KindOfQuantityCP propUnit = prop->GetKindOfQuantity();
+
+        if (nullptr == propUnit)
+            return nullptr;
+
+        Formatting::FormatUnitSetCR unit = propUnit->GetPersistenceUnit();
+
+        Units::UnitCP u = unit.GetUnit();
+
+        return u;
+        }
+
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    BentleyStatus   BuildingDomainUtilities::SetDoublePropertyFromStringWithUnits(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR propertyValueString)
+        {
+
+        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
+
+        if (nullptr == u)
+            return BentleyStatus::ERROR;
+
+        Utf8String numbers = "-1234567890.+";
+
+        int pos = propertyValueString.find_first_not_of(numbers, 0);
+
+        Utf8String valueString = propertyValueString.substr(0, pos);
+        Utf8String unitSuffix  = propertyValueString.substr(pos, propertyValueString.length());
+
+        unitSuffix = unitSuffix.Trim();
+
+        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitSuffix.c_str());
+
+        double value = atof(valueString.c_str());
+
+        double converted;
+        Units::UnitsProblemCode code = u1->Convert(converted, value, u);
+
+        if ( Units::UnitsProblemCode::NoProblem != code)
+            return BentleyStatus::ERROR;
+        
+        ECN::ECValue doubleValue;
+
+        doubleValue.SetDouble(converted);
+
+        Dgn::DgnDbStatus status = element.SetPropertyValue(propertyName.c_str(), doubleValue);
+
+        if( Dgn::DgnDbStatus::Success != status)
+            return BentleyStatus::ERROR;
+
+        return BentleyStatus::SUCCESS;
+
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    BentleyStatus   BuildingDomainUtilities::GetDoublePropertyUsingUnitString(Dgn::DgnElementCR element, Utf8StringCR propertyName, Utf8StringCR unitString, double& value)
+        {
+        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
+
+        if (nullptr == u)
+            return BentleyStatus::ERROR;
+
+        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+
+        ECN::ECValue propVal;
+
+        if(Dgn::DgnDbStatus::Success != element.GetPropertyValue(propVal, propertyName.c_str()))
+            return BentleyStatus::ERROR;
+
+        double storedValue = propVal.GetDouble();
+
+        Units::UnitsProblemCode code = u->Convert(value, storedValue, u1);
+
+        if (Units::UnitsProblemCode::NoProblem != code)
+            return BentleyStatus::ERROR;
+
+        return BentleyStatus::SUCCESS;
+
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    BentleyStatus   BuildingDomainUtilities::SetDoublePropertyUsingUnitString(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR unitString, double value)
+        {
+        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
+
+        if (nullptr == u)
+            return BentleyStatus::ERROR;
+
+        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+
+        double converted;
+        Units::UnitsProblemCode code = u1->Convert(converted, value, u);
+
+        if (Units::UnitsProblemCode::NoProblem != code)
+            return BentleyStatus::ERROR;
+
+        ECN::ECValue doubleValue;
+
+        doubleValue.SetDouble(converted);
+
+        Dgn::DgnDbStatus status = element.SetPropertyValue(propertyName.c_str(), doubleValue);
+
+        if (Dgn::DgnDbStatus::Success != status)
+            return BentleyStatus::ERROR;
+
+        return BentleyStatus::SUCCESS;
+        }
 
     }
 

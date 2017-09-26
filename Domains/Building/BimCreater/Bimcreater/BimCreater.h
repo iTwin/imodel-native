@@ -10,7 +10,23 @@
 #include "stdafx.h"      
 #include <DgnPlatform/DesktopTools\KnownDesktopLocationsAdmin.h>
 
-                
+#define USE_PROTOTYPE
+
+#ifdef USE_PROTOTYPE
+
+    #define PIPERUN_TYPEPTR         Dgn::FunctionalBreakdownElementPtr
+    #define PIPERUN_TYPECPTR        Dgn::FunctionalBreakdownElementCPtr
+    #define PIPERUN_TYPE            Dgn::FunctionalBreakdownElement
+    #define PIPERUN_CTYPE           Dgn::FunctionalBreakdownElementCPtr
+#else
+    #define PIPERUN_TYPEPTR         Dgn::FunctionalComponentElementPtr
+    #define PIPERUN_TYPECPTR        Dgn::FunctionalComponentElementCPtr
+    #define PIPERUN_TYPE            Dgn::FunctionalComponentElement
+    #define PIPERUN_CTYPE           Dgn::FunctionalComponentElementCPtr
+
+#endif
+
+
                 
                            
 //=======================================================================================
@@ -41,16 +57,18 @@ struct BimCreater : Dgn::DgnPlatformLib::Host, Dgn::DgnPlatformLib::Host::Reposi
         WString GetArgValueW(WCharCP arg);
         BentleyStatus ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus CreateBuilding( BuildingPhysical::BuildingPhysicalModelR, BuildingPhysical::BuildingTypeDefinitionModelR);
-		Dgn::DrawingModelPtr CreatePidDrawings(Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionModel, Utf8StringCR drawingcode, Dgn::DgnElementCPtr subUnit);
         BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
         BentleyStatus PopulateElementProperties(Dgn::DgnElementPtr element);
+        BentleyStatus PopulateEquipmentProperties(Dgn::DgnElementPtr element, Utf8StringCR deviceTypeCode, Utf8StringCR description, int number);
 		Dgn::DgnDbPtr OpenDgnDb(BeFileNameCR outputFileName);
 
-        Dgn::DgnCode SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode);
+        Dgn::DgnCode SetCodeFromParent1(int& number, Utf8StringR shortCode, Dgn::FunctionalElementR functionElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode);
 
         Dgn::FunctionalComponentElementPtr CreateNozzle          (Dgn::DgnElementId pipeRunId,  Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual = false);
-        Dgn::DrawingGraphicPtr             CreatePipeRunGraphics (Dgn::FunctionalBreakdownElementCPtr, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count);
-        Dgn::FunctionalBreakdownElementPtr CreatePipeRun         (Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel);
+
+        Dgn::DrawingGraphicPtr             CreatePipeRunGraphics (PIPERUN_TYPECPTR, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count);
+        Dgn::DrawingModelPtr               CreatePidDrawings     (Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionModel, Utf8StringCR drawingcode, Dgn::DgnElementCPtr subUnit);
+        PIPERUN_TYPEPTR                    CreatePipeRun         (Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel);
         Dgn::FunctionalComponentElementPtr CreateGateValve       (Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement);
         Dgn::FunctionalComponentElementPtr CreateTank            (Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement);
         Dgn::FunctionalComponentElementPtr CreateRoundTank       (Dgn::DgnElementId  subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement);
