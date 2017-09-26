@@ -126,7 +126,7 @@ WSQuery VersionsManager::CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8Str
 //---------------------------------------------------------------------------------------
 VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetAllVersions";
+    const Utf8String methodName = "VersionsManager::GetAllVersions";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Version);
 
@@ -161,7 +161,7 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
 //---------------------------------------------------------------------------------------
 VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetVersionById";
+    const Utf8String methodName = "VersionsManager::GetVersionById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return m_wsRepositoryClient->SendGetObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId), nullptr, cancellationToken)
         ->Then<VersionInfoResult>([=] (WSObjectsResult const& versionInfoResult)
@@ -184,7 +184,7 @@ VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICanc
 //---------------------------------------------------------------------------------------
 VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::CreateVersion";
+    const Utf8String methodName = "VersionsManager::CreateVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     return m_wsRepositoryClient->SendCreateObjectRequest(version.GenerateJson(), BeFileName(), nullptr, cancellationToken)
@@ -213,7 +213,7 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
 //---------------------------------------------------------------------------------------
 StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::ModifyVersion";
+    const Utf8String methodName = "VersionsManager::UpdateVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     Json::Value varsionJson = version.GenerateJson();
@@ -236,7 +236,7 @@ StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellatio
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetVersionChangeSets";
+    const Utf8String methodName = "VersionsManager::GetVersionChangeSets";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
@@ -250,7 +250,7 @@ ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsBetweenVersions";
+    const Utf8String methodName = "VersionsManager::GetChangeSetsBetweenVersions";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (Utf8String::IsNullOrEmpty(firstVersionId.c_str()) || Utf8String::IsNullOrEmpty(secondVersionId.c_str()))
@@ -264,7 +264,8 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String f
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String versionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsAfterVersion";
+    const Utf8String methodName = "VersionsManager::GetChangeSetsAfterVersion";
+
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
@@ -278,7 +279,8 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String vers
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersionAndChangeSet(Utf8String versionId, Utf8String changeSetId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsBetweenVersionAndChangeSet";
+    const Utf8String methodName = "VersionsManager::GetChangeSetsBetweenVersionAndChangeSet";
+
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
