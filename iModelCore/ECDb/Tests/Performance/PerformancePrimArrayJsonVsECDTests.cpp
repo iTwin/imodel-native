@@ -287,7 +287,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                 {
                     case PRIMITIVETYPE_Binary:
                     {
-                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
+                    if (ECJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
@@ -319,7 +319,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                     bvector<Byte> fb;
                     BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
-                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
+                    if (ECJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
                         return ERROR;
 
                     break;
@@ -337,14 +337,14 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                     }
                     case PRIMITIVETYPE_Point2d:
                     {
-                    if (ECRapidJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                    if (ECJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
                         return ERROR;
 
                     break;
                     }
                     case PRIMITIVETYPE_Point3d:
                     {
-                    if (ECRapidJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                    if (ECJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
                         return ERROR;
 
                     break;
@@ -441,7 +441,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                         return ERROR;
 
                     blobBuffer.Resize(0);
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blobBuffer, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToBinary(blobBuffer, *it))
                         return ERROR;
 
                     if (blobBuffer.size() != GetTestBlobSize() ||
@@ -490,9 +490,9 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     if (!it->IsString())
                         return ERROR;
 
-
+                    
                     blobBuffer.Resize(0);
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blobBuffer, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToBinary(blobBuffer, *it))
                         return ERROR;
 
                     IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry((Byte const*) blobBuffer.data());
@@ -525,7 +525,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     case PRIMITIVETYPE_Point2d:
                     {
                     DPoint2d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -536,7 +536,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     case PRIMITIVETYPE_Point3d:
                     {
                     DPoint3d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint3d()))

@@ -61,13 +61,10 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, JsonValueCR memberJ
         return BindStructValue(binder, memberJson, prop.GetAsStructProperty()->GetType());
 
     if (prop.GetIsPrimitiveArray())
-        {
-        PrimitiveType arrayElementType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        return BindArrayValue(binder, memberJson, &arrayElementType, nullptr);
-        }
+        return BindPrimitiveArrayValue(binder, memberJson, prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
 
     if (prop.GetIsStructArray())
-        return BindArrayValue(binder, memberJson, nullptr, &prop.GetAsStructArrayProperty()->GetStructElementType());
+        return BindStructArrayValue(binder, memberJson, prop.GetAsStructArrayProperty()->GetStructElementType());
 
     BeAssert(false);
     return ECSqlStatus::Error;
@@ -208,6 +205,18 @@ ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, JsonValueCR s
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus JsonECSqlBinder::BindPrimitiveArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, PrimitiveType primType) { return BindArrayValue(binder, arrayJson, &primType, nullptr); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus JsonECSqlBinder::BindStructArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECStructClassCR structType) { return BindArrayValue(binder, arrayJson, nullptr, &structType); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
     if (!arrayJson.isArray() || (primType == nullptr && structType == nullptr))
@@ -308,13 +317,10 @@ ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, RapidJsonValueCR me
         return BindStructValue(binder, memberJson, prop.GetAsStructProperty()->GetType());
 
     if (prop.GetIsPrimitiveArray())
-        {
-        PrimitiveType arrayElementType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        return BindArrayValue(binder, memberJson, &arrayElementType, nullptr);
-        }
+        return BindPrimitiveArrayValue(binder, memberJson, prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
 
     if (prop.GetIsStructArray())
-        return BindArrayValue(binder, memberJson, nullptr, &prop.GetAsStructArrayProperty()->GetStructElementType());
+        return BindStructArrayValue(binder, memberJson, prop.GetAsStructArrayProperty()->GetStructElementType());
 
     BeAssert(false);
     return ECSqlStatus::Error;
@@ -334,7 +340,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             case ECN::PRIMITIVETYPE_Binary:
             {
             ByteStream blob;
-            if (SUCCESS != ECN::ECRapidJsonUtilities::JsonToBinary(blob, json))
+            if (SUCCESS != ECN::ECJsonUtilities::JsonToBinary(blob, json))
                 return ECSqlStatus::Error;
 
             return binder.BindBlob(blob.data(), (int) blob.size(), IECSqlBinder::MakeCopy::Yes);
@@ -349,7 +355,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             case ECN::PRIMITIVETYPE_DateTime:
             {
             DateTime dt;
-            if (SUCCESS != ECN::ECRapidJsonUtilities::JsonToDateTime(dt, json))
+            if (SUCCESS != ECN::ECJsonUtilities::JsonToDateTime(dt, json))
                 return ECSqlStatus::Error;
 
             return binder.BindDateTime(dt);
@@ -365,7 +371,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
 
             case ECN::PRIMITIVETYPE_IGeometry:
             {
-            IGeometryPtr geom = ECRapidJsonUtilities::JsonToIGeometry(json);
+            IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(json);
             if (geom == nullptr)
                 return ECSqlStatus::Error;
 
@@ -388,7 +394,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             case ECN::PRIMITIVETYPE_Long:
             {
             int64_t val = 0;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToInt64(val, json))
+            if (SUCCESS != ECJsonUtilities::JsonToInt64(val, json))
                 return ECSqlStatus::Error;
 
             return binder.BindInt64(val);
@@ -397,7 +403,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             case ECN::PRIMITIVETYPE_Point2d:
             {
             DPoint2d pt;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, json))
+            if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, json))
                 return ECSqlStatus::Error;
 
             return binder.BindPoint2d(pt);
@@ -406,7 +412,7 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             case ECN::PRIMITIVETYPE_Point3d:
             {
             DPoint3d pt;
-            if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, json))
+            if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, json))
                 return ECSqlStatus::Error;
 
             return binder.BindPoint3d(pt);
@@ -460,6 +466,18 @@ ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, RapidJsonValu
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus JsonECSqlBinder::BindPrimitiveArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, PrimitiveType primType) { return BindArrayValue(binder, arrayJson, &primType, nullptr); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus JsonECSqlBinder::BindStructArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECStructClassCR structType) { return BindArrayValue(binder, arrayJson, nullptr, &structType); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
     if (!arrayJson.IsArray() || (primType == nullptr && structType == nullptr))
@@ -501,7 +519,7 @@ ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, RapidJson
             }
         else
             {
-            ECInstanceId navId = ECRapidJsonUtilities::JsonToId<ECInstanceId>(navIdJson);
+            ECInstanceId navId = ECJsonUtilities::JsonToId<ECInstanceId>(navIdJson);
             if (!navId.IsValid())
                 return ECSqlStatus::Error; //wrong format
 
@@ -517,7 +535,7 @@ ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, RapidJson
         if (relClassNameJson.IsNull())
             return binder[ECDBSYS_PROP_NavPropRelECClassId].BindNull();
 
-        ECClassId relClassId = ECRapidJsonUtilities::GetClassIdFromClassNameJson(relClassNameJson, classLocater);
+        ECClassId relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(relClassNameJson, classLocater);
         if (!relClassId.IsValid())
             return ECSqlStatus::Error; //wrong format
 

@@ -321,7 +321,7 @@ BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePrimitiveValue(rapidjson
                 blob[i] = (Byte) (rand() & 0xFF);
                 }
 
-            return ECRapidJsonUtilities::BinaryToJson(json, blob, sizeof(blob), jsonAllocator);
+            return ECJsonUtilities::BinaryToJson(json, blob, sizeof(blob), jsonAllocator);
             }
 
             case PRIMITIVETYPE_Boolean:
@@ -330,9 +330,7 @@ BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePrimitiveValue(rapidjson
 
             case PRIMITIVETYPE_DateTime:
             {
-            DateTime dt = DateTime::GetCurrentTimeUtc();
-            Utf8String dtStr = dt.ToString();
-            json.SetString(dtStr.c_str(), (rapidjson::SizeType) dtStr.size(), jsonAllocator);
+            ECJsonUtilities::DateTimeToJson(json, DateTime::GetCurrentTimeUtc(), jsonAllocator);
             return SUCCESS;
             }
 
@@ -345,9 +343,7 @@ BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePrimitiveValue(rapidjson
             IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(rand() * 1.0, rand() * 2.0, rand() * 1.0,
                                                                                                rand() * 1.0, rand() * 2.0, rand() * 1.0)));
 
-            bvector<Byte> fb;
-            BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, *geom);
-            return ECRapidJsonUtilities::BinaryToJson(json, fb.data(), fb.size(), jsonAllocator);
+            return ECJsonUtilities::IGeometryToJson(json, *geom, jsonAllocator);
             }
             case PRIMITIVETYPE_Integer:
                 json.SetInt(rand());
@@ -358,10 +354,10 @@ BentleyStatus BulkCrudTestFixture::TestDataset::GeneratePrimitiveValue(rapidjson
                 return SUCCESS;
 
             case PRIMITIVETYPE_Point2d:
-                return ECRapidJsonUtilities::Point2dToJson(json, DPoint2d::From(rand() * 1.4, rand() * (-1.0)), jsonAllocator);
+                return ECJsonUtilities::Point2dToJson(json, DPoint2d::From(rand() * 1.4, rand() * (-1.0)), jsonAllocator);
 
             case PRIMITIVETYPE_Point3d:
-                return ECRapidJsonUtilities::Point3dToJson(json, DPoint3d::From(rand() * 1.4, rand() * (-1.0), rand() * 1.0), jsonAllocator);
+                return ECJsonUtilities::Point3dToJson(json, DPoint3d::From(rand() * 1.4, rand() * (-1.0), rand() * 1.0), jsonAllocator);
 
             case PRIMITIVETYPE_String:
             {

@@ -119,7 +119,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! 
         //!     {
         //!     "id" : "0x332",
-        //!     "Name": "ACME"
+        //!     "name": "ACME"
         //!     }
         //!
         //! @param [out] json Current row values of the column of the specified class as JSON object of property name value pairs
@@ -186,8 +186,8 @@ public:
     JsonAdapterBindingInfo(int paramIndex, ECN::ECPropertyCR);
     JsonAdapterBindingInfo(int systemParamIndex);
 
-    bool IsSystemProperty() const { return m_property == nullptr; }
     int GetParameterIndex() const { return m_parameterIndex; }
+    bool IsSystemProperty() const { return m_property == nullptr; }
     ECN::ECPropertyCP GetProperty() const { return m_property; }
     };
 #endif
@@ -209,6 +209,9 @@ struct JsonECSqlBinder final
         static ECSqlStatus BindArrayValue(IECSqlBinder&, RapidJsonValueCR arrayJson, ECN::PrimitiveType const*, ECN::ECStructClass const*);
 
     public:
+        /// @name Methods to bind JSON values from the JsonCpp API
+        /// @{
+
         //! Binds a EC JSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
         //! @param[in] json EC JSON value to be bound to @p binder
@@ -251,7 +254,11 @@ struct JsonECSqlBinder final
         //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, ECN::IECClassLocater& classLocater);
+        
+        //! @}
 
+        /// @name Methods to bind JSON values from the RapidJson API
+        //! @{
 
         //! Binds a EC JSON value to the specified ECSQL statement's binder.
         //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
@@ -295,6 +302,8 @@ struct JsonECSqlBinder final
         //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from EC JSON class names (e.g. via ECDb::GetClassLocater).
         //! @return ECSqlStatus
         ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, ECN::IECClassLocater& classLocater);
+
+        //! @}
     };
 
 //=======================================================================================
