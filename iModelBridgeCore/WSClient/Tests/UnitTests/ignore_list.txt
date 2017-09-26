@@ -32,6 +32,9 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
 
+#EC JSON Format
+ECInstanceKeyFilterTests.FilterByClass_MultipleClassesEmptyInput_EmptyResults
+
 # New ECDb forces cardinality rules upon data, so relationship change caching is broken.
 # This should be rare case and not be needed in real world, but should be fixed:
 #   probably by safely removing relationship before caching new one.
