@@ -95,7 +95,7 @@ namespace connectivity
     //==========================================================================
     /** Parser for SQL92
     */
-    class OOO_DLLPUBLIC_DBTOOLS OSQLParser
+    class OSQLParser
         {
         friend class OSQLParseNode;
         friend struct SQLParseNodeParameter;
@@ -113,21 +113,11 @@ namespace connectivity
             std::unique_ptr<OSQLParseNode> m_pParseTree;    // result from parsing
             Utf8String m_sFieldName;    // current field name for a predicate
             Utf8String m_sErrorMessage;// current error msg
-
             RefCountedPtr< ::com::sun::star::beans::XPropertySet > m_xField;        // current field
-            RefCountedPtr< ::com::sun::star::util::XNumberFormatter > m_xFormatter;    // current number formatter
-            sal_Int32 m_nFormatKey;    // numberformat, which should be used
-            sal_Int32 m_nDateFormatKey;
-            RefCountedPtr< ::com::sun::star::lang::XMultiServiceFactory >    m_xServiceFactory;
-            RefCountedPtr< ::com::sun::star::i18n::XCharacterClassification> m_xCharClass;
-            static RefCountedPtr< ::com::sun::star::i18n::XLocaleData>       s_xLocaleData;
-            RefCountedPtr< ::com::sun::star::i18n::XLocaleData>               xDummy; // can be deleted after 627
-
-
         public:
             // if NULL, a default context will be used
             // the context must live as long as the parser
-            OSQLParser(const RefCountedPtr< ::com::sun::star::lang::XMultiServiceFactory >& _xServiceFactory, const IParseContext* _pContext = NULL);
+            explicit  OSQLParser(const IParseContext* _pContext = nullptr);
             ~OSQLParser();
 
             // Parsing an SQLStatement
@@ -159,11 +149,6 @@ namespace connectivity
 
             // RuleId mit enum, wesentlich effizienter
             static sal_uInt32 RuleID(OSQLParseNode::Rule eRule);
-            // compares the _sFunctionName with all known function names and return the DataType of the return value
-            static sal_Int32 getFunctionReturnType(const Utf8String& _sFunctionName, const IParseContext* pContext = NULL);
-
-            // returns the type for a parameter in a given function name
-            static sal_Int32 getFunctionParameterType(sal_uInt32 _nTokenId, sal_uInt32 _nPos);
 
             void error(const sal_Char* pFormat);
             int SQLlex(YYSTYPE* val);

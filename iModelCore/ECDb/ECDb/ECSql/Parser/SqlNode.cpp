@@ -211,42 +211,7 @@ namespace connectivity
             rString = sBuffer;
             }
         }
-    //-----------------------------------------------------------------------------
-    bool OSQLParseNode::parseNodeToExecutableStatement(Utf8String& _out_rString, const RefCountedPtr< XConnection >& _rxConnection,
-                                                       OSQLParser& _rParser, ::com::sun::star::sdbc::SQLException* _pErrorHolder) const
-        {
-        RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::parseNodeToExecutableStatement");
-        OSL_PRECOND(_rxConnection.IsValid(), "OSQLParseNode::parseNodeToExecutableStatement: invalid connection!");
-        SQLParseNodeParameter aParseParam(_rxConnection,
-                                          NULL, NULL, OParseContext::getDefaultLocale(), NULL, false, true, '.', false, true);
 
-        if (aParseParam.aMetaData.supportsSubqueriesInFrom())
-            {
-            TODO_ConvertCode();
-            //RefCountedPtr< XQueriesSupplier > xSuppQueries = new XQueriesSupplier( _rxConnection, UNO_QUERY );
-            //OSL_ENSURE( xSuppQueries.IsValid(), "OSQLParseNode::parseNodeToExecutableStatement: cannot substitute everything without a QueriesSupplier!" );
-            //if ( xSuppQueries.IsValid() )
-            //    aParseParam.xQueries = &xSuppQueries->getQueries();
-            }
-
-        aParseParam.pParser = &_rParser;
-
-        _out_rString = Utf8String();
-        Utf8String sBuffer;
-        bool bSuccess = false;
-        try
-            {
-            impl_parseNodeToString_throw(sBuffer, aParseParam);
-            bSuccess = true;
-            }
-        catch (const SQLException& e)
-            {
-            if (_pErrorHolder)
-                *_pErrorHolder = e;
-            }
-        _out_rString = sBuffer;
-        return bSuccess;
-        }
     //-----------------------------------------------------------------------------
     void OSQLParseNode::impl_parseNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {

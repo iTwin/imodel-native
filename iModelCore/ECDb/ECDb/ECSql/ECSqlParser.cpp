@@ -21,7 +21,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
     ScopedContext scopedContext(*this, ecdb);
     //Parse statement
     Utf8String error;
-    OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
+    OSQLParser parser;
     std::unique_ptr<OSQLParseNode> parseTree(parser.parseTree(error, ecsql));
 
     if (parseTree == nullptr || !error.empty())

@@ -78,11 +78,9 @@ namespace connectivity
 
     //=============================================================================
     //-----------------------------------------------------------------------------
-    OSQLParser::OSQLParser(const RefCountedPtr< ::com::sun::star::lang::XMultiServiceFactory >& _xServiceFactory, const IParseContext* _pContext)
+    OSQLParser::OSQLParser(const IParseContext* _pContext)
         :m_pContext(_pContext)
-        , m_nFormatKey(0)
-        , m_nDateFormatKey(0)
-        , m_xServiceFactory(_xServiceFactory)
+
         {
 
 #if YYDEBUG
@@ -228,7 +226,7 @@ namespace connectivity
                     }
             }
 
-        if (m_pContext == NULL)
+        if (m_pContext == nullptr)
             m_pContext = &s_aDefaultContext;
         }
     //-----------------------------------------------------------------------------
@@ -236,39 +234,4 @@ namespace connectivity
         {
         }
 
-    //-----------------------------------------------------------------------------
-    sal_Int32 OSQLParser::getFunctionReturnType(const Utf8String& _sFunctionName, const IParseContext* pContext)
-        {
-        sal_Int32 nType = DataType::VARCHAR;
-        Utf8String sFunctionName = _sFunctionName;
-
-        if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_BIT_LENGTH, pContext)))                nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CHAR_LENGTH, pContext)))          nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_INSERT, pContext)))               nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_LEFT, pContext)))                 nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_OCTET_LENGTH, pContext)))         nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_POSITION, pContext)))             nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_RIGHT, pContext)))                nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_SUBSTRING, pContext)))            nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURRENT_DATE, pContext)))         nType = DataType::DATE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURRENT_TIMESTAMP, pContext)))    nType = DataType::TIMESTAMP;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURDATE, pContext)))              nType = DataType::DATE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_EXTRACT, pContext)))              nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_HOUR, pContext)))                 nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MINUTE, pContext)))               nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MONTH, pContext)))                nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_NOW, pContext)))                  nType = DataType::TIMESTAMP;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_SECOND, pContext)))               nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_WEEK, pContext)))                 nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_YEAR, pContext)))                 nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_COUNT, pContext)))                nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MAX, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MIN, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_AVG, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_SUM, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_LOWER, pContext)))                nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_UPPER, pContext)))                nType = DataType::VARCHAR;
-
-        return nType;
-        }
     }  // namespace connectivity

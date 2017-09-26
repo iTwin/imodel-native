@@ -2943,7 +2943,6 @@ sal_uInt32                OSQLParser::s_nRuleIDs[OSQLParseNode::rule_count + 1];
 OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
-RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     {
@@ -3014,16 +3013,14 @@ static Utf8String delComment(Utf8String const& rQuery)
 //-----------------------------------------------------------------------------
 std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
-    m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(rStatement.c_str(), m_pContext, sal_True));
-    m_pParseTree = NULL;
-    m_sErrorMessage = Utf8String();
+    m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
+    m_pParseTree = nullptr;
+    m_sErrorMessage.clear();
     if (SQLyyparse(this) != 0)
         {
         // only set the error message, if it's not already set
         if (!m_sErrorMessage.size())
             m_sErrorMessage = m_scanner->getErrorMessage();
-        if (!m_sErrorMessage.size())
-            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
 
         rErrorMessage = m_sErrorMessage;
         return nullptr;

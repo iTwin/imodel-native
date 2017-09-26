@@ -61,10 +61,10 @@ namespace connectivity
             OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
             virtual ~OSQLScanner();
             OSQLParseNodesContainer& GetContainer() { return m_pGarbageCollector; }
-            inline static void * SAL_CALL operator new(size_t nSize) SAL_THROW(()) { return malloc(nSize); }
-            inline static void * SAL_CALL operator new(size_t, void* _pHint) SAL_THROW(()) { return _pHint; }
-            inline static void SAL_CALL operator delete(void * pMem) SAL_THROW(()) { free(pMem); }
-            inline static void SAL_CALL operator delete(void *, void*) SAL_THROW(()) {}
+            inline static void * operator new(size_t nSize) { return malloc(nSize); }
+            inline static void * operator new(size_t, void* _pHint) { return _pHint; }
+            inline static void operator delete(void * pMem) { free(pMem); }
+            inline static void operator delete(void *, void*) {}
             virtual void SQLyyerror(const char *fmt);
             virtual void output(sal_Int32) { OSL_ASSERT("Internal error in sdblex.l: output not possible"); }
             virtual void ECHO(void) { OSL_ASSERT("Internal error in sdblex.l: ECHO not possible"); }
