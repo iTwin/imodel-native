@@ -79,7 +79,7 @@
 #define BING_NORTHLATITUDE_ELEMENT      "NorthLatitude"
 #define BING_EASTLONGITUDE_ELEMENT      "EastLongitude"
 
-#define VE_MAP_RESOLUTION       21
+#define VE_MAP_RESOLUTION       19
 #define VE_MAP_WIDTH            (256 * (1 << VE_MAP_RESOLUTION))
 #define VE_MAP_HEIGHT           (256 * (1 << VE_MAP_RESOLUTION))
 
