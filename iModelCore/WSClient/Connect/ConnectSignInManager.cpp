@@ -594,15 +594,15 @@ ConnectSignInManager::ConnectionClientListener::ConnectionClientListener(Connect
     s_instance = this;
     }
 
-void ConnectSignInManager::ConnectionClientListener::callback(int eventId)
+void ConnectSignInManager::ConnectionClientListener::callback(int eventId, WCharCP data)
     {
-    s_instance->ConnectionClientCallback(eventId);
+    s_instance->ConnectionClientCallback(eventId, data);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(int eventId)
+void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(int eventId, WCharCP data)
     {
     if (IConnectionClientInterface::EVENT_TYPE::LOGIN == eventId)
         {

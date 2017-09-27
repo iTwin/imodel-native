@@ -26,7 +26,7 @@ struct ConnectionClientInterface : public IConnectionClientInterface
         static BeCriticalSection s_lock;
 
         CCDATABUFHANDLE GetUserInformation();
-        static void EventListener(int eventId);
+        static void EventListener(int eventId, WCharCP data);
 
     public:
         ConnectionClientInterface();

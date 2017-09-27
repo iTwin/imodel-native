@@ -79,8 +79,8 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
             public:
                 ConnectionClientListener(ConnectSignInManagerPtr manager);
-                static void callback(int eventId);
-                void ConnectionClientCallback(int eventId);
+                static void callback(int eventId, WCharCP data);
+                void ConnectionClientCallback(int eventId, WCharCP data);
             };
 
     private:

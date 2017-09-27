@@ -17,7 +17,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 * @bsiclass                                                     Mark.Uvari    09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 
-typedef void(*event_callback)(int eventId);
+typedef void(*event_callback)(int eventId, WCharCP data);
 
 typedef std::shared_ptr<struct IConnectionClientInterface> IConnectionClientInterfacePtr;
 struct IConnectionClientInterface 
