@@ -86,14 +86,15 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
     private:  
 
         bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_overviewNodes;
-        bvector<IScalableMesh*>                              m_smOverviews;
+        bvector<IScalableMesh*>                               m_smOverviews;
         mutable std::vector<RequestedQuery>                   m_requestedQueries;        
        // IScalableMeshPtr                                      m_scalableMeshPtr;
         IScalableMeshDisplayCacheManagerPtr                   m_displayCacheManagerPtr;
         bset<uint64_t>                                        m_activeClips;
+        bool                                                  m_loadTexture;
 
         void UpdatePreloadOverview();
-        void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh);        
+        void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh);
         void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
     protected:                                        
@@ -133,9 +134,11 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
     public : 
 
-        static void PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload);
+        static void CancelPreload(ScalableMesh<DPoint3d>* smP);
 
-        ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+        static void PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload);
+        
+        ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
         virtual ~ScalableMeshProgressiveQueryEngine();
 

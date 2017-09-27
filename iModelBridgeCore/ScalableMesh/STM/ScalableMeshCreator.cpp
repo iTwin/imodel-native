@@ -74,7 +74,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #endif
 
 #include "MosaicTextureProvider.h"
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 
 #define SCALABLE_MESH_TIMINGS
 
@@ -419,7 +419,7 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
-    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Embedded);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Embedded);
     m_scmPtr->TextureFromRaster(mosaicPtr);
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
@@ -432,8 +432,8 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     DRange3d range;
     m_scmPtr->GetRange(range);
     BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
-    ITextureProviderPtr mapboxPtr = new MapBoxTextureProvider(url, range, cs);
-    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Streaming);
+    ITextureProviderPtr mapboxPtr = new StreamTextureProvider(url, range, cs);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
     m_scmPtr->TextureFromRaster(mapboxPtr);
     return SUCCESS;
     }

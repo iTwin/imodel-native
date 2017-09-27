@@ -34,7 +34,7 @@
 #include <json/json.h>
 
 
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -3798,7 +3798,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
-    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+    if (dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()))
         {
         textureWidthInPixels = 256;
         textureHeightInPixels = 256;
@@ -4892,7 +4892,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
 
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
-    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 
@@ -4908,7 +4908,7 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode)
     {
-    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(nodeId, m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(nodeId, m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 
@@ -4925,7 +4925,7 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     {
     HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
 
-    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
     pNewNode->m_loadNeighbors = m_loadNeighbors;
@@ -5227,9 +5227,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     settings->m_isPublishing = true;
     ISMDataStoreTypePtr<EXTENT>     pDataStore(
 #ifndef VANCOUVER_API
-        new SMStreamingStore<EXTENT>(settings)
+        new SMStreamingStore<EXTENT>(settings, nullptr)
 #else
-        SMStreamingStore<EXTENT>::Create(settings)
+        SMStreamingStore<EXTENT>::Create(settings, nullptr)
 #endif
     );
 
@@ -5520,7 +5520,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POINT, EXTENT>::CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore)
     {
     SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter->Clone(),
-                                                                       m_indexHeader.m_balanced, m_indexHeader.m_textured != IndexTexture::None,
+                                                                       m_indexHeader.m_balanced, m_indexHeader.m_textured != SMTextureType::None,
                                                                        m_propagatesDataDown, m_loadNeighbors, m_mesher2_5d, m_mesher3d);
     auto node = GetRootNode();
     if (node == nullptr) return index;

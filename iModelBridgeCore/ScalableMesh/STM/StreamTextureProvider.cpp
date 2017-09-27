@@ -1,6 +1,6 @@
 #include "ScalableMeshPCH.h"
 #include <ScalableMesh/IScalableMesh.h>
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 #include "ImagePPHeaders.h"
 #include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 static double s_minPixelSizeLimit = 0.25;
 
-DPoint2d MapBoxTextureProvider::_GetMinPixelSize()
+DPoint2d StreamTextureProvider::_GetMinPixelSize()
     {
     DPoint2d minSize;
 
@@ -35,13 +35,13 @@ DPoint2d MapBoxTextureProvider::_GetMinPixelSize()
     return minSize;
     }
 
-DRange2d MapBoxTextureProvider::_GetTextureExtent()
+DRange2d StreamTextureProvider::_GetTextureExtent()
     {
     DRange2d rasterBox = DRange2d::From(m_totalExt);
     return rasterBox;
     }
 
-StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
+StatusInt StreamTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
     double unitsPerPixelX = (area.high.x - area.low.x) / width;
     double unitsPerPixelY = (area.high.y - area.low.y) / height;
@@ -52,7 +52,7 @@ StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     return SUCCESS;
     }
 
-MapBoxTextureProvider::MapBoxTextureProvider(WString url, DRange3d totalExtent, GeoCoordinates::BaseGCSCPtr targetCS)
+StreamTextureProvider::StreamTextureProvider(WString url, DRange3d totalExtent, GeoCoordinates::BaseGCSCPtr targetCS)
     {
     m_totalExt = totalExtent;
 

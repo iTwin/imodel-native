@@ -38,10 +38,11 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
-
+#include "ScalableMesh\ScalableMeshLib.h"
 #include <CloudDataSource/DataSourceManager.h>
 
 #include "ScalableMeshDraping.h"
+#include "ScalableMeshInfo.h"
 #include "ScalableMeshVolume.h"
 
 #include "Edits\ClipRegistry.h"
@@ -51,6 +52,7 @@ extern bool   GET_HIGHEST_RES;
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
+#include <ImagePP\all\h\HRFVirtualEarthFile.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include "ScalableMeshAnalysis.h"
@@ -163,9 +165,19 @@ bool IScalableMesh::IsTextured()
     return _IsTextured();
     }
 
+StatusInt IScalableMesh::GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {
+    return _GetTextureInfo(textureInfo);
+    }
+
 bool IScalableMesh::IsCesium3DTiles()
     {
     return _IsCesium3DTiles();
+    }
+
+Utf8String IScalableMesh::GetProjectWiseContextShareLink()
+    {
+    return _GetProjectWiseContextShareLink();
     }
 
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
@@ -672,6 +684,13 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             newBaseEditsFilePath.Assign(temp);
             }
         }
+    else if (WString(filePath).ContainsI(L"realitydataservices") && WString(filePath).ContainsI(L"S3MXECPlugin"))
+        { // Open from ProjectWise Context share
+        isLocal = false;
+        wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+        if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
+        newBaseEditsFilePath.Assign(temp);
+        }
     else
         {
         status = BSIERROR;
@@ -973,7 +992,15 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
     status = scmPtr->Open();
     if (status == BSISUCCESS)
         {
-        ScalableMeshLib::GetHost().RegisterScalableMesh(filePath, scmP);
+        bool isFromPWCS = false;
+        WString newFilePath = filePath;
+        if (scmPtr->IsCesium3DTiles())
+            {
+            auto pwcsLink = scmPtr->GetProjectWiseContextShareLink();
+            if (isFromPWCS = !pwcsLink.empty())
+                newFilePath = WString(pwcsLink.c_str(), true);
+            }
+        ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1036,40 +1063,66 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         config_server["settings"]["url"] = Json::Value(utf8Path.c_str());
                         }
                     else
-                        { // RDS
-                        config_server["type"] = "rds";
-                        auto& server_settings = config_server["settings"];
-                        assert(m_path.substr(0, 8) == L"https://");
-                        auto firstSeparatorPos = m_path.find(L".");
-                        auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
-                        server_settings["id"] = Json::Value(serverID.c_str());
-                        server_settings["authentication"]["public"] = true;
+                        {
+                        Utf8String projectID, guid;
+                        if (utf8Path.ContainsI("realitydataservices") && utf8Path.ContainsI("S3MXECPlugin"))
+                            { // RDS
+                            config_server["type"] = "rds";
+                            auto& server_settings = config_server["settings"];
+                            auto firstSeparatorPos = m_path.find(L".");
+                            auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                            server_settings["id"] = Json::Value(serverID.c_str());
+                            server_settings["authentication"]["public"] = false;
 
-                        // compute positions and lengths for guid, root file and azure token
-                        auto guidPos = m_path.find(L"/", 8) + 1;
-                        auto guidLength = m_path.find(L"/", guidPos) - guidPos;
-                        auto rootTilesetPathPos = guidPos + guidLength + 1;
-                        auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
-                        auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
-                        auto azureTokenLength = m_path.size() - azureTokenPos;
+                            auto guidPos = m_path.find(L"RealityData/") + 12;
+                            auto guidLength = m_path.find(L"/", guidPos) - guidPos;
 
-                        // guid
-                        auto guid = Utf8String(m_path.substr(guidPos, guidLength));
+                            // guid
+                            guid = Utf8String(m_path.substr(guidPos, guidLength));
 
-                        // root file
-                        auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+                            config["guid"] = Json::Value(guid.c_str());
+                            auto projectIDStartPos = m_path.find(L"S3MXECPlugin--") + 14;
+                            auto projectIDEndPos = m_path.find_first_of(L"/", projectIDStartPos);
+                            projectID = Utf8String(m_path.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+                            }
+                        else
+                            { // Azure
+                            config_server["type"] = "rds";
+                            auto& server_settings = config_server["settings"];
+                            assert(m_path.substr(0, 8) == L"https://");
+                            auto firstSeparatorPos = m_path.find(L".");
+                            auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                            server_settings["id"] = Json::Value(serverID.c_str());
+                            server_settings["authentication"]["public"] = true;
 
-                        // azure token
-                        auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+                            // compute positions and lengths for guid, root file and azure token
+                            auto guidPos = m_path.find(L"/", 8) + 1;
+                            auto guidLength = m_path.find(L"/", guidPos) - guidPos;
+                            auto rootTilesetPathPos = guidPos + guidLength + 1;
+                            auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
+                            auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
+                            auto azureTokenLength = m_path.size() - azureTokenPos;
 
-                        // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+                            // guid
+                            guid = Utf8String(m_path.substr(guidPos, guidLength));
 
-                        server_settings["url"] = Json::Value(rootTilesetPath.c_str());
-                        config["guid"] = Json::Value(guid.c_str());
+                            // root file
+                            auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+
+                            // azure token
+                            auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+
+                            // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+
+                            server_settings["url"] = Json::Value(rootTilesetPath.c_str());
+                            config["guid"] = Json::Value(guid.c_str());
+
+                            projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
+                            }
+                        m_smRDSProvider = IScalableMeshRDSProvider::Create(projectID, guid);
                         }
                     }
-
-                    }
+                }
                 SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(config);
                 m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
 
@@ -1081,7 +1134,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     stream_settings->m_url = localDataFilesPath.GetNameUtf8().c_str();
                     }
 #ifndef VANCOUVER_API                                       
-                dataStore = new SMStreamingStore<Extent3dType>(stream_settings);
+                dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
 #else
                 dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
 #endif
@@ -1240,7 +1293,15 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
-    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
+    WString path = m_path;
+    if (this->IsCesium3DTiles())
+        {
+        auto pwcsLink = this->GetProjectWiseContextShareLink();
+        if (!pwcsLink.empty())
+            path = WString(pwcsLink.c_str(), true);
+        }
+
+    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
@@ -1789,15 +1850,63 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTextured()
 
     if (m_scmIndexPtr != 0)
         {
-        return m_scmIndexPtr->IsTextured() != IndexTexture::None;
+        return m_scmIndexPtr->IsTextured() != SMTextureType::None;
         }
     return false;
+    }
 
+template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {    
+    if (m_scmIndexPtr == 0)
+        {
+        return ERROR;        
+        }
+
+    SMTextureType textureType = m_scmIndexPtr->IsTextured();
+    bool isUsingBingMap = false;
+
+    if (textureType == SMTextureType::Streaming)
+        {
+        assert(m_smSQLitePtr != nullptr);
+
+        SourcesDataSQLite sourcesData;
+        m_smSQLitePtr->LoadSources(sourcesData);
+        
+        IDTMSourceCollection sources;
+        DocumentEnv sourceEnv(L"");
+        bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
+        assert(success == true);
+                
+        for (IDTMSourceCollection::const_iterator sourceIt = sources.Begin(), sourcesEnd = sources.End(); sourceIt != sourcesEnd; ++sourceIt)
+            {
+            const IDTMSource& source = *sourceIt;
+            if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
+                {                
+                HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+
+                if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+                    {
+                    isUsingBingMap = true;
+                    break;
+                    }                                
+                }
+            }        
+        }
+    
+    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap));
+
+    return SUCCESS;
     }
 
 template <class POINT> bool ScalableMesh<POINT>::_IsCesium3DTiles()
     {
     return m_isCesium3DTiles;
+    }
+
+template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextShareLink()
+    {
+    if (!m_smRDSProvider.IsValid()) return Utf8String();
+    return m_smRDSProvider->GetRDSURLAddress();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider)

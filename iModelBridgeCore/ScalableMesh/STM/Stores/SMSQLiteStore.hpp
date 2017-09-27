@@ -54,7 +54,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
         {
         //we create the raster only once per dataset. Apparently there is some race condition if we do it in the render threads.
-        if (indexHeader.m_textured == IndexTexture::Streaming) 
+        if (indexHeader.m_textured == SMTextureType::Streaming) 
             {
 
             SQLiteNodeHeader nodeHeader;
@@ -99,6 +99,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
             m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
+            assert(m_raster != nullptr);
             }
         }
 
@@ -248,7 +249,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+        m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
+        m_preloadMutex.unlock();
         }
 
 #if 0 
@@ -380,7 +383,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
-    if (m_masterHeader.m_textured == IndexTexture::Streaming)
+    if (m_masterHeader.m_textured == SMTextureType::Streaming)
         {
         dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
         return true;

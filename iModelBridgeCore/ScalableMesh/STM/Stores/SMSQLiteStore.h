@@ -15,6 +15,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
         HFCPtr<HRARASTER> m_raster;
         SMIndexMasterHeader<EXTENT> m_masterHeader;
+        std::mutex                  m_preloadMutex;
 
 
     public : 

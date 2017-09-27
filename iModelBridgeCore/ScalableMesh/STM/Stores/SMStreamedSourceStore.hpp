@@ -24,17 +24,10 @@
 
 template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>::SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<HRARASTER> source)
     {
+    assert(source != nullptr);
     m_nodeHeader = nodeHeader;
     m_dataType = dataType;
-    m_smSQLiteFile = smSQLiteFile;
-
-    if (!smSQLiteFile->HasSources())
-        {
-        assert(false && "Trying to use a streamed source but no source found!");
-        return;
-        }
-
-
+    m_smSQLiteFile = smSQLiteFile;    
     m_source = source;
     }
 
@@ -57,6 +50,7 @@ template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, 
 template <class DATATYPE, class EXTENT>  size_t SMStreamedSourceStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
     assert(maxCountData >= 256 * 256 * 3);
+    assert(m_source != nullptr);
     
 
     //DRange2d nodeExtent2d = DRange2d::From(m_nodeHeader->m_contentExtentDefined ? m_nodeHeader->m_contentExtent : m_nodeHeader->m_nodeExtent);
