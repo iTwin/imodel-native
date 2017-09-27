@@ -53,6 +53,14 @@ protected:
     bool                            m_overwriteExisting = true;
     bool                            m_wantProgressOutput = true;
 
+    // History (WIP) requires IModel Hub connection.
+    bool                            m_wantHistory = false;
+    Utf8String                      m_userName;
+    Utf8String                      m_password;
+    Utf8String                      m_projectName;
+    Utf8String                      m_repositoryName;
+    Utf8String                      m_environment;
+
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
     PublisherParams () { }
@@ -68,6 +76,7 @@ public:
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
+    bool WantHistory() const { return m_wantHistory; }
     GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
@@ -76,6 +85,14 @@ public:
 
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db);
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
+
+    // For History publishing...
+    Utf8StringCR GetUser() const { return m_userName; }
+    Utf8StringCR GetPassword() const { return m_password; }
+    Utf8StringCR GetProjectName() const { return m_projectName; }
+    Utf8StringCR GetRepositoryName() const { return m_repositoryName; }
+    Utf8StringCR GetEnvironment() const { return m_environment; }
+
 };
 
 //=======================================================================================
@@ -146,6 +163,7 @@ public:
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
 
+
     struct VerboseStatistics
         {
         Utf8String      m_modelNames;
@@ -161,6 +179,36 @@ public:
         return stats;
         }
 };
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     09/2017
+//=======================================================================================
+struct TilesetRevisionPublisher : TilesetPublisher
+{
+
+public:    
+    TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params)
+        : TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
+        { 
+        m_dataDir.AppendToPath(L"Revisions").AppendSeparator();
+        }
+
+    PublisherContext::Status PublishRevision(DgnElementIdSet const&  addedIds, DgnElementIdSet const& removedIds, size_t index, PublisherParamsR params);
+
+
+    
+};  // TilesetRevisionPublisher
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     09/2017
+//=======================================================================================
+struct TilesetHistoryPublisher : TilesetPublisher
+{
+    TILEPUBLISHER_EXPORT static Status PublishTilesetWithHistory(PublisherParamsR params);
+
+
+
+};  // TilesetHistoryPublisher
 
 } // namespace Cesium
 

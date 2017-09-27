@@ -8,6 +8,7 @@
 #include <TilePublisher/CesiumPublisher.h>
 #include "CesiumConstants.h"
 
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
@@ -39,7 +40,6 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
 
     return viewId;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -243,7 +243,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return status;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
 
     ExtractSchedules();     // Extract these now as they schedule entrie may need to be added to batch tables.
 
@@ -352,3 +352,4 @@ WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, Pu
     }
 
 
+                                    

@@ -1301,7 +1301,7 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
 
             default:
                 {
-                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::White() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
+                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::Cyan() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
 
                 for (auto& curr : attributes)
                     m_elementColors[curr.first.GetElementId()] = s_colors[m_classifier.GetInsideDisplay()].GetValue();
@@ -3532,7 +3532,6 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
             AddViewedModel (viewedModels, modelId);
         }
     }
-static size_t           s_maxPointsPerTile = 250000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016

@@ -244,6 +244,14 @@ struct PublisherContext : TileGenerator::ITileCollector
         ErrorWritingScene,
         ErrorWritingNode,
         CantOpenOutputFile,
+
+        // History publishing...
+        CantConnectToIModelHub,
+        RepositoryDoesNotExist,
+        CantAcquireBriefcase,
+        CantOpenBriefcase,
+        CantExtractHistory,
+        CantFindDefaultView,
         };
 
     struct  Statistics
