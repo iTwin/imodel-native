@@ -426,7 +426,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     if (m_serverArgs.m_haveProjectGuid)
         {
-        m_clientUtils->SetProjectId(m_serverArgs.m_bcsProjectId);
+        m_clientUtils->SetProjectId(m_serverArgs.m_bcsProjectId.c_str());
         }
     else
         {

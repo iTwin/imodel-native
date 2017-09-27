@@ -1402,6 +1402,10 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
     if (!m_registry.IsValid())
-        m_registry = new iModelBridgeRegistry(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+        {
+        m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+        if (!m_registry.IsValid())
+            throw "iModelBridgeRegistry statedb open error";
+        }
     return *m_registry;
     }
