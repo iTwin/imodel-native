@@ -44,6 +44,13 @@ _vsProject = 1
 %include $(MOBILEDGNSDK_DIR_BuildPlatform)deliver.mki
 
 #---------------------------------------------------------------------------------------+
+#   Deliver Assemblies
+#---------------------------------------------------------------------------------------+
+
+$(o)CCApi.dll : $(BuildContext)SubParts/Assemblies/CCApi.dll
+    $(LinkFirstDepToFirstTarget)
+    
+#---------------------------------------------------------------------------------------+
 #   Compile test utilities
 #---------------------------------------------------------------------------------------+
 
@@ -86,6 +93,7 @@ GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeLibxml2$(libext)
 GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BentleyAllocator$(libext)
 GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesCache$(libext)
 GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesClient$(libext)
+GUNITTEST_LIBS + $(BuildContext)SubParts/Libs/$(libprefix)CCApi$(libext)
 
 # Don't run tests after build
 GUNITTEST_NOEXEC = 1
