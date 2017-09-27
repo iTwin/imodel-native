@@ -15,7 +15,7 @@ BDC_SDKSources = $(BuildContext)SdkSources/Vancouver-BentleyDesktopClient/
 always:
     @CreateSymLinks.py    "$(BuildContext)Delivery/Bentley.Connect.Client.API.dll=$(BDC_SDKSources)Assemblies/Bentley.Connect.Client.API.dll"
     @CreateSymLinks.py -d "$(BuildContext)PublicAPI/BentleyDesktopClient=$(BDC_SDKSources)PublicAPI"
-    @CreateSymLinks.py    "$(BuildContext)Delivery/CCApi.dll=$(Vancouver_BentleyDesktopClient)Files/CCApi.dll"
+    @CreateSymLinks.py    "$(BuildContext)Delivery/CCApi.dll=$(Vancouver_BentleyDesktopClient)Assemblies/CCApi.dll"
     @CreateSymLinks.py    "$(Vancouver_BentleyDesktopClient)Libs/CCApi.lib=$(BDC_SDKSources)Libs/CCApi.lib"
-    @CreateSymLinks.py    "$(Vancouver_BentleyDesktopClient)Files/CCApi.dll=$(BDC_SDKSources)Assemblies/CCApi.dll"
+    @CreateSymLinks.py    "$(Vancouver_BentleyDesktopClient)Assemblies/CCApi.dll=$(BDC_SDKSources)Assemblies/CCApi.dll"
 
