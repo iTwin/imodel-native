@@ -31,6 +31,7 @@ class BingMapLogoRetriever
         BingMapLogoRetriever()
             {
             m_bingMapLogoURI = WString(L"http://dev.virtualearth.net/Branding/logo_powered_by.png");
+            m_bingMapLogoRetryCount = 0;
             }
 
         /*---------------------------------------------------------------------------------**//**
