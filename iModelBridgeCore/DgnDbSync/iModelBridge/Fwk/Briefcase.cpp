@@ -62,7 +62,8 @@ void iModelBridgeFwk::ServerArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
 SERVER:\n\
-    --server-project=       (required)  The name of a project in the iModel Hub Services.\n\
+    --server-project=       (optional)  The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
+    --server-project-guiid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
     --server-repository=    (required)  The name of a repository in the project.\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
@@ -104,7 +105,15 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
 
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-project="))
             {
-            m_bcsProjectName = getArgValue(argv[iArg]);
+            m_bcsProjectId = getArgValue(argv[iArg]);
+            m_haveProjectGuid = false;
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-project-guid="))
+            {
+            m_bcsProjectId = getArgValue(argv[iArg]);
+            m_haveProjectGuid = true;
             continue;
             }
 
@@ -131,9 +140,9 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::ServerArgs::Validate(int argc, WCharCP argv[])
     {
-    if (m_bcsProjectName.empty())
+    if (m_bcsProjectId.empty())
         {
-        GetLogger().fatal("missing project name");
+        GetLogger().fatal("missing project name or GUID");
         return BSIERROR;
         }
 
@@ -415,13 +424,20 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    WebServices::WSError wserror;
-    if (BSISUCCESS != m_clientUtils->QueryProjectId(&wserror, m_serverArgs.m_bcsProjectName))
+    if (m_serverArgs.m_haveProjectGuid)
         {
-        GetLogger().fatalv("Cannot find iModelHub project: [%s]", m_serverArgs.m_bcsProjectName.c_str());
-        if (wserror.GetStatus() != WebServices::WSError::Status::None)
-            GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
-        return BSIERROR;
+        m_clientUtils->SetProjectId(m_serverArgs.m_bcsProjectId);
+        }
+    else
+        {
+        WebServices::WSError wserror;
+        if (BSISUCCESS != m_clientUtils->QueryProjectId(&wserror, m_serverArgs.m_bcsProjectId))
+            {
+            GetLogger().fatalv("Cannot find iModelHub project: [%s]", m_serverArgs.m_bcsProjectId.c_str());
+            if (wserror.GetStatus() != WebServices::WSError::Status::None)
+                GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
+            return BSIERROR;
+            }
         }
 
     return BSISUCCESS;
