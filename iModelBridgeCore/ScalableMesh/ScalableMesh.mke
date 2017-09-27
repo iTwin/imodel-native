@@ -480,6 +480,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
+    Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \

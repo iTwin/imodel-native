@@ -34,6 +34,8 @@ struct IScalableMeshTextureInfo abstract : virtual public RefCountedBase
         BENTLEY_SM_EXPORT SMTextureType GetTextureType() const;
 
         BENTLEY_SM_EXPORT bool          IsUsingBingMap() const;        
+
+        BENTLEY_SM_EXPORT static const Byte* GetBingMapLogo(DPoint2d& bingMapLogoSize);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
