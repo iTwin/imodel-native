@@ -22,6 +22,9 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 struct StubImsClient : public IImsClient
     {
     public:
+        SamlTokenPtr stubToken = StubSamlToken();
+
+    public:
         std::shared_ptr<StubImsClient> Create()
             {
             return std::make_shared<StubImsClient>();
