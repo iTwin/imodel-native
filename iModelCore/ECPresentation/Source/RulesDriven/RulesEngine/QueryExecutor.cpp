@@ -270,21 +270,6 @@ size_t ContentQueryExecutor::GetRecordsCount() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document GetFormattedValue(IECPropertyFormatter const& formatter, PrimitiveECPropertyCR prop, 
-    IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
-    {
-    Utf8String formattedValue;
-    if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(prop.GetType(), value)))
-        return ValueHelpers::GetJsonFromPrimitiveValue(prop.GetType(), value, allocator);
-        
-    rapidjson::Document json(allocator);
-    json.SetString(formattedValue.c_str(), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsValueMerged(Utf8CP value)
     {
     static Utf8String s_format;
@@ -314,6 +299,70 @@ private:
     rapidjson::Document m_values;
     rapidjson::Document m_displayValues;
     bvector<Utf8String> m_mergedFieldNames;
+
+private:
+    /*---------------------------------------------------------------------------------**//**
+    // @bsimethod                                    Grigas.Petraitis                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static rapidjson::Document GetFormattedValue(IECPropertyFormatter const& formatter, ECPropertyCR prop,
+        IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
+    /*---------------------------------------------------------------------------------**//**
+    // @bsimethod                                    Grigas.Petraitis                10/2016
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static rapidjson::Document GetFormattedPrimitiveValue(IECPropertyFormatter const& formatter, ECPropertyCR prop, PrimitiveType type,
+        IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
+        {
+        Utf8String formattedValue;
+        if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, value)))
+            return ValueHelpers::GetJsonFromPrimitiveValue(type, value, allocator);
+        
+        rapidjson::Document json(allocator);
+        json.SetString(formattedValue.c_str(), json.GetAllocator());
+        return json;
+        }
+    /*---------------------------------------------------------------------------------**//**
+    // @bsimethod                                    Grigas.Petraitis                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static rapidjson::Document GetFormattedStructValue(IECPropertyFormatter const& formatter, 
+        IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        for (IECSqlValue const& value : structValue.GetStructIterable())
+            {
+            ECPropertyCP memberProperty = value.GetColumnInfo().GetProperty();
+            json.AddMember(rapidjson::Value(memberProperty->GetName().c_str(), json.GetAllocator()), 
+                GetFormattedValue(formatter, *memberProperty, value, &json.GetAllocator()), json.GetAllocator());
+            }
+        return json;
+        }
+    /*---------------------------------------------------------------------------------**//**
+    // @bsimethod                                    Grigas.Petraitis                09/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static rapidjson::Document GetFormattedArrayValue(IECPropertyFormatter const& formatter, ArrayECPropertyCR prop, 
+        IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
+        {
+        rapidjson::Document json(allocator);
+        json.SetArray();
+        for (IECSqlValue const& value : arrayValue.GetArrayIterable())
+            {
+            if (prop.GetIsStructArray())
+                {
+                json.PushBack(GetFormattedStructValue(formatter, value, &json.GetAllocator()), json.GetAllocator());
+                }
+            else if (prop.GetIsPrimitiveArray())
+                {
+                PrimitiveType primitiveType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+                json.PushBack(GetFormattedPrimitiveValue(formatter, prop, primitiveType, value, &json.GetAllocator()), json.GetAllocator());
+                }
+            else
+                {
+                BeAssert(false);
+                break;
+                }
+            }
+        return json;
+        }
 
 public:
     ContentValueAppender()
@@ -378,23 +427,31 @@ public:
             rapidjson::Document valueJson = ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), value, &m_values.GetAllocator());
             rapidjson::Document formattedValueJson(&m_displayValues.GetAllocator());
             if (nullptr != propertyFormatter)
-                formattedValueJson = GetFormattedValue(*propertyFormatter, primitiveProperty, value, &m_displayValues.GetAllocator());
+                formattedValueJson = GetFormattedPrimitiveValue(*propertyFormatter, primitiveProperty, primitiveProperty.GetType(), value, &m_displayValues.GetAllocator());
             else
                 formattedValueJson.CopyFrom(valueJson, formattedValueJson.GetAllocator());
             AddValue(name, std::move(valueJson), std::move(formattedValueJson));
             }
         else if (ecProperty.GetIsStruct())
             {
-            rapidjson::Document valueJson = ValueHelpers::GetJsonFromStructValue(ecProperty.GetAsStructProperty()->GetType(), value, &m_values.GetAllocator());
+            StructECPropertyCR structProperty = *ecProperty.GetAsStructProperty();
+            rapidjson::Document valueJson = ValueHelpers::GetJsonFromStructValue(structProperty.GetType(), value, &m_values.GetAllocator());
             rapidjson::Document formattedValueJson(&m_displayValues.GetAllocator());
-            formattedValueJson.CopyFrom(valueJson, formattedValueJson.GetAllocator()); // no formatting for struct values
+            if (nullptr != propertyFormatter)
+                formattedValueJson = GetFormattedStructValue(*propertyFormatter, value, &m_displayValues.GetAllocator());
+            else
+                formattedValueJson.CopyFrom(valueJson, formattedValueJson.GetAllocator());
             AddValue(name, std::move(valueJson), std::move(formattedValueJson));
             }
         else if (ecProperty.GetIsArray())
             {
+            ArrayECPropertyCR arrayProperty = *ecProperty.GetAsArrayProperty();
             rapidjson::Document valueJson = ValueHelpers::GetJsonFromArrayValue(value, &m_values.GetAllocator());
             rapidjson::Document formattedValueJson(&m_displayValues.GetAllocator());
-            formattedValueJson.CopyFrom(valueJson, formattedValueJson.GetAllocator()); // no formatting for array values
+            if (nullptr != propertyFormatter)
+                formattedValueJson = GetFormattedArrayValue(*propertyFormatter, arrayProperty, value, &m_displayValues.GetAllocator());
+            else
+                formattedValueJson.CopyFrom(valueJson, formattedValueJson.GetAllocator());
             AddValue(name, std::move(valueJson), std::move(formattedValueJson));
             }
         else if (ecProperty.GetIsNavigation())
@@ -419,6 +476,21 @@ public:
         AddValue(name, std::move(jsonValue), rapidjson::Value(), ADD_Value);
         }
 };
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentValueAppender::GetFormattedValue(IECPropertyFormatter const& formatter, ECPropertyCR prop,
+    IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
+    {
+    if (prop.GetIsPrimitive())
+        return GetFormattedPrimitiveValue(formatter, prop, prop.GetAsPrimitiveProperty()->GetType(), value, allocator);
+    if (prop.GetIsArray())
+        return GetFormattedArrayValue(formatter, *prop.GetAsArrayProperty(), value, allocator);
+    if (prop.GetIsStruct())
+        return GetFormattedStructValue(formatter, value, allocator);
+    BeAssert(false && "Unexpected property type");
+    return rapidjson::Document(allocator);
+    }
 
 //=======================================================================================
 // @bsiclass                                     Grigas.Petraitis               06/2017

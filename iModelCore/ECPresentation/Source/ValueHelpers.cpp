@@ -14,10 +14,10 @@
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop,
     std::function<int()> getIntEnumId, std::function<Utf8CP()> getStrEnumId)
     {
-    if (!prop.GetIsPrimitive())
+    if (!prop.GetIsPrimitive() && !prop.GetIsPrimitiveArray())
         return ERROR;
 
-    ECEnumerationCP enumeration = prop.GetAsPrimitiveProperty()->GetEnumeration();
+    ECEnumerationCP enumeration = prop.GetIsPrimitive() ? prop.GetAsPrimitiveProperty()->GetEnumeration() : prop.GetAsPrimitiveArrayProperty()->GetEnumeration();
     if (nullptr == enumeration)
         return ERROR;
 
