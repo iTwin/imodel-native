@@ -606,7 +606,8 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
     BeFileName changeStreamPathname = BuildRevisionChangesPathname(revisionId);
     
     DgnRevisionPtr revision = new DgnRevision(revisionId, parentRevisionId, dbGuid);
-    revision->SetRevisionChangesFile(changeStreamPathname);
+    revision->m_revChangesFile = changeStreamPathname;
+    revision->m_ownsRevChangesFile = true;
     status = RevisionStatus::Success;
     return revision;
     }
@@ -617,7 +618,7 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
 DgnRevision::~DgnRevision()
     {
 #ifndef DEBUG_REVISION_KEEP_FILES
-    if (m_revChangesFile.DoesPathExist())
+    if (m_ownsRevChangesFile && m_revChangesFile.DoesPathExist())
         {
         BeFileNameStatus status = m_revChangesFile.BeDeleteFile();
         BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
