@@ -19,7 +19,6 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 
 #include <DgnPlatform\TextString.h>
-#include <DgnPlatform\ImageUtilities.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -785,56 +784,6 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.St-Pierre  09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DownloadBitmapToRgba(bvector<Byte>& imageData, DPoint2d& size, WChar const* pURI, DPoint2d* pRequestedSize)
-    {
-    WChar localFilename[MAX_PATH];
-
-    if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
-        return false;
-    
-    ImageUtilities::RgbImageInfo info;
-    BeFile pngFile;    
-    
-    BeFileStatus fileStatus = pngFile.Open(localFilename, BeFileAccess::Read);
-    
-    if (fileStatus != BeFileStatus::Success)
-        return false;        
-
-    BentleyStatus status = ImageUtilities::ReadImageFromPngFile(imageData, info, pngFile);
-
-    if (status != SUCCESS)
-        {
-        return false;
-        }
-
-    size.x = info.width;
-    size.y = info.height;
-       
-    return true;        
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.St-Pierre  09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Byte const* ScalableMeshModel::GetImageryLogo(DPoint2d& size)
-    {
-    if (m_brandLogoURI.empty() || m_logoRetryCount > 2)  // Stop trying after 3 attempts.
-        return NULL;
-
-    if (m_pLogoRgba.size() == 0 && !DownloadBitmapToRgba(m_pLogoRgba, m_logoSize, m_brandLogoURI.c_str(), NULL))
-        {
-        // An error occurred, we should not try over and over. 
-        ++m_logoRetryCount;
-        return NULL;
-        }
-
-    size = m_logoSize;
-    return &m_pLogoRgba[0];
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  08/2017
 //----------------------------------------------------------------------------------------
@@ -847,15 +796,6 @@ void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRG
     //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (true);
 
     DPoint2d bitmapDrawSize = { bitmapSize.x, bitmapSize.y };
-
-/*
-    if (context.GetDrawPurpose() == DrawPurpose::Plot)
-        {
-        // Adjust logo size to look like the size they use during print at www.bing.com/maps
-        bitmapDrawSize.y = max(1.0, m_dpi.y*s_logoHeightInch);
-        bitmapDrawSize.x = max(1.0, bitmapSize.x * (bitmapDrawSize.y / bitmapSize.y));
-        }
-*/
 
     DPoint3d bitmapInView[4];
     bitmapInView[0].x = 0;
@@ -1035,7 +975,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (m_isUsingBingMap)
         {
         DPoint2d bitmapSize;
-        Byte const* pBitmap = GetImageryLogo(bitmapSize);
+    
+        const Byte* pBitmap = IScalableMeshTextureInfo::GetBingMapLogo(bitmapSize);
+
         if (NULL != pBitmap)
             DrawBingLogo(context, pBitmap, bitmapSize);
         }
@@ -1409,12 +1351,6 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 
     m_isUsingBingMap = false;
     m_displayTexture = true;
-
-
-    m_logoSize.x = m_logoSize.y = 0;
-    m_logoRetryCount = 0;
-
-    m_brandLogoURI = WString(L"http://dev.virtualearth.net/Branding/logo_powered_by.png");
     }
 
 //----------------------------------------------------------------------------------------
