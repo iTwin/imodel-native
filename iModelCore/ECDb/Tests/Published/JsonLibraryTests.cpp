@@ -443,6 +443,8 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     // now update the row that was just inserted
     JsonUpdater updater(m_ecdb, *documentClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
+    rapidJsonInput.RemoveMember(ECJsonSystemNames::Id());
+    rapidJsonInput.RemoveMember(ECJsonSystemNames::ClassName());
     rapidJsonInput.AddMember("urx", 3.3, rapidJsonInput.GetAllocator());
     rapidJsonInput.AddMember("ury", 4.4, rapidJsonInput.GetAllocator());
 

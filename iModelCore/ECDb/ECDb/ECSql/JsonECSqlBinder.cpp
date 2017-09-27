@@ -14,24 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   09/17
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonAdapterBindingInfo::JsonAdapterBindingInfo() {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   09/17
-//+---------------+---------------+---------------+---------------+---------------+------
-JsonAdapterBindingInfo::JsonAdapterBindingInfo(int paramIndex, ECN::ECPropertyCR prop)  : m_parameterIndex(paramIndex), m_property(&prop) { }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   09/17
-//+---------------+---------------+---------------+---------------+---------------+------
-JsonAdapterBindingInfo::JsonAdapterBindingInfo(int paramIndex) : m_parameterIndex(paramIndex) {}
-
-//************************************************************************************
-// JsonECSqlBinder
-//************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   09/17
-//+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus JsonECSqlBinder::BindValue(IECSqlBinder& binder, JsonValueCR memberJson, ECN::ECProperty const& prop, IECClassLocater& classLocater)
     {
@@ -177,6 +159,9 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, JsonValueC
 //static
 ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, JsonValueCR structJson, ECN::ECStructClassCR structClass)
     {
+    if (structJson.isNull())
+        return ECSqlStatus::Success;
+
     if (!structJson.isObject())
         return ECSqlStatus::Error;
 
@@ -219,6 +204,9 @@ ECSqlStatus JsonECSqlBinder::BindStructArrayValue(IECSqlBinder& binder, JsonValu
 //static
 ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
+    if (arrayJson.isNull())
+        return ECSqlStatus::Success;
+
     if (!arrayJson.isArray() || (primType == nullptr && structType == nullptr))
         return ECSqlStatus::Error;
 
@@ -244,6 +232,9 @@ ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR ar
 //static
 ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, IECClassLocater& classLocater)
     {
+    if (navJson.isNull())
+        return ECSqlStatus::Success;
+
     if (!navJson.isObject())
         return ECSqlStatus::Error;
 
@@ -438,6 +429,9 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
 //static
 ECSqlStatus JsonECSqlBinder::BindStructValue(IECSqlBinder& binder, RapidJsonValueCR structJson, ECN::ECStructClassCR structClass)
     {
+    if (structJson.IsNull())
+        return ECSqlStatus::Success;
+
     if (!structJson.IsObject())
         return ECSqlStatus::Error;
 
@@ -480,6 +474,9 @@ ECSqlStatus JsonECSqlBinder::BindStructArrayValue(IECSqlBinder& binder, RapidJso
 //static
 ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, PrimitiveType const* primType, ECStructClassCP structType)
     {
+    if (arrayJson.IsNull())
+        return ECSqlStatus::Success;
+
     if (!arrayJson.IsArray() || (primType == nullptr && structType == nullptr))
         return ECSqlStatus::Error;
 
@@ -505,6 +502,9 @@ ECSqlStatus JsonECSqlBinder::BindArrayValue(IECSqlBinder& binder, RapidJsonValue
 //static
 ECSqlStatus JsonECSqlBinder::BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, IECClassLocater& classLocater)
     {
+    if (navJson.IsNull())
+        return ECSqlStatus::Success;
+
     if (!navJson.IsObject())
         return ECSqlStatus::Error;
 
