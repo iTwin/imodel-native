@@ -67,7 +67,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/Parser/IParseContext.h \
                 $(baseDir)ECSql/Parser/SqlScan.h \
                 $(baseDir)ECSql/Parser/SqlBison.h \
-                $(baseDir)ECSql/Parser/InternalNode.h \
                 $(baseDir)ECSql/Parser/SqlNode.h \
                 $(baseDir)ECSql/ECSqlParser.h \
                 $(baseDir)ECSql/ClassRefExp.h \
@@ -213,8 +212,6 @@ $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstan
 $(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)InternalNode$(oext):                                      $(baseDir)ECSql/Parser/InternalNode.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -395,6 +392,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 %endif
 
 $(o)SqlNode$(oext): $(baseDir)ECSql/Parser/SqlNode.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SqlParse$(oext): $(baseDir)ECSql/Parser/SqlParse.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SqlFlex$(oext): $(baseDir)ECSql/Parser/SqlFlex.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

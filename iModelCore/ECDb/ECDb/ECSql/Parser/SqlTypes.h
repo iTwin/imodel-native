@@ -13,29 +13,7 @@
 #include "TextEncoding.h"
 
 #define OOO_DLLPUBLIC_DBTOOLS 
-////////////////////////OSL//////////////////////////////////////////////////
-//#if OSL_DEBUG_LEVEL > 0
-//
-//#define _OSL_DEBUG_ONLY(f)    (f)
-//#define _OSL_ASSERT(c, f, l) \
-//    do \
-//    {  \
-//        if (!(c) && _OSL_GLOBAL osl_assertFailedLine(f, l, 0)) \
-//            _OSL_GLOBAL osl_breakDebug(); \
-//    } while (0)
-//
-//#define _OSL_ENSURE(c, f, l, m) \
-//    do \
-//    {  \
-//        if (!(c) && _OSL_GLOBAL osl_assertFailedLine(f, l, m)) \
-//            _OSL_GLOBAL osl_breakDebug(); \
-//    } while (0)
-//
-//#else
-//
-//#define _OSL_DEBUG_ONLY(f)            ((void)0)
-//#define _OSL_ASSERT(c, f, l)        ((void)0)
-//#define _OSL_ENSURE(c, f, l, m)        ((void)0)
+
 #define OSL_DEBUG_LEVEL 3
 #define OSL_ASSERT(X) BeAssert( X)
 //#define OSL_FAIL(X, Y) BeAssert( X && Y);

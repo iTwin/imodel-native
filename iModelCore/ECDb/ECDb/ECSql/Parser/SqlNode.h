@@ -18,63 +18,31 @@
  * under the License.
  *
  *************************************************************/
-
-
+#pragma once
 #ifndef _CONNECTIVITY_SQLNODE_HXX
 #define _CONNECTIVITY_SQLNODE_HXX
 
-
 #include "SqlTypes.h"
-//#include "connectivity/dbtoolsdllapi.hxx"
-//#include "connectivity/dbmetadata.hxx"
-//#include <com/sun/star/uno/Reference.hxx>
-//#include <com/sun/star/util/XNumberFormatTypes.hpp>
-//#include <com/sun/star/beans/XPropertySet.hpp>
 #include <vector>
 #include <functional>
 #include <set>
-//#include <boost/shared_ptr.hpp>
-//#include <rtl/ustrbuf.hxx>
-
-// forward declarations
-//namespace com
-//{
-//    namespace sun
-//    {
-//        namespace star
-//        {
-//            namespace beans
-//            {
-//                class XPropertySet;
-//            }
-//            namespace util
-//            {
-//                class XNumberFormatter;
-//            }
-//            namespace container
-//            {
-//                class XNameAccess;
-//            }
-//        }
-//    }
-//}
-
 namespace rtl
     {
     class OUStringBuffer;
     }
+
 #define ORDER_BY_CHILD_POS  5
 #define TABLE_EXPRESSION_CHILD_COUNT    9
-
 namespace connectivity
     {
     class OSQLParser;
     class OSQLParseNode;
     class IParseContext;
 
-    typedef ::std::vector< OSQLParseNode* >                  OSQLParseNodes;
+    typedef ::std::vector< OSQLParseNode* > OSQLParseNodes;
 
-    enum SQLNodeType    {
+    enum SQLNodeType
+        {
         SQL_NODE_RULE, SQL_NODE_LISTRULE, SQL_NODE_COMMALISTRULE,
         SQL_NODE_KEYWORD, SQL_NODE_COMPARISON, SQL_NODE_NAME, SQL_NODE_ARRAY_INDEX, SQL_NODE_DOTLISTRULE,
         SQL_NODE_STRING, SQL_NODE_INTNUM, SQL_NODE_APPROXNUM,
@@ -102,7 +70,7 @@ namespace connectivity
         bool                bPredicate : 1;    /// are we going to parse a mere predicate?
         bool                bParseToSDBCLevel : 1;    /// should we create an SDBC-level statement (e.g. with substituted sub queries)?
 
-        SQLParseNodeParameter (
+        SQLParseNodeParameter(
             const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
             const RefCountedPtr< ::com::sun::star::util::XNumberFormatter >& _xFormatter,
             const RefCountedPtr< ::com::sun::star::beans::XPropertySet >& _xField,
@@ -113,26 +81,23 @@ namespace connectivity
             sal_Char _cDecSep,
             bool _bPredicate,
             bool _bParseToSDBC
-            );
-        ~SQLParseNodeParameter ();
+        );
+        ~SQLParseNodeParameter();
         };
-
+    class OSQLParseNodesContainer;
     //==========================================================================
     //= OSQLParseNode
     //==========================================================================
     class OOO_DLLPUBLIC_DBTOOLS OSQLParseNode
         {
         friend class OSQLParser;
-
-        OSQLParseNodes                    m_aChildren;
-        OSQLParseNode*                     m_pParent;        // pParent fuer Reuckverkettung im Baum
-        Utf8String                          m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
-        // Utf8String, INT, usw. -Werten
-        SQLNodeType                     m_eNodeType;    // s. o.
-        sal_uInt32                        m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
-        // ::com::sun::star::chaos::Rule IDs und Token IDs koennen nicht anhand des Wertes
-        // unterschieden werden, dafuer ist IsRule() abzufragen!
-
+        friend class OSQLScanner;
+        OSQLParseNodes m_aChildren;
+        OSQLParseNode* m_pParent;        // pParent fuer Reuckverkettung im Baum
+        Utf8String m_aNodeValue;    // Token-Name oder leer bei Regeln oder Utf8String bei
+        SQLNodeType m_eNodeType;    // s. o.
+        sal_uInt32 m_nNodeID;         // ::com::sun::star::chaos::Rule ID (bei IsRule()) oder Token ID (bei !IsRule())
+        OSQLParseNodesContainer* m_container;
         public:
             enum Rule
                 {
@@ -258,207 +223,93 @@ namespace connectivity
                 };
 
             // must be ascii encoding for the value
-            OSQLParseNode (const sal_Char* _pValueStr,
-                SQLNodeType _eNodeType,
-                sal_uInt32 _nNodeID = 0);
+            OSQLParseNode(const sal_Char* _pValueStr,
+                          SQLNodeType _eNodeType,
+                          sal_uInt32 _nNodeID = 0);
 
-            OSQLParseNode (Utf8String const& _rValue,
-                SQLNodeType eNewNodeType,
-                sal_uInt32 nNewNodeID = 0);
-
-            // Kopiert den entsprechenden ParseNode
-            OSQLParseNode (const OSQLParseNode& rParseNode);
-            OSQLParseNode& operator=(const OSQLParseNode& rParseNode);
-
-            sal_Bool operator==(OSQLParseNode& rParseNode) const;
-
-            // Destruktor raeumt rekursiv den Baum ab
-            virtual ~OSQLParseNode ();
-
-            // Parent gibt den Zeiger auf den Parent zurueck
-            OSQLParseNode* getParent () const { return m_pParent; };
-
-            // SetParent setzt den Parent-Zeiger eines ParseNodes
-            void setParent (OSQLParseNode* pParseNode) { m_pParent = pParseNode; };
-
-            size_t count () const { return m_aChildren.size (); };
-            inline OSQLParseNode* getChild (size_t nPos) const;
-            inline OSQLParseNode* getLast () const;
-            inline OSQLParseNode* getFirst () const;
-
-            void append (OSQLParseNode* pNewSubTree);
-            void insert (sal_uInt32 nPos, OSQLParseNode* pNewSubTree);
-
-            OSQLParseNode* replace (OSQLParseNode* pOldSubTree, OSQLParseNode* pNewSubTree);
-
-            OSQLParseNode* removeAt (sal_uInt32 nPos);
-
-            void replaceNodeValue (const Utf8String& rTableAlias, const Utf8String& rColumnName);
-
-            /** parses the node to a string which can be passed to a driver's connection for execution
-
-                Any particles of the parse tree which represent application-level features - such
-                as queries appearing in the FROM part - are subsituted, so that the resulting statement can
-                be executed at an SDBC-level connection.
-
-                @param  _out_rString
-                is an output parameter taking the resulting SQL statement
-
-                @param  _rxConnection
-                the connection relative to which to parse. This must be an SDB-level connection (e.g.
-                support the XQueriesSupplier interface) for the method to be able to do all necessary
-                substitutions.
-
-                @param _rParser
-                the SQLParser used to create the node. This is needed in case we need to parse
-                sub queries which are present in the SQL statement - those sub queries need to be parsed,
-                too, to check whether they contain nested sub queries.
-
-                @param _pErrorHolder
-                takes the error which occured while generating the statement, if any. Might be <NULL/>,
-                in this case the error is not reported back, and can only be recognized by examing the
-                return value.
-
-                @return
-                <TRUE/> if and only if the parsing was successful.<br/>
-
-                Currently, there's only one condition how this method can fail: If it contains a nested
-                query which causes a cycle. E.g., consider a statement <code>SELECT * from "foo"</code>,
-                where <code>bar </code> is a query defined as <code>SELECT * FROM "bar"</code>, where
-                <code>bar</code> is defined as <code>SELECT * FROM "foo"</code>. This statement obviously
-                cannot be parsed to an executable statement.
-
-                If this method returns <FALSE/>, you're encouraged to check and handle the error in
-                <arg>_pErrorHolder</arg>.
-                */
-            bool parseNodeToExecutableStatement (Utf8String& _out_rString,
-                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
-                OSQLParser& _rParser,
-                ::com::sun::star::sdbc::SQLException* _pErrorHolder) const;
-
-            void parseNodeToStr (Utf8String& rString,
-                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
-                const IParseContext* pContext = NULL,
-                sal_Bool _bIntl = sal_False,
-                sal_Bool _bQuote = sal_True) const;
+            OSQLParseNode(Utf8String const& _rValue,
+                          SQLNodeType eNewNodeType,
+                          sal_uInt32 nNewNodeID = 0);
+            
+            virtual ~OSQLParseNode();
+            OSQLParseNode* getParent() const { return m_pParent; };
+            void setParent(OSQLParseNode* pParseNode) { m_pParent = pParseNode; };
+            size_t count() const { return m_aChildren.size(); };
+            inline OSQLParseNode* getChild(size_t nPos) const;
+            inline OSQLParseNode* getLast() const;
+            inline OSQLParseNode* getFirst() const;
+            void append(OSQLParseNode* pNewSubTree);
+            void insert(sal_uInt32 nPos, OSQLParseNode* pNewSubTree);
+            OSQLParseNode* replace(OSQLParseNode* pOldSubTree, OSQLParseNode* pNewSubTree);
+            OSQLParseNode* removeAt(sal_uInt32 nPos);
+            OSQLParseNode* detach();
+            void parseNodeToStr(Utf8String& rString,
+                                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
+                                const IParseContext* pContext = NULL,
+                                sal_Bool _bIntl = sal_False,
+                                sal_Bool _bQuote = sal_True) const;
 
             // quoted und internationalisert
-            void parseNodeToPredicateStr (Utf8String& rString,
-                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
-                const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
-                const ::com::sun::star::lang::Locale& rIntl,
-                sal_Char _cDec,
-                const IParseContext* pContext = NULL) const;
+            void parseNodeToPredicateStr(Utf8String& rString,
+                                         const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
+                                         const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
+                                         const ::com::sun::star::lang::Locale& rIntl,
+                                         sal_Char _cDec,
+                                         const IParseContext* pContext = NULL) const;
 
-            void parseNodeToPredicateStr (Utf8String& rString,
-                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
-                const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
-                const RefCountedPtr< ::com::sun::star::beans::XPropertySet > & _xField,
-                const ::com::sun::star::lang::Locale& rIntl,
-                sal_Char _cDec,
-                const IParseContext* pContext = NULL) const;
+            void parseNodeToPredicateStr(Utf8String& rString,
+                                         const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
+                                         const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
+                                         const RefCountedPtr< ::com::sun::star::beans::XPropertySet > & _xField,
+                                         const ::com::sun::star::lang::Locale& rIntl,
+                                         sal_Char _cDec,
+                                         const IParseContext* pContext = NULL) const;
 
-            OSQLParseNode* getByRule (OSQLParseNode::Rule eRule) const;
+            OSQLParseNode* getByRule(OSQLParseNode::Rule eRule) const;
 
 #if OSL_DEBUG_LEVEL > 0
             // zeigt den ParseTree mit tabs und linefeeds
-            void showParseTree (Utf8String& rString) const;
-            void showParseTree (Utf8String& _inout_rBuf, sal_uInt32 nLevel) const;
+            void showParseTree(Utf8String& rString) const;
+            void showParseTree(Utf8String& _inout_rBuf, sal_uInt32 nLevel) const;
 #endif
 
-            SQLNodeType getNodeType () const { return m_eNodeType; };
-
-            // RuleId liefert die RuleId der Regel des Knotens (nur bei IsRule())
-            sal_uInt32 getRuleID () const { return m_nNodeID; }
-
-            /** returns the ID of the rule represented by the node
-
-                If the node does not represent a rule, UNKNOWN_RULE is returned
-                */
-            Rule getKnownRuleID () const;
-
-            // returns the TokenId of the node's token (only if !isRule())
-            sal_uInt32 getTokenID () const { return m_nNodeID; }
-
-            // IsRule tests whether a node is a rule (NonTerminal)
-            // ATTENTION: rules can be leaves, for example empty lists
-            sal_Bool isRule () const
+            SQLNodeType getNodeType() const { return m_eNodeType; };
+            sal_uInt32 getRuleID() const { return m_nNodeID; }
+            Rule getKnownRuleID() const;
+            sal_uInt32 getTokenID() const { return m_nNodeID; }
+            sal_Bool isRule() const
                 {
                 return (m_eNodeType == SQL_NODE_RULE) || (m_eNodeType == SQL_NODE_LISTRULE)
                     || (m_eNodeType == SQL_NODE_COMMALISTRULE || m_eNodeType == SQL_NODE_DOTLISTRULE);
                 }
 
             // IsToken tests whether a Node is a Token (Terminal but not a rule)
-            sal_Bool isToken () const { return !isRule (); }
-
-            const Utf8String& getTokenValue () const { return m_aNodeValue; }
-
-            void setTokenValue (const Utf8String& rString) { if (isToken ()) m_aNodeValue = rString; }
-
-            sal_Bool isLeaf () const { return m_aChildren.empty (); }
-
-            // negate only a searchcondition, any other rule could cause a gpf
-            static void negateSearchCondition (OSQLParseNode*& pSearchCondition, sal_Bool bNegate = sal_False);
-
-            // normalize a logic form
-            // e.q. (a or b) and (c or d) <=> a and c or a and d or b and c or b and d
-            static void disjunctiveNormalForm (OSQLParseNode*& pSearchCondition);
-
-            //     Simplies logic expressions
-            // a * a        = a
-            // a + a        = a
-            // a * ( a + b) = a
-            // a + a * b    = a
-            static void absorptions (OSQLParseNode*& pSearchCondition);
-
-            // erase not nessary braces
-            static void eraseBraces (OSQLParseNode*& pSearchCondition);
-
-            // makes the logic formula a little more smaller
-            static void compress (OSQLParseNode*& pSearchCondition);
-            // return the catalog, schema and tablename form this node
-            // _pTableNode must be a rule of that above or a SQL_TOKEN_NAME
-            static sal_Bool getTableComponents (const OSQLParseNode* _pTableNode,
-                Utf8String &_rCatalog,
-                Utf8String &_rSchema,
-                Utf8String &_rTable
-                , const RefCountedPtr< ::com::sun::star::sdbc::XDatabaseMetaData >& _xMetaData);
-
-            // susbtitute all occurences of :var or [name] into the dynamic parameter ?
-            // _pNode will be modified if parameters exists
-            static void substituteParameterNames (OSQLParseNode* _pNode);
-
-            /** return a table range when it exists.
-            */
-            static Utf8String getTableRange (const OSQLParseNode* _pTableRef);
+            sal_Bool isToken() const { return !isRule(); }
+            const Utf8String& getTokenValue() const { return m_aNodeValue; }
+            void setTokenValue(const Utf8String& rString) { if (isToken()) m_aNodeValue = rString; }
+            sal_Bool isLeaf() const { return m_aChildren.empty(); }
 
         protected:
             // ParseNodeToStr konkateniert alle Token (Blaetter) des ParseNodes
-            void parseNodeToStr (Utf8String& rString,
-                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
-                const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
-                const RefCountedPtr< ::com::sun::star::beans::XPropertySet > & _xField,
-                const ::com::sun::star::lang::Locale& rIntl,
-                const IParseContext* pContext,
-                bool _bIntl,
-                bool _bQuote,
-                sal_Char _cDecSep,
-                bool _bPredicate,
-                bool _bSubstitute) const;
+            void parseNodeToStr(Utf8String& rString,
+                                const RefCountedPtr< ::com::sun::star::sdbc::XConnection >& _rxConnection,
+                                const RefCountedPtr< ::com::sun::star::util::XNumberFormatter > & xFormatter,
+                                const RefCountedPtr< ::com::sun::star::beans::XPropertySet > & _xField,
+                                const ::com::sun::star::lang::Locale& rIntl,
+                                const IParseContext* pContext,
+                                bool _bIntl,
+                                bool _bQuote,
+                                sal_Char _cDecSep,
+                                bool _bPredicate,
+                                bool _bSubstitute) const;
 
         private:
-            void impl_parseNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
-            void impl_parseLikeNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
-            void impl_parseTableRangeNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseLikeNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseTableRangeNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            bool impl_parseTableNameNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 
-            /** parses a table_name node into a SQL statement particle.
-                @return
-                <TRUE/> if and only if parsing was successful, <FALSE/> if default handling should
-                be applied.
-                */
-            bool impl_parseTableNameNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
-
-            void parseLeaf (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void parseLeaf(Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 #if !NDEBUG
         private:
             Rule m_ruleId;
@@ -466,32 +317,30 @@ namespace connectivity
         };
 
     //-----------------------------------------------------------------------------
-    inline OSQLParseNode* OSQLParseNode::getChild (size_t nPos) const
+    inline OSQLParseNode* OSQLParseNode::getChild(size_t nPos) const
         {
-        OSL_ENSURE (nPos < m_aChildren.size (), "Invalid Position");
-
-        //    return m_aChildren[nPos];
-        return m_aChildren.at (nPos);
+        OSL_ENSURE(nPos < m_aChildren.size(), "Invalid Position");
+        return m_aChildren.at(nPos);
         }
-    inline OSQLParseNode* OSQLParseNode::getLast () const
+    inline OSQLParseNode* OSQLParseNode::getLast() const
         {
-        auto nSize = m_aChildren.size ();
+        auto nSize = m_aChildren.size();
         if (nSize > 0)
             return m_aChildren[nSize - 1];
 
         return nullptr;
         }
-    inline OSQLParseNode* OSQLParseNode::getFirst () const
+    inline OSQLParseNode* OSQLParseNode::getFirst() const
         {
-        if (m_aChildren.size () > 0)
+        if (m_aChildren.size() > 0)
             return m_aChildren[0];
 
         return nullptr;
         }
     // Utility-Methoden zum Abfragen auf bestimmte Rules, Token oder Punctuation:
-#define SQL_ISRULE(pParseNode, eRule)     ((pParseNode)->isRule() && (pParseNode)->getRuleID() == OSQLParser::RuleID(OSQLParseNode::eRule))
-#define SQL_ISTOKEN(pParseNode, token) ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
-#define SQL_ISPUNCTUATION(pParseNode, aString) ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
+#define SQL_ISRULE(pParseNode, eRule)           ((pParseNode)->isRule() && (pParseNode)->getRuleID() == OSQLParser::RuleID(OSQLParseNode::eRule))
+#define SQL_ISTOKEN(pParseNode, token)          ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
+#define SQL_ISPUNCTUATION(pParseNode, aString)  ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
     }
 
 #endif    //_CONNECTIVITY_SQLNODE_HXX
