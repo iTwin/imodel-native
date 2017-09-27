@@ -10,7 +10,6 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 const int GUID_BUFFER_SIZE = 1024;
-const int TOKEN_BUFFER_SIZE = 100000;
 
 bset<event_callback>  ConnectionClientInterface::s_listeners;
 BeCriticalSection ConnectionClientInterface::s_lock;
@@ -51,13 +50,32 @@ SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8S
     {
     WString rpUriW(rpUri.c_str(), true);
     LPCWSTR uri = rpUriW.c_str();
-    std::unique_ptr<WCHAR> urlBuf(new WCHAR[TOKEN_BUFFER_SIZE]);
-    CallStatus status = CCApi_GetSerializedDelegateSecurityToken(m_ccApi, uri, urlBuf.get(), TOKEN_BUFFER_SIZE);
 
+    CCDATABUFHANDLE buffer = NULL;
+    CallStatus status = CCApi_GetSerializedDelegateSecurityTokenBuffer(m_ccApi, uri, &buffer);
+    if (status != APIERR_SUCCESS)
+        {
+        CCApi_DataBufferFree(buffer);
+        return nullptr;
+        }
+
+    size_t tokenLength = 0;
+    status = CCApi_DataBufferGetStringLength(buffer, TOKEN_BUFF_TOKEN, 0, &tokenLength);
+    if (status != APIERR_SUCCESS)
+        {
+        CCApi_DataBufferFree(buffer);
+        return nullptr;
+        }
+
+    tokenLength++;
+    std::unique_ptr<WCHAR> tokenBuffer(new WCHAR[tokenLength]);
+
+    status = CCApi_DataBufferGetStringProperty(buffer, TOKEN_BUFF_TOKEN, 0, tokenBuffer.get(), (UINT32)tokenLength);
+    CCApi_DataBufferFree(buffer);
     if (status != APIERR_SUCCESS)
         return nullptr;
 
-    Utf8String tokenStrBase64(urlBuf.get());
+    Utf8String tokenStrBase64(tokenBuffer.get());
     Utf8String tokenStr = Base64Utilities::Decode(tokenStrBase64);
     SamlTokenPtr token = std::make_shared<SamlToken>(tokenStr);
 
@@ -135,9 +153,9 @@ void ConnectionClientInterface::AddClientEventListener(event_callback callback)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectionClientInterface::EventListener(int eventId)
+void ConnectionClientInterface::EventListener(int eventId, WCharCP data)
     {
     BeCriticalSectionHolder lock(s_lock);
     for (auto listener : s_listeners)
-        (*listener)(eventId);
+        (*listener)(eventId, data);
     }
