@@ -4,145 +4,87 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECSchemaReference name="DesignModelingUnits" version="01.00.00" alias="DMU"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
-            <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
-    <ECEnumeration typeName="DoorType_ConstructionType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="ALUMINIUM"/>
-        <ECEnumerator value="1" displayLabel="HIGH_GRADE_STEEL"/>
-        <ECEnumerator value="2" displayLabel="STEEL"/>
-        <ECEnumerator value="3" displayLabel="WOOD"/>
-        <ECEnumerator value="4" displayLabel="ALUMINIUM_WOOD"/>
-        <ECEnumerator value="5" displayLabel="ALUMINIUM_PLASTIC"/>
-        <ECEnumerator value="6" displayLabel="PLASTIC"/>
-        <ECEnumerator value="7" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="8" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="DoorType_OperationType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="SINGLE_SWING_LEFT"/>
-        <ECEnumerator value="1" displayLabel="SINGLE_SWING_RIGHT"/>
-        <ECEnumerator value="2" displayLabel="DOUBLE_DOOR_SINGLE_SWING"/>
-        <ECEnumerator value="3" displayLabel="DOUBLE_SWING_LEFT"/>
-        <ECEnumerator value="4" displayLabel="DOUBLE_SWING_RIGHT"/>
-        <ECEnumerator value="5" displayLabel="DOUBLE_DOOR_DOUBLE_SWING"/>
-        <ECEnumerator value="6" displayLabel="DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT"/>
-        <ECEnumerator value="7" displayLabel="DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT"/>
-        <ECEnumerator value="8" displayLabel="SLIDING_TO_LEFT"/>
-        <ECEnumerator value="9" displayLabel="SLIDING_TO_RIGHT"/>
-        <ECEnumerator value="10" displayLabel="DOUBLE_DOOR_SLIDING"/>
-        <ECEnumerator value="11" displayLabel="FOLDING_TO_LEFT"/>
-        <ECEnumerator value="12" displayLabel="FOLDING_TO_RIGHT"/>
-        <ECEnumerator value="13" displayLabel="DOUBLE_DOOR_FOLDING"/>
-        <ECEnumerator value="14" displayLabel="REVOLVING"/>
-        <ECEnumerator value="15" displayLabel="ROLLINGUP"/>
-        <ECEnumerator value="16" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="17" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Stair_ShapeType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="STRAIGHT_RUN_STAIR"/>
-        <ECEnumerator value="1" displayLabel="TWO_STRAIGHT_RUN_STAIR"/>
-        <ECEnumerator value="2" displayLabel="QUARTER_WINDING_STAIR"/>
-        <ECEnumerator value="3" displayLabel="QUARTER_TURN_STAIR"/>
-        <ECEnumerator value="4" displayLabel="HALF_WINDING_STAIR"/>
-        <ECEnumerator value="5" displayLabel="HALF_TURN_STAIR"/>
-        <ECEnumerator value="6" displayLabel="TWO_QUARTER_WINDING_STAIR"/>
-        <ECEnumerator value="7" displayLabel="TWO_QUARTER_TURN_STAIR"/>
-        <ECEnumerator value="8" displayLabel="THREE_QUARTER_WINDING_STAIR"/>
-        <ECEnumerator value="9" displayLabel="THREE_QUARTER_TURN_STAIR"/>
-        <ECEnumerator value="10" displayLabel="SPIRAL_STAIR"/>
-        <ECEnumerator value="11" displayLabel="DOUBLE_RETURN_STAIR"/>
-        <ECEnumerator value="12" displayLabel="CURVED_RUN_STAIR"/>
-        <ECEnumerator value="13" displayLabel="TWO_CURVED_RUN_STAIR"/>
-        <ECEnumerator value="14" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="15" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
+
     <ECEntityClass typeName="Casework">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+
     <ECEntityClass typeName="CurtainWall" displayLabel="Curtain Wall">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+    
     <ECEntityClass typeName="Door">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="DMU:LENGTH">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="DMU:LENGTH">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="OverallHeight"        typeName="double"   description="Overall Height of the Door"                        displayLabel="Overall Height"       kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="OverallWidth"         typeName="double"   description="Overal1 Width of the Door"                         displayLabel="Overall Width"        kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Description"          typeName="string"/>
     </ECEntityClass>
-    <ECEntityClass typeName="DoorType" description="(From IFC) Class : IfcDoorStyle. Replaced by IfcDoorType since IFC2x4" displayLabel="Door Type">
+
+    <ECEntityClass typeName="DoorType" description="Door Physical Type" displayLabel="Door Type">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OperationType" typeName="DoorType_OperationType" description="(From IFC) Enumeration : IfcDoorStyleOperationEnum" displayLabel="Operation Type"/>
-        <ECProperty propertyName="ConstructionType" typeName="DoorType_ConstructionType" description="(From IFC) Enumeration : IfcDoorStyleConstructionEnum" displayLabel="Construction Type"/>
-        <ECProperty propertyName="ParameterTakesPrecedence" typeName="boolean" description="(From IFC)" displayLabel="Parameter Takes Precedence"/>
-        <ECProperty propertyName="Sizeable" typeName="boolean" description="(From IFC)"/>
     </ECEntityClass>
+
     <ECEntityClass typeName="Floor">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+
     <ECEntityClass typeName="Furniture">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+ 
     <ECEntityClass typeName="Railing">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+
     <ECEntityClass typeName="Ramp" description="A slopping element that transistions between two elevations">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+ 
     <ECEntityClass typeName="Roof">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+
     <ECEntityClass typeName="Stair">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECProperty propertyName="ShapeType" typeName="Stair_ShapeType" description="(From IFC) Enumeration : IfcStairTypeEnum" displayLabel="Shape Type"/>
     </ECEntityClass>
+
     <ECEntityClass typeName="TransportationMechanism" displayLabel="Transportation Mechanism">
         <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
+    
     <ECEntityClass typeName="Wall" description="Wall">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>bis:IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="DMU:LENGTH"/>
-        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
-        <ECProperty propertyName="GrossVolume" typeName="double" description="Gross Volume at the of the wall" displayLabel="Gross Volume" kindOfQuantity="DMU:VOLUME"/>
-        <ECProperty propertyName="NetVolume" typeName="double" description="Net Volume at the of the wall" displayLabel="Net Volume" kindOfQuantity="DMU:VOLUME"/>
-        <ECProperty propertyName="GrossSideArea" typeName="double" description="Gross Area at the center of the wall" displayLabel="Gross Side Area" kindOfQuantity="DMU:AREA"/>
-        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
-        <ECProperty propertyName="NetSideArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Side Area" kindOfQuantity="DMU:AREA"/>
-        <ECProperty propertyName="GrossFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Gross Footprint Area" kindOfQuantity="DMU:AREA"/>
-        <ECProperty propertyName="NetFootprintArea" typeName="double" description="Net Area at the center of the wall" displayLabel="Net Footprint Area" kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="Height"               typeName="double"   description="Height of the wall"                        displayLabel="Height"               kindOfQuantity="DMU:LENGTH"/>
+        <ECProperty propertyName="Width"                typeName="double"   description="Width of the wall"                         displayLabel="Width"                kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="GrossVolume"          typeName="double"   description="Gross Volume at the of the wall"           displayLabel="Gross Volume"         kindOfQuantity="DMU:VOLUME"/>
+        <ECProperty propertyName="NetVolume"            typeName="double"   description="Net Volume at the of the wall"             displayLabel="Net Volume"           kindOfQuantity="DMU:VOLUME"/>
+        <ECProperty propertyName="GrossSideArea"        typeName="double"   description="Gross Area at the center of the wall"      displayLabel="Gross Side Area"      kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="Length"               typeName="double"   description="length along the centerline of the wall"   displayLabel="Length"               kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="NetSideArea"          typeName="double"   description="Net Area at the center of the wall"        displayLabel="Net Side Area"        kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="GrossFootprintArea"   typeName="double"   description="Net Area at the center of the wall"        displayLabel="Gross Footprint Area" kindOfQuantity="DMU:AREA"/>
+        <ECProperty propertyName="NetFootprintArea"     typeName="double"   description="Net Area at the center of the wall"        displayLabel="Net Footprint Area"   kindOfQuantity="DMU:AREA"/>
     </ECEntityClass>
+
     <ECEntityClass typeName="WallLeaf" description="Wall" displayLabel="Wall Leaf">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Height" typeName="double" description="Height of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
-        <ECProperty propertyName="Length" typeName="double" description="length along the centerline of the wall" kindOfQuantity="DMU:LENGTH"/>
-        <ECProperty propertyName="Width" typeName="double" description="Width of the wall" kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Height"               typeName="double"   description="Height of the wall"                        displayLabel="Height"               kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Length"               typeName="double"   description="length along the centerline of the wall"   displayLabel="Length"               kindOfQuantity="DMU:LENGTH"/>
+        <ECProperty propertyName="Width"                typeName="double"   description="Width of the wall"                         displayLabel="Width"                kindOfQuantity="DMU:LENGTH_SHORT"/>
     </ECEntityClass>
+
     <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel ="Wall leaf related to" polymorphic="true">
@@ -152,33 +94,24 @@
             <Class class="WallLeaf"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="WallType" description="(From IFC) Class : IfcWallType" displayLabel="Wall Type">
+
+    <ECEntityClass typeName="WallType" description="Physical wall type" displayLabel="Wall Type">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+
     <ECEntityClass typeName="Window" description="Window">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="OverallHeight" typeName="double" displayLabel="Overall Height" kindOfQuantity="DMU:LENGTH_SHORT">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="OverallWidth" typeName="double" displayLabel="Overall Width" kindOfQuantity="DMU:LENGTH_SHORT">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.03">
-                    <Standard>8</Standard>
-                </ExtendType>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="OverallHeight"        typeName="double"   description="Overall Height of the Window"                      displayLabel="Overall Height"       kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="OverallWidth"         typeName="double"   description="Overal1 Width of the Window"                       displayLabel="Overall Width"        kindOfQuantity="DMU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Description"          typeName="string"/>
     </ECEntityClass>
+
     <ECEntityClass typeName="WindowType" displayLabel="Window Type">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>

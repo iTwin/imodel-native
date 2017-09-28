@@ -27,10 +27,6 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)BuildingDomain$(libext)
-                Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)
-            </Files>
         </Bindings>
     </Part>   
 
