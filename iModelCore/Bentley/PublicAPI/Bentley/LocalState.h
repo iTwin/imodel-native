@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/LocalState.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,11 +22,11 @@ struct ILocalState
     protected:
         virtual ~ILocalState () {}
     
-        //! Saves the Utf8String value in the local state.
+        //! Saves the Utf8String value in the local state. Set to empty to delete value.
         //! @note The nameSpace and key pair must be unique.
         virtual void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) = 0;
 
-        //! Returns a stored Utf8String from the local state.
+        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
         //! @note The nameSpace and key pair uniquely identifies the value.
         virtual Utf8String _GetValue (Utf8CP nameSpace, Utf8CP key) const = 0;
 
