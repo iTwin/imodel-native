@@ -1019,6 +1019,8 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE(testClass != nullptr);
     JsonReader defaultReader(m_ecdb, *testClass);
     ASSERT_TRUE(defaultReader.IsValid());
+    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson, key.GetInstanceId()));
+
     JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_TRUE(javaScriptReader.IsValid());
     ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson, key.GetInstanceId()));
