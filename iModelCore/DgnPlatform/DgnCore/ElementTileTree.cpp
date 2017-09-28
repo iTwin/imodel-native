@@ -2185,6 +2185,9 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 
     GeometryList geometries = CollectGeometry(context);
     auto collection = CreateGeometryCollection(geometries, context);
+    if (context.WasAborted())
+        return Render::Primitives::GeometryCollection();
+
     if (collection.IsEmpty() && !geometries.empty())
         collection.MarkIncomplete();
 
