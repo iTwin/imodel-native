@@ -24,10 +24,6 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)ElectricalDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ElectricalDomain$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)ElectricalDomain$(libext)
-                Delivery/$(shlibprefix)ElectricalDomain$(ApiNumber)$(shlibext)
-            </Files>
         </Bindings>
     </Part>
 	
