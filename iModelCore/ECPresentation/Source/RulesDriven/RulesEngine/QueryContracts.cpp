@@ -953,7 +953,7 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
     if (prop.GetIsNavigation())
         {
         PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetECInstanceDisplayLabel, 
-            CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"));
+            CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"), true, isDistinct);
         field->SetPrefixOverride(prefix);
         return field;
         }
