@@ -112,6 +112,7 @@ protected:
     Status                      m_acceptTileStatus = Status::Success;
     bool                        m_verbose;
     bool                        m_wantProgressOutput;
+    Json::Value                 m_revisionsJson;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
@@ -156,12 +157,13 @@ public:
         : TilesetPublisher(db, viewsToPublish, defaultView, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
 
-    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
+    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params, bool initializeDirectories = true);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
 
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
+    void SetRevisionsJson(Json::Value const&& revisionsJson) { m_revisionsJson = std::move(revisionsJson); }
 
 
     struct VerboseStatistics
@@ -179,25 +181,6 @@ public:
         return stats;
         }
 };
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     09/2017
-//=======================================================================================
-struct TilesetRevisionPublisher : TilesetPublisher
-{
-
-public:    
-    TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params)
-        : TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
-        { 
-        m_dataDir.AppendToPath(L"Revisions").AppendSeparator();
-        }
-
-    PublisherContext::Status PublishRevision(DgnElementIdSet const&  addedIds, DgnElementIdSet const& removedIds, size_t index, PublisherParamsR params);
-
-
-    
-};  // TilesetRevisionPublisher
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
@@ -205,6 +188,7 @@ public:
 struct TilesetHistoryPublisher : TilesetPublisher
 {
     TILEPUBLISHER_EXPORT static Status PublishTilesetWithHistory(PublisherParamsR params);
+
 
 
 

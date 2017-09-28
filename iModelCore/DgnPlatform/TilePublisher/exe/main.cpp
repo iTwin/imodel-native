@@ -312,17 +312,32 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             }
         }
 
-    if (!haveInput)
+    if (m_wantHistory)
         {
-        printf("Input filename is required\n");
-        return false;
+        if (m_repositoryName.empty())
+            {
+            printf ("Repository required for history publishing\n");
+            return false;
+            }
+
+
+        if (m_tilesetName.empty())
+            m_tilesetName = WString(m_repositoryName.c_str(), false);
         }
+    else
+        {
+        if (!haveInput)
+            {
+            printf("Input filename is required\n");
+            return false;
+            }
 
-    if (m_outputDir.empty())
-        m_outputDir = m_inputFileName.GetDirectoryName();
+        if (m_outputDir.empty())
+            m_outputDir = m_inputFileName.GetDirectoryName();
 
-    if (m_tilesetName.empty())
-        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        if (m_tilesetName.empty())
+            m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        }
 
     return true;
     }

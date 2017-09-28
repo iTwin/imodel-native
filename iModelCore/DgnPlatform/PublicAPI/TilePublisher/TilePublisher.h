@@ -318,7 +318,6 @@ protected:
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
-    TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT void CleanDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter);
     Status PublishClassifiers (DgnModelIdSet const& viewedModels, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
@@ -367,6 +366,7 @@ public:
     T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
     void RecordUsage(FeatureAttributesMapCR attributes);
+    TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
 
     bool IsSubCategoryUsed(DgnSubCategoryId subCategoryId) const { return m_usedSubCategories.find(subCategoryId) != m_usedSubCategories.end(); }
 

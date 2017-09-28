@@ -3657,7 +3657,11 @@ PublisherContext::Status   PublisherContext::PublishClassifier(ClassifierInfo& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
     {
-    return BeFileName(nullptr, m_dataDir.c_str(), GetRootName(modelId, GetCurrentClassifier()).c_str(), s_metadataExtension);
+    WString rootName = GetRootName(modelId, GetCurrentClassifier());
+    BeFileName modelDir = m_dataDir;
+
+    modelDir.AppendSeparator().AppendToPath(rootName.c_str()).AppendSeparator();
+    return BeFileName(nullptr, modelDir.c_str(), GetRootName(modelId, GetCurrentClassifier()).c_str(), s_metadataExtension);
     }
 
 
@@ -3674,7 +3678,7 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
         }
 
     WString         modelRootName = GetRootName(modelId, classifier);
-    WString         modelDir      = L"TileSets\\" + m_rootName;
+    WString         modelDir      = L"TileSets\\" + m_rootName + L"\\" + modelRootName + L"\\";
     BeFileName      tilesetFileName (nullptr, modelDir.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();
 

@@ -145,6 +145,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (Status::Success != (status = GetViewsJson (json, groundPoint)))
         return status;
 
+    if (!m_revisionsJson.isNull())
+        json["revisions"] = m_revisionsJson;
 
     Json::Value viewerOptions = params.GetViewerOptions();
 
@@ -236,11 +238,14 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
+PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params, bool initializeDirectories)
     {
-    auto status = InitializeDirectories(GetDataDirectory());
-    if (Status::Success != status)
-        return status;
+    if (initializeDirectories)
+        {
+        auto status = InitializeDirectories(GetDataDirectory());
+        if (Status::Success != status)
+            return status;
+        }
 
     ProgressMeter progressMeter(*this);
     TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
@@ -250,7 +255,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
+    auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -285,6 +290,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
         groundPoint.z = params.GetGroundHeight();
         }
+    
 
     return WriteWebApp(groundPoint, params);
     }
@@ -340,7 +346,6 @@ void TilesetPublisher::GenerateModelNameList()
         m_modelNameList.append(1, ']');
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -348,7 +353,7 @@ WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, Pu
     {
     WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId()) : classifier->GetRootName();
 
-    return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
+    return tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }
 
 

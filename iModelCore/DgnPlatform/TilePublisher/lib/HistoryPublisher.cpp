@@ -14,7 +14,72 @@ USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_VERSIONCOMPARE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_EC
 
+//=======================================================================================
+// @bsistruct                                                   Diego.Pinate    09/17
+//=======================================================================================
+struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
+    {
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/17
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
+        {
+        Utf8CP tableName = nullptr;
+        int nCols, indirect;
+        DbOpcode opcode;
+        DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+        BeAssert(result == BE_SQLITE_OK);
+        UNUSED_VARIABLE(result);
+
+        if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
+            return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+
+        return ChangeSet::ConflictResolution::Replace;
+        }
+    };  // CompareChangeSet
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getChangedGeometricElements(bvector<DgnElementId>& elementIds, bvector<DbOpcode>& opcodes, DgnDbPtr db, DgnRevisionPtr changeset)
+    {
+    ChangeSummary summary(*db);
+    ChangeGroup changeGrp;
+    BeFileNameCR changesFile = changeset->GetRevisionChangesFile();
+    RevisionChangesFileReader stream(changesFile, *db);
+    stream.ToChangeGroup(changeGrp);
+    CompareChangeSet set;
+    set.FromChangeGroup(changeGrp);
+    summary.FromChangeSet(set);
+
+    ECClassCP geomClass = db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricElement);
+    bmap<ECInstanceId, ChangeSummary::Instance> changedElements;
+    summary.QueryByClass(changedElements, geomClass->GetId());
+
+    for (auto changedElement : changedElements)
+        {
+        DgnElementId elementId (changedElement.first.GetValue());
+        DbOpcode opcode = changedElement.second.GetDbOpcode();
+        elementIds.push_back(elementId);
+        opcodes.push_back(opcode);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static StatusInt getAllChangeSets(bvector<DgnRevisionPtr>& changesets, DgnDbR db, ClientPtr client)
+    {
+    bool isBackwardsRoll;
+    Utf8String filename(db.GetFileName().GetFileNameWithoutExtension());
+    Utf8String firstChangesetId = VersionSelector::GetFileFirstChangeSet(client, &db, filename);
+
+    return VersionSelector::GetChangeSetsToApply(changesets, isBackwardsRoll, client, &db, firstChangesetId, filename);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2016
@@ -108,6 +173,10 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
     tempDbName.BuildName(nullptr, tempPath.c_str(), WString(repositoryName.c_str(), false).c_str(), L".ibim");
 
+    DgnDbPtr    existingBriefcase = DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    if (existingBriefcase.IsValid())
+        return existingBriefcase;
+
     WebServices::WSError wserror;
     auto projectId = iModel::Hub::ClientHelper::GetInstance()->QueryProjectId(&wserror, projectName);
 
@@ -126,6 +195,60 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     09/2017
+//=======================================================================================
+struct TilesetRevisionPublisher : TilesetPublisher
+{
+private:
+    WString     m_revisionName;
+
+public:    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index) : 
+    TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
+    { 
+    m_revisionName = WPrintfString(L"Revision_%d", index);
+    m_dataDir.AppendToPath(m_revisionName.c_str()).AppendSeparator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnElementIdSet const& elementIds, PublisherParamsR params)
+    {
+    struct RevisionCollectionFilter : ITileCollectionFilter
+        {
+        DgnElementIdSet const& m_ids;
+
+        RevisionCollectionFilter(DgnElementIdSet const& ids) : m_ids(ids) {}
+
+        virtual bool _AcceptElement(DgnElementId elementId) const override { return m_ids.Contains(elementId); }
+        };
+
+    auto status = InitializeDirectories(GetDataDirectory());
+    if (Status::Success != status)
+        return status;
+    
+
+    if (!elementIds.empty())
+        {
+        ProgressMeter               progressMonitor(*this);
+        RevisionCollectionFilter    collectionFilter(elementIds);
+        TileGenerator               tileGenerator(m_db, &collectionFilter, &progressMonitor);
+    
+        auto generateStatus = tileGenerator.GenerateTiles(*this, modelIds, params.GetTolerance(), params.SurfacesOnly(), s_maxPointsPerTile);
+        }
+
+    return PublisherContext::Status::Success;
+    }
+
+   
+};  // TilesetRevisionPublisher
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -149,104 +272,68 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
     if (!defaultView.IsValid())
         return Status::CantFindDefaultView;
 
-    bvector<ChangeSetInfoPtr>   allChangeSets;
-    bvector<FileInfoPtr>        masterFiles;
+    bvector<DgnRevisionPtr> changeSets;
+    Json::Value             revisionsJson = Json::arrayValue;
 
-    // Get the information of all changesets present in the server
-    if (SUCCESS != VersionSelector::GetRevisions(client, tempDb.get(), allChangeSets, masterFiles))
-        return Status::CantExtractHistory;
-    
-    for (size_t i=allChangeSets.size()-2; i>=0; i++)
+    getAllChangeSets(changeSets, *tempDb, client);
+
+    TilesetPublisher  tilesetPublisher(*tempDb, params, viewsToPublish, defaultView);
+
+    tilesetPublisher.InitializeDirectories(tilesetPublisher.GetDataDirectory());
+
+    for (int i = 0; i<changeSets.size(); i++)
         {
-        // Select the first one as an example and get the ID
-        Utf8String changesetId = allChangeSets.at(i)->GetId();
-
-        // Generate a change summary to compare to the target changeset ID
-        VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate(client, *tempDb, changesetId);
-        if (!changeSummary.IsValid())
-            return Status::CantExtractHistory;
-
         bvector<DgnElementId>   elementIds;
-        DgnElementIdSet         addedOrModifiedIds, deletedIds;
-        bvector<ECClassId>      ecclassIds;
         bvector<DbOpcode>       opCodes;
-        // Get the IDs, ECClass IDs and Opcodes (change type) of the elements that were affected by the changesets
-        if (SUCCESS == changeSummary->GetChangedElements(elementIds, ecclassIds, opCodes) && !elementIds.empty())
+             
+        getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
+
+        if (!elementIds.empty())
             {
-            for (size_t i=0; i<elementIds.size(); i++)
+            DgnElementIdSet     addedOrModifiedIds, deletedIds;
+
+            for (size_t j=0; j<elementIds.size(); j++)
                 {
-                switch(opCodes.at(i))
+                switch(opCodes.at(j))
                     {
                     case DbOpcode::Delete:
-                        deletedIds.insert(elementIds.at(i));
+                        deletedIds.insert(elementIds.at(j));
                         break;
 
                     case DbOpcode::Insert:
-                        addedOrModifiedIds.insert(elementIds.at(i));
+                        addedOrModifiedIds.insert(elementIds.at(j));
                         break;
 
                     case DbOpcode::Update:
-                        deletedIds.insert(elementIds.at(i));
-                        addedOrModifiedIds.insert(elementIds.at(i));
+                        deletedIds.insert(elementIds.at(j));
+                        addedOrModifiedIds.insert(elementIds.at(j));
                         break;
                     }
                 }
 
+            Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+
             if (!addedOrModifiedIds.empty())
                 {
-                TilesetRevisionPublisher  revisionPublisher(*tempDb, params);
+                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, i);
+                DgnModelIdSet               modelIds;
 
-                revisionPublisher.PublishRevision(addedOrModifiedIds, deletedIds, i, params);
+                for (auto& elementId : addedOrModifiedIds)
+                    modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
+
+                revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
+                revisionJson["models"] = revisionPublisher.GetModelsJson(modelIds);
                 }
-            // Write JSON with revision information (description?) and deleted Ids.
+
+            revisionsJson.append(std::move (revisionJson));
             }
 
         // Roll to previous revision.
-        VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), changesetId, Utf8String(tempDbName));
+        VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), changeSets.at(i)->GetId(), Utf8String(tempDbName));
         }
-
-    TilesetPublisher  publisher(*tempDb, params, viewsToPublish, defaultView);
-
-    publisher.Publish(params);
-
+    tilesetPublisher.SetRevisionsJson(std::move(revisionsJson));
+    tilesetPublisher.Publish(params, false);
 
     return Status::Success;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetRevisionPublisher::PublishRevision(DgnElementIdSet const&  addedIds, DgnElementIdSet const& removedIds, size_t index, PublisherParamsR params)
-    {
-    struct RevisionCollectionFilter : ITileCollectionFilter
-        {
-        DgnElementIdSet const& m_ids;
-
-        RevisionCollectionFilter(DgnElementIdSet const& ids) : m_ids(ids) {}
-
-        virtual bool _AcceptElement(DgnElementId elementId) const override { return m_ids.Contains(elementId); }
-        };
-
-    auto status = InitializeDirectories(GetDataDirectory());
-    if (Status::Success != status)
-        return status;
-    
-
-
-    if (!addedIds.empty())
-        {
-        DgnModelIdSet               modelIds;
-        ProgressMeter               progressMonitor(*this);
-        RevisionCollectionFilter    collectionFilter(addedIds);
-        TileGenerator               tileGenerator(m_db, &collectionFilter, &progressMonitor);
-    
-        for (auto& addedId : addedIds)
-            modelIds.insert(m_db.Elements().Get<DgnElement>(addedId)->GetModelId());
-
-        auto generateStatus = tileGenerator.GenerateTiles(*this, modelIds, params.GetTolerance(), params.SurfacesOnly(), s_maxPointsPerTile);
-        }
-
-    return PublisherContext::Status::Success;
     }
 
