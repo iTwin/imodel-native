@@ -51,7 +51,6 @@ typedef JsECDb const& JsECDbCR;
 // In both cases, the return status is Success, and the resulting JSON is empty. The JS caller shoudl not get an exception, just an empty object.
 struct IModelJs
 {
-    static Dgn::DgnDbPtr GetDbByName(BeSQLite::DbResult& dbres, BeFileNameCR fn, Dgn::DgnDb::OpenMode mode);
     static void GetRowAsJson(Json::Value& json, BeSQLite::EC::ECSqlStatement&);
     static void GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR) ;
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
@@ -60,6 +59,8 @@ struct IModelJs
 
     DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenDgnDb(DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenBriefcase(DgnDbPtr& db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens);
+    DGNPLATFORM_EXPORT static void CloseDgnDb(DgnDbR dgndb);
     DGNPLATFORM_EXPORT static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     DGNPLATFORM_EXPORT static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
@@ -74,11 +75,12 @@ struct IModelJs
     DGNPLATFORM_EXPORT static BeSQLite::DbResult InsertInstance(Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult UpdateInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ReadInstance(JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(JsECDbR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ContainsInstance(bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteQuery(JsonValueR results, BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteStatement(Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings);
     DGNPLATFORM_EXPORT static Utf8String GetLastEcdbIssue();
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
 };
 
 END_BENTLEY_DGN_NAMESPACE

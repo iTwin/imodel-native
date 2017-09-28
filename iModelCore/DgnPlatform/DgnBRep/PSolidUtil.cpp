@@ -1072,36 +1072,6 @@ BentleyStatus   PSolidUtil::CheckBody (PK_BODY_t body, bool checkGeometry, bool 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus checkBodyQuick(PK_BODY_t body)
-    {
-    int                 nFaults = 0;
-    PK_check_fault_t*   faultsP = nullptr;
-    PK_BODY_check_o_t   options;
-
-    if (PK_ENTITY_null == body)
-        return ERROR;
-
-    PK_BODY_check_o_m (options);
-
-    options.max_faults  = 0;
-    options.geom        = PK_check_geom_no_c;
-    options.bgeom       = PK_check_bgeom_no_c;
-    options.mesh        = PK_check_mesh_no_c;
-    options.top_geo     = PK_check_top_geo_yes_c; // <-- Just check this...
-    options.size_box    = PK_check_size_box_no_c;
-    options.fa_X        = PK_check_fa_X_no_c;
-    options.loops       = PK_check_loops_no_c;
-    options.fa_fa       = PK_check_fa_fa_no_c;
-    options.sh          = PK_check_sh_no_c;
-    options.corrupt     = PK_check_corrupt_no_c;
-    options.nmnl_geom   = PK_check_nmnl_geom_no_c;
-
-    return (SUCCESS == PK_BODY_check(body, &options, &nFaults, &faultsP) ? SUCCESS : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, double tolerance, TransformCP deltaTransform1To2)
@@ -1135,9 +1105,6 @@ bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, dou
             bvector<PK_FACE_t> faces2;
 
             if (SUCCESS != PSolidTopo::GetBodyFaces(faces1, body1) || SUCCESS != PSolidTopo::GetBodyFaces(faces2, body2) || faces1.size() != faces2.size())
-                return false;
-
-            if (SUCCESS != checkBodyQuick(body1) || SUCCESS != checkBodyQuick(body2))
                 return false;
 
             PK_VECTOR_t point;

@@ -1435,74 +1435,40 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    int                 nFaults = 0;
+    PK_check_fault_t*   faultsP = nullptr;
+    PK_BODY_check_o_t   options;
+
+    PK_BODY_check_o_m(options);
+
+    options.max_faults  = 0;
+    options.geom        = PK_check_geom_no_c;
+    options.bgeom       = PK_check_bgeom_no_c;
+    options.mesh        = PK_check_mesh_no_c;
+    options.top_geo     = PK_check_top_geo_yes_c; // <-- Just check this...
+    options.size_box    = PK_check_size_box_no_c;
+    options.fa_X        = PK_check_fa_X_no_c;
+    options.loops       = PK_check_loops_no_c;
+    options.fa_fa       = PK_check_fa_fa_no_c;
+    options.sh          = PK_check_sh_no_c;
+    options.corrupt     = PK_check_corrupt_no_c;
+    options.nmnl_geom   = PK_check_nmnl_geom_no_c;
+
+    bool        badBRep = (SUCCESS != PK_BODY_check(PSolidUtil::GetEntityTag(entity), &options, &nFaults, &faultsP));
     size_t      bufferSize = 0;
     uint8_t*    buffer = nullptr;
 
-    if (SUCCESS != PSolidUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
+    if (!badBRep && SUCCESS != PSolidUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
         {
         BeAssert(false);
         return;
         }
 
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
-    bvector<FB::FaceSymbology> fbSymbVec;
-    bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
-
-    if (nullptr != attachments)
-        {
-        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-
-        for (FaceAttachment attachment : faceAttachmentsVec)
-            {
-            FB::DPoint2d    uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
-            GeometryParams  faceParams, baseParamsIgnored;
-
-            attachment.ToGeometryParams(faceParams, baseParamsIgnored);
-
-            bool useColor = !faceParams.IsLineColorFromSubCategoryAppearance();
-            bool useMaterial = !faceParams.IsMaterialFromSubCategoryAppearance();
-
-            FB::FaceSymbology  fbSymb(useColor, useMaterial,
-                                      useColor ? faceParams.GetLineColor().GetValue() : 0,
-                                      useMaterial ? faceParams.GetMaterialId().GetValueUnchecked() : 0,
-                                      useColor ? faceParams.GetTransparency() : 0, uv);
-
-            fbSymbVec.push_back(fbSymb);
-            }
-
-        T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
-
-        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-            {
-            FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
-
-            fbSymbIndexVec.push_back(fbSymbIndex);
-            }
-        }
-
-    FlatBufferBuilder fbb;
-
-    auto entityData = fbb.CreateVector(buffer, bufferSize);
-    auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
-    auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs(&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
-
-    FB::BRepDataBuilder builder(fbb);
-    Transform entityTransform = entity.GetEntityTransform();
-
-    builder.add_entityTransform((FB::Transform*) &entityTransform);
-    builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
-    builder.add_entityData(entityData);
-
-    if (nullptr != attachments)
-        {
-        builder.add_symbology(faceSymb);
-        builder.add_symbologyIndex(faceSymbIndex);
-        }
-
-    auto mloc = builder.Finish();
-
-    fbb.Finish(mloc);
-    Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+    CurveVectorPtr curve;
+    PolyfaceHeaderPtr polyface;
+    bvector<PolyfaceHeaderPtr> polyfaces;
+    bvector<FaceAttachment> params;
 
     // NOTE: Append redundant representation for platforms where we don't yet have support for Parasolid...
     switch (entity.GetEntityType())
@@ -1510,10 +1476,10 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
         case IBRepEntity::EntityType::Wire:
             {
             // Save wire body as CurveVector...
-            CurveVectorPtr wireGeom = PSolidGeom::WireBodyToCurveVector(entity);
+            curve = PSolidGeom::WireBodyToCurveVector(entity);
 
-            if (wireGeom.IsValid())
-                Append(*wireGeom, OpCode::BRepCurveVector);
+            if (curve.IsValid())
+                break;
 
             return;
             }
@@ -1521,13 +1487,10 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
         case IBRepEntity::EntityType::Sheet:
             {
             // Save sheet body that is a single planar face as CurveVector...
-            CurveVectorPtr faceGeom = PSolidGeom::PlanarSheetBodyToCurveVector(entity);
+            curve = PSolidGeom::PlanarSheetBodyToCurveVector(entity);
 
-            if (faceGeom.IsValid())
-                {
-                Append(*faceGeom, OpCode::BRepCurveVector);
-                return;
-                }
+            if (curve.IsValid())
+                break;
 
             // Fall through...
             }
@@ -1542,35 +1505,108 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
             if (nullptr != attachments)
                 {
-                bvector<PolyfaceHeaderPtr> polyfaces;
-                bvector<FaceAttachment> params;
-
                 BRepUtil::FacetEntity(entity, polyfaces, params, *facetOpt);
 
-                for (size_t i = 0; i < polyfaces.size(); i++)
-                    {
-                    if (0 == polyfaces[i]->GetPointCount())
-                        continue;
-
-                    GeometryParams  faceParams, baseParamsIgnored;
-
-                    params[i].ToGeometryParams(faceParams, baseParamsIgnored);
-                    Append(faceParams, true, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
-                    polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
-                    Append(*polyfaces[i], OpCode::BRepPolyface);
-                    }
+                if (!polyfaces.empty())
+                    break;
                 }
             else
                 {
-                PolyfaceHeaderPtr polyface = BRepUtil::FacetEntity(entity, *facetOpt);
+                polyface = BRepUtil::FacetEntity(entity, *facetOpt);
 
                 if (polyface.IsValid())
-                    {
-                    polyface->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
-                    Append(*polyface, OpCode::BRepPolyface);
-                    }
+                    break;
                 }
-            break;
+
+            return;
+            }
+        }
+
+    if (!badBRep)
+        {
+        bvector<FB::FaceSymbology> fbSymbVec;
+        bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
+
+        if (nullptr != attachments)
+            {
+            T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+            for (FaceAttachment attachment : faceAttachmentsVec)
+                {
+                FB::DPoint2d    uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
+                GeometryParams  faceParams, baseParamsIgnored;
+
+                attachment.ToGeometryParams(faceParams, baseParamsIgnored);
+
+                bool useColor = !faceParams.IsLineColorFromSubCategoryAppearance();
+                bool useMaterial = !faceParams.IsMaterialFromSubCategoryAppearance();
+
+                FB::FaceSymbology  fbSymb(useColor, useMaterial,
+                                          useColor ? faceParams.GetLineColor().GetValue() : 0,
+                                          useMaterial ? faceParams.GetMaterialId().GetValueUnchecked() : 0,
+                                          useColor ? faceParams.GetTransparency() : 0, uv);
+
+                fbSymbVec.push_back(fbSymb);
+                }
+
+            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+
+            for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+                {
+                FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
+
+                fbSymbIndexVec.push_back(fbSymbIndex);
+                }
+            }
+
+        FlatBufferBuilder fbb;
+
+        auto entityData = fbb.CreateVector(buffer, bufferSize);
+        auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
+        auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs(&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
+
+        FB::BRepDataBuilder builder(fbb);
+        Transform entityTransform = entity.GetEntityTransform();
+
+        builder.add_entityTransform((FB::Transform*) &entityTransform);
+        builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
+        builder.add_entityData(entityData);
+
+        if (nullptr != attachments)
+            {
+            builder.add_symbology(faceSymb);
+            builder.add_symbologyIndex(faceSymbIndex);
+            }
+
+        auto mloc = builder.Finish();
+
+        fbb.Finish(mloc);
+        Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        }
+
+    if (curve.IsValid())
+        {
+        Append(*curve, badBRep ? OpCode::CurveVector : OpCode::BRepCurveVector);
+        }
+    else if (polyface.IsValid())
+        {
+        polyface->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
+        Append(*polyface, badBRep ? OpCode::Polyface : OpCode::BRepPolyface);
+        }
+    else
+        {
+        for (size_t i = 0; i < polyfaces.size(); i++)
+            {
+            if (0 == polyfaces[i]->GetPointCount())
+                continue;
+
+            GeometryParams  faceParams, baseParamsIgnored;
+
+            params[i].ToGeometryParams(faceParams, baseParamsIgnored);
+            Append(faceParams, true, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
+
+            polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
+            Append(*polyfaces[i], badBRep ? OpCode::Polyface : OpCode::BRepPolyface);
             }
         }
 #endif
@@ -3512,6 +3548,7 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
     bool geomParamsChanged = true;
+    bool allowStrokedLinestyles = activateParams; // Don't allow stroked linestyles in GeometryParts...
     Render::GraphicParams subGraphicParams;
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
@@ -3637,7 +3674,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (FB::BoundaryType_None != boundary)
                     {
-                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                    bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                     if (strokeLineStyle)
                         {
@@ -3701,7 +3738,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (FB::BoundaryType_None != boundary)
                     {
-                    bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                    bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                     if (strokeLineStyle)
                         {
@@ -3757,7 +3794,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         }
                     }
 
-                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {
@@ -3821,7 +3858,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     }
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // A single curve primitive (that isn't a point string) is always open...
-                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {
@@ -3868,7 +3905,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         }
                     }
 
-                bool strokeLineStyle = (activateParams && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
+                bool strokeLineStyle = (allowStrokedLinestyles && context.WantLineStyles() && geomParams.HasStrokedLineStyle());
 
                 if (strokeLineStyle)
                     {

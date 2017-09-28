@@ -713,7 +713,7 @@ void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
         return;
 
     modifiers |= STYLEMOD_SCALE;
-    scale = scaleFactor;
+    scale *= scaleFactor;
 
     if (!(modifiers & STYLEMOD_TRUE_WIDTH))
         return;
