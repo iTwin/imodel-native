@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include "imodeljs.h"
-//DgnECPersistence is deprecated -> use PresentationRules instead
-//#include <DgnPlatform/DgnECPersistence.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -216,6 +215,8 @@ DgnDbStatus IModelJs::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValue
 
     elementJson = elem->ToJson(inOpts);
 
+    //Utf8String elementJsonStr = Json::FastWriter::ToString(elementJson);
+    //printf("Element: %s\n", elementJsonStr.c_str());
     return DgnDbStatus::Success;
     }
 
@@ -340,82 +341,69 @@ BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Json
 
     //DgnECPersistence is deprecated -> use PresentationRules instead
     return BSIERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+void IModelJs::CloseDgnDb(DgnDbR dgndb)
+    {
+    if (dgndb.Txns().HasChanges())
+        dgndb.SaveChanges();
+    dgndb.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 09/17
+//---------------------------------------------------------------------------------------
+DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
+    {
     /*
-    Json::Value jsonInstances, jsonDisplayInfo;
-    if (SUCCESS != DgnECPersistence::GetElementInfo(jsonInstances, jsonDisplayInfo, elemId, dgndb))
-        return BSISUCCESS;  // Don't throw an exception. Just return an empty result.
-
-    // => [
-    //      {
-    //      'category':categoryLabel,
-    //      'properties': [
-    //          {
-    //          'label':propertyLabel,
-    //          'value':propertyValue
-    //          },
-    //          ...
-    //      ],
-    //      ...
-    //      }
-    //    ]
-
-    result = Json::arrayValue;
-    int nCategories = jsonDisplayInfo["Categories"].size();
-    for (int i = 0; i < nCategories; i++)
+    * Structure of JSON:
+    *     <IModelId1>
+    *         <BriefcaseId1>
+    *             pathname
+    *             parentChangeSetId
+    *         <BriefcaseId2>
+    *         ...
+    *     <IModelId2>
+    *     ...
+    */
+    BeFileName iModelPath;
+    bool isDir;
+    jsonBriefcaseInfos = Json::objectValue;
+    for (BeDirectoryIterator iModelPaths(cachePath); iModelPaths.GetCurrentEntry(iModelPath, isDir, true /*fullpath*/) == SUCCESS; iModelPaths.ToNext())
         {
-        Json::Value categoryInfo = jsonDisplayInfo["Categories"][i];
-        if (categoryInfo.isNull())
+        if (!isDir)
             continue;
-
-        Json::Value propertyList(Json::arrayValue);
-        Json::Value properties;
-        int nProperties = categoryInfo["Properties"].size();
-        for (int j = 0; j < nProperties; j++)
+        Json::Value jsonIModelBriefcases = Json::objectValue;
+        BeFileName briefcasePath;
+        for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
             {
-            Json::Value propertyDef = categoryInfo["Properties"][j];
-            if (propertyDef["InstanceIndex"].isNull())
+            if (!isDir || briefcasePath.GetBaseName().Equals(L"csets"))
+                continue;
+            BeFileName briefcasePathname;
+            BeDirectoryIterator briefcasePathnames(briefcasePath);
+            if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
                 continue;
 
-            int instanceIdx = propertyDef["InstanceIndex"].asInt();
-            if (jsonInstances[instanceIdx].isNull())
+            DbResult result;
+            DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+            DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+            if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+                {
+                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
                 continue;
+                }
 
-            Json::Value prop(Json::objectValue);
-            Utf8String name = propertyDef["Name"].asCString();
-            prop["label"] = propertyDef["DisplayLabel"];
-            prop["value"] = jsonInstances[instanceIdx][name];
-            propertyList.append(prop);
+            Json::Value jsonBriefcase = Json::objectValue;
+            jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
+            jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
+            jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
             }
-
-        if (propertyList.size() > 0)
-            {
-            Json::Value category(Json::objectValue);
-            category["category"] = categoryInfo["DisplayLabel"];
-            category["properties"] = propertyList;
-            result.append(category);
-            }
+        jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
         }
 
-#ifdef DEBUG_PROPERTIES
-    printf("Element props. Raw props:");
-    printf(Json::FastWriter::ToString(jsonInstances).c_str());
-    printf("Raw display info:");
-    printf(Json::FastWriter::ToString(jsonDisplayInfo).c_str());
-    printf("Returned properties:");
-    printf(Json::FastWriter::ToString(result).c_str());
-#endif
-
-    return BSISUCCESS;
-    */
+    return BE_SQLITE_OK;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-DbResult IModelJs::OpenDgnDb(DgnDbPtr& db, BeFileNameCR dbname, DgnDb::OpenMode mode)
-    {
-    DbResult result;
-    db = IModelJs::GetDbByName(result, dbname, mode);
-    return result;
-    }
-
