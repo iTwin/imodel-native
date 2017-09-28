@@ -30,6 +30,9 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         BentleyStatus StructToJson(JsonValueR, IECSqlValue const&) const;
         BentleyStatus PrimitiveArrayToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
         BentleyStatus StructArrayToJson(JsonValueR, IECSqlValue const&) const;
+
+        static void FormatMemberName(Utf8String&, JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing);
+        static bool NeedsMemberNameReformatting(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing);
     public:
         ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& options) : m_stmt(stmt), m_formatOptions(options) {}
 
@@ -37,8 +40,7 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo);
         BentleyStatus SelectClauseItemToJson(JsonValueR, IECSqlValue const&, ECSqlSystemPropertyInfo const& sysPropInfo) const;
 
-        static Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&);
-        static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
+        Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&) const;
     };
 
 //--------------------------------------------------------------------------------------
@@ -348,10 +350,18 @@ BentleyStatus ECSqlToJsonConverter::StructToJson(JsonValueR jsonValue, IECSqlVal
             continue;
 
         ECPropertyCP memberProp = structMemberValue.GetColumnInfo().GetProperty();
-        BeAssert(memberProp != nullptr);
-        Utf8String memberPropName(memberProp->GetName());
-        LowerFirstChar(memberPropName);
-        if (SUCCESS != PropertyValueToJson(jsonValue[memberPropName.c_str()], structMemberValue))
+        Json::Value* memberJson = nullptr;
+        if (NeedsMemberNameReformatting(m_formatOptions.GetMemberCasingMode()))
+            {
+            Utf8String memberPropName(memberProp->GetName());
+            FormatMemberName(memberPropName, m_formatOptions.GetMemberCasingMode());
+            memberJson = &jsonValue[memberPropName.c_str()];
+            }
+        else
+            memberJson = &jsonValue[memberProp->GetName().c_str()];
+
+        BeAssert(memberJson != nullptr);
+        if (SUCCESS != PropertyValueToJson(*memberJson, structMemberValue))
             return ERROR;
         }
 
@@ -444,8 +454,7 @@ ECSqlSystemPropertyInfo const& ECSqlToJsonConverter::DetermineTopLevelSystemProp
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
-Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo)
+Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo) const
     {
     //if property is generated, the display label contains the select clause item as is.
     //The property name in contrast would have encoded special characters of the select clause item.
@@ -456,7 +465,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         if (name.empty())
             name.assign(colInfo.GetProperty()->GetName());
 
-        LowerFirstChar(name);
+        FormatMemberName(name, m_formatOptions.GetMemberCasingMode());
         return name;
         }
 
@@ -464,25 +473,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         {
         Utf8String name(colInfo.GetPropertyPath().ToString());
         BeAssert(!name.empty());
-        LowerFirstChar(name);
-        bool foundDelimiter = false;
-        //lower first character of each token in access string
-        for (size_t i = 1; i < name.size(); i++)
-            {
-            if (foundDelimiter)
-                {
-                name[i] = (Utf8Char) tolower(name[i]);
-                foundDelimiter = false;
-                continue;
-                }
-
-            if (name[i] == '.')
-                {
-                foundDelimiter = true;
-                continue;
-                }
-            }
-
+        FormatMemberName(name, m_formatOptions.GetMemberCasingMode());
         return name;
         }
 
@@ -526,6 +517,47 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
 
     BeAssert(false && "Other system properties should not show up in ECSQL select clause");
     return Utf8String();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing casingMode)
+    {
+    switch (casingMode)
+        {
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
+                return false;
+
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
+                return true;
+
+            default:
+                BeAssert(false);
+                return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+void ECSqlToJsonConverter::FormatMemberName(Utf8String& memberName, JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing casingMode)
+    {
+    switch (casingMode)
+        {
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
+                return;
+
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
+                ECJsonUtilities::LowerFirstChar(memberName);
+                return;
+
+            default:
+                BeAssert(false);
+                return;
+        }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

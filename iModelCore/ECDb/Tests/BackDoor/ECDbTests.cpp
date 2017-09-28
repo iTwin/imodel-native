@@ -1060,4 +1060,43 @@ void PrintTo(ECSqlStatus stat, std::ostream* os)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(JsonECSqlSelectAdapter::FormatOptions const& options, std::ostream* os)
+    {
+    *os << "JsonECSqlSelectAdapter::FormatOptions(";
+    switch (options.GetMemberCasingMode())
+        {
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
+                *os << "MemberNameCasing::KeepOriginal";
+                break;
+            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
+                *os << "MemberNameCasing::LowerFirstChar";
+                break;
+
+            default:
+                *os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
+                return;
+        }
+
+    *os << ",";
+    switch (options.GetInt64Format())
+        {
+            case ECJsonInt64Format::AsNumber:
+                *os << ENUM_TOSTRING(ECJsonInt64Format::AsNumber);
+                break;
+            case ECJsonInt64Format::AsDecimalString:
+                *os << ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString);
+                break;
+            case ECJsonInt64Format::AsHexadecimalString:
+                *os << ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString);
+                break;
+            default:
+                *os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
+                return;
+        }
+
+    *os << ")";
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

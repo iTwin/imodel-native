@@ -141,14 +141,27 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
     public:
         struct FormatOptions final
             {
+            enum class MemberNameCasing
+                {
+                KeepOriginal, //!< Member name as returned from ECSQL
+                LowerFirstChar //!< First character of the member name is lowered. This does not apply to system members.
+                };
+
             private:
+                MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
 
             public:
-                //! Initializes a default BentleyApi::ECN::ECJsonInt64Format object with ECJsonInt64Format::AsDecimalString
+                //! Initializes a default FormatOptions object
+                //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
                 FormatOptions() {}
-                explicit FormatOptions(ECN::ECJsonInt64Format int64Format) : m_int64Format(int64Format) {}
+                //! Initializes a new FormatOptions object
+                //!@param[in] memberNameCasing Defines how the member names in the resulting JSON will be formatted.
+                //!           Casing of system member names is not affected by this.
+                //!@param[in] int64Format Defines how ECProperty values of type Int64 / Long will be formatted
+                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format) {}
 
+                MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
             };
     private:
@@ -168,7 +181,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! item in the ECSQL select clause.
         //! 
         //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
-        //! The ECSQL select clause is what exclusively determines what property name value pairs
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
         //! the JSON will contain.
         //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
@@ -179,11 +192,11 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @c SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
         //! @c TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
         //! @c TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
-        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
-        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
-        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;point2d/point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
-        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;point2d/point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
-        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;Point2d/Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;Point2d/Point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
         //! ####Examples
         //! For the ECSQL <c>SELECT %ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
@@ -192,16 +205,16 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //!     {
         //!         "id" : "0x13A",
         //!         "className" : "mySchema.Employee",
-        //!         "name": "Sally Smith",
-        //!         "age": 30
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
         //!     }
         //!
         //! For the ECSQL <c>SELECT Name, Age FROM myschema.Employee WHERE ...</c>
         //! the returned JSON format would be this:
         //! 
         //!     {
-        //!         "name": "Sally Smith",
-        //!         "age": 30
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
         //!     }
         //! 
         //! Using expressions or aliases or nesting property accessors in the ECSQL select clause
@@ -225,15 +238,15 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! 
         //!     {
         //!     "id" : "0x123",
-        //!     "name": "Sally Smith",
-        //!     "age": 30
+        //!     "Name": "Sally Smith",
+        //!     "Age": 30
         //!     }
         //!
         //! If the %ECClassId of @c Company was passed to the method, the resulting JSON would be:
         //! 
         //!     {
         //!     "id" : "0x332",
-        //!     "name": "ACME"
+        //!     "Name": "ACME"
         //!     }
         //!
         //! @param [out] json Current row values of the column of the specified class as JSON object of property name value pairs
@@ -369,9 +382,15 @@ struct JsonInserter final : NonCopyableClass
     };
 
 //=======================================================================================
-//! Update EC content in the ECDb file through JSON values
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
-//@bsiclass                                                           02/2013
+//! Update EC content in the ECDb file through @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON" values
+//! @remarks The input JSON must contain the members which the updater is supposed to update. 
+//! That implies that the JsonUpdater will fail, if the input JSON contains members which are not updatable, 
+//! e.g. @ref BentleyApi::ECN::ECJsonSystemNames::Id "id",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className", @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId", @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName".
+//! The general rule is that the JsonUpdater supports what ECSQL UPDATE supports.
+//@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
     {
@@ -406,7 +425,10 @@ struct JsonUpdater final : NonCopyableClass
         BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, Utf8CP ecsqlOptions, ECCrudWriteToken const* writeToken);
 
     public:
-        //! Initializes a new JsonUpdater instance for the specified class. 
+        //! Initializes a new JsonUpdater instance for the specified class.
+        //! @remarks The SET clause of the underlying ECSQL UPDATE will contain @b all properties of @p ecClass.
+        //! That means, any properties not contained in the incoming JSON will be nulled-out. As this is often not the desired
+        //! behavior, consider using the other constructor that takes a list of property names.
         //! @param[in] ecdb ECDb
         //! @param[in] ecClass ECClass of the instance that needs to be updated. 
         //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 

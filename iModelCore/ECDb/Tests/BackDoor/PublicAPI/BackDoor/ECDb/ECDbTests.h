@@ -223,6 +223,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 void PrintTo(ECInstanceId, std::ostream*);
 void PrintTo(ECInstanceKey const&, std::ostream*);
 void PrintTo(ECSqlStatus, std::ostream*);
+void PrintTo(JsonECSqlSelectAdapter::FormatOptions const&, std::ostream*);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
