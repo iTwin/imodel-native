@@ -420,3 +420,4 @@ UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultU
     
 ConnectTokenProviderTests.UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken
     # bim0200dev, x64, DEBUG, randomly hangs
+# Adding comment to test auto ignore script
