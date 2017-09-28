@@ -607,10 +607,11 @@ bool Feature::operator<(FeatureCR rhs) const
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_alwaysDrawn(view.GetAlwaysDrawn()),
-    m_neverDrawn(view.IsAlwaysDrawnExclusive() ? DgnElementIdSet() : view.GetNeverDrawn()), m_alwaysDrawnExclusive(view.IsAlwaysDrawnExclusive())
+    m_neverDrawn(view.IsAlwaysDrawnExclusive() ? DgnElementIdSet() : view.GetNeverDrawn())
     {
     DgnDb::VerifyClientThread();
 
+    m_alwaysDrawnExclusive = view.IsAlwaysDrawnExclusive();
     if (!m_alwaysDrawnExclusive)
         {
         auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();
@@ -841,18 +842,12 @@ void FeatureSymbologyOverrides::OverrideSubCategory(DgnSubCategoryId id, Appeara
     if (!id.IsValid() || !IsSubCategoryVisible(id))
         return;
 
+    // NB: Appearance may specify no overridden symbology - this means "don't apply the default overrides to this subcategory"
     auto iter = m_subcategoryOverrides.find(id);
     if (iter != m_subcategoryOverrides.end())
-        {
-        if (!app.OverridesSymbology())
-            m_subcategoryOverrides.erase(iter);
-        else
-            iter->second = app;
-        }
+        iter->second = app;
     else
-        {
         m_subcategoryOverrides.Insert(id, app);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -863,18 +858,28 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
     if (!id.IsValid() || m_neverDrawn.end() != m_neverDrawn.find(id))
         return;
 
+    // NB: Appearance may specify no overridden symbology - this means "don't apply the default overrides to this element"
     auto iter = m_elementOverrides.find(id);
-    if (iter != m_elementOverrides.end())
-        {
-        if (!app.OverridesSymbology())
-            m_elementOverrides.erase(iter);
-        else
-            iter->second = app;
-        }
+    if (m_elementOverrides.end() != iter)
+        iter->second = app;
     else
-        {
         m_elementOverrides.Insert(id, app);
-        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::ClearElementOverrides(DgnElementId id)
+    {
+    m_elementOverrides.erase(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::ClearSubCategoryOverrides(DgnSubCategoryId id)
+    {
+    m_subcategoryOverrides.erase(id);
     }
 
 /*---------------------------------------------------------------------------------**//**

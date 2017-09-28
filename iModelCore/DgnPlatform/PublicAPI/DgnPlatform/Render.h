@@ -2707,19 +2707,20 @@ struct FeatureSymbologyOverrides
 
         OvrGraphicParams ToOvrGraphicParams() const;
     };
+private:
 
     DgnElementIdSet                     m_alwaysDrawn;
     DgnElementIdSet                     m_neverDrawn;
-    bmap<DgnElementId, Appearance>      m_elementOverrides; // for any element for which at least one aspect of symbology is overridden
+    bmap<DgnElementId, Appearance>      m_elementOverrides; // Appearance for elements which have been explicitly overridden.
     DgnSubCategoryIdSet                 m_visibleSubCategories;
     bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
     Appearance                          m_defaultOverrides;
-    bool                                m_constructions;
-    bool                                m_dimensions;
-    bool                                m_patterns;
-    bool                                m_alwaysDrawnExclusive;
-    bool                                m_lineWeights;
-
+    uint8_t                             m_constructions:1;
+    uint8_t                             m_dimensions:1;
+    uint8_t                             m_patterns:1;
+    uint8_t                             m_alwaysDrawnExclusive:1;
+    uint8_t                             m_lineWeights:1;
+public:
     FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
 
@@ -2730,9 +2731,26 @@ struct FeatureSymbologyOverrides
     DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
     DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
 
-    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
+    // NB: Appearance can override nothing, which prevents the default overrides from applying to it.
     DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance);
+    DGNPLATFORM_EXPORT void ClearElementOverrides(DgnElementId);
+
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
+    DGNPLATFORM_EXPORT void ClearSubCategoryOverrides(DgnSubCategoryId);
+
     void SetDefaultOverrides(Appearance appearance) { m_defaultOverrides = appearance; }
+
+    bool IsAlwaysDrawnExclusive() const { return m_alwaysDrawnExclusive; }
+    void SetAlwaysDrawnExclusive(bool exclusive) { m_alwaysDrawnExclusive = exclusive; }
+
+    DgnElementIdSet& GetAlwaysDrawn()  { return m_alwaysDrawn; }
+    DgnElementIdSet const& GetAlwaysDrawn() const { return m_alwaysDrawn; }
+
+    DgnElementIdSet& GetNeverDrawn()  { return m_neverDrawn; }
+    DgnElementIdSet const& GetNeverDrawn() const { return m_neverDrawn; }
+
+    void AlwaysDraw(DgnElementId id) { m_alwaysDrawn.insert(id); }
+    void NeverDraw(DgnElementId id) { m_neverDrawn.insert(id); }
 };
 
 //=======================================================================================
