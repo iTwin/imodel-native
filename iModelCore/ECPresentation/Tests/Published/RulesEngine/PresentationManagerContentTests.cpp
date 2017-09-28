@@ -4807,6 +4807,146 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECEntityClass typeName="MyClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"(
+        {
+        "MyClassA_MyClassB_ArrayProperty": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECEntityClass typeName="MyClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 3);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        instance.SetValue("ArrayProperty", ECValue(3), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenValuesEqual, R"*(
@@ -4871,7 +5011,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_TRUE(record->GetMergedFieldNames().empty());
+    EXPECT_FALSE(record->IsMerged("MyClass_ArrayProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4999,6 +5139,68 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rapidjson::Document recordJson = record->AsJson();
     EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_ArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["ClassA_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_ArrayProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5298,6 +5500,151 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClassA_MyClassB_StructProperty": {
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreEqual, R"*(
@@ -5367,7 +5714,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_TRUE(record->GetMergedFieldNames().empty());
+    EXPECT_FALSE(record->IsMerged("MyClass_StructProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5434,6 +5781,70 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     rapidjson::Document recordJson = record->AsJson();
     EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyValueWhenClassesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="ClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    EXPECT_TRUE(record->GetValues()["ClassA_StructProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_StructProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5673,6 +6084,173 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClassA_MyClassB_StructArrayProperty": [{
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }]
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(456));
+        structInstance->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenValuesAreEqual, R"*(
@@ -5754,7 +6332,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_TRUE(record->GetMergedFieldNames().empty());
+    EXPECT_FALSE(record->IsMerged("MyClass_StructArrayProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5918,6 +6496,76 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rapidjson::Document recordJson = record->AsJson();
     EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyValueWhenClassesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="ClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    EXPECT_TRUE(record->GetValues()["ClassA_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_StructArrayProperty"));
     }
 
 /*---------------------------------------------------------------------------------**//**

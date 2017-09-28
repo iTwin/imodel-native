@@ -418,7 +418,10 @@ public:
 
         if (possiblyMerged && IsValueMerged(value.GetText()))
             {
-            AddValue(name, rapidjson::Value(value.GetText(), m_values.GetAllocator()), rapidjson::Value(value.GetText(), m_displayValues.GetAllocator()));
+            if (ecProperty.GetIsNavigation())
+                AddValue(name, rapidjson::Value(), rapidjson::Value(value.GetText(), m_displayValues.GetAllocator()), ADD_DisplayValue);
+            else
+                AddValue(name, rapidjson::Value(value.GetText(), m_values.GetAllocator()), rapidjson::Value(value.GetText(), m_displayValues.GetAllocator()));
             m_mergedFieldNames.push_back(name);
             }
         else if (ecProperty.GetIsPrimitive())
@@ -629,7 +632,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     {
     ContentQueryContractCPtr contract = m_query->GetContract();
     ContentDescriptorCR descriptor = contract->GetDescriptor();
-    bool resultsMerged = (0 != ((int)ContentFlags::MergeResults & descriptor.GetContentFlags()));
+    bool resultsMerged = descriptor.HasContentFlag(ContentFlags::MergeResults);
     int columnIndex = 0;
     uint64_t contractId = 0;
 
