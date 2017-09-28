@@ -9,10 +9,6 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)DesignModelingUnits$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DesignModelingUnits$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)DesignModelingUnits$(libext)
-                Delivery/$(shlibprefix)DesignModelingUnits$(ApiNumber)$(shlibext)
-            </Files>
         </Bindings>
     </Part>   
 
