@@ -1312,7 +1312,7 @@ void exerciseCleanup (bvector<PolyfaceHeaderPtr> &source)
     auto range = source[0]->PointRange ();
     range.Extend (source[1]->Point ());
     auto dX = range.XLength ();
-    //auto dY = 2.0 * range.YLength ();
+    // unused - auto dY = 2.0 * range.YLength ();
     //SaveAndRestoreCheckTransform shifter (0,dY,0);
     Check::Shift (dX, 0, 0);
     bvector<PolyfaceHeaderPtr> dest;
@@ -1414,7 +1414,7 @@ TEST(Polyface,CleanupVisiblesB)
         }
     Check::ClearGeometry ("Polyface.CleanupVisiblesB");
     }
-//static int s_noisyCleanup = false;
+// unused - static int s_noisyCleanup = false;
 
 
 void doUndercut (PolyfaceHeaderPtr &meshA, PolyfaceHeaderPtr &meshB)
