@@ -510,6 +510,9 @@
     <ClCompile Include="iModelHubClient\ChangeSetCacheManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1155,6 +1158,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="iModelHubClient\FileLock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\MultiProgressCallbackHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
