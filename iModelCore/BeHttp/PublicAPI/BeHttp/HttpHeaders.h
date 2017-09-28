@@ -134,7 +134,11 @@ struct HttpResponseHeaders : HttpHeaders
     // Server header
     void SetServer(Utf8StringCR server) {SetValue("Server", server);}
     Utf8CP GetServer() const {return GetValue("Server");}
-    
+
+    // Mass-Server header
+    void SetMassServer(Utf8StringCR server) { SetValue("Mas-Server", server);}
+    Utf8CP GetMassServer() const { return GetValue("Mas-Server"); }
+
     // Cache-Control header
     void SetCacheControl(Utf8StringCR cacheControl) {SetValue("Cache-Control", cacheControl);}
     Utf8CP GetCacheControl() const {return GetValue("Cache-Control");}
