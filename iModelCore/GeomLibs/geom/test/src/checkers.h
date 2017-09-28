@@ -402,6 +402,7 @@ static void SaveTransformed(IGeometryPtr const &data);
 static void SaveTransformed(CurveVectorCR data);
 static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
+static void SaveTransformed(PolyfaceHeaderPtr &data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint3d> const &data);
 static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize);

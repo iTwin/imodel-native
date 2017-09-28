@@ -109,7 +109,8 @@ bool CurvePrimitiveLineString::_FractionToPoint(double fraction, DPoint3dR point
     {
     if (m_points.size () == 0)
         return false;        
-    if (bsiDPoint3d_interpolatePolyline (&point, NULL, &m_points[0], (int)m_points.size (), fraction))
+    DVec3d tangentA, tangentB;
+    if (bsiDPoint3d_interpolatePolyline (point, tangentA, tangentB, &m_points[0], (int)m_points.size (), fraction))
         return true;
     return false;
     }

@@ -1451,6 +1451,10 @@ void Check::SaveTransformed(ICurvePrimitiveCR data)
 void Check::SaveTransformed(PolyfaceHeaderCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}
+void Check::SaveTransformed(PolyfaceHeaderPtr &data)
+    {
+    if (data.IsValid ())
+    SaveTransformed(IGeometry::Create (data->Clone ()));}
 void Check::SaveTransformed(ISolidPrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}

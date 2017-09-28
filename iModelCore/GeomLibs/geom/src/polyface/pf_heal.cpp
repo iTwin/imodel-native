@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_heal.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -493,8 +493,12 @@ static void EvaluatePinchedSectorCandidate (MTGFacets *facets, MTGGraph *graph, 
         DVec3d leftVector, rightVector;
         MTGNodeId leftNodeId, rightNodeId;
         AccessSector (facets, graph, seedNodeId, leftNodeId, rightNodeId, xyzSeed, xyzLeft, xyzRight, leftVector, rightVector);
-        if (leftVector.AngleTo(rightVector) <= angleTol)
-            candidates.push_back (seedNodeId);
+        if (leftVector.DotProduct (rightVector) > 0.0)
+            {
+            double radians = leftVector.AngleTo(rightVector);
+            if (radians < angleTol)
+                candidates.push_back (seedNodeId);
+            }
         }
     }
 
@@ -536,8 +540,11 @@ public:
 static size_t SimplifySlivers (MTGFacets *facets, double distanceTol, double angleTol = 1.0e-9)
     {
     MTGGraphP graph = jmdlMTGFacets_getGraph (facets);
+
     bvector<MTGNodeId> candidates;
     size_t numChanged = 0;
+    if (s_noisy)
+        jmdlMTGGraph_printFaceLoops (graph);
 
     MTGARRAY_SET_LOOP (seedNodeId, graph)
         {
@@ -798,7 +805,7 @@ static size_t FillHolesBySpaceTriangulation (MTGFacets* facets)
 };
 
 static double s_absTol = 1.0e-8;
-size_t PolyfaceQuery::HealVerticalPanels (PolyfaceQueryCR polyface, bool tryVerticalPanels, bool trySpaceTriangulation, PolyfaceHeaderPtr &healedPolyface)
+size_t PolyfaceQuery::HealVerticalPanels (PolyfaceQueryCR polyface, bool tryVerticalPanels, bool trySpaceTriangulation, PolyfaceHeaderPtr &healedPolyface, bool simplifySlivers)
     {
     healedPolyface = NULL;
     MTGFacets* facets = jmdlMTGFacets_grab ();
@@ -808,19 +815,21 @@ size_t PolyfaceQuery::HealVerticalPanels (PolyfaceQueryCR polyface, bool tryVert
 
     if (PolyfaceToMTG (facets, &meshVertexToNodeId, &nodeIdToReadIndex, polyface, true, Angle::SmallAngle (), Angle::SmallAngle ()))
         {
+        if (simplifySlivers)
+            {
+            DRange3d range;
+            static double s_squeezeRelTol = 1.0e-7;
+            jmdlMTGFacets_getRange (facets, &range);
+            double squeezeTol = s_absTol + s_squeezeRelTol * range.low.Distance (range.high);
+            facetsAdded += MTGHealingContext::SimplifySlivers (facets, squeezeTol);
+            }
+
         if (tryVerticalPanels)
             {
             facetsAdded += MTGHealingContext::FillHolesByLocalRetriangulation (facets);
             MTGHealingContext::AddVerticalExteriorEdges (facets);
             facetsAdded += MTGHealingContext::FillHolesByLocalRetriangulation (facets, false);
-            DRange3d range;
-            static double s_squeezeRelTol = 1.0e-7;
-            jmdlMTGFacets_getRange (facets, &range);
-            double squeezeTol = s_absTol + s_squeezeRelTol * range.low.Distance (range.high);
-            static int s_simplifySlivers = 0;
             static int s_finalFill = 1;
-            if (s_simplifySlivers)
-                facetsAdded += MTGHealingContext::SimplifySlivers (facets, squeezeTol);
             if (s_finalFill)
                 facetsAdded += MTGHealingContext::FillHolesByLocalRetriangulation (facets, false);
             }

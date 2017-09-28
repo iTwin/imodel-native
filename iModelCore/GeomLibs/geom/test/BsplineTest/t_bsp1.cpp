@@ -739,6 +739,9 @@ void sample (ICurvePrimitivePtr &cp, double f0, double df, int numFraction, bvec
         points.push_back (xyz);
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineCurve,ClosedToOpen)
     {
     bvector<DPoint3d> poles;
