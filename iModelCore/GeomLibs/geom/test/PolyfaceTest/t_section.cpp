@@ -1312,7 +1312,7 @@ void exerciseCleanup (bvector<PolyfaceHeaderPtr> &source)
     auto range = source[0]->PointRange ();
     range.Extend (source[1]->Point ());
     auto dX = range.XLength ();
-    auto dY = 2.0 * range.YLength ();
+    //auto dY = 2.0 * range.YLength ();
     //SaveAndRestoreCheckTransform shifter (0,dY,0);
     Check::Shift (dX, 0, 0);
     bvector<PolyfaceHeaderPtr> dest;
