@@ -2559,11 +2559,25 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         childContentRange.IntersectionOf(contentRange, nodeRange);
         nodeP->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(childContentRange.low.x, childContentRange.low.y, childContentRange.low.z, childContentRange.high.x, childContentRange.high.y, childContentRange.high.z);
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
-        dynamic_pcast<SMMeshIndexNode<POINT,EXTENT>,SMPointIndexNode<POINT,EXTENT>>(nodeP)->PushPtsIndices(&childIndices[0], childIndices.size());                
 
-       pointsPtr = nodeP->GetPointsPtr();
-        pointsPtr->push_back(&nodePts[0], nodePts.size());
-        nodeP->m_nodeHeader.m_totalCount = pointsPtr->size();
+		bvector<int32_t> indices(childIndices.size());
+		if (childIndices.size() > 0)
+		{
+			memcpy(&indices[0], &childIndices[0], childIndices.size() * sizeof(int32_t));
+			bvector<DPoint2d> uvs;
+			SimplifyMesh(indices, pts, uvs);
+
+			dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(nodeP)->PushPtsIndices(&indices[0], indices.size());
+			auto nodePointsPtr = nodeP->GetPointsPtr();
+			nodePointsPtr->push_back(&pts[0], pts.size());
+			nodeP->m_nodeHeader.m_totalCount = nodePointsPtr->size();
+		}
+		else
+		{
+		auto nodePointsPtr = nodeP->GetPointsPtr();
+			nodePointsPtr->push_back(&nodePts[0], nodePts.size());
+			nodeP->m_nodeHeader.m_totalCount = nodePointsPtr->size();
+		}
         nodeP->SetDirty(true);
         meshPtr = nullptr;
         }
@@ -2982,7 +2996,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
         SetNumberOfSubNodesOnSplit(4);                 
     
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
-        {        
+        {    
+		m_SMIndex->m_countsOfNodesTotal += 4;
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
@@ -3028,6 +3043,7 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
                 return;
             }
 
+		m_SMIndex->m_countsOfNodesTotal += 8;
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 1)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 1);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 8;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),

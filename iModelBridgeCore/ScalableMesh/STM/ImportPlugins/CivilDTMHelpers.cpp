@@ -41,9 +41,7 @@ CivilImportedTypes::CivilImportedTypes ()
     static const DTMFeatureType LINEAR_TYPES[] =
         {
         DTMFeatureType::Breakline,
-        // Removed as it was automatically transformed to DTMFeatureType::TinHull when tin was triangulated. Tin types couldn't be added to
-        // not triangulated dtm.
-        //DTMFeatureType::Hull,
+        DTMFeatureType::Hull,
         DTMFeatureType::ContourLine,
         DTMFeatureType::Void,
         DTMFeatureType::BreakVoid,
@@ -219,6 +217,16 @@ static bool ComputeTotalCounts (LinearFeatureTypeInfoList&              po_rList
         {
         LinearFeatureTypeInfo linFeatureStats(*TypeIdIt, 0, 0);
 
+		if (*TypeIdIt == DTMFeatureType::Hull)
+		{
+			DTMFeatureStatisticsInfo info;
+			const_cast<BcDTM&>(pi_rDTM).CalculateFeatureStatistics(info);
+			if (!info.hasHull)
+				continue;
+
+			//we only care for explicit hull features. However, BrowseFeature *will* return a hull for all in tin state,
+			//even though there's no source hull features. With CalculateFeatureStatistics we explicitly look for source hull features.
+		}
         if (DTM_SUCCESS != const_cast<BcDTM&>(pi_rDTM).BrowseFeatures(*TypeIdIt, numeric_limits<long>::max(),
                                                                        &linFeatureStats, AccumulateLinearFeatureStatsCallback))
             {
@@ -406,6 +414,16 @@ size_t LinearHandler::GetMaxPointCount () const
 bool LinearHandler::Copy    (TypeInfoCIter               pi_typeInfoIter,
                                     IDTMFeatureArray<DPoint3d>& po_featureArray) const
     {
+	if (pi_typeInfoIter->m_typeID == DTMFeatureType::Hull)
+	{
+		DTMFeatureStatisticsInfo info;
+		const_cast<BcDTM&>(m_rDTM).CalculateFeatureStatistics(info);
+		if (!info.hasHull)
+			return true;
+
+		//we only care for explicit hull features. However, BrowseFeature *will* return a hull for all in tin state,
+		//even though there's no source hull features. With CalculateFeatureStatistics we explicitly look for source hull features.
+	}
     // Retrieve features of the specified type in feature list
     if (DTM_SUCCESS != const_cast<BcDTM&>(m_rDTM).BrowseFeatures(pi_typeInfoIter->m_typeID, numeric_limits<long>::max(),
                                                                   &po_featureArray, CopyFeaturesCallback))

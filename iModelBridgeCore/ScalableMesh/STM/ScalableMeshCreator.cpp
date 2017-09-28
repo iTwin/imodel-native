@@ -429,12 +429,25 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
 StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
+
+	GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+	GetProgress()->SetTotalNumberOfSteps(1);
+	GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_TEXTURING_STREAMED;
+	GetProgress()->ProgressStepIndex() = 1;
+	GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
+
     DRange3d range;
     m_scmPtr->GetRange(range);
     BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
     ITextureProviderPtr mapboxPtr = new StreamTextureProvider(url, range, cs);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
+	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
+	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     m_scmPtr->TextureFromRaster(mapboxPtr);
+
+	GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
     return SUCCESS;
     }
 
