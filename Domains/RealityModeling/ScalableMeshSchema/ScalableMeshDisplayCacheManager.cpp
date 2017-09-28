@@ -10,6 +10,8 @@ std::mutex elemMutex;
 
 //Inherited from IScalableMeshDisplayCacheManager
 BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
+                                                                 size_t&                 usedMemInBytes,
+                                                                 bool&                   isStoredOnGpu,
                                                                  size_t                  nbVertices,
                                                                  DPoint3d const*         positionOrigin,
                                                                  float*                  positions,
@@ -69,6 +71,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     qvCachedDisplayMesh->m_graphic->Close();
 
     cachedDisplayMesh = qvCachedDisplayMesh.release();
+
+    isStoredOnGpu = false;
+    usedMemInBytes = nbVertices * sizeof(float) * 3 + nbTriangles * 3 * sizeof(int32_t) + sizeof(float) * 2 * nbVertices;
+
 #endif
     return SUCCESS;
     }
@@ -85,6 +91,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDispla
     }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisplayTexture*& cachedDisplayTexture,
+                                                                    size_t&                  usedMemInBytes,
+                                                                    bool&                    isStoredOnGpu,
                                                                     int                      xSize,
                                                                     int                      ySize,
                                                                     int                      enableAlpha,
@@ -103,6 +111,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     qvCachedDisplayTexture->m_texturePtr = m_renderSys->_CreateTexture(textureImage);
     
     cachedDisplayTexture = qvCachedDisplayTexture.release();
+
+    isStoredOnGpu = false;
+    usedMemInBytes = xSize * ySize * 6;
+
 //#endif
     return SUCCESS;
     }
