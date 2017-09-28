@@ -35,12 +35,6 @@ protected:
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
 {
-    enum class ExpectedResult
-        {
-        Success,
-        Error
-        };
-
     BeFileName seedFilePath;
     ECInstanceKey blobIoInstanceKey;
     {
@@ -87,11 +81,11 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
         runSelectECSql(restrictedECDb, selectECSql);
         }
 
-    auto runNonSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, ExpectedResult expected)
+    auto runNonSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, BentleyStatus expectedStat)
         {
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, ecsql, writeToken);
-        if (ExpectedResult::Success == expected)
+        if (SUCCESS == expectedStat)
             {
             ASSERT_EQ(ECSqlStatus::Success, stat) << "ECDb: " << ecdb.GetDbFileName() << " ECSQL: " << ecsql;
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "ECDb: " << ecdb.GetDbFileName() << " ECSQL: " << ecsql;
@@ -102,17 +96,17 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
 
     for (Utf8CP nonSelectECSql : nonSelectECSqls)
         {
-        runNonSelectECSql(readonlyECDb, nonSelectECSql, nullptr, ExpectedResult::Error);
-        runNonSelectECSql(permittedECDb, nonSelectECSql, nullptr, ExpectedResult::Success);
-        runNonSelectECSql(restrictedECDb, nonSelectECSql, nullptr, ExpectedResult::Error);
-        runNonSelectECSql(restrictedECDb, nonSelectECSql, restrictedECDb.GetToken(), ExpectedResult::Success);
+        runNonSelectECSql(readonlyECDb, nonSelectECSql, nullptr, ERROR);
+        runNonSelectECSql(permittedECDb, nonSelectECSql, nullptr, SUCCESS);
+        runNonSelectECSql(restrictedECDb, nonSelectECSql, nullptr, ERROR);
+        runNonSelectECSql(restrictedECDb, nonSelectECSql, restrictedECDb.GetToken(), SUCCESS);
         }
 
-    auto runNonSelectECSqlFromCache = [] (ECDbCR ecdb, ECSqlStatementCache& cache, Utf8CP ecsql, ECCrudWriteToken const* writeToken, ExpectedResult expected)
+    auto runNonSelectECSqlFromCache = [] (ECDbCR ecdb, ECSqlStatementCache& cache, Utf8CP ecsql, ECCrudWriteToken const* writeToken, BentleyStatus expectedStat)
         {
         Utf8CP writeTokenStr = writeToken != nullptr ? "yes" : "no";
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecsql, writeToken);
-        if (ExpectedResult::Success == expected)
+        if (SUCCESS == expectedStat)
             {
             ASSERT_TRUE(stmt != nullptr) << "ECDb: " << ecdb.GetDbFileName() << " ECSQL: " << ecsql << " WriteToken: " << writeTokenStr;
             ASSERT_EQ(BE_SQLITE_DONE, stmt->Step()) << "ECDb: " << ecdb.GetDbFileName() << " ECSQL: " << ecsql << " WriteToken: " << writeTokenStr;
@@ -127,14 +121,14 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
     ECSqlStatementCache restrictedCacheWithToken(10);
     for (Utf8CP nonSelectECSql : nonSelectECSqls)
         {
-        runNonSelectECSqlFromCache(readonlyECDb, readonlyCache, nonSelectECSql, nullptr, ExpectedResult::Error);
-        runNonSelectECSqlFromCache(permittedECDb, permittedCache, nonSelectECSql, nullptr, ExpectedResult::Success);
-        runNonSelectECSqlFromCache(restrictedECDb, restrictedCache, nonSelectECSql, nullptr, ExpectedResult::Error);
-        runNonSelectECSqlFromCache(restrictedECDb, restrictedCacheWithToken, nonSelectECSql, restrictedECDb.GetToken(), ExpectedResult::Success);
+        runNonSelectECSqlFromCache(readonlyECDb, readonlyCache, nonSelectECSql, nullptr, ERROR);
+        runNonSelectECSqlFromCache(permittedECDb, permittedCache, nonSelectECSql, nullptr, SUCCESS);
+        runNonSelectECSqlFromCache(restrictedECDb, restrictedCache, nonSelectECSql, nullptr, ERROR);
+        runNonSelectECSqlFromCache(restrictedECDb, restrictedCacheWithToken, nonSelectECSql, restrictedECDb.GetToken(), SUCCESS);
         }
 
 
-    auto runAdapters = [] (ECDbCR ecdb, ECCrudWriteToken const* writeToken, ExpectedResult expected)
+    auto runAdapters = [] (ECDbCR ecdb, ECCrudWriteToken const* writeToken, bool expectedIsValid)
         {
         ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
         ASSERT_TRUE(testClass != nullptr);
@@ -142,35 +136,35 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
 
         {
         ECInstanceInserter ecInserter(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, ecInserter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedIsValid, ecInserter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
         {
         ECInstanceUpdater ecUpdater(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, ecUpdater.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedIsValid, ecUpdater.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
         {
         ECInstanceDeleter ecDeleter(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, ecDeleter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedIsValid, ecDeleter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
         {
         JsonInserter jsonInserter(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, jsonInserter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedIsValid, jsonInserter.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
         {
         JsonUpdater jsonUpdater(ecdb, *testClass, writeToken);
-        ASSERT_EQ(expected == ExpectedResult::Success, jsonUpdater.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedIsValid, jsonUpdater.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " WriteToken: " << writeTokenStr;
         }
 
         };
 
-    runAdapters(readonlyECDb, nullptr, ExpectedResult::Error);
-    runAdapters(permittedECDb, nullptr, ExpectedResult::Success);
-    runAdapters(restrictedECDb, nullptr, ExpectedResult::Error);
-    runAdapters(restrictedECDb, restrictedECDb.GetToken(), ExpectedResult::Success);
+    runAdapters(readonlyECDb, nullptr, false);
+    runAdapters(permittedECDb, nullptr, true);
+    runAdapters(restrictedECDb, nullptr, false);
+    runAdapters(restrictedECDb, restrictedECDb.GetToken(), true);
 
     //BlobIO test
     enum class BlobIoOpenMode
@@ -178,7 +172,7 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
         Readonly,
         ReadWrite
         };
-    auto openBlobIO = [] (ECDbCR ecdb, ECInstanceKey const& key, BlobIoOpenMode openMode, ECCrudWriteToken const* writeToken, ExpectedResult expected)
+    auto openBlobIO = [] (ECDbCR ecdb, ECInstanceKey const& key, BlobIoOpenMode openMode, ECCrudWriteToken const* writeToken, BentleyStatus expectedStat)
         {
         ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
         ASSERT_TRUE(testClass != nullptr);
@@ -186,18 +180,18 @@ TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
         Utf8CP openModeStr = openMode == BlobIoOpenMode::Readonly ? "readonly" : "readwrite";
 
         BlobIO io;
-        ASSERT_EQ(expected == ExpectedResult::Success, SUCCESS == ecdb.OpenBlobIO(io, *testClass, "Bi", key.GetInstanceId(), openMode == BlobIoOpenMode::ReadWrite, writeToken)) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
-        ASSERT_EQ(expected == ExpectedResult::Success, io.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedStat, ecdb.OpenBlobIO(io, *testClass, "Bi", key.GetInstanceId(), openMode == BlobIoOpenMode::ReadWrite, writeToken)) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expectedStat, io.IsValid() ? SUCCESS : ERROR) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
         };
 
-    openBlobIO(readonlyECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, ExpectedResult::Error);
-    openBlobIO(readonlyECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, ExpectedResult::Success);
-    openBlobIO(permittedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, ExpectedResult::Success);
-    openBlobIO(permittedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, ExpectedResult::Success);
-    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, ExpectedResult::Error);
-    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, ExpectedResult::Success);
-    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, restrictedECDb.GetToken(), ExpectedResult::Success);
-    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, restrictedECDb.GetToken(), ExpectedResult::Success);
+    openBlobIO(readonlyECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, ERROR);
+    openBlobIO(readonlyECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, SUCCESS);
+    openBlobIO(permittedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, SUCCESS);
+    openBlobIO(permittedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, SUCCESS);
+    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, nullptr, ERROR);
+    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, nullptr, SUCCESS);
+    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::ReadWrite, restrictedECDb.GetToken(), SUCCESS);
+    openBlobIO(restrictedECDb, blobIoInstanceKey, BlobIoOpenMode::Readonly, restrictedECDb.GetToken(), SUCCESS);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

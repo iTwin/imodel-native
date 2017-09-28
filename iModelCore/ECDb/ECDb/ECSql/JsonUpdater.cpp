@@ -13,121 +13,235 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 9/2013
+// @bsimethod                                   Krischan.Eberle      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) const
+JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions) : m_ecdb(ecdb), m_ecClass(ecClass)
     {
-    if (m_ecClass.GetRelationshipClassCP() != nullptr)
+    m_isValid = Initialize(nullptr, ecsqlOptions, writeToken) == SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, bvector<Utf8CP> const& props, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions) : m_ecdb(ecdb), m_ecClass(ecClass)
+    {
+    m_isValid = Initialize(&props, ecsqlOptions, writeToken) == SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, Utf8CP ecsqlOptions, ECCrudWriteToken const* writeToken)
+    {
+    m_jsonClassName = ECJsonUtilities::FormatClassName(m_ecClass);
+
+    Utf8String ecsql("UPDATE ONLY ");
+    ecsql.append(m_ecClass.GetECSqlName()).append(" SET ");
+
+    ECPropertyCP currentTimeStampProp = nullptr;
+    const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+
+    bvector<ECPropertyCP> props;
+    if (propNames != nullptr)
         {
-        BeAssert(false && "Use the other Update override for relationships");
+        for (Utf8CP propName : *propNames)
+            {
+            ECPropertyCP prop = m_ecClass.GetPropertyP(propName);
+            if (prop == nullptr)
+                return ERROR;
+
+            //Current time stamp props are populated by SQLite, so ignore them here.
+            if (hasCurrentTimeStampProp && prop == currentTimeStampProp)
+                continue;
+
+            props.push_back(prop);
+            }
+        }
+    else
+        {
+        for (ECPropertyCP prop : m_ecClass.GetProperties(true))
+            {
+            //Current time stamp props are populated by SQLite, so ignore them here.
+            if (hasCurrentTimeStampProp && prop == currentTimeStampProp)
+                continue;
+
+            props.push_back(prop);
+            }
+        }
+
+    if (props.empty())
+        {
+        if (propNames == nullptr)
+            LOG.errorv("JsonUpdater initialization failure. The ECClass '%s' does not have any updatable properties.", m_ecClass.GetFullName());
+        else
+            LOG.errorv("JsonUpdater initialization failure. The list of ECProperties of ECClass '%s' is empty or does not contain any updatable properties.", m_ecClass.GetFullName());
+
+        return ERROR;
+        }
+
+    int parameterIndex = 1;
+
+    bool isFirstProp = true;
+    for (ECPropertyCP ecProperty : props)
+        {
+        if (!isFirstProp)
+            ecsql.append(",");
+
+        ecsql.append("[").append(ecProperty->GetName()).append("]=?");
+        m_bindingMap[ecProperty->GetName().c_str()] = BindingInfo(parameterIndex, *ecProperty);
+        parameterIndex++;
+
+        isFirstProp = false;
+        }
+
+
+    ecsql.append(" WHERE " ECDBSYS_PROP_ECInstanceId "=?");
+    m_idParameterIndex = parameterIndex;
+
+    if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
+        ecsql.append(" ECSQLOPTIONS ").append(ecsqlOptions);
+
+    return ECSqlStatus::Success == m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR json) const
+    {
+    if (!m_isValid)
+        return BE_SQLITE_ERROR;
+
+    if (json.isNull() || !json.isObject() || json.size() == 0)
+        {
+        LOG.errorv("JsonUpdater failure. The JSON to update must be a non-empty object, but it was: %s", json.ToString().c_str());
         return BE_SQLITE_ERROR;
         }
 
-    IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
+    m_statement.ClearBindings();
 
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
-        return BE_SQLITE_ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (relClass == nullptr)
+    BeAssert(json.isObject());
+    for (Json::Value::iterator it = json.begin(); it != json.end(); it++)
         {
-        BeAssert(false && "Use the other Update override for non-relationship instances");
+        Utf8CP memberName = it.memberName();
+        JsonValueCR memberJson = *it;
+
+        auto bindingMapLookupIt = m_bindingMap.find(memberName);
+        if (bindingMapLookupIt == m_bindingMap.end())
+            {
+
+            if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+                LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
+                           memberName, json.ToString().c_str());
+            else
+                LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
+                           memberName, m_ecClass.GetFullName(), json.ToString().c_str());
+
+            return BE_SQLITE_ERROR;
+            }
+
+        BeAssert(!ECJsonSystemNames::IsTopLevelSystemMember(memberName));
+        BindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+            {
+            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %d for ECJSON %s. Underlying ECSQL: %s",
+                       memberName, bindingInfo.GetParameterIndex(), json.ToString().c_str(), m_statement.GetECSql());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    if (ECSqlStatus::Success != m_statement.BindId(m_idParameterIndex, instanceId))
+        {
+        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %d. Underlying ECSQL: %s",
+                   instanceId.ToString().c_str(), m_idParameterIndex, m_statement.GetECSql());
+
         return BE_SQLITE_ERROR;
         }
 
-    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
+    //now execute statement
+    const DbResult stepStatus = m_statement.Step();
 
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
-        return BE_SQLITE_ERROR;
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
 
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    Shaun.Sewall                    01 / 2014
+//@bsimethod                                    Krischan.Eberle                09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const
+DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR json) const
     {
-    if (m_ecClass.GetRelationshipClassCP() != nullptr)
+    if (!m_isValid)
+        return BE_SQLITE_ERROR;
+
+    if (json.IsNull() || !json.IsObject() || json.GetObject().ObjectEmpty())
         {
-        BeAssert(false && "Use the other Update override for relationships");
+        rapidjson::StringBuffer jsonStr;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+        json.Accept(writer);
+        LOG.errorv("JsonUpdater failure. The JSON to update must be a non-empty object, but it was: %s", jsonStr.GetString());
         return BE_SQLITE_ERROR;
         }
 
-    IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
+    m_statement.ClearBindings();
 
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
-        return BE_SQLITE_ERROR;
-
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (relClass == nullptr)
+    BeAssert(json.IsObject());
+    for (rapidjson::Value::ConstMemberIterator it = json.MemberBegin(); it != json.MemberEnd(); ++it)
         {
-        BeAssert(false && "Use the other Update override for non-relationship instances");
+        Utf8CP memberName = it->name.GetString();
+        RapidJsonValueCR memberJson = it->value;
+
+        auto bindingMapLookupIt = m_bindingMap.find(memberName);
+        if (bindingMapLookupIt == m_bindingMap.end())
+            {
+            rapidjson::StringBuffer jsonStr;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+            memberJson.Accept(writer);
+
+            if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+                LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
+                           memberName, jsonStr.GetString());
+            else
+                LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
+                           memberName, m_ecClass.GetFullName(), jsonStr.GetString());
+
+            return BE_SQLITE_ERROR;
+            }
+
+        BeAssert(!ECJsonSystemNames::IsTopLevelSystemMember(memberName));
+        BindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+            {
+            rapidjson::StringBuffer jsonStr;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+            memberJson.Accept(writer);
+
+            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %d for ECJSON %s. Underlying ECSQL: %s",
+                       memberName, bindingInfo.GetParameterIndex(), jsonStr.GetString(), m_statement.GetECSql());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    if (ECSqlStatus::Success != m_statement.BindId(m_idParameterIndex, instanceId))
+        {
+        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %d. Underlying ECSQL: %s",
+                   instanceId.ToString().c_str(), m_idParameterIndex, m_statement.GetECSql());
+
         return BE_SQLITE_ERROR;
         }
 
-    IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
+    //now execute statement
+    const DbResult stepStatus = m_statement.Step();
 
-    if (SUCCESS != JsonECInstanceConverter::JsonToECInstance(*ecInstance, jsonValue, m_ecdb.GetClassLocater()))
-        return BE_SQLITE_ERROR;
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
 
-    ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
-
-    return m_ecinstanceUpdater.Update(*ecInstance);
+    return BE_SQLITE_DONE == stepStatus ? BE_SQLITE_OK : stepStatus;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyInstance(ECInstanceKeyCR instanceKey) const
-    {
-    ECClassCP ecClass = m_ecdb.Schemas().GetClass(instanceKey.GetClassId());
-    if (!ecClass)
-        return nullptr;
-
-    IECInstancePtr instance = CreateEmptyInstance(*ecClass);
-    ECInstanceAdapterHelper::SetECInstanceId(*instance, instanceKey.GetInstanceId());
-    return instance;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
-    {
-    IECInstancePtr sourceInst = CreateEmptyInstance(sourceKey);
-    IECInstancePtr targetInst = CreateEmptyInstance(targetKey);
-    if (sourceInst == nullptr || targetInst == nullptr)
-        return nullptr;
-
-    StandaloneECRelationshipInstancePtr relInst = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(ecRelClass)->CreateRelationshipInstance();
-    relInst->SetSource(sourceInst.get());
-    relInst->SetTarget(targetInst.get());
-
-    return relInst.get();
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

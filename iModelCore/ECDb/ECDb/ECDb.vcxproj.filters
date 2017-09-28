@@ -70,9 +70,6 @@
     <ClInclude Include="ECSql\Parser\SqlBison.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\Parser\SqlError.h">
-      <Filter>ECSql\OSQLParser</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\Parser\DataType.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
@@ -92,9 +89,6 @@
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\TextEncoding.h">
-      <Filter>ECSql\OSQLParser</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\Parser\InternalNode.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\IParseContext.h">
@@ -404,6 +398,9 @@
     <ClInclude Include="JsonPersistenceHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\JsonECSqlBinder.h">
+      <Filter>ECSql\Adapters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -441,16 +438,10 @@
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\Parser\SqlError.cpp">
-      <Filter>ECSql\OSQLParser</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\Parser\SqlFlex.cpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\Parser\SqlNode.cpp">
-      <Filter>ECSql\OSQLParser</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\Parser\InternalNode.cpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp">
@@ -740,6 +731,12 @@
     </ClCompile>
     <ClCompile Include="JsonPersistenceHelper.cpp">
       <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\JsonECSqlBinder.cpp">
+      <Filter>ECSql\Adapters</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\Parser\SqlParse.cpp">
+      <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

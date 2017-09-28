@@ -671,9 +671,7 @@ void ECInstanceAdapterHelper::LogFailure(Utf8CP operationName, ECN::IECInstanceC
 bool ECInstanceAdapterHelper::Equals(ECN::ECClassCR lhs, ECN::ECClassCR rhs)
     {
     if (lhs.HasId() && rhs.HasId())
-        {
         return lhs.GetId() == rhs.GetId();
-        }
 
     return strcmp(lhs.GetFullName(), rhs.GetFullName()) == 0;
     }

@@ -737,7 +737,7 @@ TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
                 Byte const* blob = testValue.second.GetBinary(blobSize);
 
                 rapidjson::Value val;
-                ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::BinaryToJson(val, blob, blobSize, expectedJson.GetAllocator()));
+                ASSERT_EQ(SUCCESS, ECJsonUtilities::BinaryToJson(val, blob, blobSize, expectedJson.GetAllocator()));
                 expectedJson.PushBack(val.Move(), expectedJson.GetAllocator());
                 break;
                 }
@@ -745,7 +745,7 @@ TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
                 case PRIMITIVETYPE_Point3d:
                 {
                 rapidjson::Value val;
-                ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::Point3dToJson(val, testValue.second.GetPoint3d(), expectedJson.GetAllocator()));
+                ASSERT_EQ(SUCCESS, ECJsonUtilities::Point3dToJson(val, testValue.second.GetPoint3d(), expectedJson.GetAllocator()));
                 expectedJson.PushBack(val.Move(), expectedJson.GetAllocator());
                 break;
                 }

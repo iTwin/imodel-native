@@ -198,19 +198,6 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         return;
         }
 
-    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(m_ecClass);
-    BeAssert(classMap != nullptr);
-    if (classMap->GetType() == ClassMap::Type::NotMapped || classMap->GetType() == ClassMap::Type::RelationshipEndTable)
-        {
-        Utf8CP errorDetails = nullptr;
-        if (classMap->GetType() == ClassMap::Type::NotMapped)
-            errorDetails = "the ECClass is not mapped to the database.";
-        else
-            errorDetails = "the ECClass is a foreign key type ECRelationshipClass. Instances of it cannot be updated.";
-        LOG.errorv("ECClass '%s' cannot be used with ECInstanceUpdater: %s", m_ecClass.GetFullName(), errorDetails);
-        return;
-        }
-
     ECPropertyCP currentTimeStampProp = nullptr;
     const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
     const bool readonlyPropsAreUpdatable = ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(m_ecdb, m_ecClass, ecsqlOptions);
@@ -345,8 +332,8 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
             ECInstanceId oldTargetInstanceId = statement.GetValueId<ECInstanceId>(2);
             ECClassId oldTargetClassId = statement.GetValueId<ECClassId>(3);
 
-            if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() && oldSourceClassId != newSourceClassId &&
-                oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() && oldTargetClassId != newTargetClassId)
+            if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() || oldSourceClassId != newSourceClassId ||
+                oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() || oldTargetClassId != newTargetClassId)
                 return BE_SQLITE_ERROR;
             }
 

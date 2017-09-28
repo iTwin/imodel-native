@@ -57,11 +57,12 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     JsonECSqlSelectAdapter jsonAdapter(statement);
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson));
     statement.Finalize();
-
     /* Validate */
+    actualJson.removeMember(ECJsonUtilities::json_id());
     ASSERT_EQ(0, expectedJson.compare(actualJson)) << actualJson.ToString().c_str();
 
     //verify Json Insertion using the other Overload
+    actualJson.removeMember(ECJsonUtilities::json_id()); //remove id member as it would insert the new row with the existing id
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(actualJson));
     m_ecdb.SaveChanges();
 
@@ -225,12 +226,8 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 
     ECInstanceKey parentKey, childKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Code) VALUES('parent-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Child(Name) VALUES('child-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, "INSERT INTO ts.Child(Name) VALUES('child-1')"));
 
-    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
-    ASSERT_TRUE(parentClass != nullptr);
-    ECClassCP childClass = m_ecdb.Schemas().GetClass("TestSchema", "Child");
-    ASSERT_TRUE(childClass != nullptr);
     ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("TestSchema", "LinkTableRel");
     ASSERT_TRUE(linkTableRelClass != nullptr);
 
@@ -256,16 +253,21 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
     rapidjson::Document expectedRapidJson;
     ECInstanceKey linkTableRelKey;
 
+    Savepoint sp(m_ecdb, "sp", false);
+
     {
     expectedJsonStr.Sprintf(R"json({ "sourceId" : "%s", "targetId" : "%s"})json", parentKey.GetInstanceId().ToHexStr().c_str(), childKey.GetInstanceId().ToHexStr().c_str());
     ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
-
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
     }
 
     {
@@ -275,11 +277,15 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
     expectedRapidJson.SetNull();
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
+    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
     ASSERT_EQ(BE_SQLITE_OK, relInserter.Insert(linkTableRelKey, expectedRapidJson)) << expectedJsonStr.c_str();
     validate(m_ecdb, linkTableRelKey.GetInstanceId(), parentKey, childKey, expectedJsonStr.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
     }
     }
 
@@ -331,6 +337,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     statement.Finalize();
 
     /* Validate */
+    actualJson.removeMember(ECJsonUtilities::json_id());
     ASSERT_EQ(0, expectedJsonCpp.compare(actualJson)) << actualJson.ToString().c_str();
     }
 
@@ -352,7 +359,7 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
 
     rapidjson::Document rapidJsonVal;
     rapidJsonVal.SetObject();
-    rapidJsonVal.AddMember("Price", 3.0003, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("price", 3.0003, rapidJsonVal.GetAllocator());
     rapidJsonVal.AddMember("s", "StringVal", rapidJsonVal.GetAllocator());
 
     //add point2d member
@@ -373,18 +380,19 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
     ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
     ASSERT_TRUE(parentClass != nullptr);
     JsonInserter inserter(m_ecdb, *parentClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, rapidJsonVal));
     m_ecdb.SaveChanges();
 
     ECSqlStatement stmt;
-    ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?"));
     stmt.BindPoint2d(1, DPoint2d::From(0, 0));
     stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
-    DbResult stepStatus = stmt.Step();
-    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle           01/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -425,7 +433,105 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
+    ECInstanceKey pKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));
+    Utf8String pKeyStr = pKey.GetInstanceId().ToHexStr();
+    ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(psaClass != nullptr);
+
+    ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PHasP_1NPSA");
+    ASSERT_TRUE(linkTableRelClass != nullptr);
+
+    std::vector<std::tuple<ECClassCP, Utf8String, ECJsonInt64Format>> dataset
+        {
+                {psaClass, Utf8PrintfString(R"json({ "I" : 123,
+                                    "L" : 123,
+                                    "P2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "P3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "Dt" : "2017-09-19T16:59:00.000",
+                                    "P" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "S_Array" : ["Hello", "world"],
+                                    "PStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsNumber},
+
+                                    {psaClass, Utf8PrintfString(R"json({ "I" : 123,
+                                    "L" : "123",
+                                    "P2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "P3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "Dt" : "2017-09-19T16:59:00.000",
+                                    "P" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "S_Array" : ["Hello", "world"],
+                                    "PStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                    {psaClass, Utf8PrintfString(R"json({ "I" : 123,
+                                    "L" : "0X123",
+                                    "P2D" : {"x" : 1.0, "y" : 2.0 },
+                                    "P3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
+                                    "Dt" : "2017-09-19T16:59:00.000",
+                                    "P" : { "id" : "%s", "relClassName" : "ECSqlTest.PSAHasP_N1" },
+                                    "S_Array" : ["Hello", "world"],
+                                    "PStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsHexadecimalString},
+
+                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "targetId" : "%s" }")json",
+                                                                         pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "sourceClassName" : "ECSqlTest.P", "targetId" : "%s" , "targetClassName" : "ECSqlTest.P" }")json",
+                                                                pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
+
+                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", 
+                                                    "sourceClassName" : "ECSqlTest.P", 
+                                                    "targetId" : "%s" ,
+                                                    "targetClassName" : "ECSqlTest.P",
+                                                    "B_Array" : [true, false, false] }")json",
+                                                                                                                                                   pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString}
+
+        };
+
+    for (std::tuple<ECClassCP, Utf8String, ECJsonInt64Format> const& testItem : dataset)
+        {
+        ECClassCR ecClass = *std::get<0>(testItem);
+        Utf8StringCR expectedJsonStr = std::get<1>(testItem);
+        ECJsonInt64Format int64Format = std::get<2>(testItem);
+        Json::Value expectedJson;
+        ASSERT_TRUE(Json::Reader::Parse(expectedJsonStr, expectedJson)) << expectedJsonStr;
+
+        JsonInserter inserter(m_ecdb, ecClass, nullptr);
+        ASSERT_TRUE(inserter.IsValid()) << ecClass.GetFullName();
+
+        Savepoint sp(m_ecdb, "sp");
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
+
+        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, int64Format));
+        ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();
+        ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
+
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
+        ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
+        ASSERT_STREQ(ECJsonUtilities::FormatClassName(ecClass).c_str(), actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+
+        //remove the id and class name members, because the input JSON doesn't have them
+        actualJson.removeMember(ECJsonUtilities::json_id());
+        actualJson.removeMember(ECJsonUtilities::json_className());
+
+        if (!expectedJson.isMember(ECJsonUtilities::json_sourceClassName()))
+            actualJson.removeMember(ECJsonUtilities::json_sourceClassName());
+
+        if (!expectedJson.isMember(ECJsonUtilities::json_targetClassName()))
+            actualJson.removeMember(ECJsonUtilities::json_targetClassName());
+
+        ASSERT_EQ(0, expectedJson.compare(actualJson)) << "Expected: " << expectedJsonStr << " Actual: " << actualJson.ToString().c_str();
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  04/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -449,10 +555,11 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
 
     // Insert one instnace
     Json::Value rootInstance;
-    rootInstance["Name"] = rootName;
-    rootInstance["Persistance"] = 0;
+    rootInstance["name"] = rootName;
+    rootInstance["persistance"] = 0;
 
     JsonInserter inserter(m_ecdb, *rootClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rootInstance));
 
     // Try again
@@ -559,7 +666,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
                 {
                     case PRIMITIVETYPE_Binary:
                     {
-                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
+                    if (ECJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
@@ -578,10 +685,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
 
                     case PRIMITIVETYPE_IGeometry:
                     {
-                    bvector<Byte> fb;
-                    BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-
-                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
+                    if (ECJsonUtilities::IGeometryToJson(arrayElementJson, GetTestGeometry(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
@@ -594,20 +698,20 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
 
                     case PRIMITIVETYPE_Long:
                     {
-                    ECRapidJsonUtilities::Int64ToJson(arrayElementJson, INT64VALUE, json.GetAllocator());
+                    ECJsonUtilities::Int64ToJson(arrayElementJson, INT64VALUE, json.GetAllocator());
                     break;
                     }
 
                     case PRIMITIVETYPE_Point2d:
                     {
-                    if (ECRapidJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                    if (ECJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
 
                     case PRIMITIVETYPE_Point3d:
                     {
-                    if (ECRapidJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                    if (ECJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
@@ -668,7 +772,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                         return ERROR;
 
                     bvector<Byte> blob;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blob, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, *it))
                         return ERROR;
 
                     if (blob.size() != GetTestBlobSize() ||
@@ -702,14 +806,10 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
 
                     case PRIMITIVETYPE_IGeometry:
                     {
-                    if (!it->IsString())
+                    if (!it->IsObject())
                         return ERROR;
 
-                    ByteStream fb;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(fb, *it))
-                        return ERROR;
-
-                    IGeometryPtr actualGeom = BackDoor::BentleyGeometryFlatBuffer::BytesToGeometry(fb.data());
+                    IGeometryPtr actualGeom = ECJsonUtilities::JsonToIGeometry(*it);
                     if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                         return ERROR;
 
@@ -733,7 +833,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                         return ERROR;
 
                     int64_t val = 0;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToInt64(val, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToInt64(val, *it))
                         return ERROR;
 
                     if (INT64VALUE != val)
@@ -745,7 +845,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     case PRIMITIVETYPE_Point2d:
                     {
                     DPoint2d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -757,7 +857,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     case PRIMITIVETYPE_Point3d:
                     {
                     DPoint3d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, *it))
+                    if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint3d()))

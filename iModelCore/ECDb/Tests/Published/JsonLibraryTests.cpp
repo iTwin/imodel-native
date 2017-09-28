@@ -443,9 +443,10 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     // now update the row that was just inserted
     JsonUpdater updater(m_ecdb, *documentClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    rapidJsonInput[ECJsonSystemNames::Id()].SetNull();
-    rapidJsonInput.AddMember("Urx", 3.3, rapidJsonInput.GetAllocator());
-    rapidJsonInput.AddMember("Ury", 4.4, rapidJsonInput.GetAllocator());
+    rapidJsonInput.RemoveMember(ECJsonSystemNames::Id());
+    rapidJsonInput.RemoveMember(ECJsonSystemNames::ClassName());
+    rapidJsonInput.AddMember("urx", 3.3, rapidJsonInput.GetAllocator());
+    rapidJsonInput.AddMember("ury", 4.4, rapidJsonInput.GetAllocator());
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetInstanceId(), rapidJsonInput));
     m_ecdb.SaveChanges();

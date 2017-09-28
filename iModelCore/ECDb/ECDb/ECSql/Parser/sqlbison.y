@@ -32,9 +32,6 @@
 #ifndef _CONNECTIVITY_SQLPARSE_HXX
 #include "SqlParse.h"
 #endif
-#ifndef _CONNECTIVITY_SQLINTERNALNODE_HXX
-#include "InternalNode.h"
-#endif
 #ifndef _CONNECTIVITY_SQLSCAN_HXX
 #include "SqlScan.h"
 #endif
@@ -53,44 +50,31 @@
 %{
 static Utf8String aEmptyString;
 
-static connectivity::OSQLInternalNode* newNode(const sal_Char* pNewValue,
-                                 const connectivity::SQLNodeType eNodeType,
-                                 const sal_uInt32 nNodeID = 0)
-{
-    return new connectivity::OSQLInternalNode(pNewValue, eNodeType, nNodeID);
-}
-
-static connectivity::OSQLInternalNode* newNode(const Utf8String& _NewValue,
-                                const connectivity::SQLNodeType eNodeType,
-                                const sal_uInt32 nNodeID = 0)
-{
-    return new connectivity::OSQLInternalNode(_NewValue, eNodeType, nNodeID);
-}
+#define CREATE_NODE  context->GetScanner()->NewNode
 
 // yyi ist die interne Nr. der Regel, die gerade reduziert wird.
 // Ueber die Mapping-Tabelle yyrmap wird daraus eine externe Regel-Nr.
-#define SQL_NEW_RULE             newNode(aEmptyString, SQL_NODE_RULE, yyr1[yyn])
-#define SQL_NEW_LISTRULE         newNode(aEmptyString, SQL_NODE_LISTRULE, yyr1[yyn])
-#define SQL_NEW_COMMALISTRULE   newNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
-#define SQL_NEW_DOTLISTRULE   newNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
-
-
-connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
+#define SQL_NEW_RULE             context->GetScanner()->NewNode(aEmptyString, SQL_NODE_RULE, yyr1[yyn])
+#define SQL_NEW_LISTRULE         context->GetScanner()->NewNode(aEmptyString, SQL_NODE_LISTRULE, yyr1[yyn])
+#define SQL_NEW_COMMALISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_COMMALISTRULE, yyr1[yyn])
+#define SQL_NEW_DOTLISTRULE   context->GetScanner()->NewNode(aEmptyString, SQL_NODE_DOTLISTRULE, yyr1[yyn])
 
 #if !(defined MACOSX && defined PPC)
 #define YYERROR_VERBOSE
 #endif
 
-#define SQLyyerror(s)                        \
-{                                            \
-    xxx_pGLOBAL_SQLPARSER->error(s);        \
-}
+#define SQLyyerror(context, s) \
+    {                                 \
+    context->error(s);                \
+    }
 
 using namespace connectivity;
-#define SQLyylex xxx_pGLOBAL_SQLPARSER->SQLlex
+#define SQLyylex context->SQLlex
 %}
     /* symbolic tokens */
 
+%define api.pure full
+%parse-param { connectivity::OSQLParser* context }
 %union {
     connectivity::OSQLParseNode * pParseNode;
 }
@@ -249,9 +233,9 @@ using namespace connectivity;
  */
 sql_single_statement:
         sql
-        { xxx_pGLOBAL_SQLPARSER->setParseTree( $1 ); }
+        { context->setParseTree( $1 ); }
     |    sql ';'
-        { xxx_pGLOBAL_SQLPARSER->setParseTree( $1 ); }
+        { context->setParseTree( $1 ); }
     ;
 
     /* schema definition language */
@@ -294,18 +278,18 @@ opt_column_commalist:
         /* empty */         {$$ = SQL_NEW_RULE;}
     |       '(' column_commalist ')'
             {$$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));}
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));}
     ;
 
 opt_column_ref_commalist:
         /* empty */         {$$ = SQL_NEW_RULE;}
     |       '(' column_ref_commalist ')'
             {$$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));}
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));}
     ;
 
     /* module language */
@@ -428,9 +412,9 @@ values_or_query_spec:
         SQL_TOKEN_VALUES '(' row_value_constructor_commalist ')'
         {$$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -552,7 +536,7 @@ selection:
         '*'
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("*", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         }
     |    scalar_exp_commalist
     ;
@@ -691,9 +675,9 @@ boolean_primary:
     |   '(' search_condition ')'
         { // boolean_primary: rule 2
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -782,10 +766,10 @@ comparison_predicate:
         }
     |    comparison row_value_constructor
         {
-            if(xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // comparison_predicate: rule 2
+            if(context->inPredicateCheck()) // comparison_predicate: rule 2
             {
                 $$ = SQL_NEW_RULE;
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule($$,$2,$1);
+                sal_Int16 nErg = context->buildPredicateRule($$,$2,$1);
                 if(nErg == 1)
                 {
                     OSQLParseNode* pTemp = $$;
@@ -821,40 +805,12 @@ comparison:
 between_predicate_part_2:
     sql_not SQL_TOKEN_BETWEEN row_value_constructor SQL_TOKEN_AND row_value_constructor
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // between_predicate: rule 2 
-            {
-                $$ = SQL_NEW_RULE;
-                
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildPredicateRule($$,$3,$2,$5);
-                if(nErg == 1)
-                {
-                    OSQLParseNode* pTemp = $$;
-                    $$ = pTemp->removeAt((sal_uInt32)0);
-                    OSQLParseNode* pColumnRef = $$->removeAt((sal_uInt32)0);
-                    $$->insert(0,$1);
-                    OSQLParseNode* pBetween_predicate = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate));
-                    pBetween_predicate->append(pColumnRef);
-                    pBetween_predicate->append($$);
-                    $$ = pBetween_predicate;
-                    
-                    delete pTemp;
-                    delete $4;
-                }
-                else
-                {
-                    delete $$;
-                    YYABORT;
-                }
-            }
-            else
-            {
-                $$ = SQL_NEW_RULE; // between_predicate: rule 1
-                $$->append($1);
-                $$->append($2);
-                $$->append($3);
-                $$->append($4);
-                $$->append($5);
-            }
+            $$ = SQL_NEW_RULE; // between_predicate: rule 1
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
         }
 between_predicate:
         row_value_constructor between_predicate_part_2
@@ -899,17 +855,17 @@ like_predicate:
         }
     |    character_like_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())  // like_predicate: rule 5
+            if (context->inPredicateCheck())  // like_predicate: rule 5
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
                 $$->append($1);
                 OSQLParseNode* p2nd = $1->removeAt(2);
                 OSQLParseNode* p3rd = $1->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule($1,p2nd,p3rd) )
+                if ( !context->buildLikeRule($1,p2nd,p3rd) )
                 {
                     delete $$;
                     YYABORT;
@@ -921,17 +877,17 @@ like_predicate:
         }
     |    other_like_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // like_predicate: rule 6
+            if (context->inPredicateCheck()) // like_predicate: rule 6
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
                 $$->append($1);
                 OSQLParseNode* p2nd = $1->removeAt(2);
                 OSQLParseNode* p3rd = $1->removeAt(2);
-                if ( !xxx_pGLOBAL_SQLPARSER->buildLikeRule($1,p2nd,p3rd) )
+                if ( !context->buildLikeRule($1,p2nd,p3rd) )
                 {
                     delete $$;
                     YYABORT;
@@ -969,10 +925,10 @@ test_for_null:
         }
     |    null_predicate_part_2
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())// test_for_null: rule 2
+            if (context->inPredicateCheck())// test_for_null: rule 2
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
@@ -989,9 +945,9 @@ in_predicate_value:
         }
       | '(' value_exp_commalist ')'
         {$$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 in_predicate_part_2:
@@ -1012,10 +968,10 @@ in_predicate:
         }
     |    in_predicate_part_2
         {
-            if ( xxx_pGLOBAL_SQLPARSER->inPredicateCheck() )// in_predicate: rule 2
+            if ( context->inPredicateCheck() )// in_predicate: rule 2
             {
-                OSQLParseNode* pColumnRef = newNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-                pColumnRef->append(newNode(xxx_pGLOBAL_SQLPARSER->getFieldName(),SQL_NODE_NAME));
+                OSQLParseNode* pColumnRef = CREATE_NODE(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
+                pColumnRef->append(CREATE_NODE(context->getFieldName(),SQL_NODE_NAME));
 
                 $$ = SQL_NEW_RULE;
                 $$->append(pColumnRef);
@@ -1086,9 +1042,9 @@ subquery:
         '(' select_statement ')'
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -1122,48 +1078,48 @@ literal:
 /*    rules for predicate check */
     |    literal SQL_TOKEN_STRING
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_INT
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_REAL_NUM
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
         }
     |    literal SQL_TOKEN_APPROXNUM
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
                 $$->append($2);
-                xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
+                context->reduceLiteral($$, sal_True);
             }
             else
                 YYERROR;
@@ -1186,19 +1142,19 @@ position_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_POSITION '(' value_exp_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 num_value_fct:
@@ -1211,17 +1167,17 @@ char_length_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_SQL_TOKEN_INTNUM '(' value_exp ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     
     ;
@@ -1230,9 +1186,9 @@ octet_length_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 bit_length_exp:
@@ -1240,9 +1196,9 @@ bit_length_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 length_exp:
@@ -1284,11 +1240,11 @@ extract_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 unsigned_value_spec:
@@ -1313,23 +1269,23 @@ fct_spec:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    function_name0 '(' ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
        |    function_name '(' function_args_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    function_name12 '(' function_args_commalist ')'
         {
@@ -1337,9 +1293,9 @@ fct_spec:
             {
                 $$ = SQL_NEW_RULE;
                 $$->append($1);
-                $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+                $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
                 $$->append($3);
-                $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+                $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             }
             else
                 YYERROR;
@@ -1349,10 +1305,10 @@ fct_spec:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
-            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         };
         
 
@@ -1388,8 +1344,8 @@ window_function_type :
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     | general_set_fct
     | ntile_function
@@ -1402,9 +1358,9 @@ ntile_function :
     {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
     }
     ;
 dynamic_parameter_specification:
@@ -1422,15 +1378,15 @@ opt_lead_or_lag_function:
     | ',' offset 
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode(",", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($2);
         }
     | ',' offset ',' default_expression
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode(",", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(",", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($4);
         }
     ;
@@ -1444,10 +1400,10 @@ lead_or_lag_function:
     {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
-            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             $$->append($6);
     }
     ;
@@ -1473,9 +1429,9 @@ first_or_last_value_function:
     {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             $$->append($5);
     }
     ;
@@ -1492,11 +1448,11 @@ nth_value_function:
     {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(",", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             $$->append($7);
             $$->append($8);
     }
@@ -1565,9 +1521,9 @@ window_specification:
     '(' window_specification_details ')'
     {
         $$ = SQL_NEW_RULE;
-        $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+        $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
         $$->append($2);
-        $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+        $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
     }
     ;
 opt_existing_window_name:
@@ -1728,27 +1684,27 @@ general_set_fct:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
-            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_COUNT '(' '*' ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3 = newNode("*", SQL_NODE_PUNCTUATION));
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_COUNT '(' opt_all_distinct function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
-            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -1870,9 +1826,9 @@ named_columns_join:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -1918,7 +1874,7 @@ cast_target_scalar:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }  
         ;
@@ -1942,11 +1898,11 @@ cast_spec:
       {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 value_exp_primary:
@@ -1959,9 +1915,9 @@ value_exp_primary:
       | '(' value_exp ')'
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
       | cast_spec
     ;
@@ -1976,13 +1932,13 @@ factor:
     |    '-' num_primary  %prec SQL_TOKEN_UMINUS
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("-", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("-", SQL_NODE_PUNCTUATION));
             $$->append($2);
         }
     |    '+' num_primary  %prec SQL_TOKEN_UMINUS
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("+", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($2);
         }
     ;
@@ -1993,21 +1949,21 @@ term:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("*", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       | term '/' factor
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("/", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("/", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       | term '%' factor
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("%", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("%", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       ;
@@ -2018,14 +1974,14 @@ num_value_exp:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("+", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       | num_value_exp '-' term
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("-", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("-", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       ;
@@ -2110,7 +2066,7 @@ value_exp_commalist:
     /*    this rule is only valid if we check predicates */
     |   value_exp_commalist ';' value_exp
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $1->append($3);
                 $$ = $1;
@@ -2157,7 +2113,7 @@ function_args_commalist:
     /*    this rule is only valid if we check predicates */
     |   function_args_commalist ';' function_arg
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck())
+            if (context->inPredicateCheck())
             {
                 $1->append($3);
                 $$ = $1;
@@ -2189,7 +2145,7 @@ concatenation:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("+", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
     |    value_exp SQL_CONCAT value_exp
@@ -2238,12 +2194,12 @@ bit_substring_fct:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
             $$->append($6);
-            $$->append($7 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 bit_value_exp:
@@ -2265,7 +2221,7 @@ bit_concatenation:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("+", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
     ;
@@ -2308,20 +2264,20 @@ char_substring_fct:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
             $$->append($6);
-            $$->append($7 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_SUBSTRING '(' value_exp_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 upper_lower:
@@ -2333,9 +2289,9 @@ fold:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 form_conversion:
@@ -2343,21 +2299,21 @@ form_conversion:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |    SQL_TOKEN_CONVERT '(' cast_operand ',' cast_target ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($2 = newNode(",", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 char_translation:
@@ -2365,11 +2321,11 @@ char_translation:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -2404,14 +2360,14 @@ catalog_name:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
     |    SQL_TOKEN_NAME ':' schema_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode(":", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
 ;
@@ -2420,7 +2376,7 @@ schema_name:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
     |
@@ -2428,7 +2384,7 @@ schema_name:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = newNode(":", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
 ;
@@ -2463,7 +2419,7 @@ property_path:
 				{
 				if (last->getFirst()->getNodeType() == SQL_NODE_PUNCTUATION) //'*'
 					{
-					SQLyyerror("'*' can only occur at the end of property path\n");
+					SQLyyerror(context, "'*' can only occur at the end of property path\n");
 					YYERROR;
 					}
 				}
@@ -2483,7 +2439,7 @@ property_path_entry:
 	|   '*'
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("*", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
         } 
     ;
 
@@ -2623,13 +2579,13 @@ parameter:
         ':' SQL_TOKEN_NAME
         {
             $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode(":", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             $$->append($2);
             }
     |    '?'
         {
             $$ = SQL_NEW_RULE; // test
-            $$->append($1 = newNode("?", SQL_NODE_PUNCTUATION));
+            $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -2649,13 +2605,13 @@ range_variable:
 sql:
         search_condition /* checking predicats */
         {
-            if (xxx_pGLOBAL_SQLPARSER->inPredicateCheck()) // sql: rule 1
+            if (context->inPredicateCheck()) // sql: rule 1
             {
                 $$ = $1;
                 if ( SQL_ISRULE($$,search_condition) )
                 {
-                    $$->insert(0,newNode("(", SQL_NODE_PUNCTUATION));
-                    $$->append(newNode(")", SQL_NODE_PUNCTUATION));
+                    $$->insert(0,CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+                    $$->append(CREATE_NODE(")", SQL_NODE_PUNCTUATION));
                 }
             }
             else
@@ -2987,20 +2943,11 @@ sal_uInt32                OSQLParser::s_nRuleIDs[OSQLParseNode::rule_count + 1];
 OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
-sal_Int32                  OSQLParser::s_nRefCount    = 0;
-OSQLScanner*            OSQLParser::s_pScanner = 0;
-OSQLParseNodesGarbageCollector*        OSQLParser::s_pGarbageCollector = 0;
-RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
-//-----------------------------------------------------------------------------
-void setParser(OSQLParser* _pParser)
-{
-    xxx_pGLOBAL_SQLPARSER = _pParser;
-}
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
-{
-    m_pParseTree = pNewParseTree;
-}
+    {
+    m_pParseTree =std::unique_ptr<OSQLParseNode>(pNewParseTree->detach());
+    }
 //-----------------------------------------------------------------------------
 
 /** Delete all comments in a query.
@@ -3063,59 +3010,24 @@ static Utf8String delComment(Utf8String const& rQuery)
     }
     return aBuf;
 }
-
-OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
-                                     Utf8String const& rStatement,
-                                     sal_Bool bInternational)
-{
-
-
-    // must be reset
-    setParser(this);
-
-    // delete comments before parsing
+//-----------------------------------------------------------------------------
+std::unique_ptr<OSQLParseNode> OSQLParser::parseTree (Utf8String& rErrorMessage,Utf8String const& rStatement, sal_Bool bInternational) {
     Utf8String sTemp = delComment(rStatement);
-    // defines how to scan
-    s_pScanner->SetRule(s_pScanner->GetSQLRule()); // initial
-    s_pScanner->prepareScan(sTemp, m_pContext, bInternational);
-
-    SQLyylval.pParseNode = NULL;
-    //    SQLyypvt = NULL;
-    m_pParseTree = NULL;
-    m_sErrorMessage = Utf8String();
-
-    // ... und den Parser anwerfen ...
-    if (SQLyyparse() != 0)
-    {
+    m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
+    m_pParseTree = nullptr;
+    m_sErrorMessage.clear();
+    if (SQLyyparse(this) != 0)
+        {
         // only set the error message, if it's not already set
         if (!m_sErrorMessage.size())
-            m_sErrorMessage = s_pScanner->getErrorMessage();
-        if (!m_sErrorMessage.size())
-            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_GENERAL);
+            m_sErrorMessage = m_scanner->getErrorMessage();
 
         rErrorMessage = m_sErrorMessage;
+        return nullptr;
+        }
 
-        // clear the garbage collector
-        (*s_pGarbageCollector)->clearAndDelete();
-        return NULL;
+    return std::move(m_pParseTree);
     }
-    else
-    {
-        (*s_pGarbageCollector)->clear();
-
-        // Das Ergebnis liefern (den Root Parse Node):
-
-        //    OSL_ENSURE(Sdbyyval.pParseNode != NULL,"OSQLParser: Parser hat keinen ParseNode geliefert");
-        //    return Sdbyyval.pParseNode;
-        // geht nicht wegen Bug in MKS YACC-erzeugtem Code (es wird ein falscher ParseNode
-        // geliefert).
-
-        // Stattdessen setzt die Parse-Routine jetzt den Member pParseTree
-        // - einfach diesen zurueckliefern:
-        OSL_ENSURE(m_pParseTree != NULL,"OSQLParser: Parser hat keinen ParseTree geliefert");
-        return m_pParseTree;
-    }
-}
 //-----------------------------------------------------------------------------
 Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext)
 {
@@ -3202,68 +3114,6 @@ sal_uInt32 OSQLParser::RuleID(OSQLParseNode::Rule eRule)
 {
     return s_nRuleIDs[(sal_uInt16)eRule];
 }
-// -------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildNode(OSQLParseNode*& pAppend,OSQLParseNode* pCompare,OSQLParseNode* pLiteral,OSQLParseNode* pLiteral2)
-{
-    OSQLParseNode* pColumnRef = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::column_ref));
-    pColumnRef->append(new OSQLInternalNode(m_sFieldName,SQL_NODE_NAME));
-    OSQLParseNode* pComp = NULL;
-    if ( SQL_ISTOKEN( pCompare, BETWEEN) && pLiteral2 )
-        pComp = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::between_predicate_part_2));
-    else
-        pComp = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::comparison_predicate));
-    
-    pComp->append(pColumnRef);
-    pComp->append(pCompare);
-    pComp->append(pLiteral);
-    if ( pLiteral2 )
-    {
-        pComp->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD,SQL_TOKEN_AND));
-        pComp->append(pLiteral2);        
-    }
-    pAppend->append(pComp);
-    return 1;
-}
-//-----------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
-{
-    if(!pLiteral)
-        return 1;
-
-    if(SQL_ISRULE(pLiteral,fct_spec) || SQL_ISRULE(pLiteral,general_set_fct) || SQL_ISRULE(pLiteral,column_ref)
-        || SQL_ISRULE(pLiteral,subquery))
-        return 1; // here I have a function that I can't transform into a string
-
-    if(pLiteral->getNodeType() == SQL_NODE_INTNUM || pLiteral->getNodeType() == SQL_NODE_APPROXNUM || pLiteral->getNodeType() == SQL_NODE_ACCESS_DATE)
-    {
-        OSQLParseNode* pParent = pLiteral->getParent();
-
-        OSQLParseNode* pNewNode = new OSQLInternalNode(pLiteral->getTokenValue(), SQL_NODE_STRING);
-        pParent->replace(pLiteral, pNewNode);
-        delete pLiteral;
-        pLiteral = NULL;
-        return 1;
-    }
-
-    for(sal_uInt32 i=0;i<pLiteral->count();++i)
-    {
-        OSQLParseNode* pChild = pLiteral->getChild(i);
-        buildStringNodes(pChild);
-    }
-    if(SQL_ISRULE(pLiteral,term) || SQL_ISRULE(pLiteral,value_exp_primary))
-    {
-        m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_COMPARE);
-        return 0;
-    }
-    return 1;
-}
-//-----------------------------------------------------------------------------
-sal_Int16 OSQLParser::buildComparsionRule(OSQLParseNode*& pAppend,OSQLParseNode* pLiteral)
-{
-    OSQLParseNode* pComp = new OSQLInternalNode(Utf8String("="), SQL_NODE_EQUAL);
-    return buildPredicateRule(pAppend,pLiteral,pComp);
-}
-
 
 //-----------------------------------------------------------------------------
 void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
@@ -3279,7 +3129,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
     
     aValue.append(pLiteral->getChild(1)->getTokenValue());
 
-    pLiteral = new OSQLInternalNode(aValue,SQL_NODE_STRING);
+    pLiteral = m_scanner->NewNode(aValue,SQL_NODE_STRING);
     delete pTemp;
 }
 
@@ -3310,7 +3160,7 @@ void OSQLParser::error( const sal_Char* fmt)
         else
             m_sErrorMessage = sStr;
 
-        Utf8String aError = s_pScanner->getErrorMessage();
+        Utf8String aError = m_scanner->getErrorMessage();
         if(aError.size())
         {
             m_sErrorMessage += ", ";
@@ -3319,9 +3169,9 @@ void OSQLParser::error( const sal_Char* fmt)
     }
 }
 // -------------------------------------------------------------------------
-int OSQLParser::SQLlex()
+int OSQLParser::SQLlex(YYSTYPE* val)
 {
-    return s_pScanner->SQLlex();
+    return m_scanner->SQLlex(val);
 }
 
 #if defined __SUNPRO_CC

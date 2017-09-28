@@ -112,7 +112,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
         ASSERT_FALSE(document.Parse<0>(stmt.GetValueText(0)).HasParseError());
 
         DPoint3d pt;
-        ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::JsonToPoint3d(pt, document));
+        ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(pt, document));
         ASSERT_TRUE(pt.AlmostEqual(GetTestPoint3d()));
         actualRowCount++;
         }
@@ -703,7 +703,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint2d pt;
-                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, json))
+                        if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -729,7 +729,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint3d pt;
-                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, json))
+                        if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -1010,7 +1010,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
             {
                 case PRIMITIVETYPE_Binary:
                 {
-                if (ECRapidJsonUtilities::BinaryToJson(v, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
+                if (ECJsonUtilities::BinaryToJson(v, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
                     return ERROR;
                 break;
                 }
@@ -1042,7 +1042,7 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 bvector<Byte> fb;
                 BackDoor::BentleyGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
 
-                if (ECRapidJsonUtilities::BinaryToJson(v, fb.data(), fb.size(), json.GetAllocator()))
+                if (ECJsonUtilities::BinaryToJson(v, fb.data(), fb.size(), json.GetAllocator()))
                     return ERROR;
 
                 break;
@@ -1060,14 +1060,14 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 }
                 case PRIMITIVETYPE_Point2d:
                 {
-                if (ECRapidJsonUtilities::Point2dToJson(v, GetTestPoint2d(), json.GetAllocator()))
+                if (ECJsonUtilities::Point2dToJson(v, GetTestPoint2d(), json.GetAllocator()))
                     return ERROR;
 
                 break;
                 }
                 case PRIMITIVETYPE_Point3d:
                 {
-                if (ECRapidJsonUtilities::Point3dToJson(v, GetTestPoint3d(), json.GetAllocator()))
+                if (ECJsonUtilities::Point3dToJson(v, GetTestPoint3d(), json.GetAllocator()))
                     return ERROR;
 
                 break;

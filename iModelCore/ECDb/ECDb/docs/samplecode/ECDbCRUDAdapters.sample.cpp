@@ -48,6 +48,38 @@ BentleyStatus ECDb_ECInstanceECSqlSelectAdapter()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_JsonECSqlBinder()
+    {
+    ECDb ecdb;
+
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_JsonECSqlBinder.sampleCode
+
+    // omit any error handling to focus on the JsonECSqlBinder usage
+
+    ECSqlStatement statement;
+    statement.Prepare(ecdb, "UPDATE stco.Employee SET Birthday=?, Address=? WHERE ECInstanceId=?");
+
+    Json::Value birthdayJson("1971-04-30");
+    JsonECSqlBinder::BindPrimitiveValue(statement.GetBinder(1), birthdayJson, PRIMITIVETYPE_DateTime);
+
+    Json::Value addressJson;
+    Json::Reader::Parse(R"json( { "street " : "2000 Main Street",
+                                  "zip" : 94300,
+                                  "city" : "MyTown" 
+                                }
+                               )json", addressJson);
+    ECStructClassCP locationStruct = ecdb.Schemas().GetClass("StartupCompany", "Location")->GetStructClassCP();
+    JsonECSqlBinder::BindStructValue(statement.GetBinder(2), addressJson, *locationStruct);
+
+    statement.Step();
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
 void SendToClient(Json::Value const& jsonPage);
 
 //---------------------------------------------------------------------------------------

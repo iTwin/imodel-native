@@ -8,33 +8,160 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECSqlStatement.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <json/json.h>
 #include <rapidjson/BeRapidJson.h>
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//======================================================================================
+//! Helper API to bind @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON" values to ECSQL parameters.
+//! @see ECSqlStatement, IECSqlBinder
+// @bsiclass                                                  09/2017
+//+===============+===============+===============+===============+===============+======
+struct JsonECSqlBinder final
+    {
+    private:
+        JsonECSqlBinder() = delete;
+        ~JsonECSqlBinder() = delete;
+
+        static ECSqlStatus BindValue(IECSqlBinder& binder, JsonValueCR memberJson, ECN::ECPropertyCR);
+        static ECSqlStatus BindArrayValue(IECSqlBinder&, JsonValueCR arrayJson, ECN::PrimitiveType const*, ECN::ECStructClass const*);
+
+        static ECSqlStatus BindValue(IECSqlBinder& binder, RapidJsonValueCR memberJson, ECN::ECPropertyCR);
+        static ECSqlStatus BindArrayValue(IECSqlBinder&, RapidJsonValueCR arrayJson, ECN::PrimitiveType const*, ECN::ECStructClass const*);
+
+    public:
+        /// @name Methods to bind JSON values from the JsonCpp API
+        /// @{
+
+        //! Binds a ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
+        //! @param[in] json ECJSON value to be bound to @p binder
+        //! @param[in] prop ECProperty of the parameter expression
+        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from ECJSON class names (e.g. via ECDb::GetClassLocater).
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindValue(IECSqlBinder& binder, JsonValueCR json, ECN::ECPropertyCR prop, ECN::IECClassLocater& classLocater);
+
+        //! Binds a primitive ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the primitive ECSQL parameter to which the value is bound to
+        //! @param[in] primitiveJson Primitive ECJSON value to be bound to @p binder
+        //! @param[in] primitiveType Primitive type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindPrimitiveValue(IECSqlBinder& binder, JsonValueCR primitiveJson, ECN::PrimitiveType primitiveType);
+
+        //! Binds a struct ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] structJson Struct ECJSON value to be bound to @p binder
+        //! @param[in] structType Struct type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindStructValue(IECSqlBinder& binder, JsonValueCR structJson, ECN::ECStructClassCR structType);
+
+        //! Binds a primitive array EC JSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] arrayJson Primitive array EC JSON value to be bound to @p binder
+        //! @param[in] arrayElementType Array element type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindPrimitiveArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECN::PrimitiveType arrayElementType);
+
+        //! Binds a struct array ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] arrayJson Struct array ECJSON value to be bound to @p binder
+        //! @param[in] arrayElementType Array element type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindStructArrayValue(IECSqlBinder& binder, JsonValueCR arrayJson, ECN::ECStructClassCR arrayElementType);
+
+        //! Binds an ECJSON navigation property value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the navigation property ECSQL parameter to which the value is bound to
+        //! @param[in] navJson ECJSON navigation property value to be bound to @p binder
+        //! @param[in] classLocater Class locater needed to look up the relationship class from the @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" member (e.g. via ECDb::GetClassLocater).
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, JsonValueCR navJson, ECN::IECClassLocater& classLocater);
+
+        //! @}
+
+        /// @name Methods to bind JSON values from the RapidJson API
+        //! @{
+
+        //! Binds a ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to
+        //! @param[in] json ECJSON value to be bound to @p binder
+        //! @param[in] prop ECProperty of the parameter expression
+        //! @param[in] classLocater Class locater needed to look up ECClasses or ECClassIds from ECJSON class names (e.g. via ECDb::GetClassLocater).
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindValue(IECSqlBinder& binder, RapidJsonValueCR json, ECN::ECPropertyCR prop, ECN::IECClassLocater& classLocater);
+
+        //! Binds a primitive ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the primitive ECSQL parameter to which the value is bound to
+        //! @param[in] primitiveJson Primitive ECJSON value to be bound to @p binder
+        //! @param[in] primitiveType Primitive type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindPrimitiveValue(IECSqlBinder& binder, RapidJsonValueCR primitiveJson, ECN::PrimitiveType primitiveType);
+
+        //! Binds a struct ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] structJson Struct ECJSON value to be bound to @p binder
+        //! @param[in] structType Struct type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindStructValue(IECSqlBinder& binder, RapidJsonValueCR structJson, ECN::ECStructClassCR structType);
+
+        //! Binds a primitive array ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] arrayJson Primitive array ECJSON value to be bound to @p binder
+        //! @param[in] arrayElementType Array element type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindPrimitiveArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECN::PrimitiveType arrayElementType);
+
+        //! Binds a struct array ECJSON value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the struct ECSQL parameter to which the value is bound to
+        //! @param[in] arrayJson Struct array ECJSON value to be bound to @p binder
+        //! @param[in] arrayElementType Array element type
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindStructArrayValue(IECSqlBinder& binder, RapidJsonValueCR arrayJson, ECN::ECStructClassCR arrayElementType);
+
+        //! Binds an ECJSON navigation property value to the specified ECSQL statement's binder.
+        //! @param[in,out] binder ECSQL statement binder representing the navigation property ECSQL parameter to which the value is bound to
+        //! @param[in] navJson ECJSON navigation property value to be bound to @p binder
+        //! @param[in] classLocater Class locater needed to look up the relationship class from the @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" member (e.g. via ECDb::GetClassLocater).
+        //! @return ECSqlStatus
+        ECDB_EXPORT static ECSqlStatus BindNavigationValue(IECSqlBinder& binder, RapidJsonValueCR navJson, ECN::IECClassLocater& classLocater);
+
+        //! @}
+    };
 
 //=======================================================================================
 //! Adapts the rows returned by an ECSqlStatement to the JSON format (see @ref BentleyApi::ECN::ECJsonSystemNames).
 //! 
 //! @see ECSqlStatement, BentleyApi::ECN::ECJsonSystemNames
 //! @ingroup ECDbGroup
-//! @bsiclass                                                 08/2012
+//! @bsiclass                                                               08/2012
 //+===============+===============+===============+===============+===============+======
 struct JsonECSqlSelectAdapter final: NonCopyableClass
     {
     public:
         struct FormatOptions final
             {
+            enum class MemberNameCasing
+                {
+                KeepOriginal, //!< Member name as returned from ECSQL
+                LowerFirstChar //!< First character of the member name is lowered. This does not apply to system members.
+                };
+
             private:
+                MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
 
             public:
-                //! Initializes a default BentleyApi::ECN::ECJsonInt64Format object with ECJsonInt64Format::AsDecimalString
+                //! Initializes a default FormatOptions object
+                //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
                 FormatOptions() {}
-                explicit FormatOptions(ECN::ECJsonInt64Format int64Format) : m_int64Format(int64Format) {}
+                //! Initializes a new FormatOptions object
+                //!@param[in] memberNameCasing Defines how the member names in the resulting JSON will be formatted.
+                //!           Casing of system member names is not affected by this.
+                //!@param[in] int64Format Defines how ECProperty values of type Int64 / Long will be formatted
+                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format) {}
 
+                MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
             };
     private:
@@ -54,7 +181,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! item in the ECSQL select clause.
         //! 
         //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
-        //! The ECSQL select clause is what exclusively determines what property name value pairs
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
         //! the JSON will contain.
         //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
@@ -65,11 +192,11 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @c SourceECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName" | "<Schema Name>.<Class Name>"
         //! @c TargetECInstanceId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId" | Hex String
         //! @c TargetECClassId | @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName" | "<Schema Name>.<Class Name>"
-        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
-        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
-        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;point2d/point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
-        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;point2d/point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
-        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
+        //! &lt;%Navigation Property&gt;.<c>Id</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "id" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;%Navigation Property&gt;.<c>RelECClassId</c> | &lt;%Navigation Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "relClassName" | "<Schema Name>.<RelationshipClass Name>"
+        //! &lt;Point2d/Point3d Property&gt;.<c>X</c> | &lt;Point2d/Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::X "x" | double
+        //! &lt;Point2d/Point3d Property&gt;.<c>Y</c> | &lt;Point2d/Point3d Property&gt;..@ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "y" | double
+        //! &lt;%Point3d Property&gt;.<c>Z</c> | &lt;Point3d Property&gt;.@ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "z" | double
         //!
         //! ####Examples
         //! For the ECSQL <c>SELECT %ECInstanceId, ECClassId, Name, Age FROM myschema.Employee WHERE ...</c>
@@ -78,16 +205,16 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //!     {
         //!         "id" : "0x13A",
         //!         "className" : "mySchema.Employee",
-        //!         "name": "Sally Smith",
-        //!         "age": 30
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
         //!     }
         //!
         //! For the ECSQL <c>SELECT Name, Age FROM myschema.Employee WHERE ...</c>
         //! the returned JSON format would be this:
         //! 
         //!     {
-        //!         "name": "Sally Smith",
-        //!         "age": 30
+        //!         "Name": "Sally Smith",
+        //!         "Age": 30
         //!     }
         //! 
         //! Using expressions or aliases or nesting property accessors in the ECSQL select clause
@@ -95,8 +222,12 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @note When using expressions in the SELECT clause it is recommended to assign a column alias to them.
         //! The JSON member name will then be the alias instead of the full expression.
         //! @param [out] json current row as JSON object of property name value pairs
+        //! @param[in] appendToJson If true, the JSON property name value pairs of the retrieved row will
+        //! be appended to @p json. In this case, @p json must have be a JSON object.
+        //! If false, @p json will just contain the retrieved row data. If @p json contained
+        //! members before the call, those will be cleared.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus GetRow(JsonValueR json) const;
+        ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
         //! Gets only the columns from the current row that refer to the specified ECClass
         //!
@@ -107,8 +238,8 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! 
         //!     {
         //!     "id" : "0x123",
-        //!     "name": "Sally Smith",
-        //!     "age": 30
+        //!     "Name": "Sally Smith",
+        //!     "Age": 30
         //!     }
         //!
         //! If the %ECClassId of @c Company was passed to the method, the resulting JSON would be:
@@ -129,7 +260,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
 //! @remarks This is mainly a convenience wrapper over @ref JsonECSqlSelectAdapter
 //! using an ECSQL that selects all properties of the ECClass plus ECInstanceId and ECClassId.
 //! @ingroup ECDbGroup
-// @bsiclass                                                 Ramanujam.Raman      09/2013
+// @bsiclass                                                                09/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonReader final : NonCopyableClass
     {
@@ -169,17 +300,46 @@ struct JsonReader final : NonCopyableClass
         ECDB_EXPORT BentleyStatus Read(JsonValueR jsonInstance, ECInstanceId ecInstanceId) const;
     };
 
+
+
+
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
-//@bsiclass                                                 Ramanujam.Raman      02/2013
+//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
+//@bsiclass                                                                   02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonInserter final : NonCopyableClass
     {
     private:
+        struct BindingInfo final
+            {
+            private:
+                int m_parameterIndex = 0;
+                ECN::ECPropertyCP m_property = nullptr;
+            public:
+                BindingInfo() {}
+                BindingInfo(int paramIndex, ECN::ECPropertyCR prop) : m_parameterIndex(paramIndex), m_property(&prop) {}
+                explicit BindingInfo(int systemParamIndex) : m_parameterIndex(systemParamIndex) {}
+
+                int GetParameterIndex() const { return m_parameterIndex; }
+                bool IsSystemProperty() const { return m_property == nullptr; }
+                ECN::ECPropertyCP GetProperty() const { return m_property; }
+            };
+
+        struct CompareIUtf8Ascii
+            {
+            bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+            };
+
         ECDbCR m_ecdb;
         ECN::ECClassCR m_ecClass;
-        ECInstanceInserter m_ecinstanceInserter;
+        Utf8String m_jsonClassName;
+
+        mutable ECSqlStatement m_statement;
+        bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
+        bool m_isValid = false;
+
+        void Initialize(ECCrudWriteToken const* writeToken);
 
     public:
         //! Initializes a new JsonInserter instance for the specified class. 
@@ -190,49 +350,103 @@ struct JsonInserter final : NonCopyableClass
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @remarks Holds some cached state to speed up future inserts of the same class. Keep the 
         //! inserter around when inserting many instances of the same class. 
-        JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass, writeToken) {}
+        ECDB_EXPORT JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken);
 
         //! Indicates whether this JsonInserter is valid and can be used to insert JSON instances.
         //! It is not valid, if the underlying ECClass is not mapped or not instantiable for example.
         //! @return true if the inserter is valid and can be used for inserting. false if it cannot be used for inserting.
-        bool IsValid() const { return m_ecinstanceInserter.IsValid(); }
+        bool IsValid() const { return m_isValid; }
 
-        //! Inserts the instance
-        //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
-        //! @param[in] jsonValue the instance data
+        //! Inserts a row from the specified EC JSON object
+        //! @remarks if the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member is set in the @p json,
+        //! ECDb will not generate an ECInstanceId but use the member's value instead.
+        //! @param[out] key the ECInstanceKey generated for the inserted instance
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(ECInstanceKey& key, JsonValueCR json) const;
 
-        //! Inserts the instance and updates the $ECInstanceId field with the generated ECInstanceId
-        //! @param[in] jsonValue the instance data
+        //! Inserts a row from the specified EC JSON object
+        //! Inserts the row and adds the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member with the generated ECInstanceId
+        //! to @p json
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(JsonValueR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(JsonValueR json) const;
 
         //! Insert an instance created from the specified jsonValue
-        //! @param[out] newInstanceKey the ECInstanceKey generated for the inserted instance
-        //! @param[in] jsonValue the instance data
+        //! @remarks if the @ref BentleyApi::ECN::ECJsonUtilities::json_id "id" member is set in the @p json,
+        //! ECDb will not generate an ECInstanceId but use the member's value instead.
+        //! @param[out] key the ECInstanceKey generated for the inserted instance
+        //! @param[in] json EC JSON object to insert
         //! @return BE_SQLITE_OK in case of success, error codes otherwise
-        ECDB_EXPORT DbResult Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const;
+        ECDB_EXPORT DbResult Insert(ECInstanceKey& key, RapidJsonValueCR json) const;
     };
 
 //=======================================================================================
-//! Update EC content in the ECDb file through JSON values
-//! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON Format".
-//@bsiclass                                                 Ramanujam.Raman      02/2013
+//! Update EC content in the ECDb file through @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON" values
+//! @remarks The input JSON must contain the members which the updater is supposed to update. 
+//! That implies that the JsonUpdater will fail, if the input JSON contains members which are not updatable, 
+//! e.g. @ref BentleyApi::ECN::ECJsonSystemNames::Id "id",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className", @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId", @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName",
+//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName".
+//! The general rule is that the JsonUpdater supports what ECSQL UPDATE supports.
+//!
+//! ### How the JsonUpdater works
+//! During construction the JsonUpdater generates and prepares an ECSQL UPDATE statement from the specified class and property names.
+//! The list of property names makes up the SET clause of the UPDATE statement, i.e. it is the list that indicates which properties
+//! are to be updated by the updater. <b>If no property name list is passed, all properties of the class will show up in the SET clause.</b>
+//!
+//! @em Example:
+//! JsonUpdater initialization | Generated underlying ECSQL
+//! ---------------------------|----------------------------
+//! ECClass 'MySchema.MyClass' and properties {"Prop1','Prop2' } | <c>UPDATE ONLY MySchema.MyClass SET Prop1=?, Prop2=? WHERE ECInstanceId=?</c>
+//! ECClass 'MySchema.MyClass' | <c>UPDATE ONLY MySchema.MyClass SET Prop1=?, Prop2=?, Prop3=?, Prop4=?,... WHERE ECInstanceId=?</c>
+//!
+//! When JsonUpdater::Update is called, the values from the input ECJSON are bound to the members in the ECSQL UPDATE SET clause.
+//! That implies:
+//!     - The ECJSON may only contain members that match the list of properties passed at construction time
+//!     - Consequently, the ECJSON may not contain the instance id. It is passed as separate argument to the Update method.
+//!     - Any properties not contained in the ECJSON will be nulled out because no value is bound to its parameter in the SET clause.
+//!     (Unbound parameters in SQLite are treated as if NULL was bound to them).
+//@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
     {
     private:
+        struct BindingInfo final
+            {
+            private:
+                int m_parameterIndex = 0;
+                ECN::ECPropertyCP m_property = nullptr;
+            public:
+                BindingInfo() {}
+                BindingInfo(int paramIndex, ECN::ECPropertyCR prop) : m_parameterIndex(paramIndex), m_property(&prop) {}
+
+                int GetParameterIndex() const { return m_parameterIndex; }
+                ECN::ECPropertyCR GetProperty() const { BeAssert(m_property != nullptr); return *m_property; }
+            };
+
+        struct CompareIUtf8Ascii
+            {
+            bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+            };
+
         ECDbCR m_ecdb;
         ECN::ECClassCR m_ecClass;
-        ECInstanceUpdater m_ecinstanceUpdater;
+        Utf8String m_jsonClassName;
 
-        ECN::IECInstancePtr CreateEmptyInstance(ECN::ECClassCR ecClass) const { return ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0); }
-        ECN::IECInstancePtr CreateEmptyInstance(ECInstanceKeyCR instanceKey) const;
-        ECN::IECInstancePtr CreateEmptyRelInstance(ECN::ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
+        mutable ECSqlStatement m_statement;
+        bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
+        int m_idParameterIndex = 0;
+        bool m_isValid = false;
+
+        BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, Utf8CP ecsqlOptions, ECCrudWriteToken const* writeToken);
 
     public:
-        //! Initializes a new JsonUpdater instance for the specified class. 
+        //! Initializes a new JsonUpdater instance for the specified class.
+        //! @remarks The SET clause of the underlying ECSQL UPDATE will contain @b all properties of @p ecClass.
+        //! That means, any properties not contained in the incoming JSON will be nulled-out. As this is often not the desired
+        //! behavior, consider using the other constructor that takes a list of property names.
         //! @param[in] ecdb ECDb
         //! @param[in] ecClass ECClass of the instance that needs to be updated. 
         //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 
@@ -240,47 +454,41 @@ struct JsonUpdater final : NonCopyableClass
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
         //!            Pass without ECSQLOPTIONS keyword.
-        //! @remarks Holds some cached state to speed up future updates of the same class. Keep the 
-        //! inserter around when updating many instances of the same class. 
-        JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, writeToken, ecsqlOptions) {}
+        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
+
+        //! Initializes a new JsonUpdater instance for the specified class. 
+        //! @param[in] ecdb ECDb
+        //! @param[in] ecClass ECClass of the instance that needs to be updated. 
+        //! @param[in] propertyNames ECClass of the instance that needs to be updated. 
+        //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 
+        //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
+        //! If the option is not set, nullptr can be passed for @p writeToken.
+        //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
+        //!            Pass without ECSQLOPTIONS keyword.
+        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<Utf8CP> const& propertyNames, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
 
         //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
-        //! It is not valid, if the underlying ECClass is not mapped or not instantiable for example.
+        //! It is not valid, if the underlying ECClass is abstract or not mapped for example.
         //! @return true if the updater is valid and can be used for updating. false if it cannot be used for updating.
-        bool IsValid() const { return m_ecinstanceUpdater.IsValid(); }
+        bool IsValid() const { return m_isValid; }
 
-        //! Updates an instance from the specified jsonValue
+        //! Updates an instance from the specified ECJSON
+        //! @remarks All ECProperties of the underlying ECClass for which the input ECJSON does not contain a value
+        //! are nulled-out.
         //! @param[in] instanceId the ECInstanceId of the instance to update
-        //! @param[in] jsonValue the instance data
+        //! @param[in] json the instance data
         //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
         //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
-        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR jsonValue) const;
+        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR json) const;
 
-        //! Update  a relationship instance from the specified jsonValue and source/target keys
+        //! Update an instance from the specified ECJSON
+        //! @remarks All ECProperties of the underlying ECClass for which the input ECJSON does not contain a value
+        //! are nulled-out.
         //! @param[in] instanceId the ECInstanceId of the instance to update
-        //! @param[in] jsonValue the instance data
-        //! @param[in] sourceKey ECInstanceKey for the source of the relationship
-        //! @param[in] targetKey ECInstanceKey for the target of the relationship
+        //! @param[in] json the instance data
         //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
         //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
-        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
-
-        //! Update an instance from the specified jsonValue
-        //! @param[in] instanceId the ECInstanceId of the instance to update
-        //! @param[in] jsonValue the instance data
-        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
-        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const;
-
-        //! Update  a relationship instance from the specified jsonValue and source/target keys
-        //! @param[in] instanceId the ECInstanceId of the instance to update
-        //! @param[in] jsonValue the instance data
-        //! @param[in] sourceKey ECInstanceKey for the source of the relationship
-        //! @param[in] targetKey ECInstanceKey for the target of the relationship
-        //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
-        //! BE_SQLITE_OK is also returned if the specified ECInstance does not exist in the file. Error codes otherwise.
-        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
+        ECDB_EXPORT DbResult Update(ECInstanceId instanceId, RapidJsonValueCR json) const;
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

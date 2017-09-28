@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! Converts different data types to JSON whenever JSON is persisted in the ECDb file.
 //! @remarks This helper has to be used whenever JSON is written/read from the DB. This is to
-//! ensure that the file format is not changed by API changes. E.g. ECRapidJsonUtilities must not be
+//! ensure that the file format is not changed by API changes. E.g. ECJsonUtilities must not be
 //! used as it might change.
 // @bsiclass                                                Krischan.Eberle      09/2017
 //+===============+===============+===============+===============+===============+======
