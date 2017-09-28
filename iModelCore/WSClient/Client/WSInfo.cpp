@@ -103,7 +103,9 @@ Utf8String WSInfo::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, bool useWsgVersionHeader, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
-    Utf8CP serverHeader = headers.GetServer();
+    Utf8CP serverHeader = headers.GetMassServer();
+    if (nullptr == serverHeader)
+        serverHeader = headers.GetServer();
 
     //Try the WsgServer header, if not available, resort back to Server header.
     if (useWsgVersionHeader)

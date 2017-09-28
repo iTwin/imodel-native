@@ -159,6 +159,34 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_Identifyi
     EXPECT_EQ(BeVersion(2, 0), info.GetValue().GetVersion());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperMasServerHeader_IdentifyingWSG)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}}));
+
+    auto info = client->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(2,6), info.GetValue().GetVersion());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                julius.cepukenas                     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_FirstResponseHasMasServerAndServerHeader_IdentifyingCorrectWSG)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}, {"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
+
+    auto info = client->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(2, 6), info.GetValue().GetVersion());
+    }
+
 TEST_F(WSClientTests, GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
