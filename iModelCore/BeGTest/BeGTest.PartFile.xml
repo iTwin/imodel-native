@@ -69,6 +69,7 @@
         <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
         <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
         <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
         
 		<ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData"/>
         <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
