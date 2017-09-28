@@ -370,6 +370,9 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
     if (nullptr == descriptor)
         return;
 
+    if (descriptor->HasContentFlag(ContentFlags::KeysOnly))
+        return;
+
     for (ContentDescriptor::Field const* field : descriptor->GetAllFields())
         {
         if (field->IsNestedContentField())
