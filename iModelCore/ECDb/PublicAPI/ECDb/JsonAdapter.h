@@ -390,6 +390,24 @@ struct JsonInserter final : NonCopyableClass
 //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId", @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName",
 //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName".
 //! The general rule is that the JsonUpdater supports what ECSQL UPDATE supports.
+//!
+//! ### How the JsonUpdater works
+//! During construction the JsonUpdater generates and prepares an ECSQL UPDATE statement from the specified class and property names.
+//! The list of property names makes up the SET clause of the UPDATE statement, i.e. it is the list that indicates which properties
+//! are to be updated by the updater. <b>If no property name list is passed, all properties of the class will show up in the SET clause.</b>
+//!
+//! @em Example:
+//! JsonUpdater initialization | Generated underlying ECSQL
+//! ---------------------------|----------------------------
+//! ECClass 'MySchema.MyClass' and properties {"Prop1','Prop2' } | <c>UPDATE ONLY MySchema.MyClass SET Prop1=?, Prop2=? WHERE ECInstanceId=?</c>
+//! ECClass 'MySchema.MyClass' | <c>UPDATE ONLY MySchema.MyClass SET Prop1=?, Prop2=?, Prop3=?, Prop4=?,... WHERE ECInstanceId=?</c>
+//!
+//! When JsonUpdater::Update is called, the values from the input ECJSON are bound to the members in the ECSQL UPDATE SET clause.
+//! That implies:
+//!     - The ECJSON may only contain members that match the list of properties passed at construction time
+//!     - Consequently, the ECJSON may not contain the instance id. It is passed as separate argument to the Update method.
+//!     - Any properties not contained in the ECJSON will be nulled out because no value is bound to its parameter in the SET clause.
+//!     (Unbound parameters in SQLite are treated as if NULL was bound to them).
 //@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass

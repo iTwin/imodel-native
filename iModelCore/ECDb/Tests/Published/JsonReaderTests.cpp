@@ -949,58 +949,126 @@ TEST_F(JsonReaderTests, PartialPoints)
 
     ECSqlStatement selStmt;
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
-    JsonECSqlSelectAdapter adapter(selStmt);
 
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
-    Json::Value actualJson;
-    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
+
+    Json::Value defaultJson, javaScriptJson;
+    JsonECSqlSelectAdapter defaultAdapter(selStmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
     selStmt.Finalize();
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+
+    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
+
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
-    ASSERT_TRUE(actualJson.isMember("P2D"));
-    ASSERT_TRUE(actualJson["P2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+    {
+    ASSERT_TRUE(defaultJson.isMember("P2D"));
+    ASSERT_TRUE(defaultJson["P2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, defaultJson["P2D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P2D"][ECJsonUtilities::json_y()].asDouble());
 
-    ASSERT_TRUE(actualJson.isMember("P3D"));
-    ASSERT_TRUE(actualJson["P3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_TRUE(javaScriptJson.isMember("p2D"));
+    ASSERT_TRUE(javaScriptJson["p2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, javaScriptJson["p2D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p2D"][ECJsonUtilities::json_y()].asDouble());
+    }
 
-    ASSERT_TRUE(actualJson.isMember("PStructProp.p2d"));
-    ASSERT_TRUE(actualJson["PStructProp.p2d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p2d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp.p2d"]["y"].asDouble());
+    {
+    ASSERT_TRUE(defaultJson.isMember("P3D"));
+    ASSERT_TRUE(defaultJson["P3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(2, defaultJson["P3D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_z()].asDouble());
 
-    ASSERT_TRUE(actualJson["PStructProp.p3d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp.p3d"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp.p3d"]["z"].asDouble());
+    ASSERT_TRUE(javaScriptJson.isMember("p3D"));
+    ASSERT_TRUE(javaScriptJson["p3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(2, javaScriptJson["p3D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_z()].asDouble());
+    }
 
-    actualJson = Json::Value();
+    {
+    ASSERT_TRUE(defaultJson.isMember("PStructProp.p2d"));
+    ASSERT_TRUE(defaultJson["PStructProp.p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p2d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, defaultJson["PStructProp.p2d"][ECJsonUtilities::json_y()].asDouble());
+
+    ASSERT_TRUE(javaScriptJson.isMember("pStructProp.p2d"));
+    ASSERT_TRUE(javaScriptJson["pStructProp.p2d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p2d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, javaScriptJson["pStructProp.p2d"][ECJsonUtilities::json_y()].asDouble());
+    }
+
+    {
+    ASSERT_TRUE(defaultJson["PStructProp.p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_z()].asDouble());
+
+    ASSERT_TRUE(javaScriptJson["pStructProp.p3d"].isObject());
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_z()].asDouble());
+    }
+
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
-    JsonReader reader(m_ecdb, *testClass);
-    ASSERT_TRUE(reader.IsValid());
-    ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId()));
+    JsonReader defaultReader(m_ecdb, *testClass);
+    ASSERT_TRUE(defaultReader.IsValid());
+    JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    ASSERT_TRUE(javaScriptReader.IsValid());
+    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson, key.GetInstanceId()));
 
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
 
-    ASSERT_DOUBLE_EQ(1, actualJson["P2D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P2D"]["y"].asDouble());
+    {
+    ASSERT_TRUE(defaultJson.isMember("P2D"));
+    ASSERT_TRUE(defaultJson["P2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, defaultJson["P2D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P2D"][ECJsonUtilities::json_y()].asDouble());
 
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(2, actualJson["P3D"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(0, actualJson["P3D"]["z"].asDouble());
+    ASSERT_TRUE(javaScriptJson.isMember("p2D"));
+    ASSERT_TRUE(javaScriptJson["p2D"].isObject());
+    ASSERT_DOUBLE_EQ(1, javaScriptJson["p2D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p2D"][ECJsonUtilities::json_y()].asDouble());
+    }
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+    {
+    ASSERT_TRUE(defaultJson.isMember("P3D"));
+    ASSERT_TRUE(defaultJson["P3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(2, defaultJson["P3D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_z()].asDouble());
 
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
+    ASSERT_TRUE(javaScriptJson.isMember("p3D"));
+    ASSERT_TRUE(javaScriptJson["p3D"].isObject());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(2, javaScriptJson["p3D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_z()].asDouble());
+    }
+
+    {
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p2d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, defaultJson["PStructProp"]["p2d"][ECJsonUtilities::json_y()].asDouble());
+
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p2d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, javaScriptJson["pStructProp"]["p2d"][ECJsonUtilities::json_y()].asDouble());
+    }
+
+    {
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_z()].asDouble());
+
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_x()].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_z()].asDouble());
+    }
     }
 
 //---------------------------------------------------------------------------------------
