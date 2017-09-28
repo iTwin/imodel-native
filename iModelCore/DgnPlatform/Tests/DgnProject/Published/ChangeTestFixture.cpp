@@ -69,10 +69,10 @@ void ChangeTestFixture::SetupDgnDb(BeFileName seedFileName, WCharCP newFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::OpenDgnDb(BeFileName fileName)
+void ChangeTestFixture::OpenDgnDb(BeFileName fileName, Db::OpenMode openMode/*=Db::OpenMode::ReadWrite*/)
 {
     DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    DgnDb::OpenParams openParams(openMode);
     m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
