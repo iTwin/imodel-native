@@ -501,9 +501,8 @@ ICancellationTokenPtr ct
         {
         ECPropertyCP remoteIdProperty = statement.GetColumnInfo(remoteIdColumn).GetProperty();
         if (nullptr == remoteIdProperty ||
-            !remoteIdProperty->GetClass().GetName().Equals(CLASS_CachedObjectInfo))
- //           || TODO: Improve the verification of remoteIdProperty
- //           !remoteIdProperty->GetName().Equals(CLASS_CachedObjectInfo_PROPERTY_RemoteId))
+            !remoteIdProperty->GetClass().GetName().Equals(CLASS_CachedObjectInfo) ||
+            !remoteIdProperty->GetName().EqualsI(CLASS_CachedObjectInfo_PROPERTY_RemoteId))
             {
             BeAssert(false && "Read info does not match statement");
             remoteIdColumn = -1;

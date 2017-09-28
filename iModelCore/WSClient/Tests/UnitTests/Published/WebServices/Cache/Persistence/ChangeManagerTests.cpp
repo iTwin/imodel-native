@@ -2790,10 +2790,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedInstanceLabel_ReturnsC
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModification_ReturnsChangesBetweenLatestAndLocalVersions)
     {
-    //temprorary Solution
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"testSchema.TestClass", "Foo"}, {{"testProperty", "OldA"}, {"testProperty2", "OldB"}, {"tesTProperty3", "OldC"}});
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"}, {"TestProperty2", "OldB"}, {"TestProperty3", "OldC"}});
     auto properties = ToJson(R"({"testProperty":"OldA", "testProperty2":"NewB", "testProperty3":"OtherC"})");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
 
@@ -2801,7 +2800,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModifica
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties1));
 
     StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "Foo"}, {{"testProperty", "NewA"}, {"testProperty2", "NewB"}, {"testProperty3", "NewC"}});
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewA"}, {"TestProperty2", "NewB"}, {"TestProperty3", "NewC"}});
     ASSERT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
     // Act
     Json::Value modifiedProperties;

@@ -15,6 +15,7 @@
 #include "Events/EventManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
+#include "MultiProgressCallbackHandler.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -69,7 +70,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
                 {
                 if (!fileResult.IsSuccess())
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileResult.GetError().GetMessage().c_str());
                     return StatusResult::Error(fileResult.GetError());
                     }
 
@@ -87,7 +88,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(Error(result.GetError()));
                 }
 
@@ -145,7 +146,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return FileAccessKeyResult::Error(result.GetError());
             }
 
@@ -195,7 +196,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
         if (Error::Id::FileAlreadyExists != error.GetId())
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
             return;
             }
 
@@ -204,7 +205,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
         if (initialized)
             {
             finalResult->SetError(error);
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
             return;
             }
 
@@ -223,14 +224,14 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
             if (!queryResult.IsSuccess())
                 {
                 finalResult->SetError(queryResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
             
             if (queryResult.GetValue().GetRapidJsonDocument().IsNull())
                 {
                 finalResult->SetError(error);
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
                 return;
                 }
 
@@ -258,7 +259,7 @@ StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAcces
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return StatusResult::Error(Error(result.GetError()));
             }
 
@@ -279,7 +280,7 @@ StatusTaskPtr iModelConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellat
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
 
@@ -302,7 +303,7 @@ StatusTaskPtr iModelConnection::InitializeServerFile(FileInfoCR fileInfo, ICance
         {
         if (!initializeFileResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializeFileResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializeFileResult.GetError().GetMessage().c_str());
             return StatusResult::Error(initializeFileResult.GetError());
             }
 
@@ -353,7 +354,7 @@ BeBriefcaseId                  briefcaseId
     else
         {
         auto error = Error(db, status);
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
         if (db.IsValid())
             db->CloseDb();
         return StatusResult::Error(error);
@@ -385,7 +386,7 @@ ICancellationTokenPtr cancellationToken,
 IWSRepositoryClient::RequestOptionsPtr requestOptions
 ) const
     {
-    const Utf8String methodName = "iModelConnection::SendChangesetRequest";
+    const Utf8String methodName = "iModelConnection::SendChangesetRequestInternal";
 
     changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::Empty);
     
@@ -406,7 +407,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
             return StatusResult::Success();
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return StatusResult::Error(result.GetError());
             }
         });
@@ -884,7 +885,7 @@ StatusTaskPtr iModelConnection::AcquireCodesLocksInternal
     ICancellationTokenPtr               cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::AcquireCodesLocks";
+    const Utf8String methodName = "iModelConnection::AcquireCodesLocksInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     
@@ -910,7 +911,7 @@ BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return BriefcasesInfoResult::Error(result.GetError());
                 }
 
@@ -1260,7 +1261,7 @@ ICancellationTokenPtr cancellationToken
                 CodeSequence        codeSequence;
                 if (!GetCodeSequenceFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeSequence))
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Code template parse failed.");
                     return CodeSequenceResult::Error({Error::Id::InvalidPropertiesValues, ErrorLocalizedString(MESSAGE_CodeSequenceResponseError)});
                     }
 
@@ -1270,7 +1271,7 @@ ICancellationTokenPtr cancellationToken
                 }
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return CodeSequenceResult::Error(result.GetError());
                 }
             });
@@ -1304,7 +1305,7 @@ ICancellationTokenPtr cancellationToken
                 CodeSequence        codeSequence;
                 if (!GetCodeSequenceFromServerJson(json[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeSequence))
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code template parse failed.");
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Code template parse failed.");
                     return CodeSequenceResult::Error({Error::Id::InvalidPropertiesValues, ErrorLocalizedString(MESSAGE_CodeSequenceResponseError)});
                     }
 
@@ -1314,7 +1315,7 @@ ICancellationTokenPtr cancellationToken
                 }
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return CodeSequenceResult::Error(result.GetError());
                 }
             });
@@ -1349,7 +1350,7 @@ FileTaskPtr iModelConnection::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, IC
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return FileResult::Error(result.GetError());
             }
         auto fileInfo = FileInfo::Parse(*result.GetValue().GetInstances().begin());
@@ -1367,7 +1368,7 @@ bool                  loadAccessKey,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::GetChangeSetById";
+    const Utf8String methodName = "iModelConnection::GetChangeSetByIdInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (changeSetId.empty())
         {
@@ -1393,7 +1394,7 @@ ICancellationTokenPtr cancellationToken
             auto changeSetInstances = changeSetResult.GetValue().GetInstances();
             if (changeSetInstances.IsEmpty())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "ChangeSet does not exist.");
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "ChangeSet does not exist.");
                 return ChangeSetInfoResult::Error(Error::Id::ChangeSetDoesNotExist);
                 }
 
@@ -1408,7 +1409,7 @@ ICancellationTokenPtr cancellationToken
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
             return ChangeSetInfoResult::Error(changeSetResult.GetError());
             }
         });
@@ -1561,7 +1562,7 @@ StatusTaskPtr iModelConnection::SetEventSASToken(ICancellationTokenPtr cancellat
         {
         if (!sasTokenResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, sasTokenResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, sasTokenResult.GetError().GetMessage().c_str());
             return StatusResult::Error(sasTokenResult.GetError());
             }
 
@@ -1601,6 +1602,7 @@ StatusTaskPtr iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, I
             if (!setResult.IsSuccess())
                 {
                 finalResult->SetError(setResult.GetError());
+                return;
                 }
 
             finalResult->SetSuccess();
@@ -1750,7 +1752,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             }
         else
             {
@@ -1782,7 +1784,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             }
         else
             {
@@ -1807,7 +1809,7 @@ bool longpolling
 
     if (!IsSubscribedToEvents())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Not subscribed to event service.");
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Not subscribed to event service.");
         return CreateCompletedAsyncTask<EventReponseResult>
             (EventReponseResult::Error(Error::Id::NotSubscribedToEventService));
         }
@@ -1820,7 +1822,7 @@ bool longpolling
             Http::Response response = result.GetValue();
             if (response.GetHttpStatus() != HttpStatus::OK)
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return EventReponseResult::Error(Error(result.GetError()));
                 }
 
@@ -1843,7 +1845,7 @@ bool longpolling
                 }
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return EventReponseResult::Error(Error(result.GetError()));
                 }
             }
@@ -1873,7 +1875,7 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (!IsSubscribedToEvents())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Not subscribed to event service.");
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Not subscribed to event service.");
         return CreateCompletedAsyncTask<EventResult>
             (EventResult::Error(Error::Id::NotSubscribedToEventService));
         }
@@ -1888,14 +1890,14 @@ ICancellationTokenPtr cancellationToken
             EventPtr ptr = EventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
             if (ptr == nullptr)
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found."); 
                 return EventResult::Error(Error::Id::NoEventsFound);
                 }
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
             return EventResult::Success(ptr);
             }
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
         return EventResult::Error(result.GetError());
         });
     }
@@ -1977,7 +1979,7 @@ bool                        parseFileAccessKey,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::ChangeSetsFromQuery";
+    const Utf8String methodName = "iModelConnection::ChangeSetsFromQueryInternal";
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<ChangeSetsInfoResult>
         ([=](const WSObjectsResult& changeSetsInfoResult)
         {
@@ -2007,7 +2009,7 @@ ICancellationTokenPtr       cancellationToken
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsInfoResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsInfoResult.GetError().GetMessage().c_str());
             return ChangeSetsInfoResult::Error(changeSetsInfoResult.GetError());
             }
         });
@@ -2039,7 +2041,7 @@ bool                        parseFileAccessKey,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsAfterId";
+    const Utf8String methodName = "iModelConnection::GetChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<ChangeSetsInfoResult> finalResult = std::make_shared<ChangeSetsInfoResult>();
@@ -2057,7 +2059,7 @@ ICancellationTokenPtr       cancellationToken
             else
                 {
                 finalResult->SetError(changeSetsResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
                 }
             })->Then<ChangeSetsInfoResult>([=]()
                 {
@@ -2134,15 +2136,20 @@ Http::Request::ProgressCallbackCR      callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::DownloadChangeSets";
+    const Utf8String methodName = "iModelConnection::DownloadChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback);
+    double singleCallbackPercentage = changeSets.empty() ? 100.0f : 100.0f / changeSets.size();
 
     bset<std::shared_ptr<AsyncTask>> tasks;
     bmap<Utf8String, int64_t> changeSetIdIndexMap;
     for (auto& changeSet : changeSets)
         {
-        tasks.insert(DownloadChangeSetFile(changeSet, callback, cancellationToken));
+        Http::Request::ProgressCallback changeSetCallback;
+        callbacksHandlerPtr->AddCallback(changeSetCallback, singleCallbackPercentage);
+        tasks.insert(DownloadChangeSetFile(changeSet, changeSetCallback, cancellationToken));
         changeSetIdIndexMap.Insert(changeSet->GetId(), changeSet->GetIndex());
         }
 
@@ -2154,7 +2161,7 @@ ICancellationTokenPtr                  cancellationToken
             auto result = dynamic_pointer_cast<ChangeSetTask>(task)->GetResult();
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return ChangeSetsResult::Error(result.GetError());
                 }
             resultChangeSets.push_back(result.GetValue());
@@ -2174,6 +2181,7 @@ ICancellationTokenPtr                  cancellationToken
             return itemA->second < itemB->second;
             });
 
+        callbacksHandlerPtr->SetFinished();
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return ChangeSetsResult::Success(resultChangeSets);
@@ -2269,7 +2277,7 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
     {
     InitializationState initializationState = InitializationState::NotStarted;
     int retriesLeft = 300;
-    const Utf8String methodName = "Client::WaitForInitializedBIMFile";
+    const Utf8String methodName = "iModelConnection::WaitForInitializedBIMFile";
     BeThreadUtilities::BeSleep(1000);
 
     while (!IsInitializationFinished(initializationState) && retriesLeft > 0)
@@ -2277,7 +2285,7 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
         auto seedFilesResult = GetSeedFileById(fileGuid)->GetResult();
         if (!seedFilesResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFilesResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFilesResult.GetError().GetMessage().c_str()); 
             finalResult->SetError(seedFilesResult.GetError());
             return;
             }
@@ -2292,16 +2300,19 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
 
     if (initializationState != InitializationState::Success)
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not initialized.");
         switch (initializationState)
             {
             case InitializationState::Scheduled:
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Scheduled"); 
                 finalResult->SetError({ Error::Id::FileIsNotYetInitialized });
             case InitializationState::OutdatedFile:
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is outdated");
                 finalResult->SetError({ Error::Id::FileIsOutdated });
             case InitializationState::IncorrectFileId:
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File has different id");
                 finalResult->SetError({ Error::Id::FileHasDifferentId });
             default:
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File initialization failed");
                 finalResult->SetError({ Error::Id::FileInitializationFailed });
             }
         }
@@ -2357,7 +2368,7 @@ ICancellationTokenPtr             cancellationToken
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
-        return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), callback, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), nullptr, cancellationToken)
             ->Then([=] (const WSCreateObjectResult& initializePushResult)
             {
     #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -2365,7 +2376,7 @@ ICancellationTokenPtr             cancellationToken
     #endif
             if (!initializePushResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializePushResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializePushResult.GetError().GetMessage().c_str());
                 finalResult->SetError(initializePushResult.GetError());
                 return;
                 }
@@ -2388,20 +2399,20 @@ ICancellationTokenPtr             cancellationToken
     #endif
                     if (!uploadChangeSetResult.IsSuccess())
                         {
-                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadChangeSetResult.GetError().GetMessage().c_str());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, uploadChangeSetResult.GetError().GetMessage().c_str());
                         finalResult->SetError(uploadChangeSetResult.GetError());
                         return;
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
                         ->Then([=] (StatusResultCR result)
                         {
                         if (result.IsSuccess())
                             finalResult->SetSuccess();
                         else
                             {
-                            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                             finalResult->SetError(result.GetError());
                             }
                         });
@@ -2417,20 +2428,20 @@ ICancellationTokenPtr             cancellationToken
 #endif
                     if (!result.IsSuccess())
                         {
-                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                         finalResult->SetError(Error(result.GetError()));
                         return;
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
                         ->Then([=] (StatusResultCR result)
                         {
                         if (result.IsSuccess())
                             finalResult->SetSuccess();
                         else
                             {
-                            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                             finalResult->SetError(result.GetError());
                             }
                         });
@@ -2492,7 +2503,6 @@ Dgn::DgnDbCR                    dgndb,
 JsonValueR                      pushJson,
 ObjectId                        changeSetObjectId,
 bool                            relinquishCodesLocks,
-Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -2556,7 +2566,7 @@ ICancellationTokenPtr           cancellationToken
         auto errorId = Error(initializeChangeSetResult.GetError()).GetId();
         if (Error::Id::LockDoesNotExist != errorId && Error::Id::CodeDoesNotExist != errorId)
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializeChangeSetResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializeChangeSetResult.GetError().GetMessage().c_str());
             finalResult->SetError(initializeChangeSetResult.GetError());
             return;
             }
@@ -2570,7 +2580,7 @@ ICancellationTokenPtr           cancellationToken
             {
             if (!acquireCodesLocksResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, acquireCodesLocksResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, acquireCodesLocksResult.GetError().GetMessage().c_str());
                 finalResult->SetError(acquireCodesLocksResult.GetError());
                 return;
                 }
@@ -2583,7 +2593,7 @@ ICancellationTokenPtr           cancellationToken
                     finalResult->SetSuccess();
                 else
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, repeatInitializeChangeSetResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, repeatInitializeChangeSetResult.GetError().GetMessage().c_str());
                     finalResult->SetError(repeatInitializeChangeSetResult.GetError());
                     }
                 });
@@ -2746,7 +2756,7 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
 
@@ -2773,7 +2783,7 @@ StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationT
             {
             if (!result.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
 
@@ -2803,7 +2813,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
             if (!fileCreationResult.IsSuccess())
                 {
                 finalResult->SetError(fileCreationResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileCreationResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileCreationResult.GetError().GetMessage().c_str());
                 return;
                 }
 
@@ -2814,7 +2824,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                 if (!fileUpdateResult.IsSuccess())
                     {
                     finalResult->SetError(fileUpdateResult.GetError());
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileUpdateResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileUpdateResult.GetError().GetMessage().c_str());
                     return;
                     }
                 }
@@ -2828,7 +2838,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                 if (!uploadResult.IsSuccess() && Error::Id::MissingRequiredProperties != uploadResult.GetError().GetId())
                     {
                     finalResult->SetError(uploadResult.GetError());
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, uploadResult.GetError().GetMessage().c_str());
                     return;
                     }
                 InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (StatusResultCR initializationResult)
@@ -2836,7 +2846,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
                     if (!initializationResult.IsSuccess())
                         {
                         finalResult->SetError(initializationResult.GetError());
-                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializationResult.GetError().GetMessage().c_str());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializationResult.GetError().GetMessage().c_str());
                         return;
                         }
 
@@ -2873,14 +2883,14 @@ StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr can
         if (!result.IsSuccess())
             {
             finalResult->SetError(result.GetError());
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return;
             }
         auto instances = result.GetValue().GetInstances();
         if (instances.IsEmpty())
             {
             finalResult->SetError({Error::Id::FileDoesNotExist, ErrorLocalizedString(MESSAGE_SeedFileNotFound)});
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "File does not exist.");
             return;
             }
 
@@ -2890,7 +2900,7 @@ StatusTaskPtr iModelConnection::CancelSeedFileCreation(ICancellationTokenPtr can
             if (!deleteResult.IsSuccess())
                 {
                 finalResult->SetError(deleteResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, deleteResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, deleteResult.GetError().GetMessage().c_str());
                 }
             else
                 {
@@ -3160,7 +3170,7 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid briefcase.");
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid briefcase."); 
         return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Error(Error::Id::FileIsNotBriefcase));
         }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -3173,7 +3183,7 @@ ICancellationTokenPtr cancellationToken
             if (!changeSetResult.IsSuccess() && changeSetResult.GetError().GetId() != Error::Id::InvalidChangeSet)
                 {
                 finalResult->SetError(changeSetResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
                 return;
                 }
             else if (changeSetResult.IsSuccess())
@@ -3197,7 +3207,7 @@ ICancellationTokenPtr cancellationToken
                     if (!task->GetResult().IsSuccess())
                         {
                         finalResult->SetError(task->GetResult().GetError());
-                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, task->GetResult().GetError().GetMessage().c_str());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, task->GetResult().GetError().GetMessage().c_str());
                         return;
                         }
                     }
@@ -3453,14 +3463,14 @@ ICancellationTokenPtr               cancellationToken
                     }
                 else
                     {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, downloadResult.GetError().GetMessage().c_str());
                     finalResult->SetError(downloadResult.GetError());
                     }
                 });
             }
         else
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
             finalResult->SetError(changeSetsResult.GetError());
             }
         })->Then<ChangeSetsResult>([=] ()
@@ -3484,7 +3494,7 @@ StatusTaskPtr iModelConnection::VerifyConnection(ICancellationTokenPtr cancellat
                 return StatusResult::Success();
             else
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 return StatusResult::Error(result.GetError());
                 }
             });

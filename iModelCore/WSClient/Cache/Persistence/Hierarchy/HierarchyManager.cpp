@@ -234,7 +234,7 @@ bool HierarchyManager::IsInstanceHeldByOtherInstances(ECInstanceKeyCR instance)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HierarchyManager::DeleteForOneOneRelate
+BentleyStatus HierarchyManager::DeleteForCardinalityViolatingRelate
 (
 ECInstanceKeyCR source,
 ECInstanceKeyCR target,
@@ -246,11 +246,10 @@ bset<ECInstanceKey>& deletedInstancesSetOut
         (&HierarchyManager::DeleteRelationshipOnly);
 
     ECInstanceKey deletedInstanceOut;
-    //Prepare the source instance for one one relate
-    auto status = DeleteForOneOneRelate
+    auto status = DeleteForCardinalityViolatingRelate
         (
         relationshipClass,
-        relationshipClass->GetSource(),
+        relationshipClass->GetTarget().GetMultiplicity(),
         source,
         //Function to find related instance keys with regards to given instance
         std::bind(&ECDbAdapter::GetRelatedTargetKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
@@ -265,10 +264,10 @@ bset<ECInstanceKey>& deletedInstancesSetOut
     if (deletedInstanceOut.IsValid())
         deletedInstancesSetOut.insert(deletedInstanceOut);
 
-    //Prepare the target instance for one one relate
-    status = DeleteForOneOneRelate
-        (relationshipClass,
-        relationshipClass->GetTarget(),
+    status = DeleteForCardinalityViolatingRelate
+        (
+        relationshipClass,
+        relationshipClass->GetSource().GetMultiplicity(),
         target,
         std::bind(&ECDbAdapter::GetRelatedSourceKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
         //Reverse deletion function to correctly delete found source instance and given target instance
@@ -286,10 +285,10 @@ bset<ECInstanceKey>& deletedInstancesSetOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HierarchyManager::DeleteForOneOneRelate
+BentleyStatus HierarchyManager::DeleteForCardinalityViolatingRelate
 (
 ECRelationshipClassCP relationshipClass,
-ECRelationshipConstraintR relathionshipConstrain,
+RelationshipMultiplicityCR relatedInstanceCardinality,
 ECInstanceKeyCR instance,
 std::function<BentleyStatus(ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&)> getRelatedKeysFunction,
 std::function<BentleyStatus(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR)> deleteRelathionshipFunction,
@@ -297,8 +296,8 @@ ECInstanceKeyCR newRelatedInstance,
 ECInstanceKeyR deletedInstanceOut
 )
     {
-    //Check if there is one to one relathioniship
-    if (0 != RelationshipMultiplicity::Compare(relathionshipConstrain.GetMultiplicity(), RelationshipMultiplicity::OneOne()))
+    //Check if related instance has to-one cardinality
+    if (1 != relatedInstanceCardinality.GetUpperLimit())
         return SUCCESS;
 
     ECInstanceKeyMultiMap keysOut;
