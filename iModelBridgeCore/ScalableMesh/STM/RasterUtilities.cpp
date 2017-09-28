@@ -44,24 +44,32 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     else
 */
 #endif
-   if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        }    
-    else
-        {
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
-        }
 
-    pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+    try
+        {     
+       if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            }    
+        else
+            {
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            }
 
-#ifndef VANCOUVER_API
-    if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        //NEEDS_WORK_SM : Imagepp cache doesn't work with very large image.
-        //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+    #ifndef VANCOUVER_API
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            //NEEDS_WORK_SM : Imagepp cache doesn't work with very large image.
+            //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+            }
+    #endif
         }
-#endif
+    catch (HFCException& )
+        {
+        pRasterFile = nullptr;
+        }
 
     return pRasterFile;
     }
@@ -87,6 +95,11 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
+    if (pRasterFile == nullptr)
+        { 
+        HFCPtr<HRARASTER> pVoidRaster;
+        return pVoidRaster;
+        }
 
     pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
     pObjectStore = new HRSObjectStore(s_rasterMemPool,
@@ -116,6 +129,12 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
+
+    if (pRasterFile == nullptr)
+        {
+        HFCPtr<HRARASTER> pVoidRaster;
+        return pVoidRaster;
+        }
 
 	GCSCP pRasterGcs = nullptr;
 

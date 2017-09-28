@@ -1860,10 +1860,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
     if (m_scmIndexPtr == 0)
         {
         return ERROR;        
-        }
+        }   
 
     SMTextureType textureType = m_scmIndexPtr->IsTextured();
-    bool isUsingBingMap = false;
+    bool isUsingBingMap = false;    
 
     if (textureType == SMTextureType::Streaming)
         {
@@ -1890,10 +1890,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
                     break;
                     }                                
                 }
-            }        
+            } 
         }
-    
-    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap));
+
+    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable()));
 
     return SUCCESS;
     }

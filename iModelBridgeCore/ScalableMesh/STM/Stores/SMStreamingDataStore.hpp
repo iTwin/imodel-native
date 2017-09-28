@@ -1108,6 +1108,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     // assert(!"No implemented yet");
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
+    {    
+    return true;
+    }
+
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
     {
     m_settings->SetSMID(smID);

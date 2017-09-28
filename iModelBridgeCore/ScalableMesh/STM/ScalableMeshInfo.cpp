@@ -105,6 +105,11 @@ SMTextureType IScalableMeshTextureInfo::GetTextureType() const
     return _GetTextureType();
     }
 
+bool IScalableMeshTextureInfo::IsTextureAvailable() const
+    {
+    return _IsTextureAvailable();
+    }
+
 bool IScalableMeshTextureInfo::IsUsingBingMap() const
     {
     return _IsUsingBingMap();
@@ -117,15 +122,22 @@ const Byte* IScalableMeshTextureInfo::GetBingMapLogo(DPoint2d& bingMapLogoSize)
 /*----------------------------------------------------------------------------+
 |IScalableMeshTextureInfo Method Definition Section - End
 +----------------------------------------------------------------------------*/
-ScalableMeshTextureInfo::ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap)
+ScalableMeshTextureInfo::ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap, bool isTextureAvailable)
     {
+    assert(isTextureAvailable || isUsingBingMap);
     m_textureType = textureType;
     m_isUsingBingMap = isUsingBingMap;
+    m_isTextureAvailable = isTextureAvailable;
     }
 
 SMTextureType ScalableMeshTextureInfo::_GetTextureType() const
     {
     return m_textureType;
+    }
+
+bool ScalableMeshTextureInfo::_IsTextureAvailable() const
+    {
+    return m_isTextureAvailable;
     }
 
 bool ScalableMeshTextureInfo::_IsUsingBingMap() const

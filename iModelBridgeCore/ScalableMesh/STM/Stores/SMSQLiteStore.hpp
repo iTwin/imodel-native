@@ -98,8 +98,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
             //path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
-            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
-            assert(m_raster != nullptr);
+            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);        
             }
         }
 
@@ -312,6 +311,16 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
+    {
+    if (m_masterHeader.m_textured == SMTextureType::Streaming && m_raster == nullptr)
+        {   
+        return false;         
+        }
+
+    return true;
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
