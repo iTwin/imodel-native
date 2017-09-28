@@ -258,16 +258,24 @@ CachedInstances& cachedInstancesInOut
 
     // TODO: insert/update whole relationship with properties at once?
     bset<ECInstanceKey> deletedRelathionshipsOut;
-    if (SUCCESS != m_hierarchyManager.DeleteForOneOneRelate(*source, *target, relClass, deletedRelathionshipsOut))
+
+    if (SUCCESS != m_hierarchyManager.DeleteForCardinalityViolatingRelate(*source, *target, relClass, deletedRelathionshipsOut))
+        {
+        BeAssert("Failed to cache relationship instance. Unexpected error");
         return ERROR;
+        }
 
     // Deleted oneToOne relathionship should not been casched in the same response
     for (auto deletedInstance : deletedRelathionshipsOut)
         {
         if (cachedInstancesInOut.HasCachedInstance(m_relationshipInfoManager.ReadCachedRelationshipKey(deletedInstance)))
+            {
+            BeAssert("Failed to cache relationship instance. Cardinality violation");
             return ERROR;
+            }
         }
 
+    // TODO: insert/update whole relationship with properties at once
     ECInstanceKey relationshipKey = m_hierarchyManager.RelateInstances(*source, *target, relClass);
     if (!relationshipKey.IsValid())
         {
@@ -277,8 +285,7 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetInstanceId(),
-            relationshipInstance.GetProperties(), *source, *target))
+        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetInstanceId(), relationshipInstance.GetProperties()))
             {
             return ERROR;
             }

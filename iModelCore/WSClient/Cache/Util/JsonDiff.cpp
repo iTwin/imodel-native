@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/JsonDiff.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -62,7 +62,9 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
             }
 
         static rapidjson::Value s_nullValue(kNullType);
-        RapidJsonValueCR oldValue = oldJson.HasMember(newMemberItr->name.GetString()) ? oldJson[newMemberItr->name.GetString()] : s_nullValue;
+        CharCP memberName = "";
+
+        RapidJsonValueCR oldValue = HasMemberI(oldJson, newMemberItr->name.GetString(), memberName) ? oldJson[memberName] : s_nullValue;
 
         if (newMemberItr->value.GetType() == kObjectType)
             {
@@ -97,9 +99,10 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
     // Find deletions
     if (m_findDeletions)
         {
+        CharCP memberName = "";
         for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
             {
-            if (!newJson.HasMember(oldMemberItr->name.GetString()))
+            if (!HasMemberI(newJson, oldMemberItr->name.GetString(), memberName))
                 {
                 changesFound = true;
                 AddMember(jsonOut, oldMemberItr->name, Value(kNullType), allocator);
@@ -108,6 +111,25 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
         }
 
     return changesFound;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsonDiff::HasMemberI(RapidJsonValueCR json, CharCP searchMember, CharCP& memberOut)
+    {
+    bool isMemberFound = false;
+    for (auto jsonIterator = json.MemberBegin(); jsonIterator != json.MemberEnd(); ++jsonIterator)
+        {
+        if (0 != BeStringUtilities::Stricmp(searchMember, jsonIterator->name.GetString()))
+            continue;
+
+        memberOut = jsonIterator->name.GetString();
+        isMemberFound = true;
+        break;
+        }
+
+    return isMemberFound;
     }
 
 /*--------------------------------------------------------------------------------------+
