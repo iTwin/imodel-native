@@ -1414,7 +1414,7 @@ TEST(Polyface,CleanupVisiblesB)
         }
     Check::ClearGeometry ("Polyface.CleanupVisiblesB");
     }
-static int s_noisyCleanup = false;
+//static int s_noisyCleanup = false;
 
 
 void doUndercut (PolyfaceHeaderPtr &meshA, PolyfaceHeaderPtr &meshB)
