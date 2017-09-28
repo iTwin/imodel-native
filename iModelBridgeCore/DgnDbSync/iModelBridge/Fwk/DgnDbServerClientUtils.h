@@ -44,6 +44,9 @@ public:
     //! @return non-zero error status if the project ID was not found and stored in the client
     BentleyStatus QueryProjectId(WebServices::WSError* wserror, Utf8StringCR bcsProjectName);
 
+    //! Call this if you already know the project GUID
+    void SetProjectId(Utf8CP guid) {m_projectId=guid;}
+
     //! Query if the client is signed in.
     bool IsSignedIn() const {return m_client.IsValid();}
 

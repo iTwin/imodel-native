@@ -145,7 +145,8 @@ struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
     struct ServerArgs
         {
-        Utf8String m_bcsProjectName;                //!< iModelHub project
+        bool m_haveProjectGuid {};                  //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
+        Utf8String m_bcsProjectId;                  //!< iModelHub project 
         Utf8String m_repositoryName;                //!< A repository in the iModelHub project
         Http::Credentials m_credentials;            //!< User credentials
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment

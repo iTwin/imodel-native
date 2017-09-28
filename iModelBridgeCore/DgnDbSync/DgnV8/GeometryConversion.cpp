@@ -593,10 +593,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         params.SetWeight(paramsV8.GetWeight());
         }
 
-    //  NEEDSWORK LineStyles How do line style overrides interact with STYLE_BYLEVEL, overrides?
-    //  NEEDSWORK LineStyles what do we do with LINECODE?
-
-    DgnModelRefP        styleModelRef;
+    DgnModelRefP styleModelRef;
 
     if (nullptr != ovr && ovr->GetFlags().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef()) ? context.GetCurrentModel() :ovr->GetLineStyleModelRef()))
         {
@@ -605,9 +602,13 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
             InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
             }
         }
-    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
+    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
         {
-        InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), paramsV8.GetLineStyleParams());
+        DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams();
+
+        // Ugh...still need modifiers like start/end width for STYLE_BYLEVEL... :(
+        if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
+            InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
         }
 
     params.SetTransparency(paramsV8.GetTransparency());
@@ -686,6 +687,8 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
                 }
             }
         }
+
+    params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
     }
 
 /*=================================================================================**//**
@@ -1255,7 +1258,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
             m_geometry->TransformInPlace(goopTrans);
 
             // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
-            //       LineStyleParams only needs to be rotated for placement, the scale has already been accounted for...
+            //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
             m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
             }
 
@@ -1422,7 +1425,7 @@ struct PostInstancePartCacheAppData: BeSQLite::Db::AppData
 {
 protected:
 
-typedef bmap<DgnGeometryPartId, DgnGeometryPartCPtr> T_PartIdToGeom;
+typedef bmap<DgnGeometryPartId, GeometricPrimitivePtr> T_PartIdToGeom;
 T_PartIdToGeom m_map;
 
 public:
@@ -1433,7 +1436,7 @@ static BeSQLite::Db::AppData::Key const& GetKey()
     return s_key;
     }
 
-static DgnGeometryPartCPtr GetPart(DgnGeometryPartId partId, DgnDbR db)
+static GeometricPrimitivePtr GetPart(DgnGeometryPartId partId, DgnDbR db)
     {
     auto cache = (PostInstancePartCacheAppData*) db.FindAppData(GetKey());
 
@@ -1447,7 +1450,28 @@ static DgnGeometryPartCPtr GetPart(DgnGeometryPartId partId, DgnDbR db)
 
     if (found == cache->m_map.end())
         {
-        cache->m_map[partId] = db.Elements().Get<DgnGeometryPart>(partId);
+        DgnGeometryPartCPtr partGeom = db.Elements().Get<DgnGeometryPart>(partId);
+        GeometricPrimitivePtr geom;
+
+        if (partGeom.IsValid())
+            {
+            GeometryCollection collection(partGeom->GetGeometryStream(), db);
+
+            for (auto iter : collection)
+                {
+                GeometricPrimitivePtr thisGeom = iter.GetGeometryPtr();
+
+                if (geom.IsValid())
+                    {
+                    geom = nullptr; // Post instance parts should only have a single geometric primitive...
+                    break;
+                    }
+
+                geom = thisGeom;
+                }
+            }
+
+        cache->m_map[partId] = geom;
         found = cache->m_map.find(partId);
         }
 
@@ -1517,6 +1541,19 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+
+    // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
+    //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok 
+    //       that we only account for scale here in _ProcessCurveVector.
+    if (pathEntry.m_geomParams.IsTransformable())
+        {
+        RotMatrix   rMatrix, rotation, skewFactor;
+
+        DoInterop(m_currentTransform).GetMatrix(rMatrix);
+
+        if (rMatrix.RotateAndSkewFactors(rotation, skewFactor, 0, 1) && !skewFactor.IsIdentity())
+            pathEntry.m_geomParams.ApplyTransform(Transform::From(skewFactor));
+        }
 
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
@@ -2181,6 +2218,9 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             {
             if (0.0 == pathEntry.m_partScale)
                 return; // Not suitable for creating a part, ex. non-uniform scale...
+
+            if (pathEntry.m_curve.IsValid() && pathEntry.m_geomParams.HasStrokedLineStyle())
+                return;
             }
         }
 
@@ -2285,31 +2325,32 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPath const& path)
     {
-#if defined (NOT_NOW_TOO_SLOW_TFS_752781)
     if (!m_model.Is3d())
         return false;
 
-    // Reject text as instancing may have undesirable ramifications for editing, etc.
-    if (GeometricPrimitive::GeometryType::TextString == geometry.GetGeometryType())
-        return false;
-            
-    Bentley::ElementRefP elRef = path.GetCursorElem();
+    // NOTE: Determine if geometry is worth instancing.
+    //       Always reject text. Instancing may have undesirable ramifications for editing, etc.
+    //       Always reject line/point strings! The CurveVector round trips as a CurvePrimitive from GeometryCollection so the type check always fails!!!
+    switch (geometry.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+        case GeometricPrimitive::GeometryType::Polyface:
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            break;
 
-    // XGraphics symbols have already had their chance...don't want to attempt post-instance of those rejected for non-uniform scale, etc.
-    if (DgnV8Api::XGraphicsContainer::IsXGraphicsSymbol(elRef))
-        return false;
+        default:
+            return false;
+        }
+
+    Bentley::ElementRefP elRef = path.GetCursorElem();
 
     if (elRef->IsComplexComponent())
         elRef = elRef->GetOutermostParentOrSelf();
 
-    // Shared cells have already had their chance...
-    if (DgnV8Api::SHARED_CELL_ELM == elRef->GetElementType() || DgnV8Api::SHAREDCELL_DEF_ELM == elRef->GetElementType())
-        return false;
-
-    // Normal cell components are good candidates for post-instancing...
+    // Normal cell components are good candidates for post-instancing...and it shouldn't be a huge problem if we create a part and don't find other instances...
     if (DgnV8Api::CELL_HEADER_ELM == elRef->GetElementType() && !elRef->GetUnstableMSElementCP()->hdr.dhdr.props.b.h)
         return true;
-#endif
 
     return false;
     }
@@ -2319,73 +2360,12 @@ bool IsValidForPostInstancing(GeometricPrimitiveR geometry, DgnV8Api::DisplayPat
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsMatchingPartGeometry(DgnGeometryPartId partId, DgnDbR db, GeometricPrimitiveR geometry)
     {
-    GeometricPrimitive::GeometryType geomType = geometry.GetGeometryType();
+    GeometricPrimitivePtr partGeometry = PostInstancePartCacheAppData::GetPart(partId, db);
 
-    if (GeometricPrimitive::GeometryType::TextString == geomType)
-        return false; // Don't post-instance text...
-
-    DgnGeometryPartCPtr partGeometry = PostInstancePartCacheAppData::GetPart(partId, db);
-
-    if (!partGeometry.IsValid())
+    if (!partGeometry.IsValid() || !partGeometry->IsSameStructureAndGeometry(geometry, 1.0e-5))
         return false;
 
-    bool foundMatch = false;
-    GeometryCollection collection(partGeometry->GetGeometryStream(), db);
-
-    for (auto iter : collection)
-        {
-        if (foundMatch)
-            return false; // Shouldn't be anything else in GeometryStream after a matching GeometricPrimitive...
-
-        // First do a quick type compare to avoid unnecessary deserialization of part geometry...
-        switch (iter.GetEntryType())
-            {
-            case GeometryCollection::Iterator::EntryType::CurvePrimitive:
-                if (GeometricPrimitive::GeometryType::CurvePrimitive != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::CurveVector:
-                if (GeometricPrimitive::GeometryType::CurveVector != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::SolidPrimitive:
-                if (GeometricPrimitive::GeometryType::SolidPrimitive != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::BsplineSurface:
-                if (GeometricPrimitive::GeometryType::BsplineSurface != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::Polyface:
-                if (GeometricPrimitive::GeometryType::Polyface != geomType)
-                    return false;
-                break;
-
-            case GeometryCollection::Iterator::EntryType::BRepEntity:
-                if (GeometricPrimitive::GeometryType::BRepEntity != geomType)
-                    return false;
-                break;
-
-            default:
-                return false;
-            }
-
-        GeometricPrimitivePtr instanceGeom = iter.GetGeometryPtr();
-
-        if (!instanceGeom.IsValid())
-            return false;
-
-        if (!instanceGeom->IsSameStructureAndGeometry(geometry, 1.0e-5))
-            return false;
-
-        foundMatch = true;
-        }
-
-    return foundMatch;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2418,8 +2398,28 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
 
         partBuilder->Append(geometry);
 
-        if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+        if (SUCCESS == partBuilder->Finish(*geomPart))
+            {
+            bool isValidInstance = (GeometricPrimitive::GeometryType::BRepEntity != geometry.GetGeometryType());
+
+            // NOTE: Don't create instance for a bad/failed brep. Polyface/CurveVector from part will never match so we'd end up with singleton parts...
+            if (!isValidInstance)
+                {
+                GeometryCollection collection(geomPart->GetGeometryStream(), m_model.GetDgnDb());
+
+                for (auto iter : collection)
+                    {
+                    if (GeometryCollection::Iterator::EntryType::BRepEntity != iter.GetEntryType())
+                        continue;
+
+                    isValidInstance = true;
+                    break;
+                    }
+                }
+
+            if (isValidInstance && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+            }
         }
 
     builder.Append(params);

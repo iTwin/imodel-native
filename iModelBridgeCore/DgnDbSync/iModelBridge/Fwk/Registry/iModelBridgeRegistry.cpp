@@ -749,6 +749,17 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
     return 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+    {
+    RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, iModelName);
+    if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
+        return nullptr;
+    return reg;
+    }
+
 /*
 "Don't pass empty string to bridge"
 

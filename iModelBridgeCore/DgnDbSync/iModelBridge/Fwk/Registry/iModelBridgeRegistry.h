@@ -70,14 +70,16 @@ private:
 
     static void InitCrt(bool quietAsserts);
 
-public:
     iModelBridgeRegistry(BeFileNameCR stagingDir, Utf8StringCR iModelName);
     ~iModelBridgeRegistry();
 
+public:
     //! @private
     static int ComputeAffinityMain(int argc, WCharCP argv[]);
     //! @private
     static int AssignMain(int argc, WCharCP argv[]);
+    //! @private
+    static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName);
 
 };
 

@@ -10,6 +10,7 @@
 #include <iModelBridge/iModelBridge.h>
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
+#include <iModelBridge/iModelBridgeFwk.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -444,3 +445,30 @@ TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
     db->SaveChanges();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, FwkArgs)
+    {
+    bvector<WString> args;
+    args.push_back(L"dummyarg0");
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", GetOutputDir().c_str()));
+    args.push_back(L"--server-environment=dev");
+    args.push_back(L"--server-repository=reponame");
+    args.push_back(L"--server-project-guid=projname");
+    args.push_back(L"--fwk-create-repository-if-necessary");
+    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+    args.push_back(L"--server-user=username=username");
+    args.push_back(L"--server-password=\"password><!@\"");
+    args.push_back(L"--fwk-bridge-regsubkey=regsubkey");
+    args.push_back(L"--fwk-input=rootfilename");
+
+    bvector<WCharCP> argptrs;
+    for (auto& arg: args)
+        argptrs.push_back(arg.c_str());
+
+    iModelBridgeFwk fwk;
+    ASSERT_EQ(BSISUCCESS, fwk.ParseCommandLine((int)argptrs.size(), argptrs.data()));
+
+    // Too bad - there's almost nothing we can test in the fwk. We'd need to connect to iModelHub to check the real validity of the parameters.
+    }
