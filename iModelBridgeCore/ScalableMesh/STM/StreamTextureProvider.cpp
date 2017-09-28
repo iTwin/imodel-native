@@ -52,13 +52,11 @@ StatusInt StreamTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     return SUCCESS;
     }
 
-StreamTextureProvider::StreamTextureProvider(WString url, DRange3d totalExtent, GeoCoordinates::BaseGCSCPtr targetCS)
+StreamTextureProvider::StreamTextureProvider(HFCPtr<HRARASTER>& textureSource, DRange3d totalExtent)
     {
-    m_totalExt = totalExtent;
-
-    DRange2d extent2d = DRange2d::From(m_totalExt);
-    auto mapBoxRaster = RasterUtilities::LoadRaster(url, targetCS, extent2d);
+    m_totalExt = totalExtent;    
+    
     HGF2DExtent maxExt;
-    mapBoxRaster->GetPixelSizeRange(m_minExt, maxExt);
-    m_minExt.ChangeCoordSys(mapBoxRaster->GetCoordSys());
+    textureSource->GetPixelSizeRange(m_minExt, maxExt);
+    m_minExt.ChangeCoordSys(textureSource->GetCoordSys());
     }

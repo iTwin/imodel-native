@@ -440,7 +440,16 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     DRange3d range;
     m_scmPtr->GetRange(range);
     BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
-    ITextureProviderPtr mapboxPtr = new StreamTextureProvider(url, range, cs);
+
+    DRange2d extent2d = DRange2d::From(range);
+    HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
+
+    if (streamingRaster == nullptr)
+        {
+        return ERROR;
+        }
+
+    ITextureProviderPtr mapboxPtr = new StreamTextureProvider(streamingRaster, range);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
 	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
 	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
