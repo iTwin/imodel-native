@@ -172,6 +172,8 @@ enum class RevisionStatus : int
     WrongDgnDb, //!< Revision originated in a different Db
     CouldNotOpenDgnDb, //!< Could not open the DgnDb to merge revision
     MergeSchemaChangesOnOpen, //! Cannot merge schema change in a previously opened DgnDb. Merge it when the file is opened. 
+    CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
+    CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
     };
 
 //=======================================================================================

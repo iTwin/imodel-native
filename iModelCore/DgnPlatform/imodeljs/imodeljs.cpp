@@ -232,7 +232,7 @@ DbResult IModelJs::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, Js
         PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), BE_SQLITE_ERROR);
 
         Utf8String id = changeSetToken["id"].asString();
-        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : "";
+        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : db->Revisions().GetParentRevisionId();
 
         RevisionStatus revStatus;
         DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
@@ -269,7 +269,7 @@ DbResult IModelJs::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, Js
 //---------------------------------------------------------------------------------------
 void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
-    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
+    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(rowJson, true);
     }
 

@@ -381,7 +381,7 @@ DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFile
         BeFileName briefcasePath;
         for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
             {
-            if (!isDir)
+            if (!isDir || briefcasePath.GetBaseName().Equals(L"csets"))
                 continue;
             BeFileName briefcasePathname;
             BeDirectoryIterator briefcasePathnames(briefcasePath);
