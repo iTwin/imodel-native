@@ -45,7 +45,7 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
@@ -68,7 +68,7 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
         {
         if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             return ChangeSetsResult::Error(result.GetError());
             }
 
@@ -94,7 +94,7 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
@@ -138,7 +138,7 @@ StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Htt
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
@@ -217,8 +217,8 @@ StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Htt
         else
             {
             m_db->Revisions().AbandonCreateRevision();
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetMessage().c_str());
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetDescription().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pushResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pushResult.GetError().GetDescription().c_str());
             return StatusResult::Error(pushResult.GetError());
             }
         });
@@ -240,7 +240,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 #endif
     if (!result.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Pull failed.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Pull failed.");
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result.GetError()));
         }
 
@@ -275,7 +275,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquis
 //---------------------------------------------------------------------------------------
 void Briefcase::WaitForChangeSetEvent() const
     {
-    const Utf8String methodName = "Briefcase::WaitForStart";
+    const Utf8String methodName = "Briefcase::WaitForChangeSetEvent";
     int iterationsLeft = 100;
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to wait.");
 
@@ -298,7 +298,7 @@ void Briefcase::WaitForChangeSetEvent() const
 //---------------------------------------------------------------------------------------
 void Briefcase::SubscribeForChangeSetEvents()
     {
-    const Utf8String methodName = "Briefcase::SubscribeForPullMergeAndPushEvents";
+    const Utf8String methodName = "Briefcase::SubscribeForChangeSetEvents";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     EventTypeSet eventTypes;
@@ -363,7 +363,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool r
             break;
         default:
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
             UnsubscribeChangeSetEvents();
             return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result.GetError()));
             }
@@ -420,7 +420,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidiModelConnection));
         }
     if (m_db->IsReadonly())
@@ -454,7 +454,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
             {
             if (!pushResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pushResult.GetError().GetMessage().c_str());
                 finalResult->SetError(pushResult.GetError());
                 }
             else
@@ -484,7 +484,7 @@ BoolTaskPtr Briefcase::IsBriefcaseUpToDate(ICancellationTokenPtr cancellationTok
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<BoolResult> (BoolResult::Error(Error::Id::InvalidiModelConnection));
         }
 
@@ -505,7 +505,7 @@ BoolTaskPtr Briefcase::IsBriefcaseUpToDate(ICancellationTokenPtr cancellationTok
             return BoolResult::Success(pendingChangeSets <= 0); //If there are not pending changeSets we are up to date
             }
 
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
         return BoolResult::Error(result.GetError());
         });
     }
@@ -541,7 +541,7 @@ StatusTaskPtr Briefcase::UnsubscribeEventsCallback(EventCallbackPtr callback) co
         }
     if (m_imodelConnection.IsNull())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel connection.");
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelConnection));
         }
 
@@ -555,7 +555,7 @@ StatusTaskPtr Briefcase::UnsubscribeEventsCallback(EventCallbackPtr callback) co
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::UpdateToVersion";
+    const Utf8String methodName = "Briefcase::UpdateToVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -570,7 +570,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 
     if (!changeSetResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
         }
     auto changeSetInfos = changeSetResult.GetValue();
@@ -578,7 +578,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
     auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
         }
     auto changeSets = changeSetsResult.GetValue();
@@ -600,7 +600,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::UpdateToChangeSet";
+    const Utf8String methodName = "Briefcase::UpdateToChangeSet";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -614,7 +614,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
 
     if (!changeSetResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
         }
     auto changeSetInfos = changeSetResult.GetValue();
@@ -622,7 +622,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
     auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
         }
     auto changeSets = changeSetsResult.GetValue();
@@ -655,7 +655,7 @@ RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) co
     4. Some ChangeSets should be reinstated and some merged(added)/First part of ChangeSets has been reversed and others are new ChangeSets
        In this case reinstations step and then merge step are done.
     */
-    const Utf8String methodName = "Client::AddRemoveChangeSetsFromDgnDb";
+    const Utf8String methodName = "Briefcase::AddRemoveChangeSetsFromDgnDb";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (changeSets.size() <= 0)

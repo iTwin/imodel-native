@@ -39,13 +39,13 @@ unsigned __stdcall EventManagerThread(void* arg)
         EventManagerContextPtr* managerContextPtr = (EventManagerContextPtr*)arg;
         if (nullptr == managerContextPtr)
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid argument.");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid argument.");
             return 0;
             }
         EventManagerContextPtr managerContext = *managerContextPtr;
         if (managerContext.IsNull())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid context.");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid context.");
             return 0;
             }
         managerContext->GetConditionVariable().notify_one();
@@ -103,15 +103,15 @@ unsigned __stdcall EventManagerThread(void* arg)
         }
     catch (std::exception const& e)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_ERROR, "EventManagerThread", e.what());
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", e.what());
         }
     catch (Utf8StringCR message)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_ERROR, "EventManagerThread", message.c_str());
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", message.c_str());
         }
     catch (...)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_ERROR, "EventManagerThread", "Unknown exception");
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", "Unknown exception");
         }
     
     return 0;
@@ -206,13 +206,13 @@ StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr
         {
         if (!subscribeResult.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, subscribeResult.GetError().GetMessage().c_str());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, subscribeResult.GetError().GetMessage().c_str());
             return subscribeResult;
             }
 
         if (!Start())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Thread start failed");
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Thread start failed");
             return StatusResult::Error(Error::Id::EventServiceSubscribingError);
             }
 
