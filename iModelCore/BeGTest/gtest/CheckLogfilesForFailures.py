@@ -107,6 +107,16 @@ def checkLogFileForFailures(logfilename):
     lines=''
     global failedTestsDic
     failedTestsDic={}
+
+    # Always print full log files on firebug/PRG so downstream consumers of firebug's logs can better analyze test run history.
+    shouldPrintAllLogs = ("PRG" in os.environ)
+    if shouldPrintAllLogs:
+        print("BEGIN_TEST_LOG " + logfilename)
+        with open(logfilename, 'r') as logfile:
+            for line in logfile.readlines():
+                sys.stdout.write(line)
+        print("END_TEST_LOG " + logfilename)
+
     with open(logfilename, 'r') as logfile:
         lines=logfile.readlines()
         for line in lines:
@@ -179,7 +189,8 @@ def checkLogFileForFailures(logfilename):
         advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + failedTestsList
         advicestr = advicestr + "\n"
 
-    if anyFailures or not foundSummary:
+    # Only re-print log if we didn't already spit it out above for other reasons.
+    if (anyFailures or not foundSummary) and not shouldPrintAllLogs:
         # When we detect failing or crashing tests, print the whole log. That will then go into bb's build log.
         # The user will want to scroll up to see complete details.
         print '************ ' + logfilename + ' ******************'
