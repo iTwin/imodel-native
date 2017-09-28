@@ -2263,7 +2263,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredPar
         {
         ASSERT_FALSE(childClass == nullptr);
         Json::Value instance;
-        instance["ParentId"][ECJsonUtilities::json_navId()] = a.GetInstanceId().ToString();
+        instance["ParentId"][ECJsonUtilities::json_navId()] = a.GetInstanceId().ToHexStr();
         ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *childClass, nullptr).Insert(b, instance));
         rel = ECInstanceKey(relClass->GetId(), b.GetInstanceId());
 
