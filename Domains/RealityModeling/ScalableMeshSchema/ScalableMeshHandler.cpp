@@ -972,7 +972,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (m_smPtr == 0) return; //if open failed, we can't draw anything
 
     // BingMaps Brand logo for legal purpose.
-    if (m_isUsingBingMap)
+    if (m_textureInfo->IsUsingBingMap() && m_textureInfo->IsTextureAvailable())
         {
         DPoint2d bitmapSize;
     
@@ -1071,7 +1071,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
                 
-        if (m_isUsingBingMap)
+        if (m_textureInfo->IsUsingBingMap())
             {
             viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
             }
@@ -1348,8 +1348,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_subModel = false;
     m_loadedAllModels = false;
     m_startClipCount = 0;
-
-    m_isUsingBingMap = false;
+    
     m_displayTexture = true;
     }
 
@@ -1602,14 +1601,15 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, m_path, basePath);
-
-    IScalableMeshTextureInfoPtr textureInfo;
-
-    StatusInt result = m_smPtr->GetTextureInfo(textureInfo);
+  
+    StatusInt result = m_smPtr->GetTextureInfo(m_textureInfo);
 
     assert(result == SUCCESS);
 
-    m_isUsingBingMap = textureInfo->IsUsingBingMap();
+    if (!m_textureInfo->IsTextureAvailable())
+        {
+        SetDisplayTexture(false);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -2248,6 +2248,12 @@ bool ScalableMeshModel::HasTerrain()
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetDisplayTexture(bool displayTexture)
     {
+    if (!m_textureInfo->IsTextureAvailable() && displayTexture == true)
+        { 
+        assert(!"Texture source is unavailable. Cannot turn on texture.");
+        return;
+        }
+
     if (m_displayTexture != displayTexture)
         { 
         m_displayTexture = displayTexture;
