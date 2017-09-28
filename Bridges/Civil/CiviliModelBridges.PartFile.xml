@@ -67,6 +67,7 @@
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
         <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
