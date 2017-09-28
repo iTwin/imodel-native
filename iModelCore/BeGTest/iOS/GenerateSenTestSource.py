@@ -45,6 +45,7 @@ def processDir (rootDir, dirNameIn, listfilename, senTestTemplate, XCodeProject_
             print ''
             print 'always:'
             print '     @cat ' + tmpTestFilePath + ' >> ' + testFilePath
+            print '     @python $(baseDir)StripEmptyLines.py ' + testFilePath
             print ''
 
 def main():
