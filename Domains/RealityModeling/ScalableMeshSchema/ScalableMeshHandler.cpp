@@ -1219,11 +1219,12 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain)
+void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain, bool& hasCesium3DTiles)
     {    
     has3D = false; 
     hasTerrain = false;
     hasExtractedTerrain = false;
+    hasCesium3DTiles = false;
 
     bvector<IMeshSpatialModelP> smModels;
 
@@ -1241,8 +1242,9 @@ void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, boo
                 {
                 bvector<uint64_t> ids;
                 sm->GetCoverageIds(ids);
-
                 if (ids.size() > 0) hasExtractedTerrain = true;
+
+                if (sm->IsCesium3DTiles()) hasCesium3DTiles = true;
                 }
 
             has3D = true;
