@@ -123,7 +123,7 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_Co
     auto infos = CacheQueryHelper(options).CreateReadInfos(schema->GetClassCP("Table"));
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
-    EXPECT_TRUE(Utf8String::npos != ecSql.find("SELECT info.[remoteId], instance.* FROM"));
+    EXPECT_TRUE(Utf8String::npos != ecSql.find("SELECT info.[RemoteId], instance.* FROM"));
     }
 
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_ConstructsJoinWithInfo)
@@ -134,7 +134,7 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_Co
     auto infos = CacheQueryHelper(options).CreateReadInfos(schema->GetClassCP("Table"));
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
-    EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[instanceId] = instance.ECInstanceId"));
+    EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[InstanceId] = instance.ECInstanceId"));
     }
 
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithOrderBy_ConstructsQueryWithOrderBy)
@@ -192,5 +192,5 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithRemo
     auto infos = CacheQueryHelper(options).CreateReadInfos(schema->GetClassCP("Table"));
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
-    EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[instanceId] = instance.ECInstanceId"));
+    EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[InstanceId] = instance.ECInstanceId"));
     }
