@@ -1373,4 +1373,4 @@ void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) { m_o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Clear() {m_cache.clear();}
+void ECExpressionsCache::Clear() {m_cache.clear(); m_optimizedCache.clear();}

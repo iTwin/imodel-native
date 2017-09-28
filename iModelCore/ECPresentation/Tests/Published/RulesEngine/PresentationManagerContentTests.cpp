@@ -5004,6 +5004,114 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsEnumsArrayPropertyValue, R"*(
+    <ECEnumeration typeName="MyEnum" backingTypeName="int" isStrict="True" displayLabel="My Enum">
+        <ECEnumerator value="1" displayLabel="One" />
+        <ECEnumerator value="2" displayLabel="Two" />
+        <ECEnumerator value="3" displayLabel="Three" />
+    </ECEnumeration>
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="EnumsArray" typeName="MyEnum" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("EnumsArray", 2);
+        instance.SetValue("EnumsArray", ECValue(2), 0);
+        instance.SetValue("EnumsArray", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("EnumsArray", 3);
+        instance.SetValue("EnumsArray", ECValue(1), 0);
+        instance.SetValue("EnumsArray", ECValue(2), 1);
+        instance.SetValue("EnumsArray", ECValue(3), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsEnumsArrayPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Array",
+        "TypeName": "MyEnum[]",
+        "MemberType": {
+            "ValueFormat": "Primitive",
+            "TypeName": "MyEnum"
+            }
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"(
+        {
+        "MyClass_EnumsArray": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    rapidjson::Document expectedDisplayValues1;
+    expectedDisplayValues1.Parse(R"(
+        {
+        "MyClass_EnumsArray": ["Two", "One"]
+        })");
+    EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["DisplayValues"]);
+
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"(
+        {
+        "MyClass_EnumsArray": [1, 2, 3]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    rapidjson::Document expectedDisplayValues2;
+    expectedDisplayValues2.Parse(R"(
+        {
+        "MyClass_EnumsArray": ["One", "Two", "Three"]
+        })");
+    EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["DisplayValues"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsStructPropertyValue, R"*(
     <ECStructClass typeName="MyStruct">
         <ECProperty propertyName="IntProperty" typeName="int" />
@@ -5911,6 +6019,131 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FormatsPrimitiveArrayPropertyValues, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayPropertyValues)
+    {
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("FormatsPrimitiveArrayPropertyValues", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(R"(
+        {
+        "MyClass_ArrayProperty": ["_2_", "_1_"]
+        })");
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FormatsStructPropertyValues, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues)
+    {
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("FormatsStructPropertyValues", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->GetSpecificationsR().push_back(spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": "_123_",
+           "StringProperty": "_abc_"
+           }
+        })");
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
