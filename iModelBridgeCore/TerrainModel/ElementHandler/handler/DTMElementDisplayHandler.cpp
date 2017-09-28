@@ -146,28 +146,38 @@ bool IsValidTransformation (TransformCP transform)
     if (transform)
         {
         DPoint3d fixedPoint;
-        DPoint3d directionVector;
-        double radians;
+        //DPoint3d directionVector;
+        //double radians;
         double scale;
         RotMatrix mat;
+        DVec3d normal;
 
         transform->getMatrix (&mat);
 
         if (mat.isIdentity ())
             return true;
 
-        if(transform->isUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &radians, &scale))
-            {
-            DVec3d upV;
-            DVec3d matZ;
-            upV.init (0, 0, scale);
-            mat.getRow (&matZ, 2);
+        if (!transform->IsPlanar(DVec3d::From(0, 0, 1)))
+            return false;
 
-            if (matZ.isEqual (&upV, 1.0e-10))
-                {
-                return true;
-                }
-            }
+        if (transform->IsMirrorAboutPlane(fixedPoint, normal))
+            return false;
+
+        if (!transform->IsUniformScale(fixedPoint, scale))
+            return false;
+
+        //if(transform->isUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &radians, &scale))
+        //    {
+        //    DVec3d upV;
+        //    DVec3d matZ;
+        //    upV.init (0, 0, scale);
+        //    mat.getRow (&matZ, 2);
+
+        //    if (matZ.isEqual (&upV, 1.0e-10))
+        //        {
+        //        return true;
+        //        }
+        //    }
         }
     return false;
     }
@@ -491,8 +501,9 @@ struct DTMStrokeForCacheHull : IDTMStrokeForCache
 //=======================================================================================
 int geoconvertFunction (DPoint3d* pts, size_t numPoints, void* userP)
     {
-    IGeoCoordinateReprojectionHelper* helper = (IGeoCoordinateReprojectionHelper*)userP;
-    helper->ReprojectPoints (pts, nullptr, nullptr, pts, (int)numPoints);
+    IGeoCoordinateReprojectionHelper* geo = (IGeoCoordinateReprojectionHelper*)userP;
+
+    geo->ReprojectPoints (pts, nullptr, nullptr, pts, (int)numPoints);
     return SUCCESS;
     }
 
@@ -524,18 +535,20 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
         DPoint3d origin;
 
         ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetTransformOrigin (element, origin);
-
+        
         TransformInfo   transform;
+        bool useTransform = false;
         transform.SetOptions (TRANSFORM_OPTIONS_ApplyAnnotationScale);
         if (geo.GetLocalTransform (&transform.GetTransformR(), origin, NULL, true, true) == SUCCESS)
             {
+            useTransform = true;
             if (IsValidTransformation(&transform.GetTransformR()))
                 if (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).ApplyTransform (element, transform) == SUCCESS)
                 return REPROJECT_Success;
             }
 
         DTMPtr dtm;
-        dtmDataRef->GetDTMReferenceStorage (dtm);
+        dtmDataRef->GetDTMReferenceDirect (dtm);
         BcDTMPtr bcdtm = dtm->GetBcDTM();
 
         if (dtmDataRef->GetElement().GetDgnModelP()->IsReadOnly ())
@@ -545,7 +558,10 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
             DTMElementHandlerManager::GetStorageToUORMatrix (mtrx, element.GetModelRef(), element, false);
             bcdtm = bcdtm->Clone ();
 
-            bcdtm->TransformUsingCallback (&geoconvertFunction, &geo);
+            if (useTransform)
+                bcdtm->Transform(transform.GetTransformR());
+            else
+                bcdtm->TransformUsingCallback (&geoconvertFunction, &geo);
             ElementRefP ref = element.GetElementRef ();
             element.SetElementRef (nullptr, element.GetModelRef());
             BcDTMPtr dtm = BcDTM::CreateFromDtmHandle (*bcdtm->GetTinHandle());
@@ -557,7 +573,10 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
             {
             bcdtm->SetMemoryAccess (DTMAccessMode::Write);
 
-            bcdtm->TransformUsingCallback (&geoconvertFunction, &geo);
+            if (useTransform)
+                bcdtm->Transform(transform.GetTransformR());
+            else
+                bcdtm->TransformUsingCallback (&geoconvertFunction, &geo);
             }
         element.GetDisplayHandler()->ValidateElementRange(element, true);
 

@@ -13,7 +13,7 @@
 +----------------------------------------------------------------------*/
 #include <math.h>
 #include <TerrainModel/TerrainModel.h>
-
+#include <Geom\msgeomstructs.h>
 #include <bcDTMBaseDef.h>
 #include <dtmevars.h>
 
@@ -171,15 +171,19 @@ class TransformPointsCallbackTransformHelper
             m_helper = helper;
             m_userP = userP;
             }
+        bool needsHelperTransform() const
+            {
+            return (m_helper != nullptr && !m_helper->IsIdentity());
+            }
         void* GetUserArg ()
             {
-            if (m_helper && !m_helper->IsIdentity ())
+            if (needsHelperTransform())
                 return this;
             return m_userP;
             }
         DTMTransformPointsCallback GetCallBackFunc ()
             {
-            if (m_helper && !m_helper->IsIdentity ())
+            if (needsHelperTransform())
                 return &TransformFunction;
             return m_callBackFunctP;
             }
@@ -3168,14 +3172,45 @@ DTMStatusInt BcDTM::Transform (TransformCR trsfMatP)
     BC_DTM_OBJ* dtmHandleP = GetTinHandle();
     double dtmTransform[3][4] ;
 
-    // ToDo Translatation???
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
         bcdtmWrite_message(1,0,0, "DTM is readonly");
         return DTM_ERROR;
         }
 
-    memcpy (dtmTransform, &trsfMatP, 12 * sizeof(double)) ;
+    if (_dtmTransformHelper.IsNull())
+        memcpy (dtmTransform, &trsfMatP, 12 * sizeof(double)) ;
+    else
+        {
+        Bentley::Transform transformTo;
+        Bentley::Transform transformFrom;
+        Bentley::Transform transform;
+        Bentley::Transform transform2;
+
+        _dtmTransformHelper->GetTransformationFromDTM(transformFrom);
+        _dtmTransformHelper->GetTransformationToDTM(transformTo);
+
+        transform = Bentley::Transform::FromProduct(trsfMatP, transformFrom);
+        transform2 = Bentley::Transform::FromProduct(transformTo, transform);
+        transform = transform2;
+
+        memcpy (dtmTransform, &transform, 12 * sizeof(double)) ;
+
+        DPoint3d test = DPoint3d::From(dtmHandleP->xMin, dtmHandleP->yMin);
+
+        DPoint3d test2 = test;
+
+        _dtmTransformHelper->convertPointFromDTM(test2);
+        trsfMatP.Multiply(test2);
+        _dtmTransformHelper->convertPointToDTM(test2);
+
+        transform.Multiply(test);
+
+        if (!test.IsEqual(test2))
+            BeAssert(false);
+
+
+        }
 
     // Call Core DTM Function
 
