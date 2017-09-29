@@ -3381,16 +3381,37 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     DVec3d  taperDir = DVec3d::FromStartEndNormalize(offsetPt, extremePt);
     double  angle = fabs(normal.AngleTo(taperDir));
 
+    if (angle < Angle::FromDegrees(1.0).Radians() || angle > Angle::FromDegrees(89.0).Radians())
+        return ERROR;
+
+#if defined (NOT_NOW)
+    PK_SURF_t    surfaceTag = PK_ENTITY_null;
+    PK_LOGICAL_t orientation = PK_LOGICAL_true;
+    bool         refFaceReversed = (SUCCESS == PK_FACE_ask_oriented_surf(PSolidSubEntity::GetSubEntityTag(*refFacePtr), &surfaceTag, &orientation) && PK_LOGICAL_false == orientation);
+    bool         extFaceReversed = (SUCCESS == PK_FACE_ask_oriented_surf(PSolidSubEntity::GetSubEntityTag(*extremePtr), &surfaceTag, &orientation) && PK_LOGICAL_false == orientation);
+
+    printf(">>> Angle: %lf Dot: %lf Orient: %d-%d\n", Angle::FromRadians(angle).Degrees(), offsetDir.DotProduct(refFaceNormal), refFaceReversed, extFaceReversed);
+
+    if (offsetDir.DotProduct(DVec3d::FromNormalizedCrossProduct(refEdgeTangent, normal)) < 0.0)
+        angle = -angle;
+
+    if (extFaceReversed)
+        angle = -angle;
+
+    if (refFaceReversed)
+        {
+        if (offsetDir.DotProduct(refFaceNormal) > 0.0)
+            angle = -angle;
+        }
+    else
+        {
+        if (offsetDir.DotProduct(refFaceNormal) < 0.0)
+            angle = -angle;
+        }
+#endif
+
     if (offsetDir.DotProduct(refFaceNormal) < 0.0)
         angle = -angle;
-
-    PK_SURF_t    surfaceTag;
-    PK_LOGICAL_t orientation;
-
-    if (SUCCESS == PK_FACE_ask_oriented_surf(PSolidSubEntity::GetSubEntityTag(*extremePtr), &surfaceTag, &orientation) && PK_LOGICAL_false == orientation)
-        angle = -angle;
-
-//    printf(">>> Angle: %lf Dot: %lf\n", Angle::FromRadians(angle).Degrees(), offsetDir.DotProduct(refFaceNormal));
 
     bvector<ISubEntityPtr> taperFaces;
     bvector<ISubEntityPtr> refEntities;
@@ -3488,7 +3509,8 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
             }
         }
 
-    return BRepUtil::Modify::TaperFaces(targetEntity, taperFaces, refEntities, DVec3d::From(0.0, 0.0, 0.0), angles, addStep);
+    return BRepUtil::Modify::TaperFaces(targetEntity, taperFaces, refEntities, normal, angles, addStep);
+//    return BRepUtil::Modify::TaperFaces(targetEntity, taperFaces, refEntities, DVec3d::From(0.0, 0.0, 0.0), angles, addStep);
 #else
     return ERROR;
 #endif
