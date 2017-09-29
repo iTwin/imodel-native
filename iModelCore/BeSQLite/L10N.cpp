@@ -185,7 +185,7 @@ Utf8String L10NLookup::GetString(Utf8CP scope, int id, bool* outHasString)
         //BeAssert (false && "Attempt to lookup localized string failed.");
         }
 
-    ResuspendIfNeeded(message);
+    ResuspendIfNeeded();
     return message;
     }
 
@@ -210,7 +210,7 @@ Utf8String L10NLookup::GetString (Utf8CP scope, Utf8CP name, bool* outHasString)
         BeAssert (false && "Attempt to lookup localized string failed.");
         }
 
-    ResuspendIfNeeded(message);
+    ResuspendIfNeeded();
     return message;
     }
 
