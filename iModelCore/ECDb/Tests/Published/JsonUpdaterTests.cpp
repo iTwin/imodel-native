@@ -237,21 +237,21 @@ TEST_F(JsonUpdaterTests, Options)
 
     for (JsonUpdater::Options const& options : testOptions)
         {
-        ASSERT_TRUE(options.IsValid()) << options;
+        ASSERT_TRUE(options.IsValid()) << ToString(options);
         }
 
     BeTest::SetFailOnAssert(false);
     {
     JsonUpdater::Options invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Fail, "ReadonlyPropertiesAreUpdatable");
-    ASSERT_FALSE(invalidOptions.IsValid()) << invalidOptions;
+    ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
 
     invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Ignore, "ReadonlyPropertiesAreUpdatable");
-    ASSERT_FALSE(invalidOptions.IsValid()) << invalidOptions;
+    ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
 
     invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem, "ReadonlyPropertiesAreUpdatable");
-    ASSERT_FALSE(invalidOptions.IsValid()) << invalidOptions;
+    ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
 
     BeTest::SetFailOnAssert(true);
@@ -267,13 +267,13 @@ TEST_F(JsonUpdaterTests, Options)
             continue;
 
         Savepoint sp(m_ecdb, "sp");
-        ASSERT_EQ(BE_SQLITE_OK, noReadonlyPropsClassUpdater.Update(noReadonlyPropsKey.GetInstanceId(), testJson)) << options;
+        ASSERT_EQ(BE_SQLITE_OK, noReadonlyPropsClassUpdater.Update(noReadonlyPropsKey.GetInstanceId(), testJson)) << ToString(options);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Code FROM ts.NoReadonlyProps WHERE ECInstanceId=?"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, noReadonlyPropsKey.GetInstanceId()));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << options;
-        ASSERT_EQ(2000, stmt.GetValueInt(0)) << options;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ToString(options);
+        ASSERT_EQ(2000, stmt.GetValueInt(0)) << ToString(options);
         stmt.Finalize();
 
         ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
@@ -293,24 +293,24 @@ TEST_F(JsonUpdaterTests, Options)
 
         if (!options.IsValid())
             {
-            EXPECT_FALSE(readonlyPropsClassUpdater.IsValid()) << "Invalid options: " << options;
+            EXPECT_FALSE(readonlyPropsClassUpdater.IsValid()) << "Invalid options: " << ToString(options);
             continue;
             }
 
         if (options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Fail)
             {
-            EXPECT_FALSE(readonlyPropsClassUpdater.IsValid()) << options;
+            EXPECT_FALSE(readonlyPropsClassUpdater.IsValid()) << ToString(options);
             continue;
             }
 
-        EXPECT_TRUE(readonlyPropsClassUpdater.IsValid()) << options;
+        EXPECT_TRUE(readonlyPropsClassUpdater.IsValid()) << ToString(options);
         Savepoint sp(m_ecdb, "sp");
-        ASSERT_EQ(BE_SQLITE_OK, readonlyPropsClassUpdater.Update(readonlyPropsKey.GetInstanceId(), testJson)) << options;
+        ASSERT_EQ(BE_SQLITE_OK, readonlyPropsClassUpdater.Update(readonlyPropsKey.GetInstanceId(), testJson)) << ToString(options);
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT LastMod,ReadonlyProp,WritableProp FROM ts.ReadonlyProps WHERE ECInstanceId=?"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, readonlyPropsKey.GetInstanceId()));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << options;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ToString(options);
 
         DateTime actualLastMod = stmt.GetValueDateTime(0);
         uint64_t actualLastModJd;
@@ -318,16 +318,16 @@ TEST_F(JsonUpdaterTests, Options)
         
         if (options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Ignore)
             {
-            ASSERT_LT(jdInJson, actualLastModJd) << "LastMod prop is not modified by the updater, so the last mod trigger does it." << options;
-            ASSERT_EQ(1000, stmt.GetValueInt(1)) << "Readonly prop is expected to be unmodified for " << options;
+            ASSERT_LT(jdInJson, actualLastModJd) << "LastMod prop is not modified by the updater, so the last mod trigger does it." << ToString(options);
+            ASSERT_EQ(1000, stmt.GetValueInt(1)) << "Readonly prop is expected to be unmodified for " << ToString(options);
             }
         else
             {
-            ASSERT_EQ(dtInJson, actualLastMod) << "Readonly prop is expected to be modified for " << options;
-            ASSERT_EQ(2000, stmt.GetValueInt(1)) << "Readonly prop is expected to be modified for " << options;
+            ASSERT_EQ(dtInJson, actualLastMod) << "Readonly prop is expected to be modified for " << ToString(options);
+            ASSERT_EQ(2000, stmt.GetValueInt(1)) << "Readonly prop is expected to be modified for " << ToString(options);
             }
 
-        ASSERT_EQ(2000, stmt.GetValueInt(2)) << "Writable prop is expected to be modified for any option. Actual option: " << options;
+        ASSERT_EQ(2000, stmt.GetValueInt(2)) << "Writable prop is expected to be modified for any option. Actual option: " << ToString(options);
 
         stmt.Finalize();
         ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());

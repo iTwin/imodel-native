@@ -907,6 +907,73 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR target, IECInstanceCR s
     return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ToString(JsonECSqlSelectAdapter::FormatOptions const& options)
+    {
+    Utf8String str("JsonECSqlSelectAdapter::FormatOptions(");
+    switch (options.GetMemberCasingMode())
+        {
+            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
+                str.append("MemberNameCasing::KeepOriginal");
+                break;
+            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
+                str.append("MemberNameCasing::LowerFirstChar");
+                break;
+
+            default:
+                return Utf8String("Unhandled JsonECSqlSelectAdapter::MemberNameCasing. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(",");
+    switch (options.GetInt64Format())
+        {
+            case ECJsonInt64Format::AsNumber:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsNumber));
+                break;
+            case ECJsonInt64Format::AsDecimalString:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString));
+                break;
+            case ECJsonInt64Format::AsHexadecimalString:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString));
+                break;
+            default:
+                return Utf8String("Unhandled ECJsonInt64Format. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(")");
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ToString(JsonUpdater::Options const& options)
+    {
+    Utf8String str("JsonUpdater::Options(");
+    switch (options.GetReadonlyPropertiesOption())
+        {
+            case JsonUpdater::ReadonlyPropertiesOption::Fail:
+                str.append("ReadonlyPropertiesOption::Fail");
+                break;
+            case JsonUpdater::ReadonlyPropertiesOption::Ignore:
+                str.append("ReadonlyPropertiesOption::Ignore");
+                break;
+
+            case JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem:
+                str.append("ReadonlyPropertiesOption::UpdateIfNonSystem");
+                break;
+
+            default:
+                return Utf8String("Unhandled ReadonlyPropertiesOption. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(", ECSQLOPTIONS: ").append(options.GetECSqlOptions());
+    return str;
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
 
 //************************************************************************************
@@ -1058,70 +1125,6 @@ void PrintTo(ECSqlStatus stat, std::ostream* os)
                 *os << "Unhandled ECSqlStatus. Adjust the PrintTo method";
                 break;
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  09/17
-//+---------------+---------------+---------------+---------------+---------------+------
-std::ostream& operator<<(std::ostream& os, JsonECSqlSelectAdapter::FormatOptions const& options)
-    {
-    os << "JsonECSqlSelectAdapter::FormatOptions(";
-    switch (options.GetMemberCasingMode())
-        {
-            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
-                os << "MemberNameCasing::KeepOriginal";
-                break;
-            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
-                os << "MemberNameCasing::LowerFirstChar";
-                break;
-
-            default:
-                return os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
-        }
-
-    os << ",";
-    switch (options.GetInt64Format())
-        {
-            case ECJsonInt64Format::AsNumber:
-                os << ENUM_TOSTRING(ECJsonInt64Format::AsNumber);
-                break;
-            case ECJsonInt64Format::AsDecimalString:
-                os << ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString);
-                break;
-            case ECJsonInt64Format::AsHexadecimalString:
-                os << ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString);
-                break;
-            default:
-                return os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
-        }
-
-    return os << ")";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  09/17
-//+---------------+---------------+---------------+---------------+---------------+------
-std::ostream& operator<<(std::ostream& os, JsonUpdater::Options const& options)
-    {
-    os << "JsonUpdater::Options(";
-    switch (options.GetReadonlyPropertiesOption())
-        {
-            case JsonUpdater::ReadonlyPropertiesOption::Fail:
-                os << "ReadonlyPropertiesOption::Fail";
-                break;
-            case JsonUpdater::ReadonlyPropertiesOption::Ignore:
-                os << "ReadonlyPropertiesOption::Ignore";
-                break;
-
-            case JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem:
-                os << "ReadonlyPropertiesOption::UpdateIfNonSystem";
-                break;
-
-            default:
-                return os << "Unhandled ReadonlyPropertiesOption. Adjust the operator<< method";
-        }
-
-    return os << ", ECSQLOPTIONS: " << options.GetECSqlOptions();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
