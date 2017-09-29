@@ -15,9 +15,8 @@
 void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount)
     {
     WString seedFileName;
-    seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
-
     BeFileName seedFilePath;
+    seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
     BeTest::GetHost().GetOutputRoot(seedFilePath);
     seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
@@ -25,29 +24,15 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         {
         SetupSeedProject(seedFileName.c_str());
         ASSERT_EQ(SchemaStatus::Success, PerfTestDomain::GetDomain().ImportSchema(*m_db));
-
         ASSERT_TRUE(m_db->IsDbOpen());
-        //m_db->Schemas().CreateClassViewsInDb();
-        {
-        bvector<DgnElementPtr> testElements;
-        CreateElements(initialInstanceCount, testClassName, testElements, "InitialInstances");
-        DgnDbStatus stat = DgnDbStatus::Success;
-        for (DgnElementPtr& element : testElements)
-            {
-            element->Insert(&stat);
-            ASSERT_EQ(DgnDbStatus::Success, stat);
-            ASSERT_TRUE(element.IsValid());
-            }
-        }
+        CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
         m_db->CloseDb();
         }
 
     BeFileName dgndbFilePath;
     BeTest::GetHost().GetOutputRoot(dgndbFilePath);
     dgndbFilePath.AppendToPath(destFileName);
-
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedFilePath, dgndbFilePath, false));
-
     DbResult status;
     m_db = DgnDb::OpenDgnDb(&status, dgndbFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
@@ -249,6 +234,22 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::SetPropertyValues(Utf8CP classNa
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan.Khan                       09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element)> PerformanceElementsCRUDTestFixture::SetPropertyValuesMethod(Utf8CP className, bool update) const
+    {
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
+        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementPropertyValues(element, update); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
+        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub1PropertyValues(element, update); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
+        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub2PropertyValues(element, update); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
+        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub3PropertyValues(element, update); };
+
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson                       01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent, DgnClassId dgnClassId) const
@@ -271,6 +272,56 @@ Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Ut
         return PerfElementCHSub3::Create(*m_db, targetModel.GetModelId(), catId);
     return nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                       01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::function<PhysicalElementPtr(void)> PerformanceElementsCRUDTestFixture::CreatePerfElementMethod(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent, DgnClassId dgnClassId) const
+    {
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
+        return [&] () { return PerfElement::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
+        return [&] () { return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
+        return [&] () { return  PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
+        return [&] () { return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
+        return [&] () { return PerfElementCHBase::Create(*m_db, targetModel.GetModelId(), catId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
+        return [&] () { return PerfElementCHSub1::Create(*m_db, targetModel.GetModelId(), catId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
+        return [&] () { return PerfElementCHSub2::Create(*m_db, targetModel.GetModelId(), catId); };
+    if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
+        return [&] () { return PerfElementCHSub3::Create(*m_db, targetModel.GetModelId(), catId); };
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan Khan                       09/167
+//+---------------+---------------+---------------+---------------+---------------+------
+void PerformanceElementsCRUDTestFixture::CreateElementsAndInsert(int numInstances, Utf8CP className, Utf8CP modelName) const
+    {
+    ASSERT_TRUE(m_db != nullptr);
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, modelName);
+    Utf8String categoryName;
+    categoryName.Sprintf("%s_Category", modelName);
+    DgnCategoryId catId = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
+    DgnDbStatus stat = DgnDbStatus::Success;
+    std::function<PhysicalElementPtr(void)> createPerfElementMethod = CreatePerfElementMethod(className, *targetModel, catId);
+    std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element)> setPropertyValuesMethod =SetPropertyValuesMethod(className, false);
+
+    for (int i = 0; i < numInstances; i++)
+        {
+        Dgn::PhysicalElementPtr element = createPerfElementMethod();
+        ASSERT_TRUE(element != nullptr);
+        ASSERT_EQ(DgnDbStatus::Success, setPropertyValuesMethod(element));
+        AddGeometry(element);
+        element->Insert(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_TRUE(element.IsValid());
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  11/16

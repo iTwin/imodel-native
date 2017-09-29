@@ -31,14 +31,16 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName) const;
-
+        void CreateElementsAndInsert(int numInstances, Utf8CP className, Utf8CP modelName) const;
         DgnDbStatus SetPerfElementPropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPerfElementSub1PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPerfElementSub2PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPerfElementSub3PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPropertyValues(Utf8CP className, DgnElementPtr element, bool update = false) const;
-        Dgn::PhysicalElementPtr CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent = DgnElementId(), DgnClassId dgnClassId = DgnClassId()) const;
+        std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element)> SetPropertyValuesMethod(Utf8CP className, bool update) const;
 
+        Dgn::PhysicalElementPtr CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent = DgnElementId(), DgnClassId dgnClassId = DgnClassId()) const;
+        std::function<PhysicalElementPtr(void)> CreatePerfElementMethod(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent = DgnElementId(), DgnClassId dgnClassId = DgnClassId()) const;
         static DgnElementId generateTimeBasedId(int counter);
         static DgnElementId generateAlternatingBriefcaseId(int counter);
 
@@ -54,10 +56,11 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
         void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-
+        
         void AddGeometry(DgnElementPtr element) const;
         void ExtendGeometry(DgnElementPtr element) const;
 
         void LogTiming(StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
         int  GetfirstElementId(Utf8CP className);
+
     };
