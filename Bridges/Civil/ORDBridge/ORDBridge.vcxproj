@@ -25,18 +25,23 @@
     <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="iModelBridgeAffinity.cpp" />
     <ClCompile Include="ORDBridge.cpp" />
     <ClCompile Include="ORDBridgeInternal.cpp" />
     <ClCompile Include="ORDConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Cif.Prewire.mke" />
+    <None Include="installer\installer.prewire.mke" />
+    <None Include="installer\ORDBridgeInstaller.wxs" />
+    <None Include="installer\ORDBridgeInstallerbeforecompile.mki" />
     <None Include="ORDBridge.mke" />
     <None Include="ORDBridge.mki" />
     <None Include="ORDBridge.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\CiviliModelBridges.PartFile.xml" />
+    <Xml Include="installer\ORDBridgeinstaller.wix.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{82006D28-7E29-44DB-A592-58AAE71563D4}</ProjectGuid>

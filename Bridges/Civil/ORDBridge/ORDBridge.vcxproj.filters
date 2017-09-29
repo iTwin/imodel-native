@@ -13,6 +13,9 @@
     <Filter Include="Header Files\PublicAPI">
       <UniqueIdentifier>{61d9ed11-b6e4-4186-978d-841bc3d59a92}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Installer Files">
+      <UniqueIdentifier>{084c1e4b-55c7-418b-a4d7-3bb746265c08}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h">
@@ -38,6 +41,9 @@
     <ClCompile Include="ORDConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelBridgeAffinity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ORDBridge.mke">
@@ -52,10 +58,22 @@
     <None Include="Cif.Prewire.mke">
       <Filter>Build Files</Filter>
     </None>
+    <None Include="installer\installer.prewire.mke">
+      <Filter>Installer Files</Filter>
+    </None>
+    <None Include="installer\ORDBridgeInstaller.wxs">
+      <Filter>Installer Files</Filter>
+    </None>
+    <None Include="installer\ORDBridgeInstallerbeforecompile.mki">
+      <Filter>Installer Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\CiviliModelBridges.PartFile.xml">
       <Filter>Build Files</Filter>
+    </Xml>
+    <Xml Include="installer\ORDBridgeinstaller.wix.xml">
+      <Filter>Installer Files</Filter>
     </Xml>
   </ItemGroup>
 </Project>

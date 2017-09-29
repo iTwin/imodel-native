@@ -37,6 +37,16 @@ static int runBridge(int argc, WCharCP argv[])
 
     saparams.Initialize();
 
+    // Testing affinity interface
+    iModelBridgeWithAffinity affinity;
+    iModelBridge_getAffinity(affinity, BeFileName(), iModelBridgeP->_GetParams().GetInputFileName());
+
+    if (affinity.m_affinity != iModelBridgeAffinityLevel::ExactMatch)
+        {
+        fprintf(stderr, "Affinity-check failed\n");
+        return BentleyStatus::ERROR;
+        }
+
     return iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
     }
 

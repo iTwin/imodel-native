@@ -45,6 +45,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
+$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
+
 $(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
 
 $(o)ORDConverter$(oext) : $(_MakeFilePath)ORDConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDConverter.h

@@ -18,23 +18,18 @@
         </Bindings>
     </Part>
 
-    <Product Name="ORDBridge">
-        <SubPart PartName="ORDBridgeLibrary" />
-        <Directories DirectoryListName="ORDBridgeDirectoryList" />
-    </Product>
-
-    <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="ORDBridge"/>
-        </Bindings>
-    </Part>
-
     <ProductDirectoryList ListName="ORDBridgeDirectoryList">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
         <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ConfigDir"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
     </ProductDirectoryList>
@@ -49,6 +44,30 @@
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ORDBridge$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ORDBridgeInstallerFiles" BMakeFile="ORDBridge/installer/installer.prewire.mke">
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <Bindings>
+            <Files BindToWixBuild="true">
+                InstallerBuildFiles\*.wxs
+                InstallerBuildFiles\*.mki
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+        <SubPart PartName="ORDBridgeInstallerFiles"/>
+        <SubPart PartName="ORDBridgeLibrary" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
+        <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
+        <Directories DirectoryListName="ORDBridgeDirectoryList" />
+    </Product>
+
+    <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ORDBridge"/>
         </Bindings>
     </Part>
 

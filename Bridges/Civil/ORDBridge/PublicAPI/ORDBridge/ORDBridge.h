@@ -53,6 +53,8 @@ public:
 extern "C"
 {
 ORDBRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance();
+ORDBRIDGE_EXPORT void iModelBridge_getAffinity(Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
+    BeFileName const& affinityLibraryPath, BeFileName const& sourceFileName);
 };
 
 END_ORDBRIDGE_NAMESPACE
