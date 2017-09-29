@@ -21,6 +21,8 @@ JsonUpdater::Options::Options(JsonUpdater::ReadonlyPropertiesOption readonlyProp
         {
         LOG.errorv("Invalid JsonUpdater::Option. The ECSQLOPTION '%s' may not be specified. Always use the JsonUpdater::ReadonlyPropertiesOption argument instead.", OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
         BeAssert(!m_ecsqlOptions.ContainsI(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION) && "Invalid JsonUpdater::Option: The ECSQLOPTION 'ReadonlyPropertiesAreUpdatable' may not be specified. Always use the JsonUpdater::ReadonlyPropertiesOption argument instead.");
+        m_isValid = false;
+        return;
         }
 
     if (readonlyPropertiesOption == JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem)
@@ -30,6 +32,8 @@ JsonUpdater::Options::Options(JsonUpdater::ReadonlyPropertiesOption readonlyProp
 
         m_ecsqlOptions.append(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
         }
+
+    m_isValid = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -53,6 +57,9 @@ JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, bvector<Utf8CP> const& 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, ECCrudWriteToken const* writeToken)
     {
+    if (!m_options.IsValid())
+        return ERROR;
+
     m_jsonClassName = ECJsonUtilities::FormatClassName(m_ecClass);
 
     Utf8String ecsql("UPDATE ONLY ");
