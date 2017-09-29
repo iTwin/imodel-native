@@ -38,7 +38,6 @@ struct FileSystem
     //! @param[out] freeBytes       The amount of free space on the storage device, in bytes
     //! @param[in] dirName          The name of a file or directory on the device to check
     //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
-    //! @note This function is not implemented for mobile apps. 
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameCR dirName);
 
     //! Get free space on disk
@@ -46,13 +45,12 @@ struct FileSystem
     //! @param[in] dirName          The name of a file or directory on the device to check
     //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
     //! @deprecated Use version of BeFileName::BeGetDiskFreeSpace that takes a BeFileNameCR parameter instead
-    //! @note This function is not implemented for mobile apps. 
     //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName);
 
     //! Get the current working directory
     //! @param[out] currentDirectory The current directory;
-    //! @note This function is not implemented for mobile apps. Use DgnPlatformLib::Host::GetKnownLocations for a portable way to identify known locations.
+    //! @note This function is not useful for mobile apps. Use DgnPlatformLib::Host::GetKnownLocations for a portable way to identify known locations.
     //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus GetCwd (WStringR currentDirectory);
 /** @} */
