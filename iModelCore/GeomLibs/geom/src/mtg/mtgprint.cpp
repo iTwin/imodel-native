@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/mtgprint.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -148,6 +148,13 @@ void        *pContext
                         label
                         );
                     }
+                GEOMAPI_PRINTF ("V:");
+                MTGARRAY_VERTEX_LOOP (vertexNodeId, pGraph, currNodeId)
+                    {
+                    GEOMAPI_PRINTF(" %d", vertexNodeId);
+                    }
+                MTGARRAY_END_VERTEX_LOOP (vertexNodeId, pGraph, currNodeId)
+
                 if (pFunc)
                     pFunc (pGraph, currNodeId, pContext);
                 }

@@ -8,7 +8,28 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-
+void CompressCyclicPointsAndZingers (bvector<DPoint3d> &points, double tolerance)
+    {
+    DPoint3dOps::Compress (points, tolerance);
+    double angleTol = Angle::SmallAngle ();
+    size_t n = points.size ();
+    for (size_t i1 = 0; i1 < n; i1++)
+        {
+        size_t i0 = i1 == 0 ? n - 1: i1 - 1;
+        size_t i2 = (i1 + 1) % n;
+        auto xyz0 = points[i0];
+        auto xyz1 = points[i1];
+        auto xyz2 = points[i2];
+        // look from i1 towards each neighbor ..
+        auto vector10 = DVec3d::FromStartEnd (xyz1, xyz0);
+        auto vector12 = DVec3d::FromStartEnd (xyz1, xyz2);
+        if (fabs (vector10.AngleToXY (vector12)) < angleTol)
+            {
+            points.erase (points.begin () + i1);
+            n--;
+            }
+        }
+    }
 void PolygonVectorOps__ComputeUndercut_direct
 (
 TaggedPolygonVectorCR sourceA,
@@ -68,7 +89,7 @@ TaggedPolygonVectorR surfaceBbelowA
                     if (xyzAClip.size () > 0)
                         {
                         counts.Record(4);
-                        DPoint3dOps::CompressCyclic (xyzAClip, pointTolerance);
+                        CompressCyclicPointsAndZingers (xyzAClip, pointTolerance);
                         surfaceAaboveB.push_back (TaggedPolygon (xyzAClip));
                         xyzWork.clear ();
                         // project in reverse order to plane of B
@@ -141,6 +162,65 @@ PolyfaceHeaderPtr &undercutPolyface
     if (result.size () > 0)
         undercutPolyface = result[0];
     }
+
+// test condition for distinguishing barrier polygons.
+void PolyfaceQuery::ComputeOverAndUnderXY
+(
+PolyfaceHeaderCR polyfaceA,
+IPolyfaceVisitorFilter *filterA,
+PolyfaceHeaderCR polyfaceB,
+IPolyfaceVisitorFilter *filterB,
+PolyfaceHeaderPtr &polyfaceAOverB,
+PolyfaceHeaderPtr &polyfaceBOverA
+)
+    {
+    polyfaceAOverB = nullptr;
+    polyfaceBOverA = nullptr;
+    DRange3d rangeA = polyfaceA.PointRange ();
+    DRange3d rangeB = polyfaceB.PointRange ();
+
+    if (rangeA.high.z < rangeB.low.z)
+        return;
+
+    DRange3d inputRange;
+    inputRange.UnionOf (rangeA, rangeB);
+
+    TaggedPolygonVector polygonA, polygonB ;
+
+    polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
+    polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
+
+    double planarityAbsTol = s_planarityLocalRelTol * inputRange.low.Distance (inputRange.high);
+    DPoint3d rangeCenter;
+    rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
+
+    Transform localToWorld, worldToLocal;
+    localToWorld.InitFrom (rangeCenter);
+    worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+
+    PolygonVectorOps::Multiply (polygonA, worldToLocal);
+    PolygonVectorOps::Multiply (polygonB, worldToLocal);
+
+    worldToLocal.Multiply (inputRange, inputRange);    // worldToLocal is just translation, so this is exact.
+
+    PolygonVectorOps::TriangulateNonPlanarPolygons (polygonA, planarityAbsTol);
+    PolygonVectorOps::TriangulateNonPlanarPolygons (polygonB, planarityAbsTol);
+    bvector <TaggedPolygonVector> debugPolygons;
+    TaggedPolygonVector out1, out2;
+    PolygonVectorOps__ComputeUndercut_direct (polygonA, polygonB, out1, out2);
+
+    PolygonVectorOps::Multiply (out1, localToWorld);
+    PolygonVectorOps::Multiply (out2, localToWorld);
+    bvector<PolyfaceHeaderPtr> result;
+    SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
+    if (result.size () > 0)
+        polyfaceAOverB = result[0];
+    result.clear ();
+    SavePolygons(result, out2, nullptr);
+    if (result.size () > 0)
+        polyfaceBOverA = result[0];
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
         ShardHealer bodies
@@ -561,7 +641,7 @@ TaggedPolygonVector* debugPolygons
                         );
                     if (currentShard.size () > 2)
                         {
-                        DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
+                        CompressCyclicPointsAndZingers (currentShard, pointTolerance);
                         if (currentShard.size () > 2)
                             insideShards.PushCopy (currentShard);
                         }
@@ -609,7 +689,7 @@ TaggedPolygonVector* debugPolygons
 
                         if (currentShard.size () > 2)
                             {
-                            DPoint3dOps::CompressCyclic (currentShard, pointTolerance);
+                            CompressCyclicPointsAndZingers (currentShard, pointTolerance);
                             if (currentShard.size () > 2)
                                 insideShards.PushCopy (currentShard);
                             }
@@ -623,7 +703,7 @@ TaggedPolygonVector* debugPolygons
         size_t numOutside = 0;  // To become the number of nontrivial outside shards
         for (auto &shard : shards[shard0])
             {
-            DPoint3dOps::CompressCyclic (shard, pointTolerance);
+            CompressCyclicPointsAndZingers (shard, pointTolerance);
             if (shard.size () > 2)
                 numOutside++;
             }
@@ -681,7 +761,5 @@ TaggedPolygonVector* debugPolygons
         );
 #endif
     }
-
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -1451,12 +1451,19 @@ void Check::SaveTransformed(ICurvePrimitiveCR data)
 void Check::SaveTransformed(PolyfaceHeaderCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}
+void Check::SaveTransformed(PolyfaceHeaderPtr &data)
+    {
+    if (data.IsValid ())
+    SaveTransformed(IGeometry::Create (data->Clone ()));}
 void Check::SaveTransformed(ISolidPrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}
 void Check::SaveTransformed(DEllipse3dCR data)
     {
-    SaveTransformed(*ICurvePrimitive::CreateArc (data));
+    if (data.vector0.Magnitude () + data.vector90.Magnitude () == 0.0)
+        SaveTransformedMarker (data.center);
+    else
+        SaveTransformed(*ICurvePrimitive::CreateArc (data));
     }
 
 void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
@@ -1468,24 +1475,26 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     auto cv = ICurvePrimitive::CreateLineString (data);
     SaveTransformed (IGeometry::Create (cv));
     }
+void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
+    {
+    auto cp = ICurvePrimitive::CreateLineString
+            (
+            bvector<DPoint3d>
+                {
+                DPoint3d::From (xyz.x - markerSize, xyz.y, xyz.z),
+                DPoint3d::From (xyz.x + markerSize, xyz.y, xyz.z),
+                DPoint3d::From (xyz.x, xyz.y + markerSize, xyz.z),
+                DPoint3d::From (xyz.x , xyz.y - markerSize, xyz.z)
+                }
+            );
+
+    SaveTransformed (IGeometry::Create (cp));
+    }
 
 void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize)
     {
     for (auto &xyz : data)
-        {
-        auto cp = ICurvePrimitive::CreateLineString
-                (
-                bvector<DPoint3d>
-                    {
-                    DPoint3d::From (xyz.x - markerSize, xyz.y, xyz.z),
-                    DPoint3d::From (xyz.x + markerSize, xyz.y, xyz.z),
-                    DPoint3d::From (xyz.x, xyz.y + markerSize, xyz.z),
-                    DPoint3d::From (xyz.x , xyz.y - markerSize, xyz.z)
-                    }
-                );
-
-        SaveTransformed (IGeometry::Create (cp));
-        }
+        SaveTransformedMarker (xyz);
     }
 
 

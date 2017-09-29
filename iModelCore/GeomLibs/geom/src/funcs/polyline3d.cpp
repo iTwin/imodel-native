@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/polyline3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -48,34 +48,43 @@ double           param
         double delta = 1.0 / (double) (n-1);
         double localParam;
         DPoint3d tangent;
-        DPoint3d point0;
+        DPoint3d point0, point1;
         int iBase;
         /* Establish iBase = index of base point of segment where linear*/
         /* interpolation is applied.*/
-        if (param < 0.0)
+        if (param >= 1.0)
             {
-            iBase = 0;
-            }
-        else if (param >= 1.0)
-            {
-            iBase = n - 2;
+            // ensure exact ping of end point by basing fraction calculation there.
+            localParam = (1.0 - param) / delta;     // this is 0 or negative.  point shuffle makes the interpolation accurate at 1.0
+            point0 = pPointArray [n-1];
+            point1 = pPointArray[n-2];
+            tangent = DVec3d::FromStartEnd (point1, point0);        // this points forward
+
             }
         else
             {
-            iBase = (int)(param / delta);
-            // YES -- this can happen  !!! param = 0.9999999999999999, delta = 0.333333333333333 ==> iBase = n-1 !!!!
-            if (iBase == n - 1)
-                iBase = n - 2;
+            if (param < 0.0)
+                {
+                iBase = 0;
+                }
+            else
+                {
+                iBase = (int)(param / delta);
+                // YES -- this can happen  !!! param = 0.9999999999999999, delta = 0.333333333333333 ==> iBase = n-1 !!!!
+                if (iBase == n - 1)
+                    iBase = n - 2;
+                }
+            
+            localParam = (param - delta * iBase) / delta;
+            point0 = pPointArray [iBase];
+            point1 = pPointArray[iBase+1];
+            tangent = DVec3d::FromStartEnd (point0, point1);
             }
-
-        localParam = (param - delta * iBase) / delta;
-        point0 = pPointArray [iBase];
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&tangent, pPointArray + iBase + 1, &point0);
         if (pPoint)
-            bsiDPoint3d_addScaledDPoint3d (pPoint, &point0, &tangent, localParam);
+            pPoint->Interpolate (point0, localParam, point1);
 
         if (pTangent)
-            bsiDPoint3d_scale (pTangent, &tangent, (double)(n-1));
+            pTangent->Scale (tangent, (double)(n-1));
 
         result = true;
         }
@@ -134,30 +143,35 @@ double           param
         /* The usual case.*/
         double delta = 1.0 / (double) (n-1);
         double localParam;
-        DPoint3d point0;
+        DPoint3d point0, point1;
         int iBase;
         /* Establish iBase = index of base point of segment where linear*/
         /* interpolation is applied.*/
         if (param < 0.0)
             {
+            localParam = param / delta;
             iBase = 0;
             }
         else if (param >= 1.0)
             {
+            // treat the endpoint as the anchor
             iBase = n - 2;
+            localParam = 1.0 + (param - 1.0) / delta;   // avoid near-one fuzz
             }
         else
             {
+
             iBase = (int)(param / delta);
             // YES -- this can happen  !!! param = 0.9999999999999999, delta = 0.333333333333333 ==> iBase = n-1 !!!!
             if (iBase == n - 1)
                 iBase = n - 2;
+            localParam = (param - delta * iBase) / delta;
+            tangentA = DVec3d::FromStartEnd (point0, point1);
             }
-
-        localParam = (param - delta * iBase) / delta;
-        point0 = pPointArray [iBase];
-        tangentA = DVec3d::FromStartEnd (point0, pPointArray[iBase+1]);
-        point.SumOf (point0, tangentA, localParam);
+        point0 = pPointArray[iBase];
+        point1 = pPointArray[iBase + 1];
+        tangentA = DVec3d::FromStartEnd (point0, point1);
+        point.Interpolate (point0, localParam, point1);
         tangentB = tangentA;
         // Detect actual interior breakpoints . ..
         size_t k0 = SIZE_MAX;

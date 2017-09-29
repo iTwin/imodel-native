@@ -2130,3 +2130,58 @@ PolyfaceHeaderPtr *debug
         *debug = PolygonsToMesh (debugPolygons, &localToWorld);
 
     }
+// Compute what parts of meshB are hidden by meshA (the hider).   Both returned meshes are null 
+// if there is no hiding.
+void PolyfaceHeader::MeshHidesMeshXYByPlaneSets (
+PolyfaceHeaderPtr &hider,   // 
+PolyfaceHeaderPtr &hidable,
+PolyfaceHeaderPtr &meshBVisible,
+PolyfaceHeaderPtr &meshBHidden
+)
+    {
+    PolyfaceHeaderPtr meshAOverB, meshBUnderA;
+    PolyfaceHeader::ComputeOverAndUnderXY (*hider, nullptr, *hidable, nullptr, meshAOverB, meshBUnderA);
+    if (meshBUnderA.IsValid ())
+        {
+        PolyfaceHeader::ComputePunchXYByPlaneSets (*meshBUnderA, *hidable, &meshBHidden, &meshBVisible);
+        }
+    }
+// Compute pairwise hidden-visible splits, and replace each input mesh by its visible parts.
+// Note that meshes that become fully hidden become nullptr in the allMesh array.
+// Each mesh is individually assumed "upward facing"
+void PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (bvector<PolyfaceHeaderPtr> &allMesh, bvector<PolyfaceHeaderPtr> &visibleParts)
+    {
+    bvector<DRange3d> ranges;
+    visibleParts.clear ();
+    for (auto &mesh : allMesh)
+        {
+        ranges.push_back (mesh->PointRange ());
+        visibleParts.push_back (mesh->Clone ());
+        }
+    size_t numMesh = visibleParts.size ();
+    for (size_t index0 = 0; index0 < numMesh; index0++)
+        {
+        // index0 is the mesh being hidden.
+        for (size_t index1 = 0; visibleParts[index0].IsValid () && index1 < numMesh; index1++)
+            {
+            // index1 is a hider mesh
+            if (index0 != index1
+                && visibleParts[index1].IsValid ()
+                && ranges[index0].IntersectsWith (ranges[index1], 2))
+                {
+                PolyfaceHeaderPtr visibleFacets, hiddenFacets;
+                MeshHidesMeshXYByPlaneSets (allMesh[index1], visibleParts[index0], visibleFacets, hiddenFacets);
+                // !!! double null means nothing hidden -- leave everything alone.
+                if (visibleFacets.IsValid () || hiddenFacets.IsValid ())
+                    {
+                    visibleParts[index0] = visibleFacets;
+                    if (visibleFacets.IsValid ())
+                        ranges[index0] = visibleFacets->PointRange ();
+                    else
+                        ranges[index0].Init ();
+                    }
+                }
+            }
+        }
+    }
+

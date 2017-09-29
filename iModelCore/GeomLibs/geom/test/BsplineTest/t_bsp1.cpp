@@ -728,3 +728,52 @@ TEST(Spiral,PartialSpiralEvaluation)
         }
     Check::Near (prevDropDist, lengthB);
     }
+
+void sample (ICurvePrimitivePtr &cp, double f0, double df, int numFraction, bvector<DPoint3d> &points)
+    {
+    points.clear ();
+    for (int i = 0; i < numFraction; i++)
+        {
+        DPoint3d xyz;
+        cp->FractionToPoint (f0 + i * df, xyz);
+        points.push_back (xyz);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MSBsplineCurve,ClosedToOpen)
+    {
+    bvector<DPoint3d> poles;
+    poles.push_back (DPoint3d::From (0,0,0));
+    poles.push_back (DPoint3d::From (5,0,0));
+    poles.push_back (DPoint3d::From (8,0,0));
+    poles.push_back (DPoint3d::From (8,1,0));
+    poles.push_back (DPoint3d::From (0,1,0));
+    bvector<DPoint3d> polesA, polesB, pointC;
+    double dX = 15.0;
+    double dY = 10.0;
+    double dYA = 2.0;
+    for (int order = 2; order < 6; order++)
+        {
+        SaveAndRestoreCheckTransform shifter (0, dY, 0);
+        MSBsplineCurvePtr curveA = MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, order, true, true);
+        auto cp = ICurvePrimitive::CreateBsplineCurve(curveA);
+        Check::SaveTransformed (*cp);
+        Check::Shift (0, dYA);
+        curveA->GetPoles (polesA);
+        Check::SaveTransformed (polesA);
+
+        Check::Shift (dX, -dYA, 0);
+        curveA->MakeOpen (0.0);
+        sample (cp, 0.0, 0.1, 4, pointC);
+        Check::SaveTransformed (*cp);
+        curveA->GetPoles (polesB);
+
+        Check::Shift (0, dYA);
+        Check::SaveTransformed (polesB);
+        Check::Shift (0, dYA);
+        Check::SaveTransformed (pointC);
+        }
+    Check::ClearGeometry("MSBsplineCurve.ClosedToOpen");
+    }

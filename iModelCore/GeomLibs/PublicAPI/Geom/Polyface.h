@@ -1132,7 +1132,15 @@ PolyfaceHeaderCR polyfaceB,             //!< [in] lower surface of upper geometr
 IPolyfaceVisitorFilter *filterB,        //!< [in] optional filter object
 PolyfaceHeaderPtr &undercutPolyface     //!< [in] undercut results
 );
-
+static GEOMDLLIMPEXP void ComputeOverAndUnderXY
+(
+PolyfaceHeaderCR polyfaceA,             //!< [in] upper surface of lower geometry(for instance, upward facing facets of road, all shifted upwards by clearance)
+IPolyfaceVisitorFilter *filterA,        //!< [in] optional filter object
+PolyfaceHeaderCR polyfaceB,             //!< [in] lower surface of upper geometry (for instance, downward facing facets of bridge)
+IPolyfaceVisitorFilter *filterB,        //!< [in] optional filter object
+PolyfaceHeaderPtr &polyfaceAOverB,      //!< [out] parts of polyfaceA that are over polyfaceB
+PolyfaceHeaderPtr &polyfaceBUnderA      //!< [out] parts of polyfaceB that are over polyfaceA
+);
 template <typename T>
 struct AnnotatedMesh
 {
@@ -1202,18 +1210,21 @@ PolyfaceHeaderPtr *outside,  //!< [out] (target outsideOf punch)
 PolyfaceHeaderPtr *debugMesh = nullptr //!< [in] debugMesh
 );
 
+
 //! Attempt to heal vertical gaps in a mesh.
 //! @param [in] polyface original polyface
 //! @param [in] tryVerticalPanels true to seek pure vertical panels
 //! @param [in] trySpaceTriangulation true to seek triangulation of any missing faces, as viewed from any direction found useful.
 //! @param [out] healedPolyface modified polyface.  This is NOT constructed if no panels can be added.
+//! @param [in] simplifySlivers true to look for sliver faces
 //! @returns number of facets added
 static GEOMDLLIMPEXP size_t HealVerticalPanels
 (
 PolyfaceQueryCR polyface,
 bool tryVerticalPanels,
 bool trySpaceTriangulation,
-PolyfaceHeaderPtr &healedPolyface
+PolyfaceHeaderPtr &healedPolyface,
+bool simplifySlivers = false
 );
 
 //!<ul>
@@ -1954,6 +1965,22 @@ CurveVectorCP paths,            //!< [in] optional additional constraint lines.
 bvector<DPoint3d> const *isolatedPoints,   //!< [in] optional additional isolated points to add to triangulation
 IFacetOptionsP strokeOptions = nullptr //!< [in] options for stroking curves
 );
+
+//! Create a (closed, volumetric) mesh from "bore segment data"
+//!<ul>
+//!<li> Each bore segment is a pair of top and bottom points of the volume.
+//!<li> Ideally the bore data is pure vertical.
+//!<li> "somewhat non vertical" bores are ok.
+//!<li>Severely non vertical bores will cause folded lower and side surfaces.
+//!</ul>
+GEOMDLLIMPEXP static PolyfaceHeaderPtr VolumeFromBoreData
+(
+bvector<DSegment3d> &segments,       //!< [inout] segment bottom and top.  During processing, start and end points are swapped as needed to point[0] is the lower point!!!
+bool &foldedSurfaces,                //!< [out] true if bottom or side surfaces are folded.
+bvector<ptrdiff_t> *topFacetReadIndex,     //!< [out] optional array of read indices of upper surface facets
+bvector<ptrdiff_t> *bottomFacetReadIndex,     //!< [out] optional array of read indices of lower surface facets
+bvector<ptrdiff_t> *sideFacetReadIndex     //!< [out] optional array of read indices of side facets
+);
 //! Create a (smart pointer to a) new (empty) PolyfaceHeader, with each facet defined 
 //! by 3 or 4 unindexed points as indicated by the arg.
 //! @returns invalid if numPerFace is other than 3 or 4.
@@ -1997,6 +2024,24 @@ bvector<PolyfaceHeaderPtr> &dest,            //!< [out] array of new mesh, conta
 bvector<bvector<SizeSize>> *destReadIndexToSourceReadIndex,  //!< [out] array connecting destMesh readIndex to its corresponsding readIndex in the corresponding source mesh
 TransformR localToWorld,            //!< [out] axes whose xy plane is the xy plane for viewing along local z axis.
 TransformR worldToLocal             //!< [out] transform used to put the polygons in xy viewing position.
+);
+
+//! Compute what parts of meshB are hidden by meshA (the hider).
+//! NOTE: If there is no hiding, both returned meshes are null. (hidable is NOT copied)
+GEOMDLLIMPEXP void static MeshHidesMeshXYByPlaneSets (
+PolyfaceHeaderPtr &hider,   //!< [in] mesh that might hid part of hidable.
+PolyfaceHeaderPtr &hidable, //!< [in] mesh that might be partially hidden
+PolyfaceHeaderPtr &meshBVisible,    //!< [out] visible parts of the hidable mesh
+PolyfaceHeaderPtr &meshBHidden      //!< [out] hidden parts of the hidable mesh
+);
+
+//< Compute pairwise hidden-visible splits, and replace each input mesh by its visible parts.
+//< Note that meshes that become fully hidden become nullptr in the allMesh array.
+//< Each mesh is individually assumed "upward facing"
+GEOMDLLIMPEXP void static MultiMeshVisiblePartsXYByPlaneSets
+(
+bvector<PolyfaceHeaderPtr> &allMesh,        //!< [in] multiple meshes
+bvector<PolyfaceHeaderPtr> &visibleParts    //!< [out] the corresponding visible parts.   Some entries may be null meshes!!
 );
 
 //! DEPRECATED -- Use PolyfaceHeader::CreateVariableSizeIndexed ();

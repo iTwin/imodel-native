@@ -2360,3 +2360,35 @@ TEST(CurveVector, GeometricConstructions)
 
 
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CPLineString,EndFuzz)
+    {
+    // "getStartEnd" did not ping the bits on the endpoint ... verify it with various length linestrings
+    DPoint3d xyzBase = DPoint3d::From (-9.4347826089999991,0.0,-1.8773913040000001);
+    bvector<DPoint3d> points {DPoint3d::From (-0.56521739100000001,0.0,-1.8773913040000001)};
+
+    for (int i = 0; i < 14; i++)
+        {
+        // force another point into the front ...
+        points.insert (points.begin (), DPoint3d::From (xyzBase.x + i, xyzBase.y, xyzBase.z));
+        auto linestring = ICurvePrimitive::CreateLineString (points);
+        DPoint3d xyz0, xyz1;
+        linestring->GetStartEnd (xyz0, xyz1);
+        auto d0 = xyz0.Distance (points.front ());
+        auto d1 = xyz1.Distance (points.back ());
+        Check::ExactDouble (0, d0, "LineString start");
+        Check::ExactDouble (0, d1, " LineString end");
+        double localFraction = 0.234248977923;
+        for (size_t k = 0; k + 1 < points.size (); k++)
+            {
+            auto xyz = DPoint3d::FromInterpolate (points[k], localFraction, points[k+1]);
+            DPoint3d xyzF;
+            double globalFraction = (k + localFraction) / (points.size () - 1.0);
+            linestring->FractionToPoint (globalFraction, xyzF);
+            Check::Near (xyz, xyzF, "Linestring FractionToPoint on specific segment");
+            }
+        }
+    }
