@@ -9,7 +9,6 @@
 #pragma once
 
 #include <WebServices/Connect/IImsClient.h>
-#include <WebServices/Connect/ConnectSignInManager.h>
 #include "ConnectTestsHelper.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -32,14 +31,11 @@ struct StubImsClient : public IImsClient
 
         AsyncTaskPtr<SamlTokenResult> RequestToken(CredentialsCR creds, Utf8String rpUri = nullptr, uint64_t lifetime = 0) override
             {
-            SamlTokenPtr stubToken = StubSamlTokenWithUser(creds.GetUsername());
             return CreateCompletedAsyncTask(SamlTokenResult::Success(stubToken));
             };
 
         AsyncTaskPtr<SamlTokenResult> RequestToken(SamlTokenCR parent, Utf8String rpUri = nullptr, uint64_t lifetime = 0) override
             {
-            Utf8String name = ConnectSignInManager::GetUserInfo(parent).username;
-            SamlTokenPtr stubToken = StubSamlTokenWithUser(name);
             return CreateCompletedAsyncTask(SamlTokenResult::Success(stubToken));
             };
     };
