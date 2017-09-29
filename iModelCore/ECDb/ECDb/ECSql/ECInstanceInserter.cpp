@@ -120,13 +120,20 @@ void ECInstanceInserter::Impl::Initialize(ECCrudWriteToken const* writeToken)
     m_ecinstanceIdBindingInfo = m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::ECInstanceId, parameterIndex);
     parameterIndex++;
 
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+    if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+        {
+        LOG.errorv("ECInstanceInserter failure: Could not retrieve the 'ClassHasCurrentTimeStampProperty' custom attribute from the ECClass '%s'.",
+                   m_ecClass.GetFullName());
+
+        m_isValid = false;
+        return;
+        }
 
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties(true))
         {
         //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+        if (currentTimeStampProp != nullptr && ecProperty == currentTimeStampProp)
             continue;
 
         if (!m_needsCalculatedPropertyEvaluation)

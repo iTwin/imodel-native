@@ -15,44 +15,63 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions) : m_ecdb(ecdb), m_ecClass(ecClass)
+JsonUpdater::Options::Options(JsonUpdater::ReadonlyPropertiesOption readonlyPropertiesOption, Utf8CP ecsqlOptions) :m_readonlyProps(readonlyPropertiesOption), m_ecsqlOptions(ecsqlOptions)
     {
-    m_isValid = Initialize(nullptr, ecsqlOptions, writeToken) == SUCCESS;
+    if (m_ecsqlOptions.ContainsI(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
+        {
+        LOG.errorv("Invalid JsonUpdater::Option. The ECSQLOPTION '%s' may not be specified. Always use the JsonUpdater::ReadonlyPropertiesOption argument instead.", OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
+        BeAssert(!m_ecsqlOptions.ContainsI(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION) && "Invalid JsonUpdater::Option: The ECSQLOPTION 'ReadonlyPropertiesAreUpdatable' may not be specified. Always use the JsonUpdater::ReadonlyPropertiesOption argument instead.");
+        }
+
+    if (readonlyPropertiesOption == JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem)
+        {
+        if (!m_ecsqlOptions.empty())
+            m_ecsqlOptions.append(" ");
+
+        m_ecsqlOptions.append(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, bvector<Utf8CP> const& props, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions) : m_ecdb(ecdb), m_ecClass(ecClass)
+JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, Options const& options) : m_ecdb(ecdb), m_ecClass(ecClass), m_options(options)
     {
-    m_isValid = Initialize(&props, ecsqlOptions, writeToken) == SUCCESS;
+    m_isValid = Initialize(nullptr, writeToken) == SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle      09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, bvector<Utf8CP> const& props, ECCrudWriteToken const* writeToken, Options const& options) : m_ecdb(ecdb), m_ecClass(ecClass), m_options(options)
+    {
+    m_isValid = Initialize(&props, writeToken) == SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, Utf8CP ecsqlOptions, ECCrudWriteToken const* writeToken)
+BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, ECCrudWriteToken const* writeToken)
     {
     m_jsonClassName = ECJsonUtilities::FormatClassName(m_ecClass);
 
     Utf8String ecsql("UPDATE ONLY ");
     ecsql.append(m_ecClass.GetECSqlName()).append(" SET ");
 
-    ECPropertyCP currentTimeStampProp = nullptr;
-    const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
-
     bvector<ECPropertyCP> props;
     if (propNames != nullptr)
         {
+        if (propNames == nullptr)
+            {
+            LOG.errorv("JsonUpdater initialization failure. The ECClass '%s' does not have any properties.", m_ecClass.GetFullName());
+            return ERROR;
+            }
+
         for (Utf8CP propName : *propNames)
             {
             ECPropertyCP prop = m_ecClass.GetPropertyP(propName);
             if (prop == nullptr)
                 return ERROR;
-
-            //Current time stamp props are populated by SQLite, so ignore them here.
-            if (hasCurrentTimeStampProp && prop == currentTimeStampProp)
-                continue;
 
             props.push_back(prop);
             }
@@ -61,34 +80,34 @@ BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, Utf8CP e
         {
         for (ECPropertyCP prop : m_ecClass.GetProperties(true))
             {
-            //Current time stamp props are populated by SQLite, so ignore them here.
-            if (hasCurrentTimeStampProp && prop == currentTimeStampProp)
-                continue;
-
             props.push_back(prop);
             }
-        }
 
-    if (props.empty())
-        {
-        if (propNames == nullptr)
-            LOG.errorv("JsonUpdater initialization failure. The ECClass '%s' does not have any updatable properties.", m_ecClass.GetFullName());
-        else
-            LOG.errorv("JsonUpdater initialization failure. The list of ECProperties of ECClass '%s' is empty or does not contain any updatable properties.", m_ecClass.GetFullName());
-
-        return ERROR;
+        if (props.empty())
+            {
+            LOG.errorv("JsonUpdater initialization failure. The list of ECProperties of ECClass '%s' is empty.", m_ecClass.GetFullName());
+            return ERROR;
+            }
         }
 
     int parameterIndex = 1;
 
     bool isFirstProp = true;
-    for (ECPropertyCP ecProperty : props)
+    for (ECPropertyCP prop : props)
         {
+        //readonly props are ignored if the respective option is specified
+        if (prop->GetIsReadOnly() && m_options.GetReadonlyPropertiesOption() == ReadonlyPropertiesOption::Ignore)
+            {
+            //add a "SkipBinding" BindingInfo so that at update time, the adapter knows to ignore a JSON member of this name
+            m_bindingMap[prop->GetName().c_str()] = BindingInfo();
+            continue;
+            }
+
         if (!isFirstProp)
             ecsql.append(",");
 
-        ecsql.append("[").append(ecProperty->GetName()).append("]=?");
-        m_bindingMap[ecProperty->GetName().c_str()] = BindingInfo(parameterIndex, *ecProperty);
+        ecsql.append("[").append(prop->GetName()).append("]=?");
+        m_bindingMap[prop->GetName().c_str()] = BindingInfo(parameterIndex, *prop);
         parameterIndex++;
 
         isFirstProp = false;
@@ -98,8 +117,8 @@ BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, Utf8CP e
     ecsql.append(" WHERE " ECDBSYS_PROP_ECInstanceId "=?");
     m_idParameterIndex = parameterIndex;
 
-    if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
-        ecsql.append(" ECSQLOPTIONS ").append(ecsqlOptions);
+    if (!m_options.GetECSqlOptions().empty())
+        ecsql.append(" ECSQLOPTIONS ").append(m_options.GetECSqlOptions());
 
     return ECSqlStatus::Success == m_statement.Prepare(m_ecdb, ecsql.c_str(), writeToken) ? SUCCESS : ERROR;
     }
@@ -129,19 +148,26 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR json) const
         auto bindingMapLookupIt = m_bindingMap.find(memberName);
         if (bindingMapLookupIt == m_bindingMap.end())
             {
-
             if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+                {
+                if (m_options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Ignore)
+                    continue;
+
                 LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
                            memberName, json.ToString().c_str());
-            else
-                LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
-                           memberName, m_ecClass.GetFullName(), json.ToString().c_str());
+                return BE_SQLITE_ERROR;
+                }
 
+            LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
+                           memberName, m_ecClass.GetFullName(), json.ToString().c_str());
             return BE_SQLITE_ERROR;
             }
 
         BeAssert(!ECJsonSystemNames::IsTopLevelSystemMember(memberName));
         BindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (bindingInfo.SkipBinding())
+            continue;
 
         if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
             {
@@ -197,22 +223,34 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR json) con
         auto bindingMapLookupIt = m_bindingMap.find(memberName);
         if (bindingMapLookupIt == m_bindingMap.end())
             {
+            if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+                {
+                if (m_options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Ignore)
+                    continue;
+
+                rapidjson::StringBuffer jsonStr;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
+                memberJson.Accept(writer);
+
+                LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
+                           memberName, jsonStr.GetString());
+                return BE_SQLITE_ERROR;
+                }
+
             rapidjson::StringBuffer jsonStr;
             rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
             memberJson.Accept(writer);
 
-            if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
-                LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
-                           memberName, jsonStr.GetString());
-            else
-                LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
-                           memberName, m_ecClass.GetFullName(), jsonStr.GetString());
-
+            LOG.errorv("JsonUpdater failure. The JSON member '%s' does not match with a property in ECClass '%s'. Input JSON: %s",
+                       memberName, m_ecClass.GetFullName(), jsonStr.GetString());
             return BE_SQLITE_ERROR;
             }
 
         BeAssert(!ECJsonSystemNames::IsTopLevelSystemMember(memberName));
         BindingInfo const& bindingInfo = bindingMapLookupIt->second;
+
+        if (bindingInfo.SkipBinding())
+            continue;
 
         if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
             {

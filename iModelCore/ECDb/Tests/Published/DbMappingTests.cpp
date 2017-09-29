@@ -7379,6 +7379,158 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Base" modifier="Abstract" />
+        <ECEntityClass typeName="IHasLastMod" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.01.00">
+                    <AppliesToEntityClass>Base</AppliesToEntityClass>
+                </IsMixin>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Foo" >
+            <BaseClass>Base</BaseClass>
+            <BaseClass>IHasLastMod</BaseClass>
+            <ECProperty propertyName="Code" typeName="int" />
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "ClassHasCurrentTimeStampProperty may not be assigned to Mixin";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>Bla</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must exist";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property 'PropertyName' in ClassHasCurrentTimeStampProperty must be set";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>123</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property 'PropertyName' in ClassHasCurrentTimeStampProperty must have a string value";
+
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="dateTime"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be readonly";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="string" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be of type DateTime";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECProperty propertyName="LastMod" typeName="double" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be of type DateTime";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECArrayProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be primitive DateTime prop";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECStructClass typeName="Something"/>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECStructProperty propertyName="LastMod" typeName="Something" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be primitive DateTime prop";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+        <ECStructClass typeName="Something"/>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                    <PropertyName>LastMod</PropertyName>
+                </ClassHasCurrentTimeStampProperty>
+            </ECCustomAttributes>
+            <ECStructArrayProperty propertyName="LastMod" typeName="Something" readOnly="True"/>
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Property to with ClassHasCurrentTimeStampProperty CA points to must be primitive DateTime prop";
+
+
     ASSERT_EQ(SUCCESS, SetupECDb("classhascurrenttimestampCA.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -7390,7 +7542,7 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
                 </ClassHasCurrentTimeStampProperty>
             </ECCustomAttributes>
             <ECProperty propertyName="Code" typeName="int" />
-            <ECProperty propertyName="LastMod" typeName="dateTime" />
+            <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True"/>
         </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -7430,34 +7582,6 @@ TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     ASSERT_TRUE(lastMod2Msec - lastMod1Msec > INT64_C(100)) << "LastMod should have been updated after the last UPDATE statement";
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle             03/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
-    {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-        <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
-        <ECEntityClass typeName="Base" modifier="Abstract" />
-        <ECEntityClass typeName="IHasLastMod" modifier="Abstract">
-            <ECCustomAttributes>
-                <IsMixin xmlns="CoreCustomAttributes.01.00">
-                    <AppliesToEntityClass>Base</AppliesToEntityClass>
-                </IsMixin>
-                <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
-                    <PropertyName>LastMod</PropertyName>
-                </ClassHasCurrentTimeStampProperty>
-            </ECCustomAttributes>
-            <ECProperty propertyName="LastMod" typeName="dateTime" />
-        </ECEntityClass>
-        <ECEntityClass typeName="Foo" >
-            <BaseClass>Base</BaseClass>
-            <BaseClass>IHasLastMod</BaseClass>
-            <ECProperty propertyName="Code" typeName="int" />
-        </ECEntityClass>
-        </ECSchema>)xml"))) << "ClassHasCurrentTimeStampProperty may not be assigned to Mixin";
-    }
 
 
 //---------------------------------------------------------------------------------------

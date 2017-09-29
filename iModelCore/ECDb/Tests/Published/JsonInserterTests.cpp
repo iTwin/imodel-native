@@ -508,7 +508,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, expectedJson)) << ecClass.GetFullName() << ": " << expectedJsonStr;
 
-        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, int64Format));
+        JsonReader reader(m_ecdb, ecClass.GetId(), JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, int64Format));
         ASSERT_TRUE(reader.IsValid()) << ecClass.GetFullName();
         Json::Value actualJson;
         ASSERT_EQ(SUCCESS, reader.Read(actualJson, key.GetInstanceId())) << ecClass.GetFullName() << " Id: " << key.GetInstanceId().ToString().c_str();

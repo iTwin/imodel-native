@@ -1063,40 +1063,65 @@ void PrintTo(ECSqlStatus stat, std::ostream* os)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  09/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(JsonECSqlSelectAdapter::FormatOptions const& options, std::ostream* os)
+std::ostream& operator<<(std::ostream& os, JsonECSqlSelectAdapter::FormatOptions const& options)
     {
-    *os << "JsonECSqlSelectAdapter::FormatOptions(";
+    os << "JsonECSqlSelectAdapter::FormatOptions(";
     switch (options.GetMemberCasingMode())
         {
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
-                *os << "MemberNameCasing::KeepOriginal";
+            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
+                os << "MemberNameCasing::KeepOriginal";
                 break;
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
-                *os << "MemberNameCasing::LowerFirstChar";
+            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
+                os << "MemberNameCasing::LowerFirstChar";
                 break;
 
             default:
-                *os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
-                return;
+                return os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
         }
 
-    *os << ",";
+    os << ",";
     switch (options.GetInt64Format())
         {
             case ECJsonInt64Format::AsNumber:
-                *os << ENUM_TOSTRING(ECJsonInt64Format::AsNumber);
+                os << ENUM_TOSTRING(ECJsonInt64Format::AsNumber);
                 break;
             case ECJsonInt64Format::AsDecimalString:
-                *os << ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString);
+                os << ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString);
                 break;
             case ECJsonInt64Format::AsHexadecimalString:
-                *os << ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString);
+                os << ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString);
                 break;
             default:
-                *os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
-                return;
+                return os << "Unhandled MemberNameCasing. Adjust the PrintTo method";
         }
 
-    *os << ")";
+    return os << ")";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::ostream& operator<<(std::ostream& os, JsonUpdater::Options const& options)
+    {
+    os << "JsonUpdater::Options(";
+    switch (options.GetReadonlyPropertiesOption())
+        {
+            case JsonUpdater::ReadonlyPropertiesOption::Fail:
+                os << "ReadonlyPropertiesOption::Fail";
+                break;
+            case JsonUpdater::ReadonlyPropertiesOption::Ignore:
+                os << "ReadonlyPropertiesOption::Ignore";
+                break;
+
+            case JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem:
+                os << "ReadonlyPropertiesOption::UpdateIfNonSystem";
+                break;
+
+            default:
+                return os << "Unhandled ReadonlyPropertiesOption. Adjust the operator<< method";
+        }
+
+    return os << ", ECSQLOPTIONS: " << options.GetECSqlOptions();
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
