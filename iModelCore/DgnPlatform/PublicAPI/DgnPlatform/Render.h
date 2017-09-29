@@ -2656,6 +2656,10 @@ struct FeatureSymbologyOverrides
         void Init() { m_flagsMask = 0; }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
+        static Appearance FromRgb(ColorDef rgb) { Appearance app; app.SetRgb(rgb); return app; }
+        static Appearance FromRgba(ColorDef rgb, uint8_t alpha) { Appearance app = FromRgb(rgb); app.SetAlpha(alpha); return app; }
+        static Appearance FromRgba(ColorDef rgba) { return FromRgba(rgba, rgba.GetAlpha()); }
+
         //! Override transparency
         void SetTransparency(double t) { SetAlpha(static_cast<uint8_t>((1.0-t)*255.0)); }
         //! Override transparency
@@ -2732,13 +2736,17 @@ public:
     DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
 
     // NB: Appearance can override nothing, which prevents the default overrides from applying to it.
-    DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance);
+    DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance, bool replaceExisting=true);
     DGNPLATFORM_EXPORT void ClearElementOverrides(DgnElementId);
 
-    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance);
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance, bool replaceExisting=true);
     DGNPLATFORM_EXPORT void ClearSubCategoryOverrides(DgnSubCategoryId);
 
-    void SetDefaultOverrides(Appearance appearance) { m_defaultOverrides = appearance; }
+    void SetDefaultOverrides(Appearance appearance, bool replaceExisting=true)
+        {
+        if (replaceExisting || !m_defaultOverrides.OverridesSymbology())
+            m_defaultOverrides = appearance;
+        }
 
     bool IsAlwaysDrawnExclusive() const { return m_alwaysDrawnExclusive; }
     void SetAlwaysDrawnExclusive(bool exclusive) { m_alwaysDrawnExclusive = exclusive; }

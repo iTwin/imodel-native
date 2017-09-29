@@ -837,7 +837,7 @@ bool FeatureSymbologyOverrides::IsSubCategoryVisible(DgnSubCategoryId subcatId) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FeatureSymbologyOverrides::OverrideSubCategory(DgnSubCategoryId id, Appearance app)
+void FeatureSymbologyOverrides::OverrideSubCategory(DgnSubCategoryId id, Appearance app, bool replaceExisting)
     {
     if (!id.IsValid() || !IsSubCategoryVisible(id))
         return;
@@ -845,15 +845,20 @@ void FeatureSymbologyOverrides::OverrideSubCategory(DgnSubCategoryId id, Appeara
     // NB: Appearance may specify no overridden symbology - this means "don't apply the default overrides to this subcategory"
     auto iter = m_subcategoryOverrides.find(id);
     if (iter != m_subcategoryOverrides.end())
-        iter->second = app;
+        {
+        if (replaceExisting)
+            iter->second = app;
+        }
     else
+        {
         m_subcategoryOverrides.Insert(id, app);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
+void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app, bool replaceExisting)
     {
     if (!id.IsValid() || m_neverDrawn.end() != m_neverDrawn.find(id))
         return;
@@ -861,9 +866,14 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app)
     // NB: Appearance may specify no overridden symbology - this means "don't apply the default overrides to this element"
     auto iter = m_elementOverrides.find(id);
     if (m_elementOverrides.end() != iter)
-        iter->second = app;
+        {
+        if (replaceExisting)
+            iter->second = app;
+        }
     else
+        {
         m_elementOverrides.Insert(id, app);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
