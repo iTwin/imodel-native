@@ -203,6 +203,10 @@
 		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
 		<SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
+	
+	<Part Name="GeomCompare" BentleyBuildMakeFile="GeomComparison.mke" OnlyPlatforms="x64">
+		<SubPart PartName="RunGtest" />
+    </Part>
 
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
