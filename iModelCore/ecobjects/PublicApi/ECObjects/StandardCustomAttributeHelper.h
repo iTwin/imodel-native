@@ -76,6 +76,15 @@ public:
     //! is not of type ::PRIMITIVETYPE_DateTime. 
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
 
+    //! Checks whether the specified ECClass has the @b ClassHasCurrentTimeStampProperty CustomAttribute and, if yes,
+    //! returns the ECProperty pointed to by the custom attribute which is meant to hold a current time stamp.
+    //! @param[out] currentTimeStampProp Retrieved current timestamp property
+    //! @param[in] ecClass ECClass to look for the @b ClassHasCurrentTimeStampProperty CustomAttribute
+    //! @return SUCCESS if the class has the custom attribute and the property could be retrieved successfully - or
+    //! if the class doesn't have the custom attribute. In the latter case, @p currentTimeStampProp is set to nullptr.
+    //! ERROR if the custom attribute is malformed or is not pointing to a date time property.
+    ECOBJECTS_EXPORT static BentleyStatus GetCurrentTimeStampProperty(PrimitiveECPropertyCP& currentTimeStampProp, ECClassCR ecClass);
+
     //! Returns the specified ECCustomAttributeClass from the CoreCustomAttributes schema
     //! @param[in] attributeName The name of the ECCustomAttributeClass
     //! @return An ECCustomAttributeClass, if the class is found in the CoreCustomAttributes schema. Otherwise, nullptr will be returned.
