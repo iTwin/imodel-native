@@ -240,10 +240,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
 
         if (0 < m_sources.GetCount() &&
             S_SUCCESS != SyncWithSources(restrictLevelForPropagation))
-            return SMStatus::S_ERROR;
-
-		if (GetProgress()->IsCanceled())
-			return SMStatus::S_ERROR_CANCELED_BY_USER;
+            status = SMStatus::S_ERROR;
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
@@ -253,6 +250,9 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
             (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
             BSISUCCESS != SaveGCS())
             status = SMStatus::S_ERROR;
+
+		if (GetProgress()->IsCanceled())
+			return SMStatus::S_ERROR_CANCELED_BY_USER;
 
         }
     catch (...)
