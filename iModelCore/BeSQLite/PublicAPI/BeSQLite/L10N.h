@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/L10N.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,7 +88,7 @@ struct L10N
     BE_SQLITE_EXPORT static BentleyStatus Initialize(SqlangFiles const& files);
 
     //! The Suspend and Resume calls can be used to close and re-open the database files that store the translations.
-    //! This is required on iOS 8 when the app suspends and resumes; it is optional elsewhere. On iOS 8 using older hardware (pre-iPad Air), the *.sqlang.db3 files in the app bundle are, for an unknown reason, considred "system" files, and your app is terminated if they're left open while suspended.
+    //! This is required on iOS 8 when the app suspends and resumes; it is optional elsewhere. On iOS 8 using older hardware (pre-iPad Air), the *.sqlang.db3 files in the app >>>bundle<<< are, for an unknown reason, considred "system" files, and your app is terminated if they're left open while suspended.
     BE_SQLITE_EXPORT static void Suspend();
 
     //! The Suspend and Resume calls can be used to close and re-open the database files that store the translations.
@@ -142,11 +142,17 @@ private:
         Utf8String GetString(Utf8CP scope, Utf8CP name, bool& hasString);
         };
 
-    bool       m_initialized;
+private:
+    bool       m_initialized = false;
+    bool       m_suspended = false;
+
     SQLangDb   m_lastResortDb;
     SQLangDb   m_cultureNeutralDb;
     SQLangDb   m_cultureSpecificDb;
+
+private:
     void Initialize();
+    void ResuspendIfNeeded();
 
 public: 
     BE_SQLITE_EXPORT L10NLookup(L10N::SqlangFiles const&);

@@ -2,7 +2,7 @@
 |
 |     $Source: L10N.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/L10N.h>
@@ -88,7 +88,6 @@ DbResult L10NLookup::SQLangDb::Open()
 L10NLookup::L10NLookup (L10N::SqlangFiles const & files)
      : m_lastResortDb(files.m_default), m_cultureNeutralDb(files.m_cultureNeutral), m_cultureSpecificDb(files.m_cultureSpecific)
     {
-    m_initialized = false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -127,6 +126,20 @@ void L10NLookup::Initialize()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void L10NLookup::ResuspendIfNeeded()
+    {
+    // Addition to original fix with Suspend()/Resume(): http://graphite5-5r6.hgbranches.bentley.com/dgndb/mobiledgn/rev/0efb55a16beb
+    // iOS app crashes after getting localized strings while app is in background mode. String retrieval re-initializes "suspended" L10N API.
+    // Database connections lock app-bundle files, and this causes "Message from debugger: Terminated due to signal 9" crash after app 
+    // finishes its background execution with endBackgroundTask.
+    if (!m_initialized || !m_suspended)
+        return;
+    Suspend();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2014
 //---------------------------------------------------------------------------------------
 void L10NLookup::Suspend()
@@ -139,6 +152,7 @@ void L10NLookup::Suspend()
     m_lastResortDb.CloseDb();
 
     m_initialized = false;
+    m_suspended = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -146,6 +160,7 @@ void L10NLookup::Suspend()
 //---------------------------------------------------------------------------------------
 void L10NLookup::Resume()
     {
+    m_suspended = false;
     // Let the next call to initialize take care of starting up again.
     }
 
@@ -157,7 +172,7 @@ Utf8String L10NLookup::GetString(Utf8CP scope, int id, bool* outHasString)
     Initialize();
 
     bool ALLOW_NULL_OUTPUT (hasString, outHasString);
-    Utf8String  message = m_cultureSpecificDb.GetString(scope, id, hasString);
+    Utf8String message = m_cultureSpecificDb.GetString(scope, id, hasString);
     if (!hasString)
         message = m_cultureNeutralDb.GetString(scope, id, hasString);
 
@@ -170,6 +185,7 @@ Utf8String L10NLookup::GetString(Utf8CP scope, int id, bool* outHasString)
         //BeAssert (false && "Attempt to lookup localized string failed.");
         }
 
+    ResuspendIfNeeded(message);
     return message;
     }
 
@@ -194,6 +210,7 @@ Utf8String L10NLookup::GetString (Utf8CP scope, Utf8CP name, bool* outHasString)
         BeAssert (false && "Attempt to lookup localized string failed.");
         }
 
+    ResuspendIfNeeded(message);
     return message;
     }
 
