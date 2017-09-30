@@ -161,7 +161,9 @@ static ClientPtr   doSignIn(PublisherParams const& params)
     return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
     }
 
-
+#ifdef NOT_NOW
+// This acquires a temporary briefcase at TIP - We're not using it now as we are always working from 
+// an existing briefcase.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -195,6 +197,31 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
+#endif
+// This acquires a temporary briefcase at TIP - We're not using it now as we are always working from 
+// an existing briefcase.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbName)
+    {
+    BeFileName      tempPath;
+    WString         fileName;
+    BentleyStatus   status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPath, L"TempBriefcase");
+
+    BeAssert(SUCCESS == status && "Cannot get temporary directory");
+
+    tempDbName.BuildName(nullptr, tempPath.c_str(), inputDbName.GetFileNameAndExtension().c_str(), nullptr);
+
+    // Try to create temporary file by copying base bim file
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile(inputDbName, tempDbName))
+        {
+        BeAssert(false && "unable to copy temporary DB.");
+        return nullptr;
+        }
+    return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    }
+
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
@@ -213,6 +240,7 @@ TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index) :
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
     { 
     m_revisionName = WPrintfString(L"Revision_%d", index);
+    m_revisionIndex = index;
     m_dataDir.AppendToPath(m_revisionName.c_str()).AppendSeparator();
     }
 
@@ -261,7 +289,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         return Status::CantConnectToIModelHub;
 
     BeFileName  tempDbName;
-    auto        tempDb = acquireTemporaryBriefcase(tempDbName, client, params.GetProjectName(), params.GetRepositoryName());
+    auto        tempDb = copyToTemporaryBriefcase(tempDbName, params.GetInputFileName());
 
     if (!tempDb.IsValid())
         return Status::CantAcquireBriefcase;
@@ -273,7 +301,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         return Status::CantFindDefaultView;
 
     bvector<DgnRevisionPtr> changeSets;
-    Json::Value             revisionsJson = Json::arrayValue;
+    std::list<Json::Value>  revisionJsons;
 
     getAllChangeSets(changeSets, *tempDb, client);
 
@@ -290,32 +318,36 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         if (!elementIds.empty())
             {
+            Json::Value         revisionElementsJson = Json::objectValue;
             DgnElementIdSet     addedOrModifiedIds, deletedIds;
 
             for (size_t j=0; j<elementIds.size(); j++)
                 {
+                auto elementId = elementIds.at(j);
+
                 switch(opCodes.at(j))
                     {
                     case DbOpcode::Delete:
-                        deletedIds.insert(elementIds.at(j));
+                        deletedIds.insert(elementId);
                         break;
 
                     case DbOpcode::Insert:
-                        addedOrModifiedIds.insert(elementIds.at(j));
+                        addedOrModifiedIds.insert(elementId);
                         break;
 
                     case DbOpcode::Update:
-                        deletedIds.insert(elementIds.at(j));
-                        addedOrModifiedIds.insert(elementIds.at(j));
+                        deletedIds.insert(elementId);
+                        addedOrModifiedIds.insert(elementId);
                         break;
                     }
+                revisionElementsJson[elementId.ToString()] = (int) opCodes.at(j);
                 }
 
             Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
 
             if (!addedOrModifiedIds.empty())
                 {
-                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, i);
+                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i);
                 DgnModelIdSet               modelIds;
 
                 for (auto& elementId : addedOrModifiedIds)
@@ -324,13 +356,21 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                 revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
                 revisionJson["models"] = revisionPublisher.GetModelsJson(modelIds);
                 }
+            Utf8String  revisionName = Utf8PrintfString("Revision: %d", changeSets.size() - i);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
 
-            revisionsJson.append(std::move (revisionJson));
+            revisionJson["name"] = revisionName;
+            revisionJson["elements"] = std::move(revisionElementsJson);
+            revisionJsons.push_front(revisionJson);
             }
 
         // Roll to previous revision.
         VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), changeSets.at(i)->GetId(), Utf8String(tempDbName));
         }
+    Json::Value     revisionsJson;
+    for (auto& revisionJson : revisionJsons)
+        revisionsJson.append(revisionJson);
+
+    // Needs work - This publishes in initial state and doesn't include changes to views/categories etc.
     tilesetPublisher.SetRevisionsJson(std::move(revisionsJson));
     tilesetPublisher.Publish(params, false);
 

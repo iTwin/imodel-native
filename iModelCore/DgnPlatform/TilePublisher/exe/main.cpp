@@ -298,45 +298,30 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_password = Utf8String(arg.m_value.c_str());
                 break;
 
-            case ParamId::ProjectName:
-                m_projectName = Utf8String(arg.m_value.c_str());
-                break;
-
-            case ParamId::RepositoryName:
-                m_repositoryName = Utf8String(arg.m_value.c_str());
-                break;
-
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
+    if (!haveInput)
+        {
+        printf("Input filename is required\n");
+        return false;
+        }
+
+    if (m_outputDir.empty())
+        m_outputDir = m_inputFileName.GetDirectoryName();
+
+    if (m_tilesetName.empty())
+        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
 
     if (m_wantHistory)
         {
-        if (m_repositoryName.empty())
+        if (m_userName.empty() || m_password.empty())
             {
-            printf ("Repository required for history publishing\n");
+            printf ("Username and password are reaquired for history publishing\n");
             return false;
             }
-
-
-        if (m_tilesetName.empty())
-            m_tilesetName = WString(m_repositoryName.c_str(), false);
-        }
-    else
-        {
-        if (!haveInput)
-            {
-            printf("Input filename is required\n");
-            return false;
-            }
-
-        if (m_outputDir.empty())
-            m_outputDir = m_inputFileName.GetDirectoryName();
-
-        if (m_tilesetName.empty())
-            m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
         }
 
     return true;

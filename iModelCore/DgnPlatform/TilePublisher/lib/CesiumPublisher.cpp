@@ -247,12 +247,13 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
             return status;
         }
 
+    DRange3d            range;
+
     ProgressMeter progressMeter(*this);
     TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
 
-    ExtractSchedules();     // Extract these now as they schedule entrie may need to be added to batch tables.
+    ExtractSchedules();     // Extract these now as they schedule entries may need to be added to batch tables.
 
-    DRange3d            range;
 
     m_generator = &generator;
     auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
