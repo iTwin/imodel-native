@@ -25,6 +25,7 @@ static const uint32_t s_instanced3dVersion   = 1;
 static const uint32_t s_pointCloudVersion    = 1;
 static const uint32_t s_vectorVersion        = 1;
 
+static const size_t   s_maxPointsPerTile = 250000;
 
 #define GLTF_LINES 1
 #define GLTF_LINE_STRIP 3
