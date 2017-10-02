@@ -167,3 +167,47 @@ TEST(Clip,XYVisibilityAB)
 
     Check::ClearGeometry ("Clip.XYVisibilityAB");
     }
+
+
+
+TEST(Polyface,PartitionReadIndicesByNormal)
+    {
+    IFacetOptionsPtr options = IFacetOptions::Create ();
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+    builder->AddSweptNGon (30, 1.0, 0.0, 1.0, false, false);
+    auto mesh = builder->GetClientMeshPtr ();
+    auto vector = DVec3d::From (-1.0, -2.0, 0.0);
+    double a = 7.0;
+    double b = 4.0;
+    double r = 3.0;
+    DPoint3d origin = DPoint3d::From (0,0,0);
+    DVec3d axis = DVec3d::From (0,0,1);
+    for (auto degrees : bvector<double> {0.1, 5.0, 15.0, 30.0})
+        {
+        SaveAndRestoreCheckTransform shift0 (a, 0, 0);
+        auto theta = Angle::FromDegrees (90 + degrees);
+        auto vectorA = DVec3d::FromRotateVectorAroundVector (vector, axis,  theta);
+        auto vectorB = DVec3d::FromRotateVectorAroundVector (vector, axis, -theta);
+            bvector<DPoint3d> annotation {
+            origin - vectorB, origin + vectorB,
+            origin,
+            origin + vectorA, origin - vectorA,
+            origin,
+            origin - vector};
+        Check::SaveTransformed (annotation);
+                
+        bvector<bvector<ptrdiff_t>> readIndices;
+        mesh->PartitionReadIndicesByNormal (vector, readIndices, Angle::DegreesToRadians (degrees));
+        bvector<PolyfaceHeaderPtr> subMesh;
+        mesh->CopyPartitions (readIndices, subMesh);
+        Check::SaveTransformed (*mesh);
+        for (auto &m : subMesh)
+            {
+            Check::Shift (0, b, 0);
+            Check::SaveTransformed (annotation);
+            if (m.IsValid () && m->Point().size () > 0)
+                Check::SaveTransformed (*m);
+            }
+        }
+    Check::ClearGeometry ("Polyface.PartitionReadIndicesByNormal");
+    }
