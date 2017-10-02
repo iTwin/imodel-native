@@ -2803,7 +2803,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreateObjectWithFiles_CallbacksC
     options.AddFileCancellationToken(instance1, fileCt1);
     options.AddFileCancellationToken(instance2, fileCt2);
 
-    auto mockFunction = MockFunction<void(ECInstanceKeyCR)>();
+    MockFunction<void(ECInstanceKeyCR)> mockFunction;
 
     options.SetFileUploadFinishCallaback(std::function<void(ECInstanceKeyCR)>([&] (ECInstanceKeyCR key)
         {

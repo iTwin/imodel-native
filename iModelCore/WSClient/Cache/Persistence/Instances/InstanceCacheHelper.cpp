@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -185,6 +185,11 @@ ICancellationTokenPtr ct
         element.relationshipClass = m_dbAdapter.GetECRelationshipClass(relationshipInstance.GetObjectId());
         element.selectedClass = m_dbAdapter.GetECClass(relationshipInstance.GetRelatedInstance().GetObjectId());
         element.direction = relationshipInstance.GetDirection();
+        if (!element.IsValid())
+            {
+            LOG.errorv("Failed to cache relationship instance %s. Selected path element is invalid.", relationshipInstance.GetObjectId().ToString().c_str());
+            return ERROR;
+            }
 
         bvector<SelectPathElement> relatedPath = path;
         relatedPath.push_back(element);
@@ -382,6 +387,12 @@ BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info,
         }
 
     ECClassCP ecClass = m_dbAdapter.GetECClass(info.GetCachedInstanceKey());
+    if (nullptr == ecClass)
+        {
+        BeAssert(false && "Unknown instance class");
+        return ERROR;
+        }
+
     if (SUCCESS != SaveExistingInstance(info, *ecClass, properties))
         {
         LOG.errorv("Failed to update instance %s", info.GetObjectId().ToString().c_str());
