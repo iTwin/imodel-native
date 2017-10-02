@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfoManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
 
         ECSqlAdapterLoader<ECInstanceInserter>  m_infoECInstanceInserter;
         ECSqlAdapterLoader<JsonInserter>        m_infoInserter;
-        ECSqlAdapterLoader<JsonUpdater>         m_infoUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>         m_infoUpdater;
 
     private:
         ECInstanceKey ReadRelationshipKeyByInfo(CacheNodeKeyCR infoKey);

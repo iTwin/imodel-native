@@ -24,6 +24,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 double IntegrationTestsBase::s_lastProgressBytesTransfered = 0;
 double IntegrationTestsBase::s_lastProgressBytesTotal = 0;
+int IntegrationTestsBase::s_progressRetryCount = 0;
 
 L10N::SqlangFiles GetSqlangFiles(BeFileNameCR assets)
     {
@@ -75,9 +76,20 @@ Request::ProgressCallback IntegrationTestsBase::CreateProgressCallback()
     {
     s_lastProgressBytesTransfered = 0;
     s_lastProgressBytesTotal = 0;
+    s_progressRetryCount = 0;
 
     return [](double bytesTransfered, double bytesTotal)
         {
+        // Workaround for TFS#582017
+        if (bytesTransfered == 0 && bytesTotal == 0 && s_lastProgressBytesTransfered > 0)
+            {
+            // Gets here if connection dies and query is repeated
+            EXPECT_EQ(s_progressRetryCount, 0);
+            s_progressRetryCount++;
+            s_lastProgressBytesTransfered = 0;
+            s_lastProgressBytesTotal = 0;
+            }
+
         EXPECT_GE(bytesTransfered, s_lastProgressBytesTransfered);
         if (s_lastProgressBytesTotal > 0)
             {

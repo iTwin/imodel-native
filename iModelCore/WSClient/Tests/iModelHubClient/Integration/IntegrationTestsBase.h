@@ -28,6 +28,7 @@ private:
 protected:
     static double s_lastProgressBytesTransfered;
     static double s_lastProgressBytesTotal;
+    static int    s_progressRetryCount;
     ScopediModelHubHost *m_pHost;
     Utf8String m_projectId;
 

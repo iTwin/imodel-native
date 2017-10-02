@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -36,7 +36,7 @@ m_rootHoldingRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSc
 m_rootWeakRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootToNodeWeak)),
 
 m_rootInserter(dbAdapter.GetECDb(), *m_rootClass),
-m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass)
+m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {}
 
 /*--------------------------------------------------------------------------------------+

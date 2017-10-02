@@ -37,7 +37,7 @@ m_objectInfoManager(objectInfoManager),
 m_relationshipInfoManager(relationshipInfoManager),
 m_changeInfoManager(changeInfoManager),
 m_inserters(dbAdapter.GetECDb()),
-m_updaters(dbAdapter.GetECDb(), "ReadonlyPropertiesAreUpdatable")
+m_updaters(dbAdapter.GetECDb(), ECSqlUpdater_Options_IgnoreSystemAndUpdateReadOnlyProperties)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -365,6 +365,9 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties)
     {
+    if (properties.IsNull() || properties.GetObject().ObjectEmpty())
+        return SUCCESS;
+
     return BE_SQLITE_OK == m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetInstanceId(), properties) ? SUCCESS : ERROR;
     }
 
