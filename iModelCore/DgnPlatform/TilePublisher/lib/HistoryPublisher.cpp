@@ -148,7 +148,7 @@ static WebServices::ClientInfoPtr getClientInfo()
 static ClientPtr   doSignIn(PublisherParams const& params)
     {
     Credentials                 credentials;
-    UrlProvider::Environment    environment = WebServices::UrlProvider::Environment::Qa;
+    UrlProvider::Environment    environment = WebServices::UrlProvider::Environment::Dev;
 
     credentials.SetUsername(params.GetUser());
     credentials.SetPassword(params.GetPassword());

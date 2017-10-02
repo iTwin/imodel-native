@@ -51,9 +51,6 @@ enum class ParamId
     History,
     UserName,
     Password,
-    ProjectName,
-    RepositoryName,
-    Environment,
     Invalid,
 };
 
@@ -92,8 +89,6 @@ static CommandParam s_paramTable[] =
         { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
         { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
         { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
-        { L"pr", L"project", L"Project (History Publishing)", false, false },
-        { L"rp", L"repository", L"Repository (History Publishing)", false, false},
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
