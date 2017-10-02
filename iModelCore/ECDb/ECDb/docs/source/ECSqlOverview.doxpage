@@ -37,7 +37,7 @@
     |ECClass kind    | SELECT (polym.) | SELECT (non-polym.) | INSERT | UPDATE (polym.) | UPDATE (non-polym.) | DELETE (polym.) | DELETE (non-polym.)|
     |----------------|-----------------|---------------------|--------|-----------------|---------------------|-----------------|--------------------|
     | Entity         | yes             | yes                 | yes    | yes             | yes                 | yes             | yes                |
-    | Abstract entity| yes             | yes                 | no     | yes             | yes (affects 0 rows) | yes            | yes (affects 0 rows) |
+    | Abstract entity| yes             | yes                 | no     | yes             | no                  | yes             | no                 |
     | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
     | ForeignKey Relationship | yes    | yes                 | no*    | no*             | no*                 | no*             | no*                |
     | LinkTable Relationship | yes     | yes                 | yes    | yes             | yes                 | yes             | yes                |

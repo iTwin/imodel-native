@@ -591,8 +591,8 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
 
     ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ITargetEnd"));
     ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ISourceEnd"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceEnd"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.TargetEnd"));
     ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceHasTarget"));
     }
 //---------------------------------------------------------------------------------------
@@ -8689,7 +8689,8 @@ TEST_F(DbMappingTestFixture, CRUDOnMixins)
 
     //-----------UPDATE----------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.IMixin SET IMixin_Prop='UpdatedVal'"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ONLY ts.Parent SET Parent_Prop='UpdatedVal'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET Child_Prop=200"));
     stmt.Finalize();

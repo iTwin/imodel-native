@@ -24,79 +24,82 @@ Policy& Policy::operator= (Policy const& rhs)
         m_notSupportedMessage = rhs.m_notSupportedMessage;
         }
 
-    return *this;
+return *this;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-Policy& Policy::operator= (Policy&& rhs)
-    {
-    if (this != &rhs)
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                 Krischan.Eberle                    12/2013
+    //---------------------------------------------------------------------------------------
+    Policy& Policy::operator= (Policy&& rhs)
         {
-        m_isSupported = std::move(rhs.m_isSupported);
-        m_notSupportedMessage = std::move(rhs.m_notSupportedMessage);
+        if (this != &rhs)
+            {
+            m_isSupported = std::move(rhs.m_isSupported);
+            m_notSupportedMessage = std::move(rhs.m_notSupportedMessage);
+            }
+
+        return *this;
         }
 
-    return *this;
-    }
 
-
-//********************* PolicyManager ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-//static
-Policy PolicyManager::GetPolicy(PolicyAssertion const& assertion)
-    {
-    switch (assertion.GetType())
+    //********************* PolicyManager ******************************************
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                 Krischan.Eberle                    12/2013
+    //---------------------------------------------------------------------------------------
+    //static
+    Policy PolicyManager::GetPolicy(PolicyAssertion const& assertion)
         {
-            case PolicyAssertion::Type::ClassIsValidInECSql:
-                return DoGetPolicy(static_cast<ClassIsValidInECSqlPolicyAssertion const&> (assertion));
+        switch (assertion.GetType())
+            {
+                case PolicyAssertion::Type::ClassIsValidInECSql:
+                    return DoGetPolicy(static_cast<ClassIsValidInECSqlPolicyAssertion const&> (assertion));
 
-            case PolicyAssertion::Type::ECCrudPermission:
-                return DoGetPolicy(static_cast<ECCrudPermissionPolicyAssertion const&> (assertion));
+                case PolicyAssertion::Type::ECCrudPermission:
+                    return DoGetPolicy(static_cast<ECCrudPermissionPolicyAssertion const&> (assertion));
 
-            case PolicyAssertion::Type::ECSchemaImportPermission:
-                return DoGetPolicy(static_cast<SchemaImportPermissionPolicyAssertion const&> (assertion));
+                case PolicyAssertion::Type::ECSchemaImportPermission:
+                    return DoGetPolicy(static_cast<SchemaImportPermissionPolicyAssertion const&> (assertion));
 
-            default:
-                return Policy::CreateNotSupported();
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-//static
-Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& assertion)
-    {
-    ECClassCR ecClass = assertion.GetClassMap().GetClass();
-    Utf8StringCR className = ecClass.GetName();
-    //generally not supported - regardless of ECSqlType
-    if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
-        {
-        Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it is neither an entity class nor a relationship class.",
-                                    className.c_str());
-        return Policy::CreateNotSupported(notSupportedMessage);
+                default:
+                    return Policy::CreateNotSupported();
+            }
         }
 
-    if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                 Krischan.Eberle                    12/2013
+    //---------------------------------------------------------------------------------------
+    //static
+    Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& assertion)
         {
-        Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
-                                    " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
-                                    " In that case, please see the log for details about why the class was not mapped.",
-                                    className.c_str());
-        return Policy::CreateNotSupported(notSupportedMessage);
-        }
+        ECClassCR ecClass = assertion.GetClassMap().GetClass();
+        Utf8StringCR className = ecClass.GetName();
+        //generally not supported - regardless of ECSqlType
+        if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
+            {
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it is neither an entity class nor a relationship class.",
+                                        className.c_str());
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
 
-    BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
+        if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+            {
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
+                                        " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
+                                        " In that case, please see the log for details about why the class was not mapped.",
+                                        className.c_str());
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
 
-    const ECSqlType ecsqlType = assertion.GetECSqlType();
-    if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
-        {
+        BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
+
+        const ECSqlType ecsqlType = assertion.GetECSqlType();
+        if (ecsqlType == ECSqlType::Select)
+            return Policy::CreateSupported(); //no more policies for SELECT
+
+        BeAssert(ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update || ecsqlType == ECSqlType::Delete);
+
         if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
             {
             Utf8String notSupportedMessage;
@@ -123,21 +126,27 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
             return Policy::CreateNotSupported(notSupportedMessage);
             }
 
-        if (ecsqlType == ECSqlType::Insert)
+        if (!assertion.IsPolymorphicClassExpression())
             {
-            //Inserting into abstract classes is not possible (by definition of abstractness)
             if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
                 {
                 Utf8String notSupportedMessage;
-                notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
+                notSupportedMessage.Sprintf("Cannot run non-polymorphic ECSQL INSERT, UPDATE or DELETE on an abstract ECClass '%s'. Abstract classes are not instantiable.",
                                             className.c_str());
 
                 return Policy::CreateNotSupported(notSupportedMessage);
                 }
 
-            }
+            if (assertion.GetClassMap().GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+                {
+                Utf8String notSupportedMessage;
+                notSupportedMessage.Sprintf("ECClass '%s' is mapped to a virtual table. Therefore only ECSQL SELECT statements can be used against the class.",
+                                            className.c_str());
 
-        if (assertion.IsPolymorphicClassExpression())
+                return Policy::CreateNotSupported(notSupportedMessage);
+                }
+            }
+        else
             {
             for (Partition const& horizPartition : assertion.GetClassMap().GetStorageDescription().GetHorizontalPartitions())
                 {
@@ -152,18 +161,8 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
                 }
             }
 
-        if (assertion.GetClassMap().GetPrimaryTable().GetType() == DbTable::Type::Virtual)
-            {
-            Utf8String notSupportedMessage;
-            notSupportedMessage.Sprintf("ECClass '%s' is mapped to a virtual table. Therefore only ECSQL SELECT statements can be used against the class.",
-                                        className.c_str());
-
-            return Policy::CreateNotSupported(notSupportedMessage);
-            }
+        return Policy::CreateSupported();
         }
-
-    return Policy::CreateSupported();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2016

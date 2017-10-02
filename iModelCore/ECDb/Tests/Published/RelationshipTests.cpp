@@ -5231,22 +5231,21 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     }
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.Base"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(6, stmt.GetValueInt(0));
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(4, stmt.GetValueInt(0));
     stmt.Finalize();
 
     //Deletes the instances of BaseOwnsBase class..
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY t.BaseOwnsBase"));
-    ASSERT_TRUE(BE_SQLITE_DONE == stmt.Step());
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY t.BaseOwnsBase"));
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(4, stmt.GetValueInt(0));
     stmt.Finalize();
 
@@ -5256,7 +5255,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(2, stmt.GetValueInt(0));
     stmt.Finalize();
 
@@ -5266,7 +5265,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(0, stmt.GetValueInt(0));
     stmt.Finalize();
     }

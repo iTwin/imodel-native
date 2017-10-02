@@ -11,3 +11,6 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
+
+#TFS 760324
+ECSqlStatementTestFixture.PolymorphicUpdateNoTph
