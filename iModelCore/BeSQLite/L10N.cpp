@@ -85,8 +85,10 @@ DbResult L10NLookup::SQLangDb::Open()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Bern.McCarty     02/2013
 //---------------------------------------------------------------------------------------
-L10NLookup::L10NLookup (L10N::SqlangFiles const & files)
-     : m_lastResortDb(files.m_default), m_cultureNeutralDb(files.m_cultureNeutral), m_cultureSpecificDb(files.m_cultureSpecific)
+L10NLookup::L10NLookup (L10N::SqlangFiles const & files) :
+m_lastResortDb(files.m_default),
+m_cultureNeutralDb(files.m_cultureNeutral),
+m_cultureSpecificDb(files.m_cultureSpecific)
     {
     }
 
@@ -161,7 +163,7 @@ void L10NLookup::Suspend()
 void L10NLookup::Resume()
     {
     m_suspended = false;
-    // Let the next call to initialize take care of starting up again.
+    // Let the next call to Initialize() take care of starting up again.
     }
 
 //---------------------------------------------------------------------------------------
@@ -215,7 +217,14 @@ Utf8String L10NLookup::GetString (Utf8CP scope, Utf8CP name, bool* outHasString)
     }
 
 static L10NLookup* s_lookup = NULL;
-void L10N::Shutdown() {DELETE_AND_CLEAR(s_lookup);}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void L10N::Shutdown()
+    {
+    DELETE_AND_CLEAR(s_lookup);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2014
@@ -224,7 +233,7 @@ void L10N::Suspend()
     {
     if (NULL == s_lookup)
         {
-        BeAssert(false); // Call L10N::Initialize first
+        BeAssert(false && "Call L10N::Initialize() first");
         return;
         }
 
@@ -238,7 +247,7 @@ void L10N::Resume()
     {
     if (NULL == s_lookup)
         {
-        BeAssert(false); // Call L10N::Initialize first
+        BeAssert(false && "Call L10N::Initialize() first");
         return;
         }
 
@@ -281,7 +290,7 @@ Utf8String L10N::GetString(Utf8CP scope, int id, bool* hasString)
     if (NULL != s_lookup)
         return s_lookup->GetString(scope, id, hasString);
 
-    BeAssert (false && "Call L10N::Initialize first");
+    BeAssert (false && "Call L10N::Initialize() first");
     if (hasString)
         *hasString = false;
 
@@ -296,7 +305,7 @@ Utf8String L10N::GetString(Utf8CP scope, Utf8CP name, bool* hasString)
     if (NULL != s_lookup)
         return s_lookup->GetString(scope, name, hasString);
 
-    BeAssert (false && "Call L10N::Initialize first");
+    BeAssert (false && "Call L10N::Initialize() first");
     if (hasString)
         *hasString = false;
 
