@@ -775,6 +775,38 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWithStr
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingChildInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.NotExistingClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationshipClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.NotExistingClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.NotExistingClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    BeTest::SetFailOnAssert(true);
+    }
+
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
     {
     auto cache = GetTestCache();
