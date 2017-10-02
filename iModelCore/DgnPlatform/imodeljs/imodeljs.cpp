@@ -289,229 +289,236 @@ void IModelJs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColle
         }
     }
 
-//========================================================================================
-// @bsiclass                                                 Ramanujam.Raman      08/2017
-//========================================================================================
-struct JsonBinder
-{
-private:    
-   static BentleyStatus BindPrimitiveValue(IECSqlBinder& binder, JsonValueCR bindingValue)
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus IModelJs::JsonBinder::BindPrimitiveValue(IECSqlBinder& binder, JsonValueCR bindingValue)
+    {
+    ECN::PrimitiveType primitiveType = (ECN::PrimitiveType) bindingValue["type"].asInt();
+    JsonValueCR value = bindingValue["value"];
+    BeAssert(!value.isNull());
+
+    Json::ValueType valueType = value.type();
+    switch (primitiveType)
         {
-        ECN::PrimitiveType primitiveType = (ECN::PrimitiveType) bindingValue["type"].asInt();
-        JsonValueCR value = bindingValue["value"];
-        BeAssert(!value.isNull());
-
-        Json::ValueType valueType = value.type();
-        switch (primitiveType)
+        case PRIMITIVETYPE_Binary:
             {
-            case PRIMITIVETYPE_Binary:
-                {
-                bvector<Byte> blob;
-                if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, value))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindBlob(&blob, (int) blob.size(), IECSqlBinder::MakeCopy::Yes))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_Boolean:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::booleanValue))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindBoolean(value.asBool()))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_DateTime:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::stringValue))
-                    return ERROR;
-                DateTime dateTime;
-                DateTime::FromString(dateTime, value.asString().c_str());
-                if (ECSqlStatus::Success != binder.BindDateTime(dateTime))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_Double:
-                {
-                if (!value.isConvertibleTo(Json::ValueType::realValue) && !value.isString())
-                    return ERROR;
-                double doubleValue;
-                if (value.isDouble())
-                    doubleValue = value.asDouble();
-                else if (value.isInt())
-                    doubleValue = (double) value.asInt();
-                else if (value.isString())
-                    doubleValue = std::stod(value.asCString());
-                else
-                    {
-                    EXPECTED_CONDITION(false);
-                    return ERROR;
-                    }
-                if (ECSqlStatus::Success != binder.BindDouble(doubleValue))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_IGeometry:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::objectValue))
-                    return ERROR;
-                if (value.isNull())
-                    return SUCCESS;
-                bvector<IGeometryPtr> geometry;
-                if (!BentleyGeometryJson::TryJsonValueToGeometry(value, geometry))
-                    return ERROR;
-                BeAssert(geometry.size() == 1);
-                if (ECSqlStatus::Success != binder.BindGeometry(*geometry[0]))
-                    return ERROR;
-                return SUCCESS;
-                }
-
-            case PRIMITIVETYPE_Integer:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::intValue || valueType == Json::stringValue))
-                    return ERROR;
-                int intValue;
-                if (value.isInt())
-                    intValue = value.asInt();
-                else if (value.isString())
-                    intValue = std::stoi(value.asCString());
-                else
-                    {
-                    EXPECTED_CONDITION(false);
-                    return ERROR;
-                    }
-                if (ECSqlStatus::Success != binder.BindInt(intValue))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_Long:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
-                    return ERROR;
-                BentleyStatus status;
-                uint64_t longValue = BeStringUtilities::ParseHex(value.asCString(), &status);
-                if (!EXPECTED_CONDITION(status == SUCCESS))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindInt64((int64_t) longValue))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_Point2d:
-                {
-                DPoint2d point2d;
-                if (ECJsonUtilities::JsonToPoint2d(point2d, value))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindPoint2d(point2d))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_Point3d:
-                {
-                DPoint3d point3d;
-                if (ECJsonUtilities::JsonToPoint3d(point3d, value))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindPoint3d(point3d))
-                    return ERROR;
-                return SUCCESS;
-                }
-            case PRIMITIVETYPE_String:
-                {
-                if (!EXPECTED_CONDITION(valueType == Json::stringValue))
-                    return ERROR;
-                if (ECSqlStatus::Success != binder.BindText(value.asString().c_str(), IECSqlBinder::MakeCopy::Yes))
-                    return ERROR;
-                return SUCCESS;
-                }
-            default:
+            bvector<Byte> blob;
+            if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, value))
                 return ERROR;
-        }
-        }
-
-    static BentleyStatus BindArrayValue(IECSqlBinder& binder, JsonValueCR value)
-        {
-        BeAssert(value.isArray() && !value.isNull());
-        for (int ii = 0; ii < (int) value.size(); ii++)
-            {
-            IECSqlBinder& childBinder = binder.AddArrayElement();
-            if (SUCCESS != BindValue(childBinder, value[ii]))
+            if (ECSqlStatus::Success != binder.BindBlob(&blob, (int) blob.size(), IECSqlBinder::MakeCopy::Yes))
                 return ERROR;
+            return SUCCESS;
             }
-        return SUCCESS;
-        }
-
-    static BentleyStatus BindStructValue(IECSqlBinder& binder, JsonValueCR value)
-        {
-        BeAssert(value.isObject() && !value.isNull());
-        for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        case PRIMITIVETYPE_Boolean:
             {
-            Utf8CP paramName = iter.memberName();
-            JsonValueCR childValue = *iter;
-
-            IECSqlBinder& childBinder = binder[paramName];
-            if (SUCCESS != BindValue(childBinder, childValue))
+            if (!EXPECTED_CONDITION(valueType == Json::booleanValue))
                 return ERROR;
+            if (ECSqlStatus::Success != binder.BindBoolean(value.asBool()))
+                return ERROR;
+            return SUCCESS;
             }
-        return SUCCESS;
-        }
-
-    static BentleyStatus BindValue(IECSqlBinder& binder, JsonValueCR bindingValue)
-        {
-        PRECONDITION(!bindingValue.isNull() && bindingValue.isMember("kind") && bindingValue.isMember("type") && bindingValue.isMember("value"), ERROR);
-        if (bindingValue["value"].isNull())
+        case PRIMITIVETYPE_DateTime:
             {
-            binder.BindNull();
+            if (!EXPECTED_CONDITION(valueType == Json::stringValue))
+                return ERROR;
+            DateTime dateTime;
+            DateTime::FromString(dateTime, value.asString().c_str());
+            if (ECSqlStatus::Success != binder.BindDateTime(dateTime))
+                return ERROR;
+            return SUCCESS;
+            }
+        case PRIMITIVETYPE_Double:
+            {
+            if (!value.isConvertibleTo(Json::ValueType::realValue) && !value.isString())
+                return ERROR;
+            double doubleValue;
+            if (value.isDouble())
+                doubleValue = value.asDouble();
+            else if (value.isInt())
+                doubleValue = (double) value.asInt();
+            else if (value.isString())
+                doubleValue = std::stod(value.asCString());
+            else
+                {
+                EXPECTED_CONDITION(false);
+                return ERROR;
+                }
+            if (ECSqlStatus::Success != binder.BindDouble(doubleValue))
+                return ERROR;
+            return SUCCESS;
+            }
+        case PRIMITIVETYPE_IGeometry:
+            {
+            if (!EXPECTED_CONDITION(valueType == Json::objectValue))
+                return ERROR;
+            if (value.isNull())
+                return SUCCESS;
+            bvector<IGeometryPtr> geometry;
+            if (!BentleyGeometryJson::TryJsonValueToGeometry(value, geometry))
+                return ERROR;
+            BeAssert(geometry.size() == 1);
+            if (ECSqlStatus::Success != binder.BindGeometry(*geometry[0]))
+                return ERROR;
             return SUCCESS;
             }
 
-        BentleyStatus status;
-        ECN::ValueKind valueKind = (ECN::ValueKind) bindingValue["kind"].asInt();
-        if (valueKind == VALUEKIND_Array)
-            status = BindArrayValue(binder, bindingValue);
-        else if (valueKind == VALUEKIND_Struct)
-            status = BindStructValue(binder, bindingValue);
-        else if (valueKind == VALUEKIND_Primitive)
-            status = BindPrimitiveValue(binder, bindingValue);
-        else
+        case PRIMITIVETYPE_Integer:
             {
-            EXPECTED_CONDITION(false);
-            status = ERROR;
+            if (!EXPECTED_CONDITION(valueType == Json::intValue || valueType == Json::stringValue))
+                return ERROR;
+            int intValue;
+            if (value.isInt())
+                intValue = value.asInt();
+            else if (value.isString())
+                intValue = std::stoi(value.asCString());
+            else
+                {
+                EXPECTED_CONDITION(false);
+                return ERROR;
+                }
+            if (ECSqlStatus::Success != binder.BindInt(intValue))
+                return ERROR;
+            return SUCCESS;
             }
+        case PRIMITIVETYPE_Long:
+            {
+            if (!EXPECTED_CONDITION(valueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
+                return ERROR;
+            BentleyStatus status;
+            uint64_t longValue = BeStringUtilities::ParseHex(value.asCString(), &status);
+            if (!EXPECTED_CONDITION(status == SUCCESS))
+                return ERROR;
+            if (ECSqlStatus::Success != binder.BindInt64((int64_t) longValue))
+                return ERROR;
+            return SUCCESS;
+            }
+        case PRIMITIVETYPE_Point2d:
+            {
+            DPoint2d point2d;
+            if (ECJsonUtilities::JsonToPoint2d(point2d, value))
+                return ERROR;
+            if (ECSqlStatus::Success != binder.BindPoint2d(point2d))
+                return ERROR;
+            return SUCCESS;
+            }
+        case PRIMITIVETYPE_Point3d:
+            {
+            DPoint3d point3d;
+            if (ECJsonUtilities::JsonToPoint3d(point3d, value))
+                return ERROR;
+            if (ECSqlStatus::Success != binder.BindPoint3d(point3d))
+                return ERROR;
+            return SUCCESS;
+            }
+        case PRIMITIVETYPE_String:
+            {
+            if (!EXPECTED_CONDITION(valueType == Json::stringValue))
+                return ERROR;
+            if (ECSqlStatus::Success != binder.BindText(value.asString().c_str(), IECSqlBinder::MakeCopy::Yes))
+                return ERROR;
+            return SUCCESS;
+            }
+        default:
+            return ERROR;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus IModelJs::JsonBinder::BindArrayValue(IECSqlBinder& binder, JsonValueCR value)
+    {
+    BeAssert(value.isArray() && !value.isNull());
+    for (int ii = 0; ii < (int) value.size(); ii++)
+        {
+        IECSqlBinder& childBinder = binder.AddArrayElement();
+        if (SUCCESS != BindValue(childBinder, value[ii]))
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus IModelJs::JsonBinder::BindStructValue(IECSqlBinder& binder, JsonValueCR value)
+    {
+    BeAssert(value.isObject() && !value.isNull());
+    for (Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        {
+        Utf8CP paramName = iter.memberName();
+        JsonValueCR childValue = *iter;
+
+        IECSqlBinder& childBinder = binder[paramName];
+        if (SUCCESS != BindValue(childBinder, childValue))
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus IModelJs::JsonBinder::BindValue(IECSqlBinder& binder, JsonValueCR bindingValue)
+    {
+    PRECONDITION(!bindingValue.isNull() && bindingValue.isMember("kind") && bindingValue.isMember("type") && bindingValue.isMember("value"), ERROR);
+    if (bindingValue["value"].isNull())
+        {
+        binder.BindNull();
+        return SUCCESS;
+        }
+
+    BentleyStatus status;
+    ECN::ValueKind valueKind = (ECN::ValueKind) bindingValue["kind"].asInt();
+    if (valueKind == VALUEKIND_Array)
+        status = BindArrayValue(binder, bindingValue);
+    else if (valueKind == VALUEKIND_Struct)
+        status = BindStructValue(binder, bindingValue);
+    else if (valueKind == VALUEKIND_Primitive)
+        status = BindPrimitiveValue(binder, bindingValue);
+    else
+        {
+        EXPECTED_CONDITION(false);
+        status = ERROR;
+        }
             
-        return status;
-        }
+    return status;
+    }
 
-public:
-    static BentleyStatus BindValues(ECSqlStatement& stmt, JsonValueCR bindings)
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus IModelJs::JsonBinder::BindValues(ECSqlStatement& stmt, JsonValueCR bindings)
+    {
+    PRECONDITION(!bindings.isNull(), ERROR);
+    PRECONDITION(bindings.isObject() || bindings.isArray(), ERROR);
+
+    if (bindings.isArray())
         {
-        PRECONDITION(!bindings.isNull(), ERROR);
-        PRECONDITION(bindings.isObject() || bindings.isArray(), ERROR);
-
-        if (bindings.isArray())
+        for (int ii = 0; ii < (int) bindings.size(); ii++)
             {
-            for (int ii = 0; ii < (int) bindings.size(); ii++)
-                {
-                int paramIndex = ii + 1;
-                if (SUCCESS != BindValue(stmt.GetBinder(paramIndex), bindings[ii]))
-                    return ERROR;
-                }
-            return SUCCESS;
-            }
-
-        // if (bindings.isObject())
-        for (Json::Value::iterator iter = bindings.begin(); iter != bindings.end(); iter++)
-            {
-            Utf8CP paramName = iter.memberName();
-            int paramIndex = stmt.GetParameterIndex(paramName);
-            if (!EXPECTED_CONDITION(paramIndex > 0))
-                return ERROR;
-
-            if (SUCCESS != BindValue(stmt.GetBinder(paramIndex), *iter))
+            int paramIndex = ii + 1;
+            if (SUCCESS != BindValue(stmt.GetBinder(paramIndex), bindings[ii]))
                 return ERROR;
             }
-
         return SUCCESS;
         }
-};
+
+    BeAssert(bindings.isObject());
+    for (Json::Value::iterator iter = bindings.begin(); iter != bindings.end(); iter++)
+        {
+        Utf8CP paramName = iter.memberName();
+        int paramIndex = stmt.GetParameterIndex(paramName);
+        if (!EXPECTED_CONDITION(paramIndex > 0))
+            return ERROR;
+
+        if (SUCCESS != BindValue(stmt.GetBinder(paramIndex), *iter))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17

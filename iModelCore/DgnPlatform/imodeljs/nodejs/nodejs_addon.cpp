@@ -32,6 +32,12 @@
         return;\
         }
 
+#define MUST_HAVE_M_STMT(ns) \
+    if ((ns)->m_stmt.get() == nullptr)\
+        {\
+        info.GetReturnValue().Set((int)DgnDbStatus::NotOpen);\
+        return;\
+        }
 
 #define REQUIRE_ARGUMENT_STRING(i, var, errcode)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
@@ -42,14 +48,28 @@
 
 #define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode)                   \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
-        info.GetReturnValue().Set(NodeUtils::CreateErrorObject(errcode));          \
+        info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(errcode));          \
         return;                                                                 \
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
-#define REQUIRE_ARGUMENT_OBJ(i, T, var, errcode, errmsg)                        \
+#define REQUIRE_ARGUMENT_STRING_SYNC_RV(i, var, errcode)                   \
+    if (info.Length() <= (i) || !info[i]->IsString()) {                         \
+        info.GetReturnValue().Set((int)errcode);          \
+        return;                                                                 \
+    }                                                                           \
+    Nan::Utf8String var(info[i]);
+
+#define REQUIRE_ARGUMENT_OBJ_SYNC(i, T, var, errcode)                           \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(errcode));       \
+        return;                                                                 \
+    }                                                                           \
+    T* var = Nan::ObjectWrap::Unwrap<T>(info[i].As<Object>());
+
+#define REQUIRE_ARGUMENT_OBJ_SYNC_RV(i, T, var, errcode)                           \
+    if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
+        info.GetReturnValue().Set((int)errcode);                                \
         return;                                                                 \
     }                                                                           \
     T* var = Nan::ObjectWrap::Unwrap<T>(info[i].As<Object>());
@@ -109,7 +129,20 @@ struct NodeUtils
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      09/17
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
+    template<typename STATUSTYPE>
+    static v8::Local<v8::Object> CreateErrorObject0(STATUSTYPE errCode, Utf8CP msg)
+        {
+        v8::Local<v8::Object> error = Nan::New<v8::Object>();
+        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
+        if (nullptr != msg)
+            error->Set(Nan::New("message").ToLocalChecked(), Nan::New(msg).ToLocalChecked());
+        return error;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static v8::Local<v8::Object> CreateBentleyReturnSuccessObject(v8::Local<v8::Value> const& goodVal)
         {
         v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
         retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
@@ -120,13 +153,10 @@ struct NodeUtils
     * @bsimethod                                    Sam.Wilson                      09/17
     +---------------+---------------+---------------+---------------+---------------+------*/
     template<typename STATUSTYPE>
-    static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode)
+    static v8::Local<v8::Object> CreateBentleyReturnErrorObject(STATUSTYPE errCode)
         {
-        v8::Local<v8::Object> error = Nan::New<v8::Object>();
-        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
-
         v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        retObj->Set(Nan::New("error").ToLocalChecked(), error);
+        retObj->Set(Nan::New("error").ToLocalChecked(), CreateErrorObject0(errCode, nullptr));
         return retObj;
         }
     };
@@ -163,7 +193,7 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         Nan::HandleScope scope;
         auto resolver = v8::Promise::Resolver::New(info.GetIsolate());
         info.GetReturnValue().Set(resolver->GetPromise());
-        v8::Local<v8::Object> retObj = NodeUtils::CreateErrorObject(errorStatus);
+        v8::Local<v8::Object> retObj = NodeUtils::CreateBentleyReturnErrorObject(errorStatus);
         resolver->Resolve(retObj);
         }
 
@@ -175,28 +205,28 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         }
 
-    v8::Local<v8::Object> CreateErrorObject()
+    v8::Local<v8::Object> CreateBentleyReturnErrorObject()
         {
         BeAssert(_HadError());
-        return NodeUtils::CreateErrorObject(m_status);
+        return NodeUtils::CreateBentleyReturnErrorObject(m_status);
         }
 
-    v8::Local<v8::Object> CreateSuccessObject()
+    v8::Local<v8::Object> CreateBentleyReturnSuccessObject()
         {
         BeAssert(!_HadError());
-        return NodeUtils::CreateSuccessObject(GetResultOrUndefined());
+        return NodeUtils::CreateBentleyReturnSuccessObject(GetResultOrUndefined());
         }
 
     void HandleOKCallback() override
         {
         Nan::HandleScope scope;
-        Nan::New(*m_resolver)->Resolve(CreateSuccessObject());
+        Nan::New(*m_resolver)->Resolve(CreateBentleyReturnSuccessObject());
         }
 
     void HandleErrorCallback() override
         {
         Nan::HandleScope scope;
-        Nan::New(*m_resolver)->Resolve(CreateErrorObject());
+        Nan::New(*m_resolver)->Resolve(CreateBentleyReturnErrorObject());
         }
 
     virtual bool _HadError() = 0;
@@ -737,6 +767,11 @@ public:
         info.GetReturnValue().Set(db->m_ecdb.IsValid() && db->m_ecdb->IsDbOpen());
         }
 };
+
+//=======================================================================================
+// SimpleRulesetLocater
+//! @bsiclass
+//=======================================================================================
 struct SimpleRulesetLocater : RefCounted<RuleSetLocater>
 {
 private:
@@ -936,7 +971,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
             GetECClassMetaData worker(db, *s, *c);
             worker.Execute();
-            info.GetReturnValue().Set(worker._HadError() ? worker.CreateErrorObject() : worker.CreateSuccessObject());
+            info.GetReturnValue().Set(worker._HadError() ? worker.CreateBentleyReturnErrorObject() : worker.CreateBentleyReturnSuccessObject());
             }
 
         void Execute() override
@@ -1028,7 +1063,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         if (!db->m_dgndb.IsValid())
             {
-            info.GetReturnValue().Set(NodeUtils::CreateErrorObject(DgnDbStatus::NotOpen));
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
             return;
             }
         REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
@@ -1039,11 +1074,11 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         v8::Local<v8::Object> ret;
         if (DgnDbStatus::Success != status)
-            ret = NodeUtils::CreateErrorObject(status);
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
         else
             {
             auto elemIdStrJsObj = Nan::New(elemIdJsonObj.ToString().c_str()).ToLocalChecked();
-            ret = NodeUtils::CreateSuccessObject(elemIdStrJsObj);
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(elemIdStrJsObj);
             }
 
         info.GetReturnValue().Set(ret);
@@ -1060,7 +1095,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         if (!db->m_dgndb.IsValid())
             {
-            info.GetReturnValue().Set(NodeUtils::CreateErrorObject(DgnDbStatus::NotOpen));
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
             return;
             }
         REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
@@ -1070,9 +1105,9 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         v8::Local<v8::Object> ret;
         if (DgnDbStatus::Success != status)
-            ret = NodeUtils::CreateErrorObject(status);
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
         else
-            ret = NodeUtils::CreateSuccessObject(Nan::Undefined());
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
 
         info.GetReturnValue().Set(ret);
         }
@@ -1088,7 +1123,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         if (!db->m_dgndb.IsValid())
             {
-            info.GetReturnValue().Set(NodeUtils::CreateErrorObject(DgnDbStatus::NotOpen));
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
             return;
             }
         REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
@@ -1098,9 +1133,9 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         v8::Local<v8::Object> ret;
         if (DgnDbStatus::Success != status)
-            ret = NodeUtils::CreateErrorObject(status);
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
         else
-            ret = NodeUtils::CreateSuccessObject(Nan::Undefined());
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
 
         info.GetReturnValue().Set(ret);
         }
@@ -1328,6 +1363,137 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         }
 };
 
+//=======================================================================================
+// Projects the ECSqlStatement class into JS
+//! @bsiclass
+//=======================================================================================
+struct NodeAddonECSqlStatement : Nan::ObjectWrap
+{
+    static Nan::Persistent<FunctionTemplate> s_constructor_template;
+
+    std::unique_ptr<ECSqlStatement> m_stmt;
+
+    NodeAddonECSqlStatement() : m_stmt(new ECSqlStatement())
+        {
+        }
+
+    static NAN_METHOD(New)
+        {
+        if (!info.IsConstructCall())
+            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonECSqlStatement objects");
+
+        NodeAddonECSqlStatement* ns = new NodeAddonECSqlStatement();
+
+        ns->Wrap(info.This());
+        info.GetReturnValue().Set(info.This());
+        }
+
+    static NAN_METHOD(Prepare)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+
+        REQUIRE_ARGUMENT_OBJ_SYNC_RV(0, NodeAddonDgnDb, db, DgnDbStatus::BadRequest);
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(1, ecsqlStr, DgnDbStatus::BadRequest);
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)DgnDbStatus::NotOpen);
+            return;
+            }
+
+        BeSqliteDbMutexHolder serializeAccess(*db->m_dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+
+        auto status = ns->m_stmt->Prepare(*db->m_dgndb, *ecsqlStr);
+        
+        if (status.IsSuccess())
+            info.GetReturnValue().Set(Nan::Undefined());
+        else
+            {
+            DbResult dbres = status.IsSQLiteError()? status.GetSQLiteError(): BE_SQLITE_ERROR;
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject0(dbres, IModelJs::GetLastEcdbIssue().c_str()));
+            }
+        }
+
+    static NAN_METHOD(Reset)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->Reset();
+        info.GetReturnValue().Set((int)status.Get());
+        }
+
+    static NAN_METHOD(ClearBindings)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->ClearBindings();
+        info.GetReturnValue().Set((int)status.Get());
+        }
+
+    static NAN_METHOD(BindValues)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(0, valuesStr, DgnDbStatus::BadRequest);
+        
+        //BeSqliteDbMutexHolder serializeAccess(*db->m_dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+
+        auto status = IModelJs::JsonBinder::BindValues(*ns->m_stmt, Json::Value::From(*valuesStr));
+
+        if (BSISUCCESS == status)
+            info.GetReturnValue().Set(Nan::Undefined());
+        else
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str()));
+        }
+
+    static NAN_METHOD(Step)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->Step();
+        info.GetReturnValue().Set((int)status);
+        }
+
+    static NAN_METHOD(GetValues)
+        {
+        v8::EscapableHandleScope scope(info.GetIsolate());
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        Json::Value rowJson(Json::objectValue);
+        IModelJs::GetRowAsJson(rowJson, *ns->m_stmt);
+        // *** NEEDS WORK: Get the adapter to set the js object's properties directly
+        v8::Local<v8::String> rowJsonStr = v8::String::NewFromUtf8(info.GetIsolate(), rowJson.ToString().c_str());
+        v8::Local<v8::Value> result = v8::JSON::Parse(rowJsonStr);
+        info.GetReturnValue().Set(scope.Escape(result));
+        }
+
+    //  Create projections
+    static void Init(v8::Local<v8::Object> target)
+        {
+        Nan::HandleScope scope;
+        Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
+
+        t->InstanceTemplate()->SetInternalFieldCount(1);
+        t->SetClassName(Nan::New("ECSqlStatement").ToLocalChecked());
+
+        Nan::SetPrototypeMethod(t, "prepare", Prepare);
+        Nan::SetPrototypeMethod(t, "reset", Reset);
+        Nan::SetPrototypeMethod(t, "clearBindings", ClearBindings);
+        Nan::SetPrototypeMethod(t, "bindValues", BindValues);
+        Nan::SetPrototypeMethod(t, "step", Step);
+        Nan::SetPrototypeMethod(t, "getValues", GetValues);
+        
+        s_constructor_template.Reset(t);
+
+        Nan::Set(target, Nan::New("ECSqlStatement").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1341,10 +1507,12 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     BeFileName addondir = BeFileName(*v8utf8, true).GetDirectoryName();
 
     IModelJs::Initialize(addondir);
+    NodeAddonECSqlStatement::Init(target);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);
     }
 
+Nan::Persistent<FunctionTemplate> NodeAddonECSqlStatement::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonDgnDb::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonECDb::s_constructor_template;
 
