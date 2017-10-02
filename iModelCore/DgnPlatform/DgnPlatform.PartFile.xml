@@ -653,6 +653,9 @@
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
         <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
+		<SubPart PartName="VersionCompare"      PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
+        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
+    
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
@@ -671,10 +674,10 @@
     <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherExe" />
     </Part>
-  
+  																																																		                    
     <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
         <SubPart PartName="TilePublisherExe" />
-    </Part>
+    </Part>																																										 
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
         <SubPart PartName="TilePublisherLib" />																																							                                                             

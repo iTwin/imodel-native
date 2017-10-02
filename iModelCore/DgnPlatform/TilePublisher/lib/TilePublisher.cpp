@@ -217,7 +217,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* classifierColors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleMaps = nullptr)
+BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* classifierColors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleMaps = nullptr, int revisionIndex = -1)
     : m_json(Json::objectValue), m_db(db), m_is3d(is3d), m_isClassifier(isClassifier), m_attrs(attrs)
     {
     InitUncategorizedCategory();
@@ -278,11 +278,11 @@ BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isCla
                 }
             }
         }
-    m_json["geomClass"] = std::move(geomClasses);
-    m_json["element"] = std::move(elementIds);
-    m_json["assembly"] = std::move(assemblyIds);
+    m_json["geomClass"]   = std::move(geomClasses);
+    m_json["element"]     = std::move(elementIds);
+    m_json["assembly"]    = std::move(assemblyIds);
     m_json["subCategory"] = std::move(subCategoryIds);
-    m_json["category"] = std::move(categoryIds);
+    m_json["category"]    = std::move(categoryIds);
 
     if (validLabelsFound)
         m_json["label"] = std::move(labels);
@@ -293,6 +293,16 @@ BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isCla
     if (nullptr != scheduleMaps)
         for (size_t i=0; i<scheduleMaps->size(); i++)
             m_json[Utf8PrintfString("schedule%d", i).c_str()] = std::move(schedules[i]);
+
+    if (revisionIndex >= 0)
+        {
+        Json::Value revisions = Json::arrayValue;
+
+        for (size_t i=0; i<m_attrs.size(); i++)
+           revisions.append(revisionIndex);
+
+        m_json["revision"] = std::move(revisions);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -536,7 +546,7 @@ void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString     PublisherContext::GetTileExtension (TileNodeCR tile)
+WString     PublisherContext::GetTileExtension (TileNodeCR tile) const
     {
     return DoPublishAsClassifier() ? L"vctr" : tile.GetFileExtension();
     }
@@ -555,12 +565,12 @@ void PublisherContext::RecordUsage(FeatureAttributesMapCR attributes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName  TilePublisher::GetBinaryDataFileName() const
+BeFileName  PublisherContext::GetBinaryDataFileName(TileNodeCR tile) const
     {
-    WString rootName;
-    BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
+    WString     rootName = GetRootName (tile.GetModel().GetModelId(), GetCurrentClassifier());
+    BeFileName  modelDir = GetModelDataDirectory(tile.GetModel().GetModelId(), GetCurrentClassifier());
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_context.GetTileExtension(m_tile).c_str()).c_str(), nullptr);
+    return  BeFileName(nullptr, modelDir.c_str(), tile.GetFileName (rootName.c_str(), GetTileExtension(tile).c_str()).c_str(), nullptr);
     }
 
 
@@ -601,7 +611,7 @@ PublisherContext::Status TilePublisher::Publish()
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    BeFileName      fileName = GetBinaryDataFileName();
+    BeFileName      fileName = m_context.GetBinaryDataFileName(m_tile);
 
     std::FILE*  outputFile = _wfopen(fileName.c_str(), L"wb");
 
@@ -866,7 +876,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, nullptr, nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps());
+    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, nullptr, nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
     Utf8String      batchTableStr = batchTableBuilder.ToString();
 
     Utf8String      featureTableStr = featureTableData.GetJsonString();
@@ -922,7 +932,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name", nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps());
+        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name", nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
         batchTableStr = batchTableBuilder.ToString();
         }
 
@@ -1301,7 +1311,7 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
 
             default:
                 {
-                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::White() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
+                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::Cyan() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
 
                 for (auto& curr : attributes)
                     m_elementColors[curr.first.GetElementId()] = s_colors[m_classifier.GetInsideDisplay()].GetValue();
@@ -1595,10 +1605,9 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
 #endif
             {
             extension = ImageSource::Format::Jpeg == imageSource.GetFormat() ? L"jpg" : L"png";
-            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetModelDataDirectory(m_tile.GetModel().GetModelId(), nullptr).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
             fwrite (imageSource.GetByteStream().GetData(), 1, imageSource.GetByteStream().GetSize(), outputFile);
             fclose (outputFile);
-
             }
         tileData.m_json["images"][imageId]["uri"] = Utf8String(BeFileName(nullptr, nullptr, name.c_str(), extension.c_str()).c_str());
         tileData.m_json["images"][imageId]["name"] = imageId; 
@@ -3363,7 +3372,8 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
 
                 auto&       childRoot = childTileset[JSON_Root];
                 WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
-                BeFileName  metadataFileName (nullptr, m_dataDir.c_str(), metadataRelativePath.c_str(), nullptr);
+                BeFileName  dataDirectory = GetModelDataDirectory(tile.GetModel().GetModelId(), GetCurrentClassifier());
+                BeFileName  metadataFileName (nullptr, dataDirectory.c_str(), metadataRelativePath.c_str(), nullptr);
 
                 WriteModelMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
@@ -3455,7 +3465,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGeneratorStatus::Success : TileGeneratorStatus::Aborted;
+    return Status::Success == InitializeDirectories(GetModelDataDirectory(model.GetModelId(), GetCurrentClassifier(), false)) ? TileGeneratorStatus::Success : TileGeneratorStatus::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3474,7 +3484,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         }
     else
         {
-        CleanDirectories(GetDataDirForModel(model));
+        CleanDirectories(GetModelDataDirectory(model.GetModelId(), GetCurrentClassifier(), false));
         }
 
     return status;
@@ -3486,23 +3496,21 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelTileset(TileNodeCR tile)
     {
-    WriteTileset(GetTilesetFileName(tile.GetModel().GetModelId()), tile, GetMaxTilesetDepth());
+    WriteTileset(GetTilesetFileName(tile.GetModel().GetModelId(), GetCurrentClassifier()), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
+* @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTilesetName) const
+BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, ClassifierInfo const* classifier, bool appendSeperator) const
     {
-    WString tmpTilesetName;
-    WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
+    BeFileName  modelDir = m_dataDir;
 
-    tilesetName = GetRootName (model.GetModelId(), GetCurrentClassifier());
+    modelDir.AppendToPath( GetRootName(modelId, classifier).c_str());
+    if (appendSeperator)
+        modelDir.AppendSeparator();
 
-    BeFileName dataDir = m_dataDir;
-    dataDir.AppendToPath(tilesetName.c_str());                                                                                
-
-    return dataDir;
+    return modelDir;
     }
 
 
@@ -3549,7 +3557,6 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
             AddViewedModel (viewedModels, modelId);
         }
     }
-static size_t           s_maxPointsPerTile = 250000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -3673,16 +3680,19 @@ PublisherContext::Status   PublisherContext::PublishClassifier(ClassifierInfo& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
+BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier)
     {
-    return BeFileName(nullptr, m_dataDir.c_str(), GetRootName(modelId, GetCurrentClassifier()).c_str(), s_metadataExtension);
+    WString     rootName = GetRootName(modelId, GetCurrentClassifier());
+    BeFileName  modelDir = GetModelDataDirectory(modelId, classifier);
+
+    return BeFileName(nullptr, modelDir.c_str(), rootName.c_str(), s_metadataExtension);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo const* classifier)
+Utf8String  PublisherContext::GetTilesetURL(DgnModelId modelId, ClassifierInfo const* classifier)
     {
     if (nullptr == classifier)
         {
@@ -3690,14 +3700,12 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
         if (m_directUrls.end() != urlIter)
             return urlIter->second;
         }
-
-    WString         modelRootName = GetRootName(modelId, classifier);
-    WString         modelDir      = L"TileSets\\" + m_rootName;
-    BeFileName      tilesetFileName (nullptr, modelDir.c_str(), modelRootName.c_str(), s_metadataExtension);
-    auto            utf8FileName = tilesetFileName.GetNameUtf8();
-
-    utf8FileName.ReplaceAll("\\", "//");
-    return utf8FileName;
+    BeFileName      tilesetFilePath = GetTilesetFileName(modelId, classifier);
+    auto            utf8FileName = tilesetFilePath.GetNameUtf8();
+    auto            url = Utf8String(utf8FileName.c_str() + m_outputDir.size());
+    
+    url.ReplaceAll("\\", "//");
+    return url;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3776,7 +3784,7 @@ void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId,
             }
 
         modelJson["extents"] = RangeToJson(modelRange.m_range);
-        modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
+            modelJson["tilesetUrl"] = GetTilesetURL(modelId, false);
 
 #ifdef PER_MODEL_CLASSIFIER
         // Cesium doesn't support classifying a single model as we do in JSon.
@@ -4027,7 +4035,7 @@ Json::Value PublisherContext::GetAllClassifiersJson()
             auto&           classifier = classifierInfo.m_classifier;
             Json::Value     classifierValue = classifier.ToJson();
 
-            classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), &classifierInfo);
+            classifierValue["tilesetUrl"] = GetTilesetURL(classifier.GetModelId(), &classifierInfo);
             classifiersValue[Utf8String(classifierInfo.GetRootName())] = classifierValue;
             }
         }

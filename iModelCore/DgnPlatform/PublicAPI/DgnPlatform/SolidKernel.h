@@ -398,6 +398,9 @@ DGNPLATFORM_EXPORT static bool IsSmoothEdge(ISubEntityCR);
 //! Return whether the supplied entity is a laminar edge of a sheet body, i.e. boundary of a single face.
 DGNPLATFORM_EXPORT static bool IsLaminarEdge(ISubEntityCR);
 
+//! Return whether the supplied entity is a linear edge.
+DGNPLATFORM_EXPORT static bool IsLinearEdge(ISubEntityCR);
+
 //! Return whether the supplied entity is a disjoint body.
 DGNPLATFORM_EXPORT static bool IsDisjointBody(IBRepEntityCR);
 
@@ -501,7 +504,7 @@ struct Create
 
     //! Represent edges with the given offset distance on the supplied planar face as a CurveVector.
     //! @param[in] face The target face sub-entity to offset the edges onto.
-    //! @param[in] edges The list of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
+    //! @param[in] edges The array of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
     //! @param[in] distance The offset distance.
     //! @return nullptr if edge offset could not be created.
     DGNPLATFORM_EXPORT static CurveVectorPtr OffsetEdgesOnPlanarFaceToCurveVector(ISubEntityCR face, bvector<ISubEntityPtr>& edges, double distance);
@@ -740,6 +743,16 @@ struct Modify
     //! @return SUCCESS if faces could be offset.
     DGNPLATFORM_EXPORT static BentleyStatus OffsetFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<double> const& distances, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
 
+    //! Modify the target solid or sheet body by offsetting selected edges.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] edges The array of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't share a face with the reference edge are ignored.
+    //! @param[in] offsetDir The offset direction relative to the reference edge.
+    //! @param[in] offset The offset distance for each edge.
+    //! @param[in] propagateSmooth Whether to automatically continue offset along connected and tangent edges that aren't explicitly specified in edges array.
+    //! @param[in] addStep The option for how to handle the creation of step faces.
+    //! @return SUCCESS if edges could be offset.
+    DGNPLATFORM_EXPORT static BentleyStatus OffsetEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, DVec3dCR offsetDir, double offset, bool propagateSmooth = true, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+
     //! Modify the target solid or sheet body by transforming selected faces.
     //! @param[in,out] target The target body to modify.
     //! @param[in] faces The array of faces to be transformed.
@@ -782,12 +795,12 @@ struct Modify
     //! Modify the target solid or sheet body by tapering selected faces.
     //! @param[in,out] target The target body to modify.
     //! @param[in] faces The array of faces to taper.
-    //! @param[in] edges The array of references edges (one for each face entry) that should retain their geometry after the taper has been applied.
+    //! @param[in] refEntities The array of references entities (one for each face entry) that should retain their geometry after the taper has been applied. Can be edges or faces.
     //! @param[in] direction The taper direction.
     //! @param[in] angles The taper angle(s). Either a single taper angle or a taper angle for each face entry. (value in range of -2pi to 2pi)
     //! @param[in] addStep The option for how to handle the creation of step faces.
     //! @return SUCCESS if faces could be tapered.
-    DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+    DGNPLATFORM_EXPORT static BentleyStatus TaperFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& refEntities, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
 
     //! Modify the target solid or sheet body by removing selected faces and healing.
     //! @param[in,out] target The target body to modify.

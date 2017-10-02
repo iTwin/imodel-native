@@ -153,6 +153,9 @@ Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContex
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphicParamsR symbologyOverrides, Dgn::GeometrySourceCP source)
     {
+    if (nullptr == source)
+        return;
+
     DgnElementCP el = source->ToElement();
 
     if (nullptr == el)
@@ -166,19 +169,13 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
     if (m_focusedElementId.IsValid() && m_focusedElementId != elementId)
         {
         m_symbology.GetUntouchedOverrides(symbologyOverrides);
-        //T_Super::_OverrideGraphicParams(symbologyOverrides, source);
         return;
         }
 
-    //PersistentState elementIdData = m_comparisonData->GetPersistentState(el->GetElementId());
-    //TransientState elementData = m_comparisonData->GetTransientState(el->GetElementId());
-    //bool isPersistent   =  (m_persistentOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
-    //bool isTransient    =  (m_transientOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
     DbOpcode persistentOpcode = m_persistentOpcodeCache[elementId];
     DbOpcode transientOpcode = m_transientOpcodeCache[elementId];
 
     // Get the override for element IDs
-    //if (WantShowCurrent() && !m_visitingTransientElements && elementIdData.IsValid())
     if (WantShowCurrent() && !m_visitingTransientElements && persistentOpcode != (DbOpcode)0)
         {
         m_symbology.GetCurrentRevisionOverrides(persistentOpcode, symbologyOverrides);
