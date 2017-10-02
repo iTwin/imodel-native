@@ -23,10 +23,10 @@ enum class CacheRootPersistence
 // JSON specific properties
 #define DataSourceCache_PROPERTY_LocalInstanceId        "id"
 #define DataSourceCache_PROPERTY_ClassKey               "className"
-#define DataSourceCache_PROPERTY_RemoteId               "$remoteId"
+#define DataSourceCache_PROPERTY_RemoteId               "$RemoteId"
 
-#define DataSourceCache_PROPERTY_DisplayInfo            "$displayInfo"
-#define DataSourceCache_PROPERTY_DisplayData            "$displayData"
-#define DataSourceCache_PROPERTY_RawData                "$rawData"
+#define DataSourceCache_PROPERTY_DisplayInfo            "$DisplayInfo"
+#define DataSourceCache_PROPERTY_DisplayData            "$DisplayData"
+#define DataSourceCache_PROPERTY_RawData                "$RawData"
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

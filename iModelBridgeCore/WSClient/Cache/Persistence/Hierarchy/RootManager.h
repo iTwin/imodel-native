@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ struct RootManager
         ECRelationshipClassCP       m_rootWeakRelationshipClass;
 
         ECSqlAdapterLoader<JsonInserter>    m_rootInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_rootUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_rootUpdater;
 
     private:
         ECInstanceId FindRootECInstanceId(Utf8StringCR rootName);

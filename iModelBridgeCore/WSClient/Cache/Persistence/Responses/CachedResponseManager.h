@@ -44,7 +44,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
 
         ECSqlStatementCache& m_statementCache;
         ECSqlAdapterLoader<JsonInserter> m_responseInserter;
-        ECSqlAdapterLoader<JsonUpdater>  m_responseUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>  m_responseUpdater;
 
     private:
         BentleyStatus RelateResultInstancesToPage
