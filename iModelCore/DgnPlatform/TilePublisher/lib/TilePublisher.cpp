@@ -1735,9 +1735,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (!mat.IsTextured())
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
-#ifdef COLORBLENDMODE_TEST
-    AddTechniqueParameter(technique, "diffuse", GLTF_FLOAT_VEC4, "_3DTILESDIFFUSE");
-#endif
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
