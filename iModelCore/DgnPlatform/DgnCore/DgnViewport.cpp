@@ -1127,9 +1127,12 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     ClearUndo();
 
-
+    if (m_viewController.IsValid())
+        {
         m_viewController->_OnDetachedFromViewport(*this);
         BeAssert(nullptr == m_viewController->m_vp);
+        }
+
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
     BeAssert(this == m_viewController->m_vp);
