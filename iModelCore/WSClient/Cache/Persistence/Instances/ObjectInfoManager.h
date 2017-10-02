@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/ObjectInfoManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ struct ObjectInfoManager : public IECDbAdapter::DeleteListener
         ECClassCP               m_infoClass;
 
         ECSqlAdapterLoader<JsonInserter>    m_infoInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_infoUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_infoUpdater;
 
     public:
         ObjectInfoManager

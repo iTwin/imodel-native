@@ -44,7 +44,7 @@ m_responsePageToResultClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchem
 m_responsePageToResultWeakClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResultWeak)),
 
 m_responseInserter(m_dbAdapter.GetECDb(), *m_responseClass),
-m_responseUpdater(m_dbAdapter.GetECDb(), *m_responseClass)
+m_responseUpdater(m_dbAdapter.GetECDb(), *m_responseClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {
     dbAdapter.RegisterDeleteListener(this);
     }

@@ -31,7 +31,7 @@ m_cachedRelationshipInfoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_C
 
 m_infoECInstanceInserter(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass),
 m_infoInserter(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass),
-m_infoUpdater(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass)
+m_infoUpdater(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {
     dbAdapter.RegisterDeleteListener(this);
     }

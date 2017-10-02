@@ -41,9 +41,9 @@ m_externalFileInfoClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_External
 m_externalFileInfoOwnershipClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_FileInfoOwnership)),
 
 m_cachedFileInfoInserter(dbAdapter.GetECDb(), *m_cachedFileInfoClass),
-m_cachedFileInfoUpdater(dbAdapter.GetECDb(), *m_cachedFileInfoClass),
+m_cachedFileInfoUpdater(dbAdapter.GetECDb(), *m_cachedFileInfoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties),
 m_externalFileInfoInserter(dbAdapter.GetECDb(), *m_externalFileInfoClass),
-m_externalFileInfoUpdater(dbAdapter.GetECDb(), *m_externalFileInfoClass)
+m_externalFileInfoUpdater(dbAdapter.GetECDb(), *m_externalFileInfoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {
     dbAdapter.RegisterDeleteListener(this);
     }

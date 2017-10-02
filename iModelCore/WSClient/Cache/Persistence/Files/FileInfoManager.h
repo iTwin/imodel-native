@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -42,9 +42,9 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         ECClassCP               m_externalFileInfoOwnershipClass;
 
         ECSqlAdapterLoader<JsonInserter>    m_cachedFileInfoInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_cachedFileInfoUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_cachedFileInfoUpdater;
         ECSqlAdapterLoader<JsonInserter>    m_externalFileInfoInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_externalFileInfoUpdater;
+        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_externalFileInfoUpdater;
 
     private:
         Json::Value ReadCachedFileInfo(CachedInstanceKeyCR cachedKey);
