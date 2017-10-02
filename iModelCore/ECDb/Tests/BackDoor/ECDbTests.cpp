@@ -953,6 +953,21 @@ Utf8String ToString(JsonECSqlSelectAdapter::FormatOptions const& options)
 Utf8String ToString(JsonUpdater::Options const& options)
     {
     Utf8String str("JsonUpdater::Options(");
+    switch (options.GetSystemPropertiesOption())
+        {
+            case JsonUpdater::SystemPropertiesOption::Fail:
+                str.append("SystemPropertiesOption::Fail");
+                break;
+            case JsonUpdater::SystemPropertiesOption::Ignore:
+                str.append("SystemPropertiesOption::Ignore");
+                break;
+
+            default:
+                return Utf8String("Unhandled ReadonlyPropertiesOption. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(", ");
+
     switch (options.GetReadonlyPropertiesOption())
         {
             case JsonUpdater::ReadonlyPropertiesOption::Fail:
@@ -962,8 +977,8 @@ Utf8String ToString(JsonUpdater::Options const& options)
                 str.append("ReadonlyPropertiesOption::Ignore");
                 break;
 
-            case JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem:
-                str.append("ReadonlyPropertiesOption::UpdateIfNonSystem");
+            case JsonUpdater::ReadonlyPropertiesOption::Update:
+                str.append("ReadonlyPropertiesOption::Update");
                 break;
 
             default:

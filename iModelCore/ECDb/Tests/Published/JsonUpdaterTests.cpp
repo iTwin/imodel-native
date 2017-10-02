@@ -95,8 +95,8 @@ TEST_F(JsonUpdaterTests, ValidInput)
     JsonUpdater updater2(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Ignore));
     EXPECT_FALSE(updater2.IsValid()) << "Class with single property which is readonly. " << ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::Ignore);
 
-    JsonUpdater updater3(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem));
-    EXPECT_TRUE(updater3.IsValid()) << "Class with single property which is readonly. "<< ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem);
+    JsonUpdater updater3(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update));
+    EXPECT_TRUE(updater3.IsValid()) << "Class with single property which is readonly. "<< ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::Update);
     }
 
     {
@@ -116,8 +116,8 @@ TEST_F(JsonUpdaterTests, ValidInput)
     JsonUpdater updater2(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Ignore));
     EXPECT_FALSE(updater2.IsValid()) << "Property list with single property which is readonly. " << ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::Ignore);
 
-    JsonUpdater updater3(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem));
-    EXPECT_TRUE(updater3.IsValid()) << "Property list with single property which is readonly. " << ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem);
+    JsonUpdater updater3(m_ecdb, *lastModClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update));
+    EXPECT_TRUE(updater3.IsValid()) << "Property list with single property which is readonly. " << ENUM_TOSTRING(JsonUpdater::ReadonlyPropertiesOption::Update);
     }
 
     {
@@ -232,7 +232,7 @@ TEST_F(JsonUpdaterTests, Options)
         JsonUpdater::Options(),
         JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Fail),
         JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Ignore),
-        JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem)
+        JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update)
         };
 
     for (JsonUpdater::Options const& options : testOptions)
@@ -250,7 +250,7 @@ TEST_F(JsonUpdaterTests, Options)
     ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
 
-    invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem, "ReadonlyPropertiesAreUpdatable");
+    invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update, "ReadonlyPropertiesAreUpdatable");
     ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
 
@@ -721,8 +721,8 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     JsonUpdater ignoreReadonlyPropsUpdater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Ignore));
     ASSERT_TRUE(ignoreReadonlyPropsUpdater.IsValid()) << "JsonUpdater with JsonUpdater::ReadonlyPropertiesOption::Ignore";
 
-    JsonUpdater readonlyPropsAreUpdatableUpdater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem));
-    ASSERT_TRUE(readonlyPropsAreUpdatableUpdater.IsValid()) << "JsonUpdater with JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem";
+    JsonUpdater readonlyPropsAreUpdatableUpdater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update));
+    ASSERT_TRUE(readonlyPropsAreUpdatableUpdater.IsValid()) << "JsonUpdater with JsonUpdater::ReadonlyPropertiesOption::Update";
 
     JsonReader reader(m_ecdb,*ecClass);
     Json::Value json;
@@ -731,7 +731,6 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     ASSERT_STREQ("JsonTest", json["P2"].asCString());
     ASSERT_DOUBLE_EQ(1000.10, json["P3"].asDouble());
 
-    Savepoint sp(m_ecdb, "sp");
     /*
     * Update class properties via Json::Value API
     */
@@ -741,7 +740,15 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     json["P3"] = 2000.20;
     ASSERT_TRUE(json.isMember(ECJsonUtilities::json_id()) && json.isMember(ECJsonUtilities::json_className())) << json.ToString().c_str();
 
-    ASSERT_EQ(BE_SQLITE_OK, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), json));
+    ASSERT_EQ(BE_SQLITE_ERROR, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), json)) << "because of system props";
+    ASSERT_EQ(BE_SQLITE_ERROR, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), json)) << "Contains system props: " << json.ToString();
+
+
+    json.removeMember(ECJsonUtilities::json_id());
+    json.removeMember(ECJsonUtilities::json_className());
+    
+    Savepoint sp(m_ecdb, "sp");
+    ASSERT_EQ(BE_SQLITE_OK, ignoreReadonlyPropsUpdater.Update(key.GetInstanceId(), json)) << "system props have been removed.";
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
@@ -750,24 +757,12 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 200));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(3, expectedVal, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindDouble(4, 1000.10));
-
     ASSERT_EQ(BE_SQLITE_ROW, checkStmt.Step());
     checkStmt.Reset();
     checkStmt.ClearBindings();
     ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
 
-    //UpdateIfNonSystem updater
-
     ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
-    ASSERT_EQ(BE_SQLITE_ERROR, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), json)) << "Contains system props: " << json.ToString();
-    ASSERT_EQ(BE_SQLITE_OK, sp.Cancel());
-
-    ASSERT_EQ(BE_SQLITE_OK, sp.Begin());
-    //now remove system props
-    json.clear();
-    json["P1"] = 200;
-    json["P2"] = expectedVal;
-    json["P3"] = 2000.20;
     ASSERT_EQ(BE_SQLITE_OK, readonlyPropsAreUpdatableUpdater.Update(key.GetInstanceId(), json));
 
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetInstanceId()));
@@ -936,16 +931,16 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     ASSERT_FALSE(updater.IsValid()) << "Updater invalid because of readonly props";
     }
 
-    //updater with ReadonlyPropertiesOption::UpdateIfNonSystem
+    //updater with ReadonlyPropertiesOption::Update
     {
-    JsonUpdater updater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem));
+    JsonUpdater updater(m_ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update));
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
 
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
-    ASSERT_EQ(newNum, validateStmt.GetValueInt(0)) << "Readonly property Num is expected to be modified with JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem";
+    ASSERT_EQ(newNum, validateStmt.GetValueInt(0)) << "Readonly property Num is expected to be modified with JsonUpdater::ReadonlyPropertiesOption::Update";
     ASSERT_STREQ(oldSquare, validateStmt.GetValueText(1)) << "Calculated property Square is not expected to be recalculated. ECDb does never evaluate calculated props";
     validateStmt.Reset();
     validateStmt.ClearBindings();

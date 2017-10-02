@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::Options::Options(JsonUpdater::ReadonlyPropertiesOption readonlyPropertiesOption, Utf8CP ecsqlOptions) :m_readonlyProps(readonlyPropertiesOption), m_ecsqlOptions(ecsqlOptions)
+JsonUpdater::Options::Options(JsonUpdater::SystemPropertiesOption systemPropertiesOption, JsonUpdater::ReadonlyPropertiesOption readonlyPropertiesOption, Utf8CP ecsqlOptions) : m_systemProps(systemPropertiesOption), m_readonlyProps(readonlyPropertiesOption), m_ecsqlOptions(ecsqlOptions)
     {
     if (m_ecsqlOptions.ContainsI(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
         {
@@ -25,7 +25,7 @@ JsonUpdater::Options::Options(JsonUpdater::ReadonlyPropertiesOption readonlyProp
         return;
         }
 
-    if (readonlyPropertiesOption == JsonUpdater::ReadonlyPropertiesOption::UpdateIfNonSystem)
+    if (readonlyPropertiesOption == JsonUpdater::ReadonlyPropertiesOption::Update)
         {
         if (!m_ecsqlOptions.empty())
             m_ecsqlOptions.append(" ");
@@ -97,7 +97,7 @@ BentleyStatus JsonUpdater::Initialize(bvector<Utf8CP> const* propNames, ECCrudWr
             }
         }
 
-    int parameterIndex = 1;
+    uint32_t parameterIndex = 1;
 
     bool isFirstProp = true;
     for (ECPropertyCP prop : props)
@@ -157,7 +157,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR json) const
             {
             if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
                 {
-                if (m_options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Ignore)
+                if (m_options.GetSystemPropertiesOption() == JsonUpdater::SystemPropertiesOption::Ignore)
                     continue;
 
                 LOG.errorv("JsonUpdater failure. ECJSON System member '%s' not allowed in the JSON. System properties cannot be updated. Input JSON: %s",
@@ -176,17 +176,17 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR json) const
         if (bindingInfo.SkipBinding())
             continue;
 
-        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder((int) bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
             {
-            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %d for ECJSON %s. Underlying ECSQL: %s",
+            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %" PRIu32 " for ECJSON %s. Underlying ECSQL: %s",
                        memberName, bindingInfo.GetParameterIndex(), json.ToString().c_str(), m_statement.GetECSql());
             return BE_SQLITE_ERROR;
             }
         }
 
-    if (ECSqlStatus::Success != m_statement.BindId(m_idParameterIndex, instanceId))
+    if (ECSqlStatus::Success != m_statement.BindId((int) m_idParameterIndex, instanceId))
         {
-        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %d. Underlying ECSQL: %s",
+        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %" PRIu32 ". Underlying ECSQL: %s",
                    instanceId.ToString().c_str(), m_idParameterIndex, m_statement.GetECSql());
 
         return BE_SQLITE_ERROR;
@@ -232,7 +232,7 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR json) con
             {
             if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
                 {
-                if (m_options.GetReadonlyPropertiesOption() == JsonUpdater::ReadonlyPropertiesOption::Ignore)
+                if (m_options.GetSystemPropertiesOption() == JsonUpdater::SystemPropertiesOption::Ignore)
                     continue;
 
                 rapidjson::StringBuffer jsonStr;
@@ -259,21 +259,21 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR json) con
         if (bindingInfo.SkipBinding())
             continue;
 
-        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder(bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
+        if (ECSqlStatus::Success != JsonECSqlBinder::BindValue(m_statement.GetBinder((int) bindingInfo.GetParameterIndex()), memberJson, bindingInfo.GetProperty(), m_ecdb.GetClassLocater()))
             {
             rapidjson::StringBuffer jsonStr;
             rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
             memberJson.Accept(writer);
 
-            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %d for ECJSON %s. Underlying ECSQL: %s",
+            LOG.errorv("JsonUpdater failure. Could not bind JSON member '%s' to parameter %" PRIu32 " for ECJSON %s. Underlying ECSQL: %s",
                        memberName, bindingInfo.GetParameterIndex(), jsonStr.GetString(), m_statement.GetECSql());
             return BE_SQLITE_ERROR;
             }
         }
 
-    if (ECSqlStatus::Success != m_statement.BindId(m_idParameterIndex, instanceId))
+    if (ECSqlStatus::Success != m_statement.BindId((int) m_idParameterIndex, instanceId))
         {
-        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %d. Underlying ECSQL: %s",
+        LOG.errorv("JsonUpdater failure. Could not bind ECInstanceId %s to parameter %" PRIu32 ". Underlying ECSQL: %s",
                    instanceId.ToString().c_str(), m_idParameterIndex, m_statement.GetECSql());
 
         return BE_SQLITE_ERROR;
