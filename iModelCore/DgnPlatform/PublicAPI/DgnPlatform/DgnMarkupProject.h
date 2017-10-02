@@ -136,6 +136,36 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : GraphicalModel2d
 
     explicit RedlineModel(CreateParams const& params): T_Super(params) {}
 public:
+    struct ImageDef
+    {
+        DgnTextureId m_textureId; //!< ID of a DgnTexture holding the image data
+        DPoint2d m_origin; //!< lower-left corner of the image in meters
+        DPoint2d m_size; //!< width and height of the image in meters
+
+        ImageDef(DgnTextureId textureId, DPoint2dCR origin, DPoint2dCR size) : m_textureId(textureId), m_origin(origin), m_size(size) { }
+        ImageDef() : ImageDef(DgnTextureId(), DPoint2d::FromZero(), DPoint2d::FromZero()) { }
+
+        BE_JSON_NAME(textureId);
+        BE_JSON_NAME(originX);
+        BE_JSON_NAME(originY);
+        BE_JSON_NAME(sizeX);
+        BE_JSON_NAME(sizeY);
+
+        void FromJson(JsonValueCR);
+        Json::Value ToJson() const;
+
+        bool IsValid() const { return m_textureId.IsValid(); }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ImageDef);
+private:
+    ImageDef m_imageDef;
+
+    DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
+    DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
+public:
+    BE_JSON_NAME(imageDef);
+
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineModel)); }
 
     //! Create a RedlineModel that is to contain the graphics for the specified Redline.  @note It is the caller's responsibility to call Insert on the returned model in order to make it persistent.
@@ -145,13 +175,15 @@ public:
     DGNPLATFORM_EXPORT static RedlineModelPtr Create(DgnDbStatus* createStatus, Redline& doc); 
 
     //! Save an image to display in this redline model.
-    //! @param source the image source 
+    //! @param texture the persistent DgnTexture element holding the image data
     //! @param origin the coordinates (in meters) of the lower left corner of the image
     //! @param size   the size of the image (in meters)
-    DGNPLATFORM_EXPORT void StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, DVec2dCR size);
+    DGNPLATFORM_EXPORT void StoreImage(DgnTextureCR texture, DPoint2dCR origin, DVec2dCR size);
 
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;
+
+    ImageDefCR GetImageDef() const { return m_imageDef; }
     };
 
 //=======================================================================================
@@ -201,7 +233,13 @@ struct RedlineViewController : ViewController2d
     friend struct DgnMarkupProject;
 
 protected:
+    Render::MaterialPtr m_backgroundMaterial;
+
+    Render::MaterialP LoadBackgroundMaterial(ViewContextR context);
+    RedlineModel::ImageDef GetImageDef() const;
+
     void _DrawView(ViewContextR) override;
+    void _DrawDecorations(DecorateContextR) override;
 
 public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinitionR rdlViewDef);

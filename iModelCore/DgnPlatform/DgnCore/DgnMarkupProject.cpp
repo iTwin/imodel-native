@@ -786,50 +786,63 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineModel::ImageDef::FromJson(JsonValueCR json)
+    {
+    auto textureId = json[json_textureId()].asUInt64(0);
+    if (0 != textureId)
+        m_textureId = DgnTextureId(textureId);
+    else
+        m_textureId.Invalidate(); // to avoid assertions...
+
+    m_origin.x = json[json_originX()].asDouble(0.0);
+    m_origin.y = json[json_originY()].asDouble(0.0);
+    m_size.x = json[json_sizeX()].asDouble(0.0);
+    m_size.y = json[json_sizeY()].asDouble(0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value RedlineModel::ImageDef::ToJson() const
+    {
+    Json::Value json;
+    json.SetOrRemoveUInt64(json_textureId(), m_textureId.GetValueUnchecked(), 0);
+    json.SetOrRemoveDouble(json_originX(), m_origin.x, 0.0);
+    json.SetOrRemoveDouble(json_originY(), m_origin.y, 0.0);
+    json.SetOrRemoveDouble(json_sizeX(), m_size.x, 0.0);
+    json.SetOrRemoveDouble(json_sizeY(), m_size.y, 0.0);
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineModel::_OnSaveJsonProperties()
+    {
+    T_Super::_OnSaveJsonProperties();
+    SetJsonProperties(json_imageDef(), m_imageDef.ToJson());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineModel::_OnLoadedJsonProperties()
+    {
+    T_Super::_OnLoadedJsonProperties();
+    m_imageDef.FromJson(GetJsonProperties(json_imageDef()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, DVec2dCR size)
+void RedlineModel::StoreImage(DgnTextureCR texture, DPoint2dCR origin, DVec2dCR size)
     {
-    DgnDbR db = GetDgnDb();
-    DefinitionModelR dictionary = db.GetDictionaryModel();
-
-    DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(dictionary, CATEGORY_RedlineImage));
-
-    DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
-                            DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
-
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
-
-    // Ensure image graphic has low priority so that annotations are rendered in front of it...
-    Render::GeometryParams geomParams(cat);
-    geomParams.SetDisplayPriority(-1);
-    builder->Append(geomParams);
-
-    GraphicBuilder::TileCorners corners;
-    corners.m_pts[0] = DPoint3d::From(origin.x,           origin.y);            // lowerLeft
-    corners.m_pts[1] = DPoint3d::From(origin.x + size.x,  origin.y);            // lowerRight
-    corners.m_pts[2] = DPoint3d::From(origin.x,           origin.y + size.y);   // upperLeft
-    corners.m_pts[3] = DPoint3d::From(origin.x + size.x,  origin.y + size.y);   // upperRight
-    
-    Render::Image image(source);
-    if (!image.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    ImageGraphicPtr imageGraphic = ImageGraphic::Create(std::move(image), corners);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(imageGraphic);
-
-    builder->Append(*geometry);
-
-    if (SUCCESS != builder->Finish(*gelem->ToGeometrySourceP()))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    db.Elements().Insert(*gelem);
+    BeAssert(texture.IsPersistent() && texture.GetTextureId().IsValid());
+    m_imageDef = ImageDef(texture.GetTextureId(), origin, size);
+    Update();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,6 +961,84 @@ DocumentListModelPtr DgnMarkupProject::GetRedlineListModel()
 ViewControllerPtr RedlineViewDefinition::_SupplyController() const
     {
     return new RedlineViewController(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::MaterialP RedlineViewController::LoadBackgroundMaterial(ViewContextR context)
+    {
+    if (m_backgroundMaterial.IsValid())
+        return m_backgroundMaterial->HasTextureMapping() ? m_backgroundMaterial.get() : nullptr;
+
+    // Create the material proactively so we don't repeat all this work every frame if texture cannot be created...
+    Render::Material::CreateParams matParams;
+    matParams.SetDiffuseColor(ColorDef::White());
+    matParams.SetShadows(false);
+    matParams.SetAmbient(1.0);
+    matParams.SetDiffuse(0.0);
+    m_backgroundMaterial = context.GetRenderSystem()->_CreateMaterial(matParams);
+
+    auto def = GetImageDef();
+    auto texture = context.GetRenderSystem()->_GetTexture(def.m_textureId, GetDgnDb());
+    if (texture.IsNull())
+        return nullptr;
+
+    Render::TextureMapping mapping(*texture);
+    m_backgroundMaterial->MapTexture(mapping);
+
+    return m_backgroundMaterial.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RedlineModel::ImageDef RedlineViewController::GetImageDef() const
+    {
+    RedlineModel::ImageDef def;
+    auto model = static_cast<RedlineModelP>(GetViewedModel());
+    if (nullptr != model)
+        def = model->GetImageDef();
+
+    return def;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineViewController::_DrawDecorations(DecorateContextR context)
+    {
+    auto material = LoadBackgroundMaterial(context);
+    if (nullptr == material)
+        return;
+
+    auto def = GetImageDef();
+    BeAssert(def.IsValid());
+
+    double left = def.m_origin.x,
+           bottom = def.m_origin.y,
+           right = left + def.m_size.x,
+           top = bottom + def.m_size.y;
+
+    DPoint3d pts[5] =
+        {
+        DPoint3d::FromXYZ(left, bottom, 0.0),
+        DPoint3d::FromXYZ(left, top, 0.0),
+        DPoint3d::FromXYZ(right, top, 0.0),
+        DPoint3d::FromXYZ(right, bottom, 0.0),
+        DPoint3d::FromXYZ(left, bottom, 0.0)
+        };
+
+    context.GetViewportR().WorldToView(pts, pts, 5);
+
+    Render::GraphicParams params;
+    params.SetMaterial(material);
+
+    auto graphic = context.CreateViewGraphic();
+    graphic->ActivateGraphicParams(params);
+    graphic->AddShape(5, pts, true);
+
+    context.SetViewBackground(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
