@@ -653,7 +653,7 @@
         <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
         <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
-		<SubPart PartName="VersionCompare"      PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
+		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
         <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
     
 
