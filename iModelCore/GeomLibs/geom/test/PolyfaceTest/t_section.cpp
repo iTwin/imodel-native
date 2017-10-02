@@ -1288,11 +1288,11 @@ void SaveTransformed (bvector<PolyfaceHeaderPtr> &meshes, double xShiftFactor = 
             {
             if (mesh.IsValid ())
                 {
-                printf (" precompress %d %d\n", (int)mesh->Point().size (), (int)mesh->PointIndex().size ());
+                //printf (" precompress %d %d\n", (int)mesh->Point().size (), (int)mesh->PointIndex().size ());
                 mesh->Compress ();
                 Check::SaveTransformed (mesh);
                 Check::Shift (0, dY, 0);
-                printf ("postcompress %d %d\n", (int)mesh->Point().size (), (int)mesh->PointIndex().size ());
+                //printf ("postcompress %d %d\n", (int)mesh->Point().size (), (int)mesh->PointIndex().size ());
                 mesh->MarkTopologicalBoundariesVisible (false);
                 Check::SaveTransformed (mesh);
                 Check::Shift (0, dY, 0);
@@ -1496,3 +1496,181 @@ TEST(Polyface,CleanupByUndercutAndPunchMany)
     Check::ClearGeometry ("Polyface.CleanupByUndercutAndPunchMany");
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,MultiMeshVisibilityA)
+    {
+// 1
+  bvector<DPoint3d> points1{ 
+    DPoint3d::From (687745.24628939060,4628331.8363190368,36.652027632865682), 
+    DPoint3d::From (687760.36752856954,4628361.5381623916,43.846792983534229), 
+    DPoint3d::From (687760.20898026542,4628328.9707649322,35.704847135857555), 
+    DPoint3d::From (687775.34381491505,4628361.4652531333,43.597781970460026), 
+    DPoint3d::From (687775.16577092919,4628324.8932489594,34.454672579566953), 
+    DPoint3d::From (687790.32010126056,4628361.3923438741,43.348770957340776), 
+    DPoint3d::From (687790.11437440885,4628319.1340039419,32.784060780857857)
+    };
+
+  bvector<int> indices1 {
+     1,3,-2,0,
+     4,2,-3,0,
+     3,5,-4,0,
+     6,4,-5,0,
+     5,7,-6,0
+    };
+
+//3
+
+
+  bvector<DPoint3d> points3{
+    DPoint3d::From (687790.32010126056,4628361.3923438741,43.348770957340776), 
+    DPoint3d::From (687790.11437440885,4628319.1340039419,32.784060780857857), 
+    DPoint3d::From (687805.29638760595,4628361.3194346149,43.099759944223194), 
+    DPoint3d::From (687805.07790107594,4628316.4401299022,31.879800807703337), 
+    DPoint3d::From (687820.27267395146,4628361.2465253556,42.850748931148992), 
+    DPoint3d::From (687820.04391743848,4628314.2576641906,31.103394431650546), 
+    DPoint3d::From (687835.24896029697,4628361.1736160973,42.601737917846535), 
+    DPoint3d::From (687835.01353934931,4628312.8158138227,30.512144085745369), 
+    DPoint3d::From (687850.22524664237,4628361.1007068399,42.352726904589119), 
+    DPoint3d::From (687849.98879983032,4628312.5321817584,30.210451746826006), 
+    DPoint3d::From (687865.20153298776,4628361.0277975798,42.103715891654751)
+    };
+
+  bvector<int> indices3 {
+     3,1,-2,0,
+    2, 4,-3,0,
+    5,3, -4,0,
+    4,6,-5, 0,
+    7,5,-6,0
+    };
+
+//4
+
+  bvector<DPoint3d> points4{  
+    DPoint3d::From (687762.44792489847,4628315.5641302364,39.670177809029227), 
+    DPoint3d::From (687762.84361512598,4628333.8682841547,35.093070224001082), 
+    DPoint3d::From (687777.44245050137,4628315.2399859298,39.299826872879393), 
+    DPoint3d::From (687777.90394909563,4628336.5883557433,33.961487508610183), 
+    DPoint3d::From (687792.43697610416,4628314.9158416269,38.929475936724444), 
+    DPoint3d::From (687793.01376984117,4628341.597626050,32.257471406774144)
+    };
+
+  bvector<int> indices4 {
+     -3,2,1,0,
+    -2, 3,4,0,
+    -5,4, 3,0,
+    -4,5,6,0
+    };
+
+//6
+
+  bvector<DPoint3d> points6{
+    DPoint3d::From (687792.43697610416,4628314.9158416269,38.929475936724444), 
+    DPoint3d::From (687793.01376984117,4628341.597626050,32.257471406774144), 
+    DPoint3d::From (687807.43150170683,4628314.5916973222,38.559125000565956), 
+    DPoint3d::From (687808.05389933405,4628343.3830628404,31.359601980809096), 
+    DPoint3d::From (687822.42602730950,4628314.2675530165,38.188774064448523), 
+    DPoint3d::From (687823.07241255429,4628344.1685568560,30.711776653119280), 
+    DPoint3d::From (687837.42055291240,4628313.9434087127,37.818423128289325), 
+    DPoint3d::From (687838.08650191897,4628344.7494086502,30.115123833274936)
+    };
+
+  bvector<int> indices6 {
+     -3,2,1,0,
+    -2, 3,4,0,
+    -5,4, 3,0,
+    -4,5,6, 0,
+    -7,6,5,0
+    };
+
+
+    bvector<PolyfaceHeaderPtr> allMesh, visibleParts, visibleParts2;
+    DPoint3d origin = DPoint3d::From (0,0,0);
+    allMesh.push_back (createMesh (points1, indices1, origin));
+    allMesh.push_back (createMesh (points3, indices3, origin));
+    allMesh.push_back (createMesh (points4, indices4, origin));
+    allMesh.push_back (createMesh (points6, indices6, origin));
+    SaveTransformed (visibleParts, 1.2, true);
+    PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
+    SaveTransformed (visibleParts, 1.2, true);
+    PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (visibleParts, visibleParts2);
+    SaveTransformed (visibleParts2, 1.2, true);
+    Check::ClearGeometry ("Polyface.MultiMeshVisibilityA");
+    }
+
+extern bool DGNJSFileToGeometry (char const *filename, bvector<IGeometryPtr> &geometry);
+void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bvector<size_t> indices, size_t numFacetsAtEachEnd)
+    {
+    bvector<PolyfaceHeaderPtr> activeMesh, visibleParts;
+    for( auto i : indices)
+        {
+        if (numFacetsAtEachEnd == 0)
+            activeMesh.push_back (allMesh[i]);
+        else
+            {
+            auto numFacets = allMesh[i]->GetNumFacet ();
+            IFacetOptionsPtr options = IFacetOptions::Create ();
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            auto visitor = PolyfaceVisitor::Attach (*allMesh[i]);
+            size_t facetIndex = 0;
+            bvector<ptrdiff_t> readIndices;
+            for (visitor->Reset (); visitor->AdvanceToNextFace (); facetIndex++)
+                {
+                if (facetIndex < numFacetsAtEachEnd || facetIndex + numFacetsAtEachEnd >= numFacets)
+                    readIndices.push_back (visitor->GetReadIndex ());
+                }
+            bvector<PolyfaceHeaderPtr> result;
+            allMesh[i]->CopyPartitions (readIndices, result);
+            activeMesh.push_back (result[0]);
+            }
+        }
+    PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (activeMesh, visibleParts);
+    Check::Shift (dX, 0, 0);
+    SaveTransformed (visibleParts, 0.0, true);
+    }
+TEST(Polyface,MultiMeshVisibilityB)
+    {
+    bvector<char const*> filenames {
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
+
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_2.dgnjs",
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_4.dgnjs",
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
+
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_6.dgnjs",
+        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs"
+        };
+    bvector<PolyfaceHeaderPtr> allMesh;
+    auto range = DRange3d::NullRange ();
+    static double s_scale = 1.0 / 1024.0;
+    for (auto &filename : filenames)
+        {
+        bvector<IGeometryPtr> geometry;
+        if (DGNJSFileToGeometry (filename, geometry))
+            {
+            for (auto g : geometry)
+                {
+                auto mesh = g->GetAsPolyfaceHeader ();
+                if (mesh.IsValid ())
+                    {
+                    for (auto &xyz : mesh->Point ())
+                        xyz.Scale (s_scale);
+                    allMesh.push_back (mesh);
+                    range.Extend (mesh->Point ());
+                    }
+                }
+            }
+        }
+    SaveTransformed (allMesh, 0.0, true);
+    double dX = 1.5 * range.XLength ();
+    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {1,3,4,6}, 0);
+    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 4);
+    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 3);
+    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 2);
+
+    Check::ClearGeometry ("Polyface.MultiMeshVisibilityB");
+    }

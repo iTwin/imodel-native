@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
+static double s_undercutLocalRelTol = 1.0e-14;
 void CompressCyclicPointsAndZingers (bvector<DPoint3d> &points, double tolerance)
     {
     DPoint3dOps::Compress (points, tolerance);
@@ -136,7 +136,7 @@ PolyfaceHeaderPtr &undercutPolyface
     polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
     polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
 
-    double planarityAbsTol = s_planarityLocalRelTol * inputRange.low.Distance (inputRange.high);
+    double planarityAbsTol = s_undercutLocalRelTol * inputRange.low.Distance (inputRange.high);
     DPoint3d rangeCenter;
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
 
@@ -190,7 +190,7 @@ PolyfaceHeaderPtr &polyfaceBOverA
     polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
     polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
 
-    double planarityAbsTol = s_planarityLocalRelTol * inputRange.low.Distance (inputRange.high);
+    double planarityAbsTol = s_undercutLocalRelTol * inputRange.low.Distance (inputRange.high);
     DPoint3d rangeCenter;
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
 

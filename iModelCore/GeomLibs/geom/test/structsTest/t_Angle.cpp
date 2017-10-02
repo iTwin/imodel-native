@@ -1542,4 +1542,16 @@ TEST(HSV,PrintFloatingPointGranularity)
                     );
         }
     }
-
+// This tests if the current CPU settings and atan2 function treat atan2(-0.0,-1) differently from atan2 (+0,-1)
+// 
+TEST(Angle,Atan2Zero)
+    {
+    double thetaPlus = atan2(0.0, -1.0);
+    double thetaMinus = atan2(-0.0, -1.0);
+    double betaPlus = Angle::Atan2 (0.0, -1.0);
+    double betaMinus = Angle::Atan2 (-0.0, -1.0);
+    printf(" atan2(+0,-1) %.17lg\n", thetaPlus);
+    printf(" atan2(-0,-1) %.17lg\n", thetaMinus);
+    printf(" Angle::Atan2(+0,-1) %.17lg\n", betaPlus);
+    printf(" Angle::Atan2(-0,-1) %.17lg\n", betaMinus);
+    }
