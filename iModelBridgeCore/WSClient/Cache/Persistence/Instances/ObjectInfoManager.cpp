@@ -32,7 +32,7 @@ m_hierarchyManager(hierarchyManager),
 m_infoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
 
 m_infoInserter(m_dbAdapter.GetECDb(), *m_infoClass),
-m_infoUpdater(m_dbAdapter.GetECDb(), *m_infoClass)
+m_infoUpdater(m_dbAdapter.GetECDb(), *m_infoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {
     m_dbAdapter.RegisterDeleteListener(this);
     }

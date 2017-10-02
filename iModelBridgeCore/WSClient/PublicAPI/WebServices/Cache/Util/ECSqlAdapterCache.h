@@ -16,6 +16,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+#define ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties JsonUpdater::Options(JsonUpdater::SystemPropertiesOption::Ignore, JsonUpdater::ReadonlyPropertiesOption::Fail)
+#define ECSqlUpdater_Options_IgnoreSystemAndUpdateReadOnlyProperties JsonUpdater::Options(JsonUpdater::SystemPropertiesOption::Ignore, JsonUpdater::ReadonlyPropertiesOption::Update)
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2015
 * Cache JsonInserter, JsonUpdater and other ECSql adapters for reuse
@@ -88,6 +90,32 @@ template<typename A> struct ECSqlAdapterLoader
             {
             if (nullptr == m_adapter)
                 m_adapter = std::make_shared<A>(*m_ecdb, *m_ecClass, nullptr);
+
+            return *m_adapter;
+            };
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                  julius.cepukenas    10/2017
+* Lazy load JsonUpdater with ECSQL options
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename A> struct ECSqlAdapterLoaderWithOptions
+    {
+    private:
+        ECDb* m_ecdb;
+        ECClassCP m_ecClass;
+        std::shared_ptr<A> m_adapter;
+        JsonUpdater::Options m_options;
+
+    public:
+        ECSqlAdapterLoaderWithOptions(ECDb& ecdb, ECClassCR ecClass, JsonUpdater::Options const& options) : m_ecdb(&ecdb), m_ecClass(&ecClass), m_options(options) {};
+
+        //! Lazy initialize adapter
+        A& Get()
+            {
+            if (nullptr == m_adapter)
+                m_adapter = std::make_shared<A>(*m_ecdb, *m_ecClass, nullptr, m_options);
+
             return *m_adapter;
             };
     };
