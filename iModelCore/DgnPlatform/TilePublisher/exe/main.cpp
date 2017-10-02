@@ -16,6 +16,7 @@
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 
+#define HISTORY_SUPPORT
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -47,6 +48,9 @@ enum class ParamId
     NoReplace,
     VerboseStatistics,
     TextureMode,
+    History,
+    UserName,
+    Password,
     Invalid,
 };
 
@@ -82,6 +86,9 @@ static CommandParam s_paramTable[] =
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
         { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
+        { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
+        { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
+        { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -147,6 +154,7 @@ struct Params : PublisherParams
 {
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,12 +280,24 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
                 }
 
+            case ParamId::History:
+                m_wantHistory = true;
+                break;
+
+            case ParamId::UserName:
+                m_userName = Utf8String(arg.m_value.c_str());
+                break;
+
+
+            case ParamId::Password:
+                m_password = Utf8String(arg.m_value.c_str());
+                break;
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
-
     if (!haveInput)
         {
         printf("Input filename is required\n");
@@ -289,6 +309,15 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
 
     if (m_tilesetName.empty())
         m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+
+    if (m_wantHistory)
+        {
+        if (m_userName.empty() || m_password.empty())
+            {
+            printf ("Username and password are reaquired for history publishing\n");
+            return false;
+            }
+        }
 
     return true;
     }
@@ -418,8 +447,17 @@ int wmain(int ac, wchar_t const** av)
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
-                                                                                  
+
+
+#ifdef HISTORY_SUPPORT
+    if (createParams.WantHistory())
+        {
+        return static_cast<int> (TilesetHistoryPublisher::PublishTilesetWithHistory (createParams));
+        }
+#endif
+
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
@@ -455,3 +493,4 @@ int wmain(int ac, wchar_t const** av)
     return static_cast<int>(status);
     }
 
+                       
