@@ -147,6 +147,7 @@ protected:
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp; m_featureOverridesDirty=m_selectionSetDirty=true;}
+    virtual void _OnDetachedFromViewport(DgnViewportR vp) { m_vp = nullptr;}
     virtual GeometricModelP _GetTargetModel() const = 0;
     virtual BentleyStatus _CreateScene(SceneContextR context) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();

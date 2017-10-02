@@ -8,6 +8,7 @@
 #include <TilePublisher/CesiumPublisher.h>
 #include "CesiumConstants.h"
 
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
@@ -39,7 +40,6 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
 
     return viewId;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -145,6 +145,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (Status::Success != (status = GetViewsJson (json, groundPoint)))
         return status;
 
+    if (!m_revisionsJson.isNull())
+        json["revisions"] = m_revisionsJson;
 
     Json::Value viewerOptions = params.GetViewerOptions();
 
@@ -236,21 +238,25 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
+PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params, bool initializeDirectories)
     {
-    auto status = InitializeDirectories(GetDataDirectory());
-    if (Status::Success != status)
-        return status;
-
-    ProgressMeter progressMeter(*this);
-    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);
-
-    ExtractSchedules();     // Extract these now as they schedule entrie may need to be added to batch tables.
+    if (initializeDirectories)
+        {
+        auto status = InitializeDirectories(GetDataDirectory());
+        if (Status::Success != status)
+            return status;
+        }
 
     DRange3d            range;
 
+    ProgressMeter progressMeter(*this);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
+
+    ExtractSchedules();     // Extract these now as they schedule entries may need to be added to batch tables.
+
+
     m_generator = &generator;
-    status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
+    auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -285,6 +291,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
         groundPoint.z = params.GetGroundHeight();
         }
+    
 
     return WriteWebApp(groundPoint, params);
     }
@@ -340,7 +347,6 @@ void TilesetPublisher::GenerateModelNameList()
         m_modelNameList.append(1, ']');
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -348,7 +354,8 @@ WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, Pu
     {
     WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), false) : classifier->GetRootName();
 
-    return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
+    return tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }
 
 
+                                    

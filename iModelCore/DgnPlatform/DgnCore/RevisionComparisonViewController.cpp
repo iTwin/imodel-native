@@ -169,8 +169,6 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
         }
 
-    //bool isPersistent   =  (m_persistentOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
-    //bool isTransient    =  (m_transientOpcodeCache.find(elementId) != m_persistentOpcodeCache.end());
     DbOpcode persistentOpcode = m_persistentOpcodeCache[elementId];
     DbOpcode transientOpcode = m_transientOpcodeCache[elementId];
     if (WantShowTarget())
