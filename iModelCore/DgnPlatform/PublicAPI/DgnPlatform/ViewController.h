@@ -163,6 +163,7 @@ protected:
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
+    virtual void _OnDetachedFromViewport(DgnViewportR vp) { m_vp = nullptr;}
     virtual GeometricModelP _GetTargetModel() const = 0;
     virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
     virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;

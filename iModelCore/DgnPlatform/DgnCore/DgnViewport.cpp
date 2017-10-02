@@ -1184,10 +1184,15 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
             m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
             m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
             }
+
+        m_viewController->_OnDetachedFromViewport(*this);
+        BeAssert(nullptr == m_viewController->m_vp);
         }
 
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
+    BeAssert(this == m_viewController->m_vp);
+
     SetupFromViewController();
     SaveViewUndo();
 
