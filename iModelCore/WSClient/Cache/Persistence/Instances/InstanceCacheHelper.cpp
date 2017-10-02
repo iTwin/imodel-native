@@ -37,7 +37,7 @@ m_objectInfoManager(objectInfoManager),
 m_relationshipInfoManager(relationshipInfoManager),
 m_changeInfoManager(changeInfoManager),
 m_inserters(dbAdapter.GetECDb()),
-m_updaters(dbAdapter.GetECDb(), "ReadonlyPropertiesAreUpdatable")
+m_updaters(dbAdapter.GetECDb(), JsonUpdater::Options(JsonUpdater::SystemPropertiesOption::Fail, JsonUpdater::ReadonlyPropertiesOption::Update))
     {}
 
 /*--------------------------------------------------------------------------------------+

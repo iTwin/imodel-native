@@ -17,14 +17,14 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define SCHEMA_ECDbFileInfo                                 "ECDbFileInfo"
 
 #define CLASS_FileInfo                                      "FileInfo"
-#define CLASS_FileInfo_PROPERTY_Name                        "name"
-#define CLASS_FileInfo_PROPERTY_Size                        "size"
-#define CLASS_FileInfo_PROPERTY_Description                 "description"
-#define CLASS_FileInfo_PROPERTY_LastModified                "lastModified"
+#define CLASS_FileInfo_PROPERTY_Name                        "Name"
+#define CLASS_FileInfo_PROPERTY_Size                        "Size"
+#define CLASS_FileInfo_PROPERTY_Description                 "Description"
+#define CLASS_FileInfo_PROPERTY_LastModified                "LastModified"
 
 #define CLASS_ExternalFileInfo                              "ExternalFileInfo"
-#define CLASS_ExternalFileInfo_PROPERTY_RootFolder          "rootFolder"
-#define CLASS_ExternalFileInfo_PROPERTY_RelativePath        "relativePath"
+#define CLASS_ExternalFileInfo_PROPERTY_RootFolder          "RootFolder"
+#define CLASS_ExternalFileInfo_PROPERTY_RelativePath        "RelativePath"
 
 #define CLASS_FileInfoOwnership                             "FileInfoOwnership"
 
