@@ -139,14 +139,14 @@ struct JsonECSqlBinder final
 struct JsonECSqlSelectAdapter final: NonCopyableClass
     {
     public:
+        enum class MemberNameCasing
+            {
+            KeepOriginal, //!< Member name as returned from ECSQL
+            LowerFirstChar //!< First character of the member name is lowered. This does not apply to system members.
+            };
+
         struct FormatOptions final
             {
-            enum class MemberNameCasing
-                {
-                KeepOriginal, //!< Member name as returned from ECSQL
-                LowerFirstChar //!< First character of the member name is lowered. This does not apply to system members.
-                };
-
             private:
                 MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
@@ -384,12 +384,9 @@ struct JsonInserter final : NonCopyableClass
 //=======================================================================================
 //! Update EC content in the ECDb file through @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON" values
 //! @remarks The input JSON must contain the members which the updater is supposed to update. 
-//! That implies that the JsonUpdater will fail, if the input JSON contains members which are not updatable, 
-//! e.g. @ref BentleyApi::ECN::ECJsonSystemNames::Id "id",
-//! @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "className", @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "sourceId",
-//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "targetId", @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "sourceClassName",
-//! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "targetClassName".
-//! The general rule is that the JsonUpdater supports what ECSQL UPDATE supports.
+//!
+//! @note To simplify round-trip workflows, JsonUpdater::Options can be used to control how not-updatable should be treated if
+//! present in the input ECJSON.
 //!
 //! ### How the JsonUpdater works
 //! During construction the JsonUpdater generates and prepares an ECSQL UPDATE statement from the specified class and property names.
@@ -405,24 +402,108 @@ struct JsonInserter final : NonCopyableClass
 //! When JsonUpdater::Update is called, the values from the input ECJSON are bound to the members in the ECSQL UPDATE SET clause.
 //! That implies:
 //!     - The ECJSON may only contain members that match the list of properties passed at construction time
-//!     - Consequently, the ECJSON may not contain the instance id. It is passed as separate argument to the Update method.
+//!     - The ECJSON may not contain the instance id. It is passed as separate argument to the Update method.
 //!     - Any properties not contained in the ECJSON will be nulled out because no value is bound to its parameter in the SET clause.
 //!     (Unbound parameters in SQLite are treated as if NULL was bound to them).
+//! 
+//! The benefit of this approach is to avoid re-preparing a new ECSQL statement for every update. It comes at the cost that the set of properties
+//! to be updated remains fixed for the life-time of a JsonUpdater instance. Consider using the JsonECSqlBinder helper API if you need more
+//! flexibility with the set of properties to be updated.
 //@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater final : NonCopyableClass
     {
+    public:
+        //=======================================================================================
+        //! Options that control how the JsonUpdater treats @ref ECSqlSystemProperties.
+        //! They are never updatable in ECSQL. But in round-trip workflows the JSON might contain them. These
+        //! workflows can then decide to have the JsonUpdater ignore them.
+        //! @see BentleyApi::ECN::ECJsonSystemNames
+        //@bsienum                                                           09/2017
+        //+===============+===============+===============+===============+===============+======
+        enum class SystemPropertiesOption
+            {
+            //!JsonUpdater fails if the input ECJSON contains system properties.
+            Fail,
+            //! JsonUpdater ignores system properties in the input ECJSON.
+            Ignore
+            };
+
+        //=======================================================================================
+        //! Options that control how the JsonUpdater treats @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "read-only" properties.
+        //! @note This does not affect system properties. Use SystemPropertiesOption to control behavior for them.
+        //@bsienum                                                           09/2017
+        //+===============+===============+===============+===============+===============+======
+        enum class ReadonlyPropertiesOption
+            {
+            //!JsonUpdater fails if the class or list of properties it is initialized with contains read-only properties.
+            Fail,
+            //! JsonUpdater ignores read-only properties.
+            Ignore,
+            //! JsonUpdater treats read-only properties as writable properties. 
+            //! @remarks This option is equivalent to the @ref ECSQLOptions "ECSQLOPTION" @b ReadonlyPropertiesAreUpdatable
+            Update
+            };
+
+        //=======================================================================================
+        //! Options that control the behavior of the JsonUpdater.
+        //@bsiclass                                                           09/2017
+        //+===============+===============+===============+===============+===============+======
+        struct Options final
+            {
+            private:
+                SystemPropertiesOption m_systemProps = SystemPropertiesOption::Fail;
+                ReadonlyPropertiesOption m_readonlyProps = ReadonlyPropertiesOption::Fail;
+                Utf8String m_ecsqlOptions;
+                bool m_isValid = true;
+
+            public:
+                //! Initializes a new default Options object.
+                //! Default values:
+                //!     - JsonUpdater::SystemPropertiesOption::Fail
+                //!     - JsonUpdater::ReadonlyPropertiesOption::Fail
+                //!     - ECSQLOPTIONS: empty
+                Options() {}
+
+                //! Initializes a new Options object with JsonUpdater::SystemPropertiesOption set to its default value.
+                //! @remarks ReadonlyPropertiesOption::Update is equivalent to the @ref ECSQLOptions "ECSQLOPTION" @b ReadonlyPropertiesAreUpdatable.
+                //! Therefore, do not use the ECSQLOPTION @c ReadonlyPropertiesAreUpdatable here. Options::IsValid returns false in that case. Use the JsonUpdater::ReadonlyPropertiesOption argument instead.
+                //! @param[in] readonlyPropertiesOption Determines how read-only properties are to be handled by the updater.
+                //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
+                //!            Pass without ECSQLOPTIONS keyword.
+                explicit Options(ReadonlyPropertiesOption readonlyPropertiesOption, Utf8CP ecsqlOptions = nullptr) : Options(SystemPropertiesOption::Fail, readonlyPropertiesOption, ecsqlOptions) {}
+
+                //! Initializes a new Options object.
+                //! @remarks ReadonlyPropertiesOption::Update is equivalent to the @ref ECSQLOptions "ECSQLOPTION" @b ReadonlyPropertiesAreUpdatable.
+                //! Therefore, do not use the ECSQLOPTION @c ReadonlyPropertiesAreUpdatable here. Options::IsValid returns false in that case. Use the JsonUpdater::ReadonlyPropertiesOption argument instead.
+                //! @param[in] systemPropertiesOption Determines how system properties are to be handled by the updater.
+                //! @param[in] readonlyPropertiesOption Determines how read-only properties are to be handled by the updater.
+                //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
+                //!            Pass without ECSQLOPTIONS keyword.
+                ECDB_EXPORT Options(SystemPropertiesOption systemPropertiesOption, ReadonlyPropertiesOption readonlyPropertiesOption, Utf8CP ecsqlOptions = nullptr);
+
+                bool IsValid() const { return m_isValid; }
+                //! Default: JsonUpdater::SystemPropertiesOption::Fail
+                SystemPropertiesOption GetSystemPropertiesOption() const { return m_systemProps; }
+                //! Default: JsonUpdater::ReadonlyPropertiesOption::Fail
+                ReadonlyPropertiesOption GetReadonlyPropertiesOption() const { return m_readonlyProps; }
+                //! Default: unset
+                Utf8StringCR GetECSqlOptions() const { return m_ecsqlOptions; }
+            };
+
     private:
         struct BindingInfo final
             {
             private:
-                int m_parameterIndex = 0;
+                uint32_t m_parameterIndex = 0;
                 ECN::ECPropertyCP m_property = nullptr;
             public:
                 BindingInfo() {}
-                BindingInfo(int paramIndex, ECN::ECPropertyCR prop) : m_parameterIndex(paramIndex), m_property(&prop) {}
+                BindingInfo(uint32_t paramIndex, ECN::ECPropertyCR prop) : m_parameterIndex(paramIndex), m_property(&prop) {}
 
-                int GetParameterIndex() const { return m_parameterIndex; }
+                bool SkipBinding() const { return m_parameterIndex == 0; }
+
+                uint32_t GetParameterIndex() const { return m_parameterIndex; }
                 ECN::ECPropertyCR GetProperty() const { BeAssert(m_property != nullptr); return *m_property; }
             };
 
@@ -433,14 +514,15 @@ struct JsonUpdater final : NonCopyableClass
 
         ECDbCR m_ecdb;
         ECN::ECClassCR m_ecClass;
-        Utf8String m_jsonClassName;
+        Options m_options;
 
+        Utf8String m_jsonClassName;
         mutable ECSqlStatement m_statement;
         bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
         int m_idParameterIndex = 0;
         bool m_isValid = false;
 
-        BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, Utf8CP ecsqlOptions, ECCrudWriteToken const* writeToken);
+        BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, ECCrudWriteToken const*);
 
     public:
         //! Initializes a new JsonUpdater instance for the specified class.
@@ -452,9 +534,8 @@ struct JsonUpdater final : NonCopyableClass
         //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 
         //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
         //! If the option is not set, nullptr can be passed for @p writeToken.
-        //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
-        //!            Pass without ECSQLOPTIONS keyword.
-        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
+        //! @param[in] options Options that control the behavior of the JsonUpdater
+        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Options const& options = Options());
 
         //! Initializes a new JsonUpdater instance for the specified class. 
         //! @param[in] ecdb ECDb
@@ -463,9 +544,8 @@ struct JsonUpdater final : NonCopyableClass
         //! @param[in] writeToken Token required to execute ECSQL UPDATE statements if 
         //! the ECDb file was set-up with the "require ECSQL write token" option (for example all DgnDb files require the token).
         //! If the option is not set, nullptr can be passed for @p writeToken.
-        //! @param[in] ecsqlOptions ECSQLOPTIONS clause appended to the ECSQL generated by the JsonUpdater.
-        //!            Pass without ECSQLOPTIONS keyword.
-        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<Utf8CP> const& propertyNames, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr);
+        //! @param[in] options Options that control the behavior of the JsonUpdater
+        ECDB_EXPORT JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<Utf8CP> const& propertyNames, ECCrudWriteToken const* writeToken, Options const& options = Options());
 
         //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
         //! It is not valid, if the underlying ECClass is abstract or not mapped for example.
@@ -473,8 +553,6 @@ struct JsonUpdater final : NonCopyableClass
         bool IsValid() const { return m_isValid; }
 
         //! Updates an instance from the specified ECJSON
-        //! @remarks All ECProperties of the underlying ECClass for which the input ECJSON does not contain a value
-        //! are nulled-out.
         //! @param[in] instanceId the ECInstanceId of the instance to update
         //! @param[in] json the instance data
         //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,
@@ -482,8 +560,6 @@ struct JsonUpdater final : NonCopyableClass
         ECDB_EXPORT DbResult Update(ECInstanceId instanceId, JsonValueCR json) const;
 
         //! Update an instance from the specified ECJSON
-        //! @remarks All ECProperties of the underlying ECClass for which the input ECJSON does not contain a value
-        //! are nulled-out.
         //! @param[in] instanceId the ECInstanceId of the instance to update
         //! @param[in] json the instance data
         //! @return BE_SQLITE_OK in case of successful execution of the underlying ECSQL UPDATE. This means,

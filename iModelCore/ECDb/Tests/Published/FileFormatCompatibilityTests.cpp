@@ -992,13 +992,13 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
             EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
             }
         else
-            EXPECT_TRUE(false) << "DB object in actual file not found: " << actualName;
+            EXPECT_TRUE(false) << "DB object in benchmark file not found: " << actualName;
 
         benchmarkDdlLookupStmt.Reset();
         benchmarkDdlLookupStmt.ClearBindings();
         }
 
-    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath;
+    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------

@@ -31,8 +31,8 @@ struct ECSqlToJsonConverter final : NonCopyableClass
         BentleyStatus PrimitiveArrayToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
         BentleyStatus StructArrayToJson(JsonValueR, IECSqlValue const&) const;
 
-        static void FormatMemberName(Utf8String&, JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing);
-        static bool NeedsMemberNameReformatting(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing);
+        static void FormatMemberName(Utf8String&, JsonECSqlSelectAdapter::MemberNameCasing);
+        static bool NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing);
     public:
         ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& options) : m_stmt(stmt), m_formatOptions(options) {}
 
@@ -523,14 +523,14 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing casingMode)
+bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing casingMode)
     {
     switch (casingMode)
         {
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
+            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
                 return false;
 
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
+            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
                 return true;
 
             default:
@@ -543,14 +543,14 @@ bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::F
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-void ECSqlToJsonConverter::FormatMemberName(Utf8String& memberName, JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing casingMode)
+void ECSqlToJsonConverter::FormatMemberName(Utf8String& memberName, JsonECSqlSelectAdapter::MemberNameCasing casingMode)
     {
     switch (casingMode)
         {
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal:
+            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
                 return;
 
-            case JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar:
+            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
                 ECJsonUtilities::LowerFirstChar(memberName);
                 return;
 

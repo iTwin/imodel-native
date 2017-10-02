@@ -2482,7 +2482,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
         "               <PropertyName>LastMod</PropertyName>"
         "           </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' readOnly='True'/>"
         "   </ECEntityClass>"
         "</ECSchema>";
 
@@ -2566,7 +2566,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
         "                <PropertyName>LastMod</PropertyName>"
         "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' readOnly='True'/>"
         "   </ECEntityClass>"
         "</ECSchema>";
 
@@ -6695,7 +6695,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttribute)
         "                <PropertyName>LastMod</PropertyName>"
         "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' readOnly='True'/>"
         "       <ECProperty propertyName='prop' typeName='boolean' >"
         "        <ECCustomAttributes>"
         "            <Localizable xmlns='CoreCustomAttributes.01.00'/>"
@@ -6716,7 +6716,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteCustomAttribute)
         "                <PropertyName>LastMod</PropertyName>"
         "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' readOnly='True'/>"
         "       <ECProperty propertyName='prop' typeName='boolean' >"
         "        <ECCustomAttributes>"
         "            <Localizable xmlns='CoreCustomAttributes.01.00'/>"

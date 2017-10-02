@@ -2002,6 +2002,101 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicUpdateNoTph.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Base" >
+                    <ECProperty propertyName="BaseProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub1">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="SubProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub2">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="SubProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="BaseAbstract" modifier="Abstract">
+                    <ECProperty propertyName="BaseProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub10">
+                    <BaseClass>BaseAbstract</BaseClass>
+                    <ECProperty propertyName="SubProp" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub20">
+                    <BaseClass>BaseAbstract</BaseClass>
+                    <ECProperty propertyName="SubProp" typeName="int" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    ECInstanceKey sub1Key, sub10Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Key, "INSERT INTO ts.Sub1(BaseProp,SubProp) VALUES (100, 123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub10Key, "INSERT INTO ts.Sub10(BaseProp,SubProp) VALUES (100, 123)"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ts.Base SET BaseProp=200"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(200, stmt.GetValueInt(0));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub1 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(200, stmt.GetValueInt(0));
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ts.BaseAbstract SET BaseProp=200"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.BaseAbstract WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(200, stmt.GetValueInt(0));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub10 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(200, stmt.GetValueInt(0));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Base WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub1 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.BaseAbstract WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.BaseAbstract WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub10 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate)

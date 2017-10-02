@@ -192,9 +192,19 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
     {
-    IECInstancePtr ca = m_ecClass.GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-    if (ca == nullptr)
+    PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+    if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+        return ERROR;
+
+    if (currentTimeStampProp == nullptr)
         return SUCCESS;
+
+    if (!currentTimeStampProp->GetIsReadOnly())
+        {
+        Issues().Report("Failed to map ECClass %s. The property '%s' specified in the ClassHasCurrentTimeStampProperty custom attribute must be set to read-only.",
+                        m_ecClass.GetFullName(), currentTimeStampProp->GetName().c_str());
+        return ERROR;
+        }
 
     if (m_ecClass.IsEntityClass() && m_ecClass.GetEntityClassCP()->IsMixin())
         {
@@ -203,28 +213,7 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
         return ERROR;
         }
 
-    ECValue v;
-    if (ca->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
-        {
-        ECPropertyCP prop = m_ecClass.GetPropertyP(v.GetUtf8CP());
-        if (nullptr == prop)
-            {
-            Issues().Report("Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
-                            "does not exist in the ECClass.", m_ecClass.GetFullName(), v.GetUtf8CP());
-            return ERROR;
-            }
-        PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
-        if (primProp == nullptr || primProp->GetType() != PrimitiveType::PRIMITIVETYPE_DateTime)
-            {
-            Issues().Report("Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
-                            "is not a primitive property of type 'DateTime'.", m_ecClass.GetFullName(), prop->GetName().c_str());
-            return ERROR;
-
-            }
-
-        m_classHasCurrentTimeStampProperty = primProp;
-        }
-
+    m_classHasCurrentTimeStampProperty = currentTimeStampProp;
     return SUCCESS;
     }
 

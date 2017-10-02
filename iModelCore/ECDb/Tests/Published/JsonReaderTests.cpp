@@ -44,7 +44,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     Json::Value defaultJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
 
-    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     Json::Value javaScriptJson;
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
 
@@ -155,7 +155,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     Json::Value defaultJson, javaScriptJson;
 
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
@@ -391,7 +391,7 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     Json::Value defaultJson, javaScriptJson;
 
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
@@ -825,7 +825,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+    JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     Json::Value actualJson;
     ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson));
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
@@ -835,7 +835,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_TRUE(actualJson["L"].isIntegral()) << actualJson.ToString().c_str();
     ASSERT_EQ(1234567890, actualJson["L"].asInt64()) << "ECJsonInt64Format::AsNumber " << actualJson.ToString().c_str();
 
-    JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString));
     actualJson.clear();
     ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson));
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
@@ -845,7 +845,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_TRUE(actualJson["L"].isString()) << actualJson.ToString().c_str();
     ASSERT_STREQ("1234567890", actualJson["L"].asCString()) << "ECJsonInt64Format::AsDecimalString " << actualJson.ToString().c_str();
 
-    JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString));
+    JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString));
     actualJson.clear();
     ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson));
     ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
@@ -905,7 +905,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
     JsonECSqlSelectAdapter defaultAdapter(statement);
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson));
 
-    JsonECSqlSelectAdapter jsAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter jsAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson));
 
     statement.Finalize();
@@ -955,7 +955,7 @@ TEST_F(JsonReaderTests, PartialPoints)
 
     Json::Value defaultJson, javaScriptJson;
     JsonECSqlSelectAdapter defaultAdapter(selStmt);
-    JsonECSqlSelectAdapter javaScriptAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonECSqlSelectAdapter javaScriptAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
 
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
@@ -1021,7 +1021,7 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE(defaultReader.IsValid());
     ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson, key.GetInstanceId()));
 
-    JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_TRUE(javaScriptReader.IsValid());
     ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson, key.GetInstanceId()));
 
@@ -1170,12 +1170,12 @@ TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
 
     JsonInserter inserter(m_ecdb, *psaClass, nullptr);
     ECInstanceKey newKey;
-    for (JsonECSqlSelectAdapter::FormatOptions const& formatOption : {JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber),
-                                                                      JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsNumber),
-                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString),
-                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString),
-                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString),
-                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::FormatOptions::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString)})
+    for (JsonECSqlSelectAdapter::FormatOptions const& formatOption : {JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber),
+                                                                      JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsNumber),
+                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString),
+                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString),
+                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString),
+                                                                     JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString)})
         {
         JsonReader reader(m_ecdb, psaKey.GetClassId(), formatOption);
         ASSERT_TRUE(reader.IsValid());

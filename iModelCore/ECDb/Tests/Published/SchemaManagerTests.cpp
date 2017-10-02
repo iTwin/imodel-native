@@ -1849,8 +1849,8 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                     <ECProperty propertyName="FoundationDate" typeName="DateTime" />
                 </ECEntityClass>
                 <ECEntityClass typeName="Course" modifier="None">
-                    <ECProperty propertyName="LastMod1" typeName="DateTime"/>
-                    <ECProperty propertyName="LastMod2" typeName="DateTime"/>
+                    <ECProperty propertyName="LastMod1" typeName="DateTime" readOnly="True"/>
+                    <ECProperty propertyName="LastMod2" typeName="DateTime" readOnly="True"/>
                     <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward">
                         <ECCustomAttributes>
                             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>

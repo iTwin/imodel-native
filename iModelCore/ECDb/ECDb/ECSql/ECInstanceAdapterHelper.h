@@ -311,8 +311,6 @@ struct ECInstanceAdapterHelper final
 
         static bool IsOrContainsCalculatedProperty(ECN::ECPropertyCR prop);
 
-        static bool TryGetCurrentTimeStampProperty(ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass);
-
         static bool HasReadonlyPropertiesAreUpdatableOption(ECDbCR, ECN::ECClassCR, Utf8CP ecsqlOptions);
 
         //! Sets the ECInstanceId on the given ECInstance.

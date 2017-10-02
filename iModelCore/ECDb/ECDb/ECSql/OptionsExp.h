@@ -25,7 +25,7 @@ private:
     Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
-    explicit OptionExp(Utf8CP name, Utf8CP val) : Exp(Type::Option), m_name(name), m_val(val) {}
+    OptionExp(Utf8CP name, Utf8CP val) : Exp(Type::Option), m_name(name), m_val(val) {}
 
     Utf8CP GetName() const { return m_name.c_str(); }
     bool IsNameValuePair() const { return !m_val.empty(); }

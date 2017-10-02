@@ -398,9 +398,6 @@
     <ClInclude Include="JsonPersistenceHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\JsonECSqlBinder.h">
-      <Filter>ECSql\Adapters</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

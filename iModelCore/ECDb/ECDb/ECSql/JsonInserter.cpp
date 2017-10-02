@@ -37,12 +37,19 @@ void JsonInserter::Initialize(ECCrudWriteToken const* writeToken)
     m_bindingMap[ECJsonSystemNames::Id()] = BindingInfo(parameterIndex);
     parameterIndex++;
 
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+    if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+        {
+        LOG.errorv("JsonInserter failure: Could not retrieve the 'ClassHasCurrentTimeStampProperty' custom attribute from the ECClass '%s'.",
+                   m_ecClass.GetFullName());
+        m_isValid = false;
+        return;
+        }
+
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties(true))
         {
         //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+        if (currentTimeStampProp != nullptr && ecProperty == currentTimeStampProp)
             continue;
 
         ecsql.append(",[").append(ecProperty->GetName()).append("]");
@@ -111,7 +118,7 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, JsonValueCR json) const
                     strcmp(ECJsonSystemNames::TargetClassName(), memberName) == 0)
                     continue; //those two are ignored as ECSQL doesn't validate them anyways
 
-                LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s'.",
+                LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' or it maps to a 'CurrentTimeStamp' property (which is handled by ECDb).",
                            memberName, m_ecClass.GetFullName());
                 return BE_SQLITE_ERROR;
                 }
