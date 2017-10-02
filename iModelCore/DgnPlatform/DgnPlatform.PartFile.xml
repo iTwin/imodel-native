@@ -680,7 +680,7 @@
     </Part>																																										 
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
-        <SubPart PartName="TilePublisherLib" />																																							                                                             
+        <SubPart PartName="TilePublisherLib" />
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>

@@ -326,7 +326,8 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteModelMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet);
+    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels);
+    void AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds);
     ClassifierInfo const* GetCurrentClassifier() const { return m_currentClassifier; }
 
 
@@ -364,7 +365,7 @@ public:
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
     WString GetTileExtension (TileNodeCR tile) const;
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
-    T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
+    T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
     void RecordUsage(FeatureAttributesMapCR attributes);
     TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
