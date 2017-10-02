@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECSqlAdapterCache.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,10 +51,10 @@ template<typename A> struct ECSqlAdapterCacheWithOptions
     private:
         ECDb* m_ecdb;
         bmap<ECClassId, std::shared_ptr<A>> m_cache;
-        Utf8String m_ecSqlOptions;
+        JsonUpdater::Options m_options;
 
     public:
-        ECSqlAdapterCacheWithOptions(ECDb& ecdb, Utf8String ecSqlOptions) : m_ecdb(&ecdb), m_ecSqlOptions(ecSqlOptions) {};
+        ECSqlAdapterCacheWithOptions(ECDb& ecdb, JsonUpdater::Options const& options) : m_ecdb(&ecdb), m_options(options) {};
 
         //! Get cached or newly intialized adapter
         A& Get(ECClassCR ecClass)
@@ -63,7 +63,7 @@ template<typename A> struct ECSqlAdapterCacheWithOptions
             if (it != m_cache.end())
                 return *it->second;
 
-            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, nullptr, m_ecSqlOptions.c_str());
+            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, nullptr, m_options);
             m_cache.insert({ecClass.GetId(), adapterPtr});
             return *adapterPtr;
             };
