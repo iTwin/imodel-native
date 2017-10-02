@@ -213,7 +213,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/BeXml.mke" ApiNumber="B02">
+    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll"/>
         <SubPart PartName="libxml2" PartFile="BeLibxml2" Repository="Libsrc-libxml2"/>
         <Bindings>
