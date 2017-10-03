@@ -415,3 +415,21 @@ UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultU
 ConnectTokenProviderTests.UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken
     # bim0200dev, x64, DEBUG, randomly hangs
 # Adding comment to test auto ignore script
+
+# These tests directly use the AsyncTask API, or a test helper class that does.
+# Arturas: [ignoring such tests] would be a reasonable thing to do to be on the safe side. As far as I know, tests that use AsyncTask tend to randomly hang, so it is possible that any of those might hang the build. We will look for a short time solution to make sure that we would safely run as many tests as possible and BeFolly is long term plan.
+CachingDataSourceTests.*
+ConnectAuthenticationHandlerTests.*
+ConnectSignInManagerTests.*
+ConnectTokenProviderTests.*
+ConnectWebServicesClientCTests.*
+DataSourceCacheUpgradeTests.*
+DiskRepositoryClientTests.*
+EventParserTests.*
+iModelManagerTests.*
+MultiProgressCallbackHandlerTests.*
+RepositoryCompatibilityTests_Create.*
+RepositoryCompatibilityTests_Upgrade.*
+RetryTests.*
+UrlProviderTests.*
+WSRepositoryClientTests.*
