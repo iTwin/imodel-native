@@ -285,9 +285,12 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetInstanceId(), relationshipInstance.GetProperties()))
+        if (!relationshipInstance.GetProperties().IsNull() && !relationshipInstance.GetProperties().GetObject().ObjectEmpty())
             {
-            return ERROR;
+            if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetInstanceId(), relationshipInstance.GetProperties()))
+                {
+                return ERROR;
+                }
             }
         }
 
@@ -386,9 +389,12 @@ BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR inf
         }
 
     // Save merged instance
-    if (BE_SQLITE_OK != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetInstanceId(), mergedJson))
+    if (!mergedJson.IsNull() && !mergedJson.GetObject().ObjectEmpty())
         {
-        return ERROR;
+        if (BE_SQLITE_OK != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetInstanceId(), mergedJson))
+            {
+            return ERROR;
+            }
         }
 
     // Save latest version as backup
