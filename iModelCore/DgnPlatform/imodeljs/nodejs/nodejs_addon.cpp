@@ -1424,6 +1424,14 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         info.GetReturnValue().Set((int)status.Get());
         }
 
+    static NAN_METHOD(Dispose)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        ns->m_stmt = nullptr;
+        }
+
     static NAN_METHOD(ClearBindings)
         {
         Nan::HandleScope scope;
@@ -1483,6 +1491,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 
         Nan::SetPrototypeMethod(t, "prepare", Prepare);
         Nan::SetPrototypeMethod(t, "reset", Reset);
+        Nan::SetPrototypeMethod(t, "dispose", Dispose);
         Nan::SetPrototypeMethod(t, "clearBindings", ClearBindings);
         Nan::SetPrototypeMethod(t, "bindValues", BindValues);
         Nan::SetPrototypeMethod(t, "step", Step);
