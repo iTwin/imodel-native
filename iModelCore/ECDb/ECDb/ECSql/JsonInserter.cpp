@@ -34,20 +34,27 @@ void JsonInserter::Initialize(ECCrudWriteToken const* writeToken)
 
     int parameterIndex = 1;
     //cache the binding info as we later need to set the user provided instance id (if available)
-    m_bindingMap[ECJsonSystemNames::Id()] = JsonAdapterBindingInfo(parameterIndex);
+    m_bindingMap[ECJsonSystemNames::Id()] = BindingInfo(parameterIndex);
     parameterIndex++;
 
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+    if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+        {
+        LOG.errorv("JsonInserter failure: Could not retrieve the 'ClassHasCurrentTimeStampProperty' custom attribute from the ECClass '%s'.",
+                   m_ecClass.GetFullName());
+        m_isValid = false;
+        return;
+        }
+
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties(true))
         {
         //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+        if (currentTimeStampProp != nullptr && ecProperty == currentTimeStampProp)
             continue;
 
         ecsql.append(",[").append(ecProperty->GetName()).append("]");
         valuesClause.append(",?");
-        m_bindingMap[ecProperty->GetName().c_str()] = JsonAdapterBindingInfo(parameterIndex, *ecProperty);
+        m_bindingMap[ecProperty->GetName().c_str()] = BindingInfo(parameterIndex, *ecProperty);
         parameterIndex++;
         }
 
@@ -56,12 +63,12 @@ void JsonInserter::Initialize(ECCrudWriteToken const* writeToken)
         //SourceECClassId and TargetECClassId are not needed during insert
         ecsql.append("," ECDBSYS_PROP_SourceECInstanceId);
         valuesClause.append(",?");
-        m_bindingMap[ECJsonSystemNames::SourceId()] = JsonAdapterBindingInfo(parameterIndex);
+        m_bindingMap[ECJsonSystemNames::SourceId()] = BindingInfo(parameterIndex);
 
         parameterIndex++;
         ecsql.append("," ECDBSYS_PROP_TargetECInstanceId);
         valuesClause.append(",?");
-        m_bindingMap[ECJsonSystemNames::TargetId()] = JsonAdapterBindingInfo(parameterIndex);
+        m_bindingMap[ECJsonSystemNames::TargetId()] = BindingInfo(parameterIndex);
         }
 
     ecsql.append(valuesClause).append(")");
@@ -81,6 +88,8 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, JsonValueCR json) const
         LOG.errorv("JsonInserter failure. The JSON to insert must be an object or null, but was: %s", json.ToString().c_str());
         return BE_SQLITE_ERROR;
         }
+
+    m_statement.ClearBindings();
 
     if (!json.isNull())
         {
@@ -109,12 +118,12 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, JsonValueCR json) const
                     strcmp(ECJsonSystemNames::TargetClassName(), memberName) == 0)
                     continue; //those two are ignored as ECSQL doesn't validate them anyways
 
-                LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s'.",
+                LOG.errorv("JsonInserter failure. The JSON member '%s' does not match with a property in ECClass '%s' or it maps to a 'CurrentTimeStamp' property (which is handled by ECDb).",
                            memberName, m_ecClass.GetFullName());
                 return BE_SQLITE_ERROR;
                 }
 
-            JsonAdapterBindingInfo const& bindingInfo = bindingMapLookupIt->second;
+            BindingInfo const& bindingInfo = bindingMapLookupIt->second;
 
             if (bindingInfo.IsSystemProperty())
                 {
@@ -239,7 +248,7 @@ DbResult JsonInserter::Insert(ECInstanceKey& key, RapidJsonValueCR json) const
                 return BE_SQLITE_ERROR;
                 }
 
-            JsonAdapterBindingInfo const& bindingInfo = bindingMapLookupIt->second;
+            BindingInfo const& bindingInfo = bindingMapLookupIt->second;
 
             if (bindingInfo.IsSystemProperty())
                 {

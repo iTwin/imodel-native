@@ -521,32 +521,6 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
     return false;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   01/15
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass)
-    {
-    currentTimeStampProp = nullptr;
-    auto ca = ecClass.GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-    if (ca == nullptr)
-        return false;
-
-    ECValue v;
-    ca->GetValue(v, "PropertyName");
-
-    if (v.IsNull())
-        return false;
-
-    if (v.IsUtf8())
-        currentTimeStampProp = ecClass.GetPropertyP(v.GetUtf8CP(), true);
-    else
-        currentTimeStampProp = ecClass.GetPropertyP(v.GetWCharCP(), true);
-
-    return currentTimeStampProp != nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   01/15
 //+---------------+---------------+---------------+---------------+---------------+------

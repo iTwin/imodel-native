@@ -37,27 +37,33 @@
     |ECClass kind    | SELECT (polym.) | SELECT (non-polym.) | INSERT | UPDATE (polym.) | UPDATE (non-polym.) | DELETE (polym.) | DELETE (non-polym.)|
     |----------------|-----------------|---------------------|--------|-----------------|---------------------|-----------------|--------------------|
     | Entity         | yes             | yes                 | yes    | yes             | yes                 | yes             | yes                |
-    | Abstract entity| yes             | yes                 | no     | yes             | yes (affects 0 rows) | yes            | yes (affects 0 rows) |
+    | Abstract entity| yes             | yes                 | no     | yes             | no                  | yes             | no                 |
     | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
-    | Relationship with navigation property | yes | yes      | no*    | no*             | no*                 | no*             | no*                |
-    | Relationship w/o navigation property  | yes | yes      | yes    | yes             | yes                 | yes             | yes                |
+    | ForeignKey Relationship | yes    | yes                 | no*    | no*             | no*                 | no*             | no*                |
+    | LinkTable Relationship | yes     | yes                 | yes    | yes             | yes                 | yes             | yes                |
     | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
     | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
 
-    @b * Use navigation property in order to insert, update or delete a relationship with navigation property.
+    @b * Use navigation property in order to insert, update or delete a foreign key relationship.
 
-    @section ECSqlECInstanceIdDetails ECInstanceId
+    @section ECSqlSystemProperties ECSQL System Properties
+    ECSQL defines a set of built-in system properties. They don't have to be defined in the ECSchemas.
+    They are described in the next sections.
+
+    @note All system properties are read-only, i.e. they cannot be updated with an ECSQL UPDATE statement.
+
+    @subsection ECSqlECInstanceIdDetails ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
     reserved token @c %ECInstanceId to refer to the ECInstanceId of an instance,
     e.g. <c>SELECT Name FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
 
-    @section ECSQLECClassIdDetails ECClassId
+    @subsection ECSQLECClassIdDetails ECClassId
     The reserved token @b ECClassId refers to the BentleyApi::ECN::ECClassId of an ECClass in an ECSQL statement. 
     The ECClassId is a numeric id that uniquely identifies an ECClass in the @ref ECDbFile. The ECClassId is read-only.
 
     Example: <c>SELECT ECInstanceId, <b>ECClassId</b> FROM myschema.Foo</c>
 
-    @section ECSQLSourceTargetConstraintDetails ECRelationship's Source and Target Constraints
+    @subsection ECSQLSourceTargetConstraintDetails ECRelationship's Source and Target Constraints
     When referring to an ECRelationshipClass in an ECSQL statement, @c %SourceECInstanceId and @c %SourceECClassId refer
     to the %ECInstanceId and %ECClassId of the source ECInstance of the relationship. Likewise @c %TargetECInstanceId
     and @c %TargetECClassId refer to the %ECInstanceId and %ECClassId of the target ECInstance of the relationship.

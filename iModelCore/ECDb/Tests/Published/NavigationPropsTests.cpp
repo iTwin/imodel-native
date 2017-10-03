@@ -2315,9 +2315,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     ASSERT_TRUE(elementInserter.IsValid());
 
     Utf8String newElementJsonStr;
-    newElementJsonStr.Sprintf("{\"code\":\"TestCode-1\","
-                              " \"model1\":{\"id\": \"%s\"},"
-                              " \"model2\":{\"id\": \"%s\", \"relClassName\": \"np.ParentHasChildren2\"}}",
+    newElementJsonStr.Sprintf("{\"Code\":\"TestCode-1\","
+                              " \"Model1\":{\"id\": \"%s\"},"
+                              " \"Model2\":{\"id\": \"%s\", \"relClassName\": \"np.ParentHasChildren2\"}}",
                               modelKey.GetInstanceId().ToString().c_str(),
                               modelKey.GetInstanceId().ToString().c_str());
 
@@ -2382,7 +2382,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     //Model1
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(2)) << "Model1 via plain ECSQL";
 
-    Json::Value const& modelJson = json["model1"];
+    Json::Value const& modelJson = json["Model1"];
     ASSERT_FALSE(modelJson.isNull()) << "Model1 is not expected to be null in the read ECInstance";
     Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model1.Id is not expected to be null in the read ECInstance";
@@ -2399,7 +2399,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     ASSERT_EQ(modelKey.GetInstanceId(), selStmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << "Model2.Id via plain ECSQL";
     ASSERT_EQ(m_ecdb.Schemas().GetClassId("np", "ParentHasChildren2"), relClassId) << "Model2.RelECClassId via plain ECSQL";
 
-    Json::Value const& modelJson = json["model2"];
+    Json::Value const& modelJson = json["Model2"];
     ASSERT_FALSE(modelJson.isNull()) << "Model2 is not expected to be null in the read ECInstance";
     Json::Value const& modelIdJson = modelJson[ECJsonUtilities::json_navId()];
     ASSERT_FALSE(modelIdJson.isNull()) << "Model2.Id is not expected to be null in the read ECInstance";

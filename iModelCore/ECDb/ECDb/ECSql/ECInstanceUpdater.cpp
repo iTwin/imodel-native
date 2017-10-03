@@ -198,8 +198,16 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         return;
         }
 
-    ECPropertyCP currentTimeStampProp = nullptr;
-    const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    PrimitiveECPropertyCP currentTimeStampProp = nullptr;
+    if (SUCCESS != CoreCustomAttributeHelper::GetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass))
+        {
+        LOG.errorv("ECInstanceUpdater failure: Could not retrieve the 'ClassHasCurrentTimeStampProperty' custom attribute from the ECClass '%s'.",
+                   m_ecClass.GetFullName());
+
+        m_isValid = false;
+        return;
+        }
+
     const bool readonlyPropsAreUpdatable = ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(m_ecdb, m_ecClass, ecsqlOptions);
 
     Utf8String ecsql("UPDATE ONLY ");
@@ -214,7 +222,7 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         //Current time stamp props are populated by SQLite, so ignore them here.
         //Readonly props are ignored if they are not updatable - exception: calc props need to be updated because ECObject's evaluator is not available
         //in ECDb.
-        if ((hasCurrentTimeStampProp && prop == currentTimeStampProp) ||
+        if ((currentTimeStampProp != nullptr && prop == currentTimeStampProp) ||
             (!readonlyPropsAreUpdatable && (prop->IsReadOnlyFlagSet() && !prop->IsCalculated())))
             continue;
 

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbTests.h"
+#include <Bentley/Nullable.h>
 #include <ostream>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

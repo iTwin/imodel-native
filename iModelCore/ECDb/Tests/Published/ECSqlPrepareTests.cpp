@@ -1932,17 +1932,17 @@ TEST_F(ECSqlUpdatePrepareTests, Options)
 TEST_F(ECSqlUpdatePrepareTests, Polymorphic)
     {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSA SET I = 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I = 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I = 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractTablePerHierarchy SET I = 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.AbstractTablePerHierarchy SET I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractTablePerHierarchy SET I = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.THBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.THBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TCBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TCBase SET S = 'hello'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     }
 
@@ -2024,10 +2024,9 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TH5 SET S='hello', S1='hello1', S3='hello3', S5='hello5'"));
 
     // Abstract classes
-    //by contract non-polymorphic updates on abstract classes are valid, but are a no-op
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I=123, S='hello'"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
@@ -2065,6 +2064,85 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.BlaBla SET I=123"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY blabla.PSA SET I=123"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET Garbage='bla', I=123")) << "One of the properties does not exist in the target class.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdatePrepareTests, AbstractClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlupdate_abstractclass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                        <ECEntityClass typeName="BaseAbstractNoSubclasses" modifier="Abstract">
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="BaseAbstractTPHNoSubclasses" modifier="Abstract">
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="Base" >
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="Sub" >
+                                                            <BaseClass>Base</BaseClass>
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="BaseTPH" >
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="SubTPH" >
+                                                            <BaseClass>BaseTPH</BaseClass>
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="BaseAbstract" modifier="Abstract" >
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="Sub2" >
+                                                            <BaseClass>BaseAbstract</BaseClass>
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="BaseTPHAbstract" modifier="Abstract" >
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                        </ECEntityClass>
+                                                        <ECEntityClass typeName="SubTPH2" >
+                                                            <BaseClass>BaseTPHAbstract</BaseClass>
+                                                            <ECProperty propertyName="Name" typeName="string" />
+                                                        </ECEntityClass>
+                                                    </ECSchema>)xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
+    
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstractNoSubclasses SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstractNoSubclasses SET Code=1"));
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstractTPHNoSubclasses SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstractTPHNoSubclasses SET Code=1"));
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.Base SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ts.Base SET Code=1"));
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseTPH SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ts.BaseTPH SET Code=1"));
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstract SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstract SET Code=1"));
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseTPHAbstract SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseTPHAbstract SET Code=1"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2244,10 +2322,10 @@ TEST_F(ECSqlDeletePrepareTests, From)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TH5"));
 
     // Delete abstract classes
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasMyMixin"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.PSAHasMyMixin"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PSAHasMyMixin"));
     // Delete mixins
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
@@ -2356,18 +2434,18 @@ TEST_F(ECSqlDeletePrepareTests, Options)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeletePrepareTests, Polymorphic)
     {
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractTablePerHierarchy"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.AbstractTablePerHierarchy"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.THBase"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.THBase"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TCBase"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TCBase"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?")) << "Polymorphic delete not supported as subclass is mapped to existing table which means it is readonly";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractTablePerHierarchy"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractTablePerHierarchy"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.THBase"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.THBase"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TCBase"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TCBase"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?")) << "Polymorphic delete not supported as subclass is mapped to existing table which means it is readonly";
     }
 
 //---------------------------------------------------------------------------------------

@@ -907,6 +907,88 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR target, IECInstanceCR s
     return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ToString(JsonECSqlSelectAdapter::FormatOptions const& options)
+    {
+    Utf8String str("JsonECSqlSelectAdapter::FormatOptions(");
+    switch (options.GetMemberCasingMode())
+        {
+            case JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal:
+                str.append("MemberNameCasing::KeepOriginal");
+                break;
+            case JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar:
+                str.append("MemberNameCasing::LowerFirstChar");
+                break;
+
+            default:
+                return Utf8String("Unhandled JsonECSqlSelectAdapter::MemberNameCasing. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(",");
+    switch (options.GetInt64Format())
+        {
+            case ECJsonInt64Format::AsNumber:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsNumber));
+                break;
+            case ECJsonInt64Format::AsDecimalString:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsDecimalString));
+                break;
+            case ECJsonInt64Format::AsHexadecimalString:
+                str.append(ENUM_TOSTRING(ECJsonInt64Format::AsHexadecimalString));
+                break;
+            default:
+                return Utf8String("Unhandled ECJsonInt64Format. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(")");
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ToString(JsonUpdater::Options const& options)
+    {
+    Utf8String str("JsonUpdater::Options(");
+    switch (options.GetSystemPropertiesOption())
+        {
+            case JsonUpdater::SystemPropertiesOption::Fail:
+                str.append("SystemPropertiesOption::Fail");
+                break;
+            case JsonUpdater::SystemPropertiesOption::Ignore:
+                str.append("SystemPropertiesOption::Ignore");
+                break;
+
+            default:
+                return Utf8String("Unhandled ReadonlyPropertiesOption. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(", ");
+
+    switch (options.GetReadonlyPropertiesOption())
+        {
+            case JsonUpdater::ReadonlyPropertiesOption::Fail:
+                str.append("ReadonlyPropertiesOption::Fail");
+                break;
+            case JsonUpdater::ReadonlyPropertiesOption::Ignore:
+                str.append("ReadonlyPropertiesOption::Ignore");
+                break;
+
+            case JsonUpdater::ReadonlyPropertiesOption::Update:
+                str.append("ReadonlyPropertiesOption::Update");
+                break;
+
+            default:
+                return Utf8String("Unhandled ReadonlyPropertiesOption. Adjust ECDb ATP ToString method");
+        }
+
+    str.append(", ECSQLOPTIONS: ").append(options.GetECSqlOptions());
+    return str;
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
 
 //************************************************************************************
