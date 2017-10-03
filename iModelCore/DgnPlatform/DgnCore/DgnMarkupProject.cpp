@@ -840,7 +840,7 @@ void RedlineModel::_OnLoadedJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::StoreImage(DgnTextureCR texture, DPoint2dCR origin, DVec2dCR size)
     {
-    BeAssert(texture.IsPersistent() && texture.GetTextureId().IsValid());
+    BeAssert(texture.GetTextureId().IsValid());
     m_imageDef = ImageDef(texture.GetTextureId(), origin, size);
     Update();
     }
@@ -1031,8 +1031,12 @@ void RedlineViewController::_DrawDecorations(DecorateContextR context)
 
     context.GetViewportR().WorldToView(pts, pts, 5);
 
+    static const ColorDef color = ColorDef(0xfe, 0xff, 0);
     Render::GraphicParams params;
     params.SetMaterial(material);
+    params.SetFillColor(color);
+    params.SetIsFilled(true);
+    params.SetIsBlankingRegion(true);
 
     auto graphic = context.CreateViewGraphic();
     graphic->ActivateGraphicParams(params);
