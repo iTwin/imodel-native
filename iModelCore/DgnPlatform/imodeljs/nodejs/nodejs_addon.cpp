@@ -1476,8 +1476,11 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         IModelJs::GetRowAsJson(rowJson, *ns->m_stmt);
         // *** NEEDS WORK: Get the adapter to set the js object's properties directly
         v8::Local<v8::String> rowJsonStr = v8::String::NewFromUtf8(info.GetIsolate(), rowJson.ToString().c_str());
-        v8::Local<v8::Value> result = v8::JSON::Parse(rowJsonStr);
-        info.GetReturnValue().Set(scope.Escape(result));
+        v8::MaybeLocal<v8::Value> result = v8::JSON::Parse(info.GetIsolate(), rowJsonStr);
+        if (result.IsEmpty())
+            info.GetReturnValue().Set(v8::Local<v8::Value>(Nan::Undefined()));
+        else
+            info.GetReturnValue().Set(result.ToLocalChecked());
         }
 
     //  Create projections
