@@ -510,7 +510,7 @@ BentleyStatus IModelJs::JsonBinder::BindValues(ECSqlStatement& stmt, JsonValueCR
         {
         Utf8CP paramName = iter.memberName();
         int paramIndex = stmt.GetParameterIndex(paramName);
-        if (!EXPECTED_CONDITION(paramIndex > 0))
+        if (paramIndex <= 0)
             return ERROR;
 
         if (SUCCESS != BindValue(stmt.GetBinder(paramIndex), *iter))
