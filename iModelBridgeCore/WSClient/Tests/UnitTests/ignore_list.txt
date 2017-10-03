@@ -32,12 +32,6 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
 
-# New ECDb forces cardinality rules upon data, so relationship change caching is broken.
-# This should be rare case and not be needed in real world, but should be fixed:
-#   probably by safely removing relationship before caching new one.
-#   holding/embedding relationships should be taken care of to not loose children as well.
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
-
 # Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
 # However, this will make MetaSchema.02.00 fail upon import as it has some invalid classes. Using MetaSchema from WSG 2.x servers will not work.
 # Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
