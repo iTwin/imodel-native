@@ -6,9 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomain\BuildingDomainApi.h"
-#include <DesignModelingUnits\DesignModelingUnitsApi.h>
+#include <AecUnits\AecUnitsApi.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
 #include <Grids/GridsApi.h>
+#include <StructuralDomain/StructuralDomainApi.h>
 
 
  

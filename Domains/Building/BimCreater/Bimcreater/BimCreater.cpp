@@ -1155,7 +1155,7 @@ BentleyStatus BimCreater::DoCreate()
     // This is where we create add the information to the BIM file. You can control the number of Units, SubUnits and P&ID. 
 
     int numberOfUnits = 5;
-    int numberOfSubunits = 1;
+    int numberOfSubunits = 3;
     int numberOfPids = 10;
 
     for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)

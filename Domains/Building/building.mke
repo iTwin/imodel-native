@@ -110,9 +110,10 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(li
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)Units$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DesignModelingUnits$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)AecUnits$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)GridsDomain$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ConstraintModel$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)StructuralDomain$(libext)
 
 
 

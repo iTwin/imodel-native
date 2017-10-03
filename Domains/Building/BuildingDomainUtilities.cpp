@@ -24,7 +24,7 @@ namespace BuildingDomain
 	BentleyStatus  BuildingDomainUtilities::RegisterDomainHandlers()
 		{
 
-        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::DesignModelingUnits::DesignModelingUnitsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::AecUnits::AecUnitsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
 
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
@@ -32,6 +32,18 @@ namespace BuildingDomain
 
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+            return BentleyStatus::ERROR;
 
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
