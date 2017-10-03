@@ -5427,7 +5427,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "B"}))));
 
         int onProgressCount = 0;
-        CachingDataSource::Progress::State expectedBytes[] = {{0, 6}, {0, 6}, {2, 6}, {2, 6}, {2, 6}, {6, 6}, {6, 6}};
+        bvector<CachingDataSource::Progress::State> expectedBytes = {{0, 6}, {0, 6}, {2, 6}, {2, 6}, {2, 6}, {6, 6}, {6, 6}};
         auto onProgress = [&] (CachingDataSource::ProgressCR progress)
             {
             EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes());
@@ -5436,7 +5436,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
-        EXPECT_EQ(7, onProgressCount);
+        EXPECT_EQ(expectedBytes.size(), onProgressCount);
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithTotalBytes)
@@ -5467,20 +5467,22 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
             return CreateCompletedAsyncTask(WSUpdateFileResult::Success({}));
             }));
 
-        int onProgressCount = 0;
-        double expectedBytesTransfered[7] = {0, 0, 2, 2, 2, 6, 6};
+    int onProgressCount = 0;
+    bvector<CachingDataSource::Progress::State> expectedBytes = {{0, 6}, {0, 6}, {2, 6}, {2, 6}, {2, 6}, {6, 6}, {6, 6}};
+    bvector<CachingDataSource::Progress::State> expectedCurrentFileBytes = {{0, 0}, {0, 2}, {2, 2}, {0, 0}, {0, 4}, {4, 4}, {0, 0}};
 
-        auto onProgress = [&] (CachingDataSource::ProgressCR progress)
-            {
-            EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
-            onProgressCount++;
-            EXPECT_EQ(6, progress.GetBytes().total);
-            EXPECT_EQ(0, progress.GetInstances().current);
-            EXPECT_EQ(0, progress.GetInstances().total);
-            };
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+        {
+        EXPECT_EQ(expectedBytes[onProgressCount], progress.GetBytes());
+        EXPECT_EQ(expectedCurrentFileBytes[onProgressCount], progress.GetCurrentFileBytes());
+        onProgressCount++;
+        EXPECT_EQ(6, progress.GetBytes().total);
+        EXPECT_EQ(0, progress.GetInstances().current);
+        EXPECT_EQ(0, progress.GetInstances().total);
+        };
 
-        ds->SyncLocalChanges(onProgress, nullptr)->Wait();
-        EXPECT_EQ(7, onProgressCount);
+    ds->SyncLocalChanges(onProgress, nullptr)->Wait();
+    EXPECT_EQ(expectedBytes.size(), onProgressCount);
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequestsAndReturnsSuccess)

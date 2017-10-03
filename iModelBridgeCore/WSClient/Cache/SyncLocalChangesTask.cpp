@@ -686,7 +686,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
         BeFileName filePath = revision->GetFilePath();
         uint64_t currentFileSize = FileUtil::GetFileSize(filePath);
 
-        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, true);
+        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, true, (double) currentFileSize);
 
         m_ds->GetClient()->SendUpdateFileRequest(objectId, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
