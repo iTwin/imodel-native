@@ -74,6 +74,19 @@ void AlignmentProfileViewDefinition::_SetRotation(RotMatrixCR rot)
         m_rotation = rot;
     }
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        10/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentProfileViewDefinition::_ViewsModel(DgnModelId modelId)
+    {
+    // Manipulator code checks if the model is viewed. Since we're using a model that's not persisted, its Id is '0'
+    // return true when that happens
+    if (!modelId.IsValid())
+        return true;
+
+    return T_Super::_ViewsModel(modelId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        08/2017
 //---------------------------------------------------------------------------------------
 AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 

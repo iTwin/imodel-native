@@ -34,11 +34,12 @@ protected:
     bool m_allowRotation;
 
 protected:
+    Dgn::ViewControllerPtr _SupplyController() const override final;
     void _AdjustAspectRatio(double windowAspect) override final;
     void _SetRotation(RotMatrixCR rot) override final;
+    bool _ViewsModel(Dgn::DgnModelId modelId) override final;
     void _EnableCamera() override final {}
     bool _SupportsCamera() const override final { return false; }
-    Dgn::ViewControllerPtr _SupplyController() const override final;
 
     //! @private
     explicit AlignmentProfileViewDefinition(CreateParams const& params) : T_Super(params) {}
