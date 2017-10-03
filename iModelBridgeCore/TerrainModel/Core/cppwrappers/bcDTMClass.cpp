@@ -68,14 +68,14 @@ class FeatureCallbackTransformHelper
                 return &TransformFunction;
             return m_callBackFunctP;
             }
-		void* GetOriginalUserArg()
-			{
-			return m_userP;
-			}
-		DTMFeatureCallback GetOriginalCallBackFunc()
-			{
-			return m_callBackFunctP;
-			}
+        void* GetOriginalUserArg()
+            {
+            return m_userP;
+            }
+        DTMFeatureCallback GetOriginalCallBackFunc()
+            {
+            return m_callBackFunctP;
+            }
     private:
         static int TransformFunction (DTMFeatureType featureType, DTMUserTag featureTag, DTMFeatureId featureId, DPoint3d *tPoint, size_t nPoint, void *userP)
             {
@@ -448,7 +448,7 @@ BC_END:;
 +----------------------------------------------------------------------*/
 static int digitalTM_createProfile
     (
-    PrflPoint_t     **pointTabPP,
+    bvector<PrflPoint_t>& pointTabPP,
     long            *nbPt,
     DTMDrapePoint  drapedPt[],
     int             nResPt,         /* => Number of points in line string */
@@ -457,14 +457,14 @@ static int digitalTM_createProfile
     int             nPts            /* => Number of points in line string */
     )
     {
-    PrflPoint_t   *pointTabP = nullptr;
+    bvector<PrflPoint_t> pointTabP;
     double        currAbc = dc_zero;
     double        distOnCurrentSegment = dc_zero;
     double        distOrig = dc_zero;
     double        diffSOrig = dc_zero;
     int           iPt;
     int           currPtOrig;
-    bool      isShift = FALSE;
+    bool      isShift = false;
 
     BC_START ();
 
@@ -472,36 +472,28 @@ static int digitalTM_createProfile
     if (nResPt == 0) BC_RETURN ();
 
     // Allocate the array of points
-    pointTabP = (PrflPoint_t*)bcMem_calloc (nResPt, sizeof (PrflPoint_t));
+    pointTabP.resize(nResPt);
 
     // Set current origin point to the first one                                |
     currPtOrig = 0;
 
     // Set first point                                                          |
     BC_TRY (
-        digitalTM_setPoint (pointTabP, 0, currAbc, drapedPt));
+        digitalTM_setPoint (pointTabP.data(), 0, currAbc, drapedPt));
 
     if (sTabP)
         {
         // If there is an abcissa table, then go to the next origin point
-        DPoint3d    pt;
-        pt.x = drapedPt[0].drapePt.x;
-        pt.y = drapedPt[0].drapePt.y;
-        pt.z = drapedPt[0].drapePt.z;
+        DPoint3d    pt = drapedPt[0].drapePt;
         BC_TRY (
             digitalTM_nextOriginPoint (&pt, origStringP, sTabP, nPts, &currPtOrig, &diffSOrig, &distOrig, &distOnCurrentSegment));
         }
 
     for (iPt = 1; iPt < nResPt; iPt++)
         {
-        DPoint3d    previousPt;
-        previousPt.x = drapedPt[iPt - 1].drapePt.x;
-        previousPt.y = drapedPt[iPt - 1].drapePt.y;
-        previousPt.z = drapedPt[iPt - 1].drapePt.z;
-        DPoint3d    currentPt;
-        currentPt.x = drapedPt[iPt].drapePt.x;
-        currentPt.y = drapedPt[iPt].drapePt.y;
-        currentPt.z = drapedPt[iPt].drapePt.z;
+        DPoint3d    previousPt = drapedPt[iPt - 1].drapePt;
+        DPoint3d    currentPt = drapedPt[iPt].drapePt;
+
         if (sTabP)
             {
             if (distOrig == dc_zero)
@@ -555,10 +547,10 @@ static int digitalTM_createProfile
             }
         // Set current point
         BC_TRY (
-            digitalTM_setPoint (pointTabP, iPt, currAbc, drapedPt));
+            digitalTM_setPoint (pointTabP.data(), iPt, currAbc, drapedPt));
         }
 
-    *pointTabPP = pointTabP;
+    pointTabPP.swap(pointTabP);
     *nbPt = nResPt;
 
 BC_END:;
@@ -583,11 +575,7 @@ static int digitalTM_convertPrflPointTabToDrapedPoints
 
     for (long iPt = 0; iPt < nbPt; iPt++)
         {
-        DPoint3d    pt;
-
-        pt.x = pointTab[iPt].bcdtmDrapeData.drapePt.x;
-        pt.y = pointTab[iPt].bcdtmDrapeData.drapePt.y;
-        pt.z = pointTab[iPt].bcdtmDrapeData.drapePt.z;
+        DPoint3d    pt = pointTab[iPt].bcdtmDrapeData.drapePt;
 
         RefCountedPtr<BcDTMDrapedLinePoint> drapedPoint = BcDTMDrapedLinePoint::Create (pt, pointTab[iPt].s, pointTab[iPt].bcdtmDrapeData.drapeType);
         for (int iFeature = 0; iFeature < pointTab[iPt].bcdtmDrapeData.drapeFeatures.size(); iFeature++)
@@ -625,7 +613,7 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     )
     {
     bvector<DTMDrapePoint> drapedPts;
-    PrflPoint_t     *prflPointTabP = nullptr;
+    bvector<PrflPoint_t> prflPointTabP;
     long            nbPtProfile;
     int             status = 0;
 
@@ -636,14 +624,12 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
 
     // Create a digital TM profile with readjustment of the distances along
-    BC_TRY(digitalTM_createProfile(&prflPointTabP, &nbPtProfile, drapedPts.data(), (int)drapedPts.size(), lineStringP, absTabP, nPts));
+    BC_TRY(digitalTM_createProfile(prflPointTabP, &nbPtProfile, drapedPts.data(), (int)drapedPts.size(), lineStringP, absTabP, nPts));
 
     // Drape the points
-    BC_TRY (digitalTM_convertPrflPointTabToDrapedPoints (drapedPoints, prflPointTabP, nbPtProfile));
+    BC_TRY (digitalTM_convertPrflPointTabToDrapedPoints (drapedPoints, prflPointTabP.data(), nbPtProfile));
 
 BC_END:;
-
-    if (prflPointTabP != nullptr) bcMem_free (prflPointTabP);
 
     BC_END_RETURNSTATUS();
     }
@@ -667,11 +653,7 @@ static int loadSinglePointFeatureCallBack
     )
     {
     Dtm_Handler_t* dtmHandler = (Dtm_Handler_t*)userP;
-    DPoint3d  point;
-    point.x = tPoint[0].x;
-    point.y = tPoint[0].y;
-    point.z = tPoint[0].z;
-
+    DPoint3d  point = tPoint[0];
 
     dtmHandler->featuresSinglePointHandler(featureType, point, dtmHandler->userP);
     return (DTM_SUCCESS);
@@ -689,14 +671,8 @@ static int slopeIndicatorsCallBack
     {
     Dtm_Handler_t* dtmHandler = (Dtm_Handler_t*)userP;
     bool majorInterval = 0 ;
-    DPoint3d  startPoint;
-    startPoint.x = tPoint[0].x;
-    startPoint.y = tPoint[0].y;
-    startPoint.z = tPoint[0].z;
-    DPoint3d  endPoint;
-    endPoint.x = tPoint[1].x;
-    endPoint.y = tPoint[1].y;
-    endPoint.z = tPoint[1].z;
+    DPoint3d  startPoint = tPoint[0];
+    DPoint3d  endPoint = tPoint[1];
     dtmHandler->slopeIndicatorHandler (majorInterval, startPoint, endPoint, dtmHandler->userP);
     return (DTM_SUCCESS);
     }
@@ -2669,7 +2645,7 @@ DTMStatusInt BcDTM::BrowseFeatures (DTMFeatureType featureType, const DTMFencePa
                 // Not Yet Implemented So Return Error
                 break;
 
-			case DTMFeatureType::TriangleIndex:
+            case DTMFeatureType::TriangleIndex:
                 status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, helper.GetOriginalCallBackFunc(), isFence, fence.fenceType, fence.fenceOption,
                                                                          TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, helper.GetOriginalUserArg());
                 break;
@@ -2702,7 +2678,7 @@ DTMStatusInt BcDTM::BrowseSinglePointFeatures (DTMFeatureType featureType, doubl
 
     // Check For And Set Fence
     if (fence.points)
-        useFence = TRUE;
+        useFence = true;
 
     if (_dtmTransformHelper.IsValid ())
         {
@@ -3308,7 +3284,7 @@ DTMStatusInt BcDTM::BrowseFeaturesWithTinErrors (void* userP, DTMFeatureCallback
 DTMStatusInt BcDTM::BrowseFeaturesWithUserTag(DTMUserTag userTag, void* userP, DTMFeatureCallback callback)
     {
     long maxSpots=50000 ;
-    long useFence=FALSE ;
+    long useFence=false ;
     DTMFenceType fenceType=DTMFenceType::Block ;
     DTMFenceOption fenceOption=DTMFenceOption::Overlap ;
     DPoint3d  *fencePts = nullptr ;
@@ -4636,7 +4612,7 @@ bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
+    if (DTM_SUCCESS != DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt))
         {
         return false;
         }
