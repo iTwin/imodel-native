@@ -764,21 +764,27 @@ void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateCon
 void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
     NavNodesProviderCR oldProvider, NavNodesProviderCR newProvider) const
     {
-    NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
-    NavNodesDataSourcePtr newDs = NavNodesDataSource::Create(newProvider);
-
-    // update parent data source if the count of nodes changed from/to 0
-    if ((0 == oldDs->GetSize() && 0 != newDs->GetSize() || 0 != oldDs->GetSize() && 0 == newDs->GetSize())
-        && nullptr != newProvider.GetContext().GetPhysicalParentNodeId())
+    if (nullptr == newProvider.GetContext().GetPhysicalParentNodeId())
         {
-        NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId());
-        if (parentProvider.IsValid())
-            {
-            NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
-            HierarchyLevelInfo parentInfo(parentProviderContext.GetDb().GetDbGuid(), parentProviderContext.GetRuleset().GetRuleSetId(),
-                parentProviderContext.GetPhysicalParentNodeId());
-            subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetDb(), parentInfo));
-            }
+        // no parent data source to update
+        return;
+        }
+
+    size_t oldNodesCount = oldProvider.GetNodesCount();
+    size_t newNodesCount = newProvider.GetNodesCount();    
+    if (0 != oldNodesCount && 0 != newNodesCount || oldNodesCount == newNodesCount)
+        {
+        // update parent data source only if the count of nodes changed from/to 0
+        return;
+        }
+
+    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId());
+    if (parentProvider.IsValid())
+        {
+        NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
+        HierarchyLevelInfo parentInfo(parentProviderContext.GetDb().GetDbGuid(), parentProviderContext.GetRuleset().GetRuleSetId(),
+            parentProviderContext.GetPhysicalParentNodeId());
+        subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetDb(), parentInfo));
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -841,6 +847,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
         return;
         }
     context.GetHandledHierarchies().insert(oldInfo);
+    context.GetHandledHierarchies().insert(newInfo);
 
     if (IsHierarchyRemoved(context, oldInfo))
         {

@@ -3802,10 +3802,10 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted)
+TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsRoot)
     {
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsRoot", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
@@ -3849,6 +3849,76 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_EQ(rootNodes[0]->GetKey(), m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#759626
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsNotRoot)
+    {
+    // set up
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR g){g.SetValue("Description", ECValue("1"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR g){g.SetValue("Description", ECValue("2"));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsNotRoot", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule1 = new RootNodeRule();
+    rule1->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.Description=\"1\"", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule1);
+    
+    ChildNodeRule* childRule1 = new ChildNodeRule();
+    childRule1->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.Description=\"2\"", "RulesEngineTest:Gadget", false));
+    rule1->GetSpecifications().front()->GetNestedRules().push_back(childRule1);
+    
+    ChildNodeRule* childRule2 = new ChildNodeRule();
+    childRule2->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.Description=\"3\"", "RulesEngineTest:Gadget", false));
+    childRule1->GetSpecifications().front()->GetNestedRules().push_back(childRule2);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_TRUE(rootNodes[0]->HasChildren());
+    SetNodeExpanded(*rootNodes[0]);
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson());
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_FALSE(childNodes[0]->HasChildren());
+    SetNodeExpanded(*childNodes[0]);
+    DataContainer<NavNodeCPtr> grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options.GetJson());
+    ASSERT_EQ(0, grandchildNodes.GetSize());
+        
+    // insert another gadget
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR g){g.SetValue("Description", ECValue("3"));});
+    s_eventsSource->NotifyECInstanceInserted(s_project->GetECDbCR(), *gadget);
+
+    // expect the middle child node to have a "has children" flag set to "true"
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_TRUE(rootNodes[0]->HasChildren());
+    childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson());
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_TRUE(childNodes[0]->HasChildren());
+    grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options.GetJson());
+    ASSERT_EQ(1, grandchildNodes.GetSize());
+    
+    // expect 3 update records
+    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(rootNodes[0]->GetKey(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    
+    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
+    EXPECT_EQ(childNodes[0]->GetKey(), m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
+    EXPECT_EQ(grandchildNodes[0]->GetKey(), m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
