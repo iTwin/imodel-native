@@ -1521,6 +1521,7 @@ GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<Polyfa
 //! <li> facets with normal in the direction of the vector are in readIndices[0]
 //! <li> facets with normals opposing the drection of the vector are in readIndices[1]
 //! <li> facets wtihin tolerance of perpendicular to the vector are in readIndices[2]
+//! </ul>
 //! @param [in] vector viewing direction vector
 //! @param [out] readIndices read indices for forward, reverse, and perpendicular facets 
 //! @param [in] sideFaceRadiansTolerance for declaring a facet's normal is perpenducular to the vector.
