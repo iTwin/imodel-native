@@ -77,14 +77,14 @@
 * Pointools Vortex FeatureExtract
 ********************************************************************************************************
 -->
-  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" >
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" ApiNumber="B02" >
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <!--<SubPart PartName="wildmagic" PartFile="wildmagic" Repository="libsrc-geometrictools"/>-->
     <SubPart PartName="PointoolsVortexAPI_DLL"/>
     <Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_FeatureExtract_DLL"/>
       <Libs> Delivery/VortexFeatureExtract.lib </Libs>
-      <Assemblies Feature="PointCloud"> Delivery/VortexFeatureExtract.dll </Assemblies>
+      <Assemblies Feature="PointCloud"> Delivery/VortexFeatureExtract$(ApiNumber).dll </Assemblies>
     </Bindings>
   </Part>
   
