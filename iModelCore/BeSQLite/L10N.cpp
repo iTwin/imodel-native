@@ -146,6 +146,8 @@ void L10NLookup::ResuspendIfNeeded()
 //---------------------------------------------------------------------------------------
 void L10NLookup::Suspend()
     {
+    BeCriticalSectionHolder lock(m_mutex);
+    
     // On iOS 8.0 on older iPads (pre Air), suspending the app crashes with the message "was suspended with locked system files" listing our app's own .sqlang.db3 files.
     // We do not understand why our personal sqlang files are considered "system" files (e.g. the address book database), but closing the files on suspend seems to be the best workaround.
 
@@ -162,6 +164,7 @@ void L10NLookup::Suspend()
 //---------------------------------------------------------------------------------------
 void L10NLookup::Resume()
     {
+    BeCriticalSectionHolder lock(m_mutex);
     m_suspended = false;
     // Let the next call to Initialize() take care of starting up again.
     }
@@ -171,6 +174,7 @@ void L10NLookup::Resume()
 //---------------------------------------------------------------------------------------
 Utf8String L10NLookup::GetString(Utf8CP scope, int id, bool* outHasString)
     {
+    BeCriticalSectionHolder lock(m_mutex);
     Initialize();
 
     bool ALLOW_NULL_OUTPUT (hasString, outHasString);
@@ -196,6 +200,7 @@ Utf8String L10NLookup::GetString(Utf8CP scope, int id, bool* outHasString)
 //---------------------------------------------------------------------------------------
 Utf8String L10NLookup::GetString (Utf8CP scope, Utf8CP name, bool* outHasString)
     {
+    BeCriticalSectionHolder lock(m_mutex);
     Initialize();
 
     bool ALLOW_NULL_OUTPUT (hasString, outHasString);
@@ -216,6 +221,7 @@ Utf8String L10NLookup::GetString (Utf8CP scope, Utf8CP name, bool* outHasString)
     return message;
     }
 
+BeCriticalSection s_lookupMutex;
 static L10NLookup* s_lookup = NULL;
 
 //---------------------------------------------------------------------------------------
@@ -223,6 +229,7 @@ static L10NLookup* s_lookup = NULL;
 //---------------------------------------------------------------------------------------
 void L10N::Shutdown()
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     DELETE_AND_CLEAR(s_lookup);
     }
 
@@ -231,6 +238,7 @@ void L10N::Shutdown()
 //---------------------------------------------------------------------------------------
 void L10N::Suspend()
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     if (NULL == s_lookup)
         {
         BeAssert(false && "Call L10N::Initialize() first");
@@ -245,6 +253,7 @@ void L10N::Suspend()
 //---------------------------------------------------------------------------------------
 void L10N::Resume()
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     if (NULL == s_lookup)
         {
         BeAssert(false && "Call L10N::Initialize() first");
@@ -271,6 +280,7 @@ static void checkFileExists (BeFileNameCR filename)
 //---------------------------------------------------------------------------------------
 BentleyStatus L10N::Initialize (SqlangFiles const& files)
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     if (NULL != s_lookup)  // First caller wins 
         return BSISUCCESS;
 
@@ -287,6 +297,7 @@ BentleyStatus L10N::Initialize (SqlangFiles const& files)
 //---------------------------------------------------------------------------------------
 Utf8String L10N::GetString(Utf8CP scope, int id, bool* hasString) 
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     if (NULL != s_lookup)
         return s_lookup->GetString(scope, id, hasString);
 
@@ -302,6 +313,7 @@ Utf8String L10N::GetString(Utf8CP scope, int id, bool* hasString)
 //---------------------------------------------------------------------------------------
 Utf8String L10N::GetString(Utf8CP scope, Utf8CP name, bool* hasString) 
     {
+    BeCriticalSectionHolder lock(s_lookupMutex);
     if (NULL != s_lookup)
         return s_lookup->GetString(scope, name, hasString);
 

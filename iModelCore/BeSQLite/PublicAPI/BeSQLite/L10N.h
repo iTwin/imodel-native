@@ -143,6 +143,7 @@ private:
         };
 
 private:
+    BeCriticalSection m_mutex;
     bool       m_initialized = false;
     bool       m_suspended = false;
 
@@ -156,8 +157,10 @@ private:
 
 public: 
     BE_SQLITE_EXPORT L10NLookup(L10N::SqlangFiles const&);
+    
     BE_SQLITE_EXPORT void Suspend();
     BE_SQLITE_EXPORT void Resume();
+    
     BE_SQLITE_EXPORT Utf8String GetString(Utf8CP scope, int id, bool* hasString=NULL);
     BE_SQLITE_EXPORT Utf8String GetString(Utf8CP scope, Utf8CP name, bool* hasString=NULL);
 
