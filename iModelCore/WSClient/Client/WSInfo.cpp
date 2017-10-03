@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -101,7 +101,10 @@ Utf8String WSInfo::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
-    Utf8CP serverHeader = headers.GetServer();
+    Utf8CP serverHeader = headers.GetMassServer();
+    if (nullptr == serverHeader)
+        serverHeader = headers.GetServer();
+    
     if (nullptr == serverHeader)
         {
         return;
