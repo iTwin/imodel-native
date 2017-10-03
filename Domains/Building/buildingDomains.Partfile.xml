@@ -5,6 +5,7 @@
     <Part Name="BuildingDomains" PrgOutputDir="DesignModelingDomainsSDK">
         <SubPart PartName="RunBuildingDomainTests"/>
         <SubPart PartName="DesignModelingDomainsSDK-Only"/>
+        
         <SubProduct ProductName="StructuralDomainsTested" PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
     </Part>
 
@@ -23,7 +24,7 @@
         <SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/>
         <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
-
+        <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)</Assemblies>
