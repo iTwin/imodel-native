@@ -179,7 +179,7 @@ TEST(Polyface,PartitionReadIndicesByNormal)
     auto vector = DVec3d::From (-1.0, -2.0, 0.0);
     double a = 7.0;
     double b = 4.0;
-    double r = 3.0;
+    //double r = 3.0;
     DPoint3d origin = DPoint3d::From (0,0,0);
     DVec3d axis = DVec3d::From (0,0,1);
     for (auto degrees : bvector<double> {0.1, 5.0, 15.0, 30.0})
