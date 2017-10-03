@@ -2,22 +2,22 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="DesignModelingUnitsDomain" BentleyBuildMakeFile="DesignModelingUnits.mke" ApiNumber="B02">
-        <SubPart PartName="DesignModelingUnitsPublicAPI"/>
+    <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="B02">
+        <SubPart PartName="AecUnitsPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
         <Bindings>
-            <Libs>Delivery/$(libprefix)DesignModelingUnits$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)DesignModelingUnits$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)AecUnits$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)AecUnits$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>   
 
 
-    <Part Name="DesignModelingUnitsPublicAPI" BentleyBuildMakeFile="DesignModelingUnits.prewire.mke" ApiNumber="B02">
+    <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="B02">
         <Bindings>
-            <PublicAPI Domain="DesignModelingUnits"/>
+            <PublicAPI Domain="AecUnits"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/DesignModelingUnits.ecschema.xml
+                ECSchemas/Domain/AecUnits.ecschema.xml
             </Files>
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->

@@ -1,9 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DesignModelingUnitsInternal.cpp $
+|     $Source: PublicApi/AecUnits/AecUnitsApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DesignModelingUnitsInternal.h"
+#pragma once
 
+//__PUBLISH_SECTION_START__
+
+#include "AecUnitsDefinitions.h"
+#include "AecUnitsDomain.h"

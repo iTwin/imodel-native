@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: DesignModelingUnits.prewire.mke $
+#     $Source: AecUnits.prewire.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -12,10 +12,10 @@ targetAPIDir = $(BuildContext)PublicAPI/
 
 targetSchemasDir = $(BuildContext)ECSchemas/Domain/
 
-$(targetAPIDir)DesignModelingUnits : $(_MakeFilePath)PublicAPI/DesignModelingUnits
+$(targetAPIDir)AecUnits : $(_MakeFilePath)PublicAPI/AecUnits
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(targetSchemasDir)DesignModelingUnits.ecschema.xml : $(_MakeFilePath)Schema\DesignModelingUnits.ecschema.xml
+$(targetSchemasDir)AecUnits.ecschema.xml : $(_MakeFilePath)Schema\AecUnits.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
     

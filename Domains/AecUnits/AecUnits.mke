@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: DesignModelingUnits.mke $
+#     $Source: AecUnits.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -9,7 +9,7 @@
 
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/DesignModelingUnits/DMUnitsCompileOptions.mki
+CompileOptionsMki   = $(SrcRoot)DgnDomains/DesignModelingUnits/AecUnitsCompileOptions.mki
 %include $(CompileOptionsMki)
 
 
@@ -20,7 +20,7 @@ CompileOptionsMki   = $(SrcRoot)DgnDomains/DesignModelingUnits/DMUnitsCompileOpt
 appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) \
-                      $(appSrc)DesignModelingUnitsInternal.h 
+                      $(appSrc)AecUnitsInternal.h 
                  
 always:
     !~@mkdir $(o)
@@ -28,7 +28,7 @@ always:
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
-PchCompiland        = $(appSrc)DesignModelingUnitsInternal.cpp
+PchCompiland        = $(appSrc)AecUnitsInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(MultiCompileDepends)
@@ -49,7 +49,7 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 %include MultiCppCompileRule.mki
 
-$(o)DesignModelingUnitsDomain$(oext) : $(AppSrc)DesignModelingUnitsDomain.cpp ${MultiCompileDepends} 
+$(o)AecUnitsDomain$(oext) : $(AppSrc)AecUnitsDomain.cpp ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 
@@ -59,7 +59,7 @@ $(o)DesignModelingUnitsDomain$(oext) : $(AppSrc)DesignModelingUnitsDomain.cpp ${
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)DesignModelingUnitsInternal$(oext) 
+DLM_OBJECT_PCH              = $(o)AecUnitsInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
