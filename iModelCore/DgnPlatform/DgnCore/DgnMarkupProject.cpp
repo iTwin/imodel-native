@@ -984,7 +984,10 @@ Render::MaterialP RedlineViewController::LoadBackgroundMaterial(ViewContextR con
     if (texture.IsNull())
         return nullptr;
 
-    Render::TextureMapping mapping(*texture);
+    Render::TextureMapping::Params mapParams;
+    Render::TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    mapParams.SetTransform(&transform);
+    Render::TextureMapping mapping(*texture, mapParams);
     m_backgroundMaterial->MapTexture(mapping);
 
     return m_backgroundMaterial.get();
@@ -1043,6 +1046,7 @@ void RedlineViewController::_DrawDecorations(DecorateContextR context)
     graphic->AddShape(5, pts, true);
 
     context.SetViewBackground(*graphic->Finish());
+    //context.AddViewOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
