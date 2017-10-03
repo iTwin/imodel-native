@@ -596,6 +596,54 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentFieldEditor::~ContentFieldEditor()
+    {
+    for (Params const* params : m_params)
+        delete params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentFieldEditor::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Name", rapidjson::Value(m_name.c_str(), json.GetAllocator()), json.GetAllocator());
+
+    rapidjson::Value paramsJson(rapidjson::kObjectType);
+    for (Params const* params : m_params)
+        {
+        BeAssert(!paramsJson.HasMember(params->GetName()));
+        paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(&json.GetAllocator()), json.GetAllocator());
+        }
+    json.AddMember("Params", paramsJson, json.GetAllocator());
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentFieldEditor::Equals(ContentFieldEditor const& other) const
+    {
+    if (!m_name.Equals(other.m_name))
+        return false;
+    
+    if (m_params.size() != other.m_params.size())
+        return false;
+    for (size_t i = 0; i < m_params.size(); ++i)
+        {
+        if (!m_params[i]->Equals(*other.m_params[i]))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTypeDescription() const
@@ -618,7 +666,8 @@ rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAlloc
     json.AddMember("Type", GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember("IsReadOnly", _IsReadOnly(), json.GetAllocator());
     json.AddMember("Priority", _GetPriority(), json.GetAllocator());
-    json.AddMember("Editor", rapidjson::Value(GetEditor().c_str(), json.GetAllocator()), json.GetAllocator());
+    if (nullptr != GetEditor())
+        json.AddMember("Editor", GetEditor()->AsJson(&json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -723,7 +772,7 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
             return true;
         }
 
-    if (GetProperties().front().GetProperty().GetIsNavigation() && GetEditor().empty())
+    if (GetProperties().front().GetProperty().GetIsNavigation() && nullptr == GetEditor())
         return true;
 
     return false;

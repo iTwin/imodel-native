@@ -5,12 +5,13 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/BeTest.h>
+#include "PresentationRulesTests.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
+USING_NAMESPACE_ECPRESENTATIONTESTS
 
-struct PresentationRulesTests : ::testing::Test
+struct GenericPresentationRulesTests : PresentationRulesTests
     {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               06/2012
@@ -127,7 +128,7 @@ struct PresentationRulesTests : ::testing::Test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
+TEST_F(GenericPresentationRulesTests, TestPresentationRuleSetCreation)
     {
     RootNodeRuleP rootNodeRule1 = new RootNodeRule("TestCondition1", 1, false, TargetTree_MainTree, false);
     RootNodeRuleP rootNodeRule2 = new RootNodeRule("TestCondition2", 3, true, TargetTree_MainTree, false);
@@ -185,7 +186,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
+TEST_F(GenericPresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
     {
     Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         "  <PresentationRuleSet"
@@ -296,7 +297,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPresentationRules)
+TEST_F(GenericPresentationRulesTests, TestPresentationRules)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "Supplemental", "DummySchemaName", "MyImage", true);
@@ -461,7 +462,7 @@ TEST_F(PresentationRulesTests, TestPresentationRules)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, AddPresentationRule_SortsByPriority)
+TEST_F(GenericPresentationRulesTests, AddPresentationRule_SortsByPriority)
     {
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, false, "", "", "", true);
     EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
@@ -487,7 +488,7 @@ TEST_F(PresentationRulesTests, AddPresentationRule_SortsByPriority)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, RemovePresentationRule)
+TEST_F(GenericPresentationRulesTests, RemovePresentationRule)
     {
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, false, "", "", "", true);
     EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
@@ -625,7 +626,7 @@ TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestCustomizationRuleLoadingFromXml)
+TEST_F(GenericPresentationRulesTests, TestCustomizationRuleLoadingFromXml)
     {
     Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         "  <PresentationRuleSet"
@@ -664,7 +665,7 @@ TEST_F(PresentationRulesTests, TestCustomizationRuleLoadingFromXml)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Aidas.Vaiksnoras               03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
+TEST_F(GenericPresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
@@ -718,7 +719,7 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestContentModifierRuleLoadingFromXml)
+TEST_F(GenericPresentationRulesTests, TestContentModifierRuleLoadingFromXml)
     {
     Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         "  <PresentationRuleSet"
@@ -746,7 +747,7 @@ TEST_F(PresentationRulesTests, TestContentModifierRuleLoadingFromXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestContentModifierWriteToXml)
+TEST_F(GenericPresentationRulesTests, TestContentModifierWriteToXml)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
@@ -776,65 +777,10 @@ TEST_F(PresentationRulesTests, TestContentModifierWriteToXml)
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPropertiesDisplaySpecificationLoadingFromXml)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\""
-        "    xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\""
-        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
-        "    <ContentRule>"
-        "      <ContentInstancesOfSpecificClasses ClassNames=\"DisplayedClass\">"
-        "        <DisplayedProperties PropertyNames=\"Properties\"/>"
-        "      </ContentInstancesOfSpecificClasses>"
-        "    </ContentRule>"
-        "</PresentationRuleSet>";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
-    ASSERT_FALSE(ruleSet.IsNull());
-    ASSERT_EQ(1, ruleSet->GetContentRules().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertiesDisplaySpecifications().size());
-    EXPECT_STREQ("Properties", ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertiesDisplaySpecifications()[0]->GetPropertyNames().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPropertiesDisplaySpecificationWriteToXml)
-    {
-    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
-    ASSERT_TRUE(nullptr != ruleSet.get());
-
-    ContentRuleP content = new ContentRule("", 1, false);
-    ruleSet->AddPresentationRule(*content);
-    ASSERT_TRUE(nullptr != content);
-    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "DisplayedClass", false);
-    specification->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Properties1", 1000, false));
-    specification->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Properties2", 1000, true));
-    content->GetSpecificationsR().push_back(specification);
-
-    //Serialize RuleSet to string and deserialize from the same string.
-    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
-    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
-            "<ContentRule Priority=\"1\" CustomControl=\"\" Condition=\"\" OnlyIfNotHandled=\"false\">"
-                "<ContentInstancesOfSpecificClasses Priority=\"1\" ShowImages=\"false\" ClassNames=\"DisplayedClass\" ArePolymorphic=\"false\" InstanceFilter=\"\">"
-                    "<HiddenProperties PropertyNames=\"Properties1\" Priority=\"1000\"/>"
-                    "<DisplayedProperties PropertyNames=\"Properties2\" Priority=\"1000\"/>"
-                "</ContentInstancesOfSpecificClasses>"
-            "</ContentRule>"
-        "</PresentationRuleSet>";
-    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Aidas.Vaiksnoras                08/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PresentationRulesTests, ReadCheckBoxRuleFromXml)
+TEST_F(GenericPresentationRulesTests, ReadCheckBoxRuleFromXml)
     {
         Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         "  <PresentationRuleSet"
@@ -857,7 +803,7 @@ TEST_F(PresentationRulesTests, ReadCheckBoxRuleFromXml)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Aidas.Vaiksnoras                08/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PresentationRulesTests, WriteCheckBoxRuleToXml)
+TEST_F(GenericPresentationRulesTests, WriteCheckBoxRuleToXml)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
@@ -872,117 +818,6 @@ TEST_F(PresentationRulesTests, WriteCheckBoxRuleToXml)
     Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
             "<CheckBoxRule Priority=\"9\" PropertyName=\"checkBoxProperty\" UseInversedPropertyValue=\"false\" DefaultValue=\"true\" IsEnabled=\"isEnabledExpression\" Condition=\"conditionexpresion\" OnlyIfNotHandled=\"true\"/>"
-        "</PresentationRuleSet>";
-    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationLoadingFromXml)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\""
-        "    xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\""
-        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
-        "    <ContentRule>"
-        "      <ContentInstancesOfSpecificClasses ClassNames=\"DisplayedClass\">"
-        "        <PropertyEditors>"
-        "           <Editor PropertyName=\"TestProperty\" EditorName=\"TestEditor\"/>"
-        "        </PropertyEditors>"      
-        "      </ContentInstancesOfSpecificClasses>"
-        "    </ContentRule>"
-        "</PresentationRuleSet>";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
-    ASSERT_FALSE(ruleSet.IsNull());
-    ASSERT_EQ(1, ruleSet->GetContentRules().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors().size());
-    EXPECT_STREQ("TestProperty", ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors()[0]->GetPropertyName().c_str());
-    EXPECT_STREQ("TestEditor", ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors()[0]->GetEditorName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationWriteToXml)
-    {
-    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
-    ASSERT_TRUE(nullptr != ruleSet.get());
-
-    ContentRuleP content = new ContentRule("", 1, false);
-    ruleSet->AddPresentationRule(*content);
-    ASSERT_TRUE(nullptr != content);
-    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "DisplayedClass", false);
-    specification->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("Property1", "Editor1"));
-    content->GetSpecificationsR().push_back(specification);
-
-    //Serialize RuleSet to string and deserialize from the same string.
-    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
-    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
-            "<ContentRule Priority=\"1\" CustomControl=\"\" Condition=\"\" OnlyIfNotHandled=\"false\">"
-                "<ContentInstancesOfSpecificClasses Priority=\"1\" ShowImages=\"false\" ClassNames=\"DisplayedClass\" ArePolymorphic=\"false\" InstanceFilter=\"\">"
-                    "<PropertyEditors>"
-                        "<Editor PropertyName=\"Property1\" EditorName=\"Editor1\"/>"
-                    "</PropertyEditors>"
-                "</ContentInstancesOfSpecificClasses>"
-            "</ContentRule>"
-        "</PresentationRuleSet>";
-    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestRelatedPropertiesSpecificationRelationShipMeaningLoadingFromXml)
-    {
-    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\""
-        "    xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\""
-        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
-        "    <ContentRule>"
-        "      <ContentInstancesOfSpecificClasses ClassNames=\"DisplayedClass\">"
-        "        <RelatedProperties RelationshipClassNames=\"Schema:OnSameElement\" RequiredDirection=\"Forward\" RelationshipMeaning=\"SameInstance\"/>"     
-        "      </ContentInstancesOfSpecificClasses>"
-        "    </ContentRule>"
-        "</PresentationRuleSet>";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
-    ASSERT_FALSE(ruleSet.IsNull());
-    ASSERT_EQ(1, ruleSet->GetContentRules().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size());
-    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetRelatedProperties().size());
-    EXPECT_EQ(RelationshipMeaning::SameInstance, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetRelatedProperties()[0]->GetRelationshipMeaning());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRulesTests, TestRelatedPropertiesSpecificationRelationshipMeaningWriteToXml)
-    {
-    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
-    ASSERT_TRUE(nullptr != ruleSet.get());
-
-    ContentRuleP content = new ContentRule("", 1, false);
-    ruleSet->AddPresentationRule(*content);
-    ASSERT_TRUE(nullptr != content);
-    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "DisplayedClass", false);
-    specification->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
-    content->GetSpecificationsR().push_back(specification);
-
-    //Serialize RuleSet to string and deserialize from the same string.
-    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
-    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
-            "<ContentRule Priority=\"1\" CustomControl=\"\" Condition=\"\" OnlyIfNotHandled=\"false\">"
-                "<ContentInstancesOfSpecificClasses Priority=\"1\" ShowImages=\"false\" ClassNames=\"DisplayedClass\" ArePolymorphic=\"false\" InstanceFilter=\"\">"
-                    "<RelatedProperties RelationshipClassNames=\"RelationshipClassName\" RelatedClassNames=\"RelatedClassNames\" PropertyNames=\"Properties\" RequiredDirection=\"Forward\" RelationshipMeaning=\"SameInstance\"/>"
-                "</ContentInstancesOfSpecificClasses>"
-            "</ContentRule>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }

@@ -12,6 +12,7 @@
 #include "ECExpressionContextsProvider.h"
 #include "LoggingHelper.h"
 #include "NavNodeProviders.h"
+#include "ContentFieldEditors.h"
 
 #define NO_RELATED_PROPERTIES_KEYWORD "_none_"
 
@@ -57,7 +58,7 @@ private:
     bmap<ECRelationshipClassCP, int> m_relationshipUseCounts;
     bmap<ECClassCP, bset<PropertiesDisplayInfo>> m_perClassPropertyDisplayInfos; // per-class property display info
     bmap<ECClassCP, bset<PropertiesDisplayInfo>> m_aggregatedPropertyDisplayInfos; // property display info, including base class properties
-    bmap<ECClassCP, bmap<Utf8String, Utf8String>> m_propertyEditors;
+    bmap<ECClassCP, bmap<Utf8String, ContentFieldEditor const*>> m_propertyEditors;
     bmap<ECClassCP, bvector<RelatedClassPath>> m_handledNavigationPropertiesPaths;
 
 private:
@@ -171,14 +172,26 @@ private:
         }
     
     /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    static ContentFieldEditor const* CreateEditor(PropertyEditorsSpecificationCR spec)
+        {
+        ContentFieldEditor* editor = new ContentFieldEditor(spec.GetEditorName());
+        EditorParamsBuilder paramsBuilder(*editor);
+        for (PropertyEditorParametersSpecificationCP paramsSpec : spec.GetParameters())
+            paramsSpec->Accept(paramsBuilder);
+        return editor;
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas            07/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
     void InitPropertyEditors(ContentSpecificationCR specification, ContentModifierList const& contentModifiers)
         {
-        for (PropertyEditorsSpecificationCP displaySpec : specification.GetPropertyEditors())
+        for (PropertyEditorsSpecificationCP editorSpec : specification.GetPropertyEditors())
             {
-            bmap<Utf8String, Utf8String>& editors = m_propertyEditors[nullptr];
-            editors[displaySpec->GetPropertyName()] = displaySpec->GetEditorName();
+            bmap<Utf8String, ContentFieldEditor const*>& editors = m_propertyEditors[nullptr];
+            editors[editorSpec->GetPropertyName()] = CreateEditor(*editorSpec);
             }
 
         for (ContentModifierCP modifier : contentModifiers)
@@ -191,8 +204,8 @@ private:
                     BeAssert(false);
                     continue;
                     }
-                bmap<Utf8String, Utf8String>& editors = m_propertyEditors[ecClass];
-                editors[editorSpec->GetPropertyName()] = editorSpec->GetEditorName();
+                bmap<Utf8String, ContentFieldEditor const*>& editors = m_propertyEditors[ecClass];
+                editors[editorSpec->GetPropertyName()] = CreateEditor(*editorSpec);
                 }
             }
         }
@@ -224,6 +237,21 @@ public:
             {
             InitPropertiesDisplayInfo(*specification, ruleset.GetContentModifierRules());
             InitPropertyEditors(*specification, ruleset.GetContentModifierRules());
+            }
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    ~ContentDescriptorCreateContext()
+        {
+        for (auto classPair : m_propertyEditors)
+            {
+            for (auto propertyPair : classPair.second)
+                {
+                ContentFieldEditor const* editor = propertyPair.second;
+                delete editor;
+                }
             }
         }
 
@@ -304,7 +332,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas            07/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    Utf8CP GetPropertyEditor(ECPropertyCR ecProperty, ECClassCR ecClass, bool searchForAnyClassEditor = true)
+    ContentFieldEditor const* GetPropertyEditor(ECPropertyCR ecProperty, ECClassCR ecClass, bool searchForAnyClassEditor = true)
         {
         Utf8StringCR propertyName = ecProperty.GetName();
 
@@ -314,7 +342,7 @@ public:
             {
             auto propertyIter = specificClassIter->second.find(propertyName);
             if (specificClassIter->second.end() != propertyIter)
-                return propertyIter->second.c_str();
+                return propertyIter->second;
             }
 
         if (searchForAnyClassEditor)
@@ -325,14 +353,14 @@ public:
                 {
                 auto propertyIter = anyClassIter->second.find(propertyName);
                 if (anyClassIter->second.end() != propertyIter)
-                    return propertyIter->second.c_str();
+                    return propertyIter->second;
                 }
             }
 
         // it's possible that one of the base classes of the provided class has an editor - check that
         for (ECClassCP base : ecClass.GetBaseClasses())
             {
-            Utf8CP baseEditor = GetPropertyEditor(ecProperty, *base, false);
+            ContentFieldEditor const* baseEditor = GetPropertyEditor(ecProperty, *base, false);
             if (nullptr != baseEditor)
                 return baseEditor;
             }
@@ -461,15 +489,15 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     FieldCreateAction GetActionForPropertyField(ContentDescriptor::ECPropertiesField*& mergeField, bvector<ContentDescriptor::Field*> const& fields, ECPropertyCR ecProperty)
         {
-        Utf8CP newPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
+        ContentFieldEditor const* newPropertyEditor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
 
         for (ContentDescriptor::Field* field : fields)
             {
             if (!field->IsPropertiesField())
                 continue;
 
-            bool areEditorsEqual = (nullptr == newPropertyEditor && field->GetEditor().empty() 
-                || nullptr != newPropertyEditor && !field->GetEditor().empty() && field->GetEditor().Equals(newPropertyEditor));
+            bool areEditorsEqual = (nullptr == newPropertyEditor && nullptr == field->GetEditor()
+                || nullptr != newPropertyEditor && nullptr != field->GetEditor() && field->GetEditor()->Equals(*newPropertyEditor));
             if (!areEditorsEqual)
                 continue;
 
@@ -519,8 +547,8 @@ private:
 
             ECClassCR primaryClass = m_relatedClassPath.empty() ? m_actualClass : *m_relatedClassPath.front().GetSourceClass();
             ContentDescriptor::Category fieldCategory = m_descriptorCreateContext.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty);
-            Utf8CP editor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
-            field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor);
+            ContentFieldEditor const* editor = m_descriptorCreateContext.GetPropertyEditor(ecProperty, m_actualClass);
+            field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
             m_descriptor.GetAllFields().push_back(field);
 
             if (!m_relatedClassPath.empty())

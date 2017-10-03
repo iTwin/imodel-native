@@ -4037,8 +4037,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
-
-    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4074,8 +4075,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
-
-    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4116,8 +4118,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
-    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
-    EXPECT_STREQ("GadgetEditor", descriptor->GetVisibleFields()[1]->GetEditor().c_str());
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[1]->GetEditor());
+    EXPECT_STREQ("GadgetEditor", descriptor->GetVisibleFields()[1]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4158,8 +4163,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_ClassF_IntProperty
-
-    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4203,9 +4209,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
-
-    EXPECT_STREQ("ClassFIntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
-    EXPECT_STREQ("", descriptor->GetVisibleFields()[1]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("ClassFIntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+    
+    ASSERT_TRUE(nullptr == descriptor->GetVisibleFields()[1]->GetEditor());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -184,6 +184,54 @@ public:
 };
 
 //=======================================================================================
+//! Describes content field editor.
+//! @ingroup GROUP_Presentation_Content
+// @bsiclass                                    Grigas.Petraitis                10/2017
+//=======================================================================================
+struct ContentFieldEditor
+{
+    struct Params
+    {
+    protected:
+        virtual Utf8CP _GetName() const = 0;
+        virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const = 0;
+        virtual Params* _Clone() const = 0;
+        virtual bool _Equals(Params const& other) const {return 0 == strcmp(GetName(), other.GetName());}
+    public:
+        virtual ~Params() {}
+        Utf8CP GetName() const {return _GetName();}
+        rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
+        Params* Clone() const {return _Clone();}
+        bool Equals(Params const& other) const {return _Equals(other);}
+        bool operator==(Params const& other) const {return Equals(other);}
+    };
+
+private:
+    Utf8String m_name;
+    bvector<Params const*> m_params;
+
+public:
+    ContentFieldEditor(Utf8String name) : m_name(name) {}
+    ContentFieldEditor(ContentFieldEditor const& other) 
+        : m_name(other.m_name)
+        {
+        for (Params const* otherParams : other.m_params)
+            m_params.push_back(otherParams->Clone());
+        }
+    ContentFieldEditor(ContentFieldEditor&& other) 
+        : m_name(std::move(other.m_name)), m_params(other.m_params)
+        {
+        other.m_params.clear();
+        }
+    ECPRESENTATION_EXPORT ~ContentFieldEditor();
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT bool Equals(ContentFieldEditor const&) const;
+    bvector<Params const*> const& GetParams() const {return m_params;}
+    bvector<Params const*>& GetParams() {return m_params;}
+    Utf8StringCR GetName() const {return m_name;}
+};
+
+//=======================================================================================
 //! Describes the content: fields, sorting, filtering, format. Users may change 
 //! @ref ContentDescriptor to control what content they get and how they get it.
 //! @ingroup GROUP_Presentation_Content
@@ -347,11 +395,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Category m_category;
         Utf8String m_name;
         Utf8String m_label;
-        Utf8String m_editor;
+        ContentFieldEditor const* m_editor;
         mutable TypeDescriptionPtr m_type;
         
     protected:
-        Field() {}
+        Field() : m_editor(nullptr) {}
         virtual DisplayLabelField* _AsDisplayLabelField() {return nullptr;}
         virtual DisplayLabelField const* _AsDisplayLabelField() const {return nullptr;}
         virtual CalculatedPropertyField* _AsCalculatedPropertyField() {return nullptr;}
@@ -378,13 +426,23 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
         //! @param[in] editor The custom editor for this field.
-        Field(Category category, Utf8String name, Utf8String label, Utf8String editor = "") : m_category(category), m_name(name), m_label(label), m_editor(editor) {}
+        Field(Category category, Utf8String name, Utf8String label, ContentFieldEditor const* editor = nullptr) 
+            : m_category(category), m_name(name), m_label(label), m_editor(editor) 
+            {}
 
         //! Copy constructor.
-        Field(Field const& other) : m_category(other.m_category), m_name(other.m_name), m_label(other.m_label) {}
+        Field(Field const& other) 
+            : m_category(other.m_category), m_name(other.m_name), m_label(other.m_label), m_editor(other.m_editor)
+            {
+            if (nullptr != other.m_editor)
+                m_editor = new ContentFieldEditor(*other.m_editor);
+            }
 
         //! Move constructor.
-        Field(Field&& other) : m_category(std::move(other.m_category)), m_name(std::move(other.m_name)), m_label(std::move(other.m_label)) {}
+        Field(Field&& other) 
+            : m_category(std::move(other.m_category)), m_name(std::move(other.m_name)), m_label(std::move(other.m_label)), 
+            m_editor(std::move(other.m_editor))
+            {}
 
         //! Virtual destructor.
         virtual ~Field() {}
@@ -451,9 +509,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetLabel(Utf8String label) {m_label = label;}
 
         //! Get the editor of this field.
-        Utf8StringCR GetEditor() const { return m_editor; }
+        ContentFieldEditor const* GetEditor() const {return m_editor;}
         //! Set the editor for this field.
-        void SetEditor(Utf8String editor) { m_editor = editor; }
+        //! @note The field takes ownership of the editor object.
+        void SetEditor(ContentFieldEditor const* editor) {m_editor = editor;}
 
         //! Get field's priority.
         int GetPriority() const {return _GetPriority();}
@@ -568,13 +627,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
         //! @param[in] editor The custom editor for this field.
-        ECPropertiesField(Category category, Utf8String name, Utf8String label, Utf8String editor = "") : Field(category, name, label, editor) {}
+        ECPropertiesField(Category category, Utf8String name, Utf8String label, ContentFieldEditor const* editor = nullptr) 
+            : Field(category, name, label, editor) 
+            {}
 
         //! Constructor. Creates a field with a single @ref Property.
         //! @param[in] primaryClass ECClass of primary (root) instance. Matches @e prop.GetPropertyClass() if the property is not of related instance.
         //! @param[in] prop Property that this field is based on.
         //! @param[in] categorySupplier The category supplier used to determine the category of this field.
-        ECPropertiesField(ECN::ECClassCR primaryClass, Property const& prop, IPropertyCategorySupplierR categorySupplier) {InitFromProperty(primaryClass, prop, &categorySupplier);}
+        ECPropertiesField(ECN::ECClassCR primaryClass, Property const& prop, IPropertyCategorySupplierR categorySupplier)
+            {
+            InitFromProperty(primaryClass, prop, &categorySupplier);
+            }
         
         //! Constructor. Creates a field with a single @ref Property and invalid Category.
         //! @param[in] primaryClass ECClass of primary (root) instance. Matches @e prop.GetPropertyClass() if the property is not of related instance.

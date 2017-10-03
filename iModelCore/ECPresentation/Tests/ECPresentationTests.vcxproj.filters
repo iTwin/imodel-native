@@ -67,7 +67,12 @@
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ECExpressionsOptimizerTests.cpp" />
-    <ClCompile Include="NonPublished\RulesEngine\ContentDescriptorSerializationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedPropertiesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertiesDisplaySpecificationTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
@@ -96,6 +101,7 @@
     <ClInclude Include="TestHelpers\IssueReporter.h" />
     <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
     <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
+    <ClInclude Include="Published\PresentationRules\PresentationRulesTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

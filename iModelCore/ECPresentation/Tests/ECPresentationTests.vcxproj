@@ -22,7 +22,7 @@
     <ClCompile Include="BackDoor\Localization.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
-    <ClCompile Include="NonPublished\RulesEngine\ContentDescriptorSerializationTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp" />
@@ -65,7 +65,12 @@
     <ClCompile Include="NonPublished\RulesEngine\UserSettingsTests.cpp" />
     <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
     <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertiesDisplaySpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedPropertiesSpecificationTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
     <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />
@@ -92,6 +97,7 @@
     <ClInclude Include="NonPublished\RulesEngine\TestLocalizationProvider.h" />
     <ClInclude Include="NonPublished\RulesEngine\TestNavNode.h" />
     <ClInclude Include="NonPublished\RulesEngine\TestNodesProvider.h" />
+    <ClInclude Include="Published\PresentationRules\PresentationRulesTests.h" />
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
     <ClInclude Include="TestHelpers\ECPresentationTest.h" />
     <ClInclude Include="TestHelpers\IssueReporter.h" />
