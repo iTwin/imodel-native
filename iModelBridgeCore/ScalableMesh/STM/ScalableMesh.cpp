@@ -649,6 +649,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     StatusInt&              status)
 {
     return GetFor(filePath, baseEditsFilePath, true, openReadOnly, openShareable, status);
+
 }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
@@ -1661,6 +1662,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         }
     DPoint3d pt = DPoint3d::From(flatArea, slopeArea, 0);
     m_transformToUors.Multiply(pt);
+	m_transformToUors.Multiply(pt);
     flatArea = pt.x;
     slopeArea = pt.y;
     if (fullResolutionReturnedNodes->size() == returnedNodes.size())
@@ -1673,7 +1675,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         DPoint3d* transPtsAsync = new DPoint3d[numPoints];
         memcpy(transPtsAsync,&transPts[0], numPoints*sizeof(DPoint3d));
 
-        std::thread t(std::bind([] (bvector<IScalableMeshNodePtr>* nodes, DPoint3d* pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+        std::thread t(std::bind([] (bvector<IScalableMeshNodePtr>* nodes, DPoint3d* pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback, Transform& transformToUors)
             {
             double flatAreaFull = 0;
             double slopeAreaFull = 0;
@@ -1735,10 +1737,18 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;
                 }
-            if (finished) progressiveCallback(retval, flatAreaFull, slopeAreaFull);
+			if (finished)
+			{
+				DPoint3d pt = DPoint3d::From(flatAreaFull, slopeAreaFull, 0);
+			    transformToUors.Multiply(pt);
+				transformToUors.Multiply(pt);
+				flatAreaFull = pt.x;
+				slopeAreaFull = pt.y;
+				progressiveCallback(retval, flatAreaFull, slopeAreaFull);
+			}
             delete nodes;
             delete[] pts;
-            }, fullResolutionReturnedNodes, transPtsAsync, numPoints, progressiveCallback, isCancelledCallback));
+            }, fullResolutionReturnedNodes, transPtsAsync, numPoints, progressiveCallback, isCancelledCallback, m_transformToUors));
         t.detach();
         }
     return DTM_SUCCESS;
