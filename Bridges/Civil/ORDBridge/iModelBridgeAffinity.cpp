@@ -69,7 +69,7 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
 
         StatusInt nStatus;
         dgnFilePtr->LoadFile(&nStatus, nullptr, true);
-        
+
         DgnV8Api::ModelId modelId = dgnFilePtr->GetDefaultModelId();
 
         DependencyManager::SetProcessingDisabled(false);
@@ -81,9 +81,10 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
         if (!rootModelP)
             return;
 
-        auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
-        auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
-        if (cifModelPtr.IsValid())
+        DgnV8Api::SchemaInfo schemaInfo(Bentley::ECN::SchemaKey(L"Bentley_Civil__Model_Geometry", 0, 0), *dgnFilePtr, L"", L"", 0);
+        auto& dgnECManager = DgnV8Api::DgnECManager::GetManager();
+        Bentley::ECN::ECSchemaPtr nativeSchema = dgnECManager.LocateSchemaInDgnFile(schemaInfo, Bentley::ECN::SCHEMAMATCHTYPE_Latest);
+        if (!nativeSchema.IsNull())
             {
             bridgeAffinity.m_bridgeRegSubKey = L"OpenRoads Designer Bridge";
             bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::ExactMatch;
