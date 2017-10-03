@@ -1665,12 +1665,15 @@ TEST(Polyface,MultiMeshVisibilityB)
                 }
             }
         }
-    SaveTransformed (allMesh, 0.0, true);
-    double dX = 1.5 * range.XLength ();
-    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {1,3,4,6}, 0);
-    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 4);
-    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 3);
-    RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 2);
+    if (allMesh.size () > 0)
+        {
+        SaveTransformed (allMesh, 0.0, true);
+        double dX = 1.5 * range.XLength ();
+        RunSelectiveVisibility (dX, allMesh, bvector<size_t> {1,3,4,6}, 0);
+        RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 4);
+        RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 3);
+        RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 2);
 
-    Check::ClearGeometry ("Polyface.MultiMeshVisibilityB");
+        Check::ClearGeometry ("Polyface.MultiMeshVisibilityB");
+        }
     }
