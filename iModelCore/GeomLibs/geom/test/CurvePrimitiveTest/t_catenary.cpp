@@ -5,7 +5,9 @@
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Catenary,HelloWorld)
     {
     static double s_catenaryStrokeTolerance = 1.0e-3;       // hm... really crude, but seems to be so . .
@@ -103,6 +105,9 @@ void TestCoshIntersectLine (double gamma, double x0, double x1, bool print = fal
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Cosh,IntersectLine)
     {
     bool print = true;
@@ -156,6 +161,9 @@ void TestCoshIntersectLine (double x0, double x1, bool print = false)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Cosh,IntersectHomogeneousLine)
     {
     bool print = true;
@@ -170,6 +178,9 @@ TEST(Cosh,IntersectHomogeneousLine)
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Catenary, TrimCatenary) 
     {
     DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
@@ -213,6 +224,9 @@ TEST(Catenary, TrimCatenary)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Catenary, CloneBetweenFractions_Reverse) 
     {
     DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));

@@ -461,7 +461,7 @@ TEST (Polyface, PartitionByComponentTarget)
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     EarlinLuz  08/09
+* @bsimethod                                                     Earlin.Lutz  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, Compress)
     {

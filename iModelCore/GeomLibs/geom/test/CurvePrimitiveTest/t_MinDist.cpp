@@ -51,6 +51,9 @@ static void testBsplineCircleProximity (double curveEvaluationFraction, double c
    
     }
 //static int s_noisy = 0;       
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, MinDistBsplineToCircle)
     {
 
@@ -95,6 +98,9 @@ TransformR transformBToA    //! [out] transform that relocateds dataA on top of 
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, IsSameStructureAndGeometryWithTransform)
     {
     bvector<CurveVectorPtr> curveSets;

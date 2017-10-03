@@ -70,6 +70,9 @@ void CheckWireMoments (CurveVectorCR curve)
     ExercisePointsAlong (curve, 28);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorA, CloneLocal)
     {
     DEllipse3d ellipseData = DEllipse3d::From (1,2,3,
@@ -117,6 +120,9 @@ TransformCR worldToLocal
     localToWorld.Multiply (xyz1, uvw);
     Check::Near (xyz, xyz1);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorA, CloneLocalL)
     {
     double a0 = 0.1;
@@ -210,6 +216,9 @@ pF[k++] = pow (x, j) * pow(y,i);
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, StrokeEllipse)
     {
     MomentIntegrandWithExtraXPower F;
@@ -257,6 +266,9 @@ void CheckPlanarity (CurveVectorR curves, DPoint3dCR point0, DPoint3dCR point1, 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorA, PointIsPlanar)
     {
     DPoint3d xyz = DPoint3d::From (1,2,4);
@@ -265,6 +277,9 @@ TEST(CurveVectorA, PointIsPlanar)
     CheckPlanarity (*curves, DPoint3d::From (0,0,0), DPoint3d::From (5,2,-3), 0.2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, LocalRange)
     {
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
@@ -296,6 +311,9 @@ TEST (CurveVectorA, LocalRange)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, IsPlanar_line)
     {
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -320,7 +338,9 @@ TEST (CurveVectorA, IsPlanar_line)
     }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, DefaultPlaneNormal)
     {
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
@@ -402,6 +422,9 @@ static bool VerifySegmentOverlap (DSegment3dCR segmentA, double fB0, double fB1,
     return stat;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, SegmentOverlap)
     {
     VerifySegmentOverlap (DSegment3d::From (0,0,0, 1,0,0), 0, 1);
@@ -518,6 +541,9 @@ void ExerciseRegion (CurveVectorCR region)
         
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, Centroid)
     {
     double a = 3.0;
@@ -567,6 +593,9 @@ TEST (CurveVectorA, Centroid)
     CheckWireMoments (*rectangle);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, AreaMomentsEllipse1)
     {
     double scaleFactor = 4.0;
@@ -682,7 +711,10 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
     }
     
 #ifdef abc
-TEST (CurveVectorA, test)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+    TEST (CurveVectorA, test)
     {
     int result1 = (int)pow(3.0,2.0);
     int result4 = (int)pow(3.0,2.0);
@@ -692,7 +724,10 @@ TEST (CurveVectorA, test)
 
     }
 
-TEST (CurveVectorA, fib1)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+    TEST (CurveVectorA, fib1)
     {
     double fib[20];
     fib[0] = 0;
@@ -718,7 +753,10 @@ TEST (CurveVectorA, fib1)
         printf ("%f %22.20le \n", fib[i], res[i]);
         }
     }
-TEST (CurveVectorA, fib2)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+    TEST (CurveVectorA, fib2)
     {
     double fib[20];
     fib[0] = 0;
@@ -738,6 +776,9 @@ TEST (CurveVectorA, fib2)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, fib3)
     {
     double fib[20];
@@ -758,6 +799,9 @@ TEST (CurveVectorA, fib3)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, elliperror)
     {
     double div2 = 1.0 / 2.0;
@@ -793,6 +837,9 @@ TEST (CurveVectorA, elliperror)
 #endif
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, Holes)
     {
     DRange2d outer = DRange2d::From (0,0, 20,10);
@@ -819,6 +866,9 @@ TEST (CurveVectorA, Holes)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, Consolidate)
     {
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -837,6 +887,9 @@ TEST (CurveVectorA, Consolidate)
         ExercisePointsAlong (*pathB, 25);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineSurface, Disk)
     {
     Check::StartScope ("bsurf disk bounds checks");
@@ -860,6 +913,9 @@ TEST(MSBsplineSurface, Disk)
     Check::EndScope ();
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineSurface,PCurveStroke)
     {
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone (
@@ -887,6 +943,9 @@ TEST(MSBsplineSurface,PCurveStroke)
     Check::True (curvePoints.size () > 5, "Curve points");
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,CCI0)
     {
     ICurvePrimitivePtr line0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0));
@@ -928,6 +987,9 @@ TEST(CurvePrimitive,CCI0)
     }
     
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PointString, ClosestPointBounded0)
     {
     Check::StartScope ("Point String");
@@ -977,6 +1039,9 @@ void ConfirmClosestPointBounded (ICurvePrimitiveCR curve, DPoint3dCR spacePoint,
     Check::Size (0, numFail, "ClosestPointBounded sample");        
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClosestPointBounded, EllipseCenter)
     {
     Check::StartScope ("ClosestPointBounded_EllipseCenter");
@@ -1088,6 +1153,9 @@ void CheckPrimitive (ICurvePrimitiveCR primitive, bool doPartial = false)
         CheckPrimitive_go (*child);
         }
     }    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,TrivialPrimitives)
     {
     static bool s_doPartials = true;
@@ -1159,7 +1227,9 @@ TEST(CurvePrimitive,TrivialPrimitives)
     }    
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,SizeSampler)
     {
     bvector<IGeometryPtr> curves;
@@ -1177,6 +1247,9 @@ TEST(CurvePrimitive,SizeSampler)
             CheckPrimitive (*cp);
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,GarbageDataFrenetFrame)
     {
     ICurvePrimitivePtr line0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,2,9));
@@ -1192,6 +1265,9 @@ TEST(CurvePrimitive,GarbageDataFrenetFrame)
         }    
     }    
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,ParallelLinesFrenetFrame)
     {
     ICurvePrimitivePtr line0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 1,0,0));
@@ -1207,6 +1283,9 @@ TEST(CurvePrimitive,ParallelLinesFrenetFrame)
         }    
     }    
         
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,PointsAlongMatthieu)
     {
     bvector<DPoint3d> linePoints;
@@ -1321,6 +1400,9 @@ void TestProjectedDistanceAlong (CurveVectorPtr &source)
       TestProjectedDistanceAlong (primitive);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ProjectedLength,Test0)
     {
     bvector<IGeometryPtr> candidates;
@@ -1333,6 +1415,9 @@ TEST(ProjectedLength,Test0)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClosestPointAndDistance,Test0)
     {
     double a = 10.0;
@@ -1411,6 +1496,9 @@ static void Write (CurveVectorPtr &cv, wchar_t const *name)
         writer.EmitCurveVector (*cv);
     writer.WriteEndTag (name);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Intersection,AllanB00)
     {
     double ax = 0.0, bx =1.0;
@@ -1471,6 +1559,9 @@ TEST(Intersection,AllanB00)
 #endif
 
 // force DSegment4d logic into true 4d case . . .
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Intersection,DSegment4dSpecialCase)
     {
     DSegment4d segmentA = {{{0,0,0,1}, {1,0,0,1}}};
@@ -1494,6 +1585,9 @@ TEST(Intersection,DSegment4dSpecialCase)
     Check::Near (0.0, d1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,FlattenEllipse)
     {
     DEllipse3d ellipse0;
@@ -1619,6 +1713,9 @@ char const *name
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,RecursiveCollectPoints)
     {
     auto unionRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
@@ -1701,6 +1798,9 @@ double distanceB
         curves->push_back (ICurvePrimitive::CreateArc (DEllipse3d::FromReversed (arcB.Value())));
     return curves;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,InflexFilletConstruction)
     {
     DPoint3d pointA = DPoint3d::From (1,0,0);
@@ -1744,6 +1844,9 @@ void CheckCentroidAndArea (CurveVectorCR region, DPoint3dCR centroid0, DVec3dCR 
     Check::Near (normal0, normal, "Polygon normal");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,RegularPolygonConstructor)
     {
     DPoint3d center = DPoint3d::From (1,2,3);
@@ -1761,6 +1864,9 @@ TEST(CurveVector,RegularPolygonConstructor)
     }
 	
 	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,SpiralPrimitive)
     {
     DPoint3d startPoint {10,0,0};
@@ -1794,6 +1900,9 @@ TEST(DSpiral2D,SpiralPrimitive)
     Check::Print (xyzB, "endPoint");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,IntersectLineRange)
     {
     DRange3d range;
@@ -1844,6 +1953,9 @@ TEST(CurvePrimitive,IntersectLineRange)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,IntersectLineStringRange)
     {
     DRange3d range;
@@ -1879,6 +1991,9 @@ TEST(CurvePrimitive,IntersectLineStringRange)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString,TwoSidedDerivative)
     {
     bvector<DPoint3d> points {
@@ -1919,6 +2034,9 @@ TEST(CPLineString,TwoSidedDerivative)
         }
     }	
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,ZeroDerivativeFrenetFrames)
     {
     Transform frame;
@@ -1946,6 +2064,9 @@ TEST(CurvePrimitive,ZeroDerivativeFrenetFrames)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurvePrimitive, CloneTransformed)
     {
     bvector<IGeometryPtr> curves;
@@ -1976,6 +2097,9 @@ TEST (CurvePrimitive, CloneTransformed)
     Check::Near (cv1->Length (), cv2->Length (), "length after 3d, 4d deep clone with transform");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString, ReverseCurve) 
     {
     bvector<DPoint3d> points {
@@ -2002,6 +2126,9 @@ TEST(CPLineString, ReverseCurve)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString, CheckShapes)
     {
     auto cShapeLine = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0,0,0), DPoint3d::From(5,5,5)));
@@ -2024,6 +2151,9 @@ TEST(CPLineString, CheckShapes)
     Check::ClearGeometry("CPLineString.CheckShapes");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString, SameStructure)
     {
     DPoint3d points[5] = { DPoint3d::From(1,0,0),
@@ -2038,6 +2168,9 @@ TEST(CPLineString, SameStructure)
     Check::False(cShapePointString->IsSameStructureAndGeometry(*cShapePointStringCloned));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPLineString, LineLineStringClone)
     {
     DPoint3d points[5] = {  DPoint3d::From(1,0,0),
@@ -2077,6 +2210,9 @@ void swapCurvePrimitives(CurveVector::BoundaryType cvBT)
 
     Check::True(curve->IsSameStructureAndGeometry(*curve2));
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, SwapIndices)
     {
     swapCurvePrimitives(CurveVector::BOUNDARY_TYPE_Inner);
@@ -2104,6 +2240,9 @@ void checkChildBoundaryTypes(CurveVectorPtr parent,
 
 
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, ChildVectorType)
     {
     ////
@@ -2125,6 +2264,9 @@ TEST(CurveVector, ChildVectorType)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, ReverseLeafCurves) 
     {
     bvector<CurveVector::BoundaryType> cvType = { CurveVector::BOUNDARY_TYPE_Inner,
@@ -2183,6 +2325,9 @@ TEST(CurveVector, ReverseLeafCurves)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, LengthOfPrimitives) 
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
@@ -2212,6 +2357,9 @@ TEST(CurveVector, LengthOfPrimitives)
     double postRot = curve->Length(rot);
     Check::Near(prior, postRot);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, CloneBetweenFractions) 
     {
     DPoint3d points[5] = { DPoint3d::From(1,0,0),
@@ -2244,6 +2392,9 @@ TEST(CurveVector, CloneBetweenFractions)
     Check::SaveTransformed(*curve->CloneBetweenCyclicIndexedFractions(1, 0.5, 2, 0.7));
     Check::ClearGeometry("CurveVector.CloneBetweenFractions");
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, ChangeAreaByOffset)
     {
     CurveOffsetOptions offset(5);
@@ -2265,6 +2416,9 @@ TEST(CurveVector, ChangeAreaByOffset)
     Check::ClearGeometry("CurveVector.ChangeAreaByOffset");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, CloneOffsetCurvesXY)
     {
 
@@ -2294,6 +2448,9 @@ TEST(CurveVector, CloneOffsetCurvesXY)
 
 #if defined(WIP)
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector, GeometricConstructions) 
     {// Arc
     DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 0, 0),

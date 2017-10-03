@@ -6,6 +6,9 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
 static bool s_noisy = false;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, BinomialCoefficients)
     {
     int maxRow = 80;    // see bezeval.cpp
@@ -62,6 +65,9 @@ void Exercise (MSBsplineCurveCR curve)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, Create1)
     {
     bvector<DPoint3d> points;
@@ -117,6 +123,9 @@ MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (points, &weig
 Exercise (*curve);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, Create2)
 {
     bvector<DPoint3d> points;
@@ -144,6 +153,9 @@ Exercise (*curve);
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, PeriodicEvaluation)
 {
     bvector<DPoint3d> points;
@@ -171,6 +183,9 @@ MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(points, NULL, 
 Exercise (*curve);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, Circle)
 {
 MSBsplineCurve curve;
@@ -207,6 +222,9 @@ MSBsplineCurvePtr CreateXSqaured (double knot0, double knot1)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, ArcLengthMappings)
     {
     double k0 = 2.0;
@@ -255,6 +273,9 @@ TEST(Bspline, ArcLengthMappings)
     
     
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, AdvanceAndRetreat)
     {
     MSBsplineCurvePtr curve1 = CreateXSqaured (2.0, 6.0);
@@ -424,6 +445,9 @@ bool bspcurv_curveToDEllipse3d (MSBsplineCurveCR curve, DEllipse3dR ellipse)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, EllipseRoundTrip)
     {
     for (double theta0 = 0.0; theta0 < 3.0; theta0 += 0.974)
@@ -475,6 +499,9 @@ void checkCurve (char const *title, MSBsplineCurveCR curve, MSBsplineSurfaceCR s
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, Extract)
     {
     bvector<DPoint3d>poles;
@@ -534,6 +561,9 @@ double Avoid01 (double u)
     return u;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, PlanarBilinear)
     {
     double q0I = 0.5;
@@ -639,6 +669,9 @@ void CheckPatch (MSBsplineSurfaceCR surface, size_t numUVTest)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, SinusoidalPatch0)
     {
     int numJ = 6;
@@ -742,12 +775,18 @@ TEST(BsplineSurface, HyperbolicPatchTiming)
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, BilinearPatch1)
     {
     MSBsplineSurfacePtr surface = SimpleBilinearPatch (1.0, 1.0, 1.0);
     CheckPatch (*surface, 4);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, BilinearPatch2)
     {
     MSBsplineSurfacePtr surface = SimpleBilinearPatch (2.0, 2.0, 1.0);
@@ -756,6 +795,9 @@ TEST(BsplineSurface, BilinearPatch2)
 
     
 static int s_printBeziers = 0;    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, MakeBezier)
     {
     for (int order = 2; order < 7; order++)
@@ -797,6 +839,9 @@ TEST(BsplineSurface, MakeBezier)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,KnotSearch)
     {
     double knots[] =
@@ -823,6 +868,9 @@ TEST(BsplineCurve,KnotSearch)
     }
     
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, MatchCurveKnots)
     {
     MSBsplineSurfacePtr surface = SimpleBilinearPatch (2.0, 2.0, 1.0);
@@ -855,6 +903,9 @@ TEST(BsplineSurface, MatchCurveKnots)
         
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline,KnotByDistance)
     {
     bvector<DPoint3d> points;

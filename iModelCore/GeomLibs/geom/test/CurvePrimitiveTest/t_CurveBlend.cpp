@@ -11,6 +11,9 @@ static int s_noisy = 0;
 static bool s_readFile = 0;
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, FilletSegmentSegment)
     {
     ICurvePrimitivePtr line1 = ICurvePrimitive::CreateLine (
@@ -41,7 +44,9 @@ TEST(CurveCurve, FilletSegmentSegment)
     Check::EndScope ();
     }
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, FilletLinestring)
     {
     bvector<DPoint3d> points;
@@ -72,7 +77,9 @@ TEST(CurveCurve, FilletLinestring)
     
     }    
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, FilletLineArc)
     {
     double rA = 10.0;
@@ -104,6 +111,9 @@ TEST(CurveCurve, FilletLineArc)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, FilletLineStringArc)
     {
     double rA = 10.0;
@@ -143,7 +153,9 @@ TEST(CurveCurve, FilletLineStringArc)
     Check::EndScope ();
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, FilletArcArc)
     {
     double rA = 12;
@@ -169,6 +181,10 @@ void AddPoint (bvector<DPoint3d> &points, double x, double y, double z = 0.0)
     {
     points.push_back (DPoint3d::From (x, y, z));
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Curve,CloneWithFilletsA)
     {
     bvector<DPoint3d> points;
@@ -193,7 +209,10 @@ TEST(Curve,CloneWithFilletsA)
     Check::Size (sizeD0, sizeD1, "ConsolidateAdjacentPrimitives should have no effect here");
     
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Curve,CloneWithFilletsB)
     {
     bvector<DPoint3d> points;
@@ -227,7 +246,9 @@ TEST(Curve,CloneWithFilletsB)
     Check::Size (0, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc), "Post-Fillet arcs");    
     }
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef TestRemainderArithmetic
 TEST(RemainderArithmetic,Test)
     {
@@ -273,6 +294,9 @@ void GetOffsets (CurveVectorPtr pathA, double offsetDistance, double arcAngle, C
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CircleChords,TriplePointsA)
     {
     bvector<DPoint3d> points{
@@ -299,6 +323,9 @@ TEST(CircleChords,TriplePointsA)
     Check::ClearGeometry ("CircleChords.TriplePointsA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CircleChords,TriplePointsB)
     {
     bvector<DPoint3d> points{
@@ -349,6 +376,9 @@ TEST(CircleChords,TriplePointsB)
     Check::ClearGeometry ("CircleChords.TriplePointsB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, RectangleOffset)
     {
     bvector<DPoint3d> points;
@@ -407,8 +437,9 @@ TEST(CloneOffset, RectangleOffset)
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, ArcOffset0)
     {
     bvector<DPoint3d> points;
@@ -445,9 +476,10 @@ TEST(CloneOffset, ArcOffset0)
         }
     }
     
-     
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, ArcOffset1)
     {
     
@@ -477,10 +509,9 @@ TEST(CloneOffset, ArcOffset1)
         }
     }
     
-     
-
-    
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, RightTriangleOffset)
     {
     bvector<DPoint3d> points;
@@ -504,7 +535,9 @@ TEST(CloneOffset, RightTriangleOffset)
         }
     }
     
-     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, BsplineOffset)
     {
     bvector<DPoint3d> points;
@@ -591,7 +624,10 @@ ICurvePrimitivePtr ConstructBsplineCurveFromEndsAndTangents (DPoint3dCR pointA, 
         }
     return NULL;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(Bspline, ConstructFromEnds)
     {
     ICurvePrimitivePtr curve = ConstructBsplineCurveFromEndsAndTangents (
@@ -698,7 +734,11 @@ void TestPathMatch (CurveVectorPtr &cvA, CurveVectorPtr &cvB, ValidatedDouble ex
                 }
             }
         }
-    }    
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYLineSegments)
     {
     CurveVectorPtr cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -731,7 +771,9 @@ TEST(CurveCurve,MatchXYLineSegments)
     TestPathMatch (cvA, cvB, ValidatedDouble (expectedOverlap));
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
     {
 
@@ -765,8 +807,12 @@ TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
     Check::EndScope ();            
         }
     }
+
 #define TEST_ALL_CURVE_MATCH_not
 #ifdef TEST_ALL_CURVE_MATCH
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYArc0)
     {
     size_t numTest = 0;
@@ -817,7 +863,9 @@ TEST(CurveCurve,MatchXYArc0)
 
 #define TEST_ALL_CURVE_MATCH_not
 #ifdef TEST_ALL_CURVE_MATCH
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYLineBspline0)
     {
     CurveVectorPtr cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -850,6 +898,9 @@ void AppendStroke (CurveVectorPtr &cv, DVec3dCR vector)
             ));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MatchXYSpiral)
     {
     CurveVectorPtr cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -873,7 +924,9 @@ TEST(CurveCurve,MatchXYSpiral)
     TestPathMatch (cvA, cvB, ValidatedDouble (expectedOverlap));
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveOffset,OffsetXYSpiral)
     {
 
@@ -962,6 +1015,9 @@ ICurvePrimitivePtr CloneAsBspline (ICurvePrimitivePtr const &source)
     return nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveOffset,OffsetXYSpiralSenseCheck)
     {
 
@@ -1005,8 +1061,9 @@ TEST(CurveOffset,OffsetXYSpiralSenseCheck)
 
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,OffsetIntersection)
     {
     bvector<DPoint3d> xyzA {DPoint3d::From (50,0,0), DPoint3d::From (50,100,0)};
@@ -1075,6 +1132,9 @@ void TestDistanceAlong (CurveVectorR curve)
     Check::Near (endDetail.point, baseDetail.point);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,PointAtDistanceAlong)
     {
     bvector<CurveVectorPtr> curves;
@@ -1122,7 +1182,9 @@ double taperB              //!< [in] taper distance along vectorB
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,TaperFilletTaper)
     {
     auto lineA = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0));
@@ -1143,6 +1205,9 @@ TEST(CurveCurve,TaperFilletTaper)
     testCurveCurveTaperFilletTaper (*arcA, *arcB, 0.3, 0.3, 0.1, 1.5, 1.0, 0.2, 1.0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MultiRadiusBlendInCorner)
     {
     double dx = 15.0;
@@ -1237,6 +1302,10 @@ bool  setExtendedPath = false   // false forces new logic to use tangent extensi
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,TaperFilletTaperBad)
     {
     char const * jsonA = "{\"DgnCurveVector\":{\"Member\":[{\"LineSegment\":{\"endPoint\":[591651.21287459158,4615479.0561747560,0.0],\"startPoint\":[591709.10318203433,4615489.1559713706,0.0]}}],\"boundaryType\":1}}\n";
@@ -1260,6 +1329,9 @@ TEST(CurveCurve,TaperFilletTaperBad)
     Check::ClearGeometry ("CurveCurve.TaperFilletTaperBad");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,TaperFilletTaperOutOfBounds)
     {
 
@@ -1349,6 +1421,9 @@ bool reverse
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,MultiRadiusBlend)
     {
     double b = 40.0;
@@ -1401,6 +1476,9 @@ TEST(CurveCurve,MultiRadiusBlend)
     Check::Size (0, errors, "Failed blend construction");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorWithDistanceIndex,XYLength1)
     {
     double ax = 4.0;
@@ -1423,6 +1501,9 @@ TEST(CurveVectorWithDistanceIndex,XYLength1)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorWithDistanceIndex,XYLength2)
     {
     double aSpiral = 20.0;
@@ -1456,7 +1537,9 @@ TEST(CurveVectorWithDistanceIndex,XYLength2)
     Check::PopTolerance ();
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef DoConceptstationExample_bcurveLooksTooTileted
 TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex_ConceptStationExample)
     {
@@ -1515,6 +1598,10 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex_ConceptStationExa
         }
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
     {
     double ax = 10.0;
@@ -1600,7 +1687,9 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
     return false;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,BuildDistanceIndexFromFile)
     {
@@ -1637,7 +1726,10 @@ TEST(CurveVector,BuildDistanceIndexFromFile)
         }
     }
 #endif
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,CCI)
     {
@@ -1678,6 +1770,9 @@ TEST(CurveVector,CCI)
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,SpiralCuts)
     {
@@ -1745,7 +1840,9 @@ TEST(CurveVector,SpiralCuts)
     }
 #endif
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorWithDistanceIndex,SpiralCut0)
     {
     double d1 = 100.0;
@@ -1781,6 +1878,10 @@ TEST(CurveVectorWithDistanceIndex,SpiralCut0)
         }
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,StrokeAlignment)
     {
@@ -1833,8 +1934,9 @@ TEST(CurveVector,StrokeAlignment)
     }
 #endif
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,Stroke)
     {
     double y = 1000.0;
@@ -1987,6 +2089,9 @@ bool TestCCI (ICurvePrimitiveR curve1, ICurvePrimitiveR curve2, double f1, doubl
     return numMatch >= 1;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,Intersection)
     {
     // Spiral 
@@ -2036,6 +2141,9 @@ TEST(Spiral,Intersection)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,PartialSpiralMappings)
     {
     // Spiral 
@@ -2073,7 +2181,9 @@ TEST(Spiral,PartialSpiralMappings)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(VariableRadiusOffset,Arc)
     {
     double r0 = 10.0;
@@ -2149,7 +2259,10 @@ TEST(VariableRadiusOffset,Arc)
         }
     
     }
-	
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, AcuteLinestrings)
     {
     bvector<double> signs;
@@ -2190,6 +2303,9 @@ TEST(CloneOffset, AcuteLinestrings)
     Check::ClearGeometry ("CloneOffset.AcuteLinestring");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, AcuteCornerRemoval)
     {
     bvector<double> distances;
@@ -2227,6 +2343,9 @@ TEST(CloneOffset, AcuteCornerRemoval)
     Check::ClearGeometry ("CloneOffset.AcuteCornerRemoval");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,OffsetLineArcJaggies)
     {
@@ -2285,6 +2404,9 @@ void Test_ConstructArcs_PointTangentCurveTangent (DPoint3dCR pointA, DVec3dCR ta
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive,ConstructArcs_PointTangentCurveTangent)
     {
     DPoint3d pointC = DPoint3d::From (6,5,0);
@@ -2324,7 +2446,9 @@ TEST(CurvePrimitive,ConstructArcs_PointTangentCurveTangent)
     Check::ClearGeometry ("CurvePrimitive.ConstructArcs_PointTangentCurveTangent");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,ConstructArcs_PointTangentCurveTangent_Sandy)
     {
     char const * cvJson =
@@ -2528,7 +2652,9 @@ CurveVectorPtr createLinStringSandyB (int compress)
         }
    }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(OffsetLinestring,SandyB)
     {
     for (auto compress : bvector<int> {0, 1, 2})
@@ -2639,6 +2765,9 @@ void EvaluateBezcoffs2d (bvector<double> &bezcoffs, int n, bvector<DPoint3d> &po
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixWeightedBezier,HelloWorld)
     {
     for (int order = 2; order < 5; order++)
@@ -2674,6 +2803,9 @@ TEST (MatrixWeightedBezier,HelloWorld)
     Check::ClearGeometry ("MatrixWeightedBezier.HelloWorld");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixWeightedBezier,RadiusEffects)
     {
     int order = 2;
@@ -2710,7 +2842,9 @@ TEST (MatrixWeightedBezier,RadiusEffects)
     Check::ClearGeometry ("MatrixWeightedBezier.RadiusEffects");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixWeightedBezier,EllipseSections)
     {
     int order = 2;
@@ -2753,6 +2887,9 @@ TEST (MatrixWeightedBezier,EllipseSections)
     Check::ClearGeometry ("MatrixWeightedBezier.EllipseSections");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixWeightedBezier,WobbleStress)
     {
     double xB = 1.0;
