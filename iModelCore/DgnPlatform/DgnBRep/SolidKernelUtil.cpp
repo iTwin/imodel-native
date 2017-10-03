@@ -3188,6 +3188,37 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTERVAL_t>& intervals, PK_BODY_t bodyTag)
+    {
+    bvector<PK_EDGE_t>  edges;
+
+    if (SUCCESS != PSolidTopo::GetBodyEdges(edges, bodyTag))
+        return ERROR;
+
+    for (PK_EDGE_t edgeTag : edges)
+        {
+        PK_CURVE_t      curveTag;
+
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
+            continue;
+
+        PK_INTERVAL_t   interval;
+
+        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            continue;
+
+        curves.push_back(curveTag);
+        intervals.push_back(interval);
+        }
+
+    return SUCCESS;
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3202,6 +3233,7 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     if (ISubEntity::SubEntityType::Edge != refEdgePtr->GetSubEntityType())
         return ERROR;
 
+    // Evaluate reference edge at pick location or center if not present...
     double      uParam;
     DVec3d      refEdgeTangent;
     DPoint3d    refEdgePoint;
@@ -3219,6 +3251,7 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     if (SUCCESS != BRepUtil::EvaluateEdge(*refEdgePtr, refEdgePoint, refEdgeTangent, uParam))
         return ERROR;
 
+    // Find face of edge whose normal is closest to offsetDir...this will be the face to apply the taper to...
     bvector<ISubEntityPtr> refEdgeFaces;
 
     if (SUCCESS != BRepUtil::GetEdgeFaces(refEdgeFaces, *refEdgePtr))
@@ -3226,7 +3259,6 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
 
     double          lastDot = 0.0;
     DVec3d          refFaceNormal;
-    DPoint3d        refFacePoint;
     ISubEntityPtr   refFacePtr;
 
     for (ISubEntityPtr facePtr : refEdgeFaces)
@@ -3248,11 +3280,17 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
 
         lastDot = thisDot;
         refFaceNormal = faceNormal;
-        refFacePoint = facePoint;
         refFacePtr = facePtr;
         }
 
     if (!refFacePtr.IsValid())
+        return ERROR;
+
+    // Find an edge on the other side of the face to taper from the reference edge...
+    PK_ENTITY_t refFaceTag = PSolidSubEntity::GetSubEntityTag(*refFacePtr);
+    DRange3d    faceRange;
+
+    if (SUCCESS != PSolidUtil::GetEntityRange(faceRange, refFaceTag))
         return ERROR;
 
     Transform   fwdTargetTransform, invTargetTransform;
@@ -3260,94 +3298,94 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     fwdTargetTransform = targetEntity.GetEntityTransform();
     invTargetTransform.InverseOf(fwdTargetTransform);
 
-    DRange1d    uRange, vRange;
+    DVec3d      extremeDir = DVec3d::FromNormalizedCrossProduct(refFaceNormal, refEdgeTangent);
+    DPoint3d    points[2];
 
-    if (SUCCESS != BRepUtil::GetFaceParameterRange(*refFacePtr, uRange, vRange))
+    extremeDir.ScaleToLength(faceRange.DiagonalDistance()); // Make sure projected curve completely splits face...
+    points[0].SumOf(refEdgePoint, extremeDir);
+    points[1].SumOf(refEdgePoint, DVec3d::FromScale(extremeDir, -1.0));
+
+    PK_POINT_t      pointVec;
+    PK_POINT_sf_t   pointSF;
+    PK_ENTITY_t     toolTag = PK_ENTITY_null;
+    PK_ENTITY_t     toolEdgeTag = PK_ENTITY_null;
+
+    memset(&pointSF, 0, sizeof(pointSF));
+    PK_POINT_create(&pointSF, &pointVec);
+
+    if (SUCCESS != PK_POINT_make_minimum_body(pointVec, &toolTag))
         return ERROR;
 
-    DPoint2d    uvParam = DPoint2d::From((uRange.high+uRange.low) * 0.5, (vRange.high+vRange.low) * 0.5);
-    DVec3d      normal, uDir, vDir;
-    DPoint3d    center;
+    invTargetTransform.Multiply(points, 2);
 
-    if (SUCCESS != BRepUtil::EvaluateFace(*refFacePtr, center, normal, uDir, vDir, uvParam))
-        return ERROR;
-
-    DVec3d pickDir = DVec3d::FromStartEndNormalize(refEdgePoint, center);
-    DVec3d extremeDir = DVec3d::FromNormalizedCrossProduct(refFaceNormal, refEdgeTangent);
-
-    if (extremeDir.DotProduct(pickDir) < 0.0)
-        extremeDir.Negate();
-
-    PK_VECTOR_t dir1, dir2, dir3;
-
-    invTargetTransform.MultiplyMatrixOnly((DVec3dR) dir1, extremeDir);
-    invTargetTransform.MultiplyMatrixOnly((DVec3dR) dir2, refFaceNormal);
-    invTargetTransform.MultiplyMatrixOnly((DVec3dR) dir3, refEdgeTangent);
-
-    PK_VECTOR_t extremeVec;
-    PK_TOPOL_t  topolTag = PK_ENTITY_null;
-
-    if (SUCCESS != PK_FACE_find_extreme(PSolidSubEntity::GetSubEntityTag(*refFacePtr), dir1, dir2, dir3, &extremeVec, &topolTag))
-        return ERROR;
-
-    ISubEntityPtr extremePtr = PSolidSubEntity::CreateSubEntity(topolTag, fwdTargetTransform);
-
-    if (!extremePtr.IsValid())
-        return ERROR;
-
-    DPoint3d    extremePt = DPoint3d::From(extremeVec.coord[0], extremeVec.coord[1], extremeVec.coord[2]);
-
-    fwdTargetTransform.Multiply(extremePt);
-
-    switch (extremePtr->GetSubEntityType())
+    if (SUCCESS != PSolidUtil::ImprintSegment(toolTag, &toolEdgeTag, points))
         {
-        case ISubEntity::SubEntityType::Face:
-            {
-            extremePtr = nullptr;
-            break;
-            }
+        PK_ENTITY_delete(1, &toolTag);
+        return ERROR;
+        }
 
-        case ISubEntity::SubEntityType::Vertex:
-            {
-            bvector<ISubEntityPtr> vertexEdges;
+    bvector<PK_CURVE_t>     toolCurves;
+    bvector<PK_INTERVAL_t>  toolIntervals;
 
-            if (SUCCESS != BRepUtil::GetVertexEdges(vertexEdges, *extremePtr))
+    getBodyCurves(toolCurves, toolIntervals, toolTag);
+
+    PK_CURVE_project_o_t options;
+    PK_CURVE_project_r_t results;
+    PK_ENTITY_track_r_t  tracking;
+
+    PK_CURVE_project_o_m(options);
+    options.construction = PK_LOGICAL_false; // Create orphan curves instead of construction curves...note sure if those get persisted...
+
+    memset(&results, 0, sizeof(results));
+    memset(&tracking, 0, sizeof(tracking));
+
+    PK_ERROR_code_t failureCode = PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &refFaceTag, &options, &results, &tracking);
+
+    double      lastDist = 0.0;
+    DPoint3d    extremePt = DPoint3d::FromZero();
+
+    if (SUCCESS == failureCode && results.n_geoms > 0)
+        {
+        for (int iResult = 0; iResult < results.n_geoms; ++iResult)
+            {
+            for (int iPt = 0; iPt < 2; ++iPt)
                 {
-                extremePtr = nullptr;
-                break;
+                PK_VECTOR_t pnt;
+
+                if (SUCCESS != PK_CURVE_eval(results.geoms[iResult].geom, results.geoms[iResult].range.value[iPt], 0, &pnt))
+                    continue;
+
+                DPoint3d    point = DPoint3d::From(pnt.coord[0], pnt.coord[1], pnt.coord[2]);
+
+                fwdTargetTransform.Multiply(point);
+
+                double      thisDist = point.Distance(refEdgePoint);
+
+                if (thisDist <= lastDist)
+                    continue;
+
+                extremePt = point;
+                lastDist = thisDist;
                 }
 
-            extremePtr = nullptr; // Choose edge whose direction is closest to selected edge...
-
-            for (ISubEntityPtr vertexEdgePtr : vertexEdges)
-                {
-                DRange1d    uRangeE;
-
-                if (SUCCESS != BRepUtil::GetEdgeParameterRange(*vertexEdgePtr, uRangeE))
-                    continue;
-
-                DPoint3d    thisEdgePoint;
-                DVec3d      thisEdgeTangent;
-
-                if (SUCCESS != BRepUtil::EvaluateEdge(*vertexEdgePtr, thisEdgePoint, thisEdgeTangent, (uRangeE.low + uRangeE.high) / 2.0))
-                    continue;
-
-                double      thisDot = refEdgeTangent.DotProduct(thisEdgeTangent);
-
-                if (extremePtr.IsValid() && fabs(thisDot) < fabs(lastDot))
-                    continue;
-
-                extremePtr = vertexEdgePtr;
-                extremePt = thisEdgePoint;
-                lastDot = thisDot;
-                }
-            break;
+            PK_ENTITY_delete(1, &results.geoms[iResult].geom); // Doesn't seem like PK_ENTITY_track_r_f/PK_CURVE_project_r_f would free orphan geometry?
             }
         }
 
+    PK_ENTITY_delete(1, &toolTag);
+    PK_ENTITY_track_r_f(&tracking);
+    PK_CURVE_project_r_f(&results);
+
+    if (0.0 == lastDist)
+        return ERROR;
+
+    // The closest sub-entity to the extreme point should be an edge if there wasn't a problem above and geometry can be sensibly tapered...
+    ISubEntityPtr extremePtr = ClosestSubEntity(targetEntity, extremePt);
+
     if (!extremePtr.IsValid())
         return ERROR;
 
+    // Get the other face from the opposite edge (not the one being tapered) to use to define the taper direction...
     bvector<ISubEntityPtr> extremeEdgeFaces;
 
     if (SUCCESS != BRepUtil::GetEdgeFaces(extremeEdgeFaces, *extremePtr))
@@ -3367,19 +3405,20 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     if (!extremePtr.IsValid())
         return ERROR;
 
+    // Calculate the taper angle using the extreme point, offset point, and taper direction...
+    DPoint2d    uvParam;
+    DVec3d      normal, uDir, vDir;
+    DPoint3d    point;
+
+    if (!BRepUtil::ClosestPointToFace(*extremePtr, extremePt, point, uvParam))
+        return ERROR;
+
+    if (SUCCESS != BRepUtil::EvaluateFace(*extremePtr, point, normal, uDir, vDir, uvParam))
+        return ERROR;
+
     DPoint3d    offsetPt = DPoint3d::FromSumOf(refEdgePoint, offsetDir, offset);
-
-    DPlane3d::FromOriginAndNormal(refEdgePoint, refEdgeTangent).ProjectPoint(extremePt, extremePt);
-    DPlane3d::FromOriginAndNormal(refEdgePoint, refFaceNormal).ProjectPoint(extremePt, extremePt);
-
-    if (!BRepUtil::ClosestPointToFace(*extremePtr, extremePt, center, uvParam))
-        return ERROR;
-
-    if (SUCCESS != BRepUtil::EvaluateFace(*extremePtr, center, normal, uDir, vDir, uvParam))
-        return ERROR;
-
-    DVec3d  taperDir = DVec3d::FromStartEndNormalize(offsetPt, extremePt);
-    double  angle = fabs(normal.AngleTo(taperDir));
+    DVec3d      taperDir = DVec3d::FromStartEndNormalize(offsetPt, extremePt);
+    double      angle = fabs(normal.AngleTo(taperDir));
 
     if (angle < Angle::FromDegrees(1.0).Radians() || angle > Angle::FromDegrees(89.0).Radians())
         return ERROR;
@@ -3387,14 +3426,14 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     if (offsetDir.DotProduct(refFaceNormal) < 0.0)
         angle = -angle;
 
+    ISubEntityPtr commonFacePtr;
     bvector<ISubEntityPtr> taperFaces;
     bvector<ISubEntityPtr> refEntities;
     bvector<double> angles;
 
     angles.push_back(angle);
 
-    ISubEntityPtr commonFacePtr;
-
+    // Add faces from any other edges (or tangent edges) that share a common face with the taper face found from the reference edge...
     if (selectedEdges.size() > 1 || propagateSmooth)
         {
         for (ISubEntityPtr facePtr : refEdgeFaces)
@@ -3770,37 +3809,6 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
     return ERROR;
 #endif
     }
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTERVAL_t>& intervals, PK_BODY_t bodyTag)
-    {
-    bvector<PK_EDGE_t>  edges;
-
-    if (SUCCESS != PSolidTopo::GetBodyEdges(edges, bodyTag))
-        return ERROR;
-
-    for (PK_EDGE_t edgeTag : edges)
-        {
-        PK_CURVE_t      curveTag;
-
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
-            continue;
-
-        PK_INTERVAL_t   interval;
-
-        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
-            continue;
-
-        curves.push_back(curveTag);
-        intervals.push_back(interval);
-        }
-
-    return SUCCESS;
-    }
-#endif
 
 #if defined (BENTLEYCONFIG_PARASOLID)
 //=======================================================================================
