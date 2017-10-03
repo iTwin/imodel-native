@@ -41,10 +41,10 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         ECClassCP               m_externalFileInfoClass;
         ECClassCP               m_externalFileInfoOwnershipClass;
 
-        ECSqlAdapterLoader<JsonInserter>    m_cachedFileInfoInserter;
-        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_cachedFileInfoUpdater;
-        ECSqlAdapterLoader<JsonInserter>    m_externalFileInfoInserter;
-        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_externalFileInfoUpdater;
+        ECSqlAdapterLoader<JsonInserter>                        m_cachedFileInfoInserter;
+        ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_cachedFileInfoUpdater;
+        ECSqlAdapterLoader<JsonInserter>                        m_externalFileInfoInserter;
+        ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_externalFileInfoUpdater;
 
     private:
         Json::Value ReadCachedFileInfo(CachedInstanceKeyCR cachedKey);

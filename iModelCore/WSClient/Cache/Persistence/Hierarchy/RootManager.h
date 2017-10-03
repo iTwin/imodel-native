@@ -54,8 +54,8 @@ struct RootManager
         ECRelationshipClassCP       m_rootHoldingRelationshipClass;
         ECRelationshipClassCP       m_rootWeakRelationshipClass;
 
-        ECSqlAdapterLoader<JsonInserter>    m_rootInserter;
-        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_rootUpdater;
+        ECSqlAdapterLoader<JsonInserter>                        m_rootInserter;
+        ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_rootUpdater;
 
     private:
         ECInstanceId FindRootECInstanceId(Utf8StringCR rootName);
