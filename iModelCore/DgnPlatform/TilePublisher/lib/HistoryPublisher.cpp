@@ -148,14 +148,21 @@ static WebServices::ClientInfoPtr getClientInfo()
 static ClientPtr   doSignIn(PublisherParams const& params)
     {
     Credentials                 credentials;
-    UrlProvider::Environment    environment = WebServices::UrlProvider::Environment::Dev;
+    WebServices::UrlProvider::Environment   urlEnvironment = WebServices::UrlProvider::Environment::Qa;  
 
+
+    if (params.GetEnvironment().StartsWithI("Dev"))
+        urlEnvironment =  urlEnvironment = WebServices::UrlProvider::Environment::Dev;
+    else if (0 == params.GetEnvironment().CompareToI("Release"))
+        urlEnvironment = WebServices::UrlProvider::Environment::Release; 
+        
+        
     credentials.SetUsername(params.GetUser());
     credentials.SetPassword(params.GetPassword());
 
     Http::HttpClient::Initialize(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     iModel::Hub::ClientHelper::Initialize(getClientInfo(), getLocalState());
-    UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
+    UrlProvider::Initialize(urlEnvironment, UrlProvider::DefaultTimeout, getLocalState());
 
     Tasks::AsyncError error;        
     return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
@@ -347,7 +354,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
             if (!addedOrModifiedIds.empty())
                 {
-                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i);
+                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1);
                 DgnModelIdSet               modelIds;
 
                 for (auto& elementId : addedOrModifiedIds)

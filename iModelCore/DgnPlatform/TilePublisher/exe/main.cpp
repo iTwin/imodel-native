@@ -51,6 +51,7 @@ enum class ParamId
     History,
     UserName,
     Password,
+    Environment,
     Invalid,
 };
 
@@ -89,6 +90,7 @@ static CommandParam s_paramTable[] =
         { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
         { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
         { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
+        { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -291,6 +293,10 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
 
             case ParamId::Password:
                 m_password = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Environment:
+                m_environment = Utf8String(arg.m_value.c_str());
                 break;
 
             default:
