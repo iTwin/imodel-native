@@ -212,7 +212,8 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         double ExpectedMeanError = MIN(pixelExtentInDgnCS.GetWidth() * 0.5, pixelExtentInDgnCS.GetHeight() * 0.5);
         double ExpectedMaxError = MIN(pixelExtentInDgnCS.GetWidth(), pixelExtentInDgnCS.GetHeight());
 
-        //Increase the error so that a simplifed model is always returned by CreateAdaptedModel.
+        //Increase the error so that a simplifed model is always returned by CreateAdaptedModel. This is for avoiding some problem that the grid transsfo model is having with BingMap 
+        //(TFS 760210) and considering that 3SM only uses a transfo matrix when reprojecting.
         if (forceProjective)
             {
             ExpectedMeanError = 50000000;
