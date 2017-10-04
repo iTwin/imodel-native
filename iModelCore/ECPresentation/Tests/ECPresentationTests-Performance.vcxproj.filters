@@ -20,6 +20,7 @@
     <ClCompile Include="TestHelpers\IssueReporter.cpp" />
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="Performance\RulesEngine\CreateContentDescriptor.cpp" />
+    <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
@@ -34,6 +35,7 @@
     <ClInclude Include="TestHelpers\IssueReporter.h" />
     <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
     <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
+    <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

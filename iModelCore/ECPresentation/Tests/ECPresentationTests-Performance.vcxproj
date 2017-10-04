@@ -23,6 +23,7 @@
     <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeEventSourceTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
     <ClCompile Include="Performance\RulesEngine\CreateContentDescriptor.cpp" />
+    <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
     <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
     <ClCompile Include="TestHelpers\IssueReporter.cpp" />
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
@@ -31,6 +32,7 @@
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\StubLocalState.h" />
+    <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h" />
     <ClInclude Include="TestHelpers\ECPresentationTest.h" />
     <ClInclude Include="TestHelpers\IssueReporter.h" />
     <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
