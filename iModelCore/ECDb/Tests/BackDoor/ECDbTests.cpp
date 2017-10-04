@@ -1083,10 +1083,12 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(DbResult r, std::ostream* os)
-    {
-    *os << Db::InterpretDbResult(r);
-    }
+void PrintTo(DbResult r, std::ostream* os) { *os << Db::InterpretDbResult(r); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BeBriefcaseBasedId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
 
 END_BENTLEY_SQLITE_NAMESPACE
 

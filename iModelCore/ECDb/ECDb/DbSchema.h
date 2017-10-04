@@ -101,7 +101,7 @@ public:
     enum class Kind
         {
         //NOTE: do not assign other ints to the values as they get persisted as is in the ECDb file
-        Default = 0, //! Not known to ECDb or user define columns
+        Default = 0, //! Not known to ECDb or data columns
         ECInstanceId = 1, //! ECInstanceId system column, i.e.the primary key of the table
         ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
         SharedData = 4, //! shared data column

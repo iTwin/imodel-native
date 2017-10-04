@@ -81,6 +81,178 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
+    {
+    if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
+        return ERROR;
+
+    //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
+    ECInstanceId maxECInstanceId;
+    if (SUCCESS != DetermineMaxECInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
+        {
+        LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The maximum for the ECInstanceId sequence for the new BriefcaseId could not be determined.",
+                   briefcaseId.GetValue());
+        return ERROR;
+        }
+
+    if (BE_SQLITE_OK != m_idSequences.GetSequence(IdSequences::Key::InstanceId).Reset(maxECInstanceId.GetValueUnchecked()))
+        {
+        LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The ECInstanceId sequence could not be reset to the new BriefcaseId.",
+                   briefcaseId.GetValue());
+        return ERROR;
+        }
+
+    //Profile table sequences
+    const std::vector<std::tuple<IdSequences::Key, Utf8CP, Utf8CP>> profileTableSequences
+        {{IdSequences::Key::SchemaId, TABLE_Schema, COL_PROFILETABLE_Id},
+        {IdSequences::Key::SchemaReferenceId, TABLE_SchemaReference, COL_PROFILETABLE_Id},
+        {IdSequences::Key::ClassId, TABLE_Class, COL_PROFILETABLE_Id},
+        {IdSequences::Key::ClassHasBaseClassesId, TABLE_ClassHasBaseClasses, COL_PROFILETABLE_Id},
+        {IdSequences::Key::PropertyId, TABLE_Property, COL_PROFILETABLE_Id},
+        {IdSequences::Key::PropertyPathId, TABLE_PropertyPath, COL_PROFILETABLE_Id},
+        {IdSequences::Key::RelationshipConstraintId, TABLE_RelationshipConstraint, COL_PROFILETABLE_Id},
+        {IdSequences::Key::RelationshipConstraintClassId, TABLE_RelationshipConstraintClass, COL_PROFILETABLE_Id},
+        {IdSequences::Key::CustomAttributeId, TABLE_CustomAttribute, COL_PROFILETABLE_Id},
+        {IdSequences::Key::EnumId, TABLE_Enumeration, COL_PROFILETABLE_Id},
+        {IdSequences::Key::KoqId, TABLE_KindOfQuantity, COL_PROFILETABLE_Id},
+        {IdSequences::Key::PropertyCategoryId, TABLE_PropertyCategory, COL_PROFILETABLE_Id},
+        {IdSequences::Key::PropertyMapId, TABLE_PropertyMap, COL_PROFILETABLE_Id},
+        {IdSequences::Key::TableId, TABLE_Table, COL_PROFILETABLE_Id},
+        {IdSequences::Key::ColumnId, TABLE_Column, COL_PROFILETABLE_Id},
+        {IdSequences::Key::IndexId, TABLE_Index, COL_PROFILETABLE_Id},
+        {IdSequences::Key::IndexColumnId, TABLE_IndexColumn, COL_PROFILETABLE_Id}
+        };
+
+
+    for (std::tuple<IdSequences::Key, Utf8CP, Utf8CP> const& profileTableSequence : profileTableSequences)
+        {
+        IdSequences::Key sequenceKey = std::get<0>(profileTableSequence);
+        Utf8CP tableName = std::get<1>(profileTableSequence);
+        Utf8CP idColName = std::get<2>(profileTableSequence);
+
+        BeBriefcaseBasedId newSequenceValue;
+        if (SUCCESS != DetermineMaxIdForBriefcase(newSequenceValue, briefcaseId, tableName, idColName))
+            {
+            LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The maximum id for sequence '%s' for the new BriefcaseId could not be determined.",
+                       briefcaseId.GetValue(), m_idSequences.GetSequence(sequenceKey).GetName());
+            return ERROR;
+            }
+
+        if (BE_SQLITE_OK != m_idSequences.GetSequence(sequenceKey).Reset(newSequenceValue.GetValueUnchecked()))
+            {
+            LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The sequence '%s' could not be reset to the new BriefcaseId.",
+                       briefcaseId.GetValue(), m_idSequences.GetSequence(sequenceKey).GetName());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::DetermineMaxECInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const
+    {
+    if (!briefcaseId.IsValid())
+        return ERROR;
+
+    Statement primaryTableStmt;
+    if (BE_SQLITE_OK != primaryTableStmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, c.Name FROM " TABLE_Table " t JOIN " TABLE_Column " c ON t.Id=c.TableId WHERE t.Type=" SQLVAL_DbTable_Type_Primary " AND c.ColumnKind=" SQLVAL_DbColumn_Kind_ECInstanceId))
+        return ERROR;
+
+    Statement ignoreTableStmt;
+    if (ecClassIgnoreList != nullptr)
+        {
+        if (BE_SQLITE_OK != ignoreTableStmt.Prepare(m_ecdb, "SELECT 1 FROM " TABLE_Class " c JOIN " TABLE_PropertyMap " pm ON c.Id=pm.ClassId "
+                                                    "JOIN " TABLE_Column " col ON col.Id=pm.ColumnId "
+                                                    "WHERE col.TableId=? AND InVirtualSet(?,c.Id) LIMIT 1"))
+            return ERROR;
+        }
+
+
+    BeBriefcaseBasedId maxIdTemp(briefcaseId, 0);
+    while (BE_SQLITE_ROW == primaryTableStmt.Step())
+        {
+        DbTableId tableId = primaryTableStmt.GetValueId<DbTableId>(0);
+        Utf8CP tableName = primaryTableStmt.GetValueText(1);
+        Utf8CP pkColName = primaryTableStmt.GetValueText(2);
+
+        if (ecClassIgnoreList != nullptr)
+            {
+            if (BE_SQLITE_OK != ignoreTableStmt.BindId(1, tableId))
+                return ERROR;
+
+            if (BE_SQLITE_OK != ignoreTableStmt.BindVirtualSet(2, *ecClassIgnoreList))
+                return ERROR;
+
+            const bool ignoreTable = ignoreTableStmt.Step() == BE_SQLITE_ROW;
+            ignoreTableStmt.Reset();
+            ignoreTableStmt.ClearBindings();
+
+            if (ignoreTable)
+                continue;
+            }
+
+        BeBriefcaseBasedId tableMaxId;
+        if (SUCCESS != DetermineMaxIdForBriefcase(tableMaxId, briefcaseId, tableName, pkColName))
+            return ERROR;
+
+        if (tableMaxId > maxIdTemp)
+            maxIdTemp = tableMaxId;
+        }
+
+    maxId = ECInstanceId(maxIdTemp);
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::DetermineMaxIdForBriefcase(BeBriefcaseBasedId& maxId, BeBriefcaseId briefcaseId, Utf8CP tableName, Utf8CP idColName) const
+    {
+    if (!briefcaseId.IsValid())
+        return ERROR;
+
+    Utf8String sql;
+    sql.Sprintf("SELECT max(%s) FROM %s WHERE %s >= ? AND %s < ?", idColName, tableName, idColName, idColName);
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
+        return ERROR;
+
+    //bind min id for briefcase id
+    const BeBriefcaseBasedId minIdThreshold(briefcaseId, 0);
+    //bind exclusive max id for briefcase id
+    const BeBriefcaseBasedId maxIdThreshold(briefcaseId.GetNextBriefcaseId(), 0);
+    if (BE_SQLITE_OK != stmt.BindUInt64(1, minIdThreshold.GetValueUnchecked()) || BE_SQLITE_OK != stmt.BindUInt64(2, maxIdThreshold.GetValueUnchecked()))
+        return ERROR;
+
+    const DbResult stat = stmt.Step();
+    switch (stat)
+        {
+            case BE_SQLITE_ROW:
+                if (stmt.IsColumnNull(0))
+                    maxId = minIdThreshold;
+                else
+                    maxId = stmt.GetValueId<BeBriefcaseBasedId>(0);
+
+                return SUCCESS;
+
+            case BE_SQLITE_DONE:
+                maxId = minIdThreshold;
+                return SUCCESS;
+
+            default:
+                maxId.Invalidate();
+                return ERROR;
+        }
+    }
+
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2016
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const

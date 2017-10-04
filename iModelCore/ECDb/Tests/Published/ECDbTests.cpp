@@ -170,6 +170,115 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ResetIdSequences)
+    {
+    struct TestECDb final : ECDb
+        {
+        TestECDb() : ECDb() {}
+        ~TestECDb() {}
+
+        BentleyStatus CallResetIdSequences(BeBriefcaseId newBriefcaseId, IdSet<ECClassId> const* ecClassIgnoreList) { return ResetIdSequences(newBriefcaseId, ecClassIgnoreList); }
+
+        BeBriefcaseBasedId GetECInstanceIdSequenceValue()
+            {
+            BriefcaseLocalValueCache& cache = GetBLVCache();
+            size_t ix = 0;
+            if (!cache.TryGetIndex(ix, "ec_instanceidsequence"))
+                return BeBriefcaseBasedId();
+
+            uint64_t val = 0;
+            if (BE_SQLITE_OK != cache.QueryValue(val, ix))
+                return BeBriefcaseBasedId();
+
+            return BeBriefcaseBasedId(val);
+            }
+        };
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ResetIdSequences.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                                            <ECEntityClass typeName="A" >
+                                                                                <ECCustomAttributes>
+                                                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                                    </ClassMap>
+                                                                                 </ECCustomAttributes>
+                                                                                <ECProperty propertyName="Prop1" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="A1" >
+                                                                                <BaseClass>A</BaseClass>
+                                                                                <ECProperty propertyName="Prop2" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="B" >
+                                                                                <ECCustomAttributes>
+                                                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                                    </ClassMap>
+                                                                                 </ECCustomAttributes>
+                                                                                <ECProperty propertyName="Prop1" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="B1" >
+                                                                                <BaseClass>B</BaseClass>
+                                                                                <ECProperty propertyName="Prop2" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="C" >
+                                                                                <ECCustomAttributes>
+                                                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                                    </ClassMap>
+                                                                                 </ECCustomAttributes>
+                                                                                <ECProperty propertyName="Prop1" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="C1" >
+                                                                                <BaseClass>C</BaseClass>
+                                                                                <ECProperty propertyName="Prop2" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="C2" >
+                                                                                <BaseClass>C</BaseClass>
+                                                                                <ECProperty propertyName="Prop3" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                            <ECEntityClass typeName="C21" >
+                                                                                <BaseClass>C2</BaseClass>
+                                                                                <ECProperty propertyName="Prop4" typeName="int" />
+                                                                            </ECEntityClass>
+                                                                        </ECSchema>)xml")));
+    
+    BeFileName filePath(m_ecdb.GetDbFileName());
+
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+    BeBriefcaseId briefcaseAId(3);
+    BeBriefcaseId briefcaseBId(111);
+
+    std::map<uint32_t, uint64_t> sequenceValuesPerBriefcase {{masterBriefcaseId.GetValue(), 0},
+                                        {briefcaseAId.GetValue(), 0}, {briefcaseBId.GetValue(), 0}};
+
+    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(briefcaseAId));
+    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
+
+    m_ecdb.CloseDb();
+
+    TestECDb testDb;
+    ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+    ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetECInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
+
+    for (std::pair<uint32_t, uint64_t> const& kvPair : sequenceValuesPerBriefcase)
+        {
+        BeBriefcaseId briefcaseId(kvPair.first);
+        uint64_t expectedMaxId = kvPair.second;
+        BeBriefcaseBasedId expectedId(briefcaseId, expectedMaxId);
+        ASSERT_EQ(SUCCESS, testDb.CallResetIdSequences(briefcaseId, nullptr)) << briefcaseId.GetValue();
+        ASSERT_EQ(expectedId, testDb.GetECInstanceIdSequenceValue()) << "Briefcase Id: " << briefcaseId.GetValue() << " Expected sequence value (lower 40 bits): " << expectedMaxId;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
