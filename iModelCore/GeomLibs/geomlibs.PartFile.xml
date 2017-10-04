@@ -188,6 +188,7 @@
     <Product Name="GeomLibs-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+		
     </Product>
 	
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -196,6 +197,7 @@
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeomLibsTest.log</Files>
         </Bindings>
+		<SubPart PartName="comparedgnjs" />
     </Part>
 
 	<!-- Memory leak testing of GeomLibs tests. Only called on demand -->
@@ -204,10 +206,11 @@
 		<SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
 	
-	<Part Name="GeomCompare" BentleyBuildMakeFile="GeomComparison.mke" OnlyPlatforms="x64">
-		<SubPart PartName="RunGtest" />
+	
+	<Part Name="comparedgnjs" BentleyBuildMakeFile="comparedgnjs/comparedgnjs.mke" OnlyPlatforms="x64">
+		<SubProduct ProductName="GeomLibs-Gtest" />
     </Part>
-
+	
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
