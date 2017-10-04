@@ -136,7 +136,8 @@ struct BisClassConverter
         //! Converts the given v8 ECClass and its direct derived ECClasses
         static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName);
         static BentleyStatus ConvertECRelationshipClass(SchemaConversionContext& context, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext);
-		static BentleyStatus FindAppliesToClass(ECN::ECClassP& appliesTo, SchemaConversionContext& context, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass);
+        static void CheckForMixinConversion(SchemaConversionContext& context, ECN::ECClassR inputClass);
+        static BentleyStatus FindAppliesToClass(ECN::ECClassP& appliesTo, SchemaConversionContext& context, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass);
         static void ProcessConstraints(ECN::ECRelationshipClassR inputClass, ECN::ECEntityClassP defaultConstraintClass, SchemaConversionContext& context);
         static void ConvertECRelationshipConstraint(ECN::ECRelationshipConstraintR constraint, ECN::ECRelationshipClassR inputClass, ECN::ECEntityClassP defaultConstraintClass, SchemaConversionContext& context, bool isSource);
 

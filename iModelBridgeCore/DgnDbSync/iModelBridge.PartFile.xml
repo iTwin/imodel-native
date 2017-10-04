@@ -110,6 +110,7 @@
       <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
+      <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
       <Bindings>
         <Files ProductDirectoryName="Assemblies">Delivery/$(libprefix)iModelBridgeFwkLib$(shlibext)</Files>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>

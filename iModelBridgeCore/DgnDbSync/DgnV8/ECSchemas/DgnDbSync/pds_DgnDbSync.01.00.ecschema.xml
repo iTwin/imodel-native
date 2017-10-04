@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="PDS_DgnDbSync" nameSpacePrefix="pdsv3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECClass typeName="DUCTBANK_OL" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDS_COMPONENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PDS_EQUIP" isDomainClass="True">
         <ECCustomAttributes>
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>

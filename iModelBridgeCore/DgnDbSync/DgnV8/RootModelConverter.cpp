@@ -614,6 +614,11 @@ BentleyApi::BentleyStatus Converter::ConvertToBisBasedECSchemas()
             return BentleyApi::BSIERROR;
         }
 
+    for (BECN::ECClassP rootClass : rootClasses)
+        {
+        BisClassConverter::CheckForMixinConversion(context, *rootClass);
+        }
+
     if (BisClassConverter::FinalizeConversion(context) != BentleyApi::SUCCESS)
         return BentleyApi::BSIERROR;
 
@@ -792,12 +797,6 @@ BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
         }
 
     GetChangeDetector()._OnSchemasConverted(*this, constSchemas);
-
-    if (m_config.GetOptionValueBool("CreateECClassViews", true))
-        {
-        SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
-        GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
-        }
 
     return BentleyApi::SUCCESS;
     }
@@ -2322,7 +2321,14 @@ BentleyStatus  RootModelConverter::Process()
         _ConvertSchemas();  // Convert the ECSchemas found in spatial and drawing models
     if (WasAborted())
         return ERROR;
-    
+
+    // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
+    if (m_config.GetOptionValueBool("CreateECClassViews", true))
+        {
+        SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
+        GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
+        }
+
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
     
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
