@@ -51,11 +51,23 @@ typedef JsECDb const& JsECDbCR;
 // In both cases, the return status is Success, and the resulting JSON is empty. The JS caller shoudl not get an exception, just an empty object.
 struct IModelJs
 {
-    static void GetRowAsJson(Json::Value& json, BeSQLite::EC::ECSqlStatement&);
+    DGNPLATFORM_EXPORT static void GetRowAsJson(Json::Value& json, BeSQLite::EC::ECSqlStatement&);
     static void GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR) ;
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
+
+    struct JsonBinder
+        {
+        private:
+        static BentleyStatus BindPrimitiveValue(BeSQLite::EC::IECSqlBinder& binder, JsonValueCR bindingValue);
+        static BentleyStatus BindArrayValue(BeSQLite::EC::IECSqlBinder& binder, JsonValueCR value);
+        static BentleyStatus BindStructValue(BeSQLite::EC::IECSqlBinder& binder, JsonValueCR value);
+        static BentleyStatus BindValue(BeSQLite::EC::IECSqlBinder& binder, JsonValueCR bindingValue);
+
+        public:
+        DGNPLATFORM_EXPORT static BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
+        };
 
     DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenDgnDb(DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
