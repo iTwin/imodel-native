@@ -259,6 +259,13 @@
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance -dUsePublishedApi">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished" />
         <SubPart PartName="UnitTests-Published" />
@@ -268,6 +275,32 @@
         <SubPart PartName="Tests" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest" />
     </Product>
+
+    <!-- Performance -->
+    <Product Name="ECPresentation-Tests-Performance">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest-Performance -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Performance -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest-Performance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest-Performance/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest-Performance">
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!-- Memory leak testing -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECPresentation-Gtest" />
+    </Part>
+
     <!-- Desktop -->
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECPresentation-Tests"/>
@@ -287,11 +320,6 @@
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECPresentationTest.log</Files>
         </Bindings>
-    </Part>
-    <!-- Memory leak testing of ECPresentation tests -->
-    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
-        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-        <SubProduct ProductName="ECPresentation-Gtest" />
     </Part>
 
     <!-- Android -->
