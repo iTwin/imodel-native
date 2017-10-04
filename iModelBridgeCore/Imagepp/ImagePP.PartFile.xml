@@ -13,7 +13,7 @@
     <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
     <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="png"                     PartFile="png"              Repository="libsrc-png"/>
+        <SubPart PartName="pnglib"                     PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib"                    PartFile="Zlib"             Repository="Libsrc-Compress" />
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
@@ -107,7 +107,7 @@
         <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Zlib"                            PartFile="Zlib"                 Repository="Libsrc-Compress" />
-        <SubPart PartName="png"                             PartFile="png"                  Repository="libsrc-png"/>
+        <SubPart PartName="pnglib"                             PartFile="png"                  Repository="libsrc-png"/>
         <SubPart PartName="Jpeg12BitsLib" />
         <SubPart PartName="GdalLib" />
         <SubPart PartName="GdalData" />
