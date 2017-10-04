@@ -286,7 +286,9 @@ struct BeBriefcaseBasedId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId,BeInt64Id)
 
 public:
-    static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeBriefcaseId, lower 40 bits are local id
+    //!Top 24 bits are BeBriefcaseId.
+    //!Lower 40 bits are local id
+    static uint64_t const MaxLocal() {return 1LL<<40;}
     static uint64_t const LocalMask() {return ~-(int64_t)MaxLocal();}
 
     //! CONSTRUCT a BeInt64Id from a BriefcaseId value and an id.

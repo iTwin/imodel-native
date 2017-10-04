@@ -44,16 +44,16 @@ DbResult BeBriefcaseBasedIdSequence::Initialize() const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeBriefcaseBasedIdSequence::Reset(uint64_t minimumId) const
+DbResult BeBriefcaseBasedIdSequence::Reset(uint64_t newValue) const
     {
     if (GetDb().IsReadonly())
         return BE_SQLITE_READONLY;
 
-    const DbResult stat = GetDb().GetBLVCache().SaveValue(m_briefcaseLocalValueIndex, minimumId);
+    const DbResult stat = GetDb().GetBLVCache().SaveValue(m_briefcaseLocalValueIndex, newValue);
     if (stat != BE_SQLITE_OK)
         {
-        LOG.errorv("Could not save initial sequence value or BeBriefcaseBasedIdSequence '%s' in file '%s'.", m_briefcaseLocalValueName, GetDb().GetDbFileName());
-        BeAssert(false && "BeBriefcaseBasedIdSequence::Reset could not save initial sequence value in be_Local via SaveBriefcaseLocalValue.");
+        LOG.errorv("Could not save sequence value or BeBriefcaseBasedIdSequence '%s' in file '%s'.", m_briefcaseLocalValueName, GetDb().GetDbFileName());
+        BeAssert(false && "BeBriefcaseBasedIdSequence::Reset could not save sequence value in be_Local via SaveBriefcaseLocalValue.");
         }
 
     return stat;
