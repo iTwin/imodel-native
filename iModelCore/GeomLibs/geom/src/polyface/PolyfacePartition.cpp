@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfacePartition.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -103,7 +103,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvector<ptrdiff_t>> &readIndices)
+bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvector<ptrdiff_t>> &readIndices, double sideFaceRadiansTolerance)
     {
     const int forwardIndex = 0;
     const int reverseIndex = 1;
@@ -117,6 +117,8 @@ bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvecto
     if (!unit.IsValid())
         return false;
     double tolerance = Angle::SmallAngle();
+    if (sideFaceRadiansTolerance > 0.0)
+        tolerance = sideFaceRadiansTolerance;
     DPoint3d centroid;
     DVec3d normal;
     double area;
@@ -125,13 +127,17 @@ bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvecto
         size_t readIndex = visitor->GetReadIndex();
         if (visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area))
             {
-            double d = normal.DotProduct(unit);
-            if (fabs(d) < tolerance)
+            double angleDeviation = normal.AngleFromPerpendicular (unit);    // this is always positive
+            if (fabs(angleDeviation) < tolerance)
                 readIndices[sideIndex].push_back(readIndex);
-            else if (d > 0.0)
-                readIndices[forwardIndex].push_back(readIndex);
-            else 
-                readIndices[reverseIndex].push_back(readIndex);
+            else
+                {
+                double d = normal.DotProduct (unit);
+                if (d > 0.0)
+                    readIndices[forwardIndex].push_back(readIndex);
+                else 
+                    readIndices[reverseIndex].push_back(readIndex);
+                }
             }
         }
     return true;

@@ -1600,7 +1600,13 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
     return false;
     }
 
-
+bool DGNJSFileToGeometry (char const *filename, bvector<IGeometryPtr> &geometry)
+    {
+    geometry.clear ();
+    Utf8String string;
+    return ReadAsString (filename, string)
+        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
+    }
 #if defined(BENTLEY_WIN32)
 TEST(CurveVector,BuildDistanceIndexFromFile)
     {

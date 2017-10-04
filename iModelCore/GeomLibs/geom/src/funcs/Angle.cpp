@@ -318,6 +318,8 @@ void Angle::Rotate90UntilSmallAngle (double &x1, double &y1, double x0, double y
 
 double Angle::Atan2 (double y, double x)
     {
+    if (y == -0.0)
+        y = 0.0;        // force consistent behavior at branch.
     if (x == 0.0 && y == 0.0)
         return 0.0;
     return atan2 (y,x);

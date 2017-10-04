@@ -1,0 +1,36 @@
+
+%include mdl.mki
+
+# -----------------------------------------------------
+# Compile comparedgnjs.cpp. It contains "main"
+# -----------------------------------------------------
+
+ProductDir = $(OutputRootDir)Product/
+collectionProduct = $(ProductDir)geomlibs-gtest/
+
+o = $(OutputRootDir)Build/GeomLibsTest/
+
+$(o)comparedgnjs$(oext)  : $(baseDir)comparedgnjs.cpp 
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
+
+# -----------------------------------------------------
+# Create comparedgnjs.exe
+# -----------------------------------------------------
+EXE_DEST     = $(o)
+
+EXE_NAME     = comparedgnjs
+
+EXE_OBJS     = $(o)comparedgnjs$(oext)
+
+#EXE_TMP_DIR  = $(o)
+
+
+%include $(sharedMki)linktool.mki
+
+always:
+	~linkfile "$(collectionProduct)$(EXE_NAME)$(exeext) = $(o)$(EXE_NAME)$(exeext)"
+
+#%message $(baseD)comparedgnjs.cpp 
