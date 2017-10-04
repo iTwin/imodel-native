@@ -239,8 +239,8 @@ DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDb
 DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     {
     //ec_Schema
-    DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_Schema("
-                                    "Id INTEGER PRIMARY KEY,"
+    DbResult stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Schema
+                                    "(Id INTEGER PRIMARY KEY,"
                                     "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
@@ -252,22 +252,22 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
         return stat;
 
     //ec_SchemaReference
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_SchemaReference("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                           "ReferencedSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE)");
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_SchemaReference
+                           "(Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
+                           "ReferencedSchemaId INTEGER REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_SchemaReference_SchemaId_ReferencedSchemaId ON ec_SchemaReference(SchemaId,ReferencedSchemaId);"
-                           "CREATE INDEX ix_ec_SchemaReference_ReferencedSchemaId ON ec_SchemaReference(ReferencedSchemaId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_SchemaReference_SchemaId_ReferencedSchemaId ON " TABLE_SchemaReference "(SchemaId,ReferencedSchemaId);"
+                           "CREATE INDEX ix_ec_SchemaReference_ReferencedSchemaId ON " TABLE_SchemaReference "(ReferencedSchemaId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Class
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Class("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Class
+                           "(Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
@@ -279,30 +279,30 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_SchemaId_Name ON ec_Class(SchemaId,Name);"
-                           "CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_SchemaId_Name ON " TABLE_Class "(SchemaId,Name);"
+                           "CREATE INDEX ix_ec_Class_Name ON " TABLE_Class "(Name);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_ClassHasBaseClasses
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHasBaseClasses("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ClassHasBaseClasses
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHasBaseClasses_ClassId_BaseClassId ON ec_ClassHasBaseClasses(ClassId,BaseClassId);"
-                           "CREATE INDEX ix_ec_ClassHasBaseClasses_BaseClassId ON ec_ClassHasBaseClasses(BaseClassId);"
-                           "CREATE UNIQUE INDEX uix_ec_ClassHasBaseClasses_ClassId_Ordinal ON ec_ClassHasBaseClasses(ClassId,Ordinal)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHasBaseClasses_ClassId_BaseClassId ON " TABLE_ClassHasBaseClasses "(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHasBaseClasses_BaseClassId ON " TABLE_ClassHasBaseClasses "(BaseClassId);"
+                           "CREATE UNIQUE INDEX uix_ec_ClassHasBaseClasses_ClassId_Ordinal ON " TABLE_ClassHasBaseClasses "(ClassId,Ordinal)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Enumeration
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Enumeration("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Enumeration
+                           "(Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
@@ -312,15 +312,15 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Enumeration_SchemaId ON ec_Enumeration(SchemaId);"
-                           "CREATE INDEX ix_ec_Enumeration_Name ON ec_Enumeration(Name);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Enumeration_SchemaId ON " TABLE_Enumeration "(SchemaId);"
+                           "CREATE INDEX ix_ec_Enumeration_Name ON " TABLE_Enumeration "(Name);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_KindOfQuantity
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_KindOfQuantity
+                           "(Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
@@ -330,15 +330,15 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_KindOfQuantity_SchemaId ON ec_KindOfQuantity(SchemaId);"
-                           "CREATE INDEX ix_ec_KindOfQuantity_Name ON ec_KindOfQuantity(Name);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_KindOfQuantity_SchemaId ON " TABLE_KindOfQuantity "(SchemaId);"
+                           "CREATE INDEX ix_ec_KindOfQuantity_Name ON " TABLE_KindOfQuantity "(Name);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_PropertyCategory
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_PropertyCategory("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_PropertyCategory
+                           "(Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
@@ -346,15 +346,15 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_PropertyCategory_SchemaId ON ec_PropertyCategory(SchemaId);"
-                           "CREATE INDEX ix_ec_PropertyCategory_Name ON ec_PropertyCategory(Name);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_PropertyCategory_SchemaId ON " TABLE_PropertyCategory "(SchemaId);"
+                           "CREATE INDEX ix_ec_PropertyCategory_Name ON " TABLE_PropertyCategory "(Name);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Property
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Property("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Property
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
@@ -367,77 +367,77 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "PrimitiveTypeMaxLength INTEGER,"
                            "PrimitiveTypeMinValue NUMERIC,"
                            "PrimitiveTypeMaxValue NUMERIC,"
-                           "EnumerationId INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
-                           "StructClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "EnumerationId INTEGER REFERENCES " TABLE_Enumeration "(Id) ON DELETE CASCADE,"
+                           "StructClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "ExtendedTypeName TEXT,"
-                           "KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE,"
-                           "CategoryId INTEGER REFERENCES ec_PropertyCategory(Id) ON DELETE CASCADE,"
+                           "KindOfQuantityId INTEGER REFERENCES " TABLE_KindOfQuantity "(Id) ON DELETE CASCADE,"
+                           "CategoryId INTEGER REFERENCES " TABLE_PropertyCategory "(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
-                           "NavigationRelationshipClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "NavigationRelationshipClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "NavigationDirection INTEGER)");
 
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Property_ClassId_Name ON ec_Property(ClassId,Name);"
-                           "CREATE UNIQUE INDEX uix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
-                           "CREATE INDEX ix_ec_Property_Name ON ec_Property(Name);"
-                           "CREATE INDEX ix_ec_Property_EnumerationId ON ec_Property(EnumerationId);"
-                           "CREATE INDEX ix_ec_Property_StructClassId ON ec_Property(StructClassId);"
-                           "CREATE INDEX ix_ec_Property_KindOfQuantityId ON ec_Property(KindOfQuantityId);"
-                           "CREATE INDEX ix_ec_Property_CategoryId ON ec_Property(CategoryId);"
-                           "CREATE INDEX ix_ec_Property_NavigationRelationshipClassId ON ec_Property(NavigationRelationshipClassId);");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Property_ClassId_Name ON " TABLE_Property "(ClassId,Name);"
+                           "CREATE UNIQUE INDEX uix_ec_Property_ClassId_Ordinal ON " TABLE_Property "(ClassId,Ordinal);"
+                           "CREATE INDEX ix_ec_Property_Name ON " TABLE_Property "(Name);"
+                           "CREATE INDEX ix_ec_Property_EnumerationId ON " TABLE_Property "(EnumerationId);"
+                           "CREATE INDEX ix_ec_Property_StructClassId ON " TABLE_Property "(StructClassId);"
+                           "CREATE INDEX ix_ec_Property_KindOfQuantityId ON " TABLE_Property "(KindOfQuantityId);"
+                           "CREATE INDEX ix_ec_Property_CategoryId ON " TABLE_Property "(CategoryId);"
+                           "CREATE INDEX ix_ec_Property_NavigationRelationshipClassId ON " TABLE_Property "(NavigationRelationshipClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_PropertyPath
-    stat = ecdb.ExecuteSql("CREATE Table ec_PropertyPath("
-                           "Id INTEGER PRIMARY KEY,"
-                           "RootPropertyId INTEGER NOT NULL REFERENCES ec_Property(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE Table " TABLE_PropertyPath
+                           "(Id INTEGER PRIMARY KEY,"
+                           "RootPropertyId INTEGER NOT NULL REFERENCES " TABLE_Property "(Id) ON DELETE CASCADE,"
                            "AccessString TEXT NOT NULL COLLATE NOCASE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath(RootPropertyId,AccessString)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON " TABLE_PropertyPath "(RootPropertyId,AccessString)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_RelationshipConstraint
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_RelationshipConstraint("
-                           "Id INTEGER PRIMARY KEY,"
-                           "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_RelationshipConstraint
+                           "(Id INTEGER PRIMARY KEY,"
+                           "RelationshipClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "RelationshipEnd INTEGER NOT NULL,"
                            "MultiplicityLowerLimit INTEGER NOT NULL,"
                            "MultiplicityUpperLimit INTEGER,"
                            "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "RoleLabel TEXT,"
-                           "AbstractConstraintClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)");
+                           "AbstractConstraintClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraint_RelationshipClassId_RelationshipEnd ON ec_RelationshipConstraint(RelationshipClassId,RelationshipEnd);"
-                           "CREATE INDEX ix_ec_RelationshipConstraint_AbstractConstraintClassId ON ec_RelationshipConstraint(AbstractConstraintClassId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraint_RelationshipClassId_RelationshipEnd ON " TABLE_RelationshipConstraint "(RelationshipClassId,RelationshipEnd);"
+                           "CREATE INDEX ix_ec_RelationshipConstraint_AbstractConstraintClassId ON " TABLE_RelationshipConstraint "(AbstractConstraintClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_RelationshipConstraintClass
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_RelationshipConstraintClass("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ConstraintId INTEGER NOT NULL REFERENCES ec_RelationshipConstraint(Id) ON DELETE CASCADE,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_RelationshipConstraintClass
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ConstraintId INTEGER NOT NULL REFERENCES " TABLE_RelationshipConstraint "(Id) ON DELETE CASCADE,"
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraintClass_ConstraintId_ClassId ON ec_RelationshipConstraintClass(ConstraintId,ClassId);"
-                           "CREATE INDEX ix_ec_RelationshipConstraintClass_ClassId ON ec_RelationshipConstraintClass(ClassId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraintClass_ConstraintId_ClassId ON " TABLE_RelationshipConstraintClass "(ConstraintId,ClassId);"
+                           "CREATE INDEX ix_ec_RelationshipConstraintClass_ClassId ON " TABLE_RelationshipConstraintClass "(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_CustomAttribute
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_CustomAttribute("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_CustomAttribute
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "ContainerId INTEGER NOT NULL,"
                            "ContainerType INTEGER NOT NULL,"
                            "Ordinal INTEGER NOT NULL,"
@@ -445,15 +445,15 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
-                           "CREATE UNIQUE INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_ClassId ON ec_CustomAttribute(ContainerId,ContainerType,ClassId);"
-                           "CREATE INDEX ix_ec_CustomAttribute_ClassId ON ec_CustomAttribute(ClassId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON " TABLE_CustomAttribute "(ContainerId,ContainerType,Ordinal);"
+                           "CREATE UNIQUE INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_ClassId ON " TABLE_CustomAttribute "(ContainerId,ContainerType,ClassId);"
+                           "CREATE INDEX ix_ec_CustomAttribute_ClassId ON " TABLE_CustomAttribute "(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_ClassMap
-    stat = ecdb.ExecuteSql("CREATE Table ec_ClassMap("
-                           "ClassId INTEGER PRIMARY KEY REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE Table " TABLE_ClassMap
+                           "(ClassId INTEGER PRIMARY KEY REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
@@ -463,40 +463,40 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
         return stat;
 
     //ec_PropertyMap
-    stat = ecdb.ExecuteSql("CREATE Table ec_PropertyMap("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_ClassMap(ClassId) ON DELETE CASCADE,"
-                           "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath(Id) ON DELETE CASCADE,"
-                           "ColumnId INTEGER NOT NULL REFERENCES ec_Column(Id) ON DELETE CASCADE)");
+    stat = ecdb.ExecuteSql("CREATE Table " TABLE_PropertyMap
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_ClassMap "(ClassId) ON DELETE CASCADE,"
+                           "PropertyPathId INTEGER NOT NULL REFERENCES " TABLE_PropertyPath "(Id) ON DELETE CASCADE,"
+                           "ColumnId INTEGER NOT NULL REFERENCES " TABLE_Column "(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyMap_ClassId_PropertyPathId_ColumnId ON ec_PropertyMap(ClassId,PropertyPathId,ColumnId);"
-                           "CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON ec_PropertyMap(PropertyPathId);"
-                           "CREATE INDEX ix_ec_PropertyMap_ColumnId ON ec_PropertyMap(ColumnId);");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyMap_ClassId_PropertyPathId_ColumnId ON " TABLE_PropertyMap "(ClassId,PropertyPathId,ColumnId);"
+                           "CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON " TABLE_PropertyMap "(PropertyPathId);"
+                           "CREATE INDEX ix_ec_PropertyMap_ColumnId ON " TABLE_PropertyMap "(ColumnId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Table
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Table("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Table
+                           "(Id INTEGER PRIMARY KEY,"
+                           "ParentTableId INTEGER REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,"
+                           "ExclusiveRootClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL,"
                            "UpdatableViewName TEXT)");
 if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON ec_Table(ParentTableId);"
-                           "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON ec_Table(ExclusiveRootClassId);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON " TABLE_Table "(ParentTableId);"
+                           "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON " TABLE_Table "(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Column
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Column("
-                           "Id INTEGER PRIMARY KEY,"
-                           "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Column
+                           "(Id INTEGER PRIMARY KEY,"
+                           "TableId INTEGER NOT NULL REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
@@ -511,20 +511,20 @@ if (BE_SQLITE_OK != stat)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Column_TableId_Name ON ec_Column(TableId,Name);"
-                           "CREATE UNIQUE INDEX uix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Column_TableId_Name ON " TABLE_Column "(TableId,Name);"
+                           "CREATE UNIQUE INDEX uix_ec_Column_TableId_Ordinal ON " TABLE_Column "(TableId,Ordinal)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Index
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Index  "("
-                           "Id INTEGER PRIMARY KEY,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Index
+                           "(Id INTEGER PRIMARY KEY,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
-                           "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
+                           "TableId INTEGER NOT NULL REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
                            "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (" SQLVAL_False "," SQLVAL_True ")), "
                            "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (" SQLVAL_False "," SQLVAL_True ")),"
-                           "ClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "ClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
                            "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (" SQLVAL_False "," SQLVAL_True ")))");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -535,10 +535,10 @@ if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_IndexColumn
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_IndexColumn "("
-                           "Id INTEGER PRIMARY KEY,"
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_IndexColumn
+                           "(Id INTEGER PRIMARY KEY,"
                            "IndexId INTEGER NOT NULL REFERENCES " TABLE_Index " (Id) ON DELETE CASCADE,"
-                           "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+                           "ColumnId INTEGER NOT NULL REFERENCES " TABLE_Column " (Id) ON DELETE CASCADE,"
                            "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -553,8 +553,8 @@ if (BE_SQLITE_OK != stat)
     //ec_cache_ClassHasTables
     stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ClassHasTablesCache "("
                            "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
+                           "TableId INTEGER NOT NULL REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -566,8 +566,8 @@ if (BE_SQLITE_OK != stat)
     //ec_cache_ClassHierarchy
     stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ClassHierarchyCache "("
                            "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+                           "ClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
