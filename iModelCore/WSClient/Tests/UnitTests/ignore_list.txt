@@ -32,12 +32,6 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
 
-# New ECDb forces cardinality rules upon data, so relationship change caching is broken.
-# This should be rare case and not be needed in real world, but should be fixed:
-#   probably by safely removing relationship before caching new one.
-#   holding/embedding relationships should be taken care of to not loose children as well.
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
-
 # Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
 # However, this will make MetaSchema.02.00 fail upon import as it has some invalid classes. Using MetaSchema from WSG 2.x servers will not work.
 # Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
@@ -421,3 +415,21 @@ UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultU
 ConnectTokenProviderTests.UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken
     # bim0200dev, x64, DEBUG, randomly hangs
 # Adding comment to test auto ignore script
+
+# These tests directly use the AsyncTask API, or a test helper class that does.
+# Arturas: [ignoring such tests] would be a reasonable thing to do to be on the safe side. As far as I know, tests that use AsyncTask tend to randomly hang, so it is possible that any of those might hang the build. We will look for a short time solution to make sure that we would safely run as many tests as possible and BeFolly is long term plan.
+CachingDataSourceTests.*
+ConnectAuthenticationHandlerTests.*
+ConnectSignInManagerTests.*
+ConnectTokenProviderTests.*
+ConnectWebServicesClientCTests.*
+DataSourceCacheUpgradeTests.*
+DiskRepositoryClientTests.*
+EventParserTests.*
+iModelManagerTests.*
+MultiProgressCallbackHandlerTests.*
+RepositoryCompatibilityTests_Create.*
+RepositoryCompatibilityTests_Upgrade.*
+RetryTests.*
+UrlProviderTests.*
+WSRepositoryClientTests.*
