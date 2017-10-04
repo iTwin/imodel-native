@@ -423,25 +423,30 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache, bool include) const
         {
-        static Utf8CP query =
-            "SELECT SourceECInstanceId"
-            " FROM [meta].[ClassHasAllBaseClasses] "
-            " WHERE InVirtualSet(?, TargetECInstanceId)";
-
-        CachedECSqlStatementPtr stmt = statementsCache.GetPreparedStatement(db, query);
-        if (!stmt.IsValid())
-            {
-            BeAssert(false);
-            return IdSet<ECClassId>();
-            }
-
         IdSet<ECClassId> const& ids = include ? GetIncludedEntityClassIds() : GetExcludedEntityClassIds();
-        stmt->BindVirtualSet(1, ids);
+
+        Utf8String whereClause;
+        IdSetHelper::BindSetAction action = IdSetHelper::CreateInVirtualSetClause(whereClause, ids, "[TargetECInstanceId]");
+        Utf8String query =
+            "SELECT SourceECInstanceId"
+            " FROM [meta].[ClassHasAllBaseClasses] ";
+        query.append("WHERE ").append(whereClause);
+
+        CachedECSqlStatementPtr stmt = statementsCache.GetPreparedStatement(db, query.c_str());
+        if (IdSetHelper::BIND_VirtualSet == action)
+            {
+            stmt->BindVirtualSet(1, ids);
+            }
+        else
+            {
+            int i = 1;
+            for (ECClassId id : ids)
+                stmt->BindId(i++, id);
+            }
 
         IdSet<ECClassId> classesIds;
         while (DbResult::BE_SQLITE_ROW == stmt->Step())
             classesIds.insert(stmt->GetValueId<ECClassId>(0));
-
         return classesIds;
         }
     
@@ -1093,6 +1098,43 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 
     BeAssert(false);
     return RelatedClass();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TSet>
+static IdSetHelper::BindSetAction CreateInVirtualSetClauseInternal(Utf8StringR clause, TSet const& set, Utf8StringCR idFieldName)
+    {
+    if (set.size() > 100)
+        {
+        clause.assign("InVirtualSet(?, ");
+        clause.append(idFieldName).append(")");
+        return IdSetHelper::BIND_VirtualSet;
+        }
+    
+    Utf8String idsArg(set.size() * 2 - 1, '?');
+    for (size_t i = 1; i < set.size(); i += 2)
+        idsArg[i] = ',';
+    clause.assign(idFieldName).append(" IN (");
+    clause.append(idsArg).append(")");
+    return IdSetHelper::BIND_Ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IdSetHelper::BindSetAction IdSetHelper::CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName)
+    {
+    return CreateInVirtualSetClauseInternal(clause, keys, idFieldName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IdSetHelper::BindSetAction IdSetHelper::CreateInVirtualSetClause(Utf8StringR clause, IdSet<ECClassId> const& ids, Utf8StringCR idFieldName)
+    {
+    return CreateInVirtualSetClauseInternal(clause, ids, idFieldName);
     }
 
 /*---------------------------------------------------------------------------------**//**

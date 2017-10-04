@@ -231,6 +231,24 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2017
++===============+===============+===============+===============+===============+======*/
+struct IdSetHelper : NonCopyableClass
+{
+    enum BindSetAction
+        {
+        BIND_VirtualSet,
+        BIND_Ids,
+        };
+
+private:
+    IdSetHelper() {}
+public:
+    static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName);
+    static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, BeSQLite::IdSet<ECClassId> const& keys, Utf8StringCR idFieldName);
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/
 struct SupportedClassNamesParser

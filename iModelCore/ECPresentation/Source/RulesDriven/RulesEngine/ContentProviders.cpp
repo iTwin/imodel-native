@@ -965,25 +965,19 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         {
         Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
         ContentQueryPtr query = m_query->Clone();
-        if (m_primaryInstanceKeys.size() > 100)
+
+        Utf8String whereClause;
+        BoundQueryValuesList bindings;
+        if (IdSetHelper::BIND_VirtualSet == IdSetHelper::CreateInVirtualSetClause(whereClause, m_primaryInstanceKeys, Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]")))
             {
-            Utf8String whereClause("InVirtualSet(?, [");
-            whereClause.append(idFieldAlias).append("].[ECInstanceId])");
-            QueryBuilderHelpers::Where(query, whereClause.c_str(), {new BoundQueryIdSet(m_primaryInstanceKeys)});
+            bindings = {new BoundQueryIdSet(m_primaryInstanceKeys)};
             }
         else
             {
-            Utf8String idsArg(m_primaryInstanceKeys.size() * 2 - 1, '?');
-            for (size_t i = 1; i < m_primaryInstanceKeys.size(); i += 2)
-                idsArg[i] = ',';
-            Utf8String whereClause;
-            whereClause.append("[").append(idFieldAlias).append("].[ECInstanceId] IN (");
-            whereClause.append(idsArg).append(")");
-            bvector<BoundQueryValue const*> boundIds;
             for (ECInstanceKeyCR key : m_primaryInstanceKeys)
-                boundIds.push_back(new BoundQueryId(key.GetInstanceId()));
-            QueryBuilderHelpers::Where(query, whereClause.c_str(), boundIds);
+                bindings.push_back(new BoundQueryId(key.GetInstanceId()));
             }
+        QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
         m_adjustedQuery = query;
         }
         
