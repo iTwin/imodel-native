@@ -6,9 +6,6 @@
 extern "C"
 void main(int argc, char **argv) 
     {
-    printf("%s\n", argv[1]);
-    printf("%s\n", argv[2]);
-    argv[2];
     Utf8String filestr0(argv[1]);
     Utf8String filestr1(argv[2]);
     BeFileName path(filestr0);
@@ -18,28 +15,28 @@ void main(int argc, char **argv)
     file2.Create(path2.c_str(), false);
     if (!(BeFileName::DoesPathExist(path2.c_str()) && BeFileName::DoesPathExist(path.c_str()))) 
         {
-        printf("DgnJs files donot exist");
+        printf("Failure");
         return;
         }
     ByteStream entireFile, entireFile2;
     if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Read))
         {
-        printf("file Open operation failed");
+        printf("Failure");
         return;
         }
     if(BeFileStatus::Success != file2.Open(path2.c_str(), BeFileAccess::Read))
         {
-        printf("file Open operation failed");
+        printf("Failure");
         return;
         }
     if (BeFileStatus::Success != file.ReadEntireFile(entireFile)) 
         {
-        printf("Read operation failed");
+        printf("Failure");
         return;
         }
     if (BeFileStatus::Success != file2.ReadEntireFile(entireFile2))
         {
-        printf("Read operation failed");
+        printf("Failure");
         return;
         }
     Utf8String str((Utf8P)entireFile.GetDataP());
@@ -47,11 +44,10 @@ void main(int argc, char **argv)
     bvector<IGeometryPtr> geometryA, geometryB;
     BentleyGeometryJson::TryJsonStringToGeometry(str, geometryA);
     BentleyGeometryJson::TryJsonStringToGeometry(str2, geometryB);
-    printf("%s", str.c_str());
-    printf("%s", str2.c_str());
     if (geometryA.size() != geometryB.size()) 
         {
-        printf("failed\n");
+        printf("Failure");
+        return;
         }
     else 
         {
@@ -59,8 +55,11 @@ void main(int argc, char **argv)
             {
             if (!geometryA[i]->IsSameStructureAndGeometry(*geometryB[i]))
                 {
-                printf("not same\n");
+                printf("Failure");
+                return;
                 }
             }
         }
+    printf("Success");
+    return;
     }
