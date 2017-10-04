@@ -42,6 +42,8 @@ RuleSetLocaterManager::RuleSetLocaterManager()
 RuleSetLocaterManager::~RuleSetLocaterManager()
     {
     DELETE_AND_CLEAR(m_connectionsTracker);
+    for (RuleSetLocaterPtr const& locater : m_locaters)
+        locater->SetRulesetCallbacksHandler(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
