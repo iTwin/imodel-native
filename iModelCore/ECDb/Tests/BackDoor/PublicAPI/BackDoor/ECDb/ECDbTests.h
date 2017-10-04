@@ -148,6 +148,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 void PrintTo(DbResult, std::ostream*);
+void PrintTo(BeBriefcaseBasedId, std::ostream*);
 
 END_BENTLEY_SQLITE_NAMESPACE
 

@@ -130,6 +130,11 @@ int ECDb::_OnAddFunction(DbFunction& func) const { return m_pimpl->OnAddFunction
 void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction(func); }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetIdSequences(briefcaseId, ecClassIgnoreList);}
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 SchemaManager const& ECDb::Schemas() const { return m_pimpl->Schemas(); }
