@@ -498,6 +498,30 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, Db
     }
 
 //------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       10 / 2017
+//-----------------------------------------------------------------------------------------
+DbColumn* ClassMapColumnFactory::HandleOverflowColumn(DbColumn* column) const
+    {
+    if (column->IsShared() && column->GetTable().GetType() == DbTable::Type::Overflow && !m_overflowTable)
+        {
+        m_overflowTable = &column->GetTableR();
+        if (!m_classMap.GetOverflowTable())
+            {
+            const_cast<ClassMap&>(m_classMap).SetOverflowTable(*m_overflowTable);
+            }
+        else
+            {
+            if (m_overflowTable != m_classMap.GetOverflowTable())
+                {
+                BeAssert(false && "This would be a serious error");
+                return nullptr;
+                }
+            }
+        }
+
+    return column;
+    }
+//------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
@@ -505,7 +529,7 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
-            return column;
+            return HandleOverflowColumn(column);
         }
 
     if (m_useSharedColumnStrategy && !forcePhysicalColum)

@@ -121,7 +121,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         Nullable<uint32_t> m_maxSharedColumnCount;
         mutable bool m_areSharedColumnsReserved = false;
         mutable ColumnResolutionScope* m_columnResolutionScope = nullptr;
-
+        DbColumn* HandleOverflowColumn(DbColumn* column) const;
         DbTable* GetEffectiveTable(SchemaImportContext&) const;
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
         DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
