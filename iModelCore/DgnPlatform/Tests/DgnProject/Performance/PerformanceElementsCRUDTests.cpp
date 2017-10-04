@@ -7,6 +7,19 @@
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
 
+void PerformanceElementsCRUDTestFixture::ApplyPragmas(Db& db)
+    {
+    for (Utf8StringCR pragmaCmd : m_pragms)
+        {
+        printf("%s\n", pragmaCmd.c_str());
+        auto rc = db.ExecuteSql(pragmaCmd.c_str());
+        if (BE_SQLITE_OK != rc)
+            {
+            printf("Error: %s\n", db.GetLastError().c_str());
+            }
+        ASSERT_EQ(BE_SQLITE_OK, rc) << "Failed to execute PRAGMA > " << pragmaCmd.c_str();
+        }
+    }
 // Uncomment this if you want elapsed time of each test case logged to console in addition to the log file.
 // #define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
 //---------------------------------------------------------------------------------------
@@ -25,6 +38,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         SetupSeedProject(seedFileName.c_str());
         ASSERT_EQ(SchemaStatus::Success, PerfTestDomain::GetDomain().ImportSchema(*m_db));
         ASSERT_TRUE(m_db->IsDbOpen());
+        ApplyPragmas(*m_db);
         CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
         m_db->CloseDb();
         }
@@ -35,6 +49,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedFilePath, dgndbFilePath, false));
     DbResult status;
     m_db = DgnDb::OpenDgnDb(&status, dgndbFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ApplyPragmas(*m_db);
     EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(m_db.IsValid());
     }
@@ -236,16 +251,16 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::SetPropertyValues(Utf8CP classNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Affan.Khan                       09/17
 //+---------------+---------------+---------------+---------------+---------------+------
-std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element)> PerformanceElementsCRUDTestFixture::SetPropertyValuesMethod(Utf8CP className, bool update) const
+std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element, bool)> PerformanceElementsCRUDTestFixture::SetPropertyValuesMethod(Utf8CP className) const
     {
     if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
-        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementPropertyValues(element, update); };
+        return [&] (Dgn::PhysicalElementPtr& element, bool update) { return SetPerfElementPropertyValues(element, update); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
-        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub1PropertyValues(element, update); };
+        return [&] (Dgn::PhysicalElementPtr& element, bool update) { return SetPerfElementSub1PropertyValues(element, update); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB2_CLASS_NAME))
-        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub2PropertyValues(element, update); };
+        return [&] (Dgn::PhysicalElementPtr& element, bool update) { return SetPerfElementSub2PropertyValues(element, update); };
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME) || 0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB3_CLASS_NAME))
-        return [&] (Dgn::PhysicalElementPtr& element) { return SetPerfElementSub3PropertyValues(element, update); };
+        return [&] (Dgn::PhysicalElementPtr& element, bool update) { return SetPerfElementSub3PropertyValues(element, update); };
 
     return nullptr;
     }
@@ -308,13 +323,13 @@ void PerformanceElementsCRUDTestFixture::CreateElementsAndInsert(int numInstance
     DgnCategoryId catId = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
     DgnDbStatus stat = DgnDbStatus::Success;
     std::function<PhysicalElementPtr(void)> createPerfElementMethod = CreatePerfElementMethod(className, *targetModel, catId);
-    std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element)> setPropertyValuesMethod =SetPropertyValuesMethod(className, false);
+    std::function<DgnDbStatus(Dgn::PhysicalElementPtr& element,bool)> setPropertyValuesMethod =SetPropertyValuesMethod(className);
 
     for (int i = 0; i < numInstances; i++)
         {
         Dgn::PhysicalElementPtr element = createPerfElementMethod();
         ASSERT_TRUE(element != nullptr);
-        ASSERT_EQ(DgnDbStatus::Success, setPropertyValuesMethod(element));
+        ASSERT_EQ(DgnDbStatus::Success, setPropertyValuesMethod(element, false));
         AddGeometry(element);
         element->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat);
@@ -355,9 +370,13 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSelectParams(DgnElementCR element)
     {
-    if (0 != strcmp("PerfElement - InitValue", element.GetPropertyValueString("BaseStr").c_str()) ||
-        (10000000 != element.GetPropertyValueUInt64("BaseLong")) ||
-        (-3.1416 != element.GetPropertyValueDouble("BaseDouble")))
+    if (0 != strcmp("PerfElement - InitValue", element.GetPropertyValueString("BaseStr").c_str()))
+        return DgnDbStatus::ReadError;
+
+    if (10000000 != element.GetPropertyValueUInt64("BaseLong"))
+        return DgnDbStatus::ReadError;
+
+    if (-3.1416 != element.GetPropertyValueDouble("BaseDouble"))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -368,10 +387,16 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSelectParams(Dg
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSub1SelectParams(DgnElementCR element)
     {
-    if ((DgnDbStatus::Success != VerifyPerfElementSelectParams(element)) ||
-        0 != strcmp("PerfElementSub1 - InitValue", element.GetPropertyValueString("Sub1Str").c_str()) ||
-        (20000000 != element.GetPropertyValueUInt64("Sub1Long")) ||
-        (2.71828 != element.GetPropertyValueDouble("Sub1Double")))
+    if (DgnDbStatus::Success != VerifyPerfElementSelectParams(element))
+        return DgnDbStatus::ReadError;;
+
+    if (0 != strcmp("PerfElementSub1 - InitValue", element.GetPropertyValueString("Sub1Str").c_str()))
+        return DgnDbStatus::ReadError;
+
+    if (20000000 != element.GetPropertyValueUInt64("Sub1Long"))
+        return DgnDbStatus::ReadError;
+
+    if (2.71828 != element.GetPropertyValueDouble("Sub1Double"))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -382,10 +407,16 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSub1SelectParam
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSub2SelectParams(DgnElementCR element)
     {
-    if ((DgnDbStatus::Success != VerifyPerfElementSub1SelectParams(element)) ||
-        0 != strcmp("PerfElementSub2 - InitValue", element.GetPropertyValueString("Sub2Str").c_str()) ||
-        (30000000 != element.GetPropertyValueUInt64("Sub2Long")) ||
-        (1.414121 != element.GetPropertyValueDouble("Sub2Double")))
+    if (DgnDbStatus::Success != VerifyPerfElementSub1SelectParams(element))
+        return DgnDbStatus::ReadError;;
+    
+    if (0 != strcmp("PerfElementSub2 - InitValue", element.GetPropertyValueString("Sub2Str").c_str()))
+        return DgnDbStatus::ReadError;
+    
+    if (30000000 != element.GetPropertyValueUInt64("Sub2Long"))
+        return DgnDbStatus::ReadError;
+    
+    if (1.414121 != element.GetPropertyValueDouble("Sub2Double"))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -452,10 +483,11 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
+    testElements.reserve(opCount);
     CreateElements(opCount, className, testElements, "ElementApiInstances");
     ASSERT_EQ(opCount, (int) testElements.size());
-
     int i = 0;
+    WaitForUserInputIfAny();
     StopWatch timer(true);
     for (DgnElementPtr& element : testElements)
         {
@@ -491,7 +523,7 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
 
     int minElemId = GetfirstElementId(className);
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
-
+    WaitForUserInputIfAny();
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
@@ -519,6 +551,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 
     //First build dgnelements with modified Geomtry
     bvector<DgnElementPtr> elements;
+    elements.reserve(opCount);
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(minElemId + i*elementIdIncrement);
@@ -531,6 +564,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
         elements.push_back(element);
         }
 
+    WaitForUserInputIfAny();
     //Now update and record time
     StopWatch timer(true);
     for (DgnElementPtr& element : elements)
@@ -541,6 +575,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
         }
 
     timer.Stop();
+
     m_db->SaveChanges();
     LogTiming(timer, "Element API Update", className, false, initialInstanceCount, opCount);
     }
@@ -564,17 +599,17 @@ void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int ini
         ASSERT_TRUE(element != nullptr);
         }
     //=========================================>>>>
+    WaitForUserInputIfAny();
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(minElemId + i*elementIdIncrement);
-        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - START");
         const DgnDbStatus stat = m_db->Elements().Delete(id);
-        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - END");
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
 
     timer.Stop();
+    WaitForUserInputIfAny();
     m_db->SaveChanges();
     LogTiming(timer, "Element API Delete", className, false, initialInstanceCount, opCount);
     }
@@ -598,7 +633,6 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
 //+---------------+---------------+---------------+---------------+---------------+------
 int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
 {
-
     uint64_t firstElemId = s_firstElementId;
     const DgnElementId id(firstElemId);
     DgnElementCPtr element = m_db->Elements().GetElement(id);
@@ -640,9 +674,9 @@ int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
 TEST_F(PerformanceElementsCRUDTestFixture, InsertApi)
     {
     ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME);
-    /*ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
-    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);*/
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
     }
 
 //---------------------------------------------------------------------------------------
