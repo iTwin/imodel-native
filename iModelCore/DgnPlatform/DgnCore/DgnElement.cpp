@@ -1269,7 +1269,7 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         return;
         }
         
-    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(ECJsonInt64Format::AsHexadecimalString));
+    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(elementJson, true);
     }
 
@@ -1357,12 +1357,6 @@ static ECN::IECInstancePtr ecStructInstanceFromJson(ECN::ECClassCR eclass, JsonV
 
     for (auto const& jsPropName : structJson.getMemberNames())
         {
-        // Probably, the JS property name will have a lowercase first letter. The standard for ECProperties is an uppercase first letter.
-        auto ecProp = getECPropertyName(eclass, jsPropName.c_str());
-        if (nullptr == ecProp)  
-            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
-
-        if (ecProp-> ...
         }
 
     return inst;
@@ -1495,26 +1489,6 @@ static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-static ECPropertyP getECPropertyName(ECN::ECClassCR eclass, Utf8CP jsPropName)
-    {
-    if (isupper(jsPropName[0]))
-        return eclass.GetPropertyP(jsPropName);
-
-    // If the js property name starts with a lowercase letter, assume that the corresponding ECProperty name starts with an uppercase letter.
-    // Try that first, because that's the most common case.
-    Utf8String ecPropName(jsPropName);
-    ecPropName[0] = (char)ecPropName[0];
-    auto ecprop = eclass.GetPropertyP(ecPropName.c_str());
-    if (nullptr != ecprop)
-        return ecprop;
-
-    // Maybe the real ECProperty does start with a lowercase letter...?
-    return eclass.GetPropertyP(jsPropName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
 static bool isDefinitelyNotAutoHandled(Utf8CP jsPropName)
     {
     // *** NEEDS WORK: We have defined a bunch of special properties in our element wire format
@@ -1544,17 +1518,9 @@ static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJs
         if (isDefinitelyNotAutoHandled(jsPropName.c_str()))  // filter out some special properties that are not actually in the ECSChema (and are certainly not auto-handled)
             continue;
 
-        // Probably, the JS property name will have a lowercase first letter. The standard for ECProperties is an uppercase first letter.
-        auto ecProp = getECPropertyName(*elem.GetElementClass(), jsPropName.c_str());
-        if (nullptr == ecProp)  
-            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
-
-        ElementECPropertyAccessor propAccessor(elem, ecProp->GetName().c_str()); // Look up the property by name, in order to get metadata info about it and to prepare to set it.
+        ElementECPropertyAccessor propAccessor(elem, jsPropName.c_str());
         if (!propAccessor.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
+            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
             
         if (!propAccessor.IsAutoHandled())
             continue;

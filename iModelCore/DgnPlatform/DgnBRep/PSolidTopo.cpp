@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidTopo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -286,7 +286,7 @@ BentleyStatus   PSolidTopo::GetTangentBlendEdges(bvector<PK_EDGE_t>& smoothEdges
 
     options.properties.propagate = PK_blend_propagate_yes_c;
 
-    if (SUCCESS != PK_EDGE_set_blend_constant(1, &edgeTag, 1.0, &options, &nBlend, &blendsP))
+    if (SUCCESS != PK_EDGE_set_blend_constant(1, &edgeTag, 1.0, &options, &nBlend, &blendsP) || 0 == nBlend)
         return ERROR;
 
     for (int i=0; i < nBlend; i++)
