@@ -28,8 +28,8 @@ struct ObjectInfoManager : public IECDbAdapter::DeleteListener
 
         ECClassCP               m_infoClass;
 
-        ECSqlAdapterLoader<JsonInserter>    m_infoInserter;
-        ECSqlAdapterLoaderWithOptions<JsonUpdater>     m_infoUpdater;
+        ECSqlAdapterLoader<JsonInserter>                          m_infoInserter;
+        ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>     m_infoUpdater;
 
     public:
         ObjectInfoManager

@@ -28,9 +28,9 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
 
         ECClassCP               m_cachedRelationshipInfoClass;
 
-        ECSqlAdapterLoader<ECInstanceInserter>  m_infoECInstanceInserter;
-        ECSqlAdapterLoader<JsonInserter>        m_infoInserter;
-        ECSqlAdapterLoaderWithOptions<JsonUpdater>         m_infoUpdater;
+        ECSqlAdapterLoader<ECInstanceInserter>                  m_infoECInstanceInserter;
+        ECSqlAdapterLoader<JsonInserter>                        m_infoInserter;
+        ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_infoUpdater;
 
     private:
         ECInstanceKey ReadRelationshipKeyByInfo(CacheNodeKeyCR infoKey);
