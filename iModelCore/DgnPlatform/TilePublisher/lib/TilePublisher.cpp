@@ -2032,7 +2032,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
     auto& techniqueUniforms = technique["uniforms"];
     if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
         techniqueUniforms["u_tex"] = "tex";
@@ -2061,7 +2061,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
         }
     else
         {
-        TilePublisher::AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, "_3DTILESDIFFUSE");
         techniqueUniforms["u_color"] = "color";
         }
 
@@ -2078,7 +2078,7 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
     BeAssert (IsTextured());
     if (IsTextured())
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;

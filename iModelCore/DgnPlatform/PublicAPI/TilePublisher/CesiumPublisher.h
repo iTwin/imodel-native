@@ -57,6 +57,7 @@ protected:
     bool                            m_wantHistory = false;
     Utf8String                      m_userName;
     Utf8String                      m_password;
+    Utf8String                      m_environment;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
@@ -86,6 +87,7 @@ public:
     // For History publishing...
     Utf8StringCR GetUser() const { return m_userName; }
     Utf8StringCR GetPassword() const { return m_password; }
+    Utf8StringCR GetEnvironment() const { return m_environment; }
 
 };
 
