@@ -254,7 +254,8 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
-TEST_F(RealityDataDownloadTestFixture, AuthInfoHeader)
+//deactivated because the UUID is not stable
+/*TEST_F(RealityDataDownloadTestFixture, AuthInfoHeader)
     {
     AString dl1 = "https://scihub.copernicus.eu/dhus/odata/v1/Products('16902fd3-f323-4014-a950-853ac602e22f')/Nodes('S1A_IW_SLC__1SDV_20141101T165548_20141101T165616_003091_0038AA_558F.SAFE')/Nodes('manifest.safe')/$value";
 
@@ -291,4 +292,4 @@ TEST_F(RealityDataDownloadTestFixture, AuthInfoHeader)
     ASSERT_TRUE(BeFileName::DoesPathExist(filename1.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(filename2.c_str()));
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
-    }
+    }*/

@@ -455,9 +455,32 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8String GetServerName() { return m_serverName; }
 
 private:
-    Utf8String m_serverName;
-    bool m_verifyPeer;
-    mutable Utf8String m_version;
+    Utf8String          m_serverName;
+    bool                m_verifyPeer;
+    mutable Utf8String  m_version;
+    };
+
+//=====================================================================================
+//! @bsiclass                                  Spencer.Mason               01/2017
+//! ProxyManager
+//! Centralized class to handle proxy information, in case multiple CurlConstructors
+//! are used
+//=====================================================================================
+struct ProxyManager
+    {
+    protected:
+        REALITYDATAPLATFORM_EXPORT static ProxyManager* s_pmInstance;
+        REALITYDATAPLATFORM_EXPORT ProxyManager();
+    public:
+        REALITYDATAPLATFORM_EXPORT static ProxyManager& GetInstance();
+
+        //! Set proxy informations
+        REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; }
+        REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) { proxyUrl = m_proxyUrl; proxyCreds = m_proxyCreds; }
+
+    private:
+        Utf8String          m_proxyUrl;
+        Utf8String          m_proxyCreds;
     };
 
 //=====================================================================================
@@ -479,16 +502,14 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
 
     //! Set proxy informations
-    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; }
-    REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) { proxyUrl = m_proxyUrl; proxyCreds = m_proxyCreds; }
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) const;
+    REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const;
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}
 protected:
     REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const;
 
-    Utf8String          m_proxyUrl;
-    Utf8String          m_proxyCreds;
     mutable Utf8String          m_token;
     BeFileName          m_certificatePath;
     mutable time_t              m_tokenRefreshTimer;

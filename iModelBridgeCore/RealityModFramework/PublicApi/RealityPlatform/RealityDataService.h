@@ -823,11 +823,11 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
     //!  files specified in this list will not be uploaded to the server
     //!  or a whiteList: only files specified in this list will be uploaded to the server
     //! @param isBlackList if true, colorList will be interpreted as a blackList, if false colorList is a whiteList
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, bvector<BeFileName> colorList = bvector<BeFileName>(), bool isBlackList = true);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, bvector<BeFileName> colorList = bvector<BeFileName>(), bool isBlackList = true, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 
     //! Alternate Constructor with a lighter signature
     //! refer to main constructor for parameter explanation
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String properties, bool overwrite = false, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, bvector<BeFileName> colorList = bvector<BeFileName>(), bool isBlackList = true);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String properties, bool overwrite = false, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, bvector<BeFileName> colorList = bvector<BeFileName>(), bool isBlackList = true, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 protected:
     BentleyStatus CreateUpload(Utf8String properties);
 
@@ -854,9 +854,9 @@ private:
 //=====================================================================================
 struct RealityDataServiceDownload : public RealityDataServiceTransfer
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 
 private:
 

@@ -112,6 +112,22 @@ Utf8String CurlConstructor::GetToken() const
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+void CurlConstructor::SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) const
+    {
+    ProxyManager::GetInstance().SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+void CurlConstructor::GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const
+    {
+    ProxyManager::GetInstance().GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
 void CurlConstructor::RefreshToken() const
@@ -222,13 +238,16 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& 
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
         }
 
-    if (!m_proxyUrl.empty())
+    Utf8String proxyUrl, proxyCreds;
+    GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
+
+    if (!proxyUrl.empty())
         {
-        curl_easy_setopt(curl, CURLOPT_PROXY, m_proxyUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-        if (!m_proxyCreds.empty())
+        if (!proxyCreds.empty())
             {
-            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
             }
         }
 
@@ -936,4 +955,28 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
         }
 
     return returnString;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ProxyManager* ProxyManager::s_pmInstance = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ProxyManager& ProxyManager::GetInstance()
+    {
+    if (nullptr == s_pmInstance)
+        s_pmInstance = new ProxyManager();
+    return *s_pmInstance;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ProxyManager::ProxyManager()
+    {
+    s_pmInstance = this;
+    m_proxyUrl = "";
+    m_proxyCreds = "";
     }

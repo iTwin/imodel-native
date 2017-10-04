@@ -1583,13 +1583,17 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
         {
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 0L);
-        if (!m_proxyUrl.empty())
+
+        Utf8String proxyUrl, proxyCreds;
+        GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
+
+        if (!proxyUrl.empty())
             {
-            curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
+            curl_easy_setopt(pCurl, CURLOPT_PROXY, proxyUrl.c_str());
             curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-            if (!m_proxyCreds.empty())
+            if (!proxyCreds.empty())
                 {
-                curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+                curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
                 }
             }
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
@@ -1705,8 +1709,8 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
 //=====================================================================================
 RealityDataServiceUpload::RealityDataServiceUpload
     (BeFileName uploadPath, Utf8String properties, bool overwrite, RealityDataServiceTransfer_StatusCallBack pi_func, 
-    bvector<BeFileName> colorList, bool isBlackList) :
-    RealityDataServiceUpload(uploadPath, "", properties, overwrite, true, pi_func, colorList, isBlackList)
+    bvector<BeFileName> colorList, bool isBlackList, Utf8String proxyUrl, Utf8String proxyCreds) :
+    RealityDataServiceUpload(uploadPath, "", properties, overwrite, true, pi_func, colorList, isBlackList, proxyUrl, proxyCreds)
     {}
 
 //=====================================================================================
@@ -1714,7 +1718,7 @@ RealityDataServiceUpload::RealityDataServiceUpload
 //=====================================================================================
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, 
     bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func, bvector<BeFileName> colorList, 
-    bool isBlackList) :
+    bool isBlackList, Utf8String proxyUrl, Utf8String proxyCreds) :
     RealityDataServiceTransfer(), m_overwrite(overwrite)
     { 
     m_id = id;
@@ -1727,6 +1731,9 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_fullTransferSize = 0;
     m_handshakeRequest = nullptr;
     m_pStatusFunc = pi_func;
+
+    if(proxyUrl.length() > 0)
+        SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
 
     if(!listable)
         {
@@ -1799,7 +1806,8 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func) :
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, 
+    RealityDataServiceTransfer_StatusCallBack pi_func, Utf8String proxyUrl, Utf8String proxyCreds) :
     RealityDataServiceTransfer()
     {
     m_id = serverId;
@@ -1811,6 +1819,9 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     m_currentTransferedAmount = 0;
     m_handshakeRequest = nullptr;
     m_pStatusFunc = pi_func;
+
+    if (proxyUrl.length() > 0)
+        SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
 
     m_handshakeRequest = new AzureHandshake(m_id, false);
     GetAzureToken();
@@ -1895,7 +1906,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func) :
+RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func, Utf8String proxyUrl, Utf8String proxyCreds) :
     RealityDataServiceTransfer()
     {
     m_id = serverId;
@@ -1907,6 +1918,9 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
     m_currentTransferedAmount = 0;
     m_handshakeRequest = nullptr;
     m_pStatusFunc = pi_func;
+
+    if (proxyUrl.length() > 0)
+        SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
 
     m_handshakeRequest = new AzureHandshake(m_id, false);
     GetAzureToken();
