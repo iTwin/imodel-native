@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/trigfuncs.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -542,18 +542,9 @@ double b
 * @return arctan of y/x.
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiTrig_atan2
-
-(
-double  y,
-double  x
-)
-
+Public GEOMDLLIMPEXP double bsiTrig_atan2 (double  y, double  x)
     {
-    if (x == 0.0 && y == 0.0)
-        return 0.0;
-    else
-        return atan2(y,x);
+    return Angle::Atan2 (y,x);
     }
 
 

@@ -697,7 +697,10 @@ TEST (DEllipse3d, IntersectPlane)
     int numPoints2 = ellipse0.IntersectPlane (trigPoints2, plane2);
     Check::Near (0, numPoints0);
     Check::Near (1, numPoints1);
-    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, -PI), trigPoints1[0]);
+
+    // Sept 2017 this was testing for -PI as the angle.
+    // but Angle::Atan2 has been changed to force the (-PI,+PI) ambiguous value to positive.
+    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, PI), trigPoints1[0]);
     Check::Near (2, numPoints2);
     Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, PI), trigPoints2[0]);
     Check::Near (DPoint3d::FromXYZ (0.0, -1.0, -PI/2), trigPoints2[1]);

@@ -1517,11 +1517,20 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<PolyfaceHeaderPtr> &submeshArray) const;
 
 //! Return indices of subsets with consistent forward and reverse visibility for given vector.
+//! <ul>
+//! <li> facets with normal in the direction of the vector are in readIndices[0]
+//! <li> facets with normals opposing the drection of the vector are in readIndices[1]
+//! <li> facets wtihin tolerance of perpendicular to the vector are in readIndices[2]
+//! </ul>
 //! @param [in] vector viewing direction vector
 //! @param [out] readIndices read indices for forward, reverse, and perpendicular facets 
+//! @param [in] sideFaceRadiansTolerance for declaring a facet's normal is perpenducular to the vector.
 //! @return false if vector is 000.
-GEOMDLLIMPEXP bool PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvector<ptrdiff_t>> &readIndices);
-
+GEOMDLLIMPEXP bool PartitionReadIndicesByNormal(
+DVec3dCR vector,
+bvector<bvector<ptrdiff_t>> &readIndices,
+double sideFaceRadiansTolerance = Angle::SmallAngle ()
+);
 };
 
 
