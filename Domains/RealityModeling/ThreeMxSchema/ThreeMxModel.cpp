@@ -45,7 +45,15 @@ BentleyStatus Scene::LoadScene()
     if (SUCCESS != ReadSceneFile())
         return ERROR;
 
-    CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024*1024*1024); // 1 GB
+    Utf8String  cacheFileString = Utf8String (m_sceneFile.c_str());
+
+    // Use full file path (without special characters) for cache key (was just using scene name).
+    cacheFileString.ReplaceAll("\\", "_");
+    cacheFileString.ReplaceAll("/", "_");
+    cacheFileString.ReplaceAll(":", "_");
+    cacheFileString.ReplaceAll(".", "_");
+
+    CreateCache(cacheFileString.c_str(), 1024*1024*1024); // 1 GB
 
     Node* root = new Node(*this, nullptr);
     root->m_childPath = m_sceneInfo.m_rootNodePath;
