@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BeSQLiteProfileManager.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\BeBriefcaseBasedIdSequence.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\BeLzma.h" />
     <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h" />
     <ClInclude Include="PublicAPI\BeSQLite\ChangeSet.h" />
     <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h" />
@@ -30,12 +32,18 @@
     <ClInclude Include="PublicAPI\BeSQLite\SHA1.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
+    <ClCompile Include="BeLzma.cpp" />
     <ClCompile Include="BeSQLite.cpp" />
     <ClCompile Include="BeSQLiteProfileManager.cpp" />
     <ClCompile Include="ChangeSet.cpp" />
     <ClCompile Include="Crypt\md5.cpp" />
     <ClCompile Include="Crypt\sha1.cpp" />
     <ClCompile Include="L10N.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BeSQLite.mke" />
+    <None Include="BeSQLite.prewire.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{52972837-02A2-4650-AC10-B770AE50B190}</ProjectGuid>
@@ -98,7 +106,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
- </PropertyGroup>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <NMakePreprocessorDefinitions>ANDROID;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>

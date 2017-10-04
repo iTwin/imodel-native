@@ -58,6 +58,8 @@ public:
         nextValue = TBeBriefcaseBasedId(nextValueInt);
         return BE_SQLITE_OK;
         }
+
+    Utf8CP GetName() const { return m_briefcaseLocalValueName; }
     };
 
 //=======================================================================================

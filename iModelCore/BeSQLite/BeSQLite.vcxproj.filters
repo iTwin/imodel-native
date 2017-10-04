@@ -34,6 +34,8 @@
     <ClInclude Include="PublicAPI\BeSQLite\ChangeSet.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\BeBriefcaseBasedIdSequence.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\BeLzma.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeSQLite.cpp" />
@@ -46,5 +48,11 @@
     <ClCompile Include="Crypt\sha1.cpp">
       <Filter>Crypt</Filter>
     </ClCompile>
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
+    <ClCompile Include="BeLzma.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BeSQLite.mke" />
+    <None Include="BeSQLite.prewire.mke" />
   </ItemGroup>
 </Project>
