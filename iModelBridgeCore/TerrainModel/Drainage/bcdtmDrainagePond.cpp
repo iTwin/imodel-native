@@ -9830,6 +9830,7 @@ static int bcdtmDrainage_designPondToATargetVolumeDtmObject
 cleanup :
     if( sideSlopeTableP != nullptr ) free(sideSlopeTableP) ;
     if( pondObjectsPP   != nullptr ) { free(pondObjectsPP) ; pondObjectsPP = nullptr ; }
+	if (joinUserTagsP != nullptr) { free(joinUserTagsP); joinUserTagsP = nullptr; }
     if( pondSideSlopesP != nullptr ) bcdtmObject_destroyDtmObject(&pondSideSlopesP) ;
     if( pondDataP != nullptr ) bcdtmObject_destroyDtmObject(&pondDataP) ;
     if( pondTinP  != nullptr ) bcdtmObject_destroyDtmObject(&pondTinP) ;

@@ -60,24 +60,41 @@ struct BcDTMDrainage
 
 struct DtmPondDesignCriteria
     {
-    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, int numPoints, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double target) :
-        points(&pointsP[0], &pointsP[numPoints-1]) , sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target)
+	DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, int numPoints, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double target) :
+		points(&pointsP[0], &pointsP[numPoints]), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target)
+		{
+		}
+
+    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, int numPoints, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double target, BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP fillTinP) :
+        points(&pointsP[0], &pointsP[numPoints]) , sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target), fillTinP(fillTinP)
         {
         }
 
-    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, const bvector<DPoint3d>& points, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double targetElevation, double targetVolume) :
-        points(points), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target)
+    DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double targetElevation, double target, BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP fillTinP) :
+        points(points), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target), fillTinP(fillTinP)
         {
         }
+
+	DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, int numPoints, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double targetElevation, double target,
+		bool isBerm, double bermSlope, double bermWidth, bool isCrown, double crownWidth, double cornerStrokeTolerance, bool isBermFillOnly, BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP fillTinP)  :
+ 		points(&pointsP[0], &pointsP[numPoints]), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target), isBerm(isBerm),
+		bermSlope(bermSlope), bermWidth(bermWidth), isCrown(isCrown), crownWidth(crownWidth), cornerStrokeTolerance(cornerStrokeTolerance), isBermFillOnly(isBermFillOnly), fillTinP(fillTinP)
+		{
+		}
+
+	DtmPondDesignCriteria()
+		{
+		}
 
     BENTLEYDTMDRAINAGE_EXPORT DTMPondResult  CreatePond(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& pondDTM);
-        
+	BENTLEYDTMDRAINAGE_EXPORT DTMPondResult  CreatePond(double *outPondElevationP, double *outPondVolumeP, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& pondDTM);
+
     bvector<DPoint3d> points;
     double sideSlope = 1; // pondSlope
     double freeBoard = 0;
     DTMPondTarget pondTarget = DTMPondTarget::Volume;
     DTMPondDesignMethod designMethod = DTMPondDesignMethod::BottomUp;
-    double target= 100000;
+    double target = 100000;
 
     double pondElevation = 0;
     double pondVolume = 0;
