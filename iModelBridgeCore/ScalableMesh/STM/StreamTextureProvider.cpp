@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-static double s_minPixelSizeLimit = 0.25;
+static double s_minPixelSizeLimit = 0;
 
 DPoint2d StreamTextureProvider::_GetMinPixelSize()
     {

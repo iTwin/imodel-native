@@ -449,6 +449,14 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
         return ERROR;
         }
 
+    double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
+    double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
+
+    Transform unitTransform;
+    unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
+    unitTransform.Multiply(range.low, range.low);
+    unitTransform.Multiply(range.high, range.high);
+
     ITextureProviderPtr mapboxPtr = new StreamTextureProvider(streamingRaster, range);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
 	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());

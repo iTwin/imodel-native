@@ -98,7 +98,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
             //path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
-            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);        
+            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d, true);        
             }
         }
 
