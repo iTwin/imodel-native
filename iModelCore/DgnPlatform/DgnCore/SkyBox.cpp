@@ -313,12 +313,9 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
                     while (params[i].y < .5) params[i].y += 1.0;
                 }
 
+            viewport.WorldToView(points, worldPoints, 4);
             for (int i=0; i<4; ++i)
                 {
-                // Compute the point in view space.
-                points[i].x = (points[i].x * 2 - 1) * width;
-                points[i].y = (points[i].y * 2 - 1) * height;
-                points[i].z = depth;
                 meshPoints.push_back(points[i]);
                 meshParams.push_back(params[i]);
                 indices.push_back((int)meshPoints.size());
