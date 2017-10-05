@@ -91,6 +91,7 @@ struct BimFile final : SessionFile
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
         ~BimFile() {}
         Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
+        Dgn::DgnDbR GetDgnDbHandleR() const { BeAssert(IsOpen()); return *m_file; }
     };
 
 //---------------------------------------------------------------------------------------
