@@ -31,6 +31,9 @@ virtual int  GetVectorIntegrandCount () override
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GaussKronrod,SimplePowers)
     {
     BSIQuadraturePoints gauss3, kronrod, gauss5, gauss7, gaussToUse;
@@ -149,6 +152,9 @@ virtual int  GetVectorIntegrandCount () override
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GaussKronrod,EllipticArcLength)
     {
     BSIQuadraturePoints gauss3, kronrod, gauss5, gauss7, gaussToUse;
@@ -266,6 +272,9 @@ TEST(GaussKronrod,EllipticArcLength)
         }
     };    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, Strang1)
     {
     int power  = 3;
@@ -342,6 +351,9 @@ TEST (GaussKronrod, Strang1)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, Strang2)
     {
     int power  = 5;
@@ -396,6 +408,9 @@ TEST (GaussKronrod, Strang2)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, Strang3)
     {
     int power  = 8;
@@ -458,6 +473,9 @@ TEST (GaussKronrod, Strang3)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, Strang4)
     {
     int selector = 7;
@@ -496,6 +514,9 @@ TEST (GaussKronrod, Strang4)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, MappedStrangConsistency)
     {
     int power  = 8;
@@ -542,6 +563,9 @@ TEST (GaussKronrod, MappedStrangConsistency)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, MappedStrang1)
     {
     int power  = 8;
@@ -633,6 +657,9 @@ TEST (GaussKronrod, MappedStrang1)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (GaussKronrod, MappedStrang2)
     {
     int power  = 2;
@@ -697,6 +724,9 @@ TEST (GaussKronrod, MappedStrang2)
     
     }
 #ifdef TestlambdaFunctions
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPP,LambdaFunction)
     {
     double a = -1.0;
@@ -752,6 +782,9 @@ void GetLastIntegrals (bvector<double> &data)
     }
 
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GaussRules,IntegrateWithRombergExtrapolation)
     {
     BSIQuadraturePoints gauss5, gauss2;

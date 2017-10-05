@@ -181,6 +181,9 @@ void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask, bool doVoronoi)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MinimumValuePriorityQueue, Bulk)
     {
     MinimumValuePriorityQueue <DPoint3d> queue;
@@ -315,6 +318,9 @@ void AddTestGraph00 (VuSetP graph, VuP &node0)
     vu_vertexTwist(graph, node7, node11);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu, MaskOps)
     {
     VuSetP graph = vu_newVuSet(0);
@@ -421,6 +427,10 @@ void DrawDashed (bvector<DSegment1d> const &fractions, DPoint3dCR xyz0, DPoint3d
         Check::SaveTransformed (line);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Vu,ShortestPaths)
     {
     ShortestPathContext::SearchFunctions unitTester;
@@ -519,6 +529,9 @@ DPoint3dCR pathStartEnd
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,FlightPathA)
     {
     bvector<bvector<DPoint3d>> allBoundaries
@@ -581,6 +594,9 @@ TEST(Vu,FlightPathA)
     Check::ClearGeometry ("Vu.FlightPathA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Vu, FlightPathB)
     {
     bvector<bvector<DPoint3d>> allBoundaries
@@ -609,6 +625,9 @@ TEST (Vu, FlightPathB)
     Check::ClearGeometry ("Vu.FlightPathB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Vu, FlightPathC)
     {
     bvector<bvector<DPoint3d>> allBoundaries

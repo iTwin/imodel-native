@@ -290,6 +290,10 @@ void DrawDashed (bvector<DSegment1d> const &fractions, DPoint3dCR xyz0, DPoint3d
         }
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MTG,ShortestPaths)
     {
     MTGShortestPathContext::MTGGraphSearchFunctions unitTester;

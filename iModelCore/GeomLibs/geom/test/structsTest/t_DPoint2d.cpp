@@ -1,5 +1,8 @@
 #include "testHarness.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, MagnitudeSquared)
     {
     DPoint2d point0 = DPoint2d::From (0.0, 1.0);
@@ -47,6 +50,9 @@ TEST(DPoint2d, MagnitudeSquared)
     Check::Near (point4, point14);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, Normalize)
     {
     DPoint2d point0 = DPoint2d::From (0.0, 0.0);
@@ -67,6 +73,9 @@ TEST(DPoint2d, Normalize)
     Check::Near (point2, point4);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, Rotate90)
     {
     DPoint2d point0, point4, point5;
@@ -83,6 +92,9 @@ TEST(DPoint2d, Rotate90)
     Check::Near (point6, point5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, Zero)
     {
     DPoint2d point0 = DPoint2d::From (12.9, -4.3);
@@ -95,6 +107,9 @@ TEST(DPoint2d, Zero)
     Check::Near (point2, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, InitFromArray)
     {
     DPoint2d point0, point2;
@@ -109,6 +124,9 @@ TEST(DPoint2d, InitFromArray)
     Check::Near (point1, point2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, SetComponents)
     {
     DPoint2d point0;
@@ -141,6 +159,9 @@ TEST(DPoint2d, SetComponents)
     Check::Near (yy, yCoord);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, SumOf)
     {
     DPoint2d point0, point6;
@@ -159,6 +180,9 @@ TEST(DPoint2d, SumOf)
     Check::Near (point7, point6);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, NormalizedDifferenceOf)
     {
     DPoint2d point0;
@@ -172,6 +196,9 @@ TEST(DPoint2d, NormalizedDifferenceOf)
     Check::Near (point3, point0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, AngleTo)
     {
     DPoint2d point0 = DPoint2d::From (1.0, 0.0);
@@ -185,6 +212,9 @@ TEST(DPoint2d, AngleTo)
     Check::Near (-PI/4, angle2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, Distance)
     {
     DPoint2d point0 = DPoint2d::From (1.0, 0.0);
@@ -203,6 +233,9 @@ TEST(DPoint2d, Distance)
     Check::Near (point1, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, IsParallelTo)
     {
     DPoint2d point0 = DPoint2d::From (2.0, 2.0);
@@ -215,6 +248,9 @@ TEST(DPoint2d, IsParallelTo)
     Check::True (!(point2.IsPerpendicularTo (point1)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, IsEqual)
     {
     DPoint2d point0 = DPoint2d::From (2.0, 2.0);
@@ -230,6 +266,9 @@ TEST(DPoint2d, IsEqual)
     Check::True (!(point3.IsEqual (point4, tol1)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, MaxAbs)
     {
     DPoint2d point0 = DPoint2d::From (-2.0, -15.0);
@@ -240,6 +279,9 @@ TEST(DPoint2d, MaxAbs)
     Check::Near (5.0, maxVal1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, IsDisconnect)
     {
     DPoint2d point0;
@@ -280,6 +322,9 @@ void TestBaryCentric (DPoint2d pointA, DPoint2d pointB, DPoint2d pointC)
     Check::Near (0.0, d1y.x + d1y.y + d1y.z, "derivative of convex sum");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, BaryCentric)
     {
     TestBaryCentric (DPoint2d::From (0,0), DPoint2d::From(1,0), DPoint2d::From (0,1));
@@ -317,7 +362,10 @@ bool test_interpolate (PrimaryType const &pointA, PrimaryType const &pointB)
     
     return errors == 0;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint2d, Interpolate)
     {
     Check::True (test_interpolate <DPoint2d, DVec2d> (DPoint2d::From (1,3), DPoint2d::From (5,11)), "DPoint2d interpolations");

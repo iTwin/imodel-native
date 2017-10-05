@@ -745,6 +745,10 @@ static size_t s_numI = 7;//17;
 static size_t s_numJ = 8;//13;
 static size_t s_numUVTest = 3;
 static size_t s_numCall = 1;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, SinusoidalPatchTiming)
     {
     double aI = 0.2;
@@ -758,7 +762,10 @@ TEST(BsplineSurface, SinusoidalPatchTiming)
     MSBsplineSurfacePtr surface = SurfaceWithSinusoidalControlPolygon (uOrder, vOrder, s_numI, s_numJ, q0I, aI, q0J, aJ);
     PatchTiming ("sinusoid", *surface, s_numUVTest, s_numCall, 0.01);
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, HyperbolicPatchTiming)
     {
     double u1 = 1.2;

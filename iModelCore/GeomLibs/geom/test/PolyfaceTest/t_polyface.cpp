@@ -257,6 +257,9 @@ size_t numMoreIn
     CHECK_EQ (Size, numMoreIn, numMore);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (COMMENT_OUT)
 TEST (Polyface, Carrier)
     {
@@ -365,6 +368,9 @@ bool Inspect (PolyfaceQueryCR mesh, size_t numFacet0, size_t minVertex0, size_t 
         && Check::Bool(nonConvex0, nonConvex1, "nonConvex");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, TriangulateCounts)
     {
 
@@ -430,6 +436,9 @@ void CheckPartition (char const* descr, size_t componentTarget, size_t faceTarge
     Check::Near (masterArea, fragmentArea, "Summed area of fragment meshes");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, PartitionByFaceTarget)
     {
     size_t nx = 4;
@@ -444,7 +453,9 @@ TEST (Polyface, PartitionByFaceTarget)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, PartitionByComponentTarget)
     {
     size_t nx = 4;
@@ -458,7 +469,6 @@ TEST (Polyface, PartitionByComponentTarget)
         CheckPartition ("ComponentTarget Target", componentTarget, 0, mesh, indices);
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  08/09

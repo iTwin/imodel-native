@@ -1,6 +1,9 @@
 #include "testHarness.h"
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, InitIdentity)
     {
     RotMatrix matrix0, matrix2, matrix4, matrix6, matrix10, matrix12,  matrix16, matrix18, matrix20, matrix22, matrix24, matrix26, matrix28, matrix30;
@@ -66,6 +69,9 @@ TEST(RotMatrix, InitIdentity)
     Check::Near (matrix0,  matrix30);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, Multiply)
     {
     RotMatrix matrix0 = RotMatrix::FromRowValues (8.0, 10.0, 12.0, 16.0, 20.0, 24.0, 24.0, 30.0, 36.0);
@@ -151,6 +157,9 @@ TEST(RotMatrix, Multiply)
     Check::Near(range0, range1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, InitProduct)
     {
     RotMatrix matrix0 = RotMatrix::FromRowValues (1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 3.0, 1.0, 2.0);
@@ -169,6 +178,9 @@ TEST(RotMatrix, InitProduct)
     Check::Near (matrix0, matrix7);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, Zero)
     {
     RotMatrix matrix0;
@@ -184,6 +196,9 @@ TEST(RotMatrix, Zero)
     Check::Near (matrix3, matrix2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, TransposeOf)
     {
     RotMatrix matrix0;
@@ -195,6 +210,9 @@ TEST(RotMatrix, TransposeOf)
     Check::Near (matrix2, matrix1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, InverseOf)
     {
     RotMatrix matrix0, matrix3;
@@ -209,6 +227,9 @@ TEST(RotMatrix, InverseOf)
     Check::Near (matrix4, matrix2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, ScaleRows)
     {
     RotMatrix matrix0, matrix4, matrix5;
@@ -229,6 +250,9 @@ TEST(RotMatrix, ScaleRows)
     Check::Near (matrix7, matrix5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, GetColumns)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
@@ -260,6 +284,9 @@ TEST(RotMatrix, GetColumns)
     Check::Near (x22, 9.0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, SetColumn)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
@@ -277,6 +304,9 @@ TEST(RotMatrix, SetColumn)
     Check::Near (vec2, vec3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, NormalizeRowsOf)
     {
     RotMatrix matrix0, matrix3;
@@ -296,6 +326,9 @@ TEST(RotMatrix, NormalizeRowsOf)
     Check::Near (0.0, d);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, ConditionNumber)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (1.0, 2.0, 5.0, 4.0, 5.0, 7.0, 7.0, 8.0, 11.0);
@@ -309,6 +342,9 @@ TEST(RotMatrix, ConditionNumber)
     Check::Near (0.0, result2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, IsDiagonal)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (1.0, 2.0, 5.0, 4.0, 5.0, 7.0, 7.0, 8.0, -11.0);
@@ -350,6 +386,9 @@ TEST(RotMatrix, IsDiagonal)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, IsSignedPermutation)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (1.0, 2.0, 5.0, 4.0, 5.0, 7.0, 7.0, 8.0, -11.0);
@@ -378,6 +417,9 @@ TEST(RotMatrix, IsSignedPermutation)
     Check::Near (2.0, scale1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, SquareAndNormalizeColumns)
     {
     RotMatrix matrix0, matrix3, matrix4, matrix5;
@@ -418,6 +460,9 @@ void CheckSquareUp (RotMatrixCR A, int expectedOrientation)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, SquareAndNormalizeColumnsA)
     {
     DVec3d U = DVec3d::From (1,2,3);
@@ -436,6 +481,9 @@ TEST(RotMatrix, SquareAndNormalizeColumnsA)
     CheckSquareUp (A1, -1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, ShuffleColumnsOf)
     {
     RotMatrix matrix0, matrix6, matrix9;
@@ -480,6 +528,9 @@ TEST(RotMatrix, ShuffleColumnsOf)
 //    matrix0.GivensRowOp (0.0, -1.0, 0, 1, matrix1);
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, Solve)
     {
     RotMatrix matrix1 = RotMatrix::FromRowValues (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -629,6 +680,9 @@ void TestMultiplication (RotMatrixCR A, double x, double y, double z)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixAndTransform, MultiplyA)
     {
     RotMatrix M0 = RotMatrix::FromRowValues (2,3,5, 7,11,13, 17,19, 23);
@@ -640,6 +694,9 @@ TEST (MatrixAndTransform, MultiplyA)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MatrixAndTransform, ProductA)
     {
     RotMatrix matrixA = RotMatrix::FromRowValues
@@ -739,6 +796,9 @@ void CheckOrthogonalFactors (RotMatrixCR A)
     CheckOrthogonalizeColumns (A);
     CheckSVD (A);    
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,OrthogonalFactors)
     {
     CheckOrthogonalFactors (
@@ -848,6 +908,9 @@ bool VerifyShifts (RotMatrixCR A, int axis, double eps, bool expectCleanup)
     Check::EndScope ();
     return true;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, InitWithRigidScaleCleanup)
     {
     Check::StartScope ("InitWithRigidScaleCleanup");
@@ -933,6 +996,9 @@ void VerifyPermutation (int ix, int iy, int iz, double x, double y, double z)
             }
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (RotMatrix, IsNearSignedPermutation)
     {
     int ix, iy, iz;
@@ -957,6 +1023,9 @@ TEST (RotMatrix, IsNearSignedPermutation)
         }    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix, EpsilonCase1)
     {
     int numFail = 0;
@@ -996,6 +1065,9 @@ void CheckEig2x2 (double a, double b, double c, double d)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Eigen, Solve2x2)
     {
     CheckEig2x2 (2, 0, 0, 3);
@@ -1004,6 +1076,9 @@ TEST(Eigen, Solve2x2)
     }
     
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,RepeatRotate)
     {
     int                                           count;
@@ -1028,6 +1103,9 @@ TEST(RotMatrix,RepeatRotate)
 
 }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,SkewFactors)
     {
     RotMatrix matrixA = RotMatrix::FromRowValues (1,2,3,-2,4,2,  -1,2,6);
@@ -1189,6 +1267,9 @@ void VerifyNearRigid (RotMatrixCR matrix, char const *name)
     Check::Print (rotationAroundVector, "rotate about");   Check::Print (theta, "radians"); Check::PrintIndent (0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,GyroData)
     {
     DVec3d f0_m = DVec3d::From (0,-1,0);
@@ -1295,6 +1376,9 @@ TEST(RotMatrix,GyroData)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,FromCrossVector)
     {
     auto vectorA = DVec3d::From (3,5,7);
@@ -1372,6 +1456,9 @@ void CheckMatrixRigid (RotMatrixCR matrix, bool isRigidScale, bool isRigidSigned
             }
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,IsRigidSignedScale)
     {
     RotMatrix pureRotation = RotMatrix::FromVectorAndRotationAngle (DVec3d::From (1,2,3), 0.23);
@@ -1503,6 +1590,9 @@ TEST(RotMatrix, ChangeRotation)
     Check::Near(point, DPoint3d::From(-4, 4, 2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,RotationFromStanadardView)
     {
     for (int viewIndex = 1; viewIndex < 9; viewIndex++)

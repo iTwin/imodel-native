@@ -28,6 +28,9 @@ void CheckQuadratic (double root0, double root1, double c, bool safeDivide)
         
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolynomialPowerDegree2, Test0)
     {
     for (int pass = 0; pass < 2; pass++)
@@ -53,6 +56,9 @@ void CheckLinear (double root, double slope, bool safeDivide)
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolynomialPowerDegree2, Test1)
     {
     for (int pass = 0; pass < 2; pass++)
@@ -63,6 +69,9 @@ TEST(PolynomialPowerDegree2, Test1)
         }
     }    
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolynomialPowerDegree2, BigRoots)
     {
     double dx = 1.0;
@@ -105,6 +114,9 @@ TEST (PolynomialPowerDegree2, BigRoots)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolynomialPowerDegree2, EvaluateThetaPhiDistance)
     {
     Polynomial::Implicit::Torus tor(30, 5, false);  // "old style".  Internal convention is now true!!!

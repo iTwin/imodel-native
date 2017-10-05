@@ -1,6 +1,9 @@
 #include "testHarness.h"
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, Init)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -46,6 +49,9 @@ TEST(DSegment3d, Init)
     Check::Near (segment9, segment10);
     } 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, GetEndPoints)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -58,6 +64,9 @@ TEST(DSegment3d, GetEndPoints)
     Check::Near (point1, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, LengthSquared)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -78,6 +87,9 @@ TEST(DSegment3d, LengthSquared)
     Check::Near (184.45, lengthSquaredSeg3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, GetRange)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -94,6 +106,9 @@ TEST(DSegment3d, GetRange)
     Check::Near (9.0, range0.high.z);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, ProjectPoint)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (4.7, 2.4, 9.3);
@@ -127,6 +142,9 @@ TEST(DSegment3d, ProjectPoint)
     Check::Near ((5.0 + (-1.0/2.0) * -2.0), point10.z);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, ProjectPointBounded)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (4.7, 2.4, 9.3);
@@ -160,6 +178,9 @@ TEST(DSegment3d, ProjectPointBounded)
     Check::Near (1.0, point10.z);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, Intersect)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (4.7, 2.4, 9.3);
@@ -192,6 +213,9 @@ TEST(DSegment3d, Intersect)
     Check::True (!(0.0 == plane0.Evaluate (point11)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, IntersectCircleXY)
     {
     DPoint3d point0[2];
@@ -227,6 +251,9 @@ TEST(DSegment3d, IntersectCircleXY)
     Check::Near (0, counter2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, InitProduct)
     {
     DPoint3d point1 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -247,6 +274,9 @@ TEST(DSegment3d, InitProduct)
     Check::Near (point7, point6);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, GetStartPoint)
     {
     DSegment3d segment0 = DSegment3d::From (8.9, -3.4, 5.7, -1.2, -2.3, 9.3);
@@ -265,6 +295,9 @@ TEST(DSegment3d, GetStartPoint)
     Check::Near (point3, segment1.point[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, FractionParameterToPoint)
     {
     DSegment3d segment0 = DSegment3d::From (0.0, 0.0, 0.0, 0.0, 4.0, 0.0);
@@ -286,6 +319,9 @@ TEST(DSegment3d, FractionParameterToPoint)
     Check::Near (vector1, vector0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, GetPoint)
     {
     DSegment3d segment0 = DSegment3d::From (1.5, 6.2, 3.7, 6.9, 4.0, 10.0);
@@ -311,6 +347,9 @@ TEST(DSegment3d, GetPoint)
     Check::Near (point5, segment1.point[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, InterpolateUniformArray)
     {
     DSegment3d segment0 = DSegment3d::From (0.0, 0.0, 0.0, 0.0, 4.0, 0.0);
@@ -339,6 +378,9 @@ TEST(DSegment3d, InterpolateUniformArray)
     Check::Near (point2, points3[0]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, Length)
     {
     DSegment3d segment0 = DSegment3d::From (0.0, 0.0, 0.0, 0.0, 4.0, 0.0);
@@ -352,6 +394,9 @@ TEST(DSegment3d, Length)
     Check::Near (4.0, length2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, FractionToLength)
     {
     DSegment3d segment0 = DSegment3d::From (0.0, 0.0, 0.0, 0.0, 4.0, 0.0);
@@ -432,6 +477,9 @@ void TrimSegments (bvector <DSegment3d> &segments, double tolerance)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DSegment3d, TrimSegments)
     {
     DPoint3d point0 = DPoint3d::FromXYZ (0.0, 0.0, 0.0);
@@ -463,6 +511,9 @@ TEST (DSegment3d, TrimSegments)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRange3d,intersectsWith)
     {
     DRange3d A;
@@ -473,7 +524,9 @@ TEST(DRange3d,intersectsWith)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d,IntersectZPlane)
     {
     Transform frame = Transform::FromRowValues (
@@ -534,6 +587,9 @@ bool bsiTransform_initPickupPutdownXY (TransformR transform, DSegment3dCR pickup
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment3d, PickupPutdown)
     {
     DSegment3d segment0 = DSegment3d::From (0,0,0, 1,0,0);

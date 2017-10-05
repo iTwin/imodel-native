@@ -106,6 +106,9 @@ void CheckOperators (TransformCR transform, DPoint3dCR A, DVec3d T)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Operators, VersusTransformOps)
     {
     CheckOperators (Transform::FromRowValues (
@@ -163,6 +166,9 @@ void CheckProductOperators (TransformCR transformA, TransformCR transformB)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Operators,MatrixProducts)
      {
      CheckProductOperators (
@@ -249,6 +255,9 @@ static void logInt(int v, char const* msg)
     LOG.errorv("(%s %d)", msg, v);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Compiler,BitFieldSize)
 {
     logInt((int)sizeof (My20Bools), "My20Bools");
@@ -260,6 +269,9 @@ TEST(Compiler,BitFieldSize)
     logInt((int)sizeof (MyBits), "MyBits");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Compiler,BSizes)
     {
     bvector<DPoint3d> bvector_DPoint3d;
@@ -293,6 +305,9 @@ TEST(Compiler,BSizes)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Compiler,bvectorCapacity)
     {
     bvector<DPoint3d> data;

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_facetTolerance.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -39,6 +39,9 @@ void FacetCone (double chordTol, double angleTol, double maxEdgeLength)
     Check::Print ((uint64_t)mesh->Point().size (), "Count");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Builder,MinimalCone)
     {
     double none = -100.0;

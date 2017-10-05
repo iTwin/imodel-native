@@ -30,11 +30,17 @@ struct CGBinarySerializationTests : ::testing::Test
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGBinarySerializationTests, TestSpecific)
     {
     Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed><ListOfControlPoint><xyz>1,0,0</xyz><xyz>0.86602540378443871,0.49999999999999994,0</xyz></ListOfControlPoint><ListOfKnot><Knot>0</Knot><Knot>0</Knot><Knot>1</Knot><Knot>1</Knot></ListOfKnot></BsplineCurve>"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGBinarySerializationTests, WriterTestLargeWeight)
     {
     Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed>"
@@ -58,10 +64,17 @@ TEST_F(CGBinarySerializationTests, WriterTestLargeWeight)
         ));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGBinarySerializationTests, WriterTestLargeRadius)
     {
         Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>110000000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGBinarySerializationTests, WriterTest)
     {
     DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0, 
@@ -101,6 +114,9 @@ TEST_F(CGBinarySerializationTests, WriterTest)
         Roundtrip(Utf8String("<CircularArc xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>110000000</radius><startAngle>0</startAngle><sweepAngle>-165</sweepAngle></CircularArc>"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CGBinarySerializationTests, DeserializeEllipticDisc)
     {
     Utf8String xml("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>");
@@ -118,6 +134,9 @@ TEST_F (CGBinarySerializationTests, DeserializeEllipticDisc)
     ASSERT_FALSE(arc.IsCircular ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
     {
     Utf8String xml("<ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\"> \
@@ -182,6 +201,9 @@ TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CGBinarySerializationTests, DeserializeNestedExtendedData)
     {
     Utf8String xml("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\">\

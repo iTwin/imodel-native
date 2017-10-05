@@ -91,7 +91,9 @@ void CheckRange ()
         Check::False (rangeA1.IsEqual (rangeA, 0.5 * e), "range equality with tol");        
         }
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRange3d, Init)
     {
     CheckRange <DRange3d, DPoint3d> ();
@@ -116,6 +118,9 @@ struct Cosine
         return m_a0 + cos (m_a1 + x * m_a2);
         }
     };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRange3d, Arrays)
     {
     Check::StartScope ("DRange3d From InitFrom Extend");
@@ -200,7 +205,10 @@ TEST(DRange3d, Arrays)
     T.Multiply (T_range_X, range_X);
     Check::EndScope ();
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRange3d, CornerRange)
     {
     DRange3d box = DRange3d::From (DPoint3d::From (1,2,3), DPoint3d::From (3,5,9));
@@ -220,7 +228,9 @@ TEST(DRange3d, CornerRange)
     Check::Near (centerToRay, fA, "box center projection");
     Check::Near (centerToPlane, fB, "box center projection");
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRange3d,Diagonal)
     {
     DVec3d zero = DVec3d::From (0,0,0);
