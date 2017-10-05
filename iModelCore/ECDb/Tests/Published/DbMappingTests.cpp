@@ -792,6 +792,60 @@ TEST_F(DbMappingTestFixture, Simple_MixIn)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                        10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, MixinInheritance)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("mixininheritance.ecdb"));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(R"xml(<ECSchema schemaName="Base" alias="b" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                    <ECEntityClass typeName="IBase" modifier="Abstract">
+                       <ECCustomAttributes>
+                           <IsMixin xmlns="CoreCustomAttributes.01.00">
+                               <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                           </IsMixin>
+                       </ECCustomAttributes>
+                       <ECProperty propertyName="Ib1" typeName="int" />
+                       <ECProperty propertyName="Ib2" typeName="int" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="BaseClass" modifier="Abstract" >
+                       <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                       </ECCustomAttributes>
+                       <ECProperty propertyName="B1" typeName="long" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="ChildA"> 
+                       <BaseClass>BaseClass</BaseClass>
+                       <ECProperty propertyName="A1" typeName="int" />
+                       <ECProperty propertyName="A2" typeName="double" />
+                   </ECEntityClass>
+                 </ECSchema>)xml"),
+
+        SchemaItem(R"xml(<ECSchema schemaName="Derived" alias="d" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECSchemaReference name="Base" version="01.00.00" alias="b"/>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                    <ECEntityClass typeName="ISub" modifier="Abstract">
+                       <ECCustomAttributes>
+                           <IsMixin xmlns="CoreCustomAttributes.01.00">
+                               <AppliesToEntityClass>ASubClass</AppliesToEntityClass>
+                           </IsMixin>
+                       </ECCustomAttributes>
+                       <BaseClass>b:IBase</BaseClass>
+                       <ECProperty propertyName="Is1" typeName="int" />
+                   </ECEntityClass>
+                   <ECEntityClass typeName="ASubClass">
+                       <BaseClass>b:BaseClass</BaseClass>
+                       <BaseClass>ISub</BaseClass>
+                       <ECProperty propertyName="S1" typeName="int" />
+                   </ECEntityClass>
+                 </ECSchema>)xml")}));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)

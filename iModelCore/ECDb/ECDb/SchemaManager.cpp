@@ -363,10 +363,7 @@ ECSchemaCP SchemaManager::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSch
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaManager::GetSchema(ECSchemaId schemaId, bool loadSchemaEntities) const
-    {
-    return GetReader().GetSchema(schemaId, loadSchemaEntities);
-    }
+ECSchemaCP SchemaManager::GetSchema(ECSchemaId schemaId, bool loadSchemaEntities) const { return GetReader().GetSchema(schemaId, loadSchemaEntities); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012

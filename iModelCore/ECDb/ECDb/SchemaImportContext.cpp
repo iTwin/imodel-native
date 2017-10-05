@@ -15,6 +15,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //ECSchemaCompareContext
 //****************************************************************************************** 
 
+//---------------------------------------------------------------------------------------
+//! WIP Only needed until ECObjects' ECSchema::Validate has become a const operation
+// @bsimethod                                                 Krischan.Eberle      10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ValidateSchema(ECN::ECSchemaCR schema)
+    {
+    for (ECClassCP ecclass : schema.GetClasses())
+        {
+        if (!ecclass->Validate())
+            return false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -37,8 +52,15 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
-            BeAssert(false && "Failed to reload a schema");
-            LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
+            BeAssert(false && "Failed to reload a previously imported schema");
+            LOG.errorv("Schema import failed. Failed to read schema %s from ECDb.", name.c_str());
+            return ERROR;
+            }
+
+        if (!ValidateSchema(*schema))
+            {
+            BeAssert(false && "Failed to validate a previously imported schema");
+            LOG.errorv("Schema import failed. Failed to validate previously imported schema %s.", name.c_str());
             return ERROR;
             }
 
@@ -50,8 +72,15 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
-            BeAssert(false && "Failed to reload a schema");
+            BeAssert(false && "Failed to reload imported schema");
             LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
+            return ERROR;
+            }
+
+        if (!ValidateSchema(*schema))
+            {
+            BeAssert(false && "Failed to validate imported schema");
+            LOG.errorv("Schema import failed. Failed to validate imported schema %s.", name.c_str());
             return ERROR;
             }
 
