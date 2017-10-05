@@ -91,6 +91,8 @@
     <ClCompile Include="Published\ElementGroup_Tests.cpp" />
     <ClCompile Include="Published\ExampleTestGroup.cpp" />
     <ClCompile Include="Published\Ecutils_Tests.cpp" />
+    <ClCompile Include="Published\FakeServer.cpp" />
+    <ClCompile Include="Published\FakeServerTests.cpp" />
     <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\LinearDimension_Test.cpp" />
@@ -130,6 +132,7 @@
     <ClInclude Include="Published\AnnotationTestFixture.h" />
     <ClInclude Include="Published\ChangeTestFixture.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
+    <ClInclude Include="Published\FakeServer.h" />
     <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h" />
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
     <ClInclude Include="TestFixture\DgnPlatformSeedManager.h" />
