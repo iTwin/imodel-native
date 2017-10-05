@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
-const wchar_t* s_path = L"C:\\work\\2017q1\\spar\\clip\\";
+const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -646,11 +646,9 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     }
 
 
-DPoint2d ComputeUVs(DPoint3d pt, DRange3d ext)
+DPoint2d ComputeUVs(DPoint3d pt, DRange3d ext, size_t textureWidthInPixels=1024, size_t textureHeightInPixels= 1024)
     {
     DPoint2d uv;
-    size_t textureWidthInPixels = 1024;
-    size_t textureHeightInPixels = 1024;
     double unitsPerPixelX = (ext.high.x - ext.low.x) / textureWidthInPixels;
     double unitsPerPixelY = (ext.high.y - ext.low.y) / textureHeightInPixels;
     ext.low.x -= 5 * unitsPerPixelX;
@@ -710,7 +708,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
         for (size_t uvI = 0; uvI < 3; ++uvI)
             {
-            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_nodeRange);
+            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_nodeRange, m_widthOfTexData, m_heightOfTexData);
             if (allUvs.count(uvCoords[uvI]) == 0 || allUvs[uvCoords[uvI]] == 0)
                 {
                 poly->Param().push_back(uvCoords[uvI]);
@@ -857,7 +855,7 @@ size_t s_nclip = 0;
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
 //#ifndef NDEBUG
-    bool dbg = false;
+    volatile bool dbg = false;
     if (dbg)
         {
         WString nameBefore = WString(s_path)+L"fpreclipmeshregion2d_";
@@ -952,6 +950,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
 #ifndef NDEBUG
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
 #endif
+
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();

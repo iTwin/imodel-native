@@ -4161,7 +4161,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     
 
         Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, m_nodeHeader.m_nodeExtent, uvBuffer, uvIndices);
-        bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
+        
+		if(m_nodeHeader.m_isTextured && m_SMIndex->IsTextured() == SMTextureType::Streaming)
+		    clipNode.SetTextureDimensions(256,256);
+
+		bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(
 #ifndef VANCOUVER_API
