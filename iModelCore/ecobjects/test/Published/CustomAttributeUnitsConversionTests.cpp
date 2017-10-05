@@ -51,7 +51,8 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                     convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
                 ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
 
-                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
+                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) 
+                    << "Converted unit not correct for " << convertedProp->GetName().c_str() << " Expected: " << convertedUnit->GetName() << " Actual: " << koq->GetPersistenceUnit().GetUnit()->GetName();
                 }
             }
         }
@@ -116,11 +117,24 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
+TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsAreNotCompatible)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="SpecialPipe" displayLabel="A more specialized pipe" isDomainClass="True">
+                <BaseClass>Pipe</BaseClass>
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>AREA</KindOfQuantityName>
+                            <DimensionName>L2</DimensionName>
+                            <UnitName>ACRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
             <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
                 <ECProperty propertyName="Length" typeName="double">
                     <ECCustomAttributes>
@@ -134,6 +148,25 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
                 </ECProperty>
             </ECClass>
 
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_FALSE(ECSchemaConverter::Convert(*schema.get())) << "Converted a schema with incompatible units";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
             <ECClass typeName="SpecialPipe" displayLabel="A more specialized pipe" isDomainClass="True">
                 <BaseClass>Pipe</BaseClass>
                 <ECProperty propertyName="Length" typeName="double">
@@ -147,6 +180,19 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
                     </ECCustomAttributes>
                 </ECProperty>
             </ECClass>
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>DECIMETRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -194,6 +240,83 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     ECValue oldUnitName;
     oldPersistenceUnit->GetValue(oldUnitName, "Name");
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                        10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>DECIMETRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+
+            <ECClass typeName="SpecialPipe" displayLabel="A more specialized pipe" isDomainClass="True">
+                <BaseClass>Pipe</BaseClass>
+                <ECProperty propertyName="AnotherLength" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>FOOT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>FOOT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="YetAnotherLength" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>FOOT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_STREQ("DM", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_FALSE(schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    ASSERT_STREQ("DM", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
+    ASSERT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_FALSE(schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_FALSE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH"));
+    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH_SpecialPipe"));
+    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH_SPecialPipe_Length"));
+    ASSERT_EQ(3, schema->GetKindOfQuantityCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -278,7 +401,8 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName(), specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_STREQ("KM", lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
     EXPECT_STREQ("CM", specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName());
-    EXPECT_EQ(2, specialLengthKOQ->GetPresentationUnitList().size());
+    EXPECT_EQ(1, lengthKOQ->GetPresentationUnitList().size());
+    EXPECT_EQ(1, specialLengthKOQ->GetPresentationUnitList().size());
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;

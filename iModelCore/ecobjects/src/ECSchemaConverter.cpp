@@ -887,41 +887,105 @@ ECObjectsStatus addOldUnitCustomAttribute(ECSchemaR schema, ECPropertyP prop, Ut
     return status;
     }
 
-ECObjectsStatus createKindOfQuantity(ECSchemaR schema, PrimitiveECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+bool kindOfQuantityHasMatchingPersitenceUnit(KindOfQuantityCP koq, Units::UnitCP unit)
     {
-    persistenceUnitChanged = false;
-    newKOQ = schema.GetKindOfQuantityP(newKoqName);
-    ECObjectsStatus status;
-    if (nullptr != newKOQ)
+    if (nullptr == koq)
+        return true;
+
+    return Units::Unit::AreEqual(koq->GetPersistenceUnit().GetUnit(), unit);
+    }
+
+bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::UnitCP displayUnit, Units::UnitCP persistenceUnit)
+    {
+    if (nullptr == displayUnit)
+        return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), persistenceUnit);
+    return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), displayUnit);
+    }
+
+ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+    {
+    ECObjectsStatus status = schema.CreateKindOfQuantity(newKOQ, newKoqName);
+    if (ECObjectsStatus::Success != status)
         {
-        if (!Units::Unit::AreEqual(newKOQ->GetPersistenceUnit().GetUnit(), newUnit))
-            {
-            Utf8String fullName = schema.GetFullSchemaName();
-            LOG.infov("Found property %s:%s.%s with KindOfQuantity '%s' and unit '%s' but the KindOfQuantity defines the unit '%s'.  Looking for alternate KindOFQuantity",
-                      fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKoqName, newUnit->GetName(), newKOQ->GetPersistenceUnit().GetUnit()->GetName());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-            }
+        LOG.warningv("Failed to create new KindOfQuantity in schema %s with name %s.", schema.GetFullSchemaName().c_str(), newKoqName);
+        return status;
+        }
+
+    if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
+        {
+        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+        newKOQ->SetRelativeError(1e-4);
         }
     else
         {
-        if (ECObjectsStatus::Success != (status = schema.CreateKindOfQuantity(newKOQ, newKoqName)))
-            return status;
-        
-        if (!prop->IsKindOfQuantityDefinedLocally() && nullptr != prop->GetKindOfQuantity())
-            {
-            KindOfQuantityCP basePropKOQ = prop->GetKindOfQuantity();
-            newKOQ->SetPersistenceUnit(basePropKOQ->GetPersistenceUnit());
-            newKOQ->SetRelativeError(basePropKOQ->GetRelativeError());
-            newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
-            persistenceUnitChanged = true;
-            }
-        else
-            {
-            newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
-            newKOQ->SetRelativeError(1e-4);
-            }
+        newKOQ->SetPersistenceUnit(baseKOQ->GetPersistenceUnit());
+        newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
+        persistenceUnitChanged = true;
         }
+
+    if (nullptr != newDisplayUnit)
+        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newDisplayUnit->GetName()));
+    else if (persistenceUnitChanged)
+        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newUnit->GetName()));
+
     return ECObjectsStatus::Success;
+    }
+
+bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged)
+    {
+    persistenceUnitChanged = false;
+    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
+        return false;
+    
+    persistenceUnitChanged = !kindOfQuantityHasMatchingPersitenceUnit(newKOQ, newUnit);
+    if (nullptr == baseKOQ && persistenceUnitChanged)
+        {
+        persistenceUnitChanged = false;
+        return false;
+        }
+
+    return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
+    }
+
+bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUnit)
+    {
+    if (nullptr == baseKOQ)
+        return false;
+    return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
+    }
+
+ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, PrimitiveECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+    {
+    persistenceUnitChanged = false;
+    KindOfQuantityCP baseKOQ = prop->GetKindOfQuantity();
+    if (baseAndNewUnitAreIncompatible(baseKOQ, newUnit))
+        {
+        LOG.errorv("Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
+                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit().GetUnit()->GetName(), newUnit->GetName());
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+        }
+
+    newKOQ = schema.GetKindOfQuantityP(newKoqName);
+    if (nullptr == newKOQ)
+        {
+        if (ECObjectsStatus::Success == createNewKindOfQuantity(schema, newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged, newKoqName))
+            return ECObjectsStatus::Success;
+        }
+    else if (kindOfQuantityIsAcceptable(newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged))
+        return ECObjectsStatus::Success;
+
+    Utf8PrintfString newKoqNameWithClass("%s_%s", newKoqName, prop->GetClass().GetName().c_str());
+    newKOQ = schema.GetKindOfQuantityP(newKoqNameWithClass.c_str());
+    if (nullptr == newKOQ)
+        {
+        if (ECObjectsStatus::Success == createNewKindOfQuantity(schema, newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged, newKoqNameWithClass.c_str()))
+            return ECObjectsStatus::Success;
+        }
+    else if (kindOfQuantityIsAcceptable(newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged))
+        return ECObjectsStatus::Success;
+
+    Utf8PrintfString newKoqNameWithClassAndProperty("%s_%s", newKoqNameWithClass.c_str(), prop->GetName().c_str());
+    return createNewKindOfQuantity(schema, newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged, newKoqNameWithClassAndProperty.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -966,42 +1030,27 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (!UnitSpecification::TryGetNewKOQName(instance, newKOQName))
         newKOQName = newUnit->GetPhenomenon()->GetName();
 
-    bool persistenceUnitChanged;
-    ECObjectsStatus status = createKindOfQuantity(schema, prop, newKOQ, instance, newUnit, persistenceUnitChanged, newKOQName.c_str());
-    if (ECObjectsStatus::NamedItemAlreadyExists == status)
+    Units::UnitCP newDisplayUnit = nullptr;
+    Unit oldDisplayUnit;
+    Utf8String oldFormatString;
+    if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        Utf8PrintfString newKoqString("%s_%s", newKOQName.c_str(), newUnit->GetName());
-        ECValidatedName validatedKoqName;
-        validatedKoqName.SetName(newKoqString.c_str());
-        newKOQ = schema.GetKindOfQuantityP(validatedKoqName.GetName().c_str());
-        if(ECObjectsStatus::Success != createKindOfQuantity(schema, prop, newKOQ, instance, newUnit, persistenceUnitChanged, validatedKoqName.GetName().c_str()))
-            {
-            LOG.errorv("Failed to create KindOfQuantity, %s, from the unit '%s' defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
-                       validatedKoqName.GetName().c_str(), oldUnit.GetName(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
-            return status;
-            }
+        newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
+        if (nullptr == newDisplayUnit)
+            LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldDisplayUnit.GetName());
+        }
+
+    bool persistenceUnitChanged;
+    ECObjectsStatus status = obtainKindOfQuantity(schema, prop, newKOQ, instance, newUnit, newDisplayUnit, persistenceUnitChanged, newKOQName.c_str());
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName());
+        return status;
         }
 
     if (persistenceUnitChanged)
         addOldUnitCustomAttribute(schema, prop, oldUnit.GetName());
 
-    Unit oldDisplayUnit;
-    Utf8String oldFormatString;
-    if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
-        {
-        if (persistenceUnitChanged || !newKOQ->HasPresentationUnits())
-            {
-            Units::UnitCP newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
-            if (nullptr == newUnit)
-                {
-                Utf8String fullName = schema.GetFullSchemaName();
-                LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
-                }
-            else
-                newKOQ->SetDefaultPresentationUnit(Formatting::FormatUnitSet("DefaultReal", newDisplayUnit->GetName()));
-            }
-        }
-    
     if (ECObjectsStatus::KindOfQuantityNotCompatible == prop->SetKindOfQuantity(newKOQ))
         {
         LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
