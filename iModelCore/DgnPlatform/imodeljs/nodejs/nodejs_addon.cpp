@@ -1238,10 +1238,12 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //=======================================================================================
     struct ExecuteQueryWorker : WorkerBase<DbResult>
         {
-        Utf8String m_ecsql;
+        Utf8String m_ecsql; // input
+        Json::Value m_bindings; // input
         Json::Value m_rowsJson;  // output
 
-        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql, Utf8CP strBindings) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue),
+            m_bindings(Utf8String::IsNullOrEmpty(strBindings) ? Json::nullValue : Json::Value::From(strBindings)) {}
 
         static NAN_METHOD(Start)
             {
@@ -1249,7 +1251,9 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
             REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR);
-            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, BE_SQLITE_ERROR);
+
+            (new ExecuteQueryWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
@@ -1270,7 +1274,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, Json::nullValue);
+            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
@@ -1302,6 +1306,20 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
     //  Destruct the native wrapper object itself
     ~NodeAddonDgnDb() {}
+
+    static NAN_METHOD(SaveChanges)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+
+        auto stat = db->m_dgndb->SaveChanges();
+        info.GetReturnValue().Set((int)stat);
+        }
 
     static NAN_METHOD(CloseDgnDb)
         {
@@ -1343,6 +1361,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
         Nan::SetPrototypeMethod(t, "openBriefcase", OpenBriefcaseWorker::Start);
+        Nan::SetPrototypeMethod(t, "saveChanges", SaveChanges);
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
@@ -1467,7 +1486,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         info.GetReturnValue().Set((int)status);
         }
 
-    static NAN_METHOD(GetValues)
+    static NAN_METHOD(GetRow)
         {
         v8::EscapableHandleScope scope(info.GetIsolate());
         NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
@@ -1498,7 +1517,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "clearBindings", ClearBindings);
         Nan::SetPrototypeMethod(t, "bindValues", BindValues);
         Nan::SetPrototypeMethod(t, "step", Step);
-        Nan::SetPrototypeMethod(t, "getValues", GetValues);
+        Nan::SetPrototypeMethod(t, "getRow", GetRow);
         
         s_constructor_template.Reset(t);
 
