@@ -1544,20 +1544,12 @@ bool ECClass::CheckBaseClassCycles (ECClassCP thisClass, const void * arg)
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
-    {
-    return AddBaseClass(baseClass, false);
-    }
-
 //-------------------------------------------------------------------------------------
 //* @bsimethod                                              
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, true);
+    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
 
 //-------------------------------------------------------------------------------------
@@ -1956,6 +1948,11 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
         
     return false;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                       10/17
+//---------------------------------------------------------------------------------------
+bool ECClass::Validate() const { return _Validate(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -2592,7 +2589,7 @@ bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseA
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECEntityClass::Verify() const
+bool ECEntityClass::_Validate() const
     {
     if(!HasBaseClasses())
         return true;

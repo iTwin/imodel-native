@@ -1469,6 +1469,8 @@ protected:
     virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const {return nullptr;} // used to avoid dynamic_cast
     virtual ECCustomAttributeClassP _GetCustomAttributeClassP() {return nullptr;} // used to avoid dynamic_cast
 
+    virtual bool _Validate() const = 0;
+
     void InvalidateDefaultStandaloneEnabler() const;
 public:
     ECOBJECTS_EXPORT ECPropertyP GetPropertyByIndex (uint32_t index) const;
@@ -1578,7 +1580,7 @@ public:
     //! so will return an error. You also can't add a base class to final classes
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
+    ECObjectsStatus AddBaseClass(ECClassCR baseClass) { return AddBaseClass(baseClass, false); }
 
     //! Adds a base class at either the beginning or end of the base class list
     //! @remarks This method is intended for the rare case where you need to control at which position
@@ -1592,8 +1594,9 @@ public:
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
     //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
-    //! false if @p baseClass is added to the end of the list
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
+    //!                             false if @p baseClass is added to the end of the list
+    //! @param[in] validate if true, will validate the class hierarchy
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate=true);
     
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool HasBaseClasses() const;
@@ -1672,6 +1675,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
+
+    ECOBJECTS_EXPORT bool Validate() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -2015,8 +2020,9 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
+
+    bool _Validate() const override;
     bool VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
-    bool Verify() const;
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -2078,6 +2084,8 @@ private:
     ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema), m_containerType(CustomAttributeContainerType::Any) {}
     virtual ~ECCustomAttributeClass () {}
 
+    bool _Validate() const override { return true; }
+
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2116,6 +2124,8 @@ private:
     //  of a schema.
     ECStructClass(ECSchemaCR schema) : ECClass(schema) {}
     virtual ~ECStructClass () {}
+
+    bool _Validate() const override { return true; }
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2384,9 +2394,10 @@ private:
     ECObjectsStatus SetStrength(Utf8CP strength);
     ECObjectsStatus SetStrengthDirection(Utf8CP direction);
 
+    bool _Validate() const override { return Verify(false); }
+    bool Verify(bool resolveIssues) const;
     bool ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
-    bool Verify(bool resolveIssues) const;
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;

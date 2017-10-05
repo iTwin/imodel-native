@@ -1,3 +1,4 @@
+m_validatedName
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECSchema.cpp $
@@ -576,19 +577,20 @@ bool ECSchema::Validate(bool resolveIssues)
     bool isValid = true;
     for (ECClassP ecClass : GetClasses())
         {
-        ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-        if ((nullptr != relClass) && !relClass->Verify(resolveIssues))
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (relClass != nullptr)
             {
-            isValid = false;
+            if (!relClass->Verify(resolveIssues))
+                isValid = false;
+
             continue;
             }
-        
-        ECEntityClassP entityClass = ecClass->GetEntityClassP();
-        if ((nullptr != entityClass) && !entityClass->Verify())
+
+        if (!ecClass->Validate())
             isValid = false;
         }
 
-    for (KindOfQuantityP koq : GetKindOfQuantities())
+    for (KindOfQuantityCP koq : GetKindOfQuantities())
         {
         if (!koq->Verify())
             isValid = false;
