@@ -1331,7 +1331,7 @@ void PondAnalysis::GetType()
     double testZ = pointAddrP(dtmP, m_lowPnt)->z;
     long clc = nodeAddrP(dtmP, m_lowPnt)->cPtr;
     long sp = -1;
-    long np;
+    long np=0;
     bool hasZSlope = false;
     while (clc != dtmP->nullPtr)
         {
@@ -2577,7 +2577,7 @@ TraceFeatureP TraceFeature::CreateAndAddEdge(bvector<TraceFeaturePtr>& newFeatur
 void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     {
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
-    long nextPnt1, nextPnt2 = dtmP->nullPnt, nextPnt3 = dtmP->nullPnt;
+    long nextPnt1 = 0, nextPnt2 = dtmP->nullPnt, nextPnt3 = dtmP->nullPnt;
     DPoint3d nextPt;
     if (pnt3 == dtmP->nullPnt)
         {
@@ -4316,7 +4316,7 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
     double previousSlope = -1;
     long useP1 = dtmP->nullPnt;
     long useP2 = 0;
-    double useAngle;
+    double useAngle = 0;
     double angleSpPnt = bcdtmMath_getPointAngleDtmObject(dtmP, m_exitPnt, sp);
     bool rememberSteepest = false;
     size_t currentChildrenNum = m_children.size();
