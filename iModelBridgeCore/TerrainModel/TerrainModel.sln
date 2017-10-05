@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerrainModelCore", "Core\Core.vcxproj", "{1D2F2287-897A-4C09-AAF7-62984BEF33A6}"
 EndProject
@@ -38,6 +38,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InroadsTM", "Formats\InroadsTM\InroadsTM.vcxproj", "{D6CFB4EE-4CCB-4394-905B-9030F11CBEF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerrainModelNetTests", "Tests\TerrainModelNetTests\TerrainModelNetTests.csproj", "{3E557515-B271-4650-B80C-406A78C2F7CC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerrainModelTest", "Tests\TerrainModelTests\TerrainModelTest.vcxproj", "{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -179,6 +181,18 @@ Global
 		{3E557515-B271-4650-B80C-406A78C2F7CC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{3E557515-B271-4650-B80C-406A78C2F7CC}.Release|Win32.ActiveCfg = Release|Any CPU
 		{3E557515-B271-4650-B80C-406A78C2F7CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|Win32.Build.0 = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Debug|x64.ActiveCfg = Debug|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|Any CPU.ActiveCfg = Release|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|Win32.ActiveCfg = Release|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|Win32.Build.0 = Release|Win32
+		{DC3C850C-1F66-4CB1-BF12-A16F020FD35E}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

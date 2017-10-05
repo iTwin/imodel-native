@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmData.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -316,8 +316,10 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
     long   pnt1,pnt2,point,dtmFeature,numPoints,firstPoint,lastPoint,lastCount=0 ;
     BC_DTM_FEATURE  *dtmFeatureP ;
     DPoint3d *pointP,*numPointsP ;
-    unsigned char   *delP,*delPointsP=NULL ;
-    long   *ofsP,*offsCountP=NULL ;
+    unsigned char   *delPointsP=nullptr;
+    bvector<unsigned char> delPoints;
+    long   *ofsP, *offsCountP = nullptr;
+    bvector<long> offsCount;
 
     // Log Entry Parameters
 
@@ -408,16 +410,13 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
 
             //     Allocate Memory For Deleted Point Flags
 
-            delPointsP = ( unsigned char * ) malloc( ( dtmP->numPoints / 8 + 1 ) * sizeof( char )) ;
-            if( delPointsP == NULL )
+            delPoints.resize(dtmP->numPoints / 8 + 1, 255);
+            delPointsP = delPoints.data();
+            if( delPointsP == nullptr )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
                 }
-
-            //     Initialise Flags
-
-            for( delP = delPointsP ; delP < delPointsP + ( dtmP->numPoints / 8 + 1) ; ++delP ) *delP = ( unsigned char ) 255 ;
 
             //     Scan Features And Mark Delete Points
 
@@ -441,7 +440,8 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
 
             //     Allocate Memory For Offset Counts
 
-            offsCountP = ( long * ) malloc( dtmP->numPoints * sizeof(long)) ;
+            offsCount.resize(dtmP->numPoints, 0) ;
+            offsCountP = offsCount.data();
             if( offsCountP == NULL )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -521,7 +521,6 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
     ** Clean Up
     */
 cleanup :
-    if( delPointsP != NULL ) free(delPointsP) ;
     /*
     ** Job Completed
     */

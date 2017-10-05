@@ -19,11 +19,24 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #pragma float_control(precise, on, push)
 
-thread_local static DPoint3d  *conPtsP = nullptr;               /* DTM Contour Points                                      */
-thread_local static long *conWghtP=nullptr ;                   /* Weighting Of Each Contour Point                         */
-thread_local static long numConPts=0  ;                     /* Number Of DTM Contour Points                            */
-thread_local static long memConPts=0  ;                     /* Amount Of Memory Currently Allocated For Contour Points */
-thread_local static long memConPtsInc=10000 ;               /* Memory Allocation Amounts For Contour Points            */
+struct ContourThreadData
+    {
+    DPoint3d  *conPtsP = nullptr;               /* DTM Contour Points                                      */
+    long *conWghtP=nullptr ;                   /* Weighting Of Each Contour Point                         */
+    long numConPts=0  ;                     /* Number Of DTM Contour Points                            */
+    long memConPts=0  ;                     /* Amount Of Memory Currently Allocated For Contour Points */
+    long memConPtsInc=10000 ;               /* Memory Allocation Amounts For Contour Points            */
+
+    ~ContourThreadData()
+        {
+        if (conPtsP)
+            free(conPtsP);
+        if (conWghtP)
+            free(conWghtP);
+        }
+    };
+
+thread_local static ContourThreadData s_contourthreadData;
 typedef int (*DtmCallBack) ();
 //concurrency::combinable<DTMFeatureCallback> ContourLoadFunctionP;
 //thread_local void* ContourLoadFunctionUserArgP = nullptr;
@@ -58,9 +71,9 @@ static bool contourIndexCompare(const DTMContourIndex& index1P, const  DTMContou
 BENTLEYDTM_EXPORT int bcdtmLoad_freeContourMemory(void)
 {
  int ret=DTM_SUCCESS ;
- numConPts = memConPts = 0 ;
- if( conPtsP  != nullptr ) { free(conPtsP)  ; conPtsP  = nullptr ; }
- if( conWghtP != nullptr ) { free(conWghtP) ; conWghtP = nullptr ; }
+ s_contourthreadData.numConPts = s_contourthreadData.memConPts = 0 ;
+ if( s_contourthreadData.conPtsP  != nullptr ) { free(s_contourthreadData.conPtsP)  ; s_contourthreadData.conPtsP  = nullptr ; }
+ if( s_contourthreadData.conWghtP != nullptr ) { free(s_contourthreadData.conWghtP) ; s_contourthreadData.conWghtP = nullptr ; }
  return(ret) ;
 }
 /*-------------------------------------------------------------------+
@@ -79,14 +92,14 @@ BENTLEYDTM_Public int bcdtmLoad_removeDuplicateContourPoints(void)
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Removing Duplicate Contour Points") ;
-    bcdtmWrite_message(0,0,0,"Number Of Contour Points Before Removing Duplicates = %8ld",numConPts) ;
+    bcdtmWrite_message(0,0,0,"Number Of Contour Points Before Removing Duplicates = %8ld",s_contourthreadData.numConPts) ;
    }
 /*
 ** Scan Load Points Array And Remove Duplicates
 */
- if( numConPts > 1 )
+ if( s_contourthreadData.numConPts > 1 )
    {
-    for( p3d1P = conPtsP , p3d2P = conPtsP + 1 , wght1P = conWghtP ,wght2P = conWghtP + 1 ; p3d2P < conPtsP + numConPts ; ++p3d2P , ++wght2P )
+    for( p3d1P = s_contourthreadData.conPtsP , p3d2P = s_contourthreadData.conPtsP + 1 , wght1P = s_contourthreadData.conWghtP ,wght2P = s_contourthreadData.conWghtP + 1 ; p3d2P < s_contourthreadData.conPtsP + s_contourthreadData.numConPts ; ++p3d2P , ++wght2P )
       {
        if( p3d1P->x != p3d2P->x || p3d1P->y != p3d2P->y || p3d1P->z != p3d2P->z )
          {
@@ -103,8 +116,8 @@ BENTLEYDTM_Public int bcdtmLoad_removeDuplicateContourPoints(void)
 /*
 ** Reset Number Of Load Points
 */
- numConPts = (long)(p3d1P-conPtsP) + 1 ;
- if( dbg )  bcdtmWrite_message(0,0,0,"Number Of Contour Points After  Removing Duplicates = %8ld",numConPts) ;
+ s_contourthreadData.numConPts = (long)(p3d1P-s_contourthreadData.conPtsP) + 1 ;
+ if( dbg )  bcdtmWrite_message(0,0,0,"Number Of Contour Points After  Removing Duplicates = %8ld",s_contourthreadData.numConPts) ;
 /*
 ** Job Completed
 */
@@ -1652,7 +1665,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              free(tinLine2P); tinLine2P = nullptr;
              }
          if (clipDtmP != nullptr) bcdtmObject_destroyDtmObject(&clipDtmP);
-         numConPts = 0;
+         s_contourthreadData.numConPts = 0;
          /*
          ** Write Departing Message
          */
@@ -2350,7 +2363,7 @@ BENTLEYDTM_Private int bcdtmLoad_traceZeroSlopeContourDtmObject
 ** Error Exit
 */
  errexit :
- numConPts = 0 ;
+ s_contourthreadData.numConPts = 0 ;
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -2378,24 +2391,24 @@ BENTLEYDTM_Public int bcdtmLoad_storeContourPoint
 /*
 ** Write Entry Message
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Storing Contour Point[%8ld] ** S = %2ld W = %2ld ** %12.5lf %12.5lf %10.4lf",numConPts,storeOption,weight,x,y,z) ;
+ if( dbg ) bcdtmWrite_message(0,0,0,"Storing Contour Point[%8ld] ** S = %2ld W = %2ld ** %12.5lf %12.5lf %10.4lf",s_contourthreadData.numConPts,storeOption,weight,x,y,z) ;
 /*
 ** Store Points If Not Clearing Memory
 */
- if( ! storeOption  ) numConPts = 0 ;
+ if( ! storeOption  ) s_contourthreadData.numConPts = 0 ;
  else
    {
 /*
 ** Check For Sufficient Heap Space
 */
-    if( numConPts == memConPts )
+    if( s_contourthreadData.numConPts == s_contourthreadData.memConPts )
       {
-       memConPts = memConPts + memConPtsInc ;
-       if( conPtsP == nullptr )  conPtsP  = ( DPoint3d  * ) malloc  ( memConPts * sizeof(DPoint3d)) ;
-       else                   conPtsP  = ( DPoint3d  * ) realloc ( conPtsP , memConPts * sizeof(DPoint3d)) ;
-       if( conWghtP == nullptr ) conWghtP = ( long * ) malloc  ( memConPts * sizeof(long)) ;
-       else                   conWghtP = ( long * ) realloc ( conWghtP , memConPts * sizeof(long)) ;
-       if( conPtsP == nullptr || conWghtP == nullptr )
+        s_contourthreadData.memConPts = s_contourthreadData.memConPts + s_contourthreadData.memConPtsInc ;
+       if( s_contourthreadData.conPtsP == nullptr )  s_contourthreadData.conPtsP  = ( DPoint3d  * ) malloc  ( s_contourthreadData.memConPts * sizeof(DPoint3d)) ;
+       else                   s_contourthreadData.conPtsP  = ( DPoint3d  * ) realloc ( s_contourthreadData.conPtsP , s_contourthreadData.memConPts * sizeof(DPoint3d)) ;
+       if( s_contourthreadData.conWghtP == nullptr ) s_contourthreadData.conWghtP = ( long * ) malloc  ( s_contourthreadData.memConPts * sizeof(long)) ;
+       else                   s_contourthreadData.conWghtP = ( long * ) realloc ( s_contourthreadData.conWghtP , s_contourthreadData.memConPts * sizeof(long)) ;
+       if( s_contourthreadData.conPtsP == nullptr || s_contourthreadData.conWghtP == nullptr )
          {
           bcdtmLoad_freeContourMemory() ;
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2405,11 +2418,11 @@ BENTLEYDTM_Public int bcdtmLoad_storeContourPoint
 /*
 ** Store Point
 */
-    (conPtsP+numConPts)->x = x ;
-    (conPtsP+numConPts)->y = y ;
-    (conPtsP+numConPts)->z = z ;
-    *(conWghtP+numConPts) = weight ;
-    ++numConPts ;
+    (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->x = x ;
+    (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->y = y ;
+    (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->z = z ;
+    *(s_contourthreadData.conWghtP+s_contourthreadData.numConPts) = weight ;
+    ++s_contourthreadData.numConPts ;
    }
 /*
 ** Clean Up
@@ -2424,7 +2437,7 @@ BENTLEYDTM_Public int bcdtmLoad_storeContourPoint
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- numConPts = 0 ;
+ s_contourthreadData.numConPts = 0 ;
  goto cleanup   ;
 }
 /*-------------------------------------------------------------------+
@@ -2454,19 +2467,19 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf ** Number Of Contour Points = %8ld",conPtsP->z,numConPts) ;
+    bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf ** Number Of Contour Points = %8ld",s_contourthreadData.conPtsP->z,s_contourthreadData.numConPts) ;
     if( dbg == 2 )
       {
-       for( p3dP = conPtsP , lP = conWghtP ; p3dP < conPtsP + numConPts ; ++p3dP , ++lP )
+       for( p3dP = s_contourthreadData.conPtsP , lP = s_contourthreadData.conWghtP ; p3dP < s_contourthreadData.conPtsP + s_contourthreadData.numConPts ; ++p3dP , ++lP )
          {
-          bcdtmWrite_message(0,0,0,"Point[%8ld] ** W = %2ld  %12.5lf %12.5lf %10.4lf",(long)(p3dP-conPtsP),*lP,p3dP->x,p3dP->y,p3dP->z) ;
+          bcdtmWrite_message(0,0,0,"Point[%8ld] ** W = %2ld  %12.5lf %12.5lf %10.4lf",(long)(p3dP-s_contourthreadData.conPtsP),*lP,p3dP->x,p3dP->y,p3dP->z) ;
          }
       }
    }
 /*
 **  Process Contour Only If More Than Two Points ( 2 vertices + direction )
 */
- if( numConPts >= 2 )
+ if( s_contourthreadData.numConPts >= 2 )
    {
 /*
 **  Remove Duplicate Contour Points
@@ -2476,7 +2489,7 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
 /*
 **  Process Contour Only If More Than Two Points ( 2 vertices + direction )
 */
-    if( numConPts > 1 )
+    if( s_contourthreadData.numConPts > 1 )
       {
 /*
 **     Check For Contours Within A Depression
@@ -2485,14 +2498,14 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
          {
           if(pondExtendedAppData->pondDtmP != nullptr )
             {
-            if( bcdtmLoad_checkForDepressionContourDtmObject(pondExtendedAppData->pondDtmP,conPtsP,numConPts,1.0,&conType)) goto errexit ;
+            if( bcdtmLoad_checkForDepressionContourDtmObject(pondExtendedAppData->pondDtmP,s_contourthreadData.conPtsP,s_contourthreadData.numConPts,1.0,&conType)) goto errexit ;
             depressionId = (DTMFeatureId) conType ;
             }
          }
 /*
 **     Smooth Contours
 */
-       if( contourParams.smoothOption != DTMContourSmoothing::None && numConPts > 2 )
+       if( contourParams.smoothOption != DTMContourSmoothing::None && s_contourthreadData.numConPts > 2 )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Smoothing Contour") ;
           if (bcdtmLoad_smoothContour (dtmP, contourParams.realInterval != 0 ? contourParams.realInterval : contourParams.interval, contourParams.smoothOption, contourParams.smoothFactor, contourParams.smoothDensity)) goto errexit;
@@ -2503,7 +2516,7 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
        if (fenceParams.fenceType == DTMFenceType::None /*&& fenceParams.fenceOption != DTMFenceOption::Overlap*/)
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Calling User Load Function %p",loadFunctionP) ;
-          if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Contour,(DTMUserTag)contourDirection,depressionId,conPtsP,numConPts,userP)) goto errexit ;
+          if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Contour,(DTMUserTag)contourDirection,depressionId,s_contourthreadData.conPtsP,s_contourthreadData.numConPts,userP)) goto errexit ;
          }
 /*
 **     Check If Contour Lies In Fence
@@ -2511,8 +2524,8 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
        else
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Cliping Contour To Fence") ;
-          if (bcdtmClip_featurePointArrayToTinHullDtmObject (clipDtmP, fenceParams.fenceOption, conPtsP, numConPts, &clipResult, &clipArraysPP, &numClipArrays)) goto errexit;
-          if( clipResult == 1 ) if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Contour,(DTMUserTag)contourDirection,depressionId,conPtsP,numConPts,userP)) goto errexit ;
+          if (bcdtmClip_featurePointArrayToTinHullDtmObject (clipDtmP, fenceParams.fenceOption, s_contourthreadData.conPtsP, s_contourthreadData.numConPts, &clipResult, &clipArraysPP, &numClipArrays)) goto errexit;
+          if( clipResult == 1 ) if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Contour,(DTMUserTag)contourDirection,depressionId,s_contourthreadData.conPtsP,s_contourthreadData.numConPts,userP)) goto errexit ;
           if( clipResult == 2 )
             {
              for( n = 0 ; n < numClipArrays ; ++n )
@@ -2529,12 +2542,12 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
 ** Clean Up
 */
  cleanup :
- numConPts = 0 ;
+ s_contourthreadData.numConPts = 0 ;
 /*
 ** Return
 */
- if( dbg && ret == DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf Completed",conPtsP->z) ;
- if( dbg && ret != DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf Error",conPtsP->z) ;
+ if( dbg && ret == DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf Completed",s_contourthreadData.conPtsP->z) ;
+ if( dbg && ret != DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Loading Contour %10.4lf Error",s_contourthreadData.conPtsP->z) ;
  return(ret) ;
 /*
 ** Error Exit
@@ -2576,10 +2589,10 @@ BENTLEYDTM_EXPORT int bcdtmLoad_smoothContour
     bcdtmWrite_message(0,0,0,"smoothDensity = %8ld",smoothDensity) ;
     if( dbg == 2 )
       {
-       bcdtmWrite_message(0,0,0,"Number Of Contour Points = %6ld",numConPts) ;
-       for( p3dP = conPtsP, w1P = conWghtP ; p3dP < conPtsP + numConPts ; ++p3dP , ++w1P )
+       bcdtmWrite_message(0,0,0,"Number Of Contour Points = %6ld",s_contourthreadData.numConPts) ;
+       for( p3dP = s_contourthreadData.conPtsP, w1P = s_contourthreadData.conWghtP ; p3dP < s_contourthreadData.conPtsP + s_contourthreadData.numConPts ; ++p3dP , ++w1P )
          {
-          bcdtmWrite_message(0,0,0,"contourPoint[%5ld] = %12.4lf %12.4lf %10.4lf ** %2ld",(long)(p3dP-conPtsP),p3dP->x,p3dP->y,p3dP->z,*w1P) ;
+          bcdtmWrite_message(0,0,0,"contourPoint[%5ld] = %12.4lf %12.4lf %10.4lf ** %2ld",(long)(p3dP-s_contourthreadData.conPtsP),p3dP->x,p3dP->y,p3dP->z,*w1P) ;
          }
       }
    }
@@ -2593,40 +2606,40 @@ BENTLEYDTM_EXPORT int bcdtmLoad_smoothContour
 /*
 ** Only Process For More Than Two Contour Points
 */
- if (numConPts > 3 && smoothOption >= DTMContourSmoothing::Vertex && smoothOption <= DTMContourSmoothing::SplineWithoutOverLapDetection)
+ if (s_contourthreadData.numConPts > 3 && smoothOption >= DTMContourSmoothing::Vertex && smoothOption <= DTMContourSmoothing::SplineWithoutOverLapDetection)
    {
 /*
 **  Copy Contour Points And Weights
 */
-    numTmpConPts = numConPts ;
-    if( bcdtmUtl_copy3DTo3D(conPtsP,numConPts,&tmpConPtsP)) goto errexit ;
-    tmpWghtP = ( long * ) malloc(numConPts*sizeof(long)) ;
+    numTmpConPts = s_contourthreadData.numConPts ;
+    if( bcdtmUtl_copy3DTo3D(s_contourthreadData.conPtsP,s_contourthreadData.numConPts,&tmpConPtsP)) goto errexit ;
+    tmpWghtP = ( long * ) malloc(s_contourthreadData.numConPts*sizeof(long)) ;
     if( tmpWghtP == nullptr )
       {
        bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    for( w1P = tmpWghtP , w2P = conWghtP ; w2P < conWghtP + numConPts ; ++w1P,++w2P) *w1P = *w2P ;
+    for( w1P = tmpWghtP , w2P = s_contourthreadData.conWghtP ; w2P < s_contourthreadData.conWghtP + s_contourthreadData.numConPts ; ++w1P,++w2P) *w1P = *w2P ;
 /*
 **  Filter Contour Points
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points Before Filter = %8ld",numConPts) ;
-    if( bcdtmLoad_filterWeightedPointArray(conPtsP,&numConPts,conWghtP,filterTolerance)) goto errexit ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points After  Filter = %8ld",numConPts) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points Before Filter = %8ld",s_contourthreadData.numConPts) ;
+    if( bcdtmLoad_filterWeightedPointArray(s_contourthreadData.conPtsP,&s_contourthreadData.numConPts,s_contourthreadData.conWghtP,filterTolerance)) goto errexit ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points After  Filter = %8ld",s_contourthreadData.numConPts) ;
 /*
 ** Vertex And Five Point Smooth Contour Line
 */
     if (smoothOption == DTMContourSmoothing::Vertex)
       {
        if( smoothFactor < 0.1 || smoothFactor > 0.5 ) smoothFactor = 0.3 ;// 0.1 to 0.5 For Linear Smoothing
-//       if( bcdtmLoad_vertexSmoothContourLine(&conPtsP,&numConPts,&conWghtP,smoothFactor)) goto errexit ;
+//       if( bcdtmLoad_vertexSmoothContourLine(&s_contourthreadData.conPtsP,&numConPts,&conWghtP,smoothFactor)) goto errexit ;
 //       if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points After Vertex Smooth  = %8ld",numConPts) ;
 /*
 **     Five Point Smooth Contour Line
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points Before Five Point Smooth = %8ld",numTmpConPts)   ;
        if( bcdtmLoad_fivePointSmoothContour(&tmpConPtsP,&numTmpConPts,&tmpWghtP,smoothFactor)) goto errexit ;
-       if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points After 5 Point Smooth = %8ld",numConPts) ;
+       if( dbg ) bcdtmWrite_message(0,0,0,"Number Contour Points After 5 Point Smooth = %8ld",s_contourthreadData.numConPts) ;
       }
 /*
 **  Spline Smooth Contour Line
@@ -2648,28 +2661,28 @@ BENTLEYDTM_EXPORT int bcdtmLoad_smoothContour
 /*
 **  Store Smoothed Contour In Contour Points Buffer
 */
-    numConPts = 0 ;
+    s_contourthreadData.numConPts = 0 ;
     for( p3dP = tmpConPtsP , w1P = tmpWghtP ; p3dP < tmpConPtsP + numTmpConPts ; ++p3dP , ++w1P )
       {
-       if( numConPts == memConPts )
+       if( s_contourthreadData.numConPts == s_contourthreadData.memConPts )
          {
-          memConPts = memConPts + memConPtsInc ;
-          conPtsP   = ( DPoint3d  * ) realloc ( conPtsP  , memConPts * sizeof(DPoint3d)) ;
-          conWghtP  = ( long * ) realloc ( conWghtP , memConPts * sizeof(long)) ;
-          if( conPtsP == nullptr || conWghtP == nullptr )
+           s_contourthreadData.memConPts = s_contourthreadData.memConPts + s_contourthreadData.memConPtsInc ;
+           s_contourthreadData.conPtsP   = ( DPoint3d  * ) realloc ( s_contourthreadData.conPtsP  , s_contourthreadData.memConPts * sizeof(DPoint3d)) ;
+           s_contourthreadData.conWghtP  = ( long * ) realloc ( s_contourthreadData.conWghtP , s_contourthreadData.memConPts * sizeof(long)) ;
+          if( s_contourthreadData.conPtsP == nullptr || s_contourthreadData.conWghtP == nullptr )
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit  ;
             }
          }
-       (conPtsP+numConPts)->x = p3dP->x ;
-       (conPtsP+numConPts)->y = p3dP->y ;
-       (conPtsP+numConPts)->z = p3dP->z ;
-       *(conWghtP+numConPts)  = *w1P ;
-       ++numConPts ;
+       (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->x = p3dP->x ;
+       (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->y = p3dP->y ;
+       (s_contourthreadData.conPtsP+s_contourthreadData.numConPts)->z = p3dP->z ;
+       *(s_contourthreadData.conWghtP+s_contourthreadData.numConPts)  = *w1P ;
+       ++s_contourthreadData.numConPts ;
       }
    }
- if( dbg && numConPts > 2000 ) bcdtmWrite_message(0,0,0,"DTM_ERROR Number Contour Points = %8ld",numConPts)    ;
+ if( dbg && s_contourthreadData.numConPts > 2000 ) bcdtmWrite_message(0,0,0,"DTM_ERROR Number Contour Points = %8ld",s_contourthreadData.numConPts)    ;
 /*
 ** Clean Up
 */

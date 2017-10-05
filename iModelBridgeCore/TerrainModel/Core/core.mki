@@ -34,6 +34,13 @@ dirToSearch     = $(TerrainModelCoreAPISrc)
 dirToSearch     = $(SrcTerrainModel)
 %include cincapnd.mki
 
+%ifdef DTM_MEMORY_DEBUG
+
+nameToDefine=DTM_MEMORY_DEBUG
+%include cdefapnd.mki
+
+%endif
+
 %ifdef DTM_CORE_DEBUG
 
 nameToDefine=DTM_TRACE_DEBUG

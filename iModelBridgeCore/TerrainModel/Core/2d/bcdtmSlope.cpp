@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmSlope.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -220,7 +220,8 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
            bcdtmMath_getPolygonDirectionP3D(tempSlopePtsP,numTempSlopePts,&direction,&area) ;
            bcdtmWrite_message(0,0,0,"Tin Hull Polygon area = %10.4lf",area) ;
           } 
-       } 
+        tempSlopePtsP = nullptr;  // This is stored in the slopePolygons array.
+         } 
      else 
        {
         if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyObjP,(long)(pListP-polyObjP->polyListP),&tempSlopePtsP,&numTempSlopePts)) goto errexit ;
@@ -256,6 +257,7 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
 **      Clip Tin Object To Polygon
 */
         if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtm1P, &dtm2P, tempSlopePtsP, numTempSlopePts, DTMClipOption::External)) goto errexit;
+        tempSlopePtsP = nullptr;  // This is stored in the slopePolygons array.
        }
 /*
 **  Scan All Points And Calculate Slope Areas
@@ -379,6 +381,7 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
  if( polyObjP != NULL ) bcdtmPolygon_deletePolygonObject(&polyObjP) ;
  if( tempSlopePtsP != NULL ) free(tempSlopePtsP) ;
  if( dtm2P != NULL && dtm2P != dtm1P ) bcdtmObject_destroyDtmObject(&dtm2P) ;
+ *numSlopePolygonsP = numSlopeArray;
 /*
 ** Return
 */

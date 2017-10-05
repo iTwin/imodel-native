@@ -1166,7 +1166,8 @@ BENTLEYDTM_Public int bcdtmPolygon_deletePolygonObject(DTM_POLYGON_OBJ **polyPP)
      return(1) ;
  else
     {
-     *polyPP = NULL ;
+     free(*polyPP);
+     *polyPP = nullptr ;
      return(0) ;
     }
 /*

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMBaseDef.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -50,9 +50,17 @@ inline DVec2d DVec2d::FromXY (double newX, double newY)
 #include <Bentley\RefCounted.h>
 #include <TerrainModel\TerrainModel.h>
 
+#ifdef DTM_MEMORY_DEBUG
+
+#define malloc BSIBaseGeom::Malloc
+#define calloc BSIBaseGeom::Calloc
+#define free BSIBaseGeom::Free
+#define realloc BSIBaseGeom::Realloc
+#endif
+
 ///*-------------------------------------------------------------------+
 //|	DTM Definition files				                             |
 //+-------------------------------------------------------------------*/
 #include  <TerrainModel\Core\DTMDefs.h>
 #include  <TerrainModel/Core/dtmfns.h>
-#endif 
+#endif

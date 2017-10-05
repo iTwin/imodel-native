@@ -18,6 +18,10 @@
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
+#ifdef DTM_MEMORY_DEBUG
+void AddMemoryReference(void* a);
+void RemoveMemoryReference(void* a);
+#endif
 
 int bcdtmMark_checkForPointOnRegionHullDtmObject (BC_DTM_OBJ* dtmP, long pnt);
 
@@ -363,9 +367,21 @@ DTMFeatureEnumerator::iterator DTMFeatureEnumerator::end() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
+DTMMeshEnumerator::iterator::~iterator ()
+    {
+    if (m_polyface)
+        {
+#ifdef DTM_MEMORY_DEBUG
+        RemoveMemoryReference(m_polyface);
+#endif
+        delete m_polyface;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 const DTMMeshEnumerator::iterator& DTMMeshEnumerator::iterator::operator++ ()
     {
-    m_polyface = nullptr;
     if (!m_p_vec->MoveNext(m_pos, m_pos2))
         m_pos = -2;
     return *this;
@@ -1315,7 +1331,12 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
         return m_p_vec->m_polyfaceHeader.get();
 
     if (!m_polyface)
-        m_polyface = new PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->m_polyfaceHeader->PointIndex().size (), (size_t)points.size (), points.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP (), normals.size (), normals.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP ());
+        {
+        m_polyface = new PolyfaceQueryCarrier(3, false, (size_t)m_p_vec->m_polyfaceHeader->PointIndex().size(), (size_t)points.size(), points.GetCP(), m_p_vec->m_polyfaceHeader->PointIndex().GetCP(), normals.size(), normals.GetCP(), m_p_vec->m_polyfaceHeader->PointIndex().GetCP());
+#ifdef DTM_MEMORY_DEBUG
+        AddMemoryReference(m_polyface);
+#endif
+        }
     else
         *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->m_polyfaceHeader->PointIndex().size (), (size_t)points.size (), points.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP (), normals.size (), normals.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP ());
     return m_polyface;
