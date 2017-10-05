@@ -239,40 +239,6 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
     bvector<int> indices;
     Frustum frustum = viewport.GetFrustum();
     DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(frustum);
-    // Compute size & depth that we need for drawing the background in View space.
-    double width;
-    double height;
-    double depth;
-    double frustumFraction = viewport.GetFrustumFraction();
-    if (!viewport.Is3dView())
-        {
-        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
-        width = DVec3d::FromStartEnd(frustum.GetCorner(NPC_RightBottomRear), farLowerLeft).Magnitude() * 0.5;
-        height = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftTopRear), farLowerLeft).Magnitude() * 0.5;
-        depth = viewport.GetRenderTarget()->Get2dFrustumDepth();
-        }
-    else if (frustumFraction > 0.999)
-        {
-        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
-        width = DVec3d::FromStartEnd(frustum.GetCorner(NPC_RightBottomRear), farLowerLeft).Magnitude() * 0.5;
-        height = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftTopRear), farLowerLeft).Magnitude() * 0.5;
-        depth = DVec3d::FromStartEnd(farLowerLeft, frustum.GetCorner(NPC_LeftBottomFront)).Magnitude() * -0.5;
-        }
-    else
-        {
-        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
-        DPoint3dCR farLowerRight = frustum.GetCorner(NPC_RightBottomRear);
-        DPoint3dCR farUpperLeft = frustum.GetCorner(NPC_LeftTopRear);
-        DPoint3dCR nearLowerLeft = frustum.GetCorner(NPC_LeftBottomFront);
-        DVec3d viewX, viewY, viewZ;
-        viewX.NormalizedDifference(farLowerRight, farLowerLeft);
-        viewY.NormalizedDifference(farUpperLeft, farLowerLeft);
-        viewZ.NormalizedCrossProduct(viewX, viewY);
-        DPoint3d cameraPosition = DPoint3d::FromSumOf(farLowerLeft, DVec3d::FromStartEnd(farLowerLeft, nearLowerLeft), 1.0 / (1.0 - frustumFraction));
-        width = farLowerRight.DotDifference(cameraPosition, viewX) * (1 + frustumFraction) * 0.5;
-        height = farUpperLeft.DotDifference(cameraPosition, viewY) * (1 + frustumFraction) * 0.5;
-        depth = (nearLowerLeft.DotDifference(cameraPosition, viewZ) + farLowerLeft.DotDifference(cameraPosition, viewZ)) * 0.5;
-        }
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
