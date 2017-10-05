@@ -117,7 +117,48 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsAreNotCompatible)
+TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompatibleDropsPresentationUnit)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DimensionName>M_PER_L3</DimensionName>
+                            <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                            <UnitName>KILOGRAM_PER_METRE_CUBED</UnitName>
+                        </UnitSpecification>
+                        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DisplayFormatString>F4</DisplayFormatString>
+                            <DisplayUnitName>METRE_SQUARED</DisplayUnitName>
+                        </DisplayUnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+
+    auto koq = schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity();
+    ASSERT_STREQ("KG/CUB.M", koq->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_FALSE(koq->HasPresentationUnits());
+
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsConversion)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
