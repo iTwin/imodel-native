@@ -211,7 +211,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(GetECDb(), schemaImportToken));
     if (!policy.IsSupported())
         {
-        LOG.error("Failed to import ECSchemas: Caller has not provided an SchemaImportToken.");
+        LOG.error("Failed to import ECSchemas: Caller has not provided a SchemaImportToken.");
         return ERROR;
         }
 
