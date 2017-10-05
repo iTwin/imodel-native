@@ -289,6 +289,49 @@ ECObjectsStatus CoreCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& dateT
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus CoreCustomAttributeHelper::GetCurrentTimeStampProperty(PrimitiveECPropertyCP& currentTimeStampProp, ECClassCR ecClass)
+    {
+    currentTimeStampProp = nullptr;
+    IECInstancePtr ca = ecClass.GetCustomAttributeLocal(CORECA_SCHEMA_NAME, "ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return SUCCESS;
+
+    ECValue v;
+    if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName"))
+        {
+        LOG.errorv("Failed to retrieve 'ClassHasCurrentTimeStampProperty' custom attribute on ECClass '%s'. It is malformed.",
+                        ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if (!v.IsNull() && v.IsString())
+        {
+        ECPropertyCP foundProp = nullptr;
+        if (v.IsUtf8())
+            foundProp = ecClass.GetPropertyP(v.GetUtf8CP(), true);
+        else
+            foundProp = ecClass.GetPropertyP(v.GetWCharCP(), true);
+
+        if (foundProp != nullptr)
+            {
+            PrimitiveECPropertyCP foundPrimProp = foundProp->GetAsPrimitiveProperty();
+            if (foundPrimProp != nullptr && foundPrimProp->GetType() == PRIMITIVETYPE_DateTime)
+                {
+                currentTimeStampProp = foundPrimProp;
+                return SUCCESS;
+                }
+            }
+        }
+
+    LOG.errorv("Failed to retrieve 'ClassHasCurrentTimeStampProperty' custom attribute on ECClass '%s'. The property 'PropertyName' must be set to the name of a primitive property of type DateTime.",
+               ecClass.GetFullName());
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static

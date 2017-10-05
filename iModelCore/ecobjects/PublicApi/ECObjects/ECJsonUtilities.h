@@ -34,7 +34,6 @@ enum class ECJsonInt64Format
 //! An ECInstance in the ECJSON Format is formatted as JSON object made up of property value pairs.
 //!
 //! ### ECJSON Format Description
-//!     - All member names start with a <b>lower-case</b> character.
 //!     - <b>Reserved member names</b>:
 //!         - "id": ECInstanceId of the instance or the navigation id within a %Navigation property
 //!         - "className": Fully qualified class name ("<schema name>.<class name>")
