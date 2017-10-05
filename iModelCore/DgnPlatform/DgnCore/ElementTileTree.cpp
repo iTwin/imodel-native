@@ -35,7 +35,7 @@ struct TileContext;
 
 // For YII - redline models contain ImageGraphic geoemtric primitives - the texture currently cannot be stored in the tile cache because we have
 // no access to its image data in _AddTile().
-#define DISABLE_TILE_CACHE_2D_YII
+// #define DISABLE_TILE_CACHE_2D_YII
 
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
