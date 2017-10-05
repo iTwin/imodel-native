@@ -1044,7 +1044,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECObjectsStatus status = obtainKindOfQuantity(schema, prop, newKOQ, instance, newUnit, newDisplayUnit, persistenceUnitChanged, newKOQName.c_str());
     if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName());
+        LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
         return status;
         }
 
