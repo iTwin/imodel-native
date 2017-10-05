@@ -591,8 +591,6 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Rapid
 //static
 BentleyStatus ECJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator)
     {
-    json.SetObject();
-
     Utf8String jsonStr;
     if (!BentleyGeometryJson::TryGeometryToJsonString(jsonStr, geom, false) || jsonStr.empty())
         return ERROR;
@@ -601,12 +599,7 @@ BentleyStatus ECJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR
     if (jsonDoc.Parse<0>(jsonStr.c_str()).HasParseError())
         return ERROR;
 
-    BeAssert(jsonDoc.IsObject());
-    for (auto& member : jsonDoc.GetObject())
-        {
-        json.AddMember(member.name, member.value, allocator);
-        }
-
+    json.CopyFrom(jsonDoc, allocator);
     return SUCCESS;
     }
 
