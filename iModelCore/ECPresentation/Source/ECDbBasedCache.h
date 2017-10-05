@@ -24,7 +24,7 @@ private:
     bset<ECDbClosedNotifier*> m_notifiers;
 
 protected:
-    virtual ~IECDbClosedListener();
+    ECPRESENTATION_EXPORT virtual ~IECDbClosedListener();
     virtual void _OnConnectionClosed(BeSQLite::EC::ECDbCR) = 0;
 };
 
