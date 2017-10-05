@@ -53,12 +53,11 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
 
         const char* volatileProperties[] =
             {
-            "$ECInstanceId",
-            "$ECInstanceLabel",
-            "ModelId",
-            "Name",
-            "LastMod",
-            "Code"
+            "id",
+            "modelId",
+            "name",
+            "lastMod",
+            "code"
             };
 
         // Ignore some properties in comparison - they too volatile. 
@@ -156,7 +155,6 @@ TEST_F(DgnECNavigatorTest, IfcElementInfo)
     StatusInt elementInfoStatus = GetElementInfo(actualElementInfo, v9ElementId);
     ASSERT_TRUE(elementInfoStatus == SUCCESS);
 
-    // Ignore "$ECInstanceId" in comparison - it's too volatile. 
     for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
         {
         // TODO: For some reason the "ThermalTransmittance" property doesn't seem to compare well, even 

@@ -27,6 +27,8 @@ $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h ${Mul
 
 $(o)SchedulePublisher$(oext) : $(SrcDir)SchedulePublisher.cpp $(SrcDir)Constants.h ${MultiCompileDepends}
 
+$(o)HistoryPublisher$(oext) : $(SrcDir)HistoryPublisher.cpp $(SrcDir)Constants.h ${MultiCompileDepends} $(SrcRoot)DgnPlatform/publicapi/TilePublisher/CesiumPublisher.h
+
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h $(SrcRoot)DgnPlatform/publicapi/TilePublisher/CesiumPublisher.h ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
@@ -44,10 +46,11 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)ThreeMx.lib           \
                       $(SubpartLibs)PointCloud.lib        \
                       $(SubpartLibs)$(libprefix)Planning.lib \
+                      $(SubpartLibs)iModelHubClient.lib   \
+                      $(SubpartLibs)BeHttp.lib \
+                      $(SubpartLibs)WebServicesClient.lib \
+                      $(SubpartLibs)VersionCompare.lib \
                       $(SubpartLibs)BeFolly.lib           
-%if TEXTURE_COMPRESSION_SUPPORT
-                      $(SubpartLibs)Crunch.lib            
-%endif
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

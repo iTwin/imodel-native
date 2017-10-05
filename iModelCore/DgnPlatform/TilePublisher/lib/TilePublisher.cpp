@@ -69,633 +69,78 @@ Utf8String PublishTileData::GetJsonString() const
     return getJsonString(m_json);
     }
 
+
 //=======================================================================================
-// We use a hierarchical batch table to organize features by element and subcategory,
-// and subcategories by category
-// Each feature has a batch table class corresponding to its DgnGeometryClass.
-// The feature classes have no properties, only parents for classification.
-// The element, category, and subcategory classes each have an ID property.
-// @bsistruct                                                   Paul.Connelly   02/17
+// Flat (non-hierarchical) batch table builder.
+// @bsistruct                                                   Ray.Bentley     09/2017
 //=======================================================================================
 struct BatchTableBuilder
 {
 private:
-    struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
-    struct AssemInfo { uint32_t m_index; uint32_t m_catIndex; };
-    struct Assembly { DgnElementId m_elemId; DgnCategoryId m_catId; };
 
     static constexpr uint32_t InvalidIndex = 0xffffffff;
-
-    // An entity label designated by an EC property can be displayed without
-    // property server as tool tip.
-    struct LabelInfo
+    struct ScheduleInfo
         {
-
         uint32_t    m_index;
-        Utf8String  m_label; 
+        uint32_t    m_entry;
 
-        LabelInfo() { }
-        LabelInfo(uint32_t index, Utf8StringCR label) : m_index(index), m_label(label) {}
-        };
-                            
-
-
-
-    enum ClassIndex
-        {
-        kClass_Primary,
-        kClass_Construction,
-        kClass_Dimension,
-        kClass_Pattern,
-        kClass_Classifier,
-        kClass_Element,
-        kClass_Assembly,
-        kClass_SubCategory,
-        kClass_Category,
-        kClass_Label,
-        kClass_Symbology,
-
-        kClass_COUNT,
-        kClass_FEATURE_COUNT = kClass_Classifier+1,
+        ScheduleInfo() { }
+        ScheduleInfo(uint32_t index, uint32_t entry) : m_index(index), m_entry(entry) { }
         };
 
-    static constexpr Utf8CP s_classNames[kClass_COUNT] =
-        {
-        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category", "Label", "Symbology",
-        };
-
+    typedef bmap<uint16_t, ScheduleInfo> T_ScheduleInfoMap;
+          
     Json::Value                             m_json; // "HIERARCHY": object
     DgnDbR                                  m_db;
-    FeatureAttributesMapCR                  m_attrs;
-    bmap<DgnElementId, ElemInfo>            m_elems;
-    bmap<DgnElementId, AssemInfo>           m_assemblies;
-    bmap<DgnSubCategoryId, uint32_t>        m_subcats;
-    bmap<DgnCategoryId, uint32_t>           m_cats;
-    bmap<DgnElementId, LabelInfo>           m_labels;
-    DgnCategoryId                           m_uncategorized;
-    bvector<uint32_t>                       m_colors;
-    bmap<DgnElementId, uint32_t>            m_colorMap;
     bool                                    m_is3d;
     bool                                    m_isClassifier;
-    PublisherContext::T_ScheduleEntryMaps*  m_scheduleEntryMaps;
-
-    template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
-        {
-        return map.find(key);
-        }
-    template<typename T, typename U> static uint32_t FindOrInsert(T& map, U const& key)
-        {
-        auto iter = Find(map, key);
-        if (iter != map.end())
-            return iter->second;
-
-        uint32_t index = static_cast<uint32_t>(map.size());
-        map[key] = index;
-        return index;
-        }
-    template<typename T, typename U> static uint32_t GetIndex(T& map, U const& key)
-        {
-        auto iter = Find(map, key);
-        BeAssert(iter != map.end());
-        return iter->second;
-        }
-
-    ElemInfo MapElementInfo(DgnElementId id);
-    ElemInfo GetElementInfo(DgnElementId id);
-    AssemInfo MapAssemblyInfo(Assembly assem);
-    uint32_t MapCategoryIndex(DgnCategoryId id) { return FindOrInsert(m_cats, id); }
-    uint32_t GetCategoryIndex(DgnCategoryId id) { return GetIndex(m_cats, id); }
-    uint32_t MapSubCategoryIndex(DgnSubCategoryId id) { return FindOrInsert(m_subcats, id); }
-    uint32_t GetSubCategoryIndex(DgnSubCategoryId id) { return GetIndex(m_subcats, id); }
-
-    Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
-    ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
-
-    Assembly QueryAssembly(DgnElementId) const;
-    void DefineClasses();
-    void MapFeatures();
-    void MapParents();
-    void MapElements(uint32_t offset, uint32_t assembliesOffset);
-    void MapAssemblies(uint32_t offset, uint32_t categoriesOffset);
-    void MapSubCategories(uint32_t offset);
-    void MapCategories(uint32_t offset);
-    void MapLabels(uint32_t offset);
-    void MapSymbology(uint32_t offset);
-    void MapSchedules(uint32_t offset);
-
-    void Build();
-    void InitUncategorizedCategory();
+    DgnCategoryId                           m_uncategorized;
+    FeatureAttributesMapCR                  m_attrs;
+    bvector<T_ScheduleInfoMap>              m_schedules;
+    bmap<DgnElementId, DgnElementId>        m_assemblyIds;
+    bmap<DgnSubCategoryId, DgnCategoryId>   m_categoryIds;
+                            
     bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
-public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* colors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleEntryMaps = nullptr)
-        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier), m_scheduleEntryMaps(scheduleEntryMaps)
-        {
-        InitUncategorizedCategory();
-        if (nullptr != labelProperty)
-            AddLabels(labelProperty);
 
-        if (nullptr != colors)
-            AddColors(*colors);
-
-        Build();
-        }
-
-    Json::Value& GetHierarchy() { return m_json; }
-    Utf8String ToString()
-        {
-        Json::Value json;
-        json["HIERARCHY"] = GetHierarchy();
-        return getJsonString(json);
-        }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-*  Used only for classifiers as these use vector tiles that do not have any 
-*  material/symbology support.
+* @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AddColors(bmap<DgnElementId, uint32_t>& colors)
+DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId)
     {
-    bmap<uint32_t, uint32_t>      uniqueColors;
-   
-    for (auto& kvp : colors)
-        {
-        auto        insertPair = uniqueColors.Insert(kvp.second, uniqueColors.size());
+    auto    found = m_categoryIds.find(subCategoryId);
 
-        if(insertPair.second)
-            m_colors.push_back(kvp.second);
-        
-        m_colorMap[kvp.first] = insertPair.first->second;
-        }
-    }
+    if (found != m_categoryIds.end())
+        return found->second;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     AddLabels(Utf8CP labelProperty)
-    {
-    for (auto& featureAttribute : m_attrs)
-        {
-        ECN::ECValue    value;
+    DgnCategoryId       categoryId;
 
-        auto element = m_db.Elements().Get<DgnElement> (featureAttribute.first.GetElementId());
-        if (element.IsValid() &&
-            DgnDbStatus::Success == element->GetPropertyValue(value, labelProperty))
-            m_labels[featureAttribute.first.GetElementId()] = LabelInfo(m_labels.size(), value.GetUtf8CP());
-        }
-    }
+    DgnSubCategoryCPtr subCategory = m_db.Elements().Get<DgnSubCategory> (subCategoryId);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t   GetLabelIndex(DgnElementId elementId)
-    {
-    auto   found = m_labels.find(elementId);
+    if (subCategory.IsValid())
+        categoryId = subCategory->GetCategoryId();
 
-    return (found == m_labels.end()) ? InvalidIndex : found->second.m_index;
-    }
+    m_categoryIds.Insert(subCategoryId, categoryId);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t   GetColorIndex(DgnElementId elementId)
-    {
-    auto   found = m_colorMap.find(elementId);
-
-    return (found == m_colorMap.end()) ? InvalidIndex : found->second;
-    }
-
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::InitUncategorizedCategory()
-    {
-    // This is dumb. See OfficeBuilding.dgn - cells have no level in V8, which translates to 'Uncategorized' (2d and 3d variants) in DgnDb
-    // We don't want to create an 'Uncategorized' assembly if its children belong to a real category.
-    // We only can detect this because for whatever reason, "Uncategorized" is not a localized string.
-    DefinitionModelR dictionary = m_db.GetDictionaryModel();
-    DgnCode code = m_is3d ? SpatialCategory::CreateCode(dictionary, "Uncategorized") : DrawingCategory::CreateCode(dictionary, "Uncategorized");
-    m_uncategorized = DgnCategory::QueryCategoryId(m_db, code);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::Build()
-    {
-    m_json["parentCounts"] = Json::arrayValue;
-    m_json["classIds"] = Json::arrayValue;
-    m_json["parentIds"] = Json::arrayValue;
-
-    // Set up the "classes" array. For each member, defines "name" property only. "length" and "instances" property TBD.
-    DefineClasses();
-
-    // Makes sure every instance of every class is assigned an index into the "classIds" array (relative to the index of
-    // the first instance of that class).
-    // Adds index for each Feature into "classIds" (index == batch ID)
-    // Sets "parentCounts" for each Feature (all == 2)
-    // Sets "length" for each of the Feature classes
-    MapFeatures();
-
-    // Populates "classes" for all instances of abstract (parent) classes
-    // Populates the "parentIds" and "parentCounts" arrays for all instances of all classes
-    // Sets the "length" and "instances" property of "classes" member for each abstract (parent) class
-    // Sets "instancesLength" to the total number of instances of all classes.
-    MapParents();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::GetFeatureClassIndex(DgnGeometryClass geomClass) -> ClassIndex
-    {
-    if (m_isClassifier)
-        return kClass_Classifier;
-
-    switch (geomClass)
-        {
-        case DgnGeometryClass::Primary:         return kClass_Primary;
-        case DgnGeometryClass::Construction:    return kClass_Construction;
-        case DgnGeometryClass::Dimension:       return kClass_Dimension;
-        case DgnGeometryClass::Pattern:         return kClass_Pattern;
-        default:
-            BeAssert(false);
-            return kClass_Primary;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapSubCategories(uint32_t offset)
-    {
-    Json::Value& subcats = GetClass(kClass_SubCategory);
-    subcats["length"] = m_subcats.size();
-
-    Json::Value &instances = (subcats["instances"] = Json::objectValue),
-                &subcat_id = (instances["subcategory"] = Json::arrayValue),
-                &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"];
-
-    for (auto const& kvp : m_subcats)
-        {
-        classIds[offset + kvp.second] = kClass_SubCategory;
-        parentCounts[offset + kvp.second] = 0;
-        subcat_id[kvp.second] = kvp.first.ToString();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapCategories(uint32_t offset)
-    {
-    Json::Value& cats = GetClass(kClass_Category);
-    cats["length"] = m_cats.size();
-
-    Json::Value &instances = (cats["instances"] = Json::objectValue),
-                &cat_id = (instances["category"] = Json::arrayValue),
-                &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"];
-
-    for (auto const& kvp : m_cats)
-        {
-        classIds[offset + kvp.second] = kClass_Category;
-        parentCounts[offset + kvp.second] = 0;
-        cat_id[kvp.second] = kvp.first.ToString();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapLabels(uint32_t offset)
-    {
-    Json::Value &labels = GetClass(kClass_Label),
-                &instances = (labels["instances"] = Json::objectValue),
-                &label = (instances["label"] = Json::arrayValue),
-                &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"];
-
-    labels["length"] = m_labels.size();
-    for (auto const& kvp : m_labels)
-        {
-        Json::Value::ArrayIndex index = kvp.second.m_index;
-
-        classIds[offset + index] = kClass_Label;
-        parentCounts[offset + index] = 0;
-        label[index] = kvp.second.m_label;
-        }
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapSymbology(uint32_t offset)
-    {
-    Json::Value &symbologies = GetClass(kClass_Symbology),
-                &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"];
-
-    Json::Value reds   = Json::arrayValue,
-                greens = Json::arrayValue,
-                blues  = Json::arrayValue;
-
-    symbologies["length"] = m_colors.size();
-    for (uint32_t index=0; index < m_colors.size(); index++)
-        {
-        classIds[offset + index] = kClass_Symbology;
-        parentCounts[offset + index] = 0;
-
-        ColorDef        color(m_colors[index]);
-        reds.append(color.GetRed());
-        greens.append(color.GetGreen());
-        blues.append(color.GetBlue());
-        }
-    symbologies["instances"]["red"]    = reds;
-    symbologies["instances"]["green"]  = greens;
-    symbologies["instances"]["blue"]   = blues;
+    return categoryId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapSchedules(uint32_t offset)
+DgnElementId QueryAssemblyId(DgnElementId childId) 
     {
-    if (nullptr != m_scheduleEntryMaps)
-        {
-        int     mapIndex = 0;
+    auto    found = m_assemblyIds.find(childId);
 
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-            {
-            int                 classIndex = kClass_COUNT + mapIndex;
-            Utf8PrintfString    instanceName("Schedule%d", mapIndex++);
+    if (found != m_assemblyIds.end())
+        return found->second;
 
-            Json::Value &schedules = m_json["classes"][classIndex],
-                        &instances = (schedules["instances"] = Json::objectValue),
-                        &scheduleIndex = (instances[instanceName.c_str()] = Json::arrayValue),
-                        &classIds = m_json["classIds"],
-                        &parentCounts = m_json["parentCounts"];
+    DgnElementId        assemblyId;
+    DgnCategoryId       assemblyCategoryId;
 
-            int         index = 0;
-            schedules["length"] = scheduleEntryMap.size();
-            for (auto const& kvp : scheduleEntryMap)
-                {
-                classIds[offset + index] = classIndex;
-                parentCounts[offset + index] = 0;
-                scheduleIndex[index] = index;
-                index++;
-                }
-            offset += scheduleEntryMap.size();
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapElements(uint32_t offset, uint32_t assembliesOffset)
-    {
-    Json::Value& elements = GetClass(kClass_Element);
-    elements["length"] = m_elems.size();
-
-    Json::Value& instances = (elements["instances"] = Json::objectValue);
-    Json::Value& elem_id = (instances["element"] = Json::arrayValue);
-    Json::Value& classIds = m_json["classIds"];
-    Json::Value& parentCounts = m_json["parentCounts"];
-    Json::Value& parentIds = m_json["parentIds"];
-
-    for (auto const& kvp : m_elems)
-        {
-        Json::Value::ArrayIndex index = kvp.second.m_index;
-        elem_id[index] = kvp.first.ToString();
-
-        classIds[offset + index] = kClass_Element;
-        parentCounts[offset + index] = 1;
-        parentIds.append(kvp.second.m_parentIndex + assembliesOffset);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapAssemblies(uint32_t offset, uint32_t categoriesOffset)
-    {
-    Json::Value& assems = GetClass(kClass_Assembly);
-    assems["length"] = m_assemblies.size();
-
-    Json::Value &instances = (assems["instances"] = Json::objectValue),
-                &assem_id = (instances["assembly"] = Json::arrayValue),
-                &classIds = m_json["classIds"],
-                &parentCounts = m_json["parentCounts"],
-                &parentIds = m_json["parentIds"];
-
-    for (auto const& kvp : m_assemblies)
-        {
-        Json::Value::ArrayIndex index = kvp.second.m_index;
-        classIds[offset+index] = kClass_Assembly;
-        assem_id[index] = kvp.first.ToString();
-        parentCounts[offset+index] = 1;
-        parentIds.append(kvp.second.m_catIndex + categoriesOffset);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapParents()
-    {
-    uint32_t elementsOffset = static_cast<uint32_t>(m_attrs.size());
-    uint32_t assembliesOffset = elementsOffset + static_cast<uint32_t>(m_elems.size());
-    uint32_t subcatsOffset = assembliesOffset + static_cast<uint32_t>(m_assemblies.size());
-    uint32_t catsOffset = subcatsOffset + static_cast<uint32_t>(m_subcats.size());
-    uint32_t labelsOffset = catsOffset + static_cast<uint32_t>(m_cats.size());
-    uint32_t colorsOffset = labelsOffset + static_cast<uint32_t>(m_labels.size());
-    uint32_t scheduleOffset = colorsOffset + static_cast<uint32_t>(m_colorMap.size());
-    uint32_t totalInstances = colorsOffset;
-
-    if (nullptr != m_scheduleEntryMaps)
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-            totalInstances += scheduleEntryMap.size();
-
-    m_json["instancesLength"] = totalInstances;
-
-    // Now that every instance of every class has an index into "classIds", we can map parent IDs
-    Json::Value& parentIds = m_json["parentIds"];
-
-    // Traverse in index order so that we can get parent counts/ids correct.
-
-    bmap<uint16_t, FeatureAttributes const*>   attrsByIndex;
-    for (auto const& kvp : m_attrs)
-        attrsByIndex[kvp.second] = &kvp.first;
-
-    uint32_t            index = 0;
-    for (auto const& kvp : attrsByIndex)
-        {
-        FeatureAttributesCR attr = *kvp.second;
-
-        parentIds[index++] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
-        parentIds[index++] = subcatsOffset + GetSubCategoryIndex(attr.GetSubCategoryId());
-
-        uint32_t      labelIndex = GetLabelIndex(attr.GetElementId());
-        if (InvalidIndex != labelIndex)
-            parentIds[index++] = labelsOffset + labelIndex;
-
-        uint32_t      colorIndex = GetColorIndex(attr.GetElementId());
-        if (InvalidIndex != colorIndex)
-            parentIds[index++] = colorsOffset + colorIndex;
-
-        if (nullptr != m_scheduleEntryMaps)
-            {
-            int32_t thisScheduleOffset = scheduleOffset;
-            for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-                {
-                auto const& found = scheduleEntryMap.find(attr.GetElementId());
-                if (found != scheduleEntryMap.end())
-                    parentIds[index++] = thisScheduleOffset + found->second;
-
-                thisScheduleOffset += scheduleEntryMap.size();
-                }
-            }
-        }
-
-    // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
-    MapElements(elementsOffset, assembliesOffset);
-    MapAssemblies(assembliesOffset, catsOffset);
-
-    // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
-    MapSubCategories(subcatsOffset);
-    MapCategories(catsOffset);
-    MapLabels(labelsOffset);
-    MapSymbology(colorsOffset);
-    MapSchedules(scheduleOffset);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::MapFeatures()
-    {
-    Json::Value& classIds = m_json["classIds"];
-    Json::Value& parentCounts = m_json["parentCounts"];
-
-    uint32_t instanceCounts[kClass_FEATURE_COUNT] = { 0 };
-
-    for (auto const& kvp : m_attrs)
-        {
-        FeatureAttributesCR attr = kvp.first;                                                                                                                                    
-        uint32_t index = kvp.second;
-        ClassIndex classIndex = GetFeatureClassIndex(attr.GetClass());
-        
-        classIds[index] = classIndex;
-        uint32_t    parentCount = 2;
-    
-        if(InvalidIndex != GetLabelIndex(attr.GetElementId()))
-            parentCount++;
-
-        if(InvalidIndex != GetColorIndex(attr.GetElementId()))
-            parentCount++;
-
-        if (nullptr != m_scheduleEntryMaps)
-            {
-            for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-                {
-                auto const& found = scheduleEntryMap.find(attr.GetElementId());
-                if (found != scheduleEntryMap.end())
-                    parentCount++;
-                }
-            }
-
-        parentCounts[index] = parentCount;
-
-        ++instanceCounts[classIndex];
-
-        // Ensure all parent instances are mapped
-        MapElementInfo(attr.GetElementId());
-        MapSubCategoryIndex(attr.GetSubCategoryId());
-        }
-
-    // Set the number of instances of each class
-    for (uint8_t classIndex = 0; classIndex < kClass_FEATURE_COUNT; classIndex++)
-        GetClass(static_cast<ClassIndex>(classIndex))["length"] = instanceCounts[classIndex];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BatchTableBuilder::DefineClasses()
-    {
-    auto& classes = (m_json["classes"] = Json::arrayValue);
-    for (uint8_t i = 0; i < kClass_COUNT; i++)
-        {
-        auto& cls = (classes[i] = Json::objectValue);
-        cls["name"] = s_classNames[i];
-        }
-    if (nullptr != m_scheduleEntryMaps)
-        {
-        int     index = 0;
-        for (auto& scheduleEntryMap : *m_scheduleEntryMaps)
-            {
-            Json::Value     cls = Json::objectValue;
-            cls["name"] = Utf8PrintfString("Schedule%d", index++).c_str();
-            classes.append(cls);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::MapElementInfo(DgnElementId id) -> ElemInfo
-    {
-    auto iter = Find(m_elems, id);
-    if (iter != m_elems.end())
-        return iter->second;
-
-    Assembly assem = QueryAssembly(id);
-    ElemInfo info;
-    info.m_index = static_cast<uint32_t>(m_elems.size());
-    info.m_parentIndex = MapAssemblyInfo(assem).m_index;
-    m_elems[id] = info;
-    return info;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::MapAssemblyInfo(Assembly assem) -> AssemInfo
-    {
-    auto iter = Find(m_assemblies, assem.m_elemId);
-    if (iter != m_assemblies.end())
-        return iter->second;
-
-    AssemInfo info;
-    info.m_index = static_cast<uint32_t>(m_assemblies.size());
-    info.m_catIndex = MapCategoryIndex(assem.m_catId);
-    m_assemblies[assem.m_elemId] = info;
-    return info;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::GetElementInfo(DgnElementId id) -> ElemInfo
-    {
-    auto iter = Find(m_elems, id);
-    BeAssert(iter != m_elems.end());
-    return iter->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
-    {
-    Assembly assem;
-    assem.m_elemId = childId;
+    assemblyId = childId;
     if (!childId.IsValid())
-        return assem;
+        return assemblyId;
 
     // Get this element's category and parent element
     // Recurse until no more parents (or we find a non-geometric parent)
@@ -708,11 +153,11 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
     while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
         auto thisCatId = stmt->GetValueId<DgnCategoryId>(1);
-        if (assem.m_catId.IsValid() && IsUncategorized(thisCatId) && !IsUncategorized(assem.m_catId))
+        if (assemblyCategoryId.IsValid() && IsUncategorized(thisCatId) && !IsUncategorized(assemblyCategoryId))
             break; // yuck. if have children with valid categories, stop before first uncategorized parent (V8 complex header).
 
-        assem.m_catId = thisCatId;
-        assem.m_elemId = childId;
+        assemblyCategoryId = thisCatId;
+        assemblyId = childId;
 
         childId = stmt->GetValueId<DgnElementId>(0);
         if (!childId.IsValid())
@@ -722,10 +167,152 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
         stmt->Reset();
         stmt->BindId(1, childId);
         }
+    m_assemblyIds.Insert(childId, assemblyId);
 
-    BeAssert(assem.m_catId.IsValid());
-    return assem;
+    return assemblyId;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void     AddSchedules(PublisherContext::T_ScheduleEntryMaps& scheduleEntryMaps)
+    {
+    for (auto& scheduleEntryMap : scheduleEntryMaps)
+        {
+        T_ScheduleInfoMap           scheduleMap;
+        bmap<uint32_t, uint32_t>    usedEntries;
+
+        for (auto& featureAttribute : m_attrs)
+            {
+            auto    found = scheduleEntryMap.find(featureAttribute.first.GetElementId());
+
+            if (found != scheduleEntryMap.end())
+                {
+                auto    scheduleEntry = found->second;
+                auto    insertPair = usedEntries.Insert(scheduleEntry, usedEntries.size());
+
+                scheduleMap[featureAttribute.second] = ScheduleInfo(insertPair.first->second, scheduleEntry);
+                }
+            }
+        m_schedules.push_back(std::move(scheduleMap));
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void InitUncategorizedCategory()
+    {
+    // This is dumb. See OfficeBuilding.dgn - cells have no level in V8, which translates to 'Uncategorized' (2d and 3d variants) in DgnDb
+    // We don't want to create an 'Uncategorized' assembly if its children belong to a real category.
+    // We only can detect this because for whatever reason, "Uncategorized" is not a localized string.
+    DefinitionModelR dictionary = m_db.GetDictionaryModel();
+    DgnCode code = m_is3d ? SpatialCategory::CreateCode(dictionary, "Uncategorized") : DrawingCategory::CreateCode(dictionary, "Uncategorized");
+
+    m_uncategorized = DgnCategory::QueryCategoryId(m_db, code);
+    }
+
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* classifierColors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleMaps = nullptr, int revisionIndex = -1)
+    : m_json(Json::objectValue), m_db(db), m_is3d(is3d), m_isClassifier(isClassifier), m_attrs(attrs)
+    {
+    InitUncategorizedCategory();
+
+    Json::Value             geomClasses    = Json::arrayValue, 
+                            elementIds     = Json::arrayValue, 
+                            assemblyIds    = Json::arrayValue, 
+                            categoryIds    = Json::arrayValue,
+                            subCategoryIds = Json::arrayValue,
+                            labels         = Json::arrayValue,
+                            colors         = Json::arrayValue;
+
+    bool                    validLabelsFound = false;
+    bvector<Json::Value>    schedules;
+
+    if (nullptr != scheduleMaps)
+        for (auto& scheduleMap : *scheduleMaps)
+            schedules.push_back(Json::arrayValue);
+                        
+    for (auto const& kvp : attrs)
+        {
+        FeatureAttributesCR attr = kvp.first;                                                                                                                                    
+        uint32_t            index = kvp.second;
+        DgnElementId        elementId = attr.GetElementId();
+
+        geomClasses[index]    = (int) attr.GetClass();
+        elementIds[index]     = elementId.ToString();
+        assemblyIds[index]    = QueryAssemblyId(elementId).ToString();
+        subCategoryIds[index] = attr.GetSubCategoryId().ToString();
+        categoryIds[index]    = QueryCategoryId(attr.GetSubCategoryId()).ToString();
+
+        if (nullptr != labelProperty)
+            {
+            ECN::ECValue    value;
+
+            auto element = db.Elements().Get<DgnElement> (elementId);
+            if (element.IsValid() &&                                                        
+
+                DgnDbStatus::Success == element->GetPropertyValue(value, labelProperty))
+                {
+                labels[index] = value.GetUtf8CP();
+                validLabelsFound = true;
+                }
+            else
+                labels[index] = Json::Value::GetNull();
+            }
+        if (nullptr != classifierColors) 
+            colors[index] = (*classifierColors)[elementId];
+
+        if (nullptr != scheduleMaps)
+            {
+            for (size_t i=0; i<scheduleMaps->size(); i++)
+                {
+                auto&   scheduleMap = scheduleMaps->at(i);
+                auto    found = scheduleMap.find(elementId);
+
+                schedules.at(i)[index] = (found == scheduleMap.end()) ? Json::Value::GetNull() : found->second;
+                }
+            }
+        }
+    m_json["geomClass"]   = std::move(geomClasses);
+    m_json["element"]     = std::move(elementIds);
+    m_json["assembly"]    = std::move(assemblyIds);
+    m_json["subCategory"] = std::move(subCategoryIds);
+    m_json["category"]    = std::move(categoryIds);
+
+    if (validLabelsFound)
+        m_json["label"] = std::move(labels);
+
+    if (nullptr != classifierColors)
+        m_json["classifierColor"] = std::move(colors);
+
+    if (nullptr != scheduleMaps)
+        for (size_t i=0; i<scheduleMaps->size(); i++)
+            m_json[Utf8PrintfString("schedule%d", i).c_str()] = std::move(schedules[i]);
+
+    if (revisionIndex >= 0)
+        {
+        Json::Value revisions = Json::arrayValue;
+
+        for (size_t i=0; i<m_attrs.size(); i++)
+           revisions.append(revisionIndex);
+
+        m_json["revision"] = std::move(revisions);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ToString()   { return getJsonString(m_json); }
+
+
+};  // BatchTableBuilder
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
@@ -959,7 +546,7 @@ void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString     PublisherContext::GetTileExtension (TileNodeCR tile)
+WString     PublisherContext::GetTileExtension (TileNodeCR tile) const
     {
     return DoPublishAsClassifier() ? L"vctr" : tile.GetFileExtension();
     }
@@ -978,12 +565,12 @@ void PublisherContext::RecordUsage(FeatureAttributesMapCR attributes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName  TilePublisher::GetBinaryDataFileName() const
+BeFileName  PublisherContext::GetBinaryDataFileName(TileNodeCR tile) const
     {
-    WString rootName;
-    BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
+    WString     rootName = GetRootName (tile.GetModel().GetModelId(), GetCurrentClassifier());
+    BeFileName  modelDir = GetModelDataDirectory(tile.GetModel().GetModelId(), GetCurrentClassifier());
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_context.GetTileExtension(m_tile).c_str()).c_str(), nullptr);
+    return  BeFileName(nullptr, modelDir.c_str(), tile.GetFileName (rootName.c_str(), GetTileExtension(tile).c_str()).c_str(), nullptr);
     }
 
 
@@ -1024,7 +611,7 @@ PublisherContext::Status TilePublisher::Publish()
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    BeFileName      fileName = GetBinaryDataFileName();
+    BeFileName      fileName = m_context.GetBinaryDataFileName(m_tile);
 
     std::FILE*  outputFile = _wfopen(fileName.c_str(), L"wb");
 
@@ -1276,7 +863,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
             }
 
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
-        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
+        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint32_t));
         }
 
     featureTableData.PadBinaryDataToBoundary(4);
@@ -1289,10 +876,10 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, nullptr, nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps());
+    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, nullptr, nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
     Utf8String      batchTableStr = batchTableBuilder.ToString();
-    Utf8String      featureTableStr = featureTableData.GetJsonString();
 
+    Utf8String      featureTableStr = featureTableData.GetJsonString();
     uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
     uint32_t        featureTableBinarySize = featureTableData.BinaryDataSize(), gltfFormat = 1, zero = 0;
@@ -1345,8 +932,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name", nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps());
-
+        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name", nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
         batchTableStr = batchTableBuilder.ToString();
         }
 
@@ -1704,19 +1290,34 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
         if (!mesh->Polylines().empty())
             AddPolylines(*mesh, mesh->Polylines(), classifiedRange);
 
-        if (m_classifier.GetInsideDisplay() == ModelSpatialClassifier::DISPLAY_ElementColor)
+        switch (m_classifier.GetInsideDisplay())
             {
-            bmap<uint16_t, DgnElementId>    attributeIndexToElementId;
-            bmap<uint16_t, uint32_t>        colorIndexToColor;
-                         
-            for (auto& curr : attributes)
-                attributeIndexToElementId[curr.second] = curr.first.GetElementId();
+            case ModelSpatialClassifier::DISPLAY_ElementColor:
+                {
+                bmap<uint16_t, DgnElementId>    attributeIndexToElementId;
+                bmap<uint16_t, uint32_t>        colorIndexToColor;
+                             
+                for (auto& curr : attributes)
+                    attributeIndexToElementId[curr.second] = curr.first.GetElementId();
 
-            for (auto& curr :  mesh->GetColorIndexMap())
-                colorIndexToColor[curr.second] = curr.first;
+                for (auto& curr :  mesh->GetColorIndexMap())
+                    colorIndexToColor[curr.second] = curr.first;
 
-            for (size_t i=0; i<mesh->Colors().size(); i++)
-                m_elementColors[attributeIndexToElementId[mesh->Attributes()[i]]] = colorIndexToColor[mesh->Colors()[i]];
+                for (size_t i=0; i<mesh->Colors().size(); i++)
+                    m_elementColors[attributeIndexToElementId[mesh->Attributes()[i]]] = colorIndexToColor[mesh->Colors()[i]];
+
+                break;
+                }
+
+            default:
+                {
+                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::Cyan() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
+
+                for (auto& curr : attributes)
+                    m_elementColors[curr.first.GetElementId()] = s_colors[m_classifier.GetInsideDisplay()].GetValue();
+                    
+                break;
+                }
             }
         }
     }
@@ -2004,10 +1605,9 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
 #endif
             {
             extension = ImageSource::Format::Jpeg == imageSource.GetFormat() ? L"jpg" : L"png";
-            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
+            std::FILE*  outputFile = _wfopen(BeFileName(nullptr, m_context.GetModelDataDirectory(m_tile.GetModel().GetModelId(), nullptr).c_str(), name.c_str(), extension.c_str()).c_str(), L"wb");
             fwrite (imageSource.GetByteStream().GetData(), 1, imageSource.GetByteStream().GetSize(), outputFile);
             fclose (outputFile);
-
             }
         tileData.m_json["images"][imageId]["uri"] = Utf8String(BeFileName(nullptr, nullptr, name.c_str(), extension.c_str()).c_str());
         tileData.m_json["images"][imageId]["name"] = imageId; 
@@ -2135,9 +1735,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (!mat.IsTextured())
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
-#ifdef COLORBLENDMODE_TEST
-    AddTechniqueParameter(technique, "diffuse", GLTF_FLOAT_VEC4, "_3DTILESDIFFUSE");
-#endif
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -2357,9 +1954,9 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
                 alpha = m_alphaOverride;
                 }
             else if (m_overridesRgb)
-                {
+                {                                                                                                                  
                 // Apparently overriding RGB without specifying transmit => opaque.
-                m_alphaOverride = 1.0;
+                m_alphaOverride = 0.0;
                 alpha = m_alphaOverride;
                 m_overridesAlpha = true;
                 }
@@ -2373,7 +1970,11 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
             }
         }
 
-    m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+    if (IsTextured() || m_overridesAlpha)
+        m_hasAlpha = alpha > 0.0;
+    else
+        m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+
     m_adjustColorForBackground = !is3d && !params.GetIsColorFromBackground();
 
     if (m_overridesAlpha && m_overridesRgb)
@@ -2434,7 +2035,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
     auto& techniqueUniforms = technique["uniforms"];
     if (ColorIndex::Dimension::Zero != dim)
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
         techniqueUniforms["u_tex"] = "tex";
@@ -2463,7 +2064,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
         }
     else
         {
-        TilePublisher::AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, "_3DTILESDIFFUSE");
         techniqueUniforms["u_color"] = "color";
         }
 
@@ -2480,7 +2081,7 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
     BeAssert (IsTextured());
     if (IsTextured())
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
@@ -2939,11 +2540,91 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& attributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
+    {
+    Utf8String suffix(name);
+    suffix.append(idStr);
+
+    Utf8String bvId = Concat("bv", suffix);
+    Utf8String accId = Concat("acc", suffix);
+
+    primitive["attributes"][semantic] = accId;
+
+    uint32_t      maxAttribute = 0;
+
+    for (auto attribute : attributes)
+        if (attribute > maxAttribute)
+            maxAttribute = attribute;
+
+    uint32_t  componentType;
+
+    if (maxAttribute > 0xffff)
+        componentType = GLTF_FLOAT;
+    else if (maxAttribute > 0xff)
+        componentType = GLTF_UNSIGNED_SHORT;
+    else
+        componentType = GLTF_UNSIGNED_BYTE;
+
+    bvector<uint8_t> attributes8;
+    bvector<uint16_t> attributes16;
+    bvector<uint32_t> attributesFloat;
+
+    void*       pData = nullptr;
+    size_t      dataSize = 0;
+
+    switch (componentType)
+        {
+        case GLTF_FLOAT:
+            dataSize = sizeof(float);
+            attributesFloat.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributesFloat.push_back(static_cast<float>(attribute));
+            pData = attributesFloat.data();
+            break;
+
+        case GLTF_UNSIGNED_SHORT:
+            dataSize = sizeof(uint16_t);
+            attributes16.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributes16.push_back(static_cast<uint16_t>(attribute));
+            pData = attributes16.data();
+            break;
+
+        case GLTF_UNSIGNED_BYTE:
+            dataSize = sizeof(uint8_t);
+            attributes8.reserve(attributes.size());
+            for (auto attribute : attributes)
+                attributes8.push_back(static_cast<uint8_t>(attribute));
+            pData = attributes8.data();
+            break;
+        }
+
+
+    auto&   bv = tileData.m_json["bufferViews"][bvId];
+    size_t  nBytes = attributes.size() * dataSize;
+
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+    tileData.AddBinaryData(pData, nBytes);
+
+    auto& acc = tileData.m_json["accessors"][accId];
+    acc["bufferView"] = bvId;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = componentType;
+    acc["count"] = attributes.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
+void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& batchIds, Utf8StringCR idStr)
     {
-    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "_BATCHID");
+    AddMeshUInt32Attributes(tileData, primitive, batchIds, idStr, "Batch_", "_BATCHID");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3106,7 +2787,7 @@ struct  PolylineTesselation
     bvector<double>             m_distances;
     bvector<DPoint2d>           m_params;
     bvector<DPoint3d>           m_scalePoints;
-    bvector<uint16_t>           m_attributes;
+    bvector<uint32_t>           m_attributes;
     bvector<uint16_t>           m_colors;
     bvector<uint32_t>           m_indices;
 
@@ -3118,7 +2799,7 @@ struct  PolylineTesselation
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint16_t attrib, uint16_t color, DPoint3dCR center)
+    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint32_t attrib, uint16_t color, DPoint3dCR center)
         {
         m_points.push_back(point);
         m_prevDirs.push_back(prev);
@@ -3142,7 +2823,7 @@ struct  PolylineTesselation
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     02/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DVec3dCR prev, DVec3dCR next, uint16_t attribute, uint16_t color, double param, DPoint3dCR center)
+    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DVec3dCR prev, DVec3dCR next, uint32_t attribute, uint16_t color, double param, DPoint3dCR center)
         {
         static size_t   s_nPoints = 4;
         double          paramDelta = 1.0 / (double) (s_nPoints - 1);
@@ -3158,7 +2839,7 @@ struct  PolylineTesselation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>&  polylineColors, bvector<uint16_t>& polylineAttributes, TilePolylineCR polyline, TileMeshCR mesh, bool doColors, bool doBatchIds)
+static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>&  polylineColors, bvector<uint32_t>& polylineAttributes, TilePolylineCR polyline, TileMeshCR mesh, bool doColors, bool doBatchIds)
     {
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
@@ -3215,7 +2896,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     for (auto const& polyline : mesh.Polylines())
         {
         bvector<DPoint3d>       polylinePoints;
-        bvector<uint16_t>       polylineColors, polylineAttributes;
+        bvector<uint16_t>       polylineColors;
+        bvector<uint32_t>       polylineAttributes;
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
@@ -3236,7 +2918,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                 length1 = (cumulativeLength += thisLength);
             bool                isStart  = (i == 0),
                                 isEnd    = (i == last - 1);
-            uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
+            uint16_t            colors0 = 0, colors1 = 0;
+            uint32_t            attributes0 = 0, attributes1 = 1;
             static double       s_extendDistance = .1;
             DVec3d              thisDir = DVec3d::FromStartEndNormalize(p0, p1), negatedThisDir = DVec3d::FromScale(thisDir, -1.0),
                                 prevDir0 = isStart ? (isClosed ?  DVec3d::FromStartEndNormalize(p0,  polylinePoints[last-1]) : negatedThisDir) : DVec3d::FromStartEndNormalize(p0,  polylinePoints[i-1]),
@@ -3354,8 +3037,8 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     Utf8String idStr(std::to_string(index).c_str());
     PolylineMaterial            mat = AddSimplePolylineMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     bvector<DPoint3d>           points, scalePoints;
-    bvector<uint16_t>           attributes, colors;
-    bvector<uint32_t>           indices;
+    bvector<uint16_t>           colors;
+    bvector<uint32_t>           attributes, indices;
     bvector<double>             distances;
     double                      minLength = 0.0, maxLength = 0.0;
     bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
@@ -3363,7 +3046,8 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     for (auto const& polyline : mesh.Polylines())
         {
         bvector<DPoint3d>       polylinePoints;
-        bvector<uint16_t>       polylineColors, polylineAttributes;
+        bvector<uint16_t>       polylineColors;
+        bvector<uint32_t>       polylineAttributes;
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
@@ -3596,33 +3280,50 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet)
+Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
     bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
         auto attachment = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachmentId);
-        DrawingViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<DrawingViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
+        ViewDefinitionCPtr view = attachment.IsValid() ? GetDgnDb().Elements().Get<ViewDefinition>(attachment->GetAttachedViewId()) : nullptr;
         if (view.IsNull())
             continue;
 
+        // Handle wacky 'spatial' views created for 2d models by DgnV8Converter...
+        DgnModelIdSet viewedModels;
+        GetViewedModelsFromView(viewedModels, attachment->GetAttachedViewId());
+        BeAssert(1 == viewedModels.size());
+        if (viewedModels.empty())
+            continue;
+
+        DgnModelId baseModelId = *viewedModels.begin();
+        attachedModels.insert(baseModelId);
+
         Json::Value viewJson;
-        viewJson["baseModelId"] = view->GetBaseModelId().ToString();
+        viewJson["baseModelId"] = baseModelId.ToString();
         viewJson["categorySelector"] = view->GetCategorySelectorId().ToString();
         viewJson["displayStyle"] = view->GetDisplayStyleId().ToString();
 
         DPoint3d            viewOrigin = view->GetOrigin();
         AxisAlignedBox3d    sheetRange = attachment->GetPlacement().CalculateRange();
         double              sheetScale = sheetRange.XLength() / view->GetExtents().x;
+
+        // HACK: For some reason, attachments to drawings of 3D models, and attachments with any scaling factor, end up as 'spatial' views of 'spatial' models in the converter.
+        // Revert the ECEF transform we apply to such models so they will render on the sheet, which is not itself transformed.
+        Transform ecefToSheet;
+        if (view->IsSpatialView() && !m_spatialToEcef.IsIdentity())
+            ecefToSheet.InverseOf(m_spatialToEcef);
+        else
+            ecefToSheet.InitIdentity();
+
         Transform           subtractViewOrigin = Transform::From(DPoint3d::From(-viewOrigin.x, -viewOrigin.y, -viewOrigin.z)),
                             viewRotation = Transform::From(view->GetRotation()),
                             scaleToSheet = Transform::FromScaleFactors (sheetScale, sheetScale, sheetScale),
-                            addSheetOrigin = Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0)),
-                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin)),
-                            sheetToTile;
+                            addSheetOrigin = Transform::FromProduct(ecefToSheet, Transform::From(DPoint3d::From(sheetRange.low.x, sheetRange.low.y, attachment->GetDisplayPriority()/500.0))),
+                            tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
 
-        sheetToTile.InverseOf(tileToSheet);
         viewJson["transform"] = TransformToJson(tileToSheet);
 
         attachmentsJson.append(std::move(viewJson));
@@ -3672,7 +3373,8 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
 
                 auto&       childRoot = childTileset[JSON_Root];
                 WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
-                BeFileName  metadataFileName (nullptr, m_dataDir.c_str(), metadataRelativePath.c_str(), nullptr);
+                BeFileName  dataDirectory = GetModelDataDirectory(tile.GetModel().GetModelId(), GetCurrentClassifier());
+                BeFileName  metadataFileName (nullptr, dataDirectory.c_str(), metadataRelativePath.c_str(), nullptr);
 
                 WriteModelMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
                 if (!childRange.IsNull())
@@ -3764,7 +3466,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGeneratorStatus::Success : TileGeneratorStatus::Aborted;
+    return Status::Success == InitializeDirectories(GetModelDataDirectory(model.GetModelId(), GetCurrentClassifier(), false)) ? TileGeneratorStatus::Success : TileGeneratorStatus::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3783,7 +3485,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         }
     else
         {
-        CleanDirectories(GetDataDirForModel(model));
+        CleanDirectories(GetModelDataDirectory(model.GetModelId(), GetCurrentClassifier(), false));
         }
 
     return status;
@@ -3795,23 +3497,21 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelTileset(TileNodeCR tile)
     {
-    WriteTileset(GetTilesetFileName(tile.GetModel().GetModelId()), tile, GetMaxTilesetDepth());
+    WriteTileset(GetTilesetFileName(tile.GetModel().GetModelId(), GetCurrentClassifier()), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
+* @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTilesetName) const
+BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, ClassifierInfo const* classifier, bool appendSeperator) const
     {
-    WString tmpTilesetName;
-    WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
+    BeFileName  modelDir = m_dataDir;
 
-    tilesetName = GetRootName (model.GetModelId(), GetCurrentClassifier());
+    modelDir.AppendToPath( GetRootName(modelId, classifier).c_str());
+    if (appendSeperator)
+        modelDir.AppendSeparator();
 
-    BeFileName dataDir = m_dataDir;
-    dataDir.AppendToPath(tilesetName.c_str());                                                                                
-
-    return dataDir;
+    return modelDir;
     }
 
 
@@ -3858,7 +3558,6 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
             AddViewedModel (viewedModels, modelId);
         }
     }
-static size_t           s_maxPointsPerTile = 250000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -3982,16 +3681,19 @@ PublisherContext::Status   PublisherContext::PublishClassifier(ClassifierInfo& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
+BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier)
     {
-    return BeFileName(nullptr, m_dataDir.c_str(), GetRootName(modelId, GetCurrentClassifier()).c_str(), s_metadataExtension);
+    WString     rootName = GetRootName(modelId, classifier);
+    BeFileName  modelDir = GetModelDataDirectory(modelId, classifier);
+
+    return BeFileName(nullptr, modelDir.c_str(), rootName.c_str(), s_metadataExtension);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo const* classifier)
+Utf8String  PublisherContext::GetTilesetURL(DgnModelId modelId, ClassifierInfo const* classifier)
     {
     if (nullptr == classifier)
         {
@@ -3999,14 +3701,12 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
         if (m_directUrls.end() != urlIter)
             return urlIter->second;
         }
-
-    WString         modelRootName = GetRootName(modelId, classifier);
-    WString         modelDir      = L"TileSets\\" + m_rootName;
-    BeFileName      tilesetFileName (nullptr, modelDir.c_str(), modelRootName.c_str(), s_metadataExtension);
-    auto            utf8FileName = tilesetFileName.GetNameUtf8();
-
-    utf8FileName.ReplaceAll("\\", "//");
-    return utf8FileName;
+    BeFileName      tilesetFilePath = GetTilesetFileName(modelId, classifier);
+    auto            utf8FileName = tilesetFilePath.GetNameUtf8();
+    auto            url = Utf8String(utf8FileName.c_str() + m_outputDir.size());
+    
+    url.ReplaceAll("\\", "//");
+    return url;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4014,76 +3714,81 @@ Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
     {
-    Json::Value     modelsJson (Json::objectValue);
-    
-    for (auto& modelId : modelIds)
-        {
-        auto const&  model = GetDgnDb().Models().GetModel (modelId);
-        if (model.IsValid())
-            {
-            auto spatialModel = model->ToSpatialModel();
-            auto model2d = nullptr == spatialModel ? dynamic_cast<GraphicalModel2dCP>(model.get()) : nullptr;
-            if (nullptr == spatialModel && nullptr == model2d)
-                {
-                BeAssert(false && "Unsupported model type");
-                continue;
-                }
-
-            auto modelRangeIter = m_modelRanges.find(modelId);
-            if (m_modelRanges.end() == modelRangeIter)
-                continue; // this model produced no tiles. ignore it.
-
-            ModelRange modelRange = modelRangeIter->second;
-            if (modelRange.m_range.IsNull())
-                {
-                BeAssert(false && "Null model range");
-                continue;
-                }
-
-            Json::Value modelJson(Json::objectValue);
-
-            auto        sheetModel = model->ToSheetModel();
-
-            // The reality models (Point Clouds and Reality meshes) do not contain elements and therefore
-            // no categories etc.   They unfortunately do not have their own base class and therefore no
-            // good way to detect - except that they do not extend physical model.
-            bool        isRealityModel = nullptr != spatialModel && nullptr == model->ToPhysicalModel();
-
-            modelJson["name"] = model->GetName();
-            modelJson["type"] = nullptr != spatialModel ? (isRealityModel ? "reality" : "spatial") : (nullptr != sheetModel ? "sheet" : "drawing");
-
-            if (nullptr != spatialModel)
-                {
-                if (modelRange.m_isEcef)
-                    {
-                    modelJson["transform"] = TransformToJson(Transform::FromIdentity());
-                    }
-                else
-                    {
-                    m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
-                    modelJson["transform"] = TransformToJson(m_spatialToEcef);
-                    }
-                }
-            else if (nullptr != sheetModel)
-                {
-                modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
-                }
-
-            modelJson["extents"] = RangeToJson(modelRange.m_range);
-            modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
-
-#ifdef PER_MODEL_CLASSIFIER
-            // Cesium doesn't support classifying a single model as we do in JSon.
-            auto const& foundClassifier = m_classifierMap.find(modelId);
-            if (foundClassifier != m_classifierMap.end())
-                modelJson["classifiers"] = GetClassifiersJson(foundClassifier->second);
-#endif
-
-            modelsJson[modelId.ToString()] = modelJson;
-            }
-        }
+    Json::Value modelsJson(Json::objectValue);
+    for (auto const& modelId : modelIds)
+        AddModelJson(modelsJson, modelId, modelIds);
 
     return modelsJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds)
+    {
+    auto const&  model = GetDgnDb().Models().GetModel (modelId);
+    if (model.IsValid())
+        {
+        auto spatialModel = model->ToSpatialModel();
+        auto model2d = nullptr == spatialModel ? dynamic_cast<GraphicalModel2dCP>(model.get()) : nullptr;
+        if (nullptr == spatialModel && nullptr == model2d)
+            {
+            BeAssert(false && "Unsupported model type");
+            return;
+            }
+
+        auto modelRangeIter = m_modelRanges.find(modelId);
+        if (m_modelRanges.end() == modelRangeIter)
+            return; // this model produced no tiles. ignore it.
+
+        ModelRange modelRange = modelRangeIter->second;
+        if (modelRange.m_range.IsNull())
+            {
+            BeAssert(false && "Null model range");
+            return;
+            }
+
+        Json::Value modelJson(Json::objectValue);
+
+        auto        sheetModel = model->ToSheetModel();
+
+        // The reality models (Point Clouds and Reality meshes) do not contain elements and therefore
+        // no categories etc.   They unfortunately do not have their own base class and therefore no
+        // good way to detect - except that they do not extend physical model.
+        bool        isRealityModel = nullptr != spatialModel && nullptr == model->ToPhysicalModel();
+
+        modelJson["name"] = model->GetName();
+        modelJson["type"] = nullptr != spatialModel ? (isRealityModel ? "reality" : "spatial") : (nullptr != sheetModel ? "sheet" : "drawing");
+
+        if (nullptr != spatialModel)
+            {
+            if (modelRange.m_isEcef)
+                {
+                modelJson["transform"] = TransformToJson(Transform::FromIdentity());
+                }
+            else
+                {
+                m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
+                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                }
+            }
+        else if (nullptr != sheetModel)
+            {
+            DgnModelIdSet attachedModels;
+            modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel, attachedModels);
+
+            // Ensure all attached models are included in the models array
+            // NB: No in-place version of std::set_difference...
+            for (auto const& attachedModelId : attachedModels)
+                if (modelIds.end() == modelIds.find(attachedModelId))
+                    AddModelJson(modelsJson, attachedModelId, modelIds);
+            }
+
+        modelJson["extents"] = RangeToJson(modelRange.m_range);
+        modelJson["tilesetUrl"] = GetTilesetURL(modelId, false);
+
+        modelsJson[modelId.ToString()] = modelJson;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4324,7 +4029,7 @@ Json::Value PublisherContext::GetAllClassifiersJson()
             auto&           classifier = classifierInfo.m_classifier;
             Json::Value     classifierValue = classifier.ToJson();
 
-            classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), &classifierInfo);
+            classifierValue["tilesetUrl"] = GetTilesetURL(classifier.GetModelId(), &classifierInfo);
             classifiersValue[Utf8String(classifierInfo.GetRootName())] = classifierValue;
             }
         }
@@ -4430,5 +4135,4 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
 
     return json;
     }
-
 

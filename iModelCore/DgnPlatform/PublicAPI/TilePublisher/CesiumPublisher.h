@@ -53,6 +53,14 @@ protected:
     bool                            m_overwriteExisting = true;
     bool                            m_wantProgressOutput = true;
 
+    // History (WIP) requires IModel Hub connection.
+    bool                            m_wantHistory = false;
+    Utf8String                      m_userName;
+    Utf8String                      m_password;
+    Utf8String                      m_environment;
+    Utf8String                      m_project = "iModelHubTest";
+    Utf8String                      m_repository;
+
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
     PublisherParams () { }
@@ -68,6 +76,7 @@ public:
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
+    bool WantHistory() const { return m_wantHistory; }
     GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
@@ -76,6 +85,14 @@ public:
 
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db);
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
+
+    // For History publishing...
+    Utf8StringCR GetUser() const { return m_userName; }
+    Utf8StringCR GetPassword() const { return m_password; }
+    Utf8StringCR GetEnvironment() const { return m_environment; }
+    Utf8StringCR GetProject() const { return m_project; }
+    Utf8StringCR GetRepository() const { return m_repository; }
+
 };
 
 //=======================================================================================
@@ -95,6 +112,7 @@ protected:
     Status                      m_acceptTileStatus = Status::Success;
     bool                        m_verbose;
     bool                        m_wantProgressOutput;
+    Json::Value                 m_revisionsJson;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
@@ -139,12 +157,14 @@ public:
         : TilesetPublisher(db, viewsToPublish, defaultView, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
 
-    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
+    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params, bool initializeDirectories = true);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
 
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
+    void SetRevisionsJson(Json::Value const&& revisionsJson) { m_revisionsJson = std::move(revisionsJson); }
+
 
     struct VerboseStatistics
         {
@@ -161,6 +181,18 @@ public:
         return stats;
         }
 };
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     09/2017
+//=======================================================================================
+struct TilesetHistoryPublisher : TilesetPublisher
+{
+    TILEPUBLISHER_EXPORT static Status PublishTilesetWithHistory(PublisherParamsR params);
+
+
+
+
+};  // TilesetHistoryPublisher
 
 } // namespace Cesium
 

@@ -16,6 +16,7 @@
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 
+#define HISTORY_SUPPORT
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -47,6 +48,12 @@ enum class ParamId
     NoReplace,
     VerboseStatistics,
     TextureMode,
+    History,
+    UserName,
+    Password,
+    Environment,
+    Project,
+    Repository,
     Invalid,
 };
 
@@ -82,6 +89,12 @@ static CommandParam s_paramTable[] =
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
         { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
+        { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
+        { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
+        { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
+        { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
+        { L"pr", L"project", L"Project for I-Model hub (History Publishing)", false, false },
+        { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -147,6 +160,7 @@ struct Params : PublisherParams
 {
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,12 +286,51 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
                 }
 
+            case ParamId::History:
+                m_wantHistory = true;
+                break;
+
+            case ParamId::UserName:
+                m_userName = Utf8String(arg.m_value.c_str());
+                break;
+
+
+            case ParamId::Password:
+                m_password = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Environment:
+                m_environment = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Project:
+                m_project = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Repository:
+                m_repository = Utf8String(arg.m_value.c_str());
+                break;
+
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
 
+
+    if (m_wantHistory)
+        {
+        if (m_userName.empty() || m_password.empty())
+            {
+            printf ("Username and password are reaquired for history publishing\n");
+            return false;
+            }
+        if (!m_repository.empty())
+            haveInput = true;       // Attempt to acquire briefcase from project.
+        }
+
+    
     if (!haveInput)
         {
         printf("Input filename is required\n");
@@ -288,7 +341,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         m_outputDir = m_inputFileName.GetDirectoryName();
 
     if (m_tilesetName.empty())
-        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        {
+        if (!m_inputFileName.empty())
+            m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        else if (!m_repository.empty())
+            m_tilesetName = WString(m_repository.c_str(), false);
+        }
+
 
     return true;
     }
@@ -375,156 +434,22 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 {
                 return false;
                 }
+
+            virtual Utf8String _GetProjectID() const override
+                {
+                Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+                WString projectGUIDw;
+
+                if (BSISUCCESS == ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                    {
+                    projectGUID.Assign(projectGUIDw.c_str());
+                    }
+                return projectGUID;
+                }
             };
         return *new CsScalableMeshAdmin;
         };
-
-
-    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin()
-        {
-
-        auto getTokenFunction = []() -> Utf8String
-            {
-            Utf8String emptyToken;
-            return emptyToken;
-            };
-        return *new ScalableMesh::WsgTokenAdmin(getTokenFunction);
-        }
-
-
-    ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
-        {
-        auto getTokenFunction = [this](const Utf8String& realityDataGuid) -> Utf8String
-            {
-            SMHost::initializeRealityDataService();
-            if (m_sasConnections.find(realityDataGuid) == m_sasConnections.end())
-                {
-                SASConnection newConnection;
-                newConnection.m_handshake = new AzureHandshake(realityDataGuid, false /*writeable*/);
-                m_sasConnections[realityDataGuid] = newConnection;
-                }
-            assert(m_sasConnections.find(realityDataGuid) != m_sasConnections.end());
-            auto& sasConnection = m_sasConnections[realityDataGuid];
-            assert(sasConnection.m_handshake != nullptr);
-            int64_t currentTime;
-            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
-            if ((sasConnection.m_azureTokenTimer - currentTime) < 0)
-                {
-                // Request Azure URL of the reality data
-                RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)sasConnection.m_handshake);
-                if (rawResponse.status != RequestStatus::BADREQ)
-                    {
-                    // The handshake status with Azure need not be checked, if the request fails the current token will be used until it expires (or return an empty token)
-                    /*BentleyStatus handshakeStatus = */
-                    sasConnection.m_handshake->ParseResponse(rawResponse.body, sasConnection.m_azureServer, sasConnection.m_azureToken, sasConnection.m_azureTokenTimer);
-                    }
-                else
-                    {
-                    // Try again after 50 minutes...
-                    sasConnection.m_azureTokenTimer = currentTime + 1000 * 60 * 50;
-                    assert(!"Problem with the handshake");
-                    }
-                }
-            return sasConnection.m_azureToken;
-            };
-        return *new ScalableMesh::SASTokenAdmin(getTokenFunction);
-        }
-
-
-    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
-        {
-        auto getSSLCertificatePath = []() -> Utf8String
-            {
-            Utf8String certificatePath;
-            return certificatePath;
-            };
-
-        return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
-        }
-
-    // &&RB TODO: the following function can be removed when the url to RDS repository
-    //            is being transferred in the ibim file.
-    virtual Utf8String GetProjectWiseContextShareLink(const WString& path) override
-        {
-        if (m_smPaths->count(path) > 0 && path.substr(0, 8) == L"https://")
-            {
-            auto guidPos = path.find(L"/", 8) + 1;
-            auto guidLength = path.find(L"/", guidPos) - guidPos;
-            auto guid = Utf8String(path.substr(guidPos, guidLength));
-
-            SMHost::initializeRealityDataService();
-
-            Utf8String rdsUrl = "https://" + RealityDataService::GetServerName() + "v" + RealityDataService::GetWSGProtocol() + "/Repositories/" + RealityDataService::GetRepoName() + "/" + RealityDataService::GetSchemaName() + "/RealityData/" + guid;
-
-            return rdsUrl;
-            }
-        return Utf8String();
-        }
-
-private:
-
-    struct SASConnection
-        {
-        int64_t m_azureTokenTimer = 0;
-        Utf8String m_azureToken;
-        Utf8String m_azureServer;
-        AzureHandshake* m_handshake;
-        };
-
-    bmap<Utf8String, SASConnection> m_sasConnections;
-
-    static StatusInt initializeRealityDataService()
-        {
-        if (RealityDataService::AreParametersSet()) return SUCCESS;
-
-        WString serverUrl;
-
-#if 0 
-        //WString serverUrl = L"connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
-        serverUrl = L"qa-connect-realitydataservices.bentley.com"; //this probably should be a function in the RDS API.
-#endif
-
-        try     {
-            Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-            std::wstring buddiUrl;
-            connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-
-            serverUrl.assign(buddiUrl.c_str());
-            }
-        catch (...)
-            {
-            }
-
-        serverUrl.ReplaceI(L"https://", L"");  // remove scheme prefix 
-
-        if (0 == serverUrl.size())
-            return ERROR;
-
-
-        RealityDataService::SetServerComponents(Utf8String(serverUrl.c_str()),
-            RealityDataService::GetWSGProtocol(),
-            RealityDataService::GetRepoName(),
-            RealityDataService::GetSchemaName());
-
-        //hardcoded the one for RM Internal for now. Need a UI of some sort to pick the project if
-        //user has multiples, etc
-        //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-        //RealityDataService::SetProjectId(Utf8String("75c7d1d7-1e32-4c4f-842d-ea6bade38638"));
-        //RealityDataService::SetProjectId(Utf8String("4b8643d2-c6b0-4d77-b491-61408fe03b79"));
-
-        Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
-
-        WString projectGUIDw;
-
-        if (BSISUCCESS == ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
-            {
-            projectGUID.Assign(projectGUIDw.c_str());
-            }
-
-        RealityDataService::SetProjectId(projectGUID);
-
-        return SUCCESS;
-        }
 
     };
 
@@ -552,8 +477,17 @@ int wmain(int ac, wchar_t const** av)
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
-                                                                                  
+
+
+#ifdef HISTORY_SUPPORT
+    if (createParams.WantHistory())
+        {
+        return static_cast<int> (TilesetHistoryPublisher::PublishTilesetWithHistory (createParams));
+        }
+#endif
+
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
@@ -589,3 +523,4 @@ int wmain(int ac, wchar_t const** av)
     return static_cast<int>(status);
     }
 
+                       

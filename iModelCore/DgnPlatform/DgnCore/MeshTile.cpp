@@ -21,14 +21,10 @@ USING_NAMESPACE_BENTLEY_RENDER
 BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
-// unused - static size_t s_maxFacetDensity;
-
-
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
 static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
-static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
@@ -541,7 +537,7 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t attribute, uint32_t color)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -705,6 +701,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
     bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
 
+    doVertexCluster=false;
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
         {
         if (doVertexCluster)
@@ -848,12 +845,8 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
 
     opts->SetChordTolerance(chordTolerance);
     opts->SetAngleTolerance(s_defaultAngleTolerance);
-#ifdef PRE_TRIANGLE_CONVEX
-    opts->SetMaxPerFace(3);
-#else
     opts->SetMaxPerFace(100);
     opts->SetConvexFacetsRequired(true);
-#endif
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
@@ -1483,9 +1476,8 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
-    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
-      m_totalTiles(0), m_totalModels(0), m_completedModels(0)
+TileGenerator::TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
+    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), m_totalTiles(0), m_totalModels(0), m_completedModels(0), m_filter(filter)
     {
 #if defined(WIP_MESHTILE_3SM)
     m_spatialTransformFromDgn.InitIdentity();
@@ -1698,8 +1690,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
-(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile (ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
@@ -1721,7 +1712,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
         // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
         // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
         // elements too small to be included in this tile)
-        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
+        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile, m_filter); // ###TODO: Check return status
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
@@ -2029,6 +2020,7 @@ private:
     SolidPrimitivePartMap       m_solidPrimitiveParts;
     TileDisplayParamsCPtr       m_polyfaceCacheDisplay;
     IPolyfaceConstructionPtr    m_polyfaceCache;
+    ITileCollectionFilterCP      m_filter;
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
@@ -2063,8 +2055,8 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
-        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, ITileCollectionFilterCP filter, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
+        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_filter(filter), m_range(range), m_transformFromDgn(transformFromDgn),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
@@ -2304,6 +2296,10 @@ size_t TileGeomPart::GetFacetCount(FacetCounter& counter) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, DRange3dCR dgnRange)
     {
+    if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
+        return;
+    
+
     try
         {
         m_curElemGeometries.clear();
@@ -2596,19 +2592,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             Sheet::Model::DrawBorder (context, sheetSize);
             PushCurrentGeometry();
             }
-
-        // We sort by size in order to ensure the largest geometries are assigned batch IDs
-        // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
-        if (m_geometries.size() > s_maxGeometryIdCount)
-            {
-            std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
-                {
-                DRange3d lhsRange, rhsRange;
-                lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
-                rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
-                return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
-                });
-            }
         }
 
     return status;
@@ -2774,13 +2757,12 @@ template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_Stroke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter)
     {
     // Collect geometry from elements in this node, sorted by size
     auto is2d = cache.GetModel().Is2dModel();
     IFacetOptionsPtr                facetOptions = TileGenerator::CreateTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
-
+    TileGeometryProcessor           processor(m_geometries, cache, db, filter, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
@@ -2888,6 +2870,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             TileDisplayParamsCPtr   displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->HasTexture(db);  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+
+            if (0 != polyface->NormalIndex().size() && polyface->GetPointIndexCount() != polyface->NormalIndex().size())
+                {
+                BeAssert(false && "mismatched Normal and Point index counts");        // Crash in ChinaPlant...
+                continue;
+                }
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -3034,7 +3022,7 @@ FeatureAttributesMap::FeatureAttributesMap()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
+uint32_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
     {
     return GetIndex(geom.GetAttributes());
     }
