@@ -205,12 +205,13 @@ protected:
     mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
-    void UnloadChildren(BeTimePoint olderThan) const;
 
     //! Mark this tile as invalidated, e.g. because its contents have been modified.
     virtual void _Invalidate() = 0;
     //! Given the non-empty set of damaged ranges intersecting this tile's range, return whether the tile has become invalidated and must be regenerated.
     virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
+    //! Invoked at beginning of _SelectTiles() to ensure children are still valid.
+    virtual void _ValidateChildren() const { }
 
     bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
 public:
@@ -298,6 +299,9 @@ public:
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
     virtual ElementAlignedBox3d const& _GetContentRange() const {return m_range;}
     bool HasContentRange() const;
+
+    //! When the range of the model changes, update this tile's range
+    virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 };
 
 /*=================================================================================**//**
@@ -333,6 +337,7 @@ protected:
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 
+    void UpdateRange(DirtyRangesCR dirty);
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
 public:
@@ -713,6 +718,7 @@ struct Tile : TileTree::Tile
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
     void _Invalidate() override { m_graphic = nullptr; }
+    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
 };
 
 } // end QuadTree
@@ -776,6 +782,7 @@ public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
     bool _HasChildren() const override { return !m_isLeaf; }
     DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool load) const override;
+    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
     DGNPLATFORM_EXPORT void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileCacheKey() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     

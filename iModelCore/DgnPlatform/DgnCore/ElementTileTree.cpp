@@ -264,7 +264,7 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
-constexpr uint32_t s_minElementsPerTile = 100;
+constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
@@ -1225,14 +1225,6 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
             // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
             }
-        else
-            {
-            // ###TODO_ELEMENT_TILE: Redlining workflow creates a 2d model then annotates in the margins.
-            // For YII demos only, expand the range to work around current failure to update model range when new elements added
-            range.ScaleAboutCenter(range, 2.0);
-            range.high.z = Render::Target::Get2dFrustumDepth();
-            range.low.z = -Render::Target::Get2dFrustumDepth();
-            }
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
@@ -1573,7 +1565,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     {
     if (!_HasGraphics())
         return nullptr;
-    else if (m_debugGraphics.m_options == options)
+    else if (m_debugGraphics.IsUsable(options))
         return m_debugGraphics.m_graphic;
 
     m_debugGraphics.m_options = options;
@@ -1682,8 +1674,22 @@ void Tile::_Invalidate()
     {
     m_backupGraphic = m_graphic;
     m_graphic = nullptr;
+    m_debugGraphics.Reset();
+
     m_contentRange = ElementAlignedBox3d();
+
+    m_isLeaf = false;
+    m_hasZoomFactor = false;
+    m_zoomFactor = 1.0;
+
     InitTolerance();
+
+    if (nullptr != GetParent())
+        return;
+
+    // Root tile...
+    GeometricModelPtr model = GetElementRoot().GetModel();
+    m_displayable = isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1705,6 +1711,59 @@ bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
 
     // No damaged range is large enough to contribute to this tile, so no need to regenerate it.
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void updateLowerBound(double& myValue, double parentOldValue, double parentNewValue)
+    {
+    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && parentOldValue > parentNewValue)
+        myValue = parentNewValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void updateUpperBound(double& myValue, double parentOldValue, double parentNewValue)
+    {
+    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && parentOldValue < parentNewValue)
+        myValue = parentNewValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::_UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew)
+    {
+    if (GetElementRoot().Is3d())
+        return; // range == project extents. ###TODO: What about non-spatial 3d models? ###TODO: What about when project extents are expanded?
+
+    // Expand outside bounds of range to match the new range
+    // NB: It doesn't matter if the new range intersects the tile's range - may still need to expand
+    DRange3d myOld = GetRange();
+    if (nullptr == GetParent())
+        {
+        m_range.UnionOf(parentOld, parentNew);
+        }
+    else
+        {
+        updateLowerBound(m_range.low.x, parentOld.low.x, parentNew.low.x);
+        updateLowerBound(m_range.low.y, parentOld.low.y, parentNew.low.y);
+        updateLowerBound(m_range.low.z, parentOld.low.z, parentNew.low.z);
+        updateUpperBound(m_range.high.x, parentOld.high.x, parentNew.high.x);
+        updateUpperBound(m_range.high.y, parentOld.high.y, parentNew.high.y);
+        updateUpperBound(m_range.high.z, parentOld.high.z, parentNew.high.z);
+        }
+
+    auto children = _GetChildren(false);
+    if (nullptr != children)
+        {
+        for (auto& child : *children)
+            child->_UpdateRange(myOld, GetRange());
+        }
+
+    m_debugGraphics.Reset(); // so we changes to bounding volumes immediately...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1735,6 +1794,46 @@ Tile::ChildTiles const* Tile::_GetChildren(bool load) const
         }
 
     return T_Super::_GetChildren(load);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::_ValidateChildren() const
+    {
+    // Until the tile is ready, we won't know if it will be a leaf, be sub-divided, or have a zoom factor applied
+    if (!IsReady() || !IsDisplayable())
+        return;
+
+    if (HasZoomFactor())
+        {
+        switch (m_children.size())
+            {
+            case 0:
+                break;
+            case 1:
+                {
+                // Child had zoom factor then was invalidated.
+                auto child = static_cast<TileP>(m_children[0].get());
+                if (!child->HasZoomFactor())
+                    {
+                    child->SetZoomFactor(2.0 * GetZoomFactor());
+                    child->InitTolerance();
+                    }
+
+                break;
+                }
+            default:
+                // We previously sub-divided, now don't want to.
+                _UnloadChildren(BeTimePoint::Now());
+                break;
+            }
+        }
+    else if (IsLeaf() || 1 == m_children.size())
+        {
+        // Child had zoom factor, now we no longer have it - may want to subdivide, or may have become a leaf
+        _UnloadChildren(BeTimePoint::Now());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

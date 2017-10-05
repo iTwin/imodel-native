@@ -203,6 +203,9 @@ private:
     {
         Render::GraphicPtr  m_graphic;
         Root::DebugOptions  m_options = Root::DebugOptions::None;
+
+        bool IsUsable(Root::DebugOptions opts) const { return m_options == opts && m_graphic.IsNull() == (Root::DebugOptions::None == opts); }
+        void Reset() { m_graphic = nullptr; m_options = Root::DebugOptions::None; }
     };
 
     double                      m_tolerance;
@@ -224,9 +227,13 @@ private:
     double _GetMaximumSize() const override;
     void _Invalidate() override;
     bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
+    void _UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew) override;
+
     void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileCacheKey() const override;
+
     ChildTiles const* _GetChildren(bool load) const override;
+    void _ValidateChildren() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
     Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);

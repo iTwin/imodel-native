@@ -664,19 +664,6 @@ void Tile::SetAbandoned() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::UnloadChildren(BeTimePoint olderThan) const
-    {
-    // This node may have initially had children and subsequently determined that it should be a leaf instead
-    // - unload its now-useless children unconditionally
-    if (!_HasChildren())
-        olderThan = BeTimePoint::Now();
-
-    _UnloadChildren(olderThan);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Unload all of the children of this node. Must be called from client thread. Usually this will cause the nodes to become unreferenced
 * and therefore deleted. Note that sometimes we can unload a child that is still in the download queue. In that case, it will remain alive until
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
@@ -736,7 +723,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
-        UnloadChildren(args.m_purgeOlderThan);
+        _UnloadChildren(args.m_purgeOlderThan);
         return SelectParent::No;
         }
 
@@ -801,7 +788,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
             }
 
         if (!substitutingChildren)
-            UnloadChildren(args.m_purgeOlderThan);
+            _UnloadChildren(args.m_purgeOlderThan);
 
         return selectParent;
         }
@@ -844,6 +831,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     return SelectParent::Yes;
 #else
+    _ValidateChildren();
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
@@ -1271,6 +1259,17 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuadTree::Tile::_ValidateChildren() const
+    {
+    // This node may have initially had children and subsequently determined that it should be a leaf instead
+    // - unload its now-useless children unconditionally
+    if (m_isLeaf)
+        _UnloadChildren(BeTimePoint::Now());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
@@ -1409,6 +1408,17 @@ OctTree::TileId OctTree::Tile::GetRelativeTileId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctTree::Tile::_ValidateChildren() const
+    {
+    // This node may have initially had children and subsequently determined that it should be a leaf instead
+    // - unload its now-useless children unconditionally
+    if (m_isLeaf)
+        _UnloadChildren(BeTimePoint::Now());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingNodes::Insert(TileCR tile, double distance)
@@ -1514,6 +1524,7 @@ void Root::InvalidateDamagedTiles()
         return;
 
     DirtyRanges dirty(m_damagedRanges);
+    UpdateRange(dirty);
     m_rootTile->Invalidate(dirty);
 
     m_damagedRanges.clear();
@@ -1549,6 +1560,26 @@ void Tile::Invalidate(DirtyRangesCR dirty)
         DirtyRanges childDirty = dirty.Intersect(child->GetRange());
         child->Invalidate(childDirty);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::UpdateRange(DirtyRangesCR dirty)
+    {
+    TilePtr rootTile = GetRootTile();
+    if (dirty.empty() || rootTile.IsNull())
+        return;
+
+    auto iter = dirty.begin();
+    DRange3d range = *iter;
+    ++iter;
+
+    for (/*iter*/; iter != dirty.end(); ++iter)
+        range.UnionOf(range, *iter);
+
+    if (!range.IsContained(rootTile->GetRange()))
+        rootTile->_UpdateRange(rootTile->GetRange(), range);
     }
 
 /*---------------------------------------------------------------------------------**//**
