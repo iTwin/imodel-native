@@ -208,6 +208,25 @@ void ViewContext::WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) c
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::WorldToView(DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const
+    {
+    DPoint3d  tPt;
+    DPoint4d  t4dPt;
+
+    for (int i=0; i<nPts; i++)
+        {
+        WorldToView(&t4dPt, worldPts+i, 1);
+
+        t4dPt.GetProjectedXYZ(tPt);
+
+        (viewPts+i)->x = tPt.x;
+        (viewPts+i)->y = tPt.y;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const

@@ -245,15 +245,20 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
 //=======================================================================================
 struct RectanglePoints
 {
-    DPoint2d m_pts[5];
-    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh) 
+    DPoint2d m_pts[5]; // view coords
+
+    // Inputs in world coords
+    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh, ViewContextCR context)
         {
-        m_pts[0].x = m_pts[3].x = m_pts[4].x = xlow;
-        m_pts[0].y = m_pts[1].y = m_pts[4].y = ylow;
-        m_pts[1].x = m_pts[2].x = xhigh; 
-        m_pts[2].y = m_pts[3].y = yhigh;
+        DPoint3d pts[5];
+        pts[0].x = pts[3].x = pts[4].x = xlow;
+        pts[0].y = pts[1].y = pts[4].y = ylow;
+        pts[1].x = pts[2].x = xhigh; 
+        pts[2].y = pts[3].y = yhigh;
         
+        context.WorldToView(m_pts, pts, 5);
         }
+
     operator DPoint2dP() {return m_pts;}
     operator DPoint2dCP() const {return m_pts;}
 };
@@ -359,16 +364,14 @@ void Sheet::ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR size)
     {
-    Render::GraphicBuilderPtr border = context.CreateWorldGraphic();
-    RectanglePoints rect(0, 0, size.x, size.y);
+    Render::GraphicBuilderPtr border = context.CreateViewGraphic();
+    RectanglePoints rect(0, 0, size.x, size.y, context);
     border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);
 
     double shadowWidth = .01 * size.Distance(DPoint2d::FromZero());
-    double keyValues[] = {0.0, 0.5};
-    ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
 
-    DPoint2d points[7];
+    DPoint3d points[7];
     points[0].y = points[1].y = points[6].y = 0.0;
     points[0].x = shadowWidth;
     points[1].x = points[2].x = size.x;
@@ -376,6 +379,14 @@ Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR s
     points[2].y = points[3].y = size.y - shadowWidth;
     points[4].y = points[5].y = -shadowWidth;
     points[5].x = points[6].x = shadowWidth;
+    for (auto& point : points)
+        point.z =0.0;
+
+    DPoint2d shadowPoints[7];
+    context.WorldToView(shadowPoints, points, 7);
+
+    double keyValues[] = {0.0, 0.5};
+    ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
 
     GradientSymbPtr gradient = GradientSymb::Create();
     gradient->SetMode(Render::GradientSymb::Mode::Linear);
@@ -388,8 +399,7 @@ Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR s
     border->ActivateGraphicParams(params);
 
     // Make sure drop shadow displays behind border...
-    int32_t priority = Render::Target::GetMinDisplayPriority();
-    border->AddShape2d(7, points, true, static_cast<double>(priority));
+    border->AddShape2d(7, shadowPoints, true, Render::Target::Get2dFrustumDepth());
 
     return border->Finish();
     }
@@ -505,10 +515,8 @@ void Sheet::ViewController::Attachment::LoadRoot(DgnDbR db, Render::SystemP syst
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawDecorations(DecorateContextR context)
     {
-    // On the trunk, the border is 'terrain', so gradient not affected by view's 'fill' flag.
-    // Draw it as a decoration in tile world.
     auto border = Sheet::Model::CreateBorder(context, m_size);
-    context.AddWorldDecoration(*border);
+    context.SetViewBackground(*border);
     }
 
 /*---------------------------------------------------------------------------------**//**
