@@ -228,6 +228,35 @@ DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbN
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
 
+#define FABRICATE_FAKE_REVISION_DATA
+#ifdef FABRICATE_FAKE_REVISION_DATA
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void fabricateFakeRevisionData(Json::Value& revisionJson)
+    {
+    static          double s_time = 0.0;
+    static          double s_fakeTimeInterval = 2.0;     
+    static char*    s_fakeUsers[] = {"John Braun", "Charles Johnson", "Sharon Kowalski" };
+    static char*    s_fakeDescriptions[] = {"Add HVAC", "Modify roof", "Add plumbing", "Rework HVAC" };
+    static int      s_fakeUserIndex, s_fakeDescriptionIndex;
+    DateTime::Info  info;
+
+    if (0.0 == s_time)
+        DateTime::GetCurrentTime().ToJulianDay(s_time);
+
+
+    if (!revisionJson.isMember("Date"))
+        revisionJson["Date"] = s_time;
+
+    if (0 == revisionJson["User"].asString().size())
+        revisionJson["User"] = s_fakeUsers[s_fakeUserIndex++ % 3];
+
+    s_time -= s_fakeTimeInterval;
+    }
+#endif
+
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
 //=======================================================================================
@@ -279,37 +308,102 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
 
     return PublisherContext::Status::Success;
     }
-
    
 };  // TilesetRevisionPublisher
 
-#define FABRICATE_FAKE_REVISION_DATA
-#ifdef FABRICATE_FAKE_REVISION_DATA
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     09/2017
+//=======================================================================================
+struct BaselinePublisher : TilesetPublisher
+{
+    Json::Value             m_json;
+    DgnElementIdSet         m_allModelSelectors;
+    T_CategorySelectorMap   m_allCategorySelectors;
+    DgnElementIdSet         m_allDisplayStyles;
+    DgnModelIdSet           m_all2dModelIds;
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void fabricateFakeRevisionData(Json::Value& revisionJson)
+BaselinePublisher(DgnDbR db, PublisherParamsR params,  DgnViewIdSet const& viewIds, DgnViewId defaultViewId) : 
+    TilesetPublisher(db, viewIds, defaultViewId, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status Initialize()
     {
-    static          double s_time = 0.0;
-    static          double s_fakeTimeInterval = 2.32;     
-    static char*    s_fakeUsers[] = {"John Braun", "Charles Johnson", "Sharon Kowalski" };
-    static char*    s_fakeDescriptions[] = {"Add HVAC", "Modify roof", "Add plumbing" };
-    static int      s_fakeUserIndex, s_fakeDescriptionIndex;
-    DateTime::Info  info;
+    Status          status;
 
-    if (0.0 == s_time)
-        DateTime::GetCurrentTime().ToJulianDay(s_time);
+    Utf8String rootNameUtf8(m_rootName.c_str());
+    m_json["name"] = rootNameUtf8;
 
+    // TODO - Set ground point.
 
-    if (!revisionJson.isMember("Date"))
-        revisionJson["Date"] = s_time;
+    
+    ExtractViewSelectors (m_defaultViewId, m_allModelSelectors, m_allCategorySelectors, m_allDisplayStyles, m_all2dModelIds);
 
-    if (0 == revisionJson["User"].asString().size())
-        revisionJson["User"] = s_fakeUsers[s_fakeUserIndex++ % 3];
+    if (!m_defaultViewId.IsValid())
+        return Status::NoGeometry;
 
-    s_time -= s_fakeTimeInterval;
+    m_json["views"] = GetViewDefinitionsJson();
+    m_json["defaultView"] = m_defaultViewId.ToString();
+
+    WriteCategoriesJson(m_json, m_allCategorySelectors, false);
+    m_json["displayStyles"] = GetDisplayStylesJson(m_allDisplayStyles);
+
+    AxisAlignedBox3d projectExtents = m_projectExtents;
+    Transform::FromProduct(m_spatialToEcef, m_dbToTile).Multiply(projectExtents, projectExtents);
+    m_json["projectExtents"] = RangeToJson(projectExtents);
+    m_json["projectTransform"] = TransformToJson(m_spatialToEcef);
+    m_json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
+    
+    return InitializeDirectories(GetDataDirectory());
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status Publish(PublisherParamsR params, Json::Value&& revisions)
+    {
+    DRange3d      range;
+    ProgressMeter progressMeter(*this);
+    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
+
+    m_generator = &generator;
+    auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
+    m_generator = nullptr;
+
+    if (Status::Success != status)
+        {
+        CleanDirectories(GetDataDirectory());
+        return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+        }
+
+    OutputStatistics(generator.GetStatistics());
+    WriteModelsJson(m_json, m_allModelSelectors, m_all2dModelIds);
+
+    Json::Value viewerOptions = params.GetViewerOptions();
+
+    // If we are displaying "in place" but don't have a real geographic location - default to natural earth.
+    if (!IsGeolocated() && viewerOptions["imageryProvider"].isNull())
+        viewerOptions["imageryProvider"] = "NaturalEarth";
+
+    m_json["viewerOptions"] = viewerOptions;
+    m_json["revisions"] = std::move(revisions);
+
+    if (Status::Success != (status = WriteAppJson (m_json)) ||
+        Status::Success != (status = WriteHtmlFile()))
+        return  status;
+
+    return WriteScripts ();
+
+    }
+
+};  // Baseline Publisher
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -344,9 +438,12 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
     getAllChangeSets(changeSets, *tempDb, client);
 
     printf ("Publishing History with %d Revisions", (int) changeSets.size());
-    TilesetPublisher  tilesetPublisher(*tempDb, params, viewsToPublish, defaultView);
+    BaselinePublisher  baselinePublisher(*tempDb, params, viewsToPublish, defaultView);
 
-    tilesetPublisher.InitializeDirectories(tilesetPublisher.GetDataDirectory());
+    PublisherContext::Status    status;
+
+    if (Status::Success != (status = baselinePublisher.Initialize()))
+        return status;
 
     for (int i = 0; i<changeSets.size(); i++)
         {
@@ -355,7 +452,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
              
         getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
 
-        printf ("Revision: %d Contains %d changed elements", i, (int) elementIds.size());
+        printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
         if (!elementIds.empty())
             {
             Json::Value         revisionElementsJson = Json::objectValue;
@@ -384,6 +481,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                 }
 
             Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+
 #ifdef FABRICATE_FAKE_REVISION_DATA
             fabricateFakeRevisionData(revisionJson); 
 #endif
@@ -415,10 +513,6 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
     for (auto& revisionJson : revisionJsons)
         revisionsJson.append(revisionJson);
 
-    // Needs work - This publishes in initial state and doesn't include changes to views/categories etc.
-    tilesetPublisher.SetRevisionsJson(std::move(revisionsJson));
-    tilesetPublisher.Publish(params, false);
-
-    return Status::Success;
+    return baselinePublisher.Publish(params, std::move(revisionsJson));
     }
 
