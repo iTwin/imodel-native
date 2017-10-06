@@ -1954,9 +1954,9 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
                 alpha = m_alphaOverride;
                 }
             else if (m_overridesRgb)
-                {
+                {                                                                                                                  
                 // Apparently overriding RGB without specifying transmit => opaque.
-                m_alphaOverride = 1.0;
+                m_alphaOverride = 0.0;
                 alpha = m_alphaOverride;
                 m_overridesAlpha = true;
                 }
@@ -1970,7 +1970,11 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
             }
         }
 
-    m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+    if (IsTextured() || m_overridesAlpha)
+        m_hasAlpha = alpha > 0.0;
+    else
+        m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+
     m_adjustColorForBackground = !is3d && !params.GetIsColorFromBackground();
 
     if (m_overridesAlpha && m_overridesRgb)
@@ -3679,7 +3683,7 @@ PublisherContext::Status   PublisherContext::PublishClassifier(ClassifierInfo& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier)
     {
-    WString     rootName = GetRootName(modelId, GetCurrentClassifier());
+    WString     rootName = GetRootName(modelId, classifier);
     BeFileName  modelDir = GetModelDataDirectory(modelId, classifier);
 
     return BeFileName(nullptr, modelDir.c_str(), rootName.c_str(), s_metadataExtension);
@@ -3781,14 +3785,7 @@ void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId,
             }
 
         modelJson["extents"] = RangeToJson(modelRange.m_range);
-            modelJson["tilesetUrl"] = GetTilesetURL(modelId, false);
-
-#ifdef PER_MODEL_CLASSIFIER
-        // Cesium doesn't support classifying a single model as we do in JSon.
-        auto const& foundClassifier = m_classifierMap.find(modelId);
-        if (foundClassifier != m_classifierMap.end())
-            modelJson["classifiers"] = GetClassifiersJson(foundClassifier->second);
-#endif
+        modelJson["tilesetUrl"] = GetTilesetURL(modelId, false);
 
         modelsJson[modelId.ToString()] = modelJson;
         }

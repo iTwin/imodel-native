@@ -583,34 +583,49 @@ void ImportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    BeFileName path(args[1]);
-    path.Trim(L"\"");
-    if (!path.DoesPathExist())
-        {
-        BimConsole::WriteErrorLine("Import failed. Specified path '%s' does not exist.", path.GetNameUtf8().c_str());
-        return;
-        }
-
+   
     Utf8StringCR commandSwitch = args[switchArgIndex];
     if (commandSwitch.EqualsIAscii(ECSCHEMA_SWITCH))
         {
         if (!session.IsECDbFileLoaded(true))
             return;
 
-        RunImportSchema(session, path);
+        RunImportSchema(session, args);
         return;
         }
 
     BeAssert(commandSwitch.EqualsIAscii(CSV_SWITCH));
-    RunImportCsv(session, path, args);
+    RunImportCsv(session, args);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath) const
+void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> const& args) const
     {
+    Utf8StringCR firstArg = args[1];
+    size_t pathIx = 1;
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None;
+    if (firstArg.EqualsIAscii("legacy"))
+        {
+        options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues;
+        pathIx = 2;
+        }
+    else if (firstArg.EqualsIAscii("poisoning"))
+        {
+        options = SchemaManager::SchemaImportOptions::Poisoning;
+        pathIx = 2;
+        }
+
+    BeFileName ecschemaPath(args[pathIx]);
+    ecschemaPath.Trim(L"\"");
+    if (!ecschemaPath.DoesPathExist())
+        {
+        BimConsole::WriteErrorLine("Schema Import failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8().c_str());
+        return;
+        }
+
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
 
@@ -651,7 +666,18 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         return;
         }
 
-    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas()))
+    bool schemaImportSuccessful = false;
+    if (session.GetFile().GetType() == SessionFile::Type::Bim)
+        {
+        if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<BimFile>().GetDgnDbHandleR().ImportV8LegacySchemas(context->GetCache().GetSchemas());
+        else
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<BimFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+        }
+    else
+        schemaImportSuccessful = SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
+
+    if (schemaImportSuccessful)
         {
         session.GetFile().GetHandleR().SaveChanges();
         BimConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
@@ -680,11 +706,19 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std::vector<Utf8String> const& args) const
+void ImportCommand::RunImportCsv(Session& session, std::vector<Utf8String> const& args) const
     {
     if(args.size() < 3)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    BeFileName csvFilePath(args[1]);
+    csvFilePath.Trim(L"\"");
+    if (!csvFilePath.DoesPathExist())
+        {
+        BimConsole::WriteErrorLine("CSV Import failed. Specified path '%s' does not exist.", csvFilePath.GetNameUtf8().c_str());
         return;
         }
 
