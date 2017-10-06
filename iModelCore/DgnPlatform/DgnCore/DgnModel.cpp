@@ -40,6 +40,10 @@ void DgnModels::AddLoadedModel(DgnModelR model)
     model.m_persistent = true;
     BeMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
+
+    auto geomModel = model.ToGeometricModelP();
+    if (nullptr != geomModel)
+        geomModel->InitLastElementModifiedTime();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -864,7 +868,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
         {
         m_rangeIndex->AddElement(*geom);
         if (geom->HasGeometry() && m_root.IsValid())
-            m_root->MarkDamaged(geom->CalculateRange3d());
+            m_root->OnAddToRangeIndex(geom->CalculateRange3d(), element.GetElementId());
         }
     }
 
@@ -882,7 +886,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
         {
         m_rangeIndex->RemoveElement(element.GetElementId());
         if (m_root.IsValid())
-            m_root->MarkDamaged(geom->CalculateRange3d());
+            m_root->OnRemoveFromRangeIndex(geom->CalculateRange3d(), element.GetElementId());
         }
     }
 
@@ -903,23 +907,31 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (nullptr == newGeom)
         return;
 
-    AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
-    AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
+    bool origHasGeom = origGeom->HasGeometry(),
+         newHasGeom  = newGeom->HasGeometry();
+    AxisAlignedBox3d origBox = origHasGeom ? origGeom->CalculateRange3d() : AxisAlignedBox3d(),
+                     newBox  = newHasGeom ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
+    auto id = original.GetElementId();
     if (!origBox.IsEqual(newBox)) // many changes don't affect range
         {
-        auto id = original.GetElementId();
         m_rangeIndex->RemoveElement(id);
         m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
         }
 
     if (m_root.IsValid())
         {
-        if (origGeom->HasGeometry())
-            m_root->MarkDamaged(origBox);
-
-        if (newGeom->HasGeometry())
-            m_root->MarkDamaged(newBox);
+        if (origHasGeom)
+            {
+            if (newHasGeom)
+                m_root->OnUpdateRangeIndex(origBox, newBox, id);
+            else
+                m_root->OnRemoveFromRangeIndex(origBox, id);
+            }
+        else if (newHasGeom)
+            {
+            m_root->OnAddToRangeIndex(newBox, id);
+            }
         }
     }
 
@@ -1978,8 +1990,46 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::InitLastElementModifiedTime()
+    {
+    if (0 != m_lastModifiedTime.load())
+        return;
+
+    // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
+    constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?";
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
+    stmt->BindId(1, GetModelId());
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        DateTime dt = stmt->GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS == dt.ToUnixMilliseconds(unixMillis))
+            {
+            m_lastModifiedTime.store(static_cast<uint64_t>(unixMillis));
+            }
+        else
+            {
+            BeAssert(false);
+            UpdateLastElementModifiedTime();
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::UpdateLastModified() { GetDgnDb().Elements().UpdateLastModifiedTime(); }
+void GeometricModel::UpdateLastElementModifiedTime()
+    {
+    m_lastModifiedTime.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t GeometricModel::GetLastElementModifiedTime() const
+    {
+    return m_lastModifiedTime.load();
+    }
 

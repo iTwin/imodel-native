@@ -1174,7 +1174,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     auto& tile = GetElementTile();
     DgnDbR db = tile.GetRoot().GetDgnDb();
 
-    uint64_t lastModMillis = db.Elements().GetLastModifiedTime();
+    uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 
@@ -1529,6 +1529,19 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
         geometry.append(iter->second);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::RemoveCachedGeometry(DRange3dCR range, DgnElementId id)
+    {
+    double rangeDiagSq = range.low.DistanceSquared(range.high);
+    if (WantCacheGeometry(rangeDiagSq))
+        {
+        BeMutexHolder lock(m_mutex);
+        m_geomLists.erase(id);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

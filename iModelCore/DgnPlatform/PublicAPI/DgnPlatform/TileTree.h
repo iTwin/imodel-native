@@ -337,6 +337,11 @@ protected:
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
 
+    virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
+    virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
+    virtual void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) { }
+
+    void MarkDamaged(DRange3dCR range);
     void UpdateRange(DirtyRangesCR dirty);
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
@@ -363,7 +368,6 @@ public:
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
-    DGNPLATFORM_EXPORT void MarkDamaged(DRange3dCR range);
     Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
     DrawArgs CreateDrawArgs(SceneContextR context);
 
@@ -408,6 +412,10 @@ public:
 
     //! Perform a pick operation on the contents of this tree
     DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);
+
+    void OnAddToRangeIndex(DRange3dCR range, DgnElementId id);
+    void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
+    void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
 };
 
 //=======================================================================================

@@ -223,7 +223,6 @@ private:
     template<class T> void CallAppData(T const& caller) const;
 
     void UnloadRangeIndex();
-    DGNPLATFORM_EXPORT void UpdateLastModified();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
     ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[json_UserProps()];}
@@ -324,39 +323,39 @@ protected:
     //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnInsertedElement(DgnElementCR element) {UpdateLastModified();}
+    virtual void _OnInsertedElement(DgnElementCR element) {}
 
     //! Called after a change representing addition of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] element The element that was just added.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedAddElement(DgnElementCR element) {UpdateLastModified();}
+    virtual void _OnAppliedAddElement(DgnElementCR element) {}
 
     //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {UpdateLastModified();}
+    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {}
 
     //! Called after a change representing DgnElement in this model was updated by applying a change set.
     //! @param[in] original The element in its original state. This is the state before the original change (the current state)
     //! @param[in] modified The element in its post-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {UpdateLastModified();}
+    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnDeletedElement(DgnElementCR element) {UpdateLastModified();}
+    virtual void _OnDeletedElement(DgnElementCR element) {}
 
     //! Called after a change representing deletion of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] element The element that was just deleted by applying a change set.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedDeleteElement(DgnElementCR element) {UpdateLastModified();}
+    virtual void _OnAppliedDeleteElement(DgnElementCR element) {}
 
     /** @} */
 
@@ -865,10 +864,13 @@ protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     Formatter m_displayInfo;
     RefCountedPtr<TileTree::Root> m_root;
+    BeAtomic<uint64_t> m_lastModifiedTime;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+
+    DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
 
     DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
     DGNPLATFORM_EXPORT void ReleaseTileTree();
@@ -880,18 +882,19 @@ protected:
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
-    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
-    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
-    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
-    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
-    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
-    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
+    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
+    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element); UpdateLastElementModifiedTime();}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original); UpdateLastElementModifiedTime();}
+    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original); UpdateLastElementModifiedTime();}
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
+    
 public:
     BE_JSON_NAME(formatter)
 
@@ -910,6 +913,10 @@ public:
     Formatter const& GetFormatter() const {return m_displayInfo;}
 
     DGNPLATFORM_EXPORT TileTree::Root* GetTileTree(Render::SystemP system);
+
+    //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
+    DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;
+    void InitLastElementModifiedTime(); //!< @private
 };
 
 //=======================================================================================

@@ -165,6 +165,10 @@ private:
     Utf8CP _GetName() const override { return m_name.c_str(); }
     Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override { return Render::ViewFlagsOverrides(); }
 
+    void RemoveCachedGeometry(DRange3dCR range, DgnElementId id);
+    void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) override { RemoveCachedGeometry(range, id); }
+    void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) override { RemoveCachedGeometry(oldRange, id); }
+
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
     static RootPtr Create(GeometricModelR model, Render::SystemR system);

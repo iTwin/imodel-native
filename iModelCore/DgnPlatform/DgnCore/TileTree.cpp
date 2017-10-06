@@ -1512,6 +1512,34 @@ void Root::MarkDamaged(DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
+    {
+    MarkDamaged(range);
+    _OnAddToRangeIndex(range, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
+    {
+    MarkDamaged(range);
+    _OnRemoveFromRangeIndex(range, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id)
+    {
+    MarkDamaged(oldRange);
+    MarkDamaged(newRange);
+    _OnUpdateRangeIndex(oldRange, newRange, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::InvalidateDamagedTiles()

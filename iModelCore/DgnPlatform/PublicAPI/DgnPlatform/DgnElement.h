@@ -3392,7 +3392,6 @@ private:
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
-    BeAtomic<uint64_t> m_lastModifiedTime;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -3421,9 +3420,6 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
-
-    void InitLastModifiedTime();
-    void UpdateLastModifiedTime();
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3578,9 +3574,6 @@ public:
     void SetUndisplayed(DgnElementR, bool isUndisplayed);
     DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
     void SetHilited(DgnElementR, bool hilited);
-
-    //! Returns the time of the most recent modification to the elements table in unix milliseconds.
-    DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;
 };
 
 //=======================================================================================
