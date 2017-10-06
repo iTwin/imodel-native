@@ -74,8 +74,7 @@ protected:
             NotifyMessageDetails details(
                 (OutputMessagePriority)v8Details.GetPriority(), 
                 Utf8String(v8Details.GetBriefMsg().c_str()).c_str(), 
-                Utf8String(v8Details.GetDetailedMsg().c_str()).c_str(), 
-                v8Details.GetMsgAttributes());
+                Utf8String(v8Details.GetDetailedMsg().c_str()).c_str());
             return T_HOST.GetNotificationAdmin()._OutputMessage(details);
             }
 
