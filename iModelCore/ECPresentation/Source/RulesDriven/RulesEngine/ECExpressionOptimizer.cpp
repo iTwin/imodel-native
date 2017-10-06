@@ -63,29 +63,41 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     if (nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
         return false;
         
-    ECClassId classId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
-
-    if (params.GetConnection().GetDbGuid() != m_connectionId)
+    ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
+    
+    auto cacheIter = m_cache.find(&params.GetConnection());
+    if (m_cache.end() == cacheIter)
         {
-        m_expectedClass = params.GetConnection().Schemas().GetClass(m_schemaName, m_className);
-        m_classIdsCache.clear();
-        m_connectionId = params.GetConnection().GetDbGuid();
+        ECDbClosedNotifier::Register(*this, params.GetConnection(), true);
+        ECClassCP expectedClass = params.GetConnection().Schemas().GetClass(m_schemaName, m_className);
+        if (nullptr == expectedClass)
+            {
+            BeAssert(false);
+            return false;
+            }
+        cacheIter = m_cache.Insert(&params.GetConnection(), Cache(*expectedClass)).first;
         }
 
-    if (nullptr == m_expectedClass)
-        return false;
-
-    auto iter = m_classIdsCache.find(classId);
-    if (m_classIdsCache.end() != iter)
+    bmap<ECClassId, bool>& resultsCache = cacheIter->second.m_results;
+    auto iter = resultsCache.find(lookupClassId);
+    if (resultsCache.end() != iter)
         return iter->second;
 
-    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(classId);
+    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(lookupClassId);
     if (nullptr == selectedClass)
         return false;
 
-    bool result = selectedClass->Is(m_expectedClass);
-    m_classIdsCache[classId] = result;
+    bool result = selectedClass->Is(cacheIter->second.m_expectedClass);
+    resultsCache[lookupClassId] = result;
     return result;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            10/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+void IsOfClassOptimizedExpression::_OnConnectionClosed(ECDbCR connection)
+    {
+    m_cache.erase(&connection);
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -107,24 +119,34 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const &
     if (nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
         return false;
 
-    ECClassId classId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
-    if (params.GetConnection().GetDbGuid() != m_connectionId)
-        {
-        m_classIdsCache.clear();
-        m_connectionId = params.GetConnection().GetDbGuid();
-        }
+    ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
 
-    auto iter = m_classIdsCache.find(classId);
-    if (m_classIdsCache.end() != iter)
+    auto cacheIter = m_resultsCache.find(&params.GetConnection());
+    if (m_resultsCache.end() == cacheIter)
+        {
+        ECDbClosedNotifier::Register(*this, params.GetConnection(), true);
+        cacheIter = m_resultsCache.Insert(&params.GetConnection(), bmap<ECClassId, bool>()).first;
+        }
+    
+    auto iter = cacheIter->second.find(lookupClassId);
+    if (cacheIter->second.end() != iter)
         return iter->second;
 
-    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(classId);
+    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(lookupClassId);
     if (nullptr == selectedClass)
         return false;
 
     bool result = selectedClass->GetName() == m_className;
-    m_classIdsCache[classId] = result;
+    cacheIter->second[lookupClassId] = result;
     return result;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            10/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+void ClassNameOptimizedExpression::_OnConnectionClosed(ECDbCR connection)
+    {
+    m_resultsCache.erase(&connection);
     }
 
 /*-----------------------------------------------------------------------------**//**

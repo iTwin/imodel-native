@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentation/ECPresentation.h>
+#include "../../ECDbBasedCache.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -108,20 +109,27 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                08/2017
 +===============+===============+===============+===============+===============+======*/
-struct IsOfClassOptimizedExpression : OptimizedExpression
+struct IsOfClassOptimizedExpression : OptimizedExpression, IECDbClosedListener
 {
+    struct Cache
+        {
+        bmap<ECN::ECClassId, bool> m_results;
+        ECN::ECClassCP m_expectedClass;
+        Cache() : m_expectedClass(nullptr) {}
+        Cache(ECN::ECClassCR expectedClass) : m_expectedClass(&expectedClass) {}
+        };
+
 private:
     Utf8String m_schemaName;
     Utf8String m_className;
-    bmap<ECN::ECClassId, bool> m_classIdsCache;
-    ECN::ECClassCP m_expectedClass;
-    BeSQLite::BeGuid m_connectionId;
+    bmap<ECDb const*, Cache> m_cache;
 private:
-    IsOfClassOptimizedExpression(Utf8CP schema, Utf8CP className) : m_schemaName(schema), m_className(className), m_expectedClass(nullptr) {}
+    IsOfClassOptimizedExpression(Utf8CP schema, Utf8CP className) : m_schemaName(schema), m_className(className) {}
 protected:
     ECPRESENTATION_EXPORT bool _Value(OptimizedExpressionsParameters const& params) override;
     ECPRESENTATION_EXPORT bool _IsEqual(OptimizedExpression const& other) const override;
     IsOfClassOptimizedExpression const* _AsIsOfClassOptimizedExpression() const override {return this;}
+    ECPRESENTATION_EXPORT void _OnConnectionClosed(ECDbCR) override;
 public:
     static RefCountedPtr<IsOfClassOptimizedExpression> Create(Utf8CP schema, Utf8CP className) {return new IsOfClassOptimizedExpression(schema, className);}
 };
@@ -129,18 +137,18 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                08/2017
 +===============+===============+===============+===============+===============+======*/
-struct ClassNameOptimizedExpression : OptimizedExpression
+struct ClassNameOptimizedExpression : OptimizedExpression, IECDbClosedListener
 {
 private:
     Utf8String m_className;
-    bmap<ECN::ECClassId, bool> m_classIdsCache;
-    BeSQLite::BeGuid m_connectionId;
+    bmap<ECDb const*, bmap<ECN::ECClassId, bool>> m_resultsCache;
 private:
     ClassNameOptimizedExpression(Utf8CP className) : m_className(className) {}
 protected:
     ECPRESENTATION_EXPORT bool _Value(OptimizedExpressionsParameters const& params) override;
     ECPRESENTATION_EXPORT bool _IsEqual(OptimizedExpression const& other) const override;
     ClassNameOptimizedExpression const* _AsClassNameOptimizedExpression() const override {return this;}
+    ECPRESENTATION_EXPORT void _OnConnectionClosed(ECDbCR) override;
 public:
     static RefCountedPtr<ClassNameOptimizedExpression> Create(Utf8CP className) {return new ClassNameOptimizedExpression(className);}
 };
