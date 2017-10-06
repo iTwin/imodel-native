@@ -63,7 +63,7 @@ NavigationQueryCPtr ExpectedQueries::GetNavigationQuery(Utf8CP name, ChildNodeSp
         {
         NavigationQueryPtr query = iter->second->Clone();
         query->GetResultParametersR().GetNavNodeExtendedDataR().SetRulesetId("NavigationQueryBuilderTests");
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationId(spec.GetId());
+        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash(spec.GetHash());
         query->GetResultParametersR().SetSpecification(&spec);
         return query;
         }
@@ -2436,9 +2436,9 @@ void ExpectedQueries::RegisterExpectedQueries()
     // Grouping_PropertyGroup_GroupsByRange
         {
         PropertyGroupP spec = new PropertyGroup("", "", false, "DisplayLabel", "");
-        spec->GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "0", "5"));
-        spec->GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "6", "10"));
-        spec->GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "11", "20"));
+        spec->AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
+        spec->AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
+        spec->AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
         RegisterForDelete(*spec);
 
         NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel"), nullptr, *spec, nullptr);

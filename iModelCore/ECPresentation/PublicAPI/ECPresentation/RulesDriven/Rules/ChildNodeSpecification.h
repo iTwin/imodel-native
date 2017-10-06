@@ -24,7 +24,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
     {
     private:
         int                m_priority;
-        int                m_id;
         bool               m_alwaysReturnsChildren;
         bool               m_hideNodesInHierarchy;
         bool               m_hideIfNoChildren;
@@ -32,8 +31,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         Utf8String            m_extendedData;
         RelatedInstanceSpecificationList m_relatedInstances;
         ChildNodeRuleList  m_nestedRules;
-
-        static int GetNewSpecificationId ();
 
     protected:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -57,6 +54,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const = 0;
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Destructor.
         ECPRESENTATION_EXPORT virtual                      ~ChildNodeSpecification (void);
@@ -75,12 +75,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Sets the priority of the specification, can be an int.
         ECPRESENTATION_EXPORT void                         SetPriority (int value);
-        
-        //! ID of the specification.
-        ECPRESENTATION_EXPORT void                         SetId(int id);
-
-        //! ID of the specification.
-        ECPRESENTATION_EXPORT int                          GetId (void) const;
 
         //! Returns true if specification always returns nodes. This allows to optimize node expand performance.
         ECPRESENTATION_EXPORT bool                         GetAlwaysReturnsChildren (void) const;
@@ -117,13 +111,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECPRESENTATION_EXPORT void                         SetDoNotSort (bool doNotSort);
 
         //! A writable list of related instance specifications.
-        RelatedInstanceSpecificationList& GetRelatedInstances() {return m_relatedInstances;}
+        ECPRESENTATION_EXPORT void AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance);
 
         //! A const list of related instance specifications.
         RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECPRESENTATION_EXPORT ChildNodeRuleList&           GetNestedRules (void);
+        ECPRESENTATION_EXPORT ChildNodeRuleList const&           GetNestedRules (void);
+
+        //! Add nested rule.
+        ECPRESENTATION_EXPORT void AddNestedRule(ChildNodeRuleR rule);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -631,8 +631,6 @@ void UpdateHandler::_OnConnectionClosed(ECDbCR connection)
     msg.append("Connection ").append(connection.GetDbGuid().ToString()).append(" closed. Clear related caches.");
     LoggingHelper::LogMessage(Log::Update, msg.c_str());
 
-    if (nullptr != m_nodesCache)
-        m_nodesCache->Clear(&connection);
     if (nullptr != m_contentCache)
         m_contentCache->ClearCache(connection);
     }

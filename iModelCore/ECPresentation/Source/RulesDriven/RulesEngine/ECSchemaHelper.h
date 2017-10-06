@@ -102,11 +102,11 @@ struct RelatedPathsCache
         {
         ECClassCP m_rootClass;
         ECEntityClassCP m_targetClass;
-        int m_specificationId;
+        Utf8String m_specificationHash;
 
-        Key() : m_rootClass(nullptr), m_targetClass(nullptr), m_specificationId(0) {}
-        Key(ECClassCR rootClass, ECEntityClassCP targetClass, int specificationId)
-            : m_rootClass(&rootClass), m_targetClass(targetClass), m_specificationId(specificationId)
+        Key() : m_rootClass(nullptr), m_targetClass(nullptr), m_specificationHash("") {}
+        Key(ECClassCR rootClass, ECEntityClassCP targetClass, Utf8CP specificationHash)
+            : m_rootClass(&rootClass), m_targetClass(targetClass), m_specificationHash(specificationHash)
             {}
         bool operator<(Key const& other) const
             {
@@ -118,7 +118,7 @@ struct RelatedPathsCache
                 return true;
             if (m_targetClass > other.m_targetClass)
                 return false;
-            return m_specificationId < other.m_specificationId;
+            return m_specificationHash < other.m_specificationHash;
             }
         };
 
@@ -173,14 +173,14 @@ struct ECSchemaHelper : NonCopyableClass
         Utf8String m_supportedClasses;
         ECEntityClassCP m_targetClass;
         bmap<ECRelationshipClassCP, int>& m_relationshipsUseCounter;
-        int m_specificationId;
+        Utf8CP m_specificationHash;
 
         ECPRESENTATION_EXPORT RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
             Utf8StringCR supportedSchemas, Utf8StringCR supportedRelationships, Utf8StringCR supportedClasses,
             bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr);
 
-        void SetSpecificationId(int id) {m_specificationId = id;}
-        int GetSpecificationId() const {return m_specificationId;}
+        void SetSpecificationHash(Utf8StringCR hash) {m_specificationHash = hash.c_str();}
+        Utf8CP GetSpecificationHash() const {return m_specificationHash;}
         };
 
 private:

@@ -68,6 +68,7 @@
     <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ECExpressionsOptimizerTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentDescriptorSerializationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRulesHashingTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />

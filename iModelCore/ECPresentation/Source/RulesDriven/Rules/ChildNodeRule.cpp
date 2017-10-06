@@ -95,14 +95,57 @@ Utf8StringCR SubCondition::GetCondition (void) { return m_condition;  }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubConditionList& SubCondition::GetSubConditionsR (void) { return m_subConditions;  }
 SubConditionList const& SubCondition::GetSubConditions (void) const { return m_subConditions;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubCondition::AddSubCondition(SubConditionR subCondition)
+    {
+    InvalidateHash();
+    subCondition.SetParent(this);
+    m_subConditions.push_back(&subCondition);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationList& SubCondition::GetSpecificationsR (void) { return m_specifications; }
 ChildNodeSpecificationList const& SubCondition::GetSpecifications (void) const { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubCondition::AddSpecification(ChildNodeSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_specifications.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SubCondition::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_condition.c_str(), m_condition.size());
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (SubConditionP condition : m_subConditions)
+        {
+        Utf8StringCR conditionHash = condition->GetHash(currentHash.c_str());
+        md5.Add(conditionHash.c_str(), conditionHash.size());
+        }
+    for (ChildNodeSpecificationP spec : m_specifications)
+        {
+        Utf8StringCR conditionHash = spec->GetHash(currentHash.c_str());
+        md5.Add(conditionHash.c_str(), conditionHash.size());
+        }
+
+    return md5;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -216,19 +259,46 @@ RuleTargetTree ChildNodeRule::GetTargetTree (void) const { return m_targetTree; 
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubConditionList const& ChildNodeRule::GetSubConditions (void) const { return m_subConditions;  }
-SubConditionList& ChildNodeRule::GetSubConditionsR (void) { return m_subConditions;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::AddSubCondition(SubConditionR subCondition)
+    { 
+    InvalidateHash();
+    subCondition.SetParent(this);
+    m_subConditions.push_back(&subCondition);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications (void) const { return m_specifications; }
-ChildNodeSpecificationList& ChildNodeRule::GetSpecificationsR (void) { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::AddSpecification(ChildNodeSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_specifications.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.vaiksnoras               03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeCustomizationRuleList const& ChildNodeRule::GetCustomizationRules(void) const { return m_customizationRules; }
-ChildNodeCustomizationRuleList& ChildNodeRule::GetCustomizationRulesR(void) { return m_customizationRules; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::AddCustomizationRule(CustomizationRuleR customizationRule)
+    {
+    InvalidateHash();
+    customizationRule.SetParent(this);
+    m_customizationRules.push_back(&customizationRule);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014
@@ -240,6 +310,34 @@ void ChildNodeRule::SetStopFurtherProcessing (bool stopFurtherProcessing) { m_st
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChildNodeRule::GetStopFurtherProcessing (void) const { return m_stopFurtherProcessing; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ChildNodeRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    md5.Add(&m_targetTree, sizeof(m_targetTree));
+    md5.Add(&m_stopFurtherProcessing, sizeof(m_stopFurtherProcessing));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (SubConditionP condition : m_subConditions)
+        {
+        Utf8StringCR conditionHash = condition->GetHash(currentHash.c_str());
+        md5.Add(conditionHash.c_str(), conditionHash.size());
+        }
+    for (ChildNodeSpecificationP spec : m_specifications)
+        {
+        Utf8StringCR conditionHash = spec->GetHash(currentHash.c_str());
+        md5.Add(conditionHash.c_str(), conditionHash.size());
+        }
+    for (CustomizationRuleP custRule : m_customizationRules)
+        {
+        Utf8StringCR custRuleHash = custRule->GetHash(currentHash.c_str());
+        md5.Add(custRuleHash.c_str(), custRuleHash.size());
+        }
+
+    return md5;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -289,3 +387,13 @@ void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
 * @bsimethod                                    dmitrijus.tiazlovas             04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RootNodeRule::GetAutoExpand (void) const { return m_autoExpand; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 RootNodeRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ChildNodeRule::_ComputeHash(parentHash);
+    md5.Add(&m_autoExpand, sizeof(m_autoExpand));
+    return md5;
+    }

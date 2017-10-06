@@ -107,7 +107,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
     
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     ChildNodeRule rule("", 1000, false, TargetTree_MainTree);
@@ -168,7 +168,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedRelatedInstanceClasses)
     
     RootNodeRule rule("", 1000, false, TargetTree_MainTree, false);
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    spec.GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget", "g"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget", "g"));
 
     GetBuilder().GetQueries(rule, spec);
     ASSERT_EQ(3, listener.GetUsedClasses().size());
@@ -192,7 +192,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedRelatedInstanceClasses)
 TEST_F (NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances)
     {
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    spec.GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
@@ -212,7 +212,7 @@ TEST_F (NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances)
 TEST_F (NavigationQueryBuilderTests, FiltersByRelatedInstanceProperties)
     {
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "widget.IntProperty > 5 AND widget.MyID <> this.MyID", "RulesEngineTest:Gadget", false);
-    spec.GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());

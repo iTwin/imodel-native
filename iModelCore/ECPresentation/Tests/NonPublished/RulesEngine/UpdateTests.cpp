@@ -163,7 +163,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for nodes
@@ -210,7 +210,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -280,7 +280,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     NavNodeCPtr removedClassNode;
@@ -345,7 +345,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -396,7 +396,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -469,7 +469,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     NavNodeCPtr removedLabelGroupingNode;
@@ -546,7 +546,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -603,7 +603,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -673,8 +673,8 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -717,8 +717,8 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -770,7 +770,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -838,7 +838,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -900,7 +900,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -970,7 +970,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1028,7 +1028,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1083,7 +1083,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1132,7 +1132,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1182,7 +1182,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1233,7 +1233,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", false));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1273,7 +1273,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1315,7 +1315,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -1354,11 +1354,11 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsInstanceNode", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection::RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -1416,8 +1416,8 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rules->AddPresentationRule(*rule);
 
     SearchResultInstanceNodesSpecificationP spec = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
-    spec->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] > 10", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddQuerySpecification(*new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] > 10", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*spec);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecificationWithSingleQuerySpecification", TargetTree_Both);
@@ -1481,9 +1481,9 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rules->AddPresentationRule(*rule);
 
     SearchResultInstanceNodesSpecificationP spec = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
-    spec->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] > 20", "RulesEngineTest", "Widget"));
-    spec->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] < 15", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddQuerySpecification(*new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] > 20", "RulesEngineTest", "Widget"));
+    spec->AddQuerySpecification(*new StringQuerySpecification("SELECT [Widget].[MyID] FROM [RulesEngineTest].[Widget] WHERE [Widget].[IntProperty] < 15", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*spec);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecificationWithMultipleQuerySpecifications", TargetTree_Both);
@@ -1549,8 +1549,8 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rules->AddPresentationRule(*rule);
 
     SearchResultInstanceNodesSpecificationP spec = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
-    spec->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM [RulesEngineTest].[ClassE] WHERE [ClassE].[IntProperty] > 10", "RulesEngineTest", "ClassE"));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM [RulesEngineTest].[ClassE] WHERE [ClassE].[IntProperty] > 10", "RulesEngineTest", "ClassE"));
+    rule->AddSpecification(*spec);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecification_Polymorphic", TargetTree_Both);
@@ -1614,7 +1614,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
@@ -1622,8 +1622,8 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     rules->AddPresentationRule(*childRule);
 
     SearchResultInstanceNodesSpecificationP spec = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
-    spec->GetQuerySpecificationsR().push_back(new ECPropertyValueQuerySpecification("RulesEngineTest", "Gadget", "Description"));
-    childRule->GetSpecificationsR().push_back(spec);
+    spec->AddQuerySpecification(*new ECPropertyValueQuerySpecification("RulesEngineTest", "Gadget", "Description"));
+    childRule->AddSpecification(*spec);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
@@ -1682,14 +1682,14 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
 
     InstanceNodesOfSpecificClassesSpecificationP rootSpec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false,
         "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(rootSpec);
+    rule->AddSpecification(*rootSpec);
 
     ChildNodeRuleP childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    rootSpec->GetNestedRules().push_back(childRule);
+    rootSpec->AddNestedRule(*childRule);
 
     InstanceNodesOfSpecificClassesSpecificationP childSpec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Gadget", false);
-    childRule->GetSpecificationsR().push_back(childSpec);
+    childRule->AddSpecification(*childSpec);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options("CreatesNodeAfterECInstanceInsertWhenPreviouslyNotCreatedDueToHideIfNoChildrenFlag", TargetTree_Both);
@@ -1730,11 +1730,11 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new SameLabelInstanceGroup());
+    groupingRule->AddGroup(*new SameLabelInstanceGroup());
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -1783,11 +1783,11 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
-    groupingRule->GetGroupsR().push_back(new ClassGroup("", true, "RulesEngineTest", "ClassE"));
+    groupingRule->AddGroup(*new ClassGroup("", true, "RulesEngineTest", "ClassE"));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -1846,11 +1846,11 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "IntProperty"));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "IntProperty"));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -1909,15 +1909,15 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     rules->AddPresentationRule(*groupingRule);
 
     PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "IntProperty");
-    groupingSpec->GetRangesR().push_back(new PropertyRangeGroupSpecification("5 to 10", "", "5", "10"));
-    groupingRule->GetGroupsR().push_back(groupingSpec);
+    groupingSpec->AddRange(*new PropertyRangeGroupSpecification("5 to 10", "", "5", "10"));
+    groupingRule->AddGroup(*groupingSpec);
 
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options("RangePropertyGroupIsUpdatedWhenAdditionalInstancesAreInserted", TargetTree_Both);
@@ -1976,11 +1976,11 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "IntProperty"));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "IntProperty"));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -2049,11 +2049,11 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", false, "IntProperty"));
+    groupingRule->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -2105,10 +2105,10 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
     spec->SetAlwaysReturnsChildren(false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
@@ -2144,14 +2144,14 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
     spec->SetAlwaysReturnsChildren(false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"MyType\"", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    childRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
@@ -2196,14 +2196,14 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
     spec->SetAlwaysReturnsChildren(false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"MyType\"", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    childRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
@@ -2245,11 +2245,11 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "MyCustomType", "MyLabel", "", "MyImageId"));
+    rule->AddSpecification(*new CustomNodeSpecification(1, false, "MyCustomType", "MyLabel", "", "MyImageId"));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"MyCustomType\"", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    childRule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*childRule);
     
     // request for root nodes
@@ -2328,11 +2328,11 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "IntProperty", "Default Label"));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "IntProperty", "Default Label"));
     rules->AddPresentationRule(*groupingRule);
     
     // request for root nodes
@@ -2410,11 +2410,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2468,11 +2468,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Backward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2527,11 +2527,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2586,11 +2586,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Backward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2644,11 +2644,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2705,11 +2705,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Backward, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2767,11 +2767,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2829,11 +2829,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
         "", RequiredRelationDirection_Backward, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
     
@@ -2890,7 +2890,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetsHaveGadgets\", \"Backward\", \"RulesEngineTest:Widget\")", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
@@ -2937,7 +2937,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetsHaveGadgets\", \"Forward\", \"RulesEngineTest:Gadget\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -2985,7 +2985,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetsHaveGadgets\", \"Backward\", \"RulesEngineTest:Widget\")", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3032,7 +3032,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetsHaveGadgets\", \"Forward\", \"RulesEngineTest:Gadget\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3078,7 +3078,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetHasGadgets\", \"Backward\", \"RulesEngineTest:Widget\")", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3122,7 +3122,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3167,7 +3167,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetHasGadgets\", \"Backward\", \"RulesEngineTest:Widget\")", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3211,7 +3211,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.HasRelatedInstance(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3260,7 +3260,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.GetRelatedValue(\"RulesEngineTest:WidgetsHaveGadgets\", \"Forward\", \"RulesEngineTest:Gadget\", \"MyID\") = \"123\"", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -3309,12 +3309,12 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
         RequiredRelationDirection_Forward, "", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childRule);
 
@@ -3373,12 +3373,12 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
         RequiredRelationDirection_Forward, "", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childRule);
 
@@ -3433,12 +3433,12 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "this.IntProperty = 1", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", 
         RequiredRelationDirection_Both, "", "RulesEngineTest:WidgetsHaveGadgets2", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childRule);
 
@@ -3493,9 +3493,9 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "", "RulesEngineTest:Gadget", false));
-    rule->GetSpecificationsR()[0]->GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
+    rule->GetSpecifications()[0]->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
@@ -3545,9 +3545,9 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "", "RulesEngineTest:Gadget", false));
-    rule->GetSpecificationsR()[0]->GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
+    rule->GetSpecifications()[0]->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
@@ -3597,9 +3597,9 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
         "", "RulesEngineTest:Gadget", false));
-    rule->GetSpecificationsR()[0]->GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
+    rule->GetSpecifications()[0]->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
@@ -3642,21 +3642,21 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_1", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules1);
     RootNodeRule* rule1 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule1->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules1->AddPresentationRule(*rule1);
     rules1->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_2", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules2);
     RootNodeRule* rule2 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule2->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules2->AddPresentationRule(*rule2);
     rules2->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     PresentationRuleSetPtr rules3 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_3", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules3);
     RootNodeRule* rule3 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule3->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule3->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules3->AddPresentationRule(*rule3);
     rules3->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -3713,30 +3713,30 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     s_locater->AddRuleSet(*rules1);
     rules1->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule1 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule1->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
+    rootRule1->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules1->AddPresentationRule(*rootRule1);
     ChildNodeRule* childRule1 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule1->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules1->AddPresentationRule(*childRule1);
     
     PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedChildHierarchies_2", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules2);
     rules2->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule2 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule2->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
+    rootRule2->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules2->AddPresentationRule(*rootRule2);
     ChildNodeRule* childRule2 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule2->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules2->AddPresentationRule(*childRule2);
     
     PresentationRuleSetPtr rules3 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedChildHierarchies_3", 1, 0, false, "", "", "", false);
     s_locater->AddRuleSet(*rules3);
     rules3->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule3 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule3->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
+    rootRule3->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules3->AddPresentationRule(*rootRule3);
     ChildNodeRule* childRule3 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule3->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    childRule3->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules3->AddPresentationRule(*childRule3);
 
     // request for root nodes
@@ -3811,11 +3811,11 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
     rootSpec->SetAlwaysReturnsChildren(false);
-    rootRule->GetSpecificationsR().push_back(rootSpec);
+    rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"custom\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*childRule);
 
@@ -3866,11 +3866,11 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
     rootSpec->SetAlwaysReturnsChildren(false);
-    rootRule->GetSpecificationsR().push_back(rootSpec);
+    rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"custom\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*childRule);
 
@@ -3918,11 +3918,11 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
     rootSpec->SetAlwaysReturnsChildren(false);
-    rootRule->GetSpecificationsR().push_back(rootSpec);
+    rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"custom\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*childRule);
 
@@ -3963,11 +3963,11 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
     rootSpec->SetAlwaysReturnsChildren(false);
-    rootRule->GetSpecificationsR().push_back(rootSpec);
+    rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"custom\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*childRule);
 
@@ -4015,15 +4015,15 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "TEST_TYPE", "Custom label", "", "ImageId"));
-    rootRule->GetSpecificationsR()[0]->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_TYPE", "Custom label", "", "ImageId"));
+    rootRule->GetSpecifications()[0]->AddNestedRule(*childRule);
 
     ChildNodeRule* grandchildRule = new ChildNodeRule("ParentNode.Type = \"TEST_TYPE\"", 1, false, RuleTargetTree::TargetTree_Both);
-    grandchildRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    grandchildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*grandchildRule);
 
     // request for root nodes
@@ -4073,7 +4073,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
@@ -4111,7 +4111,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("1 = GetSettingIntValue(\"test\")", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
@@ -4148,7 +4148,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "1 = GetSettingIntValue(\"test\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
@@ -4186,7 +4186,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\""));
@@ -4227,7 +4227,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"test\" & GetSettingIntValue(\"test\")", "\"test\""));
@@ -4274,12 +4274,12 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false,
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false,
         "this.IntProperty = GetSettingIntValue(\"test\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, true, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, true, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4335,7 +4335,7 @@ TEST_F (HierarchyUpdateTests, UpdatesLocalizedCustomNodesOnUserSettingChange)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "Custom", "Label", "Description", "ImageId"));
+    rule->AddSpecification(*new CustomNodeSpecification(1, false, "Custom", "Label", "Description", "ImageId"));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("ThisNode.Type=\"Custom\"", 1, 
         Utf8PrintfString("\"%s\"", RULESENGINE_LOCALIZEDSTRING_Other.c_str()), "GetSettingIntValue(\"counter\")"));
@@ -4382,11 +4382,11 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4441,11 +4441,11 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4499,11 +4499,11 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Gadget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Backward, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4561,18 +4561,18 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     // gadget rule
     ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule1->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule1->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule1);
 
     // sprocket rule
     ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.ClassName=\"Gadget\"", 1, false, TargetTree_Both);
-    childRule2->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule2->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childRule2);
 
@@ -4639,11 +4639,11 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4698,11 +4698,11 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4757,11 +4757,11 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, true, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, true, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4820,7 +4820,7 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     // make sure we have 1 root node
@@ -4883,7 +4883,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsInserted)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     // make sure we have 1 root node and disable updates
@@ -4914,7 +4914,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsUpdated)
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     // make sure we have 1 root node and disable updates
@@ -4947,11 +4947,11 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsInserted)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 
@@ -4990,11 +4990,11 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
     s_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childRule);
 

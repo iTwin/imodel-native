@@ -154,3 +154,18 @@ void InstanceNodesOfSpecificClassesSpecification::SetArePolymorphic (bool value)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR InstanceNodesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 InstanceNodesOfSpecificClassesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_groupByClass, sizeof(m_groupByClass));
+    md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
+    md5.Add(&m_showEmptyGroups, sizeof(m_showEmptyGroups));
+    md5.Add(&m_arePolymorphic, sizeof(m_arePolymorphic));
+    md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
+    md5.Add(m_classNames.c_str(), m_classNames.size());
+    return md5;
+    }

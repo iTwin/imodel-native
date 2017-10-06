@@ -220,4 +220,23 @@ Utf8StringCR RelatedInstanceNodesSpecification::GetRelatedClassNames (void) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRelatedClassNames (Utf8String value) { m_relatedClassNames = value; }
+void RelatedInstanceNodesSpecification::SetRelatedClassNames(Utf8String value) { m_relatedClassNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 RelatedInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_groupByClass, sizeof(m_groupByClass));
+    md5.Add(&m_groupByRelationship, sizeof(m_groupByRelationship));
+    md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
+    md5.Add(&m_showEmptyGroups, sizeof(m_showEmptyGroups));
+    md5.Add(&m_skipRelatedLevel, sizeof(m_skipRelatedLevel));
+    md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
+    md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
+    md5.Add(m_supportedSchemas.c_str(), m_supportedSchemas.size());
+    md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
+    md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
+    return md5;
+    }

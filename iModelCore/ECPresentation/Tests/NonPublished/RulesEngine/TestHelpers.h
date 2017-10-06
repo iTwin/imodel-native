@@ -265,10 +265,10 @@ protected:
     void _Cache(DataSourceInfo& info, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override
         {
         }
-    void _Cache(JsonNavNodeCR node, bool isVirtual) override
+    void _Cache(JsonNavNodeR node, bool isVirtual) override
         {
-        JsonNavNodeR tempNode = const_cast<JsonNavNodeR>(node);
-        m_hierarchy[node.GetNodeId()] = HierarchyItem(tempNode, isVirtual);
+        node.SetNodeId(TestNodesHelper::CreateNodeId());
+        m_hierarchy[node.GetNodeId()] = HierarchyItem(node, isVirtual);
         m_nodeIdsByKey[&node.GetKey()] = node.GetNodeId();
         }
 

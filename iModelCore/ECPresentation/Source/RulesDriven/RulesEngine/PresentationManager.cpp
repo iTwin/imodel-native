@@ -261,7 +261,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, GetConnections());
+    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, GetConnections(), NodesCacheType::Disk);
     m_contentCache = new ContentCache();
     m_statementCache = new ECDbStatementsCache();
     m_relatedPathsCache = new ECDbRelatedPathsCache();

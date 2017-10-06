@@ -352,8 +352,6 @@ public:
     //! Is this node equal to the supplied one.
     bool Equals(NavNodeCR other) const {return 0 == GetKey().Compare(other.GetKey());}
 
-    //! Create a unique node ID.
-    ECPRESENTATION_EXPORT static uint64_t CreateNodeId();
     //! Get the unique ID of this node.
     uint64_t GetNodeId() const {return _GetNodeId();}
 

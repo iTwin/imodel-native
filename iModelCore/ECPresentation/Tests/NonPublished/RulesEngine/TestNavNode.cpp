@@ -21,7 +21,7 @@ void TestNavNode::InitNode(ECDb const* db)
     SetType("TestType");
 
     NavNodeExtendedData extendedData(*this);
-    extendedData.SetSpecificationId(-1); // -1 is an invalid ID so it will never match anything unless specifically set
+    extendedData.SetSpecificationHash(""); // "" is an invalid Hash so it will never match anything unless specifically set
     extendedData.SetRulesetId("Invalid ruleset ID");
 
     if (nullptr != db)

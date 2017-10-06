@@ -118,6 +118,35 @@ bool SearchResultInstanceNodesSpecification::GetGroupByLabel (void) const { retu
 void SearchResultInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchResultInstanceNodesSpecification::AddQuerySpecification(QuerySpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_querySpecifications.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SearchResultInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    QuerySpecificationList m_querySpecifications;
+    md5.Add(&m_groupByClass, sizeof(m_groupByClass));
+    md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (QuerySpecificationP spec : m_querySpecifications)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
@@ -138,6 +167,21 @@ void QuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
     xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 QuerySpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_schemaName.c_str(), m_schemaName.size());
+    md5.Add(m_className.c_str(), m_className.size());
+    CharCP name = _GetXmlElementName();
+    md5.Add(name, strlen(name));
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    return md5;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,6 +213,16 @@ void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 StringQuerySpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = QuerySpecification::_ComputeHash(parentHash);
+    md5.Add(m_query.c_str(), m_query.size());
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ECPropertyValueQuerySpecification::_GetXmlElementName() const {return ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME;}
@@ -194,4 +248,14 @@ void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
     QuerySpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ECPropertyValueQuerySpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = QuerySpecification::_ComputeHash(parentHash);
+    md5.Add(m_parentPropertyName.c_str(), m_parentPropertyName.size());
+    return md5;
     }

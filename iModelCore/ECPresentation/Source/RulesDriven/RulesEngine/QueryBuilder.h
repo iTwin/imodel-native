@@ -126,7 +126,7 @@ private:
     // the real specification handlers
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const;
-    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, int specificationId, ChildNodeRuleCR rule) const;
+    bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const;
     bvector<NavigationQueryPtr> GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const;
 
     // called by SpecificationsVisitor:

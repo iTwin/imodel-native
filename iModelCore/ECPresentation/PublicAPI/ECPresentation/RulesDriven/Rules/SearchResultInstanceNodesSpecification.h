@@ -31,7 +31,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE QuerySpecification
+struct EXPORT_VTABLE_ATTRIBUTE QuerySpecification : HashableBase
 {
 private:
     Utf8String m_schemaName;
@@ -47,6 +47,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode);
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const;
     virtual QuerySpecification* _Clone() const = 0;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     QuerySpecification() {}
@@ -94,6 +95,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     //! Constructor
@@ -125,6 +127,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     //! Constructor
@@ -170,6 +173,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification ();
@@ -187,8 +193,8 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         //! Returns the list of query specifications that are responsible for the results of this rule.
         QuerySpecificationList const& GetQuerySpecifications() const {return m_querySpecifications;}
 
-        //! Returns the list of query specifications that are responsible for the results of this rule.
-        QuerySpecificationList& GetQuerySpecificationsR() {return m_querySpecifications;}
+        //! Add query specification.
+        ECPRESENTATION_EXPORT void AddQuerySpecification(QuerySpecificationR specification);
 
         //! Returns true if grouping by class should be applied.
         ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;

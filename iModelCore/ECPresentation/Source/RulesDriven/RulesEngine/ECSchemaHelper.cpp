@@ -970,9 +970,8 @@ ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECCla
     Utf8StringCR supportedSchemas, Utf8StringCR supportedRelationships, Utf8StringCR supportedClasses,
     bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass)
     : m_relationshipsUseCounter(relationshipsUseCounter), m_sourceClass(sourceClass), m_supportedSchemas(supportedSchemas),
-    m_supportedRelationships(supportedRelationships), m_supportedClasses(supportedClasses)
+    m_supportedRelationships(supportedRelationships), m_supportedClasses(supportedClasses), m_specificationHash(nullptr)
     {
-    m_specificationId = -1;
     m_relationshipDirection = relationshipDirection;
     m_depth = depth;
     m_targetClass = targetClass;
@@ -984,9 +983,9 @@ ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECCla
 bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
     {
     // look for cached results first
-    if (-1 != options.GetSpecificationId())
+    if (!Utf8String::IsNullOrEmpty(options.GetSpecificationHash()))
         {
-        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationId());
+        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationHash());
         RelatedPathsCache::Result const* result = m_relatedPathsCache.Get(key);
         if (nullptr != result)
             {
@@ -1019,9 +1018,9 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
         }
     
     // cache if necessary
-    if (-1 != options.GetSpecificationId())
+    if (!Utf8String::IsNullOrEmpty(options.GetSpecificationHash()))
         {
-        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationId());
+        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationHash());
         m_relatedPathsCache.Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
         }
 

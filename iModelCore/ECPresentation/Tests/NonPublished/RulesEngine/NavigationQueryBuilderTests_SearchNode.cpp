@@ -29,7 +29,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_AllowsStandardSch
     {
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
     Utf8CP query = "SELECT * FROM [ECDbMap].[SchemaMap]";
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(query, "ECDbMeta", "ECSchemaDef"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(query, "ECDbMeta", "ECSchemaDef"));
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_TRUE(queries.size() > 0);
     }
@@ -40,7 +40,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_AllowsStandardSch
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_NoGrouping)
     {
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -59,7 +59,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_NoGrouping)
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass)
     {
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, false);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -79,14 +79,14 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass_Chil
     {
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*widget, "MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, false);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
 
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -107,7 +107,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass_Chil
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel)
     {
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, true);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -126,14 +126,14 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel)
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel_ChildrenQuery)
     {
     JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, true);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
     
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
@@ -156,14 +156,14 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLa
     {
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*widget, "MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, true);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
 
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -186,19 +186,19 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLa
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*widget, "Class Grouping Node");
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
-    classGroupingNode->SetParentNodeId(NavNode::CreateNodeId());
-    labelGroupingNode->SetParentNode(*classGroupingNode);
+    classGroupingNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*classGroupingNode, false);
+    labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
 
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, true);
-    spec.GetQuerySpecificationsR().push_back(new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
+    spec.AddQuerySpecification(*new StringQuerySpecification(SEARCH_NODE_QUERY, "RulesEngineTest", "Widget"));
 
     NavNodeExtendedData classNodeExtendedData(*classGroupingNode);
     NavNodeExtendedData labelNodeExtendedData(*labelGroupingNode);
-    classNodeExtendedData.SetSpecificationId(spec.GetId());
+    classNodeExtendedData.SetSpecificationHash(spec.GetHash());
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    labelNodeExtendedData.SetSpecificationId(spec.GetId());
+    labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     labelNodeExtendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
         
@@ -222,11 +222,11 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_UsesParentPropert
     IECInstancePtr instance = GetECClass("RulesEngineTest", "Gadget")->GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue("Description", ECValue(SEARCH_NODE_QUERY));
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*instance);
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);
-    spec.GetQuerySpecificationsR().push_back(new ECPropertyValueQuerySpecification("RulesEngineTest", "Widget", "Description"));
+    spec.AddQuerySpecification(*new ECPropertyValueQuerySpecification("RulesEngineTest", "Widget", "Description"));
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 

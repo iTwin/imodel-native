@@ -79,7 +79,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_NotGro
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for nodes
@@ -114,7 +114,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -168,7 +168,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -199,7 +199,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
     RootNodeRule* rule = new RootNodeRule();
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     allInstanceNodesSpecification->SetDoNotSort(true);
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -231,7 +231,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, true, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, true, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -256,13 +256,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
 
     RootNodeRule* rule = new RootNodeRule();
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, true, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecification);
-    allInstanceNodesSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecification);
+    allInstanceNodesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -287,13 +287,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideNod
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, true, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecification);
-    allInstanceNodesSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecification);
+    allInstanceNodesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideNodesInHierarchy", TargetTree_MainTree).GetJson();
@@ -319,7 +319,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -348,7 +348,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -389,7 +389,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -441,7 +441,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNod
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request for nodes
@@ -484,8 +484,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AlwaysReturnsResultsFla
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -511,11 +511,11 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     childRule->SetCondition("ParentNode.IsInstanceNode And ParentNode.ClassName = \"Widget\"");
     rules->AddPresentationRule(*childRule);
 
@@ -544,11 +544,11 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     childRule->SetCondition("ParentNode.IsInstanceNode And ParentNode.ClassName = \"Widget\"");
     rules->AddPresentationRule(*childRule);
 
@@ -573,7 +573,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -600,11 +600,11 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     childRule->SetCondition("ParentNode.IsInstanceNode");
     rules->AddPresentationRule(*childRule);
 
@@ -636,7 +636,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -669,7 +669,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -700,7 +700,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -729,7 +729,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -758,7 +758,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanP
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -788,7 +788,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
@@ -814,7 +814,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
 
     RootNodeRule* rule = new RootNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
     
     // request for nodes
@@ -843,13 +843,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
     customNodeSpecification->SetAlwaysReturnsChildren(false);
 
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecificationChild = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecificationChild);
-    customNodeSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecificationChild);
+    customNodeSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -875,7 +875,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
     customNodeSpecification->SetAlwaysReturnsChildren(false);
 
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -901,7 +901,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_AlwaysReturn
     RootNodeRule* rule = new RootNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
     customNodeSpecification->SetAlwaysReturnsChildren(true);
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -932,7 +932,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -960,13 +960,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstancesOfSpecificClassesNodes_HideNodesInHierarchy", TargetTree_MainTree).GetJson();
@@ -992,7 +992,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1017,13 +1017,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstancesOfSpecificClassesNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -1047,7 +1047,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClas
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget,Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget,Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1073,7 +1073,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1101,7 +1101,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1144,7 +1144,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1192,7 +1192,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, true, false, "", "RulesEngineTest:Widget,Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, true, false, "", "RulesEngineTest:Widget,Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1238,7 +1238,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClas
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, true, "", "RulesEngineTest:Widget,Gadget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, true, "", "RulesEngineTest:Widget,Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1266,7 +1266,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     instanceNodesOfSpecificClassesSpecification->SetDoNotSort(true);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1302,7 +1302,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1330,7 +1330,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1355,7 +1355,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "this.IntProperty<=5", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "this.IntProperty<=5", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1383,13 +1383,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, true, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    childRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_AlwaysReturnsChildren", TargetTree_MainTree).GetJson();
@@ -1425,18 +1425,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, true, false, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     ChildNodeRule* customNodeRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    customNodeRule->GetSpecificationsR().push_back(customNodeSpecification);
-    relatedInstanceNodesSpecification->GetNestedRules().push_back(customNodeRule);
+    customNodeRule->AddSpecification(*customNodeSpecification);
+    relatedInstanceNodesSpecification->AddNestedRule(*customNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideNodesInHierarchy", TargetTree_MainTree).GetJson();
@@ -1472,13 +1472,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, true, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
@@ -1511,18 +1511,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, true, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     ChildNodeRule* customNodeRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    customNodeRule->GetSpecificationsR().push_back(customNodeSpecification);
-    relatedInstanceNodesSpecification->GetNestedRules().push_back(customNodeRule);
+    customNodeRule->AddSpecification(*customNodeSpecification);
+    relatedInstanceNodesSpecification->AddNestedRule(*customNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -1554,13 +1554,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_G
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, true, false, false, false, 0, "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByClass", TargetTree_MainTree).GetJson();
@@ -1593,13 +1593,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, true, false, 0, "", RequiredRelationDirection_Backward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_DoesntGroup1Instance", TargetTree_MainTree).GetJson();
@@ -1640,13 +1640,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, true, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Widget,Sprocket");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode", TargetTree_MainTree).GetJson();
@@ -1691,14 +1691,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Widget,Sprocket");
     relatedInstanceNodesSpecification->SetDoNotSort(true);
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes", TargetTree_MainTree).GetJson();
@@ -1738,13 +1738,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_SkipRelatedLevel", TargetTree_MainTree).GetJson();
@@ -1784,12 +1784,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "this.IntProperty = 1", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("ParentNode.IsOfClass(\"Widget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childrenRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, 
         "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
 
@@ -1830,14 +1830,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "this.MyID~\"Sprocket1\"", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket");
     relatedInstanceNodesSpecification->SetDoNotSort(true);
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_InstanceFilter", TargetTree_MainTree).GetJson();
@@ -1880,13 +1880,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, true, false, true, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Widget,Sprocket");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
-    instanceNodesOfSpecificClassesSpecification->GetNestedRules().push_back(relatedNodeRule);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
+    instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel", TargetTree_MainTree).GetJson();
@@ -1937,14 +1937,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, true, false, false);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->GetSpecificationsR().push_back(customNodeSpecification);
-    searchResultInstanceSpecification->GetNestedRules().push_back(childRule);
+    childRule->AddSpecification(*customNodeSpecification);
+    searchResultInstanceSpecification->AddNestedRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -1974,8 +1974,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, true, false, false);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2000,8 +2000,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, true, false);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2027,8 +2027,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, false, true);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2056,9 +2056,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, false, true);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Gadget", "RulesEngineTest", "Gadget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Gadget", "RulesEngineTest", "Gadget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2097,9 +2097,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, false, true);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Gadget", "RulesEngineTest", "Gadget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Gadget", "RulesEngineTest", "Gadget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2140,8 +2140,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
     RootNodeRule* rule = new RootNodeRule();
     SearchResultInstanceNodesSpecificationP searchResultInstanceSpecification = new SearchResultInstanceNodesSpecification(1, false, false, false, false, false);
     searchResultInstanceSpecification->SetDoNotSort(true);
-    searchResultInstanceSpecification->GetQuerySpecificationsR().push_back(new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
-    rule->GetSpecificationsR().push_back(searchResultInstanceSpecification);
+    searchResultInstanceSpecification->AddQuerySpecification(*new StringQuerySpecification("SELECT * FROM RulesEngineTest.Widget", "RulesEngineTest", "Widget"));
+    rule->AddSpecification(*searchResultInstanceSpecification);
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -2172,7 +2172,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ImageIdOverride)
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     ImageIdOverrideP imageIdOverride = new ImageIdOverride("ThisNode.Type=\"customType\"", 1, "\"overridedImageId\"");
@@ -2199,7 +2199,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"customType\"", 1, "\"overridedLabel\"", "\"overridedDescription\"");
@@ -2233,7 +2233,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget,Gadget", true);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"Count: \" & ThisNode.GroupedInstancesCount", "");
@@ -2269,13 +2269,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "IntProperty");
     groupingSpec->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
-    groupingRule->GetGroupsR().push_back(groupingSpec);
+    groupingRule->AddGroup(*groupingSpec);
     rules->AddPresentationRule(*groupingRule);
 
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"Count: \" & ThisNode.GroupedInstancesCount", "");
@@ -2307,26 +2307,26 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
     RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNode", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNodeSortedByPropertyValue", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "IntProperty");
     groupingSpec->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
     groupingSpec->SetSortingValue(PropertyGroupingValue::PropertyValue);
-    groupingRule->GetGroupsR().push_back(groupingSpec);
+    groupingRule->AddGroup(*groupingSpec);
     rules->AddPresentationRule(*groupingRule);
 
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"Count: \" & ThisNode.GroupedInstancesCount", "");
     rules->AddPresentationRule(*labelOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNode", TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNodeSortedByPropertyValue", TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options);
 
     // verify there're three grouping nodes with correct labels
@@ -2349,7 +2349,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
     
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     StyleOverrideP styleOverride = new StyleOverride("ThisNode.Type=\"customType\"", 1, "\"overridedForeColor\"", "\"overridedBackColor\"", "\"overridedFontStyle\"");
@@ -2380,7 +2380,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@customLabel@", "description", "imageId");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "customLabel", "RulesEngine:Test", "notfound");
@@ -2409,7 +2409,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@customLabel@", "description", "imageId");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "customLabel", "key", "notfound");
@@ -2440,7 +2440,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Label=\"Widget\"", 1, false, "BoolProperty", false, false, "");
@@ -2476,7 +2476,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "customLabel", "description", "imageId");
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Label=\"customLabel\"", 1, false, "", false, false, "");
@@ -2510,7 +2510,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Label=\"Widget\"", 1, false, "BoolProperty", true, false, "");
@@ -2550,7 +2550,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Label=\"Widget\"", 1, false, "BoolProperty", false, false, "");
@@ -2592,7 +2592,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "MyID", true, false, false);
@@ -2627,7 +2627,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "MyID", false, false, false);
@@ -2662,7 +2662,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "DoNotSortByWidgetLabel", false, true, false);
@@ -2699,7 +2699,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "ClassE", "IntProperty", true, false, true);
@@ -2760,7 +2760,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByTwo
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "IntProperty", true, false, false);
@@ -2815,7 +2815,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "ClassQ", "IntEnum", true, false, false);
@@ -2854,12 +2854,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", false, "RulesEngineTest", "ClassE");
-    groupingRule->GetGroupsR().push_back(classGroup);
+    groupingRule->AddGroup(*classGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -2896,12 +2896,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", false, "RulesEngineTest", "ClassE");
-    groupingRule->GetGroupsR().push_back(classGroup);
+    groupingRule->AddGroup(*classGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -2930,12 +2930,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", true, "RulesEngineTest", "ClassE");
-    groupingRule->GetGroupsR().push_back(classGroup);
+    groupingRule->AddGroup(*classGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -2970,12 +2970,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", false, "MyID", "");
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3004,12 +3004,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "MyID", "");
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3038,12 +3038,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "changedImageId", true, "MyID", "");
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3073,11 +3073,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "IntProperty", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "IntProperty", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3117,15 +3117,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "ClassD", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "ClassD", ""));
     rules->AddPresentationRule(*groupingRule);
 
     GroupingRuleP groupingRule2 = new GroupingRule("", 1, false, "RulesEngineTest", "ClassF", "", "", "");
-    groupingRule2->GetGroupsR().push_back(new PropertyGroup("", "", true, "IntProperty", ""));
+    groupingRule2->AddGroup(*new PropertyGroup("", "", true, "IntProperty", ""));
     rules->AddPresentationRule(*groupingRule2);
 
     // request for nodes
@@ -3159,14 +3159,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassQ", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntEnum", "");
     propertyGroup->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
     propertyGroup->SetSortingValue(PropertyGroupingValue::PropertyValue);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3198,11 +3198,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassQ", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "StrEnum", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "StrEnum", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3234,11 +3234,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "ClassD", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "ClassD", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3268,16 +3268,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootNodeRule = new RootNodeRule();
-    rootNodeRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rootNodeRule);
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
-    childNodeRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childNodeRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "Priority", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -3323,16 +3323,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootNodeRule = new RootNodeRule();
-    rootNodeRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassS", true));
+    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassS", true));
     rules->AddPresentationRule(*rootNodeRule);
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
-    childNodeRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassSHasClassT", "RulesEngineTest:ClassT"));
     rules->AddPresentationRule(*childNodeRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassSHasClassT", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "InstanceU", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "InstanceU", ""));
     rules->AddPresentationRule(*groupingRule);
 
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.ClassName=\"ClassU\"", 1, "\"Label \" & this.IntProperty", "");
@@ -3382,16 +3382,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootNodeRule = new RootNodeRule();
-    rootNodeRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rootNodeRule);
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
-    childNodeRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1,
+    childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childNodeRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "Priority", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -3434,17 +3434,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootNodeRule = new RootNodeRule();
-    rootNodeRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
         "", "RulesEngineTest:ClassD", false));
     rules->AddPresentationRule(*rootNodeRule);
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
-    childNodeRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassDReferencesClassE", "RulesEngineTest:ClassF,ClassG"));
     rules->AddPresentationRule(*childNodeRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassDReferencesClassE", "", "", "");
-    groupingRule->GetGroupsR().push_back(new PropertyGroup("", "", true, "Priority", ""));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
@@ -3488,12 +3488,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     SameLabelInstanceGroupP sameLabelInstanceGroup = new SameLabelInstanceGroup("");
-    groupingRule->GetGroupsR().push_back(sameLabelInstanceGroup);
+    groupingRule->AddGroup(*sameLabelInstanceGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3521,14 +3521,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("", "", "1", "5");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3560,15 +3560,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3600,15 +3600,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "DoubleProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3640,15 +3640,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "LongProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3680,15 +3680,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "DateProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "2017-05-01", "2017-06-01");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3723,20 +3723,20 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false,
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false,
         "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    childRule->GetSpecificationsR().push_back(new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Backward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childRule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("", "", "1", "5");
-    propertyGroup->GetRangesR().push_back(propertyRangeGroupSpecification);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*propertyRangeGroupSpecification);
+    groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3770,7 +3770,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RenameNodeRule)
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
     
-    rule->GetSpecificationsR().push_back(customNodeSpecification);
+    rule->AddSpecification(customNodeSpecification);
     rules->AddPresentationRule(*rule);
     
     RenameNodeRuleP renameNodeRule = new RenameNodeRule("ThisNode.Type=\"customType\"", 1);
@@ -3802,12 +3802,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     RootNodeRule* rule = new RootNodeRule();
 
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest");
-    rule->GetSpecificationsR().push_back(allInstanceNodesSpecification);
+    rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", true, "RulesEngineTest", "ClassE");
-    groupingRule->GetGroupsR().push_back(classGroup);
+    groupingRule->AddGroup(*classGroup);
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
@@ -3846,12 +3846,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassD,ClassE");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
     rules->AddPresentationRule(*relatedNodeRule);
     
     // make sure we have 1 ClassD root node
@@ -3905,17 +3905,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* relatedNodeRule = new ChildNodeRule();
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget");
-    relatedNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
+    relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
     rules->AddPresentationRule(*relatedNodeRule);
 
     GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Gadget", "", "", "");
     PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "MyID");
-    groupingRule->GetGroupsR().push_back(propertyGroupSpec);
+    groupingRule->AddGroup(*propertyGroupSpec);
     rules->AddPresentationRule(*groupingRule);
     
     // make sure we have 1 property grouping node
@@ -3944,7 +3944,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCusto
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     primaryRules->AddPresentationRule(*rule);
 
     PresentationRuleSetPtr supplementalRules = PresentationRuleSet::CreateInstance(primaryRules->GetRuleSetId(), 1, 0, true, "Customization", "", "", false);
@@ -3987,18 +3987,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childNodeRule = new ChildNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP relatedInstanceNodesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "sprocket.MyID = parent.Description", "RulesEngineTest:Gadget", false);
-    relatedInstanceNodesSpecification->GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "sprocket"));
-    childNodeRule->GetSpecificationsR().push_back(relatedInstanceNodesSpecification);
+    relatedInstanceNodesSpecification->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "sprocket"));
+    childNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
     rules->AddPresentationRule(*childNodeRule);
 
     GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Sprocket", "", "", "");
     PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "Description");
-    groupingRule->GetGroupsR().push_back(propertyGroupSpec);
+    groupingRule->AddGroup(*propertyGroupSpec);
     rules->AddPresentationRule(*groupingRule);
     
     // make sure we have 1 widget
@@ -4030,12 +4030,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTh
     RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GroupingChildrenByRelatedInstanceProperty", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ReturnsChildNodesWhenTheresOnlyOneLabelGroupingNode", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
     InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
     rules->AddPresentationRule(*rule);
 
     // make sure we have 2 widget nodes
@@ -4062,12 +4062,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "a", "a", "a", "a");
     spec->SetAlwaysReturnsChildren(false);
-    rootRule->GetSpecificationsR().push_back(spec);
+    rootRule->AddSpecification(*spec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"a\"", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "b", "b", "b", "b"));
-    childRule->GetSpecificationsR().push_back(new CustomNodeSpecification(1, false, "c", "c", "c", "c"));
+    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "b", "b", "b", "b"));
+    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "c", "c", "c", "c"));
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
@@ -4095,7 +4095,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AutoExpandSetsIsExpanded
     // set auto expand property to true (default false)
     RootNodeRule* rootRule = new RootNodeRule("1=1", 10, false, TargetTree_Both, true);
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "test", "test", "test", "test");
-    rootRule->GetSpecificationsR().push_back(spec);
+    rootRule->AddSpecification(*spec);
     rules->AddPresentationRule(*rootRule);
 
     // make sure we have 1 root node
@@ -4119,17 +4119,17 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsOfClass(\"Widget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.Description = parent.Description", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*childRule);
 
     ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.IsOfClass(\"Gadget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childRule2->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.Description = parent.parent.Description", "RulesEngineTest:Sprocket", false));
     rules->AddPresentationRule(*childRule2);
 
@@ -4163,12 +4163,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsOfClass(\"Widget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.Description = parent.Description", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*childRule);
 
@@ -4197,17 +4197,17 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsOfClass(\"Widget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.Description = parent.Description", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*childRule);
 
     ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.IsOfClass(\"Gadget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childRule2->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+    childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.Description = parent.parent.Description", "RulesEngineTest:Sprocket", false));
     rules->AddPresentationRule(*childRule2);
 
@@ -4241,11 +4241,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4276,11 +4276,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4312,11 +4312,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4348,11 +4348,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4389,11 +4389,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4424,11 +4424,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP groupByDouble = new PropertyGroup("", "", true, "DoubleProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByDouble);
+    groupingRule->AddGroup(*groupByDouble);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4466,11 +4466,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4502,11 +4502,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4538,11 +4538,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4580,11 +4580,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4622,11 +4622,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4664,11 +4664,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 2 grouping nodes
@@ -4706,11 +4706,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4742,11 +4742,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node
@@ -4778,11 +4778,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "ClassH", "", "", "");
     PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "PointProperty", "");
-    groupingRule->GetGroupsR().push_back(groupByPoint);
+    groupingRule->AddGroup(*groupByPoint);
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:ClassH", true));
     rules->AddPresentationRule(*rule);
 
     //make sure we have 1 grouping node

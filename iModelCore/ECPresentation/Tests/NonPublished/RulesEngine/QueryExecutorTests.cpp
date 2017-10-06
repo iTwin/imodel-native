@@ -484,9 +484,9 @@ TEST_F (QueryExecutorTests, PropertyRangeGrouping)
     RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
     PropertyGroup propertyGroup("", "", false, "IntProperty", "");
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "0", "5"));
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "6", "10"));
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "11", "20"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
     
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");
@@ -533,9 +533,9 @@ TEST_F (QueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndImageIds)
     RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
     PropertyGroup propertyGroup("", "", false, "IntProperty", "");
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("CustomLabel2", "", "0", "5"));
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("CustomLabel1", "CustomImage1", "6", "10"));
-    propertyGroup.GetRangesR().push_back(new PropertyRangeGroupSpecification("Custom3", "CustomImage3", "11", "20"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel2", "", "0", "5"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel1", "CustomImage1", "6", "10"));
+    propertyGroup.AddRange(*new PropertyRangeGroupSpecification("Custom3", "CustomImage3", "11", "20"));
 
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");

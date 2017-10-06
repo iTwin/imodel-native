@@ -26,6 +26,15 @@ enum class NodeVisibility
     };
 
 /*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                09/2017
++===============+===============+===============+===============+===============+======*/
+enum class NodesCacheType
+    {
+    Memory,
+    Disk,
+    };
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
 struct IHierarchyCache
@@ -37,7 +46,7 @@ protected:
     virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const = 0;
     
     virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) = 0;
-    virtual void _Cache(JsonNavNodeCR, bool) = 0;
+    virtual void _Cache(JsonNavNodeR, bool) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR) = 0;
     virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) = 0;
@@ -62,7 +71,7 @@ public:
         {
         _Cache(info, filter, relatedClassIds, relatedSettingIds, disableUpdates);
         }
-    void Cache(JsonNavNodeCR node, bool isVirtual) {_Cache(node, isVirtual);}
+    void Cache(JsonNavNodeR node, bool isVirtual) {_Cache(node, isVirtual);}
 
     void Update(uint64_t nodeId, JsonNavNodeCR node) {_Update(nodeId, node);}
     void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bvector<ECClassId> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
@@ -97,6 +106,8 @@ private:
     JsonNavNodesFactory const& m_nodesFactory;
     INodesProviderContextFactoryCR m_contextFactory;
     IConnectionCacheCR m_connections;
+    NodesCacheType m_type;
+    bool m_tempCache;
     mutable BeSQLite::Db m_db;
     mutable BeSQLite::StatementCache m_statements;
     mutable bvector<bpair<HierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
@@ -105,7 +116,7 @@ private:
 private:
     void Initialize(BeFileNameCR tempDirectory);
 
-    void CacheNode(DataSourceInfo const&, NavNodeCR, bool isVirtual);
+    void CacheNode(DataSourceInfo const&, NavNodeR, bool isVirtual);
     void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
     void CacheRelatedClassIds(uint64_t datasourceId, bvector<ECClassId> const&);
     void CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8String> const&);
@@ -138,7 +149,7 @@ protected:
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override;
-    ECPRESENTATION_EXPORT void _Cache(JsonNavNodeCR, bool) override;
+    ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, bool) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
@@ -148,7 +159,7 @@ protected:
     ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionCacheCR);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionCacheCR, NodesCacheType);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(HierarchyLevelInfo const&, NavNodesProviderR);
@@ -168,6 +179,8 @@ public:
 
     ECPRESENTATION_EXPORT void Clear(BeSQLite::EC::ECDb const* connection = nullptr, Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();
+
+    BeSQLite::Db const& GetDb() const {return m_db;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

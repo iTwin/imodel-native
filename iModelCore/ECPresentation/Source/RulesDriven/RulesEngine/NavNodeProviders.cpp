@@ -563,7 +563,7 @@ void CustomNodesProvider::Initialize()
 
         NavNodeExtendedData extendedData(*m_node);
         extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
-        extendedData.SetSpecificationId(m_specification.GetId());
+        extendedData.SetSpecificationHash(m_specification.GetHash());
         if (m_specification.GetAlwaysReturnsChildren())
             extendedData.SetAlwaysReturnsChildren(true);
 
@@ -714,7 +714,7 @@ bool QueryBasedNodesProvider::HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint
     NavNodeExtendedData thisNodeExtendedData(node);
     NavNodeExtendedData parentNodeExtendedData(*parentNode);
 
-    return node.Equals(*parentNode) && thisNodeExtendedData.GetSpecificationId() == parentNodeExtendedData.GetSpecificationId()
+    return node.Equals(*parentNode) && 0 == strcmp(thisNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetSpecificationHash())
         || HasSimilarNodeInHierarchy(node, parentNode->GetParentNodeId());
     }
 
@@ -1329,6 +1329,8 @@ void SQLiteCacheNodesProvider::InitializeNodes()
         if (node.IsNull())
             continue;
 
+        node->SetNodeId(statement->GetValueUInt64(2));
+
         if (!statement->IsColumnNull(1))
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(1));
 
@@ -1449,7 +1451,7 @@ void CachedHierarchyLevelProvider::InitDatasourceIds(uint64_t const* physicalPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                         " WHERE NOT [n].[IsVirtual] ";
@@ -1500,7 +1502,7 @@ CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                         " WHERE NOT [n].[IsVirtual] "

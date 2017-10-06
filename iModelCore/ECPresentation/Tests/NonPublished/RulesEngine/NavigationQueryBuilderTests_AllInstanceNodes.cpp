@@ -219,13 +219,13 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClass_ChildrenQuery
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, "Basic1");
 
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -264,13 +264,13 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel)
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel_ChildrenQuery)
     {
     JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, true, "Basic1");
     
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
@@ -293,13 +293,13 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Class
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, true, "Basic1");
 
     NavNodeExtendedData extendedData(*parentNode);
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
@@ -323,18 +323,18 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Label
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "Class Grouping Node");
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
-    classGroupingNode->SetParentNodeId(NavNode::CreateNodeId());
-    labelGroupingNode->SetParentNode(*classGroupingNode);
+    classGroupingNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*classGroupingNode, false);
+    labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, true, true, "Basic1");
 
     NavNodeExtendedData classNodeExtendedData(*classGroupingNode);
     NavNodeExtendedData labelNodeExtendedData(*labelGroupingNode);
-    classNodeExtendedData.SetSpecificationId(spec.GetId());
+    classNodeExtendedData.SetSpecificationHash(spec.GetHash());
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    labelNodeExtendedData.SetSpecificationId(spec.GetId());
+    labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     labelNodeExtendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
@@ -359,13 +359,13 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_RecursiveNodeRelationships
     
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
-    instanceNode->SetParentNodeId(NavNode::CreateNodeId());
+    instanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*instanceNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, "Basic3");
         
     NavNodeExtendedData instanceNodeExtendedData(*instanceNode);
-    instanceNodeExtendedData.SetSpecificationId(spec.GetId());
+    instanceNodeExtendedData.SetSpecificationHash(spec.GetHash());
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *instanceNode);
     ASSERT_EQ(1, queries.size());

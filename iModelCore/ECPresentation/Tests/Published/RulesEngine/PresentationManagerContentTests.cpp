@@ -4595,7 +4595,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesArrayPropertyValuesFo
         });
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsArrayPropertyValues", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesArrayPropertyValuesForWhenMergingRows", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);

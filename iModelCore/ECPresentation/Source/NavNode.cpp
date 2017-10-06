@@ -348,9 +348,6 @@ rapidjson::Document DisplayLabelGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAl
     return json;
     }
 
-
-static uint64_t s_nodeIdentifiers = 1;
-uint64_t NavNode::CreateNodeId() {return s_nodeIdentifiers++;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

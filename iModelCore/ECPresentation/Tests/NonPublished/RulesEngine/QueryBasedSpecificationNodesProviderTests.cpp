@@ -108,7 +108,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);    
+    rule->AddSpecification(*spec);    
 
     size_t index = 0;
     bool checkedWidget = false;
@@ -145,8 +145,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, UsesRelatedInstanceProperties
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
-    rule->GetSpecificationsR().push_back(spec);    
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
+    rule->AddSpecification(*spec);    
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     ASSERT_EQ(3, provider->GetNodesCount());
@@ -175,7 +175,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec); 
+    rule->AddSpecification(*spec); 
 
     size_t index = 0;
     bool checkedWidget = false;
@@ -213,13 +213,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildrenIfHideNodesInH
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     ChildNodeRule* childRule = new ChildNodeRule("", 1, false, TargetTree_Both);
-    spec->GetNestedRules().push_back(childRule);
+    spec->AddNestedRule(*childRule);
 
     CustomNodeSpecification* customNodeSpec = new CustomNodeSpecification(1, false, "Custom", "Custom", "", "Custom");
-    childRule->GetSpecificationsR().push_back(customNodeSpec);
+    childRule->AddSpecification(*customNodeSpec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -245,7 +245,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -274,11 +274,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new ClassGroup("", false, "", ""));
+    groupingRule->AddGroup(*new ClassGroup("", false, "", ""));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -301,7 +301,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsFalseWhenQueryR
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -319,7 +319,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsTrueWhenQueryRe
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -337,7 +337,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, NodesCount_SimpleCase)
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -369,13 +369,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithHideNodesInHie
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     ChildNodeRule* childRule = new ChildNodeRule("", 1, false, TargetTree_Both);
-    spec->GetNestedRules().push_back(childRule);
+    spec->AddNestedRule(*childRule);
 
     CustomNodeSpecification* customNodeSpec = new CustomNodeSpecification(1, false, "Custom", "Custom", "", "Custom");
-    childRule->GetSpecificationsR().push_back(customNodeSpec);
+    childRule->AddSpecification(*customNodeSpec);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -400,7 +400,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -434,10 +434,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new SameLabelInstanceGroup(""));
+    groupingRule->AddGroup(*new SameLabelInstanceGroup(""));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
@@ -469,11 +469,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithGroupingRuleNo
     m_context->SetRootNodeContext(*rule);
 
     GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->GetGroupsR().push_back(new ClassGroup("", false, "", ""));
+    groupingRule->AddGroup(*new ClassGroup("", false, "", ""));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
@@ -507,7 +507,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, CustomizesNodes)
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);    
+    rule->AddSpecification(*spec);    
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -537,10 +537,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsInstanceNode", 1000, false, TargetTree_Both);
-    childRule->GetSpecificationsR().push_back(new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     m_ruleset->AddPresentationRule(*childRule);
 
     size_t index = 0;
@@ -570,7 +570,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenTheresOn
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -611,13 +611,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassF", "", "", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
 
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
@@ -659,14 +659,14 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     propertyGroup->SetCreateGroupForUnspecifiedValues(false);
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    groupingRule->AddGroup(*propertyGroup);
 
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
@@ -701,7 +701,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClass
     m_context->SetRootNodeContext(*rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "this.GetRelatedValue(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\", \"MyID\")", ""));
 

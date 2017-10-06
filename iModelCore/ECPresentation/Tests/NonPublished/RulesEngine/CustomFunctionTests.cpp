@@ -315,8 +315,8 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelI
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRange)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
     
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -339,8 +339,8 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLabel)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
     
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -363,8 +363,8 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLab
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeValues)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("", "", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "9"));
     
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -454,8 +454,8 @@ struct CustomAttributeSetter
 TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -476,8 +476,8 @@ TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
 TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -498,8 +498,8 @@ TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
 TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatchAnyRange)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
@@ -520,8 +520,8 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatch
 TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsRangeImageIdIfValueMatches)
     {
     PropertyGroup spec("", "", true, "DoubleProperty");
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
-    spec.GetRangesR().push_back(new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
+    spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");

@@ -321,10 +321,10 @@ TEST_F(PresentationRulesTests, TestPresentationRules)
 
     GroupingRuleP groupingRule = new GroupingRule("TestCondition7", 8, true, "DummySchemaName", "DummyClassName", "ContextMenuCondition", "ContextMenuLabel", "SettingsId");
     ClassGroupP classGroup = new ClassGroup("ContextMenuLabel", true, "SchemaName", "BaseClassName");
-    groupingRule->GetGroupsR().push_back(classGroup);
+    groupingRule->AddGroup(*classGroup);
     PropertyGroupP propertyGroup = new PropertyGroup("ImageId", "ContextMenuLabel", true, "PropertyName");
-    propertyGroup->GetRangesR().push_back(new PropertyRangeGroupSpecification("Label", "ImageId", "FromValue", "ToValue"));
-    groupingRule->GetGroupsR().push_back(propertyGroup);
+    propertyGroup->AddRange(*new PropertyRangeGroupSpecification("Label", "ImageId", "FromValue", "ToValue"));
+    groupingRule->AddGroup(*propertyGroup);
     ruleSet->AddPresentationRule(*groupingRule);
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("checkBoxCondition", 9, true, "checkBoxProperty", false, false, "");
@@ -573,12 +573,12 @@ TEST(GroupingRulesTest, TestGroupingRules)
 
     ClassGroupP classGroup = new ClassGroup("ClassMenuLabel", true, "DummySchemaName", "DummyBaseClass");
     PropertyGroupP propertyGroup = new PropertyGroup("PropertyContextMenuLabel", "DummyImageId", true, "DummyPropertyName");
-    propertyGroup->GetRangesR().push_back(new PropertyRangeGroupSpecification("PropertySpecificationLabel", "PropertySpecificationImageId", "1", "5"));
+    propertyGroup->AddRange(*new PropertyRangeGroupSpecification("PropertySpecificationLabel", "PropertySpecificationImageId", "1", "5"));
     SameLabelInstanceGroupP sameLabelInstanceGroup = new SameLabelInstanceGroup("sameLabelContextMenuLabel");
 
-    groupingRule.GetGroupsR().push_back(classGroup);
-    groupingRule.GetGroupsR().push_back(propertyGroup);
-    groupingRule.GetGroupsR().push_back(sameLabelInstanceGroup);
+    groupingRule.AddGroup(*classGroup);
+    groupingRule.AddGroup(*propertyGroup);
+    groupingRule.AddGroup(*sameLabelInstanceGroup);
 
     ASSERT_STREQ("GroupTestCondition", groupingRule.GetCondition().c_str());
     ASSERT_STREQ("ContextMenuCondition", groupingRule.GetContextMenuCondition().c_str());
@@ -673,19 +673,19 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
     RootNodeRuleP rootNodeRule = new RootNodeRule("TestCondition1", 1, true, TargetTree_Both, false);
     ASSERT_TRUE(nullptr != rootNodeRule);
     ruleSet->AddPresentationRule(*rootNodeRule);
-    rootNodeRule->GetCustomizationRulesR().push_back(new ImageIdOverride("TestCondition3", 4, "ImageIdOverrideTestValue"));
+    rootNodeRule->AddCustomizationRule(*new ImageIdOverride("TestCondition3", 4, "ImageIdOverrideTestValue"));
 
     ChildNodeRuleP childNodeRule = new ChildNodeRule("TestCondition2", 2, true, TargetTree_Both);
     ruleSet->AddPresentationRule(*childNodeRule);
-    childNodeRule->GetCustomizationRulesR().push_back(new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
-    childNodeRule->GetCustomizationRulesR().push_back(new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
-    childNodeRule->GetCustomizationRulesR().push_back(new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
+    childNodeRule->AddCustomizationRule(*new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
+    childNodeRule->AddCustomizationRule(*new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
+    childNodeRule->AddCustomizationRule(*new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
-    nestedChildNodeRule->GetCustomizationRulesR().push_back(new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
-    spec->GetNestedRules().push_back(nestedChildNodeRule);
-    ruleSet->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
+    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
+    spec->AddNestedRule(*nestedChildNodeRule);
+    ruleSet->GetChildNodesRules()[0]->AddSpecification(*spec);
 
     StyleOverrideP styleOverride = new StyleOverride("TestCondition7", 7, "Blue", "Red", "Bold");
     ASSERT_TRUE(nullptr != styleOverride);

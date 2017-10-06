@@ -30,7 +30,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NonInstanceParentNo
     {
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
     TestNavNodePtr parentNode = TestNodesHelper::CreateCustomNode("TestType", "label", "");
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_TRUE(queries.empty());
@@ -42,7 +42,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NonInstanceParentNo
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_SupportedSchemas_DifferentThanRootInstanceSchema)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "Basic1");
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -55,7 +55,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_SupportedSchemas_Di
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_AllowsStandardSchemasIfExplicitylySpecified)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("ECDbMeta", "ECSchemaDef"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "ECDbMeta");
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -68,7 +68,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_AllowsStandardSchem
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_ForwardRelationDirection)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
@@ -91,7 +91,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_ForwardR
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BackwardRelationDirection)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
@@ -114,7 +114,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_Backward
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BothDirections)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
@@ -137,7 +137,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_NoGrouping_BothDire
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass)
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, 0, "RulesEngineTest");
 
@@ -160,14 +160,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass_Childr
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
     TestNavNodePtr groupingNode = TestNodesHelper::CreateClassGroupingNode(*GetECClass("RulesEngineTest", "Widget"), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    groupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    groupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*groupingNode, false);
     NavNodeExtendedData extendedData(*groupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *groupingNode);
@@ -198,14 +198,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
     NavNodeExtendedData extendedData(*relationshipGroupingNode);
     
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, true, false, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Relationship);
     extendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     extendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -232,14 +232,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(classA);
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(classAHasBAndC, "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
     NavNodeExtendedData extendedData(*relationshipGroupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, true, false, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Relationship);
     extendedData.SetParentECClassId(GetECClass("RulesEngineTest", "ClassA")->GetId());
     extendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -262,7 +262,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
 TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel)
     {
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, true, 0, "RulesEngineTest");
@@ -285,14 +285,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByLabel_Childr
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
     JsonNavNodePtr groupingNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    groupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    groupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*groupingNode, false);
     NavNodeExtendedData extendedData(*groupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, true, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     extendedData.SetGroupedInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
 
@@ -315,14 +315,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
     TestNavNodePtr groupingNode = TestNodesHelper::CreateClassGroupingNode(*GetECClass("RulesEngineTest", "Widget"), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    groupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    groupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*groupingNode, false);
     NavNodeExtendedData extendedData(*groupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *groupingNode);
@@ -346,20 +346,20 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*GetECClass("RulesEngineTest", "Widget"), "Class Grouping Node");
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
     
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
+    m_nodesCache.Cache(*classGroupingNode, false);
     labelGroupingNode->SetParentNode(*classGroupingNode);
-    classGroupingNode->SetParentNode(*rootInstanceNode);
-    m_nodesCache.Cache(*classGroupingNode, false);    
     m_nodesCache.Cache(*rootInstanceNode, false);
+    classGroupingNode->SetParentNode(*rootInstanceNode); 
     m_nodesCache.Cache(*labelGroupingNode, false);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, false, true, 0, "RulesEngineTest");
     
     NavNodeExtendedData classNodeExtendedData(*classGroupingNode);
     NavNodeExtendedData labelNodeExtendedData(*labelGroupingNode);
-    classNodeExtendedData.SetSpecificationId(spec.GetId());
+    classNodeExtendedData.SetSpecificationHash(spec.GetHash());
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    labelNodeExtendedData.SetSpecificationId(spec.GetId());
+    labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     labelNodeExtendedData.SetGroupedInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
 
@@ -382,14 +382,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
     NavNodeExtendedData extendedData(*relationshipGroupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, true, false, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Relationship);
     extendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     extendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -413,12 +413,12 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*GetECClass("RulesEngineTest", "Gadget"), "MyLabel");
-    classGroupingNode->SetParentNode(*relationshipGroupingNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
+    classGroupingNode->SetParentNode(*relationshipGroupingNode);
     m_nodesCache.Cache(*classGroupingNode, false);
     NavNodeExtendedData relationshipNodeExtendedData(*relationshipGroupingNode);
     NavNodeExtendedData classNodeExtendedData(*classGroupingNode);
@@ -426,9 +426,9 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, true, false, 0, "RulesEngineTest");
     relationshipNodeExtendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     relationshipNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-    relationshipNodeExtendedData.SetSpecificationId(spec.GetId());
+    relationshipNodeExtendedData.SetSpecificationHash(spec.GetHash());
     relationshipNodeExtendedData.SetGroupingType((int)GroupingType::Relationship);
-    classNodeExtendedData.SetSpecificationId(spec.GetId());
+    classNodeExtendedData.SetSpecificationHash(spec.GetHash());
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *classGroupingNode);
@@ -450,14 +450,14 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
     NavNodeExtendedData extendedData(*relationshipGroupingNode);
 
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, true, true, 0, "RulesEngineTest");
-    extendedData.SetSpecificationId(spec.GetId());
+    extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Relationship);
     extendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     extendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -481,22 +481,22 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "MyLabel");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     NavNodeExtendedData relationshipNodeExtendedData(*relationshipGroupingNode);
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
-    labelGroupingNode->SetParentNode(*relationshipGroupingNode);
     m_nodesCache.Cache(*relationshipGroupingNode, false);
+    labelGroupingNode->SetParentNode(*relationshipGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
     NavNodeExtendedData labelNodeExtendedData(*labelGroupingNode);
     
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, true, true, 0, "RulesEngineTest");
-    relationshipNodeExtendedData.SetSpecificationId(spec.GetId());
+    relationshipNodeExtendedData.SetSpecificationHash(spec.GetHash());
     relationshipNodeExtendedData.SetGroupingType((int)GroupingType::Relationship);
     relationshipNodeExtendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     relationshipNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-    labelNodeExtendedData.SetSpecificationId(spec.GetId());
+    labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     labelNodeExtendedData.SetGroupedInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
 
@@ -520,28 +520,28 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*GetECClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP(), "Relationship Grouping Node");
-    rootInstanceNode->SetParentNodeId(NavNode::CreateNodeId());
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
+    rootInstanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*rootInstanceNode, false);
+    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
     NavNodeExtendedData relationshipNodeExtendedData(*relationshipGroupingNode);
+    m_nodesCache.Cache(*relationshipGroupingNode, false);
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*GetECClass("RulesEngineTest", "Gadget"), "Class Grouping Node");
     classGroupingNode->SetParentNode(*relationshipGroupingNode);
-    m_nodesCache.Cache(*relationshipGroupingNode, false);
     NavNodeExtendedData classNodeExtendedData(*classGroupingNode);
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
-    labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*classGroupingNode, false);
+    labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
     NavNodeExtendedData labelNodeExtendedData(*labelGroupingNode);
     
     AllRelatedInstanceNodesSpecification spec(1, false, false, false, true, true, true, 0, "RulesEngineTest");
-    relationshipNodeExtendedData.SetSpecificationId(spec.GetId());
+    relationshipNodeExtendedData.SetSpecificationHash(spec.GetHash());
     relationshipNodeExtendedData.SetGroupingType((int)GroupingType::Relationship);
     relationshipNodeExtendedData.SetParentECClassId(GetECClass("RulesEngineTest", "Widget")->GetId());
     relationshipNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-    classNodeExtendedData.SetSpecificationId(spec.GetId());
+    classNodeExtendedData.SetSpecificationHash(spec.GetHash());
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    labelNodeExtendedData.SetSpecificationId(spec.GetId());
+    labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupedInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);

@@ -213,23 +213,23 @@ struct RulesPreprocessor
     {
     private:
         NavNodeCP m_parentNode;
-        int m_specificationId;
+        Utf8StringCR m_specificationHash;
     public:
         //! Constructor.
         //! @param[in] parentNode The parent node whose children the rules will be applied to.
-        //! @param[in] specificationId The Id of specification which nests customization rule
+        //! @param[in] specificationHash The Hash of specification which nests customization rule
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        AggregateCustomizationRuleParameters(NavNodeCP parentNode, int specificationId, BeSQLite::EC::ECDbCR connection, PresentationRuleSetCR ruleset, 
+        AggregateCustomizationRuleParameters(NavNodeCP parentNode, Utf8StringCR specificationHash, BeSQLite::EC::ECDbCR connection, PresentationRuleSetCR ruleset, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode), m_specificationId(specificationId)
+            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode), m_specificationHash(specificationHash)
             {}
         //! Get the parent node.
         NavNodeCP GetParentNode() const {return m_parentNode;}
         //! Get specification Id
-        int GetSpecificationId() const {return m_specificationId;}
+        Utf8StringCR GetSpecificationHash() const {return m_specificationHash;}
     };
 
     //===================================================================================
@@ -286,12 +286,12 @@ struct RulesPreprocessor
 private:
     RulesPreprocessor() {}
     static bool VerifyCondition(Utf8CP condition, ExpressionContextR, ECExpressionsCache&, OptimizedExpressionsParameters const*);
-    static void AddSpecificationsByHierarchy(PresentationRuleSetCR, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, ChildNodeRuleSpecificationsList& specs, bool& handled, bool& stopProcessing);
-    template<typename RuleType> static bool AddSpecificationsByHierarchy(bvector<RuleType*> const& rules, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
+    static void AddSpecificationsByHierarchy(PresentationRuleSetCR, Utf8CP specificationHash, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, ChildNodeRuleSpecificationsList& specs, bool& handled, bool& stopProcessing);
+    template<typename RuleType> static bool AddSpecificationsByHierarchy(bvector<RuleType*> const& rules, Utf8CP specificationHash, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
     template<typename RuleType> static bool AddMatchingSpecifications(bvector<RuleType*> const& rules, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled);
     template<typename RuleType> static void ProcessSubConditions(RuleType const& rule, SubConditionList const&, ExpressionContextR, ECExpressionsCache&, bvector<NavigationRuleSpecification<RuleType>>& specs);
-    template<typename RuleType> static bool ProcessSpecificationsById(RuleType const& rule, ChildNodeSpecificationList const& searchIn, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
-    template<typename RuleType> static bool ProcessSpecificationsById(RuleType const& rule, SubConditionList const&, int specificationId, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
+    template<typename RuleType> static bool ProcessSpecificationsByHash(RuleType const& rule, ChildNodeSpecificationList const& searchIn, Utf8CP specificationHash, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
+    template<typename RuleType> static bool ProcessSpecificationsByHash(RuleType const& rule, SubConditionList const&, Utf8CP specificationHash, bool requested, RuleTargetTree, ExpressionContextR, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing);
 
 public:
 /** @name Rule sets */
