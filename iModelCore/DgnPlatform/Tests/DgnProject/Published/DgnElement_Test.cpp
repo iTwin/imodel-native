@@ -1131,6 +1131,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
 TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     {
     SetupSeedProject();
+
     DgnElementId elementId;
     uint32_t iArrayOfStructs;
     ECN::ECValue checkValue;
@@ -2306,4 +2307,50 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
     ASSERT_EQ(elep->GetDisplayLabel(), "SubjectChild2");
     info = m_db->Elements().Get<Subject>(subele2->GetElementId());
     ASSERT_EQ(info->GetDescription(), "Child2");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, InsertPerformance1)
+    {
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true);
+
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnModelId modelId = model->GetModelId();
+
+    int elementCount = 10000;
+    for (int i=0; i<elementCount; ++i)
+        {
+        TestElementPtr el = TestElement::Create(*m_db, modelId, m_defaultCategoryId);
+        el->SetPropertyValue("IntegerProperty1", i);        // auto-handled
+        el->SetPropertyValue("IntegerProperty2", i);        // auto-handled
+        el->SetPropertyValue("IntegerProperty3", i);        // auto-handled
+        el->SetPropertyValue("IntegerProperty4", i);        // auto-handled
+        el->SetPropertyValue("TestElementProperty", i);     // custom-handled
+        el->SetPropertyValue("DoubleProperty1", i);
+        el->SetPropertyValue("DoubleProperty2", i);
+        el->SetPropertyValue("DoubleProperty3", i);
+        el->SetPropertyValue("DoubleProperty4", i);
+        el->SetPropertyValue("b", (0 == (i % 100)));
+        DPoint3d pt = DPoint3d::From(i, 0, 0);
+        el->SetPropertyValue("PointProperty1", pt);
+        el->SetPropertyValue("PointProperty2", pt);
+        el->SetPropertyValue("PointProperty3", pt);
+        el->SetPropertyValue("PointProperty4", pt);
+        DateTime dtUtc;
+        DateTime::FromString(dtUtc, "2013-09-15 12:05:39");
+        el->SetPropertyValue("dtUtc", dtUtc);
+
+        ASSERT_TRUE(el->Insert().IsValid());
+        if (0 == (i % 100))
+            m_db->SaveChanges();
+        }
+
+    m_db->SaveChanges();
+
+    ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "select count(*) from DgnPlatformTest.TestElement");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(elementCount, stmt.GetValueInt(0));
     }
