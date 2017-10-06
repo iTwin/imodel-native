@@ -27,6 +27,22 @@ cDefs +% -D__BE_SQLITE_HOST_DLL__
     cDefs + -D__BE_SQLITE_WINRT__
 %endif
 
+# Alloc 4000 pages allocated in advance  (default 20)
+cDefs + -DSQLITE_DEFAULT_PCACHE_INITSZ=4000
+# Alloc 4000 pages is page cache size (default 2000)
+cDefs + -DSQLITE_DEFAULT_CACHE_SIZE=4000
+
+#64*4096 default(64*1024)
+cDefs + -DSQLITE_STMTJRNL_SPILL=262144
+cDefs + -DSQLITE_DEFAULT_AUTOVACUUM=1
+cDefs + -DSQLITE_TEMP_STORE=3
+
+cDefs + -DSQLITE_OMIT_DEPRECATED
+cDefs + -DSQLITE_OMIT_AUTHORIZATION
+cDefs + -DSQLITE_OMIT_PROGRESS_CALLBACK
+cDefs + -DSQLITE_OMIT_COMPLETE
+cDefs + -DSQLITE_OMIT_WAL
+
 baseDir                 = $(_MakeFilePath)
 SQLiteDir               = $(baseDir)SQLite/
 SubpartLibs             = $(BuildContext)SubParts/Libs/
