@@ -599,39 +599,11 @@ TEST_F(SchemaRulesTestFixture, CircularStructReferences)
                      </ECEntityClass>
                     </ECSchema>)xml"))) << "Circular references of two structs.";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECStructClass typeName="StructA" >
-                       <ECStructProperty propertyName="B" typeName="StructB" />
-                     </ECStructClass>
-                    <ECStructClass typeName="StructB" >
-                       <ECStructProperty propertyName="A" typeName="StructA" />
-                     </ECStructClass>
-                    <ECEntityClass typeName="Foo" >
-                       <ECStructArrayProperty propertyName="A" typeName="StructA" />
-                       <ECStructArrayProperty propertyName="B" typeName="StructB" />
-                     </ECEntityClass>
-                    </ECSchema>)xml"))) << "Circular references of two structs.";
-
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECStructClass typeName="StructA" >
-                       <ECStructProperty propertyName="B" typeName="StructB" />
-                     </ECStructClass>
-                    <ECStructClass typeName="StructB" >
-                       <ECStructProperty propertyName="A" typeName="StructA" />
-                     </ECStructClass>
-                    <ECEntityClass typeName="Foo" >
-                       <ECStructProperty propertyName="A" typeName="StructA" />
-                       <ECStructProperty propertyName="B" typeName="StructB" />
-                     </ECEntityClass>
-                    </ECSchema>)xml"))) << "Circular references of two structs.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECStructClass typeName="StructA" >
                        <ECStructProperty propertyName="A2" typeName="StructA" />
                      </ECStructClass>
-                    <ECEntityClass typeName="Foo" >
-                       <ECStructProperty propertyName="A1" typeName="StructA" />
-                     </ECEntityClass>
                     </ECSchema>)xml"))) << "Circular references of two structs.";
 
 
