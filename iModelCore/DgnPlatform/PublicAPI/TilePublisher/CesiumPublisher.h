@@ -58,6 +58,8 @@ protected:
     Utf8String                      m_userName;
     Utf8String                      m_password;
     Utf8String                      m_environment;
+    Utf8String                      m_project = "iModelHubTest";
+    Utf8String                      m_repository;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
@@ -88,6 +90,8 @@ public:
     Utf8StringCR GetUser() const { return m_userName; }
     Utf8StringCR GetPassword() const { return m_password; }
     Utf8StringCR GetEnvironment() const { return m_environment; }
+    Utf8StringCR GetProject() const { return m_project; }
+    Utf8StringCR GetRepository() const { return m_repository; }
 
 };
 

@@ -76,9 +76,8 @@ static StatusInt getAllChangeSets(bvector<DgnRevisionPtr>& changesets, DgnDbR db
     {
     bool isBackwardsRoll;
     Utf8String filename(db.GetFileName().GetFileNameWithoutExtension());
-    Utf8String firstChangesetId = VersionSelector::GetFileFirstChangeSet(client, &db, filename);
 
-    return VersionSelector::GetChangeSetsToApply(changesets, isBackwardsRoll, client, &db, firstChangesetId, filename);
+    return VersionSelector::GetChangeSetsToApply(changesets, isBackwardsRoll, client, &db, "MasterFile", filename);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,9 +167,6 @@ static ClientPtr   doSignIn(PublisherParams const& params)
     return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
     }
 
-#ifdef NOT_NOW
-// This acquires a temporary briefcase at TIP - We're not using it now as we are always working from 
-// an existing briefcase.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -182,14 +178,19 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
     tempDbName.BuildName(nullptr, tempPath.c_str(), WString(repositoryName.c_str(), false).c_str(), L".ibim");
 
+#ifdef NOTNOW_BRIEFCASE_IS_ROLLED_BACK
     DgnDbPtr    existingBriefcase = DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (existingBriefcase.IsValid())
         return existingBriefcase;
+#endif
 
     WebServices::WSError wserror;
     auto projectId = iModel::Hub::ClientHelper::GetInstance()->QueryProjectId(&wserror, projectName);
 
-    auto getIModelResult = client->GetiModelByName(projectId, repositoryName)->GetResult();
+    Utf8String      repositoryNameNoSpaces = repositoryName;
+
+    repositoryNameNoSpaces.ReplaceAll(" ", "%20");
+    auto getIModelResult = client->GetiModelByName(projectId, repositoryNameNoSpaces)->GetResult();
 
     if (!getIModelResult.IsSuccess())
         return nullptr;
@@ -204,9 +205,7 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
-#endif
-// This acquires a temporary briefcase at TIP - We're not using it now as we are always working from 
-// an existing briefcase.
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -228,7 +227,6 @@ DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbN
         }
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
-
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
@@ -285,18 +283,51 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
    
 };  // TilesetRevisionPublisher
 
+#define FABRICATE_FAKE_REVISION_DATA
+#ifdef FABRICATE_FAKE_REVISION_DATA
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void fabricateFakeRevisionData(Json::Value& revisionJson)
+    {
+    static          double s_time = 0.0;
+    static          double s_fakeTimeInterval = 2.32;     
+    static char*    s_fakeUsers[] = {"John Braun", "Charles Johnson", "Sharon Kowalski" };
+    static char*    s_fakeDescriptions[] = {"Add HVAC", "Modify roof", "Add plumbing" };
+    static int      s_fakeUserIndex, s_fakeDescriptionIndex;
+    DateTime::Info  info;
+
+    if (0.0 == s_time)
+        DateTime::GetCurrentTime().ToJulianDay(s_time);
+
+
+    if (!revisionJson.isMember("Date"))
+        revisionJson["Date"] = s_time;
+
+    if (0 == revisionJson["User"].asString().size())
+        revisionJson["User"] = s_fakeUsers[s_fakeUserIndex++ % 3];
+
+    s_time -= s_fakeTimeInterval;
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(PublisherParamsR params)
     {
     auto client = doSignIn(params);
-
+    
     if (!client.IsValid())
         return Status::CantConnectToIModelHub;
 
     BeFileName  tempDbName;
-    auto        tempDb = copyToTemporaryBriefcase(tempDbName, params.GetInputFileName());
+    DgnDbPtr    tempDb;
+
+    if (!params.GetInputFileName().empty())
+        tempDb = copyToTemporaryBriefcase(tempDbName, params.GetInputFileName());
+    else
+        tempDb = acquireTemporaryBriefcase (tempDbName, client, params.GetProject(), params.GetRepository());
 
     if (!tempDb.IsValid())
         return Status::CantAcquireBriefcase;
@@ -312,6 +343,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
     getAllChangeSets(changeSets, *tempDb, client);
 
+    printf ("Publishing History with %d Revisions", (int) changeSets.size());
     TilesetPublisher  tilesetPublisher(*tempDb, params, viewsToPublish, defaultView);
 
     tilesetPublisher.InitializeDirectories(tilesetPublisher.GetDataDirectory());
@@ -323,6 +355,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
              
         getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
 
+        printf ("Revision: %d Contains %d changed elements", i, (int) elementIds.size());
         if (!elementIds.empty())
             {
             Json::Value         revisionElementsJson = Json::objectValue;
@@ -351,6 +384,9 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                 }
 
             Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+#ifdef FABRICATE_FAKE_REVISION_DATA
+            fabricateFakeRevisionData(revisionJson); 
+#endif
 
             if (!addedOrModifiedIds.empty())
                 {
@@ -363,6 +399,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                 revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
                 revisionJson["models"] = revisionPublisher.GetModelsJson(modelIds);
                 }
+            
             Utf8String  revisionName = Utf8PrintfString("Revision: %d", changeSets.size() - i);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
 
             revisionJson["name"] = revisionName;
@@ -371,7 +408,8 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
             }
 
         // Roll to previous revision.
-        VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), changeSets.at(i)->GetId(), Utf8String(tempDbName));
+        Utf8String          rollTo = (i == changeSets.size() - 1) ? "MasterFile" : changeSets.at(i+1)->GetId();
+        VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), rollTo, Utf8String(tempDbName));
         }
     Json::Value     revisionsJson;
     for (auto& revisionJson : revisionJsons)
