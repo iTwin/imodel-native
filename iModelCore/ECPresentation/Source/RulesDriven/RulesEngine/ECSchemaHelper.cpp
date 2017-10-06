@@ -1106,6 +1106,12 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 template<typename TSet>
 static IdSetHelper::BindSetAction CreateInVirtualSetClauseInternal(Utf8StringR clause, TSet const& set, Utf8StringCR idFieldName)
     {
+    if (set.empty())
+        {
+        clause.assign("0");
+        return IdSetHelper::BIND_Ids;
+        }
+
     if (set.size() > 100)
         {
         clause.assign("InVirtualSet(?, ");
@@ -1114,7 +1120,7 @@ static IdSetHelper::BindSetAction CreateInVirtualSetClauseInternal(Utf8StringR c
         }
     
     Utf8String idsArg(set.size() * 2 - 1, '?');
-    for (size_t i = 1; i < set.size(); i += 2)
+    for (size_t i = 1; i < set.size() * 2; i += 2)
         idsArg[i] = ',';
     clause.assign(idFieldName).append(" IN (");
     clause.append(idsArg).append(")");

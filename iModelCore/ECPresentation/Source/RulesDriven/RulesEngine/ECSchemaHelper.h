@@ -244,8 +244,8 @@ struct IdSetHelper : NonCopyableClass
 private:
     IdSetHelper() {}
 public:
-    static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName);
-    static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, BeSQLite::IdSet<ECClassId> const& keys, Utf8StringCR idFieldName);
+    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName);
+    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, BeSQLite::IdSet<ECClassId> const& keys, Utf8StringCR idFieldName);
 };
 
 /*=================================================================================**//**
