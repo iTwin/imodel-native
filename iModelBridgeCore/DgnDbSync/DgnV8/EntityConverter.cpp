@@ -331,15 +331,26 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
             return BSIERROR;
         }
 
-	BECN::ECSchemaR targetSchema = inputClass->GetSchemaR();
-	if (ShouldConvertECClassToMixin(targetSchema, *inputClass, context))
-		{
-		ECClassP appliesTo;
-		if (BSISUCCESS == FindAppliesToClass(appliesTo, context, targetSchema, *inputClass))
-			ConvertECClassToMixin(targetSchema, *inputClass, *appliesTo);
-		}
-
     return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisClassConverter::CheckForMixinConversion(SchemaConversionContext& context, BECN::ECClassR inputClass)
+    {
+    BECN::ECSchemaR targetSchema = inputClass.GetSchemaR();
+    if (ShouldConvertECClassToMixin(targetSchema, inputClass, context))
+        {
+        ECClassP appliesTo;
+        if (BSISUCCESS == FindAppliesToClass(appliesTo, context, targetSchema, inputClass))
+            ConvertECClassToMixin(targetSchema, inputClass, *appliesTo);
+        }
+
+    for (BECN::ECClassP childClass : inputClass.GetDerivedClasses())
+        {
+        CheckForMixinConversion(context, *childClass);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1061,6 +1072,25 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void findBase(ECClassCP &inputClass)
+    {
+    ECClassCP test = inputClass;
+    while (true)
+        {
+        if (!test->HasBaseClasses())
+            break;
+        ECClassCP t2 = *test->GetBaseClasses().begin();
+        if (t2->GetName().Equals(inputClass->GetName()))
+            test = t2;
+        else
+            break;
+        }
+    inputClass = test;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                 Simi.Hartstein      06/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -1071,7 +1101,13 @@ BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::Mix
 		{
 		ECClassCP baseInterface = schema->GetClassCP("BaseInterface");
 		ECClassCP baseObject = schema->GetClassCP("BaseObject");
-		if (baseInterface != nullptr && baseObject != nullptr)
+        if (nullptr != baseInterface)
+            findBase(baseInterface);
+
+        if (nullptr != baseObject)
+            findBase(baseObject);
+
+        if (baseInterface != nullptr && baseObject != nullptr)
 			{
 			mixinContext = SchemaConversionContext::MixinContext(baseInterface, baseObject);
 			return BSISUCCESS;
@@ -1282,7 +1318,7 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
 
     ECClassCP abstractConstraint = inputClass.GetTarget().GetAbstractConstraint();
     if (nullptr == abstractConstraint || abstractConstraint->Is(GetDefaultConstraintClass()) || 
-		abstractConstraint->IsEntityClass() && abstractConstraint->GetEntityClassCP()->IsMixin())
+		(abstractConstraint->IsEntityClass() && abstractConstraint->GetEntityClassCP()->IsMixin()))
         return m_domainRelationshipBaseClass;
     return m_aspectRelationshipBaseClass;
     }
