@@ -329,11 +329,11 @@ struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
         classes.push_back(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
         return classes;
         }
-    static std::array<int, 3> GetInitalInstanceCount() 
-        { 
-        return  {10000,100000,1000000}; 
+    static std::array<int, 3> GetInitalInstanceCount()
+        {
+        return  {10000, 100000, 1000000};
         }
-    static std::array<int, 3> GetOpCount() { return  {1000,2000,3000}; }
+    static std::array<int, 3> GetOpCount() { return  {1000, 2000, 3000}; }
     void Execute(Op op)
         {
         //WaitForUserInput();
@@ -366,6 +366,8 @@ struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
                         }
                     }
                 }
+
+            //printf("%s\n", GetDbSettings().c_str());
             }
         }
     };
@@ -393,8 +395,8 @@ TEST_F(PerformanceElementsTests, ClientElementsRead)   { Execute(Op::Select); }
 TEST_F(PerformanceElementsTests, ClientElementsUpdate) { Execute(Op::Update); }
 TEST_F(PerformanceElementsTests, ClientElementsDelete) { Execute(Op::Delete); }
 
-#define CACHE_SPILL //Pragma (SqlPrintfString ("cache_spill= %d", 200000))
-#define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 200000));
+#define CACHE_SPILL Pragma ("cache_spill = off")
+#define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 300000));
 TEST_F(PerformanceElementsTests, ServerElementsInsert) 
     { 
     CACHE_SPILL;

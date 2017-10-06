@@ -6,12 +6,134 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
+#define INFO_SQL R"(with 
+	pr_application_id as (select 1 id, application_id from pragma_application_id()),
+	pr_auto_vacuum as (select 1 id, case auto_vacuum when 0 then 'false' else 'true' end  auto_vacuum from pragma_auto_vacuum()),
+	pr_cache_size as (select 1 id, cache_size from pragma_cache_size()),
+	pr_collation_list as (select 1 id, json('[' || group_concat( '"' ||name ||'"',',') || ']') collation_list from pragma_collation_list()),
+	pr_encoding as (select 1 id, encoding from pragma_encoding()), 
+	pr_foreign_keys as (select 1 id, foreign_keys from pragma_foreign_keys()),
+	pr_freelist_count as (select 1 id, freelist_count from pragma_freelist_count()),
+	pr_journal_mode as (select 1 id, journal_mode from pragma_journal_mode()),
+	pr_journal_size_limit as (select 1 id, journal_size_limit from pragma_journal_size_limit()),
+	pr_legacy_file_format as (select 1 id, case legacy_file_format when 0 then 'true' else 'false' end legacy_file_format from pragma_legacy_file_format()),
+	pr_max_page_count as (select 1 id, max_page_count from pragma_max_page_count()),
+	pr_page_count as (select 1 id, page_count from pragma_page_count()),
+	pr_page_size as (select 1 id, page_size from pragma_page_size()),
+	pr_schema_version as (select 1 id, schema_version from pragma_schema_version()),
+	pr_user_version as (select 1 id, user_version from pragma_user_version()),
+	pr_writable_schema as (select 1 id, case writable_schema when 0 then 'false' else 'true' end writable_schema from pragma_writable_schema()), 
+	ss_cell_size_check as (select 1 id, case cell_size_check when 0 then 'false' else 'true' end cell_size_check from pragma_cell_size_check()),
+	ss_checkpoint_fullfsync as (select 1 id, case checkpoint_fullfsync when 0 then 'false' else 'true' end checkpoint_fullfsync from pragma_checkpoint_fullfsync()),
+	ss_defer_foreign_keys as (select 1 id, case defer_foreign_keys when 0 then 'false' else 'true' end defer_foreign_keys from pragma_defer_foreign_keys()),
+	ss_fullfsync as (select 1 id, case fullfsync  when 0 then 'false' else 'true' end fullfsync from pragma_fullfsync()),
+	ss_ignore_check_constraints as (select 1 id, case ignore_check_constraints when 0 then 'false' else 'true' end ignore_check_constraints from pragma_ignore_check_constraints()),
+	ss_query_only as (select 1 id, case query_only when 0 then 'false' else 'true' end query_only from pragma_query_only()),
+	ss_read_uncommitted as (select 1 id, case read_uncommitted when 0 then 'false' else 'true' end read_uncommitted from pragma_read_uncommitted()),
+	ss_recursive_triggers as (select 1 id, case recursive_triggers when 0 then 'false' else 'true' end recursive_triggers from pragma_recursive_triggers()),
+	ss_reverse_unordered_selects as (select 1 id, case reverse_unordered_selects when 0 then 'false' else 'true' end reverse_unordered_selects from pragma_reverse_unordered_selects()),
+	ss_secure_delete as (select 1 id, case secure_delete when 0 then 'false' else 'true' end secure_delete from pragma_secure_delete()),
+	ss_automatic_index as (select 1 id, case automatic_index when 0 then 'false' else 'true' end automatic_index from pragma_automatic_index()),
+	ss_busy_timeout as (select 1 id, timeout from pragma_busy_timeout()),
+	ss_cache_spill as (select 1 id, cache_spill from pragma_cache_spill()),
+	ss_data_version as (select 1 id, data_version from pragma_data_version()),
+	ss_soft_heap_limit as (select 1 id, soft_heap_limit from pragma_soft_heap_limit()),
+	ss_threads as (select 1 id, threads from pragma_threads()),
+	ss_locking_mode as (select 1 id, locking_mode from pragma_locking_mode()),
+	ss_synchronous as (select 1 id, case synchronous when 0 then 'off' when 1 then 'normal' when 2 then 'full' when 3 then 'extra' end synchronous from pragma_synchronous()),
+	ss_temp_store as (select 1 id, case temp_store when 0 then 'default' when 1 then 'file' when 2 then 'memory' end temp_store from pragma_temp_store()) ,
+	ss_compile_options as (select 1 id, json('[' || group_concat( '"' ||compile_options ||'"',',') || ']') compile_options from pragma_compile_options())
+select 
+	json_object(
+	'application_id', application_id,
+	'auto_vacuum', auto_vacuum,
+	'cache_size', cache_size,
+	'collation_list', json(collation_list),
+	'encoding', encoding,
+	'foreign_keys', foreign_keys,
+	'freelist_count', freelist_count,
+	'journal_mode', journal_mode,
+	'journal_size_limit', journal_size_limit,
+	'legacy_file_format', legacy_file_format,
+	'max_page_count', max_page_count,
+	'page_count', page_count,
+	'page_size', page_size,
+	'schema_version', schema_version,
+	'user_version', user_version,
+	'writable_schema', writable_schema,
+	'cell_size_check', cell_size_check,
+	'checkpoint_fullfsync', checkpoint_fullfsync,
+	'defer_foreign_keys', defer_foreign_keys,
+	'fullfsync', fullfsync,
+	'ignore_check_constraints', ignore_check_constraints,
+	'query_only', query_only,
+	'read_uncommitted', read_uncommitted,
+	'recursive_triggers', recursive_triggers,
+	'reverse_unordered_selects', reverse_unordered_selects,
+	'secure_delete', secure_delete,
+	'automatic_index', automatic_index,
+	'busy_timeout', timeout,
+	'cache_spill', cache_spill,
+	'data_version', data_version,
+	'soft_heap_limit', soft_heap_limit,
+	'threads', threads,
+	'locking_mode', locking_mode,
+	'synchronous', synchronous,
+	'temp_store', temp_store,
+	'compile_options', json(compile_options)) settings
+from pr_application_id
+	join pr_auto_vacuum using (id)
+	join pr_cache_size using (id)
+	join pr_encoding using (id)
+	join pr_foreign_keys using (id)
+	join pr_collation_list using (id)
+	join pr_freelist_count using (id)
+	join pr_journal_mode using (id)
+	join pr_journal_size_limit using (id)
+	join pr_legacy_file_format using (id)
+	join pr_max_page_count using (id)
+	join pr_page_count using (id)
+	join pr_page_size using (id)
+	join pr_schema_version using (id)
+	join pr_user_version using (id)
+	join pr_writable_schema using (id)
+	join ss_cell_size_check using (id)
+	join ss_checkpoint_fullfsync using (id)
+	join ss_defer_foreign_keys using (id)
+	join ss_fullfsync using (id)
+	join ss_ignore_check_constraints using (id)
+	join ss_query_only using (id)
+	join ss_read_uncommitted using (id)
+	join ss_recursive_triggers using (id)
+	join ss_reverse_unordered_selects using (id)
+	join ss_secure_delete using (id)
+	join ss_automatic_index using (id)
+	join ss_busy_timeout using (id)
+	join ss_cache_spill using (id)
+	join ss_data_version using (id)
+	join ss_soft_heap_limit using(id)
+	join ss_threads using(id)
+	join ss_locking_mode using(id)
+	join ss_synchronous using(id)
+	join ss_temp_store using(id)
+	join ss_compile_options using(id))"
 
+Utf8String PerformanceElementsCRUDTestFixture::GetDbSettings() const
+    {
+    if (m_db.IsValid())
+        {
+        Statement stmt;
+        stmt.Prepare(*m_db, INFO_SQL);
+        stmt.Step();
+        return Utf8String(stmt.GetValueText(0));
+        }
+    return "<null>";
+    }
 void PerformanceElementsCRUDTestFixture::ApplyPragmas(Db& db)
     {
     for (Utf8StringCR pragmaCmd : m_pragms)
         {
-        printf("%s\n", pragmaCmd.c_str());
+        //printf("%s\n", pragmaCmd.c_str());
         auto rc = db.ExecuteSql(pragmaCmd.c_str());
         if (BE_SQLITE_OK != rc)
             {
@@ -575,7 +697,6 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
         }
 
     timer.Stop();
-
     m_db->SaveChanges();
     LogTiming(timer, "Element API Update", className, false, initialInstanceCount, opCount);
     }

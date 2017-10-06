@@ -14,8 +14,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DPTEST
-
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -36,6 +34,7 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
             }
         void ResetPragma() { m_pragms.clear(); }
         void ApplyPragmas(Db& db);
+        Utf8String GetDbSettings() const;
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8CP modelName) const;
         void CreateElementsAndInsert(int numInstances, Utf8CP className, Utf8CP modelName) const;
@@ -57,7 +56,6 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
         DgnDbStatus GetPropertyValues(DgnElementCR element, Utf8CP className);
 
         static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
-
         void ApiInsertTime(Utf8CP className, int initialInstanceCount1 = s_initialInstanceCount, int opCount = s_opCount, bool setFederationGuid = false, int idStrategy = 0);
         void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
