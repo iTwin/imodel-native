@@ -6,6 +6,7 @@
         <SubPart PartName="RunBuildingDomainTests"/>
         <SubPart PartName="DesignModelingDomainsSDK-Only"/>
         <SubProduct ProductName="StructuralDomainsTested" PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
+        <SubProduct ProductName="AecUnitsTests"           PartFile="AecUnits"             Repository="DgnDomains-DesignModelingUnits"/>
     </Part>
 
 
@@ -19,10 +20,10 @@
 
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
-        <SubPart PartName="AecUnitsDomain"  PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
         <SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/>
         <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
-        <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"             PartFile="DgnPlatform"           Repository="DgnPlatform" />
 
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
