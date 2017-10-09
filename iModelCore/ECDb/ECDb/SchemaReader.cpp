@@ -1137,7 +1137,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     {
                     double jd = stmt.GetValueDouble(colIx);
                     const uint64_t jdMsec = DateTime::RationalDayToMsec(jd);
-                    val.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+                    val.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
                     break;
                     }
                     case PrimitiveType::PRIMITIVETYPE_Double:
