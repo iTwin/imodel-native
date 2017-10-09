@@ -53,11 +53,6 @@ enum class CacheStatus
 struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
     {
     public:
-        enum class JsonFormat
-            {
-            Raw,
-            Display
-            };
 
     public:
         virtual ~IDataSourceCache()
@@ -227,16 +222,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             ) = 0;
 
         //! Read once cached instance
-        //! format == JsonFormat::Raw - gets flat EC Json instance with additional members:
+        //! Gets flat EC Json instance with additional members:
         //!     DataSourceCache_PROPERTY_RemoteId       - remote id string
         //!     DataSourceCache_PROPERTY_ClassKey       - class key string - "SchemaName.ClassName"
-        //! format == JsonFormat::Display - gets display Json with members:
-        //!     DataSourceCache_PROPERTY_RemoteId       - remote id string
-        //!     DataSourceCache_PROPERTY_ClassKey       - class key string - "SchemaName.ClassName"
-        //!     DataSourceCache_PROPERTY_DisplayInfo    - ECDb ColumnHeaders Json
-        //!     DataSourceCache_PROPERTY_DisplayData    - flat ECDb Json with values formatted for display
-        //!     DataSourceCache_PROPERTY_RawData        - flat ECDb Json with raw values
-        virtual CacheStatus   ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut, JsonFormat format = JsonFormat::Raw) = 0;
+      virtual CacheStatus   ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut) = 0;
 
         //! Read instance with remoteId from cache. Will return nullptr if not found or error occurred.
         virtual IECInstancePtr ReadInstance(ObjectIdCR objectId) = 0;

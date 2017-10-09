@@ -288,7 +288,7 @@ AsyncTaskPtr<void> CachingExample::RunExampleGetObject(CachingDataSourcePtr data
     txn.Commit();
 
     return
-        dataSource->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData, DataSourceCache::JsonFormat::Raw)
+        dataSource->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData)
         ->Then([=] (CachingDataSource::ObjectsResult result)
         {
         if (!result.IsSuccess())
@@ -314,7 +314,7 @@ AsyncTaskPtr<void> CachingExample::RunExampleGetFile(CachingDataSourcePtr dataSo
 
     return
         // Ensure object is in cache, not needed if known that object is in the cache
-        dataSource->GetObject(fileId, CachingDataSource::DataOrigin::CachedOrRemoteData, DataSourceCache::JsonFormat::Raw)
+        dataSource->GetObject(fileId, CachingDataSource::DataOrigin::CachedOrRemoteData)
         ->Then([=] (CachingDataSource::ObjectsResult result)
         {
         if (!result.IsSuccess())
