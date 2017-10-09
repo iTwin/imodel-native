@@ -355,54 +355,60 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP const NestedStructArrayTestSchemaHelper::s_testSchemaXml =
-"<?xml version='1.0' encoding='utf-8'?>"
-"<ECSchema schemaName='NestedStructArrayTest' nameSpacePrefix='nsat' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-"   <ECEntityClass typeName='ClassA' >"
-"       <ECProperty propertyName='I' typeName='int' readOnly='false' />"
-"       <ECProperty propertyName='T' typeName='string' readOnly='false' />"
-"   </ECEntityClass>"
-"   <ECStructClass typeName = 'S4' modifier = 'None'>"
-"       <ECProperty propertyName = 'T' typeName = 'string' readOnly = 'false' />"
-"       <ECProperty propertyName = 'I' typeName = 'int' readOnly = 'false' />"
-"   </ECStructClass>"
-"   <ECStructClass typeName = 'S3' modifier = 'None'>"
-"       <ECProperty propertyName = 'T' typeName = 'string' readOnly = 'false' />"
-"       <ECProperty propertyName = 'I' typeName = 'int' readOnly = 'false' />"
-"       <ECStructArrayProperty propertyName = 'S4ARRAY' typeName = 'S4' readOnly = 'false' minOccurs = '0' maxOccurs = 'unbounded' />"
-"   </ECStructClass>"
-"   <ECStructClass typeName = 'S2' modifier = 'None'>"
-"       <ECProperty propertyName = 'T' typeName = 'string' readOnly = 'false' />"
-"       <ECProperty propertyName = 'I' typeName = 'int' readOnly = 'false' />"
-"       <ECStructArrayProperty propertyName = 'S3ARRAY' typeName = 'S3' readOnly = 'false' minOccurs = '0' maxOccurs = 'unbounded' />"
-"   </ECStructClass>"
-"   <ECStructClass typeName = 'S1' modifier = 'None'>"
-"       <ECProperty propertyName = 'T' typeName = 'string' readOnly = 'false' />"
-"       <ECProperty propertyName = 'I' typeName = 'int' readOnly = 'false' />"
-"       <ECStructArrayProperty propertyName = 'S2ARRAY' typeName = 'S2' readOnly = 'false' minOccurs = '0' maxOccurs = 'unbounded' />"
-"   </ECStructClass>"
-"   <ECEntityClass typeName = 'DerivedA' modifier = 'None'>"
-"       <BaseClass>ClassA</BaseClass>"
-"       <ECProperty propertyName = 'PropDerivedA' typeName = 'int' readOnly = 'false' />"
-"       <ECStructArrayProperty propertyName = 'S1ARRAY' typeName = 'S1' readOnly = 'false' minOccurs = '0' maxOccurs = 'unbounded' />"
-"   </ECEntityClass>"
-"   <ECEntityClass typeName = 'DerivedB' modifier = 'None'>"
-"       <BaseClass>ClassA</BaseClass>"
-"       <ECProperty propertyName = 'PropDerivedB' typeName = 'int' readOnly = 'false' />"
-"   </ECEntityClass>"
-"   <ECEntityClass typeName = 'DoubleDerivedA' modifier = 'None'>"
-"       <BaseClass>DerivedB</BaseClass>"
-"       <ECProperty propertyName = 'PropDoubleDerivedA' typeName = 'int' readOnly = 'false' />"
-"       <ECStructArrayProperty propertyName = 'S1ARRAY' typeName = 'S1' readOnly = 'false' minOccurs = '0' maxOccurs = 'unbounded' />"
-"   </ECEntityClass>"
-"   <ECEntityClass typeName = 'DoubleDerivedB' modifier = 'None'>"
-"       <BaseClass>DerivedB</BaseClass>"
-"       <ECProperty propertyName = 'PropDoubleDerivedB' typeName = 'int' readOnly = 'false' />"
-"   </ECEntityClass>"
-"   <ECEntityClass typeName = 'DoubleDerivedC' modifier = 'None'>"
-"       <BaseClass>DerivedA</BaseClass>"
-"       <ECProperty propertyName = 'PropDoubleDerivedC' typeName = 'int' readOnly = 'false' />"
-"   </ECEntityClass>"
-"</ECSchema>";
+R"xml(<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+   <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+   <ECEntityClass typeName="ClassA" >
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+       <ECProperty propertyName="I" typeName="int" readOnly="false" />
+       <ECProperty propertyName="T" typeName="string" readOnly="false" />
+   </ECEntityClass>
+   <ECStructClass typeName = "S4" modifier = "None">
+       <ECProperty propertyName = "T" typeName = "string" readOnly = "false" />
+       <ECProperty propertyName = "I" typeName = "int" readOnly = "false" />
+   </ECStructClass>
+   <ECStructClass typeName = "S3" modifier = "None">
+       <ECProperty propertyName = "T" typeName = "string" readOnly = "false" />
+       <ECProperty propertyName = "I" typeName = "int" readOnly = "false" />
+       <ECStructArrayProperty propertyName = "S4ARRAY" typeName = "S4" readOnly = "false" minOccurs = "0" maxOccurs = "unbounded" />
+   </ECStructClass>
+   <ECStructClass typeName = "S2" modifier = "None">
+       <ECProperty propertyName = "T" typeName = "string" readOnly = "false" />
+       <ECProperty propertyName = "I" typeName = "int" readOnly = "false" />
+       <ECStructArrayProperty propertyName = "S3ARRAY" typeName = "S3" readOnly = "false" minOccurs = "0" maxOccurs = "unbounded" />
+   </ECStructClass>
+   <ECStructClass typeName = "S1" modifier = "None">
+       <ECProperty propertyName = "T" typeName = "string" readOnly = "false" />
+       <ECProperty propertyName = "I" typeName = "int" readOnly = "false" />
+       <ECStructArrayProperty propertyName = "S2ARRAY" typeName = "S2" readOnly = "false" minOccurs = "0" maxOccurs = "unbounded" />
+   </ECStructClass>
+   <ECEntityClass typeName = "DerivedA" modifier = "None">
+       <BaseClass>ClassA</BaseClass>
+       <ECProperty propertyName = "PropDerivedA" typeName = "int" readOnly = "false" />
+       <ECStructArrayProperty propertyName = "S1ARRAY" typeName = "S1" readOnly = "false" minOccurs = "0" maxOccurs = "unbounded" />
+   </ECEntityClass>
+   <ECEntityClass typeName = "DerivedB" modifier = "None">
+       <BaseClass>ClassA</BaseClass>
+       <ECProperty propertyName = "PropDerivedB" typeName = "int" readOnly = "false" />
+   </ECEntityClass>
+   <ECEntityClass typeName = "DoubleDerivedA" modifier = "None">
+       <BaseClass>DerivedB</BaseClass>
+       <ECProperty propertyName = "PropDoubleDerivedA" typeName = "int" readOnly = "false" />
+       <ECStructArrayProperty propertyName = "S1ARRAY" typeName = "S1" readOnly = "false" minOccurs = "0" maxOccurs = "unbounded" />
+   </ECEntityClass>
+   <ECEntityClass typeName = "DoubleDerivedB" modifier = "None">
+       <BaseClass>DerivedB</BaseClass>
+       <ECProperty propertyName = "PropDoubleDerivedB" typeName = "int" readOnly = "false" />
+   </ECEntityClass>
+   <ECEntityClass typeName = "DoubleDerivedC" modifier = "None">
+       <BaseClass>DerivedA</BaseClass>
+       <ECProperty propertyName = "PropDoubleDerivedC" typeName = "int" readOnly = "false" />
+   </ECEntityClass>
+</ECSchema>)xml";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16

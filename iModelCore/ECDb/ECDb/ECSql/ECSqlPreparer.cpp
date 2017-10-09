@@ -541,23 +541,29 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     BeAssert(table != nullptr);
+    BeAssert(table->GetType() != DbTable::Type::Virtual);
+    BeAssert(!table->GetUpdatableViewInfo().HasView());
+    NativeSqlBuilder nativeSqlSnippet;
+    nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
+    nativeSqlSnippets.push_back(nativeSqlSnippet);
+    return ECSqlStatus::Success;
 
-    //if table is virtual, i.e. does not exist in db, the ECSQL is still valid, but will result
+    /* WIP_UPDATABLEVIEW Should not be needed anymore
+        //if table is virtual, i.e. does not exist in db, the ECSQL is still valid, but will result
     //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
     //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
     //calling the bind API.
     if (table->GetType() == DbTable::Type::Virtual)
         ctx.SetNativeStatementIsNoop(true);
 
-    NativeSqlBuilder nativeSqlSnippet;
-    //INSERTS must always be done into the table, no into the updatable view as we don't have INSERT triggers on the view
+    //INSERTS must always be done into the table, not into the updatable view as we don't have INSERT triggers on the view
     if (currentScopeECSqlType != ECSqlType::Insert && table->GetUpdatableViewInfo().HasView())
         nativeSqlSnippet.AppendEscaped(table->GetUpdatableViewInfo().GetViewName().c_str());
     else
         nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
 
     nativeSqlSnippets.push_back(nativeSqlSnippet);
-    return ECSqlStatus::Success;
+    return ECSqlStatus::Success;*/
     }
 
 //-----------------------------------------------------------------------------------------

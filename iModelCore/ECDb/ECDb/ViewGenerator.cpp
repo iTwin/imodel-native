@@ -88,16 +88,17 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
     Partition const& rootPartition = descr.GetRootHorizontalPartition();
     DbTable const& rootTable = rootPartition.GetTable();
-    //if only root table is non-virtual and other partitions are virtual, no updatable view needed either
-    //Note, this should not happen, as a non-abstract class cannot have abstract subclass
-    if (rootTable.GetType() == DbTable::Type::Virtual)
-        return SUCCESS;
 
     if (rootTable.GetType() != DbTable::Type::Virtual && !descr.HasMultipleNonVirtualHorizontalPartitions())
         {
+        //if only root table is non-virtual and other partitions are virtual, no updatable view needed either
+        //Note, this should not happen, as a non-abstract class cannot have abstract subclass
         BeAssert(horizPartitions.size() == 1);
         return SUCCESS;
         }
+
+    if (rootTable.GetType() == DbTable::Type::Virtual)
+        return SUCCESS;
 
     DbColumn const* rootPartitionIdColumn = rootTable.FindFirst(DbColumn::Kind::ECInstanceId);
 

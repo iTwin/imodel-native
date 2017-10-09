@@ -525,7 +525,6 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
     ASSERT_EQ(SUCCESS, SetupECDb("NullViewCheck.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='SourceEnd'  modifier='Abstract' />"
         "  <ECEntityClass typeName='TargetEnd'  modifier='Abstract' />"
         "  <ECEntityClass typeName='ISourceEnd' modifier='Abstract'>"
@@ -553,7 +552,6 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    m_ecdb.SaveChanges();
     Table ts_ISourceEnd = GetHelper().GetMappedTable("ts_ISourceEnd");
     ASSERT_TRUE(ts_ISourceEnd.Exists()) << "Mapped table ts_ISourceEnd";
     ASSERT_EQ(Table::Type::Virtual, ts_ISourceEnd.GetType()) << "Mapped table ts_ISourceEnd";
@@ -573,28 +571,35 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
     ASSERT_TRUE(ts_TargetEnd.Exists()) << "Mapped table ts_TargetEnd";
     ASSERT_EQ(Table::Type::Virtual, ts_TargetEnd.GetType()) << "Mapped table ts_TargetEnd";
     ASSERT_EQ(2, ts_TargetEnd.GetColumns().size()) << "Mapped table ts_TargetEnd";
-    
-    m_ecdb.SaveChanges();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd                                                                FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId                                     FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.ISourceEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.SourceEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.TargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
 
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ITargetEnd (ECInstanceId) VALUES (1)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ISourceEnd (ECInstanceId,SourceEnd.Id) VALUES (2,2)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceEnd  (ECInstanceId) VALUES (3)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.TargetEnd  (ECInstanceId) VALUES (4)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceHasTarget(SourceECInstanceId, TargetECInstanceId) VALUES (1, 2)"));
+    for (Utf8CP ecsqlSelect : {"SELECT ECInstanceId, ECClassId, SourceEnd FROM ts.ITargetEnd",
+                             "SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd",
+                             "SELECT ECInstanceId, ECClassId FROM ts.ISourceEnd",
+                             "SELECT ECInstanceId, ECClassId FROM ts.SourceEnd",
+                             "SELECT ECInstanceId, ECClassId FROM ts.TargetEnd",
+                            "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"})
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsqlSelect)) << ecsqlSelect;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecsqlSelect;
+        }
 
-
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ISourceEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.TargetEnd"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceHasTarget"));
+    for (Utf8CP ecsql : {"INSERT INTO ts.ITargetEnd (ECInstanceId) VALUES (1)",
+         "INSERT INTO ts.ISourceEnd (ECInstanceId,SourceEnd.Id) VALUES (2,2)",
+         "INSERT INTO ts.SourceEnd  (ECInstanceId) VALUES (3)",
+         "INSERT INTO ts.TargetEnd  (ECInstanceId) VALUES (4)",
+         "INSERT INTO ts.SourceHasTarget(SourceECInstanceId, TargetECInstanceId) VALUES (1, 2)",
+         "DELETE FROM ts.ITargetEnd",
+         "DELETE FROM ts.ISourceEnd",
+         "DELETE FROM ts.SourceEnd",
+         "DELETE FROM ts.TargetEnd",
+         "DELETE FROM ts.SourceHasTarget"})
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1643,23 +1648,38 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                     <BaseClass>Sub2</BaseClass>
                     <ECProperty propertyName="Sub21Prop1" typeName="string" />
                 </ECEntityClass>
+                <ECEntityClass typeName="BaseNonAbstract">
+                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub10" >
+                    <BaseClass>BaseNonAbstract</BaseClass>
+                    <ECProperty propertyName="Sub10Prop1" typeName="string" />
+                </ECEntityClass>
                 </ECSchema>)xml")));
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Base").GetType()) << "abstract class";
     ASSERT_FALSE(GetHelper().TableExists("ts1_Base")) << "Mapped virtual table is expected to not exist in the file";
-    ASSERT_FALSE(GetHelper().TableExists("_ts1_Base")) << "virtual class should not have a updatable view even if it has subclass with table";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Base"));
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Sub1").GetType()) << "abstract class";
     ASSERT_FALSE(GetHelper().TableExists("ts1_Sub1")) << "Mapped virtual table is expected to not exist in the file";
-    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub1"));
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_Sub2").GetType()) << "concrete class";
     ASSERT_TRUE(GetHelper().TableExists("ts1_Sub2")) << "concrete class";
-    ASSERT_TRUE(GetHelper().TableExists("_ts1_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub2"));
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_Sub21").GetType()) << "concrete class";
     ASSERT_TRUE(GetHelper().TableExists("ts1_Sub21")) << "concrete class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub21")) << "no updatable view expected as it is leaf class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub21"));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_BaseNonAbstract").GetType());
+    ASSERT_TRUE(GetHelper().TableExists("ts1_BaseNonAbstract"));
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_BaseNonAbstract"));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_Sub10").GetType());
+    ASSERT_TRUE(GetHelper().TableExists("ts1_Sub10"));
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub10"));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews2.ecdb", SchemaItem(
@@ -1691,19 +1711,19 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECSchema>)xml")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_Base")) << "abstract class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts2_Base")) << "virtual class should not have a updatable view even if it has subclass with table";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Base"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_IMixin")) << "abstract class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts2_IMixin")) << "mixins never have updatable views as they are not updatable";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_IMixin"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_Sub1")) << "abstract class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub1"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_Sub2")) << "abstract class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub2")) << "virtual class should not have a updatable view even if it has subclass with table";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub2"));
 
     ASSERT_TRUE(GetHelper().TableExists("ts2_Sub21")) << "concrete class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub21")) << "no updatable view expected as it is leaf class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub21"));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews3.ecdb", SchemaItem(
@@ -1726,16 +1746,16 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECSchema>)xml")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts3_Base")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(GetHelper().TableExists("_ts3_Base")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Base"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts3_Sub1")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub1")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub1"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts3_Sub2")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub2")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub2"));
 
     ASSERT_FALSE(GetHelper().TableExists("ts3_Sub21")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub21")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub21"));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews4.ecdb", SchemaItem(
@@ -1746,7 +1766,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECSchema>)xml")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts4_Base")) << "abstract class";
-    ASSERT_FALSE(GetHelper().TableExists("_ts4_Base")) << "No updatable view expected as abstract class doesn't have subclasses";
+    ASSERT_FALSE(GetHelper().TableExists("_ts4_Base"));
     }
 
 
@@ -8744,7 +8764,7 @@ TEST_F(DbMappingTestFixture, CRUDOnMixins)
     //-----------UPDATE----------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.IMixin SET IMixin_Prop='UpdatedVal'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ONLY ts.Parent SET Parent_Prop='UpdatedVal'"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET Child_Prop=200"));
     stmt.Finalize();

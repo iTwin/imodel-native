@@ -462,6 +462,12 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         return ECSqlStatus::InvalidECSql;
         }
 
+    if (prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::ECClassId()))
+        {
+        m_ecdb.GetImpl().Issues().Report(ECDBSYS_PROP_ECClassId " may never be specified in the ECSQL INSERT property name expression list.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
     BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
     if (classMap.IsRelationshipClassMap())
         {

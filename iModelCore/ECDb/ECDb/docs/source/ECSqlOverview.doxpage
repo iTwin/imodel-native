@@ -36,15 +36,16 @@
 
     |ECClass kind    | SELECT (polym.) | SELECT (non-polym.) | INSERT | UPDATE (polym.) | UPDATE (non-polym.) | DELETE (polym.) | DELETE (non-polym.)|
     |----------------|-----------------|---------------------|--------|-----------------|---------------------|-----------------|--------------------|
-    | Entity         | yes             | yes                 | yes    | yes             | yes                 | yes             | yes                |
-    | Abstract entity| yes             | yes                 | no     | yes             | no                  | yes             | no                 |
+    | Entity         | yes             | yes                 | yes    | yes*            | yes                 | yes*            | yes                |
+    | Abstract entity| yes             | yes                 | no     | yes*            | no                  | yes*            | no                 |
     | Mixin          | yes             | yes                 | no     | no              | no                  | no              | no                 |
-    | ForeignKey Relationship | yes    | yes                 | no*    | no*             | no*                 | no*             | no*                |
+    | ForeignKey Relationship | yes    | yes                 | no**   | no**            | no**                | no**            | no**               |
     | LinkTable Relationship | yes     | yes                 | yes    | yes             | yes                 | yes             | yes                |
     | Struct         | no              | no                  | no     | no              | no                  | no              | no                 |
     | Custom attribute | no            | no                  | no     | no              | no                  | no              | no                 |
 
-    @b * Use navigation property in order to insert, update or delete a foreign key relationship.
+    @b * Polymorphic UPDATE/DELETE is only supported if the class is mapped with strategy 'TablePerHierarchy' (see @ref ClassMapCustomAttributeDescription).
+    @b ** Use navigation property in order to insert, update or delete a foreign key relationship.
 
     @section ECSqlSystemProperties ECSQL System Properties
     ECSQL defines a set of built-in system properties. They don't have to be defined in the ECSchemas.
