@@ -87,7 +87,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         {
         uint64_t julianDay;
         EXPECT_EQ(BentleyStatus::SUCCESS, ecValue.GetDateTime().ToJulianDay(julianDay)) << "Failed to translate DateTimeMember to Unix Milliseconds";
-        EXPECT_EQ(DateTime::CommonEraTicksToJulianDay(633374681466664305), julianDay) << "Wrong value for DateTimeMember";
+        EXPECT_EQ(DateTime::CommonEraMillisecondsToJulianDay(63337468146666), julianDay) << "Wrong value for DateTimeMember";
         }
     else
         EXPECT_EQ(633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";

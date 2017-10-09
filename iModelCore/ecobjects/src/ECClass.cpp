@@ -3155,10 +3155,22 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                 
                 if (!baseConstraint.SupportsClass(*abstractConstraint))
                     {
-                    LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'.  An attempt to resolve this issue failed.",
-                               abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                               baseConstraint.GetRelationshipClass().GetFullName());
-                    valid = false;
+                    if (resolveIssues && !baseConstraint.GetIsPolymorphic() && baseConstraint.GetRelationshipClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
+                        {
+                        baseConstraint.SetIsPolymorphic(true);
+                        if (!baseConstraint.SupportsClass(*abstractConstraint))
+                            valid = false;
+                        }
+                    else
+                        valid = false;
+                    
+                    if (!valid)
+                        {
+                        LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'.  An attempt to resolve this issue failed.",
+                            abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                            baseConstraint.GetRelationshipClass().GetFullName());
+
+                        }
                     }
                 }
             else

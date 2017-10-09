@@ -224,7 +224,7 @@ struct ECInstanceGetSetDateTimeTestFixture : DateTimeInfoTestFixture
 
                     uint64_t expectedJdMsec = 0LL;
                     expectedDateTime.ToJulianDay(expectedJdMsec);
-                    int64_t expectedTicks = DateTime::JulianDayToCommonEraTicks(expectedJdMsec);
+                    int64_t expectedTicks = DateTime::JulianDayToCommonEraMilliseconds(expectedJdMsec) * 10000;
 
                     ECValue value;
                     ECObjectsStatus stat = instance->GetValue(value, propertyName);
@@ -408,12 +408,12 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     ASSERT_EQ(SUCCESS, expectedDate.ToJulianDay(jdMsec));
 
     ECValue ticksOnlyValue;
-    ticksOnlyValue.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+    ticksOnlyValue.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
     ECValue ticksWithUtc;
-    ticksWithUtc.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+    ticksWithUtc.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
 
     ECValue ticksWithDateOnly;
-    ticksWithDateOnly.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec), DateTime::Info::CreateForDate());
+    ticksWithDateOnly.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000, DateTime::Info::CreateForDate());
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ASSERT_TRUE(instance.IsValid());
@@ -474,7 +474,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     ASSERT_EQ(SUCCESS, expectedDate.ToJulianDay(jdMsec));
 
     ECValue v;
-    BentleyStatus stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+    BentleyStatus stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
     EXPECT_EQ(SUCCESS, stat);
 
     DateTime actualDate = v.GetDateTime();
@@ -499,7 +499,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     ASSERT_EQ(SUCCESS, expectedDate.ToJulianDay(jdMsec));
 
     v.Clear();
-    stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+    stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
     EXPECT_EQ(SUCCESS, stat);
 
     actualDate = v.GetDateTime();
@@ -525,7 +525,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     ASSERT_EQ(SUCCESS, expectedDate.ToJulianDay(jdMsec));
 
     v.Clear();
-    stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+    stat = v.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
     EXPECT_EQ(SUCCESS, stat);
 
     actualDate = v.GetDateTime();
@@ -573,7 +573,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
             EXPECT_EQ(expectedStat, value.SetDateTime(testDateTime)) << "Return value of ECValue::SetDateTime ('" << testDateTime.ToString().c_str() << "')";
             uint64_t jdMsec = 0LL;
             testDateTime.ToJulianDay(jdMsec);
-            EXPECT_EQ(expectedStat, value.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec), testDateTime.GetInfo())) << "Return value of ECValue::SetDateTimeTicks () with '" << value.ToString().c_str();
+            EXPECT_EQ(expectedStat, value.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000, testDateTime.GetInfo())) << "Return value of ECValue::SetDateTimeTicks () with '" << value.ToString().c_str();
 
             value = ECValue(testDateTime);
             if (!isLocal)
