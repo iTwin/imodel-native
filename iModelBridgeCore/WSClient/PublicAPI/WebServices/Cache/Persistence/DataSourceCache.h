@@ -157,7 +157,7 @@ struct DataSourceCache : public IDataSourceCache
             bset<ObjectId>& instanceObjectIdsOut
             ) override;
 
-        WSCACHE_EXPORT CacheStatus ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut, JsonFormat format = JsonFormat::Raw) override;
+        WSCACHE_EXPORT CacheStatus ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut) override;
         WSCACHE_EXPORT IECInstancePtr ReadInstance(ObjectIdCR objectId) override;
         WSCACHE_EXPORT IECInstancePtr ReadInstance(ECInstanceKeyCR instanceKey) override;
 

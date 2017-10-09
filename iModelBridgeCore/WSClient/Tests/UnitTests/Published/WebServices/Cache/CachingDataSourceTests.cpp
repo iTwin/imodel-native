@@ -1498,7 +1498,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObject)
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
 
-    ds->GetObject(ObjectId("TestSchema.TestClass", "Foo"), CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->Wait();
+    ds->GetObject(ObjectId("TestSchema.TestClass", "Foo"), CachingDataSource::DataOrigin::CachedOrRemoteData)->Wait();
     }
 
 TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseNotCached_ReturnsError)
@@ -2238,7 +2238,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndConnectionError_Re
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::Status::NetworkErrorsOccured, result.GetError().GetStatus());
@@ -2259,7 +2259,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
@@ -2285,7 +2285,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(newInstances.ToWSObjectsResult())));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
@@ -2309,7 +2309,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());

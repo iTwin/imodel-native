@@ -479,50 +479,17 @@ void VerifyJsonRawFormat(JsonValueCR instance)
     EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
 
     EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
-
-    EXPECT_TRUE(instance.isMember("TestProperty"));
     }
 
-void VerifyJsonDisplayDataFormat(JsonValueCR instance)
-    {
-    EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
-    EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
-
-    EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
-
-    EXPECT_TRUE(instance.isMember("TestProperty"));
-    }
-
-TEST_F(DataSourceCacheTests, GetInstance_RawFormat_ReturnsPlaceholderInstanceWithExpectedFormat)
+TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceWithExpectedFormat)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
 
     Json::Value instance;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance, DataSourceCache::JsonFormat::Raw));
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance));
 
     VerifyJsonRawFormat(instance);
-    }
-
-TEST_F(DataSourceCacheTests, GetInstance_DisplayFormat_ReturnsDisplayInstanceWithExpectedFormat)
-    {
-    auto cache = GetTestCache();
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
-
-    Json::Value instance;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance, DataSourceCache::JsonFormat::Display));
-
-    EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
-    EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
-
-    EXPECT_TRUE(instance.isMember("$DisplayInfo"));
-    EXPECT_TRUE(instance.isMember("$DisplayData"));
-    EXPECT_TRUE(instance.isMember("$RawData"));
-
-    EXPECT_TRUE(instance["$DisplayInfo"].isMember("Categories"));
-
-    VerifyJsonDisplayDataFormat(instance["$DisplayData"]);
-    VerifyJsonRawFormat(instance["$RawData"]);
     }
 
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
