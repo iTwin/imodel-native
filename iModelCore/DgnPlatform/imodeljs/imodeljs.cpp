@@ -682,7 +682,7 @@ DbResult IModelJs::UpdateInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     if (!instanceId.IsValid())
         return BE_SQLITE_ERROR;
 
-    JsonUpdater updater(ecdb, *ecClass, nullptr);
+    JsonUpdater updater(ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::SystemPropertiesOption::Ignore, JsonUpdater::ReadonlyPropertiesOption::Fail));
     return updater.Update(instanceId, jsonInstance);
     }
 
