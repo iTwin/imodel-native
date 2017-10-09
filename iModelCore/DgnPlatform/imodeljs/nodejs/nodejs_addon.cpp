@@ -753,7 +753,7 @@ public:
         {
         if (!info.IsConstructCall())
             {
-            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonECDb objects");
+            return Nan::ThrowError("Use the new operator to create new NodeAddonECDb objects");
             }
 
         NodeAddonECDb *db = new NodeAddonECDb();
@@ -1335,7 +1335,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         {
         if (!info.IsConstructCall())
             {
-            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonDgnDb objects");
+            return Nan::ThrowError("Use the new operator to create new NodeAddonDgnDb objects");
             }
 
         NodeAddonDgnDb* db = new NodeAddonDgnDb();
@@ -1399,7 +1399,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
     static NAN_METHOD(New)
         {
         if (!info.IsConstructCall())
-            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonECSqlStatement objects");
+            return Nan::ThrowError("Use the new operator to create new NodeAddonECSqlStatement objects");
 
         NodeAddonECSqlStatement* ns = new NodeAddonECSqlStatement();
 
@@ -1528,6 +1528,14 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+    {
+    Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object> module)
     {
     Nan::HandleScope scope;
@@ -1537,7 +1545,7 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     v8::String::Utf8Value v8utf8(v8filename);
     BeFileName addondir = BeFileName(*v8utf8, true).GetDirectoryName();
 
-    IModelJs::Initialize(addondir);
+    IModelJs::Initialize(addondir, throwJsExceptionOnAssert);
     NodeAddonECSqlStatement::Init(target);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);

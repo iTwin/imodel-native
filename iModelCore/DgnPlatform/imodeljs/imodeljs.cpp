@@ -13,6 +13,7 @@
 
 static Utf8String s_lastEcdbIssue;
 static BeFileName s_addonDllDir;
+static IModelJs::T_AssertHandler s_assertHandler;
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -65,8 +66,10 @@ private:
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
-        printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
-        //DebugBreak();
+        if (s_assertHandler)
+            s_assertHandler(msg, file, line, type);
+        else
+            printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
 public:
     AddonHost() { BeAssertFunctions::SetBeAssertHandler(&AddonHost::OnAssert); }
@@ -127,9 +130,10 @@ void IModelJs::InitLogging()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-void IModelJs::Initialize(BeFileNameCR addonDllDir)
+void IModelJs::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
     {
     s_addonDllDir = addonDllDir;
+    s_assertHandler = assertHandler;
 
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() 

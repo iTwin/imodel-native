@@ -2323,15 +2323,14 @@ TEST_F(DgnElementTests, InsertPerformance1)
     for (int i=0; i<elementCount; ++i)
         {
         TestElementPtr el = TestElement::Create(*m_db, modelId, m_defaultCategoryId);
-        el->SetPropertyValue("IntegerProperty1", i);        // auto-handled
-        el->SetPropertyValue("IntegerProperty2", i);        // auto-handled
-        el->SetPropertyValue("IntegerProperty3", i);        // auto-handled
-        el->SetPropertyValue("IntegerProperty4", i);        // auto-handled
-        el->SetPropertyValue("TestElementProperty", i);     // custom-handled
-        el->SetPropertyValue("DoubleProperty1", i);
-        el->SetPropertyValue("DoubleProperty2", i);
-        el->SetPropertyValue("DoubleProperty3", i);
-        el->SetPropertyValue("DoubleProperty4", i);
+        el->SetPropertyValue("IntegerProperty1", i);
+        el->SetPropertyValue("IntegerProperty2", i);
+        el->SetPropertyValue("IntegerProperty3", i);
+        el->SetPropertyValue("IntegerProperty4", i);
+        el->SetPropertyValue("DoubleProperty1", (double)i);
+        el->SetPropertyValue("DoubleProperty2", (double)i);
+        el->SetPropertyValue("DoubleProperty3", (double)i);
+        el->SetPropertyValue("DoubleProperty4", (double)i);
         el->SetPropertyValue("b", (0 == (i % 100)));
         DPoint3d pt = DPoint3d::From(i, 0, 0);
         el->SetPropertyValue("PointProperty1", pt);
@@ -2339,7 +2338,7 @@ TEST_F(DgnElementTests, InsertPerformance1)
         el->SetPropertyValue("PointProperty3", pt);
         el->SetPropertyValue("PointProperty4", pt);
         DateTime dtUtc;
-        DateTime::FromString(dtUtc, "2013-09-15 12:05:39");
+        DateTime::FromString(dtUtc, "2013-09-15 12:05:39Z");
         el->SetPropertyValue("dtUtc", dtUtc);
 
         ASSERT_TRUE(el->Insert().IsValid());
