@@ -3132,7 +3132,16 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     }
                 
                 if (!baseConstraint.SupportsClass(*abstractConstraint))
-                    valid = false;
+                    {
+                    if (resolveIssues && !baseConstraint.GetIsPolymorphic() && baseConstraint.GetRelationshipClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
+                        {
+                        baseConstraint.SetIsPolymorphic(true);
+                        if (!baseConstraint.SupportsClass(*abstractConstraint))
+                            valid = false;
+                        }
+                    else
+                        valid = false;
+                    }
                 }
             else
                 {
