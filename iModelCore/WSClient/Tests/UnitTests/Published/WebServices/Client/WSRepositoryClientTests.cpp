@@ -1403,7 +1403,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     EXPECT_EQ(ObjectId("TestRelSchema", "TestRelClass", ""), it->second);
     }
 
-TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJsonAsObject)
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithoutIdAndResponseStatusCreated_PassesResponseJsonAsObject)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1427,6 +1427,82 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJ
     Json::Value jsonBody;
     response.GetValue().GetJson(jsonBody);
     EXPECT_EQ(responseObject, jsonBody);
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithoutIdAndResponseStatusOK_Error)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value responseObject = ToJson(R"({ "testMember" : "testValue" })");
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, responseObject.toStyledString()));
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "properties": {}
+                }
+            })");
+    auto response = client->SendCreateObjectRequest(creationJson)->GetResult();
+
+    ASSERT_FALSE(response.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithIdAndResponseStatusOK_PassesResponseJsonAsObject)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value responseObject = ToJson(R"({ "testMember" : "testValue" })");
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, responseObject.toStyledString()));
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "instanceId": "TestId",
+                "properties": {}
+                }
+            })");
+    auto response = client->SendCreateObjectRequest(creationJson)->GetResult();
+
+    ASSERT_TRUE(response.IsSuccess());
+    Json::Value jsonBody;
+    response.GetValue().GetJson(jsonBody);
+    EXPECT_EQ(responseObject, jsonBody);
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithIdAndResponseStatusCreated_Error)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value responseObject = ToJson(R"({ "testMember" : "testValue" })");
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, responseObject.toStyledString()));
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "instanceId": "TestId",
+                "properties": {}
+                }
+            })");
+    auto response = client->SendCreateObjectRequest(creationJson)->GetResult();
+
+    ASSERT_FALSE(response.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
