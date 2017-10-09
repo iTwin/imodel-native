@@ -49,6 +49,10 @@ TEST(DMatrix4d, AccessRowColumnTranspose)
     Check::ExactDouble (0.0, (A1-A).MaxAbs (), "Get/Set by row");
     Check::ExactDouble (0.0, (AT1-AT).MaxAbs (), "Get/Set by column");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, AccessXYZColumns)
     {
     auto A = SequentialIntegerMatrix (1.0);
@@ -61,6 +65,9 @@ TEST(DMatrix4d, AccessXYZColumns)
     Check::ExactDouble (0.0, (B1-B).MaxAbs (), "XYZ access");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, FromTranslation)
     {
     DMatrix4d A1 = DMatrix4d::FromTranslation (2,3,4);
@@ -74,6 +81,9 @@ TEST(DMatrix4d, FromTranslation)
     Check::ExactDouble (0.0, (A1-A0).MaxAbs (), "FromTranslation");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, ConstructionA)
     {
     DMatrix4d A1 = DMatrix4d::FromTranslation (2,3,4);
@@ -90,6 +100,10 @@ TEST(DMatrix4d, ConstructionA)
     Check::ExactDouble (0.0, (A1-BT).MaxAbs (), "FromPerspective");
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, ConstructionB)
     {
     Transform transformA = YawPitchRollAngles::FromDegrees (10.0, 20.0, -2.5).ToTransform (DPoint3d::From (1,3,2));
@@ -106,6 +120,9 @@ TEST(DMatrix4d, ConstructionB)
     Check::Near (mABC0, mABC, "Confirm fast weighted A1*B0*C1 consruction");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, MutliplyAndRenormalize)
     {
     bvector<DPoint3d> allXYZ, allXYZ1, allXYZ2, allXYZ3;
@@ -129,6 +146,9 @@ TEST(DMatrix4d, MutliplyAndRenormalize)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMatrix4d, Swaps)
     {
 

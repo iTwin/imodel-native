@@ -21,6 +21,9 @@ void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BCS,SpringModelA)
     {
     auto wall = bvector<DPoint3d>
@@ -51,6 +54,9 @@ TEST(BCS,SpringModelA)
     Check::ClearGeometry ("BCS.SpringModelA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BCS,SpringModelB)
     {
     BCSSpringModel sm;
@@ -132,6 +138,9 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BCS,SpringModelC)
     {
     double rA = 2.0;
@@ -262,6 +271,9 @@ void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
     {
     for (double meshSize : bvector<double>{1,2,3,4})
@@ -269,6 +281,9 @@ TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
     Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSquareGrid");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GriddedSpaceManager,VaryMeshSizeWithIsoGrid)
     {
     // Preshift to be friends with peers ...
@@ -278,6 +293,9 @@ TEST(GriddedSpaceManager,VaryMeshSizeWithIsoGrid)
     Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithIsoGrid");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GriddedSpaceManager,VaryMeshSizeWithSmoothGrid)
     {
     // Preshift to be friends with peers ...
@@ -475,6 +493,10 @@ double areaLossFactor = 0.0     // This fraction of the spreadArea is lost.
         Check::SaveTransformed (path);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SinglePointAreaShift,Diamond)
     {
     for (double shiftFactor : bvector<double> {0.0, 0.05, 0.10, -0.5, -0.10})
@@ -498,6 +520,9 @@ TEST(SinglePointAreaShift,Diamond)
     Check::ClearGeometry ("SinglePointAreaShift.Diamond");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SinglePointAreaShift,RegularNGon)
     {
     for (int numEdge : bvector<int> {3, 4, 5, 8})
@@ -515,6 +540,9 @@ TEST(SinglePointAreaShift,RegularNGon)
     Check::ClearGeometry ("SinglePointAreaShift.RegularNgon");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SinglePointAreaShift,RegularNGonAreaImbalance)
     {
     int numEdge = 5;
@@ -833,7 +861,9 @@ void EmitSprings ()
     }
 };
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BubblePhysics,Triangle1)
     {
     for (double mu : bvector<double> {1.0, 1.2, 1.5})
@@ -866,6 +896,9 @@ TEST(BubblePhysics,Triangle1)
     Check::ClearGeometry ("BubblePhysics.Triangele1");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BubblePhysics,Quad2)
     {
     for (double r1 : bvector<double> {1, 0.9, 0.5})
@@ -912,6 +945,9 @@ void AddPoints (bvector<DPoint3d> &points, DEllipse3dCR arc, size_t numEdge)
         points.push_back (arc.FractionToPoint (i * df));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,CreateDelauney)
     {
     double dy = 50.0;
@@ -939,6 +975,10 @@ double AssignRadiusByRow (double a0, double a1, size_t i, size_t j, size_t numI,
     {
     return DoubleOps::Interpolate (a0, ((j * numI + i ) % period) / (double) period, a1);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,CreateDelauneySkew)
     {
     // unused - double dy = 80.0;
@@ -1033,6 +1073,9 @@ TEST(Vu,CreateDelauneySkew)
     Check::ClearGeometry ("Vu.CreateDelauneySkew");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,CreateDelauneyCircle)
     {
     double r = 10.0;
@@ -1063,8 +1106,9 @@ TEST(Vu,CreateDelauneyCircle)
     Check::ClearGeometry ("Vu.CreateDelauneyCircle");
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,IncircleFlipProblem)
     {
     bvector<DPoint3d> points
@@ -1083,6 +1127,10 @@ TEST(Vu,IncircleFlipProblem)
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,TwoPoints)
     {
     bvector<DPoint3d> points
@@ -1104,6 +1152,9 @@ TEST(Vu,TwoPoints)
     Check::ClearGeometry ("Vu.TwoPoints");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,FourPointsWeighted)
     {
     bvector<DPoint3d> points
@@ -1145,6 +1196,9 @@ TEST(Vu,FourPointsWeighted)
     Check::ClearGeometry ("Vu.FourPointsWeighted");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,ColinearPoints)
     {
     double b = 200.0;
@@ -1241,6 +1295,10 @@ void DoClips (bvector<DPoint3d> const &clipPoints)
         }
     shifterY.SetShift (0, dyMax, 0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,CreateClippedVornoi)
     {
 
@@ -1283,6 +1341,9 @@ void ShowConic (DPoint3dR xyz0, double r0, DPoint3dR xyz1, double r1, double the
     Check::SaveTransformed (strokes);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Voronoi,Hyperbolas6)
     {
     bvector<DPoint3d> xyzOuter;
@@ -1340,9 +1401,9 @@ bvector<DPoint3d> &intersectionPolygon         // RETURNED clipped polygon
     }
 
 
-
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlaneSet,ConvexPolygonClipCircleGon)
     {
     bvector<DPoint3d> polygonPoints {
@@ -1445,6 +1506,10 @@ bvector<DPoint3d> &wallPoints   // (closed) area for wall clip.
     Check::SaveTransformed (*voronoiClippedToCirclesAndWalls);
     Check::SaveTransformedMarkers (stations, 0.2);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu, WallAndRadiusClips)
     {
     bvector<DPoint3d> stations

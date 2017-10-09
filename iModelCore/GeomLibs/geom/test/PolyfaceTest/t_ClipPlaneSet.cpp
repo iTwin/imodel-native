@@ -8,6 +8,9 @@
 #include "testHarness.h"
 #include <stdio.h>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlaneSet,SweptPolygon)
     {
     ConvexClipPlaneSet convexSetA, convexSetB, convexSet0;
@@ -68,6 +71,9 @@ void testConvexClipXY (double x0, double y0, double ux, double uy, bvector<DPoin
     Check::Near (area, area0 + area1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlane,ConvexPolygonClip)
     {
     for (auto &polygon :
@@ -102,6 +108,9 @@ TEST(ClipPlane,ConvexPolygonClip)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlaneSet,Undercut1)
     {
     printf (" enter undercut\n");
@@ -133,6 +142,9 @@ TEST(ClipPlaneSet,Undercut1)
     Check::ClearGeometry ("ClipPlaneSet.Undercut1");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlaneSet,Undercut2)
     {
     printf (" enter undercut\n");

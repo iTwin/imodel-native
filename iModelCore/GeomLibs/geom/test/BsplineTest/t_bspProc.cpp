@@ -5,8 +5,9 @@
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 //static int s_noisy = 0;
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBspline,RecursiveOffset)
     {
     auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder

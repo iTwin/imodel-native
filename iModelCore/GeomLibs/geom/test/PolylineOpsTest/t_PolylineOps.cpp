@@ -15,6 +15,9 @@ void BuildSteps (bvector<DPoint3d> &xyz, size_t numLeft, size_t numRight, double
         xyz .push_back ( DPoint3d::From (1.0 + (double)i, yRight, 0.0));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolylineOps,XYIntersections1)
     {
     bvector<size_t> counts;
@@ -71,6 +74,9 @@ void AppendWithXIndex (bvector<DPoint3d> &xyz, size_t n, double y, double z = 0.
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolylineOps,XYIntersections2)
     {
     bvector<size_t> counts;
@@ -120,6 +126,9 @@ TEST(PolylineOps,XYIntersections2)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Vu, PlanarSubdivision)
     {
     // sample data: some more-or-less vertical lines, some more or less horizontal ...
@@ -186,6 +195,9 @@ TEST (Vu, PlanarSubdivision)
 
 #ifdef TryHeapZOne
 #include <RmgrTools/Tools/Heapzone.h>
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Vu, HeapZone)
     {
     HeapZone * myHeap = new HeapZone ('VuSt', true);
@@ -196,6 +208,9 @@ TEST (Vu, HeapZone)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolylineOps,CollectZPairsForOrderedXPoints)
     {
     bvector<DPoint3d> xyzA
@@ -264,6 +279,9 @@ TEST(PolylineOps,CollectZPairsForOrderedXPoints)
     Check::True (minB < maxB);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveLocationDetailPair,LocalMinMax)
     {
     auto curveA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -293,6 +311,9 @@ TEST(CurveLocationDetailPair,LocalMinMax)
 #include "VuSpineContext.h"
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,SpineContext)
     {
     VuSpineContext sc;
@@ -333,6 +354,9 @@ TEST(Vu,SpineContext)
     Check::ClearGeometry("Vu.SpineContext");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,SpineContextB)
     {
     VuSpineContext sc;
@@ -382,6 +406,9 @@ TEST(Vu,SpineContextB)
     Check::ClearGeometry("Vu.SpineContextB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,SpineContextC)
     {
     for (double f0 : bvector<double> {1.0, 0.8, 0.2})
@@ -431,6 +458,9 @@ TEST(Vu,SpineContextC)
     Check::ClearGeometry("Vu.SpineContextC");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,SpineContextBridgePier)
     {
     double dxTotal = 10.0;
@@ -475,6 +505,9 @@ TEST(Vu,SpineContextBridgePier)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolylineOps,GreedyTriangulation1)
     {
     bvector<DPoint3d> xyzA {
@@ -678,6 +711,9 @@ void AddRectangle (bvector<bvector<DPoint3d>> &data, double xA, double yA, doubl
         });
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,OuterBoundaryMerge)
     {
     double expectedLength = 0.0;
@@ -751,6 +787,9 @@ void PrintCurveStrokes (DPoint3dDoubleUVCurveArrays &data, char const *name)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyline,AddStrokesDEllipse3d)
     {
     DEllipse3d arc = DEllipse3d::From (0,0,0,   4,0,0, 0,2,0, 0.0, Angle::TwoPi ());
@@ -799,6 +838,9 @@ void testSimplePolylineStroke (size_t xMax, double startFraction, double endFrac
     Check::EndScope ();
     Check::EndScope ();
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyline, Stroke)
     {
     auto options = IFacetOptions::CreateForCurves ();
@@ -821,6 +863,9 @@ TEST (Polyline, Stroke)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyline, GreedyTriangleA)
     {
     // triangulation between simple translates
@@ -883,6 +928,9 @@ bvector<DPoint3d> SplitBySimpleLength (bvector<DPoint3d> const &data, double a)
     out.push_back (data.back ());
     return out;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyline, GreedyTriangleB)
     {
     // triangulation between simple translates

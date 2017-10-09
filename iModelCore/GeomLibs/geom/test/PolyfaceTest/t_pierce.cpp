@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_pierce.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -107,6 +107,9 @@ void Pierce (DPoint3dP points, int n, DPoint3dCR testPoint, int expectedResult)
             }
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, Square)
     {
     DPoint3d shape [] =
@@ -130,6 +133,9 @@ TEST(PolygonPierce, Square)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, DegenerateQuad1)
     {
     DPoint3d shape [] =
@@ -152,6 +158,9 @@ TEST(PolygonPierce, DegenerateQuad1)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, DegenerateQuad2)
     {
     DPoint3d shape [] =
@@ -173,6 +182,9 @@ TEST(PolygonPierce, DegenerateQuad2)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, DegenerateQuad0)
     {
     DPoint3d shape [] =
@@ -194,6 +206,9 @@ TEST(PolygonPierce, DegenerateQuad0)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, DegenerateQuad3)
     {
     DPoint3d shape [] =
@@ -215,6 +230,9 @@ TEST(PolygonPierce, DegenerateQuad3)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonPierce, L)
     {
     DPoint3d shape [] =
@@ -303,6 +321,9 @@ void TestNGon (size_t numEdge, size_t startShift, bool repeatFirstPoint, DPoint2
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(UVPierce, Convex)
     {
     bvector <DPoint2d> uvPoints;
@@ -350,6 +371,9 @@ void FillSquareWavePolygon (bvector<DPoint2d> &uv, double dx1, double h1, double
     uv.push_back (DPoint2d::From (x0, h3));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(UVPierce, SquareWave)
     {
     bvector<DPoint2d> polygon;
@@ -403,6 +427,9 @@ void CheckMoments (MSBsplineSurface &surface)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BSplineSurfaceMoments, BsplineSurface3)
     {
     //IFacetOptionsPtr options = CreateFacetOptions ();

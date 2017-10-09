@@ -39,6 +39,9 @@ bool CheckUpCastMatch (IGeometryPtr g)
     return stat;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IGeoemtry,HelloWorld)
     {
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,2,9));
@@ -124,6 +127,9 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry)
     }
 
   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BGFB,HelloWorld)
     {
     ICurvePrimitivePtr cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3,4,3,2));
@@ -234,6 +240,9 @@ TEST(BGFB,HelloWorld)
 
 
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FlatBuffer,Catenary1)
     {
     auto catenary = ICurvePrimitive::CreateCatenary (2.0,
@@ -242,6 +251,9 @@ TEST(FlatBuffer,Catenary1)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Flatbuffer, InterpolationCurve)
     {
     MSInterpolationCurve curve;
@@ -259,7 +271,9 @@ TEST(Flatbuffer, InterpolationCurve)
 
     }    
  
- 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Flatbuffer, TransitionSpiral)
     {
     Transform frame = Transform::From (
@@ -279,6 +293,9 @@ TEST(Flatbuffer, TransitionSpiral)
 
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Flatbuffer, GeometryGroup)
     {
     auto cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3,4,5,6));
@@ -298,6 +315,9 @@ TEST(Flatbuffer, GeometryGroup)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FlatBuffer,Signature)
     {
     auto cp0 = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3,4,5,6)));
@@ -325,6 +345,9 @@ ICurvePrimitivePtr upgrade (ICurvePrimitiveR cpref)
     ICurvePrimitivePtr cpPtr = &cpref;
     return cpPtr;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (IcurvePrimCasts, Test0)
     {
     ICurvePrimitivePtr linePtr = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3,4,5,6));
@@ -334,6 +357,9 @@ TEST (IcurvePrimCasts, Test0)
     }
 
 #ifdef abc
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(OrderedIGeometryPtr, Test1)
     {
     bmap<OrderedIGeometryPtr, size_t> myMap;
@@ -550,7 +576,9 @@ void AddProperty (char const *name, int value) override
 };
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SampleGeometryCreator,Test0)
     {
     bvector<IGeometryPtr> geometry;
@@ -600,6 +628,9 @@ void TestFBLineString (size_t numPoint)
     Check::True (g->IsSameStructureAndGeometry (*g1));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FlatBuffer, LongLineString)
     {
     TestFBLineString (10);
@@ -636,6 +667,9 @@ TransformCR transform)
             }
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GeometryNode,Test0)
     {
     auto m2 = RotMatrix::FromPrimaryAxisDirections (1, 1, 2, -1);
@@ -653,6 +687,9 @@ TEST(GeometryNode,Test0)
     CheckRangeTransformCommutes (root, child3, t2 * t3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FlatBuffer,CurvePrimitiveId)
     {
     uint32_t myIndex = 322;
@@ -683,6 +720,9 @@ TEST(FlatBuffer,CurvePrimitiveId)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FlatBuffer,CurvePrimitiveIdInSolidPrimitive)
     {
     for (auto attachId : bvector<bool> {false, true})

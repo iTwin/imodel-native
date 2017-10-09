@@ -191,6 +191,9 @@ static Proto::BsplineCurve *CreateBsplineCurve (MSBsplineCurveCR bcurve)
 };
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,LineSegment_singlesets)
     {
     Proto::LineSegment *myLine = new Proto::LineSegment ();
@@ -216,6 +219,9 @@ TEST(PBSize,LineSegment_singlesets)
     BeConsole::Printf ("   +point1.z(0) ==> %d\n", myLine->ByteSize ());
 }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,LineSegmentA)
     {
     Proto::LineSegment *data = CGProtobuffer::CreateLineSegment (1,2,3,4,5,6);
@@ -225,6 +231,9 @@ TEST(PBSize,LineSegmentA)
     BeConsole::Printf ("CreateLineSegment (z=0) ByteSize ()=%d\n", data1->ByteSize ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,LineStringA)
     {
     bvector<DPoint3d> points;
@@ -244,6 +253,9 @@ TEST(PBSize,LineStringA)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,IPlacementA)
     {
     RotMatrix axes = RotMatrix::FromRowValues (1,0,0,   0,1,0,   0,0,1);
@@ -251,7 +263,9 @@ TEST(PBSize,IPlacementA)
     BeConsole::Printf ("CreateIPlacemnet ByteSize ()=%d\n", data->ByteSize ());
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,DEllipse3dA)
     {
     Proto::DEllipse3d *data = CGProtobuffer::CreateDEllipse3d (
@@ -285,6 +299,10 @@ void TestBsplineCurve (int numPoles, int order, double z, bool closed)
               z, order, numPoles, data->ByteSize ());
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PBSize,MSBsplineCurve)
     {
     TestBsplineCurve (4, 4, 1.0, false);

@@ -1,6 +1,9 @@
 #include "testHarness.h"
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPlane3d, InitFromArray_FirstPointFarthest)
     {
     bvector<DPoint3d> points;
@@ -82,7 +85,10 @@ void CheckFractions (double a0, double a1, double u0, double u1, int n, bvector<
             }
         }
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BuildFractions, Test1)
     {
     bvector<double> fraction1;
@@ -97,6 +103,9 @@ TEST(BuildFractions, Test1)
         }
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPlane3d,Intersect)
     {
     auto planeA = DPlane3d::FromOriginAndNormal (1,2,3, 2,1,9);
@@ -113,6 +122,9 @@ TEST(DPlane3d,Intersect)
             "confirm intesrection failure with repeated plane");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPlane3d,IntersectByDistance)
     {
     auto normalA = DVec3d::From (1,2,3);

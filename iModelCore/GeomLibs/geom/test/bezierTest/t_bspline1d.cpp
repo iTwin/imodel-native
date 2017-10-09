@@ -49,7 +49,9 @@ void exerciseBspline1d (bvector<double> &yValues, bool noisy = false)
         }
     }  
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline1d, Raman2)
     {
     bvector<double> time
@@ -63,7 +65,9 @@ TEST(Bspline1d, Raman2)
     exerciseBspline1d (time);
         }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline1d, Raman1)
     {
     bvector<double> time
@@ -86,6 +90,9 @@ TEST(Bspline1d, Raman1)
     exerciseBspline1d (time);
         }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline1d, ProfileCurve0)
   {
 
@@ -114,8 +121,9 @@ TEST(Bspline1d, ProfileCurve0)
     }
   }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline1d, ProfileCurve1)
   {
   // y=1+x through first section, length 4
@@ -367,6 +375,9 @@ void TestMaximalBasisFunctions (bvector<double> const &knots, size_t order, bvec
     ConvertToClampedBspline (knots, order, xyz, criticalKnots, xyzPoles);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve, CriticalKnotsHighOrder)
     {
 
@@ -413,6 +424,9 @@ TEST(BsplineCurve, CriticalKnotsHighOrder)
     TestMaximalBasisFunctions (knotCubicU, 4, criticalKnots);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,CriticalKnotsCubicManyPoles)
     {
     bvector<double> criticalKnots;
@@ -446,7 +460,9 @@ TEST(BsplineCurve,CriticalKnotsCubicManyPoles)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,KnotSpread)
     {
 
@@ -509,6 +525,9 @@ bvector<DPoint3d>const &xyz    //!< @param [in] xyz interpolation points
     return MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, &knots,(int)order, false, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,KnotSpread1)
     {
     bvector<double>criticalSpreadKnots;
@@ -571,6 +590,9 @@ double GrevilleKnot (size_t i, size_t k)
     }    
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline1d,BasisFunctions)
 {
 static int s_noisy = 0;

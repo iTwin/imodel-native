@@ -311,6 +311,9 @@ void Add (bvector<DPoint3d> &dest, double x, double y, double z)
     dest.push_back (xyz);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IrishPolygons, SimpleIntersection)
     {
     bvector<DPoint3d> pointA, pointB, pointA1, pointB1;
@@ -340,6 +343,9 @@ bool AlmostEqual (bvector<DPoint3d> const &pointA, bvector<DPoint3d> const &poin
     return true;
     }
         
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IrishPolygons, MoveVertexToVertex)
     {
     bvector<DVec3d> vectors;
@@ -374,6 +380,9 @@ TEST(IrishPolygons, MoveVertexToVertex)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IrishPolygons, MoveVertexToEdge)
     {
     bvector<DVec3d> vectors;
@@ -428,6 +437,9 @@ TEST(IrishPolygons, MoveVertexToEdge)
     }    
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PrincipalAxes,Zero)
     {
     bvector<DPoint3d>points;
@@ -437,6 +449,9 @@ TEST(PrincipalAxes,Zero)
     
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PrincipalAxes,XAXis)
     {
     Check::StartScope ("XAxisPointPair");
@@ -525,6 +540,9 @@ double shiftMagnitude         //
     Check::Near (axesC, axesB1, "Transformed axes");
 
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PrincipalAxes,Slab)
     {
     Check::StartScope ("XAxisPointPair");
@@ -633,6 +651,9 @@ void TestNearIntersction (
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d,NearIntersection)
     {
     TestNearIntersction (

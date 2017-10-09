@@ -30,6 +30,9 @@ void ApplyLinearFactor (bvector <double> &product, double root, double slope)
         }    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(UnivariateRoots, RegularRoots)
     {
     bvector <double> product;
@@ -108,6 +111,9 @@ double smallAngleVersine (double theta)
     double c = cos (theta);
     return s * s / (1.0 + c);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Trig,Hermite)
     {
     double theta0 = 0.0;
@@ -567,6 +573,9 @@ void AddAndCheck (BezHull &seg, double a, double &uMin)
     Check::True (seg.ValidateHull (), "Convex Hull Properties");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test0)
     {
     for (double s = 1.0; s > -2.0; s -= 2.0)
@@ -660,6 +669,9 @@ void Solve (BezHull const &functionIn, bvector<double> &roots, char * name)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, TestSymmetricCubic)
     {
     bvector<double> roots;
@@ -672,6 +684,9 @@ TEST(BezierHull, TestSymmetricCubic)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test1)
     {
     BezHull function;
@@ -686,6 +701,9 @@ TEST(BezierHull, Test1)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test2)
     {
     BezHull function;
@@ -696,6 +714,9 @@ TEST(BezierHull, Test2)
     function.Push (3);
     Solve (function, roots, "Single Root Expected");
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test3)
     {
     BezHull function;
@@ -717,6 +738,9 @@ TEST(BezierHull, Test3)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test4)
     {
     BezHull function;
@@ -738,6 +762,9 @@ TEST(BezierHull, Test4)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test5)
     {
     BezHull function;
@@ -757,6 +784,9 @@ TEST(BezierHull, Test5)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, Test6)
     {
     BezHull function;
@@ -767,6 +797,9 @@ TEST(BezierHull, Test6)
     Solve (function, roots, "Quadratic with large coffs");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierHull, RegularRoots)
     {
     bvector <double> product;
@@ -934,6 +967,9 @@ double &acceptedStep
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bezier,IncrementalRoots)
     {
     NewtonStepEvaluator newton (0.5, 0.1, 0.5);

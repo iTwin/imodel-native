@@ -72,6 +72,10 @@ void AddSegments (CurveVectorR cv, int numSegment, DSegment3dCR segment0, DVec3d
         segment.point[1].Add (shift);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,RangeTree)
 {
 CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
@@ -80,7 +84,9 @@ CurveVectorRangeData cvRanges;
 cvRanges.Install (cv);
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveCurve, TransverseIntersection)
     {
     for (int numB = 1; numB < 6; numB += 2)
@@ -185,6 +191,10 @@ void SavePartialCurveMarkers (CurveVectorR curves, double markerSize = 0.2)
         }
     Check::SaveTransformedMarkers (markers, markerSize);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveCurve, SelfIntersecton)
     {
     bvector<CurveVectorPtr> curves;

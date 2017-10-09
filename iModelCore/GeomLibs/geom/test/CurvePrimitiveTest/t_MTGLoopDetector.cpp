@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_MTGLoopDetector.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -149,7 +149,9 @@ void TestLoopDetector (uint32_t numEdgesInLoop)
             }
         }
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MTG,LoopDetector)
     {
     TestLoopDetector (3);
@@ -431,7 +433,9 @@ bool IsTrivalentInterior (MTGMultiCellularTetrahedralTopology &graph)
     return true;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MTG,TetrahedralAssembler)
     {
     MTGMultiCellularTetrahedralTopology graph;
@@ -473,6 +477,9 @@ void TestTetrahedralFile (char const *filename)
     fclose (m_fp);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MTG,TetrahedralAssemblerByFile)
     {
     static bool s_doTest0 = false;

@@ -3,6 +3,9 @@
 #include "testHarness.h"
 #include "frustumClipper.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FrustumClip, Test1)
     {
     DPoint3d frustumPointsA[8];
@@ -39,6 +42,9 @@ TEST(FrustumClip, Test1)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConvexHull, Test1)
     {
     bvector<DPoint3d> xyz;
@@ -69,6 +75,9 @@ TEST(ConvexHull, Test1)
         }
         }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef TestEllipticIntegralAveragingStep
 static double EllipticAngle (double x, double y, double z)
     {
@@ -104,7 +113,10 @@ void testEllipticIntegralIteration_xLTy_div4 (double x, double y, double z, int 
         GEOMAPI_PRINTF ("%3d (xyz %.17g, %.17g, %.17g) (delta %.2le, %.2le, %.2le) (q %.17g) (dq %.2le)\n", i, x, y, z, x - x0, y - y0, z - z0, q, q - q0);
         }
     }    
-        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(EllipticIntegralIterations,Test1)
     {
     testEllipticIntegralIteration_xLTy_div4 (1,2,3, 20);

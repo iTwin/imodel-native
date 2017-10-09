@@ -155,6 +155,9 @@ TEST (DVec3d, FromXYAngleAndMagnitude)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DVec3d, ConstructByMatrixAndTransformAccess)
     {
     RotMatrix matrix = RotMatrix::FromRowValues
@@ -689,6 +692,9 @@ void AllTests (DVec3dCR vector0, DVec3dCR vector1, DVec3dCR vector2)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DVec3d, All)
     {
     DVec3d vector0 = DVec3d::From (1,2,3);
@@ -714,6 +720,9 @@ void TestPerpendicularParts (double ux, double uy, double uz, double vx, double 
         }
     Check::EndScope ();
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DVec3d, PerpendicularParts)
     {
     TestPerpendicularParts (1,0,0,0,1,0);
@@ -724,6 +733,9 @@ TEST(DVec3d, PerpendicularParts)
     
 // DSegment4d DSegment4d::From (double xA, double yA, double zA, double wA, double xB, double yB, double zB, double wB)
 // LINE 145
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test1)
     {
     DSegment4d segmentA = DSegment4d::From(1, 2, 3, 4, 5, 6, 7, 8);
@@ -733,6 +745,9 @@ TEST(DSegment4d, Test1)
     
 // DSegment4d DSegment4d::From (double xA, double yA, double zA, double xB, double yB, double zB)
 // LINE 153
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test2)
     {
     DSegment4d segmentC = DSegment4d::From(1.3, 2.6, 3.7, 5.1, 6.8, 7.5);
@@ -741,6 +756,9 @@ TEST(DSegment4d, Test2)
     
 // DSegment4d DSegment4d::From (DSegment3dCR segment)
 // LINE 160
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test3)
     {
     DSegment3d segmentD = DSegment3d::From (1.1, 2.2, 3.3, 2.3, 3.4, 4.5); 
@@ -755,6 +773,9 @@ TEST(DSegment4d, Test3)
     
 // DSegment4d DSegment4d::FromFractionInterval (DSegment4d parent, double startFraction, double endFraction)
 // LINE 172
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test4)
     {
     DSegment4d parent = DSegment4d::From(1, 2, 1, 2, 1, 2);
@@ -765,6 +786,9 @@ TEST(DSegment4d, Test4)
     
 // DSegment4d DSegment4d::From (DPoint3dCR pointA, DPoint3dCR pointB)
 // LINE 134
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test5)
     {
     DSegment3d segmentX = DSegment3d::From (0.5, 1, 4, 3, 2, 1.5); 
@@ -776,6 +800,9 @@ TEST(DSegment4d, Test5)
     
 // DSegment4d DSegment4d::From (DPoint4dCR pointA, DPoint4dCR pointB)
 // LINE 123
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test6)
     {
     DSegment4d segmentP = DSegment4d::From (0.5, 1, 4, 2.4, 3, 2, 1.5, 2.2); 
@@ -787,6 +814,9 @@ TEST(DSegment4d, Test6)
     
 // bool DSegment4d::ProjectDPoint4dCartesianXYW (DPoint4dR closestPoint, double &closestParam, DPoint4dCR spacePoint) const
 //LINE 89
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test7)
     {
         DSegment4d segmentCAR = DSegment4d::From (1.4, 2.2, 5.6, 7.7, 2.5, 3.3, 8.8, 9.4);
@@ -824,6 +854,9 @@ TEST(DSegment4d, Test7)
 
 // void DSegment4d::Init (double x0, double y0, double z0, double x1, double y1, double z1)
 // LINE 10
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test8)
     {
     DSegment4d segmentA1;
@@ -834,8 +867,11 @@ TEST(DSegment4d, Test8)
   
 // void DSegment4d::Init (double x0, double y0, double z0, double w0, double x1, double y1, double z1, double w1)  
 // LINE 28 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test9)
-    {
+{
     DSegment4d segmentB1;
     segmentB1.Init(1.1, 2.2, 3.3, 8.8, 4.4, 5.5, 6.6, 7.7);
     Check::Near (segmentB1.point[0].y, 2.2, "y value");
@@ -844,6 +880,9 @@ TEST(DSegment4d, Test9)
     
 // void DSegment4d::Init (DSegment3dCR source)   
 // LINE 48
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test10)
     {
     DSegment4d segmentC1;
@@ -855,6 +894,9 @@ TEST(DSegment4d, Test10)
 
 // void DSegment4d::Init (DPoint3dCR point0, DPoint3dCR point1)   
 // LINE 58
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test11)
     {
     DSegment4d segmentE1;
@@ -867,6 +909,9 @@ TEST(DSegment4d, Test11)
 
 // void DSegment4d::Init (DPoint4dCR point0, DPoint4dCR point1)   
 // LINE 68
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test12)
     {
     DSegment4d segmentZ1;
@@ -880,6 +925,9 @@ TEST(DSegment4d, Test12)
 // bool DSegment4d::FractionParameterToPoint (DPoint4dR outPoint, double fraction) const
 // LINE 79
 // ****What should I be testing here?****
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test13)
     {
     DSegment4d segmentR1 = DSegment4d::From (5, 6, 7, 8, 4, 3, 2, 1);
@@ -889,6 +937,9 @@ TEST(DSegment4d, Test13)
     
 // bool DSegment4d::GetEndPoints (DPoint3dR point0, DPoint3dR point1)
 // LINE 187
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test14)
     {
     DPoint3d pointAA = DPoint3d::From (1, 2, 3);
@@ -902,6 +953,9 @@ TEST(DSegment4d, Test14)
 // void DSegment4d::InitProduct (TransformCR transform, DSegment4dCR source)
 // void DSegment4d::InitProduct (DMatrix4dCR mat, DSegment4dCR source)
 // LINE 200 + LINE 205
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test15)
     {
     DSegment4d segmentBB;
@@ -923,6 +977,9 @@ TEST(DSegment4d, Test15)
 
 //void DSegment4d::FromFractinInterval (DSegment4d parent, double startFraction, double endFraction)
 // LINE 219
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test17)
     {
     DSegment4d fract;   
@@ -947,6 +1004,9 @@ TEST(DSegment4d, Test17)
     
 //bool DSegment4d::FractionParameterToPoint(double fraction)
 // LINE 231
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test18)
     {
     //(2.3, 4.2, 5.3, 1.7, 6.4, 8.9, 7, 3.4)
@@ -962,6 +1022,9 @@ TEST(DSegment4d, Test18)
 #ifdef abc
 //bool DSegment4d::FractionParameterToPoint(DPoint3d pnt, double fraction)
 // LINE 238
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test19)
     {
     DSegment4d parent = DSegment4d::From (2, 2, 2, 2, 3, 3, 3, 3);
@@ -985,6 +1048,9 @@ TEST(DSegment4d, Test19)
 #endif    
 //double DSegment4d::PointToFractionParameter (double &param, DPoint3d pt) \
 //LINE 245
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test20)
     {
     DSegment4d segment = DSegment4d::From (0, 0, 0, 1, 1, 0, 0, 1);
@@ -996,6 +1062,9 @@ TEST(DSegment4d, Test20)
     
 //bool DSegment4d::FractionParameterToTangent (DPoint3d &spacepoint, DVec3d tangent, double param)
 //LINE 261
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test21)
     {
     DPoint3d pnt = DPoint3d::From (1.4, 3.2, 2.1);
@@ -1019,6 +1088,9 @@ TEST(DSegment4d, Test21)
     }
 //DPoint4d DSegment4d::FractionParameterToTangent  (DPoint4d spacepoint, DPoint4d &tangent, double param)
 //LINE 272
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test22)
     {
     DPoint4d pt = DPoint4d::From (1, 2, 3, 4);
@@ -1044,6 +1116,9 @@ TEST(DSegment4d, Test22)
     
 //bool DSegment4d::FractionToLength (double &arcLength, double fraction0, double fraction1)
 //LINE 285
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test23)
     {
     double arcLength4d = 0.0;
@@ -1060,6 +1135,9 @@ TEST(DSegment4d, Test23)
 
 //bool DSegment4d::LengthToFraction (double &fraction1, double fraction0, double arcStep)
 //LINE 293
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test24)
     {
     double arcStep = 0.7;
@@ -1076,6 +1154,9 @@ TEST(DSegment4d, Test24)
     
 ////bool DSegment4d::ClosestPointBoundedXY (DPoint3d closePoint, double closeParam, double distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal, bool extend0, bool extend1) 
 ////LINE 336
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST(DSegment4d, Test25)
 //    {
 //    DSegment4d zeroseg = DSegment4d::From (1.3, 4.3, 5.5, 7.6, zeroseg.point[0].x, zeroseg.point[0].y, zeroseg.point[0].z, zeroseg.point[0].w);
@@ -1156,6 +1237,9 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
 
 //bool DSegment4d::MaxCubicError (double x1, double f1, double x2, double f2, double &xm, double &fm, double &a, double &b)
 //LINE 404
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DSegment4d, Test27)
     {
     Check::StartScope ("MaxCubicError Tests");
@@ -1204,6 +1288,9 @@ bool MaxQuadraticError (double x1, double f1, double &fm)
 
 //bool DSegment4d::MaxQuadraticError (double x1, double f1, double &fm)
 //LINE 404
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DSegment4d, Test28)
     {
     Check::StartScope ("MaxQuadraticError Tests");
@@ -1221,6 +1308,9 @@ TEST (DSegment4d, Test28)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, EqualityCheck)
     {
     DSegment4d seg4d = DSegment4d::From(DPoint4d::From(3, 3, 3, 1), DPoint4d::From(10, 4, 6, 1));
@@ -1268,6 +1358,9 @@ void TestVectorToVector (DVec3dCR U, DVec3dCR V)
         
     }    
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DVec3d, RotationFromVectorToVector)
     {
     TestVectorToVector (DVec3d::From (1,0,0), DVec3d::From (0,1,0));
@@ -1298,6 +1391,9 @@ static void testProjectVectorToVector (DVec3dCR spaceVector, DVec3dCR targetVect
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DVec3d, ProjectToVector)
     {
     testProjectVectorToVector (DVec3d::From (1,2,3), DVec3d::From (-2,8,4));
@@ -1320,6 +1416,9 @@ static void testProjectVectorToPlane (DVec3dCR spaceVector, DVec3dCR vectorU, DV
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DVec3d, ProjectToPlane)
     {
     testProjectVectorToPlane (DVec3d::From (3,2,4), DVec3d::From (1,0,0), DVec3d::From (0,1,0));

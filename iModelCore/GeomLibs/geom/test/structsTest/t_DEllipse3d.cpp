@@ -112,6 +112,10 @@ bool Check_SolveRotatedEllipseCenter (double x0, double y0, double x1, double y1
         }
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Ellipse, Microsoft)
 {
 double cx0, cy0, cx1, cy1;
@@ -121,6 +125,9 @@ Check_SolveAlignedEllipseCenter (1,2,  4,5, 3, 4, false, true, cx1, cy1);
 Check_SolveRotatedEllipseCenter (1,2,  4,5, 3, 4);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, Init)
     {
     DEllipse3d ellipse0, ellipse1, ellipse2, ellipse3, ellipse4, ellipse5, ellipse6, ellipse7, ellipse8;
@@ -195,6 +202,9 @@ TEST (DEllipse3d, Init)
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, SetStartEnd)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 2*PI);
@@ -206,6 +216,9 @@ TEST (DEllipse3d, SetStartEnd)
     Check::Near (PI/2, ellipse0.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, InitFromScaledRotMatrix)
     {
     DEllipse3d ellipse0;
@@ -230,6 +243,9 @@ TEST (DEllipse3d, InitFromScaledRotMatrix)
     Check::Near (PI/2, ellipse1.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetScaledRotMatrix)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
@@ -260,6 +276,9 @@ TEST (DEllipse3d, GetScaledRotMatrix)
     Check::Near (PI/2, sweep0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, InitFromCenterNormalRadius)
     {
     DEllipse3d ellipse0;
@@ -276,6 +295,9 @@ TEST (DEllipse3d, InitFromCenterNormalRadius)
     Check::Near (2*PI, ellipse0.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IsFullEllipse)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI/2);
@@ -291,6 +313,9 @@ TEST (DEllipse3d, IsFullEllipse)
     Check::Near (-(3*PI)/2, ellipse2.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, Evaluate)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -325,6 +350,9 @@ TEST (DEllipse3d, Evaluate)
     Check::Near (point10, ddX);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, FractionParameterToPoint)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -356,6 +384,9 @@ TEST (DEllipse3d, FractionParameterToPoint)
     Check::Near (1.0, determinant);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetLocalFrame)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -396,6 +427,9 @@ TEST (DEllipse3d, GetLocalFrame)
     Check::Near (2.0, coff90);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetStrokeCount)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -413,6 +447,9 @@ TEST (DEllipse3d, GetStrokeCount)
     Check::Near (4, n3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, EvaluateTrigPairs)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -434,6 +471,9 @@ TEST (DEllipse3d, EvaluateTrigPairs)
     Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, 0.0), points1[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IsAngleInSweep)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -465,6 +505,9 @@ TEST (DEllipse3d, IsAngleInSweep)
     Check::Near (0.5, fraction3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetLimits)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, PI/4, 2*PI);
@@ -488,6 +531,9 @@ TEST (DEllipse3d, GetLimits)
     Check::Near (PI, endAngle4);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, SetLimits)
     {
     DEllipse3d ellipse0, ellipse1, ellipse2, ellipse3;
@@ -509,6 +555,9 @@ TEST (DEllipse3d, SetLimits)
     Check::Near (PI, ellipse3.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, InitWithPerpendicularAxes)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2*PI);
@@ -521,6 +570,9 @@ TEST (DEllipse3d, InitWithPerpendicularAxes)
     Check::Near (crossBefore, crossAfter);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetMajorMinorRangeMidlines)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -533,6 +585,9 @@ TEST (DEllipse3d, GetMajorMinorRangeMidlines)
     Check::Near (2.0, length);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, InitReversed)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -542,6 +597,9 @@ TEST (DEllipse3d, InitReversed)
     Check::Near (-2*PI, ellipse1.sweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, FromCopyWithPositiveSweep)
     {
     DPoint3d xyz0, xyz1;
@@ -564,8 +622,9 @@ TEST (DEllipse3d, FromCopyWithPositiveSweep)
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, TangentMagnitude)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -574,6 +633,9 @@ TEST (DEllipse3d, TangentMagnitude)
     Check::Near (1.0, magnitudeTangent);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ArcLength)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -595,6 +657,9 @@ TEST (DEllipse3d, ArcLength)
     Check::Near (arcLength4, arclength3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ArcLengthVsBspline)
     {
     double r0 = 20.0;
@@ -624,7 +689,9 @@ TEST (DEllipse3d, ArcLengthVsBspline)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ArcLengthVsBsplineSubDivide)
     {
     double r0 = 20.0;
@@ -657,6 +724,9 @@ TEST (DEllipse3d, ArcLengthVsBsplineSubDivide)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, GetRange)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -685,6 +755,9 @@ TEST (DEllipse3d, GetRange)
     Check::Near (1.0, range1.high.y);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectPlane)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -706,6 +779,9 @@ TEST (DEllipse3d, IntersectPlane)
     Check::Near (DPoint3d::FromXYZ (0.0, -1.0, -PI/2), trigPoints2[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectXYLine)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -736,6 +812,9 @@ TEST (DEllipse3d, IntersectXYLine)
     Check::Near (PI/2, ellipseAngle2[0]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IsCircular)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2*PI);
@@ -746,6 +825,9 @@ TEST (DEllipse3d, IsCircular)
     Check::True (!(ellipse1.IsCircularXY ()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectXYDEllipse3d)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
@@ -788,6 +870,9 @@ TEST (DEllipse3d, IntersectXYDEllipse3d)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectXYDEllipse3dBounded)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
@@ -828,6 +913,9 @@ TEST (DEllipse3d, IntersectXYDEllipse3dBounded)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectSweptDEllipse3d)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
@@ -870,6 +958,9 @@ TEST (DEllipse3d, IntersectSweptDEllipse3d)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, IntersectSweptDEllipse3dBounded)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, PI);
@@ -910,6 +1001,9 @@ TEST (DEllipse3d, IntersectSweptDEllipse3dBounded)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ConstructABXPointEdgePoint)
     {
     bvector<DEllipse3d> ellipses;
@@ -994,6 +1088,9 @@ void ConstructXPointEdgePointEdgePointAngle_go (double d, double y0, double y1, 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAngle)
     {
     for (double d = 2.0; d < 5.0; d+= 0.5)
@@ -1008,8 +1105,9 @@ TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAngle)
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAxis)
     {
     // These coordinates have (by hand construction) 3 solutions:
@@ -1023,7 +1121,9 @@ TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAxis)
     
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, FractionInterval)
     {
     DEllipse3d ellipse0 = DEllipse3d::From (0,0,0, 1,0,0, 0,1,0, 1,3);
@@ -1060,6 +1160,10 @@ void ExerciseEllipseConstructions (DEllipse3dCR ellipse0)
                  ellipse3.vector0.DotProduct (ellipse0.vector0),
                 "scaled vectors");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, Init2)
     {
     double theta0 = 0.1;
@@ -1071,7 +1175,9 @@ TEST (DEllipse3d, Init2)
     ExerciseEllipseConstructions (ellipse0);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, Init3)
     {
     
@@ -1123,6 +1229,10 @@ double theta1
         }
     Check::EndScope ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, StartDirection_TangentToRay)
     {
     testDEllipse3d_Construct_Point_Direction_TangentXY (1,1, 0.0, 0,0, 0.0);
@@ -1166,6 +1276,10 @@ void testParallelLineLinePoint (DPoint3dCR pointA, DPoint3dCR pointB, double ang
         }
     Check::EndScope ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TTT,ParallelLineLinePoint)
     {
     static double fMax = 1.0e7;
@@ -1230,6 +1344,9 @@ void CheckConicPoints (DConic4dCR conic0, DConic4dCR conic1, double fraction)
     CHECK_EXPR(True, sweepSign * tangent0.DotProduct (tangent1) > 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DConic4d, CommonAxesFail0)
     {
     DConic4d conic;
@@ -1295,6 +1412,10 @@ double TestExactClosestPoint (DEllipse3dR ellipse, int numStep, int numDelta, do
         }
     return maxDistance;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,ClosestPointA)
     {
     DEllipse3d ellipse;
@@ -1306,6 +1427,9 @@ TEST(DEllipse3d,ClosestPointA)
     TestExactClosestPoint (ellipse, 7, 10, epsilon);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,ClosestPointB)
     {
     DEllipse3d ellipse;
@@ -1344,6 +1468,9 @@ void CheckIntersectionOfTangents(DEllipse3dCR baseEllipse, double startDegrees, 
       }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d, IntersectionOfEndTangents)
     {
     bvector<double> sweepDegreesArray {10, 20, 30, 45, 60, 85, 100, 125, 178};
@@ -1387,6 +1514,9 @@ bool IsEllipseCollapsedToLine (DEllipse3dCR ellipse, bvector<DPoint3d> &startExt
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d, ClassifyDegenerate)
     {
     
@@ -1520,6 +1650,9 @@ void TestLineSpiralArcSpiralLine(double totalTurnRadians, double lengthA, double
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,SymmetricLineLine)
     {
     TestSymmetricLineLine (0.2, 10.0);
@@ -1528,6 +1661,9 @@ TEST(DSpiral2D,SymmetricLineLine)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,LineSpiralArcSpiralLine)
     {
     TestLineSpiralArcSpiralLine (0.2, 10.0, 10, 20);
@@ -1563,6 +1699,9 @@ void TestSpiralStartShouderTargetA (DPoint2dCR start, DPoint2dCR shoulder, DPoin
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,StartShoulderTargetA)
     {
     TestSpiralStartShouderTargetA (DPoint2d::From (0,0), DPoint2d::From (10,0), DPoint2d::From (10,10));
@@ -1581,6 +1720,9 @@ void TestLineShift (bvector<DPoint3d> const &points)
     Check::SaveTransformed (*c2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,LineToLineShift)
     {
     TestLineShift (bvector<DPoint3d>
@@ -1614,6 +1756,10 @@ TEST(DSpiral2D,LineToLineShift)
 
     Check::ClearGeometry("DSpiral2d.LineToLineShift");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSpiral2D,ScaledTransform)
     {
     Transform frame0 = Transform::FromRowValues
@@ -1655,6 +1801,9 @@ TEST(DSpiral2D,ScaledTransform)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MoveSemantics,BVectorDestructorAfterSwap)
     {
     bvector <double> a {1,2,3};
@@ -1714,6 +1863,9 @@ void testMultiRadiusFillet (bool reverse)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,MultiRadiusFilletShortTurn)
     {
     testMultiRadiusFillet (false);
@@ -1721,6 +1873,9 @@ TEST(DEllipse3d,MultiRadiusFilletShortTurn)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,MultiRadiusFilletLongTurn)
     {
     testMultiRadiusFillet (true);
@@ -1800,6 +1955,9 @@ double offset1 = 0.0
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,SymmetricFilletWithTaper)
     {
     for (double offset : bvector<double> {0.0, 0.1})
@@ -1828,6 +1986,10 @@ void TestPseudoOffsetConstruction (DEllipse3dCR arc0)   // ASSUME arc0.start == 
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,PseudoOffsetConstruction)
     {
     for (auto b : bvector<double>{1.0, 1.5, 2.0, 0.5})
@@ -1859,6 +2021,9 @@ TEST(DEllipse3d,PseudoOffsetConstruction)
             }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
     {
     // Create short ellipses starting along x axis, with various combinations of 
@@ -1892,6 +2057,9 @@ TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,CenterStartEnd)
   {
   DEllipse3d ellipse = DEllipse3d::From (0,10,0,   10,0,0, 0,10,0, 0.0, Angle::TwoPi ());
@@ -1913,6 +2081,9 @@ TEST(DEllipse3d,CenterStartEnd)
   }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,Scott)
   {
   DPoint3d cc = DPoint3d::From (51934.74932643221, 57759.754516860063,0);
@@ -1953,6 +2124,9 @@ TEST(DEllipse3d,Scott)
   }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d,IsCCWSweepXY)
   {
 
@@ -1994,6 +2168,10 @@ bool isCCW              // true for arc runnign CCW viewed from above.
         arc.ComplementSweep ();
     return arc;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d,ConstructWithXYOrientation)
     {
     DPoint3d center = DPoint3d::From (1,2,3);
@@ -2057,6 +2235,9 @@ DPoint3d   biasPoint
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,ConstructStartPointStartTangentCircleTangency)
     {
     double shiftY = -30.0;
@@ -2090,6 +2271,10 @@ void TestSweepToPlane (DEllipse3dCR spaceEllipse, DPlane3dCR plane, DVec3d sweep
         Check::NearZero (plane.Evaluate (pointB), "Swept ellipse point is on plane");
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,SweepToPlane)
     {
     DVec3d unitZ = DVec3d::UnitZ ();
@@ -2145,6 +2330,9 @@ TEST(DEllipse3d, ArcLengthTolerance)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,CircleCircleTangentLines)
     {
     DPoint3d centerA = DPoint3d::From (0,0,0);
@@ -2177,6 +2365,9 @@ TEST(DEllipse3d,CircleCircleTangentLines)
     Check::ClearGeometry ("DEllipse3d.CircleCircleTangentLines");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,STurn)
     {
     DPoint3d pointA = DPoint3d::From (0,0,0);

@@ -1,6 +1,9 @@
 #include "testHarness.h"
 #include "Bentley/BeNumerical.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (LinearAlgebra, IdentitySolve)
     {
     for (size_t i = 1; i < 5; i++)
@@ -97,6 +100,9 @@ double TestSineShifted (size_t n, double a, double q0, double dq0, double q1, do
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (LinearAlgebra, ShiftedSolve)
     {
     size_t nMax = 100;
@@ -162,6 +168,9 @@ double CheckInterpolation (double a, double b, double c, double f, bool adaptive
         }
     return e;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(LinearAlgebra,Epsilon0)
     {
     static bool s_doPrint = false;
@@ -215,6 +224,9 @@ TEST(LinearAlgebra,Epsilon0)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(LinearAlgebra, acos)
     {
     static bool s_doPrint = false;

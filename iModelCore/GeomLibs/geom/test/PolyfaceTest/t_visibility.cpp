@@ -69,6 +69,10 @@ void BuildClipTestMeshSet (bvector<PolyfaceHeaderPtr> &meshes)
                 Angle::DegreesToRadians (15)));
     meshes.back ()->Transform (Transform::From (3.5, 0, 0));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Clip,XYVisibilityA)
     {
     // EDL April 6 2017
@@ -102,6 +106,9 @@ TEST(Clip,XYVisibilityA)
     Check::ClearGeometry ("Clip.XYVisibilityA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Clip,XYVisibilityB)
     {
     bvector<PolyfaceHeaderPtr> meshA;
@@ -133,6 +140,9 @@ TEST(Clip,XYVisibilityB)
     Check::ClearGeometry ("Clip.XYVisibilityB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Clip,XYVisibilityAB)
     {
     bvector<PolyfaceHeaderPtr> meshA;

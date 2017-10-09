@@ -59,7 +59,9 @@ void CheckRuledPierce (DPoint3dCP coffA, DPoint3dCP coffB, int order)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Bilinear0)
     {
     DPoint3d coffA[] = 
@@ -78,6 +80,9 @@ TEST(RuledBezier,Bilinear0)
     CheckRuledPierce (coffA, coffB, 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Bilinear1)
     {
     DPoint3d coffA[] = 
@@ -96,6 +101,9 @@ TEST(RuledBezier,Bilinear1)
     CheckRuledPierce (coffA, coffB, 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Quad0)
     {
     DPoint3d coffA[] = 

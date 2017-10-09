@@ -140,12 +140,18 @@ void TestRangeTree (size_t numX, size_t numY, size_t numZ)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PFRangeTree,CountRangeHits)
     {
     TestRangeTree (4,4,4);
     TestRangeTree (8,8,8);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PFRangeTree,CollectClash)
     {
     bvector<DPoint3d> small;
@@ -233,6 +239,9 @@ void TestPolyfaceRangeTree01 (size_t numX, size_t numY, size_t numZ)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceRangeTree01,CollectInRange)
     {
     TestPolyfaceRangeTree01 (3,2,8);
@@ -242,6 +251,9 @@ TEST(PolyfaceRangeTree01,CollectInRange)
 #endif
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,Cube)
     {
     PolyfaceHeader::OffsetOptions offsetOptions;
@@ -271,6 +283,9 @@ TEST(PolyfaceOffset,Cube)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,OpenMesh1)
     {
     PolyfaceHeader::OffsetOptions offsetOptions;
@@ -303,6 +318,9 @@ TEST(PolyfaceOffset,OpenMesh1)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,OpenMesh2)
     {
     PolyfaceHeader::OffsetOptions offsetOptions;
@@ -373,6 +391,9 @@ TEST(PolyfaceOffset,OpenMesh2)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,Torus)
     {
     PolyfaceHeader::OffsetOptions offsetOptions;
@@ -421,6 +442,9 @@ TEST(PolyfaceOffset,Torus)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,SimpleCreate)
     {
     //     4  3  6
@@ -490,8 +514,10 @@ void TestGridCutFill (DPoint3dDVec3dDVec3d frameA, DPoint3dDVec3dDVec3d frameB, 
         }
     }
 
-
- TEST(Polyface,CutFill0)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,CutFill0)
     {
     DPoint3dDVec3dDVec3d frameA (0,0,0,   4,0,0,   0,4,0);
     DPoint3dDVec3dDVec3d frameB (1,2,1,   1,0,0,   0,1,0);
@@ -513,6 +539,9 @@ void TestGridCutFill (DPoint3dDVec3dDVec3d frameA, DPoint3dDVec3dDVec3d frameB, 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(Polyface,CutFillA)
     {
     DPoint3dDVec3dDVec3d frameA (0,0,0,   2,0,0,   0,2,0);
@@ -540,6 +569,9 @@ void CollectDrape (PolyfaceHeaderPtr  &mesh, double x0, double x1, double y, dou
     if (cv.IsValid ())
         Check::SaveTransformed (*cv);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,DrapeLinestring)
     {
     double b = 10.0;

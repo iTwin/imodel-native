@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_normals.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -105,6 +105,9 @@ void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const 
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastCutFill,NoCrossings)
     {
     double dtmSide = 2.5;
@@ -137,7 +140,9 @@ TEST(FastCutFill,NoCrossings)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastCutFill,SlopedWithCrossings)
     {
     double dtmSide = 2.5;
@@ -162,6 +167,9 @@ TEST(FastCutFill,SlopedWithCrossings)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastCutFill,SingleVertexTouch)
     {
     double dtmSide = 5.0;
@@ -192,7 +200,9 @@ TEST(FastCutFill,SingleVertexTouch)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastCutFill,NoEdgeContact)
     {
     double dtmSide = 5.0;
@@ -222,6 +232,9 @@ TEST(FastCutFill,NoEdgeContact)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastCutFill,SinusoidPlane)
     {
     double z0 = 0.5;

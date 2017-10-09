@@ -1,6 +1,9 @@
 #include "testHarness.h"
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d,HelloWorld)
     {
     FVec3d point0 = FVec3d::From (1.0, 2.0, 3.0);
@@ -29,6 +32,9 @@ TEST(FVec3d,HelloWorld)
 //    I think the FVec3d::DotProduct values are "better" than FVec3d::FDotProduct.   But I can't say definitively it's catastrophic.
 // 
 void breakPoint (){}  // a place to put a break.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d,DotProductPrecison)
     {
     for (double z : bvector<double> {0,1,4})
@@ -79,6 +85,9 @@ TEST(FVec3d,DotProductPrecison)
         }
     }
 #endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d,OperatorOverload)
     {
     auto point0F = FPoint3d::From (2,3,5);
@@ -122,12 +131,18 @@ void TestVectorParallel ()
     Check::True(plusZ.IsPerpendicularTo (plusX));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d,ParallelAndPositiveParallel)
     {
     TestVectorParallel <DVec3d> ();
     TestVectorParallel <FVec3d> ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d, DotCrossProduct) 
     {
     double refValueShift = 1.0e6;   // to force loose tolerances.
@@ -153,6 +168,9 @@ TEST(FVec3d, DotCrossProduct)
     Check::Exact(DVec3d::From(FVec3d::FromCrossProduct(vector01F, vector23F)) , DVec3d::FromCrossProduct(vector01D, vector23D));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d, Angles)
     {
     auto point0F = FVec3d::From(2.0, 0, 0);
@@ -170,6 +188,9 @@ TEST(FVec3d, Angles)
     Check::ExactDouble(point0D.SmallerUnorientedAngleTo(point1D), point0F.SmallerUnorientedAngleTo(point1F).Radians());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FVec3d, Magnitude)
     {
     auto point0F = FVec3d::From(2.0, 3.0, -7.0);
