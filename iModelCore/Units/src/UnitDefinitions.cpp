@@ -834,7 +834,7 @@ void AddVolume(UnitRegistry& reg)
 void AddVolumeRatio(UnitRegistry& reg)
     {
     reg.AddUnit(VOLUME_RATIO, SI, "CUB.M/CUB.M", "M(3)*M(-3)");
-    reg.AddUnit(VOLUME_RATIO, SI, "LITRE/LITRE", "LITRE*LITRE(-1)");
+    reg.AddUnit(VOLUME_RATIO, METRIC, "LITRE/LITRE", "LITRE*LITRE(-1)");
     }
 
 void AddSpecificVolume(UnitRegistry& reg)
