@@ -991,11 +991,11 @@ BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
             return ERROR;
         }
 
-    if (context.GetUpdatePlan().WantWait())
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
         {
-        // ###TODO_ELEMENT_TILE: Honor timeout...
+        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
         m_root->SelectTiles(context);
-        m_root->WaitForAllLoads();
+        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
         m_root->CancelAllTileLoads();
         }
 

@@ -416,18 +416,15 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             return ERROR;
         }
 
+    UpdatePlan const& plan = context.GetUpdatePlan();
     uint32_t waitForAllLoadsMillis = 0;
-    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
-        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
+    if (plan.WantWait() && plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
+        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(plan.GetQuitTime() - BeTimePoint::Now()).count();
 
     m_root->DrawInView(context);
 
     if (!m_allAttachmentsLoaded)
         {
-        // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
-        auto const& plan = context.GetUpdatePlan().GetQuery();
-        uint64_t endTime = !context.GetUpdatePlan().WantWait() && plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
-
         // Create as many tile trees as we can within the allotted time...
         bool timedOut = false;
 
@@ -437,7 +434,7 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             Attachment& attach = m_attachments[i];
             if (nullptr == attach.m_root)
                 {
-                if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+                if (plan.IsTimedOut())
                     {
                     DEBUG_PRINTF("CreateScene aborted");
                     timedOut = true;
@@ -456,11 +453,19 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
         }
 
     // Always draw all the tile trees we currently have...
-    if (0 == waitForAllLoadsMillis)
+    if (!plan.WantWait())
         {
         for (auto& attach : m_attachments)
+            {
             if (nullptr != attach.m_root)
                 attach.m_root->DrawInView(context);
+
+#if defined(TODO_SCENE_TIMEOUT)
+            // Do we really want to stop selecting tiles half-way through? Will cause the kind of drop-out everyone hates on bim0200dev...
+            if (plan.IsTimedOut())
+                break;
+#endif
+            }
         }
     else
         {
@@ -468,6 +473,8 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
         for (auto& attach : m_attachments)
             if (nullptr != attach.m_root)
                 attach.m_root->SelectTiles(context);
+
+        uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_attachments.size()));
 
         // Wait for requests to complete
         // Note we are ignoring any time spent creating tile trees above...
@@ -477,7 +484,6 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             if (nullptr == attach.m_root)
                 continue;
 
-            uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_attachments.size()));
             attach.m_root->WaitForAllLoadsFor(waitMillis);
             attach.m_root->CancelAllTileLoads();
             attach.m_root->DrawInView(context);

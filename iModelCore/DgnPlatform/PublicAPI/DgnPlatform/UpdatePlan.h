@@ -147,28 +147,6 @@ struct StopEvents
 //=======================================================================================
 struct UpdatePlan
 {
-    struct Query
-    {
-        BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
-        double m_frustumScale = 1.0;
-        bool m_onlyAlwaysDrawn = false;
-        uint32_t m_minElements = 3000;
-        uint32_t m_maxElements = 50000;
-        mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t m_targetNumElements = 0;
-
-        BeDuration GetTimeout() const {return m_maxTime;}
-        uint32_t GetMinElements() const {return m_minElements;}
-        uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinElements(uint32_t val) {m_minElements = val;}
-        void SetMaxElements(uint32_t val) {m_maxElements = val;}
-        void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
-        uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
-        uint32_t GetDelayAfter() const {return m_delayAfter;}
-        void SetDelayAfter(uint32_t val) const {m_delayAfter=val;}
-    };
-
     struct AbortFlags
     {
         struct Motion
@@ -195,33 +173,46 @@ struct UpdatePlan
         Motion& GetMotion() const {return m_motion;}
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
-
-    bool m_hasSubRect = false;
-    mutable bool m_wantWait = false;
-    bool m_wantDecorators = true;
-    uint32_t m_priority = 0;
-    BeTimePoint m_sceneQuitTime; // don't allow scene creation past this timepoint
-    BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
-    DRange3d m_subRect;
-    Query m_query;
+protected:
+    BeTimePoint m_quitTime;
     AbortFlags m_abortFlags;
-
+    double m_frustumScale = 1.0;
+    uint32_t m_priority;
+    DRange3d m_subRect;
+    bool m_hasSubRect = false;
+    bool m_wantDecorators = true;
+    mutable bool m_wantWait = false;
 public:
-    Query& GetQueryR() {return m_query;}
-    Query const& GetQuery() const {return m_query;}
-    void SetPriority(uint32_t val) {m_priority=val;}
+    // Scale applied to the frustum when selecting tiles.
+    double GetFrustumScale() const {return m_frustumScale;}
+    void SetFrustumScale(double scale) {m_frustumScale=scale;}
+
+    // Priority of this update (see Render::Task::Priority)
     uint32_t GetPriority() const {return m_priority;}
+    void SetPriority(uint32_t val) {m_priority=val;}
+
+    // Conditions under which this update will abort.
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
+    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
-    void SetWait(bool val) const {m_wantWait=val;}
+
+    // If true, this is a synchronous update which will return either when complete or when quite time is reached. Useful for generating thumbnails.
     bool WantWait() const {return m_wantWait;}
-    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    void SetWait(bool val) const {m_wantWait=val;}
+
+    // Time after which this update should stop.
+    bool HasQuitTime() const {return m_quitTime.IsValid();}
     BeTimePoint GetQuitTime() const {return m_quitTime;}
-    void SetSceneQuitTime(BeTimePoint end) {m_sceneQuitTime = end;}
-    BeTimePoint GetSceneQuitTime () const {return m_sceneQuitTime;}
+    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    bool IsTimedOut() const {return HasQuitTime() && GetQuitTime().IsInPast();}
+
+    // An optional sub-range to update. This is used e.g. to 'heal' a rectangular portion of the screen while preserving the screen contents outside that rectangle.
+    bool HasSubRect() const {return m_hasSubRect;}
+    DRange3dCR GetSubRect() const {BeAssert(HasSubRect()); return m_subRect;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
+
+    // If true, decorators will be invoked to add their graphics.
     bool WantDecorators() const {return m_wantDecorators;}
     void SetWantDecorators(bool want) {m_wantDecorators=want;}
 };

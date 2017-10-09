@@ -504,6 +504,17 @@ public:
     //=======================================================================================
     struct RangeQuery : SpatialQuery
     {
+        struct Plan
+        {
+            BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
+            mutable uint32_t m_targetNumElements = 0;
+
+            BeDuration GetTimeout() const {return m_maxTime;}
+            void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
+            uint32_t GetTargetNumElements() const {return m_targetNumElements;}
+            void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
+        };
+
         DEFINE_T_SUPER(SpatialQuery)
         bool m_depthFirst = false;
         bool m_cameraOn = false;
@@ -516,7 +527,7 @@ public:
         double m_minScore = 0.0;
         double m_lastScore = 0.0;
         SpatialViewControllerCR m_view;
-        UpdatePlan::Query const& m_plan;
+        Plan m_plan;
         QueryResults* m_results;
 
         int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
@@ -528,7 +539,7 @@ public:
         bool ComputeOcclusionScore(double& score, FrustumCR);
 
     public:
-        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
+        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, Plan const& plan, QueryResults*);
         void DoQuery();
     };
 

@@ -177,7 +177,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
     DGNPLATFORM_EXPORT void Animate();

@@ -180,15 +180,12 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     StopWatch timer(true);
 
     uint32_t waitForAllLoadsMillis = 0;
-    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+    auto const& plan = context.GetUpdatePlan();
+    if (plan.WantWait() && plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
         waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
 
     if (!m_allRootsLoaded)
         {
-        // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
-        auto const& plan = context.GetUpdatePlan().GetQuery();
-        uint64_t endTime = !context.GetUpdatePlan().WantWait() && plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
-
         // Create as many tile trees as we can within the allotted time...
         bool timedOut = false;
 
@@ -209,7 +206,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
                 m_roots.Insert(modelId, modelRoot);
 
-                if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+                if (plan.IsTimedOut())
                     {
                     DEBUG_PRINTF("CreateScene aborted");
                     timedOut = true;
@@ -223,7 +220,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
-    if (0 == waitForAllLoadsMillis)
+    if (!plan.WantWait())
         {
         for (auto pair : m_roots)
             if (nullptr != pair.second)
@@ -236,6 +233,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
             if (nullptr != pair.second)
                 pair.second->SelectTiles(context);
 
+        uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_roots.size()));
+
         // Wait for requests to complete
         // Note we are ignoring any time spent creating tile trees above...
         context.m_requests.RequestMissing();
@@ -243,7 +242,6 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
             {
             if (nullptr != pair.second)
                 {
-                uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_roots.size()));
                 pair.second->WaitForAllLoadsFor(waitMillis);
                 pair.second->CancelAllTileLoads();
                 pair.second->DrawInView(context);
@@ -445,7 +443,7 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
 void SpatialViewController::_VisitAllElements(ViewContextR context)
     {
     QueryResults results;
-    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query(), &results); // NOTE: the context may have a smaller frustum than the view
+    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), RangeQuery::Plan(), &results); // NOTE: the context may have a smaller frustum than the view
     rangeQuery.Start(*this);
 
     if (m_noQuery)
@@ -643,7 +641,7 @@ void SpatialViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan, QueryResults* results) :
+SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, RangeQuery::Plan const& plan, QueryResults* results) :
         SpatialQuery(&view.m_special, view.GetActiveVolume().get()), m_view(view), m_plan(plan), m_results(results)
     {
     m_count = 0;
