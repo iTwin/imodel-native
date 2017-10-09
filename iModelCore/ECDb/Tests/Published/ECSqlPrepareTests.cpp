@@ -683,13 +683,13 @@ TEST_F(ECSqlSelectPrepareTests, Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, GroupBy)
     {
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I;")); //add semicoln
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B;"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry;"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY S")) << "group by column not in select clause is supported (although against standard)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)")) << "functions in group by is supported (although against standard)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY Length(S)"));
