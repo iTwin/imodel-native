@@ -102,6 +102,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     //AddPhenomenon(AREA_COEFFICIENT_OF_THERMAL_EXPANSION, "AREA*AREA(-1)*TEMPERATURE_CHANGE(-1)");
     //AddPhenomenon(VOLUMETRIC_COEFFICIENT_OF_THERMAL_EXPANSION, "VOLUME*VOLUME(-1)*TEMPERATURE_CHANGE(-1)");
     //AddPhenomenon(ACTION, "WORK*TIME");
+
+    AddPhenomenon(VOLUME_RATIO, "VOLUME*VOLUME(-1)");
     }
 
 

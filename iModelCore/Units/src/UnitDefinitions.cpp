@@ -831,6 +831,12 @@ void AddVolume(UnitRegistry& reg)
     reg.AddUnit(VOLUME, IMPERIAL, "GALLON_IMPERIAL", "LITRE", 4.54609); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
 
+void AddVolumeRatio(UnitRegistry& reg)
+    {
+    reg.AddUnit(VOLUME_RATIO, SI, "CUB.M/CUB.M", "M(3)*M(-3)");
+    reg.AddUnit(VOLUME_RATIO, SI, "LITRE/LITRE", "LITRE*LITRE(-1)");
+    }
+
 void AddSpecificVolume(UnitRegistry& reg)
     {
     reg.AddUnit(SPECIFIC_VOLUME, SI, "CUB.M/KG", "M(3)*KG(-1)");
@@ -942,6 +948,7 @@ void UnitRegistry::AddDefaultUnits()
     AddVolume(reg);
     AddSpecificVolume(reg);
     AddWarpingConstant(reg);
+    AddVolumeRatio(reg);
     }
 
 /*--------------------------------------------------------------------------------**//**

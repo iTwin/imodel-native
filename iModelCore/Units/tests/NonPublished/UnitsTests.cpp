@@ -1057,6 +1057,25 @@ TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
         }
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, VolumeRatio_Conversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+    TestUnitConversion(1.0, "CUB.M/CUB.M", 1.0, "LITRE/LITRE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "CUB.M/CUB.M", 1.0, "CUB.M/CUB.M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "LITRE/LITRE", 1.0, "CUB.M/CUB.M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "LITRE/LITRE", 1.0, "LITRE/LITRE", 1, loadErrors, conversionErrors, handledUnits);
+
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/

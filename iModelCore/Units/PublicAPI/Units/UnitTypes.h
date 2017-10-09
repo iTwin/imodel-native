@@ -106,7 +106,7 @@ private:
 
 protected:
     UNITS_EXPORT UnitsSymbol();
-    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);   
+    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
     virtual ~UnitsSymbol();
       
