@@ -406,6 +406,51 @@ TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, LinkTableConstraintClassIdCols)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("LinkTableConstraintClassIdCols.ecdb",SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                        <ECSchema schemaName="Test" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                            <ECEntityClass typeName="BaseA" modifier="None">
+                                                 <ECCustomAttributes>
+                                                      <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                       </ClassMap>
+                                                 </ECCustomAttributes>
+                                                <ECProperty propertyName="BaseAProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="SubA" modifier="None">
+                                                <BaseClass>BaseA</BaseClass>
+                                                <ECProperty propertyName="SubAProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="BaseB" modifier="None">
+                                                 <ECCustomAttributes>
+                                                      <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                       </ClassMap>
+                                                 </ECCustomAttributes>
+                                                <ECProperty propertyName="BaseBProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="SubB" modifier="None">
+                                                <BaseClass>BaseB</BaseClass>
+                                                <ECProperty propertyName="SubBProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECRelationshipClass typeName="Rel" modifier="None" strength="referencing">
+                                               <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                                                   <Class class="BaseA" />
+                                               </Source>
+                                               <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                   <Class class="BaseB" />
+                                               </Target>
+                                             </ECRelationshipClass>
+                                        </ECSchema>)xml")));
+
+    ASSERT_EQ(std::vector<Utf8String>({"Id","ECClassId","SourceId","TargetId"}), GetHelper().GetColumnNames("ts_Rel")) << "Link Table is not expected to have constraint class id columns";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, CascadeDeletion)

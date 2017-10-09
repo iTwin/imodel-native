@@ -72,7 +72,7 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, ECCla
 
     DbTableId tableId;
     m_ecdb.GetImpl().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
-    return m_tables.Add(tableId, name, tableType, exclusiveRootClassId, parentTable, DbTable::UpdatableViewInfo());
+    return m_tables.Add(tableId, name, tableType, exclusiveRootClassId, parentTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -470,7 +470,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::LoadTable(DbTableId tableId) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Type, ExclusiveRootClassId, ParentTableId, UpdatableViewName FROM ec_Table WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Type, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Id=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -493,8 +493,7 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
         BeAssert(parentTable != nullptr && "Failed to find parent table");
         }
 
-    Utf8CP updatableViewName = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
-    DbTable* table = const_cast<TableCollection&>(m_tables).Add(tableId, name, tableType, exclusiveRootClassId, parentTable, DbTable::UpdatableViewInfo(updatableViewName));
+    DbTable* table = const_cast<TableCollection&>(m_tables).Add(tableId, name, tableType, exclusiveRootClassId, parentTable);
 
     if (table == nullptr)
         {
@@ -520,7 +519,7 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id, Type, ExclusiveRootClassId, ParentTableId, UpdatableViewName FROM ec_Table WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id, Type, ExclusiveRootClassId, ParentTableId FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -543,8 +542,7 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
         BeAssert(parentTable != nullptr && "Failed to find parent table");
         }
 
-    Utf8CP updatableViewName = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
-    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, name, tableType, exclusiveRootClassId, parentTable, DbTable::UpdatableViewInfo(updatableViewName));
+    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, name, tableType, exclusiveRootClassId, parentTable);
     if (table == nullptr)
         {
         BeAssert(false);
@@ -780,7 +778,7 @@ DbTable const* DbSchema::TableCollection::Get(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2017
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable, DbTable::UpdatableViewInfo const& updatableViewInfo)
+DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     if (name.empty() || !tableId.IsValid())
         {
@@ -788,7 +786,7 @@ DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, Db
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(m_ecdb, tableId, name, tableType, exclusiveRootClassId, parentTable, updatableViewInfo);
+    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(m_ecdb, tableId, name, tableType, exclusiveRootClassId, parentTable);
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -846,8 +844,8 @@ void DbSchema::TableCollection::Remove(Utf8StringCR tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable, UpdatableViewInfo const& updatableViewInfo)
-    : m_ecdb(ecdb), m_id(id), m_name(name), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable), m_updatableViewInfo(updatableViewInfo)
+DbTable::DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_ecdb(ecdb), m_id(id), m_name(name), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
     {
     if (tableType != Type::Existing && tableType != Type::Virtual)
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(tableType));

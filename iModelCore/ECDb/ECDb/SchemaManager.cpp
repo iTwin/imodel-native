@@ -243,15 +243,6 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
         return ERROR;
 
     return GetDbMap().MapSchemas(ctx, schemasToMap);
-
-    //WIP_UPDATABLEVIEW
-    /*if (SUCCESS != ViewGenerator::DropUpdatableViews(GetECDb()))
-        return ERROR;
-
-    if (SUCCESS != GetDbMap().MapSchemas(ctx, schemasToMap))
-        return ERROR;
-    
-    return ViewGenerator::CreateUpdatableViews(GetECDb());*/
     }
 
 /*---------------------------------------------------------------------------------------
