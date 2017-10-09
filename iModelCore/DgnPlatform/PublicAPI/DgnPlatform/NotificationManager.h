@@ -40,8 +40,13 @@ private:
     Utf8String            m_briefMsg;
     Utf8String            m_detailedMsg;
 
+    // OutputMessageType.Temporary message information
+    DgnViewportCP         m_viewport;
+    Point2d               m_displayPoint;
+    int32_t               m_displayTime;
+
 public:
-    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast) {}
+    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast), m_viewport(nullptr), m_displayTime(0) {}
 
     //! Construct a NotifyMessageDetails
     //! @param[in]  priority        The priority this message should be accorded by the NotificationManager.
@@ -60,6 +65,10 @@ public:
         m_priority      = priority;
         m_openAlert     = openAlert;
         m_msgType       = msgType;
+
+        m_viewport = nullptr;
+        m_displayPoint.Init(0, 0);
+        m_displayTime = 0;
         }
 
     OutputMessagePriority GetPriority() const { return m_priority; } //!< Get the priority value of this NotifyMessageDetails.
@@ -73,7 +82,23 @@ public:
     void SetOpenAlert(OutputMessageAlert openAlert) { m_openAlert=openAlert; } //!< Set the OpenAlert value of this NotifyMessageDetails.
     void SetBriefMsg(Utf8CP msg)  { m_briefMsg.AssignOrClear(msg); } //!< Set the brief message for this NotifyMessageDetails.
     void SetDetailedMsg(Utf8CP msg)  { m_detailedMsg.AssignOrClear(msg);} //!< Set the detailed message for this NotifyMessageDetails.
+
+    //! Set OutputMessageType.Temporary message details.
+    //! @param[in]  viewport        Viewport over which to display the temporary type message.
+    //! @param[in]  displayPoint    Point at which to display the temporary type message.
+    //! @param[in]  displayTime     Amount of time, in milliseconds, to display the temporary type message.
+    void SetTemporaryTypeDetails (DgnViewportCP viewport, Point2dCR displayPoint, int32_t displayTime)
+        {
+        m_viewport = viewport;
+        m_displayPoint = displayPoint;
+        m_displayTime = displayTime;        
+        }
+
+    DgnViewportCP GetTemporaryTypeViewport() const { return m_viewport; } //!< Get the viewport of this NotifyMessageDetails.
+    Point2d GetTemporaryTypeDisplayPoint() const { return m_displayPoint; } //!< Get the display point of this NotifyMessageDetails.
+    int32_t GetTemporaryTypeDisplayTime() const { return m_displayTime; } //!< Get the display time of this NotifyMessageDetails.
 };
+
 
 //=======================================================================================
 //! The NotificationManager controls the interaction with the user for prompts, error messages, and alert dialogs.
