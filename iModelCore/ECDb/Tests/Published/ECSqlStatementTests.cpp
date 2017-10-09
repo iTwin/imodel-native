@@ -2041,7 +2041,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, baseKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
