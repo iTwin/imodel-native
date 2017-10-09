@@ -289,6 +289,49 @@ ECObjectsStatus CoreCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& dateT
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus CoreCustomAttributeHelper::GetCurrentTimeStampProperty(PrimitiveECPropertyCP& currentTimeStampProp, ECClassCR ecClass)
+    {
+    currentTimeStampProp = nullptr;
+    IECInstancePtr ca = ecClass.GetCustomAttributeLocal(CORECA_SCHEMA_NAME, "ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return SUCCESS;
+
+    ECValue v;
+    if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName"))
+        {
+        LOG.errorv("Failed to retrieve 'ClassHasCurrentTimeStampProperty' custom attribute on ECClass '%s'. It is malformed.",
+                        ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if (!v.IsNull() && v.IsString())
+        {
+        ECPropertyCP foundProp = nullptr;
+        if (v.IsUtf8())
+            foundProp = ecClass.GetPropertyP(v.GetUtf8CP(), true);
+        else
+            foundProp = ecClass.GetPropertyP(v.GetWCharCP(), true);
+
+        if (foundProp != nullptr)
+            {
+            PrimitiveECPropertyCP foundPrimProp = foundProp->GetAsPrimitiveProperty();
+            if (foundPrimProp != nullptr && foundPrimProp->GetType() == PRIMITIVETYPE_DateTime)
+                {
+                currentTimeStampProp = foundPrimProp;
+                return SUCCESS;
+                }
+            }
+        }
+
+    LOG.errorv("Failed to retrieve 'ClassHasCurrentTimeStampProperty' custom attribute on ECClass '%s'. The property 'PropertyName' must be set to the name of a primitive property of type DateTime.",
+               ecClass.GetFullName());
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -359,11 +402,13 @@ struct ConversionCustomAttributesSchemaHolder : RefCountedBase
         ConversionCustomAttributesSchemaHolder();
         ECSchemaPtr _GetSchema() {return m_schema;}
         IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
+        void Initialize();
 
     public:
         static ConversionCustomAttributesSchemaHolderPtr GetHolder();
         static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
+        void Reset();
     };
 
 ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::s_schemaHolder;
@@ -372,6 +417,14 @@ ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
+    {
+    Initialize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributesSchemaHolder::Initialize()
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     SchemaKey key(s_convSchemaName, s_convVersionRead, s_convVersionMinor);
@@ -393,6 +446,14 @@ ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributesSchemaHolder::Reset()
+    {
+    m_schema = nullptr;
+    m_enablers.clear();
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder::GetHolder()
@@ -409,7 +470,7 @@ ConversionCustomAttributesSchemaHolderPtr ConversionCustomAttributesSchemaHolder
 IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(Utf8CP attribute)
     {
     if (!m_schema.IsValid())
-        _GetSchema();
+        Initialize();
 
     auto enablerIterator = m_enablers.find(attribute);
     if (enablerIterator == m_enablers.end())
@@ -435,6 +496,13 @@ IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Ut
     return ConversionCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ConversionCustomAttributeHelper::Reset()
+    {
+    ConversionCustomAttributesSchemaHolder::GetHolder()->Reset();
+    }
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE

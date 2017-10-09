@@ -81,6 +81,7 @@
     <ClCompile Include="Published\NavigationECPropertyTests.cpp" />
     <ClCompile Include="Published\PropertyCategoryTests.cpp" />
     <ClCompile Include="Published\PropertyTests.cpp" />
+    <ClCompile Include="Published\SchemaCopyTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
     <ClCompile Include="Published\SchemaElementIdTests.cpp" />

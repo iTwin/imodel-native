@@ -41,6 +41,16 @@ static Byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5,
                                 38, 217, 39, 216, 40, 215, 41, 214, 42, 213, 43, 212, 44, 211, 45, 210, 46, 209, 47, 208, 48, 207, 49, 206, 50, 205, 51, 204, 52, 203, 53, 202, 54, 201, 55, 200, 56, 199, 
                                 57 };
 
+struct InSchemaClassLocater final : ECN::IECClassLocater
+    {
+    private:
+        ECN::ECSchemaCR m_schema;
+
+        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return m_schema.GetClassCP(className); }
+    public:
+        explicit InSchemaClassLocater(ECN::ECSchemaCR schema) : m_schema(schema) {}
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -77,7 +87,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         {
         uint64_t julianDay;
         EXPECT_EQ(BentleyStatus::SUCCESS, ecValue.GetDateTime().ToJulianDay(julianDay)) << "Failed to translate DateTimeMember to Unix Milliseconds";
-        EXPECT_EQ(DateTime::CommonEraTicksToJulianDay(633374681466664305), julianDay) << "Wrong value for DateTimeMember";
+        EXPECT_EQ(DateTime::CommonEraMillisecondsToJulianDay(63337468146666), julianDay) << "Wrong value for DateTimeMember";
         }
     else
         EXPECT_EQ(633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
@@ -950,7 +960,8 @@ TEST_F(InstanceSerializationTest, TestInstanceJsonRoundtrip)
     StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
-    BentleyStatus readbackStatus = ECJsonUtilities::ECInstanceFromJson(*readbackInstance, jsonRoot["$Instance"]);
+    InSchemaClassLocater classLocater(*schema);
+    BentleyStatus readbackStatus = JsonECInstanceConverter::JsonToECInstance(*readbackInstance, jsonRoot["$Instance"], classLocater);
 
     EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
     VerifyTestInstance(readbackInstance.get(), false, true);
@@ -986,7 +997,8 @@ TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
     StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
-    BentleyStatus readbackStatus = ECRapidJsonUtilities::ECInstanceFromJson(*readbackInstance, rapidJsonRoot["$Instance"]);
+    InSchemaClassLocater classLocater(*schema);
+    BentleyStatus readbackStatus = JsonECInstanceConverter::JsonToECInstance(*readbackInstance, rapidJsonRoot["$Instance"], classLocater);
 
     EXPECT_EQ(BentleyStatus::SUCCESS, readbackStatus);
     VerifyTestInstance(readbackInstance.get(), false, true);
@@ -1095,7 +1107,8 @@ TEST_F(InstanceSerializationTest, TestSerializeNullValues)
     StandaloneECEnablerP enabler = instance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
-    EXPECT_EQ(BSISUCCESS, ECJsonUtilities::ECInstanceFromJson(*readbackInstance, instanceJson["TestClass"]));
+    InSchemaClassLocater classLocater(*schema);
+    EXPECT_EQ(BSISUCCESS, JsonECInstanceConverter::JsonToECInstance(*readbackInstance, instanceJson["TestClass"], classLocater));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

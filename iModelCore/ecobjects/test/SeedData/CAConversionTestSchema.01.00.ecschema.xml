@@ -28,6 +28,6 @@
                 <PropertyName>TimeStampProp</PropertyName>
             </ClassHasCurrentTimeStampProperty>
         </ECCustomAttributes>
-        <ECProperty propertyName="TimeStampProp" typeName="dateTime"/>
+        <ECProperty propertyName="TimeStampProp" typeName="dateTime" readOnly="True"/>
     </ECClass>
 </ECSchema>

@@ -68,6 +68,15 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
         IECClassValidatorPtr entityValidator = new EntityValidator();
         ECSchemaValidatorSingleton->AddClassValidator(entityValidator);
 
+        IECClassValidatorPtr allClassValidator = new AllClassValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(allClassValidator);
+        
+        IECClassValidatorPtr structValidator = new StructValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(structValidator);
+
+        IECClassValidatorPtr customAttributeValidator = new CustomAttributeClassValidator();
+        ECSchemaValidatorSingleton->AddClassValidator(customAttributeValidator);
+
         IECClassValidatorPtr relationshipValidator = new RelationshipValidator();
         ECSchemaValidatorSingleton->AddClassValidator(relationshipValidator);
 
@@ -272,27 +281,58 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  06/2017
+// @bsimethod                                    Colin.Kerr                  09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PropertyIsExempt(ECPropertyP prop, ECClassCR ecClass)
+ECObjectsStatus CustomAttributeClassValidator::Validate(ECClassCR caClass) const
     {
-    return (prop->GetName().Equals(LinkedElementId) && ecClass.GetSchema().GetName().Equals(MarkupSchema));
+    if (caClass.HasBaseClasses())
+        {
+        LOG.errorv("The Custom Attribute class '%s' has base classes, but a custom attribute class should not have base classes", caClass.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StructValidator::Validate(ECClassCR structClass) const
+    {
+    if (structClass.HasBaseClasses())
+        {
+        LOG.errorv("The struct class '%s' has base classes, but structs should not have base classes", structClass.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus CheckPropertiesForLongAndId(ECClassCR ecClass)
+ECObjectsStatus checkPropertiesForLongType(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
-        if (prop->GetTypeName() == "long" && prop->GetName().EndsWith("Id") && !PropertyIsExempt(prop, ecClass))
+        if (prop->GetTypeName() == "long" && !prop->GetIsNavigation())
             {
-            LOG.errorv("Warning treated as error in class '%s:%s' as it is of type 'long' and has a name ending with 'Id'", ecClass.GetFullName(), prop->GetName().c_str());
+            LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed.  Use int, double or if this represents a FK use a navigiation property", ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
             }
         }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus AllClassValidator::Validate(ECClassCR ecClass) const
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    // Validate no properties are of type long
+    status = checkPropertiesForLongType(ecClass);
+    
     return status;
     }
 
@@ -309,11 +349,6 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     status = CheckBisAspects(entity, ElementMultiAspect, ElementOwnsMultiAspects, entityDerivesFromSpecifiedClass);
     if (!entityDerivesFromSpecifiedClass)
         status = CheckBisAspects(entity, ElementUniqueAspect, ElementOwnsUniqueAspect, entityDerivesFromSpecifiedClass);
-
-    // Validate relationship properties of type long and ending in Id
-    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(entity);
-    if (status == ECObjectsStatus::Success)
-        status = propertyLongAndIdStatus;
 
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
     bool foundIParentElement = false;
@@ -347,6 +382,25 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
                        prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
 
             status = ECObjectsStatus::Error;
+            }
+
+        if (prop->IsKindOfQuantityDefinedLocally())
+            {
+            auto propKOQ = prop->GetKindOfQuantity();
+            auto basePropKOQ = prop->GetBaseProperty()->GetKindOfQuantity();
+            if (nullptr == basePropKOQ)
+                {
+                LOG.errorv("Property '%s.%s' specifies a KindOfQuantity locally but it's base property '%s.%s' does not define or inherit a KindOfQuantity",
+                           prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetBaseProperty()->GetClass().GetFullName(), prop->GetBaseProperty()->GetName().c_str());
+                status = ECObjectsStatus::Error;
+                }
+            else if (!Units::Unit::AreEqual(propKOQ->GetPersistenceUnit().GetUnit(), basePropKOQ->GetPersistenceUnit().GetUnit()))
+                {
+                LOG.errorv("Property '%s.%s' specifies a KindOfQuantity '%s' which has a different persistence unit than the KindOfQuantity '%s' specified on the base property '%s.%s'",
+                           prop->GetClass().GetFullName(), prop->GetName().c_str(), propKOQ->GetFullName().c_str(),
+                           prop->GetBaseProperty()->GetClass().GetFullName(), prop->GetBaseProperty()->GetName().c_str(), basePropKOQ->GetFullName().c_str());
+                status = ECObjectsStatus::Error;
+                }
             }
         if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
             continue;
@@ -407,11 +461,6 @@ ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
 
     // Validate relationship strength
     status = CheckStrength(relClass);
-
-    // Validate relationship properties of type long and ending in Id
-    ECObjectsStatus propertyLongAndIdStatus = CheckPropertiesForLongAndId(ecClass);
-    if (status == ECObjectsStatus::Success)
-        status = propertyLongAndIdStatus;
 
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();

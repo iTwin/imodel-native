@@ -763,6 +763,8 @@ protected:
     virtual bool                                _IsCalculated() const {return false;}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
 
+    virtual bool _IsSame(ECPropertyCR target) const;
+
     void                                InvalidateClassLayout();
 
 public:
@@ -833,7 +835,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
-    //! Sets the Display Label for this ECProperty
+    //! Sets the Display Label for this ECProperty.
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
     //! Gets the Display Label for this ECProperty.  If no label has been set explicitly, it will return the Name of the property
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
@@ -841,6 +843,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
 
     //! Sets the minimum value for this ECProperty
+    //! @remarks Only supported on PrimitiveECProperty and PrimitiveArrayECProperty for the following primitive types: ::PRIMITIVETYPE_Double, ::PRIMITIVETYPE_Integer, and ::PRIMITIVETYPE_Long
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(ECValueCR min);
     //! Gets whether the minimum value has been defined explicitly
     ECOBJECTS_EXPORT bool               IsMinimumValueDefined() const;
@@ -850,6 +853,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    GetMinimumValue(ECValueR value) const;
 
     //! Sets the maximum value for this ECProperty
+    //! @remarks Only supported on PrimitiveECProperty and PrimitiveArrayECProperty for the following primitive types: ::PRIMITIVETYPE_Double, ::PRIMITIVETYPE_Integer, and ::PRIMITIVETYPE_Long
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(ECValueCR max);
     //! Gets whether the maximum value has been defined explicitly
     ECOBJECTS_EXPORT bool               IsMaximumValueDefined() const;
@@ -947,6 +951,9 @@ public:
     StructArrayECPropertyP      GetAsStructArrayPropertyP()         {return _GetAsStructArrayPropertyP();} //!< Returns the property as a StructArrayECProperty*
     NavigationECPropertyCP      GetAsNavigationProperty() const     {return _GetAsNavigationPropertyCP();} //!< Returns the property as a const NavigationECProperty*
     NavigationECPropertyP       GetAsNavigationPropertyP()          {return _GetAsNavigationPropertyP();} //!< Returns the property as a NavigationECProperty*
+
+    //! Returns whether this property is the same as the target property
+    bool IsSame(ECPropertyCR target) const { return _IsSame(target); }
 };
 
 //=======================================================================================
@@ -980,6 +987,7 @@ protected:
     bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
     bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveProperty;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -1032,6 +1040,7 @@ protected:
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     //! The property type.
@@ -1068,6 +1077,7 @@ protected:
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
     ArrayECPropertyP            _GetAsArrayPropertyP() override {return this;}
+    bool _IsSame(ECPropertyCR target) const override;
 
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
@@ -1401,7 +1411,7 @@ private:
     void            RemoveBaseClasses();
     static void     SetErrorHandling(bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty=true);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
 
     void            OnBaseClassPropertyRemoved(ECPropertyCR baseProperty);
     void            OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
@@ -1458,6 +1468,8 @@ protected:
 
     virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const {return nullptr;} // used to avoid dynamic_cast
     virtual ECCustomAttributeClassP _GetCustomAttributeClassP() {return nullptr;} // used to avoid dynamic_cast
+
+    virtual bool _Validate() const = 0;
 
     void InvalidateDefaultStandaloneEnabler() const;
 public:
@@ -1524,7 +1536,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetName() const;
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8CP GetFullName() const;
-    //! Formats the class name for use in an ECSQL statement. ([{SchemaName}].[{ClassName}])
+    //! Formats the class name for use in an ECSQL statement: [{SchemaName}].[{ClassName}]
     //! @remarks The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
     //! Returns an iterable of all the ECProperties defined on this class
@@ -1568,7 +1580,7 @@ public:
     //! so will return an error. You also can't add a base class to final classes
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
+    ECObjectsStatus AddBaseClass(ECClassCR baseClass) { return AddBaseClass(baseClass, false); }
 
     //! Adds a base class at either the beginning or end of the base class list
     //! @remarks This method is intended for the rare case where you need to control at which position
@@ -1582,8 +1594,9 @@ public:
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
     //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
-    //! false if @p baseClass is added to the end of the list
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
+    //!                             false if @p baseClass is added to the end of the list
+    //! @param[in] validate if true, will validate the class hierarchy
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate=true);
     
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool HasBaseClasses() const;
@@ -1662,6 +1675,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
+
+    ECOBJECTS_EXPORT bool Validate() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -2005,8 +2020,9 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
+
+    bool _Validate() const override;
     bool VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
-    bool Verify() const;
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -2068,6 +2084,8 @@ private:
     ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema), m_containerType(CustomAttributeContainerType::Any) {}
     virtual ~ECCustomAttributeClass () {}
 
+    bool _Validate() const override { return true; }
+
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2106,6 +2124,8 @@ private:
     //  of a schema.
     ECStructClass(ECSchemaCR schema) : ECClass(schema) {}
     virtual ~ECStructClass () {}
+
+    bool _Validate() const override { return true; }
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2329,7 +2349,8 @@ public:
     
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
-    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
+    //! @param[in] copyReferences If false, a shallow copy of the source relationship constraint will be made meaning it will not copy over any constraint classes or abstract constraint that does not live within the target schema. Instead it will create a schema reference back to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences = false);
 
     //! Returns whether the relationship is ordered on this constraint.
     ECOBJECTS_EXPORT bool GetIsOrdered() const;
@@ -2373,9 +2394,10 @@ private:
     ECObjectsStatus SetStrength(Utf8CP strength);
     ECObjectsStatus SetStrengthDirection(Utf8CP direction);
 
+    bool _Validate() const override { return Verify(false); }
+    bool Verify(bool resolveIssues) const;
     bool ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
-    bool Verify(bool resolveIssues) const;
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -3509,7 +3531,8 @@ public:
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
     //! @param[in]  sourceClass The class to copy
     //! @param[in]  targetClassName Name to use for the copied class (instead of using the source class's name)
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName);
+    //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName, bool copyReferences = false);
 
     //! Given a source enumeration, will copy that enumeration into this schema if it does not already exist
     //! @param[out] targetEnumeration If successful, will contain a new ECEnumeration object that is a copy of the sourceEnumeration
@@ -3754,12 +3777,22 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE IECClassLocater
 {
 protected:
-    virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
+    virtual ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) = 0;
+    virtual ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) 
+        { 
+        ECClassCP ecClass = LocateClass(schemaName, className);
+        if (ecClass == nullptr || !ecClass->HasId())
+            return ECClassId(); 
+
+        return ecClass->GetId();
+        }
+
 public:
     virtual ~IECClassLocater() {}
 
-    ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className) { return _LocateClass (schemaName, className); }
-};
+    ECClassCP LocateClass(Utf8CP schemaName, Utf8CP className) { return _LocateClass (schemaName, className); }
+    ECClassId LocateClassId(Utf8CP schemaName, Utf8CP className) { return _LocateClassId(schemaName, className); }
+    };
 
 typedef IECClassLocater& IECClassLocaterR;
 

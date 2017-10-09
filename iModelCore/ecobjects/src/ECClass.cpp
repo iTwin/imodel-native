@@ -657,7 +657,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
     if (NULL != baseProperty)
         {
         Utf8String errMsg;
-        ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty, errMsg);
+        ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errMsg);
         if (ECObjectsStatus::Success != status)
             {
             if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
@@ -688,7 +688,13 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 return ECObjectsStatus::CaseCollision;
                 }
             }
-        pProperty->SetBaseProperty (baseProperty);
+        else if (resolveConflicts && pProperty->IsSame(*baseProperty))
+            {
+            LOG.infov("%s already has a base primitive property %s of the same name.  As no differences were noted, new property will not be added.", pProperty->GetClass().GetFullName(), pProperty->GetName().c_str());
+            return ECObjectsStatus::Success;
+            }
+
+        pProperty->SetBaseProperty(baseProperty);
         }
 
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
@@ -707,13 +713,16 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes)
     {
+    if (nullptr == sourceProperty)
+        return ECObjectsStatus::NullPointerValue;
+
     return CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), copyCustomAttributes);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences)
     {
     if (nullptr == sourceProperty)
         return ECObjectsStatus::NullPointerValue;
@@ -723,10 +732,57 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         PrimitiveECPropertyCP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
         destPrimitive = new PrimitiveECProperty(*this);
         ECEnumerationCP enumeration = sourcePrimitive->GetEnumeration();
-        if (nullptr != enumeration)
-            destPrimitive->SetType(*enumeration);
+        if (nullptr != enumeration) 
+            {
+            if (enumeration->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+                {
+                ECEnumerationP destEnum = this->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
+                if (nullptr == destEnum)
+                    {
+                    if (copyReferences)
+                        {
+                        auto status = this->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
+                        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                            return status;
+                        destPrimitive->SetType(*destEnum);
+                        }
+                    else
+                        {
+                        if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), enumeration->GetSchema()))
+                            GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(enumeration->GetSchema()));
+                        destPrimitive->SetType(*enumeration);
+                        }
+                    }
+                else
+                    destPrimitive->SetType(*destEnum);
+                }
+            else
+                destPrimitive->SetType(*enumeration);
+            }
         else
             destPrimitive->SetType(sourcePrimitive->GetType());
+
+        if (sourcePrimitive->IsMinimumValueDefined()) 
+            {
+            ECValue valueToCopy;
+            sourcePrimitive->GetMinimumValue(valueToCopy);
+            destPrimitive->SetMinimumValue(valueToCopy);
+            }
+
+        if (sourcePrimitive->IsMaximumValueDefined()) 
+            {
+            ECValue valueToCopy;
+            sourcePrimitive->GetMaximumValue(valueToCopy);
+            destPrimitive->SetMaximumValue(valueToCopy);
+            }
+
+        if (sourcePrimitive->IsMinimumLengthDefined())
+            destPrimitive->SetMinimumLength(sourcePrimitive->GetMinimumLength());
+        if (sourcePrimitive->IsMaximumLengthDefined())
+            destPrimitive->SetMaximumLength(sourcePrimitive->GetMaximumLength());
+
+        if (sourcePrimitive->IsExtendedTypeDefinedLocally())
+            destPrimitive->SetExtendedTypeName(sourcePrimitive->GetExtendedTypeName().c_str());
 
         destProperty = destPrimitive;
         }
@@ -736,9 +792,33 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         StructArrayECPropertyCP sourceArray = sourceProperty->GetAsStructArrayProperty();
         destArray = new StructArrayECProperty(*this);
         ECStructClassCR structElementType = sourceArray->GetStructElementType();
-        destArray->SetStructElementType(structElementType);
+        if (structElementType.GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECClassP destClass = this->GetSchemaR().GetClassP(structElementType.GetName().c_str());
+            if (nullptr == destClass)
+                {
+                if (copyReferences)
+                    {
+                    auto status = this->GetSchemaR().CopyClass(destClass, structElementType);
+                    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return status;
+                    destArray->SetStructElementType(*destClass->GetStructClassCP());
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceArray->GetClass().GetSchema()))
+                        GetContainerSchema()->AddReferencedSchema(const_cast<ECStructClassR>(structElementType).GetSchemaR());
 
-        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+                    destArray->SetStructElementType(structElementType);
+                    }
+                }
+            else
+                destArray->SetStructElementType(*destClass->GetStructClassCP());
+            }
+        else
+            destArray->SetStructElementType(structElementType);
+
+        destArray->SetMaxOccurs(sourceArray->GetStoredMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());
 
         destProperty = destArray;
@@ -748,9 +828,58 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         PrimitiveArrayECPropertyP destArray;
         PrimitiveArrayECPropertyCP sourceArray = sourceProperty->GetAsPrimitiveArrayProperty();
         destArray = new PrimitiveArrayECProperty(*this);
-        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
+        ECEnumerationCP enumeration = sourceArray->GetEnumeration();
+        if (nullptr != enumeration)
+            {
+            if (enumeration->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+                {
+                ECEnumerationP destEnum = this->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
+                if (nullptr == destEnum)
+                    {
+                    if (copyReferences)
+                        {
+                        auto status = this->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
+                        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                            return status;
+                        destArray->SetType(*destEnum);
+                        }
+                    else
+                        {
+                        if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), enumeration->GetSchema()))
+                            GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(enumeration->GetSchema()));
+                        destArray->SetType(*enumeration);
+                        }
+                    }
+                else
+                    destArray->SetType(*destEnum);
+                }
+            else
+                destArray->SetType(*enumeration);
+            }
+        else
+            destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
-        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        if (sourceArray->IsMinimumValueDefined()) {
+            ECValue valueToCopy;
+            sourceArray->GetMinimumValue(valueToCopy);
+            destArray->SetMinimumValue(valueToCopy);
+        }
+
+        if (sourceArray->IsMaximumValueDefined()) {
+            ECValue valueToCopy;
+            sourceArray->GetMaximumValue(valueToCopy);
+            destArray->SetMaximumValue(valueToCopy);
+        }
+
+        if (sourceArray->IsMinimumLengthDefined())
+            destArray->SetMinimumLength(sourceArray->GetMinimumLength());
+        if (sourceArray->IsMaximumLengthDefined())
+            destArray->SetMaximumLength(sourceArray->GetMaximumLength());
+
+        if (sourceArray->IsExtendedTypeDefinedLocally())
+            destArray->SetExtendedTypeName(sourceArray->GetExtendedTypeName().c_str());
+
+        destArray->SetMaxOccurs(sourceArray->GetStoredMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());
 
         destProperty = destArray;
@@ -761,7 +890,30 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         StructECPropertyCP sourceStruct = sourceProperty->GetAsStructProperty();
         destStruct = new StructECProperty (*this);
         ECStructClassCR sourceType = sourceStruct->GetType();
-        destStruct->SetType(sourceType);
+        if (sourceType.GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECClassP destClass = this->GetSchemaR().GetClassP(sourceType.GetName().c_str());
+            if (nullptr == destClass)
+                {
+                if (copyReferences)
+                    {
+                    auto status = this->GetSchemaR().CopyClass(destClass, sourceType);
+                    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return status;
+                    destStruct->SetType(*destClass->GetStructClassCP());
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceStruct->GetClass().GetSchema()))
+                        GetContainerSchema()->AddReferencedSchema(const_cast<ECStructClassR>(sourceType).GetSchemaR());
+                    destStruct->SetType(sourceType);
+                    }
+                }
+            else
+                destStruct->SetType(*destClass->GetStructClassCP());
+            }
+        else
+            destStruct->SetType(sourceType);
         destProperty = destStruct;
         }
     else if (sourceProperty->GetIsNavigation())
@@ -769,7 +921,28 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         NavigationECPropertyP destNav;
         NavigationECPropertyCP sourceNav = sourceProperty->GetAsNavigationProperty();
         destNav = new NavigationECProperty(*this);
-        destNav->SetRelationshipClass(*sourceNav->GetRelationshipClass(), sourceNav->GetDirection());
+
+        ECRelationshipClassCP sourceRelClass = sourceNav->GetRelationshipClass();
+        if (sourceRelClass->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECClassP destClass = this->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
+            if (nullptr == destClass && copyReferences)
+                {
+                auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass);
+                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return status;
+                destNav->SetRelationshipClass(*destClass->GetRelationshipClassCP(), sourceNav->GetDirection());
+                }
+            else
+                {
+                if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceNav->GetClass().GetSchema()))
+                    GetContainerSchema()->AddReferencedSchema(const_cast<ECRelationshipClassP>(sourceRelClass)->GetSchemaR());
+                destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
+                }
+            }
+        else
+            destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
+        
         destNav->SetType(sourceNav->GetType());
         destProperty = destNav;
         }
@@ -779,6 +952,66 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
+    destProperty->SetPriority(sourceProperty->GetPriority());
+
+    if (sourceProperty->IsCategoryDefinedLocally())
+        {
+        PropertyCategoryCP sourcePropCategory = sourceProperty->GetCategory();
+        if (sourcePropCategory->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            PropertyCategoryP destPropCategory = this->GetSchemaR().GetPropertyCategoryP(sourcePropCategory->GetName().c_str());
+            if (nullptr == destPropCategory)
+                {
+                if (copyReferences)
+                    {
+                    auto status = this->GetSchemaR().CopyPropertyCategory(destPropCategory, *sourcePropCategory);
+                    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return status;
+                    destProperty->SetCategory(destPropCategory);
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourcePropCategory->GetSchema()))
+                        GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourcePropCategory->GetSchema()));
+                    destProperty->SetCategory(sourcePropCategory);
+                    }
+                }
+            else
+                destProperty->SetCategory(destPropCategory);
+            }
+        else
+            destProperty->SetCategory(sourcePropCategory);
+        }
+
+    if (sourceProperty->IsKindOfQuantityDefinedLocally())
+        {
+        KindOfQuantityCP sourceKoq = sourceProperty->GetKindOfQuantity();
+        if (sourceKoq->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            KindOfQuantityP destKoq = this->GetSchemaR().GetKindOfQuantityP(sourceKoq->GetName().c_str());
+            if (nullptr == destKoq)
+                {
+                if (copyReferences)
+                    {
+                    auto status = this->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq);
+                    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return status;
+                    destProperty->SetKindOfQuantity(destKoq);
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*GetContainerSchema(), sourceKoq->GetSchema()))
+                        GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceKoq->GetSchema()));
+                    destProperty->SetKindOfQuantity(sourceKoq);
+                    }
+                }
+            else
+                destProperty->SetKindOfQuantity(destKoq);
+            }
+        else
+            destProperty->SetKindOfQuantity(sourceKoq);
+        }
+
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
@@ -1311,20 +1544,12 @@ bool ECClass::CheckBaseClassCycles (ECClassCP thisClass, const void * arg)
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
-    {
-    return AddBaseClass(baseClass, false);
-    }
-
 //-------------------------------------------------------------------------------------
 //* @bsimethod                                              
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, true);
+    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
 
 //-------------------------------------------------------------------------------------
@@ -1723,6 +1948,11 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
         
     return false;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                       10/17
+//---------------------------------------------------------------------------------------
+bool ECClass::Validate() const { return _Validate(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -2359,7 +2589,7 @@ bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseA
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECEntityClass::Verify() const
+bool ECEntityClass::_Validate() const
     {
     if(!HasBaseClasses())
         return true;
@@ -3584,56 +3814,79 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
   /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint)
+ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences)
     {
-    ECObjectsStatus status;
+    ECObjectsStatus status = ECObjectsStatus::Success;
 
-    toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str());
-    status = toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
-    if (ECObjectsStatus::Success != status)
+    if (IsRoleLabelDefined() && ECObjectsStatus::Success != (status = toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str())))
         return status;
-    toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
+    if (ECObjectsStatus::Success != (status = toRelationshipConstraint.SetMultiplicity(GetMultiplicity())))
+        return status;
+    if (ECObjectsStatus::Success != (status = toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic())))
+        return status;
 
     ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
 
     if (IsAbstractConstraintDefined())
         {
-        ECClassP destAbstractConstraint = nullptr;
         if (_GetContainerSchema()->GetSchemaKey() != GetAbstractConstraint()->GetSchema().GetSchemaKey())
-            destAbstractConstraint = const_cast<ECClassP>(GetAbstractConstraint());
+            status = toRelationshipConstraint.SetAbstractConstraint(*GetAbstractConstraint());
         else
             {
-            destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
+            ECClassP destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
             if (nullptr == destAbstractConstraint)
                 {
-                status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
-                if (ECObjectsStatus::Success != status)
-                    return status;
+                if (copyReferences)
+                    {
+                    status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
+                    if (ECObjectsStatus::Success != status)
+                        return status;
+                    status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*destSchema, GetAbstractConstraint()->GetSchema()))
+                        if (ECObjectsStatus::Success != (status = destSchema->AddReferencedSchema(m_relClass->GetSchemaR())))
+                            return status;
+                    status = toRelationshipConstraint.SetAbstractConstraint(*GetAbstractConstraint());
+                    }
                 }
+            else
+                status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
             }
-
-        status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
+        
         if (ECObjectsStatus::Success != status)
             return status;    
         }
 
     for (auto constraintClass : GetConstraintClasses())
         {
-        ECClassP destConstraintClass = nullptr;
         if (_GetContainerSchema()->GetSchemaKey() != constraintClass->GetSchema().GetSchemaKey())
-            destConstraintClass = const_cast<ECClassP>(constraintClass);
+            status = toRelationshipConstraint.AddClass(*constraintClass);
         else
             {
-            destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+            ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
             if (nullptr == destConstraintClass)
                 {
-                status = destSchema->CopyClass(destConstraintClass, *constraintClass);
-                if (ECObjectsStatus::Success != status)
-                    return status;
+                if (copyReferences)
+                    {
+                    status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+                    if (ECObjectsStatus::Success != status)
+                        return status;
+                    status = toRelationshipConstraint.AddClass(*destConstraintClass);
+                    }
+                else
+                    {
+                    if (!ECSchema::IsSchemaReferenced(*destSchema, constraintClass->GetSchema()))
+                        if (ECObjectsStatus::Success != (status = destSchema->AddReferencedSchema(m_relClass->GetSchemaR())))
+                            return status;
+                    status = toRelationshipConstraint.AddClass(*constraintClass);
+                    }
                 }
+            else
+                status = toRelationshipConstraint.AddClass(*destConstraintClass);
             }
-
-        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        
         if (ECObjectsStatus::Success != status)
             return status;
         }

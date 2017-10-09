@@ -103,6 +103,24 @@ struct EntityValidator : IECClassValidator
     bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsEntityClass();}
     };
 
+struct StructValidator : IECClassValidator
+    {
+    ECObjectsStatus Validate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override { return ecClass.IsStructClass(); }
+    };
+
+struct CustomAttributeClassValidator : IECClassValidator
+    {
+    ECObjectsStatus Validate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override { return ecClass.IsCustomAttributeClass(); }
+    };
+
+struct AllClassValidator : IECClassValidator
+    {
+    ECObjectsStatus Validate(ECClassCR ecClass) const override;
+    bool CanValidate(ECClassCR ecClass) const override { return true; }
+    };
+
 struct RelationshipValidator : IECClassValidator
     {
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
