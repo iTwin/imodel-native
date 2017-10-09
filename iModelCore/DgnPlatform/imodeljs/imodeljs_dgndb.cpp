@@ -23,6 +23,7 @@ BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
 BE_JSON_NAME(id)
 BE_JSON_NAME(isCustomHandled)
+BE_JSON_NAME(isCustomHandledOrphan);
 BE_JSON_NAME(kindOfQuantity)
 BE_JSON_NAME(maxOccurs)
 BE_JSON_NAME(maximumLength)
@@ -131,6 +132,11 @@ DgnDbStatus IModelJs::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP 
     if (nullptr == ecclass)
         return DgnDbStatus::Success;    // This is not an exception. It just returns an empty result.
 
+    if (ecclass->Is(dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element)))
+        {
+        dgn_ElementHandler::Element::FindHandler(dgndb, DgnClassId(ecclass->GetId().GetValue()));
+        }
+
     mjson[json_ecclass()] = ecclass->GetFullName();
     SET_IF_NOT_EMPTY_STR(mjson[json_description()], ecclass->GetDescription());
     SET_IF_NOT_NULL_STR (mjson[json_modifier()], modifierToString(ecclass->GetClassModifier()));
@@ -167,7 +173,9 @@ DgnDbStatus IModelJs::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP 
             propjson[json_readOnly()] = true;
         SET_IF_NOT_NULL_STR(propjson[json_kindOfQuantity()], ecprop->GetKindOfQuantity());
 
-        propjson[json_isCustomHandled()] = ecprop->IsDefined(*customHandledProperty);
+        bool isCA;
+        propjson[json_isCustomHandled()] = (isCA = ecprop->IsDefined(*customHandledProperty));
+        propjson[json_isCustomHandledOrphan()] = isCA && AutoHandledPropertiesCollection::IsOrphanCustomHandledProperty(*ecprop);
         customAttributesToJson(propjson[json_customAttributes()], *ecprop);
 
         if (ecprop->GetAsPrimitiveProperty())

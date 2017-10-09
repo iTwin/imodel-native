@@ -817,7 +817,14 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 
             ECN::ECClassCP ecClass = m_dgndb.Schemas().GetClass(handlerId);
             BeAssert(nullptr != ecClass && "It is impossible to end up here with a null ECClass unless the preceding code was later modified");
+            // *** TODO: If two levels of handlers where missing, then my superclass's handler might also be an instance of MissingHandler.
+            //              In that case, restrictions should be the AND of mine and his.
             handler = handler->_CreateMissingHandler(restrictions, ecClass->GetSchema().GetName(), ecClass->GetName());
+
+            auto eclass = GetDgnDb().Schemas().GetClass((ECN::ECClassId)handlerId.GetValue());
+            if (eclass)
+                AutoHandledPropertiesCollection::DetectOrphanCustomHandledProperty(GetDgnDb(), *eclass);
+
             BeAssert(nullptr != handler);
             }
 

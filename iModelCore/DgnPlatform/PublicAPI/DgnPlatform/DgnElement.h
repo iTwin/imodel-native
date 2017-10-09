@@ -366,8 +366,12 @@ struct AutoHandledPropertiesCollection
     ECN::ECClassCP m_autoHandledProperty;
     ECSqlClassParams::StatementType m_stype;
     bool m_wantCustomHandledProps;
+    static bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> s_orphanCustomHandledProperties;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
+    
+    static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
+    static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
