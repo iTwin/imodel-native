@@ -311,8 +311,68 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     }
 
 struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
-    {};
+    {
+    enum class Op
+        {
+        Select,
+        Insert,
+        Update,
+        Delete
+        };
 
+    static std::vector<Utf8String> GetClasses()
+        {
+        std::vector<Utf8String> classes;
+        classes.push_back(PERF_TEST_PERFELEMENT_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
+        return classes;
+        }
+    static std::array<int, 3> GetInitalInstanceCount()
+        {
+        return  {10000, 100000, 1000000};
+        }
+    static std::array<int, 3> GetOpCount() { return  {1000, 2000, 3000}; }
+    void Execute(Op op)
+        {
+        //WaitForUserInput();
+        for (int initalInstanceCount : GetInitalInstanceCount())
+            {
+            if (initalInstanceCount <= 0)
+                continue;
+
+            for (int opCount : GetOpCount())
+                {
+                if (opCount <= 0)
+                    continue;
+
+                for (Utf8StringCR perfClass : GetClasses())
+                    {
+                    if (perfClass.empty())
+                        continue;
+
+                    if (op == Op::Select)
+                        ApiSelectTime(perfClass.c_str(), initalInstanceCount, opCount);
+                    else if (op == Op::Insert)
+                        ApiInsertTime(perfClass.c_str(), initalInstanceCount, opCount);
+                    else if (op == Op::Update)
+                        ApiUpdateTime(perfClass.c_str(), initalInstanceCount, opCount);
+                    else if (op == Op::Delete)
+                        ApiDeleteTime(perfClass.c_str(), initalInstanceCount, opCount);
+                    else
+                        {
+                        ASSERT_TRUE(false);
+                        }
+                    }
+                }
+
+            //printf("%s\n", GetDbSettings().c_str());
+            }
+        }
+    };
+
+#if 0
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2016
 //---------------------------------------------------------------------------------------
@@ -325,171 +385,44 @@ TEST_F(PerformanceElementsTests, ElementsInsertStrategies)
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 4, false, 2); // null FederationGuid, alternating briefcase IDs
     ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 5, true, 2); // random FederationGuid, alternating briefcase IDs
     }
+#endif
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsTests, ElementsInsert)
-    {
-    int initInstanceCount = 10000;
-    int insertCount = 1000;
-    int opCount;
+//Pragma("cache_size=200000");
+//Pragma("temp_store=MEMORY");
 
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
+TEST_F(PerformanceElementsTests, ClientElementsInsert) { Execute(Op::Insert); }
+TEST_F(PerformanceElementsTests, ClientElementsRead)   { Execute(Op::Select); }
+TEST_F(PerformanceElementsTests, ClientElementsUpdate) { Execute(Op::Update); }
+TEST_F(PerformanceElementsTests, ClientElementsDelete) { Execute(Op::Delete); }
 
-        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 100000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 1000000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
+#define CACHE_SPILL Pragma ("cache_spill = off")
+#define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 300000));
+TEST_F(PerformanceElementsTests, ServerElementsInsert) 
+    { 
+    CACHE_SPILL;
+    CACHE_SIZE;
+    Execute(Op::Insert); 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsTests, ElementsRead)
-    {
-    int initInstanceCount = 10000;
-    int insertCount = 1000;
-    int opCount;
-
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 100000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 1000000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
+TEST_F(PerformanceElementsTests, ServerElementsRead)   
+    { 
+    CACHE_SPILL;
+    CACHE_SIZE;
+    Execute(Op::Select);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsTests, ElementsUpdate)
-    {
-    int initInstanceCount = 10000;
-    int insertCount = 1000;
-    int opCount;
-
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 100000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 1000000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
+TEST_F(PerformanceElementsTests, ServerElementsUpdate) 
+    { 
+    CACHE_SPILL;
+    CACHE_SIZE;
+    Execute(Op::Update);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsTests, ElementsDelete)
-    {
-    int initInstanceCount = 10000;
-    int insertCount = 1000;
-    int opCount;
-
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 100000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
-
-    initInstanceCount = 1000000;
-    for (int i = 1; i <= 3; i++)
-        {
-        opCount = insertCount*i;
-
-        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
-        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
-        }
+TEST_F(PerformanceElementsTests, ServerElementsDelete) 
+    { 
+    CACHE_SPILL;
+    CACHE_SIZE;
+    Execute(Op::Delete);
     }
+
+

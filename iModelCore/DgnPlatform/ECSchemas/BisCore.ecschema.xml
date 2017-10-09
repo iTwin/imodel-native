@@ -737,6 +737,7 @@
     </ECEntityClass>
     
     <ECEntityClass typeName="UrlLink" displayLabel="URL Link" description="An information element that specifies a URL link.">
+        <BaseClass>LinkElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
             <DbIndexList xmlns="ECDbMap.2.0">
@@ -751,7 +752,6 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <BaseClass>LinkElement</BaseClass>
         <ECProperty propertyName="Url" displayLabel="URL" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -779,6 +779,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="EmbeddedFileLink" displayLabel="Embedded File Link" description="An information element that links to an embedded file.">
+        <BaseClass>LinkElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
             <DbIndexList xmlns="ECDbMap.2.0">
@@ -793,7 +794,6 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <BaseClass>LinkElement</BaseClass>
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1164,10 +1164,10 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="ViewAttachment" displayLabel="View Attachment">
+        <BaseClass>GraphicalElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>GraphicalElement2d</BaseClass>
         <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ViewIsAttached" strength="referencing" modifier="Sealed">
@@ -1360,7 +1360,7 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Description" typeName="string" DisplayLabel="Description">
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description">
             <ECCustomAttributes>
                 <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
@@ -1469,10 +1469,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTextStyle" modifier="Sealed" displayLabel="Annotation Text Style">
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Description" typeName="string" description="Description of the style">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1487,10 +1487,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationFrameStyle" modifier="Sealed" displayLabel="Annotation Frame Style">
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Description" typeName="string" description="Description of the style">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1505,10 +1505,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationLeaderStyle" modifier="Sealed" displayLabel="Annotation Leader Style">
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Description" typeName="string" description="Description of the style">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -1593,10 +1593,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="LightLocation" modifier="Sealed" displayLabel="Light Location" description="The spatial location of a light source">
+        <BaseClass>SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>SpatialLocationElement</BaseClass>
         <ECProperty propertyName="Enabled" typeName="boolean" displayLabel="Is light turned on" />
     </ECEntityClass>
 

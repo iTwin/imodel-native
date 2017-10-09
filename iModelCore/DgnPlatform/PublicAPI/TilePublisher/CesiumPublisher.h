@@ -112,7 +112,6 @@ protected:
     Status                      m_acceptTileStatus = Status::Success;
     bool                        m_verbose;
     bool                        m_wantProgressOutput;
-    Json::Value                 m_revisionsJson;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
@@ -122,11 +121,15 @@ protected:
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR, TileNodeP, TileGeneratorStatus) override;
 
-    Status  GetViewsJson (Json::Value& value, DPoint3dCR groundPoint);
-
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
     Status WriteWebApp(DPoint3dCR groundPoint, PublisherParams const& params);
+    Status WriteAppJson (Json::Value& json);
+    Status WriteHtmlFile();
+    Status WriteScripts();
+
+    DPoint3d GetGroundPoint(DRange3dCR range, PublisherParams const& params); 
+
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
     void GenerateModelNameList();
 
@@ -157,13 +160,12 @@ public:
         : TilesetPublisher(db, viewsToPublish, defaultView, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
 
-    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params, bool initializeDirectories = true);
+    TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
 
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
-    void SetRevisionsJson(Json::Value const&& revisionsJson) { m_revisionsJson = std::move(revisionsJson); }
 
 
     struct VerboseStatistics

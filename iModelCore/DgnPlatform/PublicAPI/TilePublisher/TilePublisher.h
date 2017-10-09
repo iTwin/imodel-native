@@ -332,12 +332,12 @@ protected:
 
 
     void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
-    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&);
+    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&, bool testUsed);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
     Json::Value GetClassifiersJson(T_ClassifierInfos const& classifiers);
     Json::Value GetAllClassifiersJson();
-    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const;
+    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views, bool testUsed) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
@@ -349,6 +349,9 @@ protected:
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
     void ExtractSchedules();
+    void ExtractViewSelectors(DgnViewId& defaultViewId, DgnElementIdSet& allModelSelectors, T_CategorySelectorMap& allCategorySelectors, DgnElementIdSet& allDisplayStyles, DgnModelIdSet&   all2dModelIds);
+    Json::Value GetViewDefinitionsJson();
+
 
 public:
     WString GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const;
@@ -375,7 +378,9 @@ public:
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
+
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
+
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
