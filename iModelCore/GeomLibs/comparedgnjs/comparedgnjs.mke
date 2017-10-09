@@ -19,7 +19,7 @@ always:
 # Compile comparedgnjs.cpp. It contains "main"
 # -----------------------------------------------------
 
-$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp 
+$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareJson.h
 
 # -----------------------------------------------------
 # Create comparedgnjs.exe

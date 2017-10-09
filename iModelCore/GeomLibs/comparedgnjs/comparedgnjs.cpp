@@ -10,7 +10,7 @@
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-
+#include "compareJson.h"
 static const char * s_messagePrefix = "comparedgnjs";
 void messagePrefix ()
     {
