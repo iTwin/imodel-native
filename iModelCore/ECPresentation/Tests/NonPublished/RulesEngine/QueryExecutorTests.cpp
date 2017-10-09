@@ -1228,7 +1228,7 @@ TEST_F(QueryExecutorTests, HandlesStructProperties)
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, false), "this");
     query->From(*classI, false, "this");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1291,7 +1291,7 @@ TEST_F(QueryExecutorTests, HandlesArrayProperties)
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, false), "this");
     query->From(*classR, false, "this");
 
     CustomFunctionsContext ctx(s_project->GetECDb(), *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());

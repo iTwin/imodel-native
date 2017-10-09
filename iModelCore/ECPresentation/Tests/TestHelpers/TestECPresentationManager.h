@@ -8,10 +8,12 @@
 #include "ECPresentationTest.h"
 #include <ECPresentation/IECPresentationManager.h>
 
+BEGIN_ECPRESENTATIONTESTS_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
-USING_NAMESPACE_ECPRESENTATIONTESTS
+
 /*=================================================================================**//**
 * @bsiclass                                     Aidas.Vaiksnoras                08/2017
 +===============+===============+===============+===============+===============+======*/
@@ -178,3 +180,5 @@ public:
     void SetOnNodeExpandedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeExpandedHandler = handler;}
     void SetOnNodeCollapsedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeCollapsedHandler = handler;}
     };
+
+END_ECPRESENTATIONTESTS_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
+|     $Source: Source/RulesDriven/Rules/PresentationRuleXmlConstants.h $
 |
 |   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -203,7 +203,24 @@
 #define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL                       "Label"
 #define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY                    "Priority"
 
+// Content: Property Editors
 #define PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME                                  "PropertyEditors"
 #define PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME                                 "Editor"
 #define PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME                     "PropertyName"
 #define PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME                       "EditorName"
+
+#define PROPERTY_EDITOR_JSON_PARAMETERS_XML_NODE_NAME                                 "JsonParams"
+
+#define PROPERTY_EDITOR_MULTILINE_PARAMETERS_XML_NODE_NAME                            "MultilineParams"
+#define PROPERTY_EDITOR_MULTILINE_PARAMETERS_ATTRIBUTE_HEIGHT                         "HeightInRows"
+
+#define PROPERTY_EDITOR_RANGE_PARAMETERS_XML_NODE_NAME                                "RangeParams"
+#define PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MINIMUM                        "Minimum"
+#define PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MAXIMUM                        "Maximum"
+
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME                               "SliderParams"
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM                       "Minimum"
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM                       "Maximum"
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_INTERVALS                     "Intervals"
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR                   "ValueFactor"
+#define PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VERTICAL                      "Vertical"

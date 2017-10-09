@@ -28,6 +28,25 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                08/2017
++===============+===============+===============+===============+===============+======*/
+template<typename TRegistry> struct RegisterSchemaHelper
+    {
+    RegisterSchemaHelper(Utf8String name, Utf8String schemaXml)
+        {
+        TRegistry::RegisterSchemaXml(name, schemaXml);
+        }
+    };
+#define DEFINE_REGISTRY_SCHEMA(registry, name, schema_xml) \
+    static RegisterSchemaHelper<registry> _register_schema_##name(#name, \
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
+        "<ECSchema schemaName=\"" #name "\" alias=\"alias_" #name "\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
+            "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"1.0\" alias=\"CoreCA\"/>" \
+            "<ECSchemaReference name=\"ECDbMap\" version=\"2.0\" alias=\"ecdbmap\"/>" \
+            schema_xml \
+        "</ECSchema>")
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
 struct RulesEngineTestHelpers

@@ -79,6 +79,8 @@ $(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionS
 
 $(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
 
+$(o)ContentFieldEditors$(oext):          $(RulesEngineSourceDirectory)ContentFieldEditors.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =
