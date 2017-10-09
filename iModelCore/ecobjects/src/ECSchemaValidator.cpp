@@ -499,6 +499,13 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
     {
+    if (strcmp(koq->GetPersistenceUnit().GetUnit()->GetPhenomenon()->GetName(), "PERCENTAGE") == 0)
+        {
+        LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE' unitless ratios are not allowed.  Use a ratio phenomenon which includes units like VOLUME_RATIO", 
+                   koq->GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
     if (strcmp(koq->GetPersistenceUnit().GetUnit()->GetUnitSystem(), "SI") == 0)
         return ECObjectsStatus::Success;
 

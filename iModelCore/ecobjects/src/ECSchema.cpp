@@ -601,7 +601,10 @@ bool ECSchema::Validate(bool resolveIssues)
             {
             ECObjectsStatus status = ecClass->FixArrayPropertyOverrides();
             if (ECObjectsStatus::Success != status)
+                {
+                LOG.errorv("Failed to fix array property overrides for properties of class '%s'", ecClass->GetFullName());
                 return false;
+                }
             }
         }
 
@@ -609,7 +612,12 @@ bool ECSchema::Validate(bool resolveIssues)
         {
         // If the validation fails and the schema is read from an ECXML 3.1 or greater, fail to validate.
         if (OriginalECXmlVersionAtLeast(ECVersion::V3_1))
+            {
+            Utf8String schemaFullName = GetFullSchemaName();
+            LOG.errorv("Schema validation failed for schema '%s'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.",
+                       schemaFullName.c_str());
             return false;
+            }
 
         if (!IsECVersion(ECVersion::V3_0))
             {

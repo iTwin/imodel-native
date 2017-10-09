@@ -2597,13 +2597,21 @@ bool ECEntityClass::_Validate() const
     bool thisIsMixin = IsMixin();
 
     if (thisIsMixin && GetBaseClasses().size() > 1)
+        {
+        LOG.errorv("Base Class Validation: The mixin '%s' has more than one base mixin, a mixin may only have one base mixin.", GetFullName());
         return false;
+        }
 
     for(ECClassCP baseClass : GetBaseClasses())
         {
         ECEntityClassCP baseAsEntity = baseClass->GetEntityClassCP();
         if (nullptr == baseAsEntity)
+            {
+            Utf8String classTypeName = thisIsMixin ? "mixin" : "entity";
+            LOG.errorv("Base Class Validation: The '%s' '%s' has a base '%s' which is not a '%s'.",
+                       classTypeName.c_str(), GetFullName(), classTypeName.c_str(), classTypeName.c_str());
             return false;
+            }
         if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
             return false;
         }
@@ -2974,25 +2982,39 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     if (GetConstraintClasses().size() == 0)
         {
         LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_0)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
-            "Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+            "Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
                 (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
         }
 
     if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
+        {
+        LOG.errorv("Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
+            m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
+        }
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
+        {
+        LOG.errorv("Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
+                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
+        }
     if (ECObjectsStatus::Success != ValidateAbstractConstraint(resolveIssues))
         {
+        LOG.errorv("Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         // Need to stop validation if abstract constraint fails, since it will change the error messages from the class constraint validation.
         m_verified = false;
         return m_verified;
         }
     if (ECObjectsStatus::Success != ValidateClassConstraint())
+        {
+        LOG.errorv("Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
-    
+        }
+
     m_verified = valid;
 
     return m_verified;
@@ -3141,14 +3163,21 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                         }
                     else
                         valid = false;
+                    
+                    if (!valid)
+                        {
+                        LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'.  An attempt to resolve this issue failed.",
+                            abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                            baseConstraint.GetRelationshipClass().GetFullName());
+
+                        }
                     }
                 }
             else
                 {
-                LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
-                             "Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
-                             abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                             baseConstraint.GetRelationshipClass().GetFullName());
+                LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
+                           abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                           baseConstraint.GetRelationshipClass().GetFullName());
 
                 valid = false;
                 }
