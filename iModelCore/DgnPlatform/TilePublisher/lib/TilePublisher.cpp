@@ -3881,28 +3881,10 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/16
+* @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId)
+void    PublisherContext::ExtractViewSelectors(DgnViewId& defaultViewId, DgnElementIdSet& allModelSelectors, T_CategorySelectorMap& allCategorySelectors, DgnElementIdSet& allDisplayStyles, DgnModelIdSet&   all2dModelIds)
     {
-    Utf8String rootNameUtf8(m_rootName.c_str());
-    json["name"] = rootNameUtf8;
-
-    Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
-
-    if (!m_spatialToEcef.IsIdentity())
-        {
-        DPoint3d groundEcefPoint;
-        spatialTransform.Multiply(groundEcefPoint, groundPoint);
-        json["groundPoint"] = PointToJson(groundEcefPoint);
-        }
-
-    DgnElementIdSet allModelSelectors;
-    T_CategorySelectorMap allCategorySelectors;
-    DgnElementIdSet allDisplayStyles;
-    DgnModelIdSet   all2dModelIds;
-
-    auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto const& viewId : m_viewIds)
         {
         auto viewDefinition = ViewDefinition::Get(GetDgnDb(), viewId);
@@ -3950,21 +3932,66 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
 
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : Transform::FromIdentity());
-        viewsJson[viewId.ToString()] = entry;
-
         // If for some reason the default view is not in the published set, we'll use the first view as the default
         if (!defaultViewId.IsValid())
             defaultViewId = viewId;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetViewDefinitionsJson()
+    {
+    Json::Value     viewsJson = Json::objectValue;
+    Transform       spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
+
+    for (auto const& viewId : m_viewIds)
+        {
+        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), viewId);
+        if (!viewDefinition.IsValid())
+            continue;
+
+        Json::Value entry(Json::objectValue);
+ 
+        GetViewJson(entry, *viewDefinition, nullptr != viewDefinition->ToSpatialView() ? spatialTransform : Transform::FromIdentity());
+        viewsJson[viewId.ToString()] = entry;
+        }
+    return viewsJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId)
+    {
+    Utf8String rootNameUtf8(m_rootName.c_str());
+    json["name"] = rootNameUtf8;
+
+    Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
+
+    if (!m_spatialToEcef.IsIdentity())
+        {
+        DPoint3d groundEcefPoint;
+        spatialTransform.Multiply(groundEcefPoint, groundPoint);
+        json["groundPoint"] = PointToJson(groundEcefPoint);
+        }
+
+    DgnElementIdSet         allModelSelectors;
+    T_CategorySelectorMap   allCategorySelectors;
+    DgnElementIdSet         allDisplayStyles;
+    DgnModelIdSet           all2dModelIds;
+    
+    ExtractViewSelectors (defaultViewId, allModelSelectors, allCategorySelectors, allDisplayStyles, all2dModelIds);
 
     if (!defaultViewId.IsValid())
         return Status::NoGeometry;
 
+    json["views"] = GetViewDefinitionsJson();
     json["defaultView"] = defaultViewId.ToString();
 
     WriteModelsJson(json, allModelSelectors, all2dModelIds);
-    WriteCategoriesJson(json, allCategorySelectors);
+    WriteCategoriesJson(json, allCategorySelectors, true);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
     AxisAlignedBox3d projectExtents = m_projectExtents;
@@ -4039,7 +4066,7 @@ Json::Value PublisherContext::GetAllClassifiersJson()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const
+bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views, bool testUsed) const
     {
     auto const& category = DgnCategory::Get(GetDgnDb(), categoryId);
 
@@ -4062,7 +4089,7 @@ bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherCo
             {
             ViewControllerPtr viewController = view->LoadViewController();
 
-            if (IsSubCategoryUsed(subCategoryId) && !viewController->GetSubCategoryAppearance(subCategoryId).IsInvisible())
+            if ((!testUsed || IsSubCategoryUsed(subCategoryId)) && !viewController->GetSubCategoryAppearance(subCategoryId).IsInvisible())
                 anySubCategoriesOn = true;
             }
         }
@@ -4072,7 +4099,7 @@ bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelectorMap const& selectorIds)
+void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelectorMap const& selectorIds, bool testUsed)
     {
     DgnCategoryIdSet    allCategories;                                                                                                                      
     Json::Value&        selectorsJson = (json["categorySelectors"] = Json::objectValue);
@@ -4087,7 +4114,7 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
             DgnCategoryIdSet    onInAnyViewCats;
 
             for (auto const& cat : cats)
-                if (CategoryOnInAnyView(cat, selectorId.second))
+                if (CategoryOnInAnyView(cat, selectorId.second, testUsed))
                     onInAnyViewCats.insert(cat);
 
             selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);

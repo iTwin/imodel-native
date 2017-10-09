@@ -126,13 +126,6 @@ TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetInfo(DgnModelCR mod
     return TileGeneratorStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
-    {
-    return GetViewsetJson(json, groundPoint, m_defaultViewId);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -142,11 +135,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     Json::Value json;
     Status      status;
 
-    if (Status::Success != (status = GetViewsJson (json, groundPoint)))
+    if (Status::Success != (status = GetViewsetJson (json, groundPoint, m_defaultViewId)))
         return status;
-
-    if (!m_revisionsJson.isNull())
-        json["revisions"] = m_revisionsJson;
 
     Json::Value viewerOptions = params.GetViewerOptions();
 
@@ -156,6 +146,18 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
 
     json["viewerOptions"] = viewerOptions;
 
+    if (Status::Success != (status = WriteAppJson (json)) ||
+        Status::Success != (status = WriteHtmlFile()))
+        return  status;
+
+    return WriteScripts ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteAppJson (Json::Value& json)
+    {
     WString     jsonRootName = m_rootName + L"_AppData";
     BeFileName  jsonFileName (nullptr, m_dataDir.c_str(), jsonRootName.c_str(), L"json");
 
@@ -170,8 +172,19 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     std::fwrite(jsonStr.c_str(), 1, jsonStr.size(), jsonFile);
     std::fclose(jsonFile);
 
+    return Status::Success;
+    }
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteHtmlFile()
+    {
     // Produce the html file contents
-    BeFileName htmlFileName = m_outputDir;
+    BeFileName  htmlFileName = m_outputDir;
+    WString     jsonRootName = m_rootName + L"_AppData";
+
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
     std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
     if (NULL == htmlFile)
@@ -184,6 +197,15 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     std::fwrite(s_viewerHtmlSuffix, 1, sizeof(s_viewerHtmlSuffix)-1, htmlFile);
     std::fclose(htmlFile);
 
+    return Status::Success;
+    }
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteScripts()
+    {
     // Symlink the scripts, if not already present
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");
@@ -238,14 +260,11 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params, bool initializeDirectories)
+PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    if (initializeDirectories)
-        {
-        auto status = InitializeDirectories(GetDataDirectory());
-        if (Status::Success != status)
-            return status;
-        }
+    auto status = InitializeDirectories(GetDataDirectory());
+    if (Status::Success != status)
+        return status;
 
     DRange3d            range;
 
@@ -254,9 +273,8 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     ExtractSchedules();     // Extract these now as they schedule entries may need to be added to batch tables.
 
-
     m_generator = &generator;
-    auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
+    status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -266,8 +284,15 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         }
 
     OutputStatistics(generator.GetStatistics());
+    return WriteWebApp(GetGroundPoint(range, params), params);
+    }
 
-    DPoint3d        groundPoint;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d   TilesetPublisher::GetGroundPoint (DRange3dCR range, PublisherParams const& params)
+    {
+    DPoint3d    groundPoint;
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
         {
@@ -277,7 +302,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         {
         if (range.IsNull())
             {
-            groundPoint.x = groundPoint.y = 0.0;
+            groundPoint.x = groundPoint.y = 0.0;                                                    
             }
         else
             {
@@ -291,9 +316,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
         groundPoint.z = params.GetGroundHeight();
         }
-    
-
-    return WriteWebApp(groundPoint, params);
+    return groundPoint;
     }
 
 /*---------------------------------------------------------------------------------**//**
