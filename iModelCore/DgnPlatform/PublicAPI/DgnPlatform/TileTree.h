@@ -199,7 +199,7 @@ protected:
     RootR   m_root;
     mutable ElementAlignedBox3d m_range;
     TileCP  m_parent;
-    int     m_depth;
+    uint32_t m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
     mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
@@ -218,10 +218,10 @@ public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
-    int GetDepth() const {return m_depth;}
+    uint32_t GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d const& GetRange() const {return m_range;}
-    DGNPLATFORM_EXPORT void Pick(PickArgsR args, int depth) const;
+    DGNPLATFORM_EXPORT void Pick(PickArgsR args, uint32_t depth) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
@@ -260,7 +260,7 @@ public:
     //! @param[in] args The DrawArgs for the current display request.
     virtual void _DrawGraphics(DrawArgsR args) const = 0;
 
-    virtual void _PickGraphics(PickArgsR args, int depth) const {}
+    virtual void _PickGraphics(PickArgsR args, uint32_t depth) const {}
 
     virtual Render::GraphicPtr _GetGraphic() const { return nullptr; }
 
@@ -538,7 +538,7 @@ public:
 
     TileCR GetTile() const { return *m_tile; }
     double GetDistance() const { return m_distance; }
-    int GetDepth() const { return GetTile().GetDepth(); }
+    uint32_t GetDepth() const { return GetTile().GetDepth(); }
 
     bool operator<(MissingNodeCR rhs) const
         {
@@ -645,6 +645,9 @@ struct DrawArgs : TileArgs
 
     double ComputeTileDistance(TileCR tile) const;
     double GetTileSizeModifier() const;
+    BeTimePoint GetDeadline() const;
+    uint32_t GetMinDepth() const;
+    uint32_t GetMaxDepth() const;
     };
     
 //=======================================================================================
@@ -902,7 +905,7 @@ protected:
 
     DGNPLATFORM_EXPORT SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, DrawArgsR) const override;
     DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR) const override;
-    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, int depth) const override;
+    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, uint32_t depth) const override;
 public:
     TriMeshList& GetGeometry() {return m_meshes;}
     void ClearGeometry() {m_meshes.clear();}

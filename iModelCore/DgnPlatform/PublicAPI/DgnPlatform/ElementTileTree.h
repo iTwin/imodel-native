@@ -233,6 +233,8 @@ private:
     bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
     void _UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew) override;
 
+    SelectParent SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args, uint32_t skipDepth) const;
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override { return SelectTiles(selected, args, 0); }
     void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileCacheKey() const override;
 

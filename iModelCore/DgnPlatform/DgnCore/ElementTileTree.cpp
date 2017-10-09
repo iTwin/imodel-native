@@ -2464,6 +2464,92 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args, uint32_t numSkipped) const
+    {
+    DgnDb::VerifyClientThread();
+
+    _ValidateChildren();
+
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    bool ready = IsReady();
+
+    // If a tile is not ready and is too coarse to draw, we can skip it only if we haven't already skipped more than maxTilesToSkip.
+    // Note we never skip the topmost displayable tiles; otherwise we can end up in a situation (e.g. after zooming way out) in which we have no tiles to draw.
+    // We would also end up enqueueing a ton of tiles when zoomed way in
+    // Part of the problem is that we can't determine which tiles are leaves until we actually generate their geometry...so if we skip lots of intermediate tiles
+    // we potentially generate a ton of child tiles for parents which really should have been leaves.
+    constexpr uint32_t maxTilesToSkip = 1;
+    bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
+    if (skipThisTile && !ready)
+        {
+        if (numSkipped >= maxTilesToSkip)
+            skipThisTile = false;
+        else
+            ++numSkipped;
+        }
+
+    // Queue for loading if necessary...
+    if (!ready && !skipThisTile)
+        args.InsertMissing(*this);
+
+    // Try drawing children in place of this tile
+    auto children = skipThisTile ? _GetChildren(true) : nullptr;
+    if (nullptr != children)
+        {
+        m_childrenLastUsed = args.m_now;
+        bool drawParent = false;
+        size_t initialSize = selected.size();
+
+        for (auto const& child : *children)
+            {
+            if (SelectParent::Yes == static_cast<TileCP>(child.get())->SelectTiles(selected, args, numSkipped))
+                {
+                drawParent = true;
+                // NB: We must continue iterating children so that they can be requested if missing...
+                }
+            }
+
+        if (!drawParent)
+            {
+            // Draw children in place of this tile
+            m_childrenLastUsed = args.m_now;
+            return SelectParent::No;
+            }
+
+        selected.resize(initialSize);
+        }
+
+    // We've determined that we should draw this tile, if we have graphics for it.
+    if (!tooCoarse)
+        _UnloadChildren(args.m_purgeOlderThan);
+
+    if (ready)
+        {
+        if (_HasGraphics())
+            selected.push_back(this);
+
+        return SelectParent::No;
+        }
+    else if (_HasBackupGraphics())
+        {
+        // Draw placeholder graphics while waiting for tile to be repaired...
+        selected.push_back(this);
+        return SelectParent::No;
+        }
+
+    return SelectParent::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder)

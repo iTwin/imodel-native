@@ -173,8 +173,39 @@ struct UpdatePlan
         Motion& GetMotion() const {return m_motion;}
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
+
+    struct TileOptions
+    {
+    private:
+        BeTimePoint m_deadline;
+        double m_scale = 1.0;
+        uint32_t m_minDepth = 0;
+        uint32_t m_maxDepth = 100;
+    public:
+        // Optional time-out for generating root tiles (those with no displayable parents). If this time is exceeded, tile generation will halt, producing a partial tile.
+        // The partial tile will later be refined until it is complete.
+        bool HasDeadline() const { return m_deadline.IsValid(); }
+        BeTimePoint GetDeadline() const { return m_deadline; }
+        void SetDeadline(BeTimePoint deadline) { m_deadline = deadline; }
+        bool IsTimedOut() const { return HasDeadline() && GetDeadline().IsInPast(); }
+
+        // An optional scale to apply to the computed screen size of each tile. A scale greater than 1.0 causes lower-resolution tiles to be selected. This is useful e.g. when
+        // generating thumbnails (which are generally not rendered full-size) or when speed of tile generation is more important than quality.
+        double GetScale() const { return m_scale; }
+        void SetScale(double scale) { m_scale = scale; }
+
+        // Optional minimum and maximum depths of tiles to select.
+        uint32_t GetMinDepth() const { return m_minDepth; }
+        uint32_t GetMaxDepth() const { return m_maxDepth; }
+        void SetMinDepth(uint32_t depth) { m_minDepth = depth; }
+        void SetMaxDepth(uint32_t depth) { m_maxDepth = depth; }
+        void SetDepthRange(uint32_t minDepth, uint32_t maxDepth) { SetMinDepth(minDepth); SetMaxDepth(maxDepth); }
+        void SetFixedDepth(uint32_t depth) { SetDepthRange(depth, depth); }
+        bool IsWithinDepthRange(uint32_t depth) const { BeAssert(GetMinDepth() <= GetMaxDepth()); return depth >= GetMinDepth() && depth <= GetMaxDepth(); }
+    };
 protected:
     BeTimePoint m_quitTime;
+    TileOptions m_tileOptions;
     AbortFlags m_abortFlags;
     double m_frustumScale = 1.0;
     uint32_t m_priority;
@@ -183,13 +214,17 @@ protected:
     bool m_wantDecorators = true;
     mutable bool m_wantWait = false;
 public:
-    // Scale applied to the frustum when selecting tiles.
+    // Scale applied to the frustum when selecting tiles. This allows selecting tiles outside of the frustum.
     double GetFrustumScale() const {return m_frustumScale;}
     void SetFrustumScale(double scale) {m_frustumScale=scale;}
 
     // Priority of this update (see Render::Task::Priority)
     uint32_t GetPriority() const {return m_priority;}
     void SetPriority(uint32_t val) {m_priority=val;}
+
+    // Options controlling how tiles are selected and generated.
+    TileOptions const& GetTileOptions() const { return m_tileOptions; }
+    TileOptions& GetTileOptionsR() { return m_tileOptions; }
 
     // Conditions under which this update will abort.
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}

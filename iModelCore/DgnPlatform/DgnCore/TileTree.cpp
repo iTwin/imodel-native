@@ -705,132 +705,13 @@ void Tile::ExtendRange(DRange3dCR childRange) const
         m_parent->ExtendRange(childRange);
     }
 
-#if !defined(NDEBUG)
-static int s_forcedDepth = -1;   // change this to a non-negative value in debugger in order to freeze the LOD of all tile trees.
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
-    // ###TODO_ELEMENT_TILE: It would be nice to be able to generate only the tiles we need for the current frustum.
-    // However, if we don't generate parents before children, then when the viewing frustum changes we will have nothing to draw until more tiles load.
-    // So for now we do similarly to 3mx: only process children after parent is ready.
     DgnDb::VerifyClientThread();
 
-#if defined(TILETREE_SKIP_INTERMEDIATES)
-    Visibility vis = GetVisibility(args);
-    if (Visibility::OutsideFrustum == vis)
-        {
-        _UnloadChildren(args.m_purgeOlderThan);
-        return SelectParent::No;
-        }
-
-    bool tooCoarse = Visibility::TooCoarse == vis;
-    if (!tooCoarse)
-        {
-        // We want to draw this tile. Can we?
-        auto selectParent = SelectParent::No;
-        bool substitutingChildren = false;
-        if (IsReady())
-            {
-            if (_HasGraphics())
-                selected.push_back(this);
-            }
-        else if (IsNotFound())
-            {
-            selectParent = SelectParent::Yes;
-            }
-        else
-            {
-            // We can't draw this tile. Request it, and choose something to draw in its place
-            args.InsertMissing(*this);
-
-            // If children are already loaded and ready to draw, draw them in place of this one
-            auto children = _GetChildren(false);
-            bool allChildrenReady = false;
-            if (nullptr != children)
-                {
-                // We'll add visible children to the selected list while determining if all visible children are ready.
-                // This way we only need to perform the frustum test once per child.
-                size_t initialSize = selected.size();
-                allChildrenReady = std::accumulate(children->begin(), children->end(), true, [&args, &selected](bool init, TilePtr const& arg)
-                    {
-                    if (!init || arg->IsContentCulled(args))
-                        return init;
-                    else if (!arg->IsReady())
-                        return false;
-
-                    if (arg->_HasGraphics())
-                        selected.push_back(arg);
-
-                    return true;
-                    });
-
-                // At least one child passed the frustum test, but it not ready. Remove any other children we added to the selected list.
-                if (!allChildrenReady)
-                    selected.resize(initialSize);
-                }
-
-            if (allChildrenReady)
-                {
-                m_childrenLastUsed = args.m_now;
-                substitutingChildren = true;
-                for (auto const& child : *children)
-                    if (child->_HasGraphics() && !child->IsContentCulled(args))
-                        selected.push_back(child);
-                }
-            else
-                {
-                selectParent = SelectParent::Yes;
-                }
-            }
-
-        if (!substitutingChildren)
-            _UnloadChildren(args.m_purgeOlderThan);
-
-        return selectParent;
-        }
-
-    // This node is too coarse. Try to select its children instead.
-    auto children = _GetChildren(true);
-    if (nullptr != children)
-        {
-        m_childrenLastUsed = args.m_now;
-        bool drawParent = false;
-        size_t initialSize = selected.size();
-        for (auto const& child : *children)
-            {
-            if (SelectParent::Yes == child->_SelectTiles(selected, args))
-                {
-                drawParent = true;
-                // NB: We must continue iterating children so that they can be requested if missing...
-                }
-            }
-
-        // Selected children - we're done
-        if (!drawParent)
-            {
-            m_childrenLastUsed = args.m_now;
-            return SelectParent::No;
-            }
-
-        // Remove any tiles which were selected above - they will be replaced with this tile (or its parent)
-        selected.resize(initialSize);
-        }
-
-    if (IsReady())
-        {
-        // We can draw this tile in place of its children
-        if (_HasGraphics())
-            selected.push_back(this);
-
-        return SelectParent::No;
-        }
-
-    return SelectParent::Yes;
-#else
     _ValidateChildren();
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
@@ -842,17 +723,13 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     bool tooCoarse = Visibility::TooCoarse == vis;
     bool ready = IsReady();
 
-    // ###TODO_ELEMENT_TILE: Revisit this post-YII. See below
-    ///if (!ready)
-    ///    args.InsertMissing(*this);
-
-    // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
+    // Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
     // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
     // The IsParentDisplayable() test below allows us to skip intermediate tiles, but never the first displayable tiles in the tree.
     bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
     auto children = skipThisTile ? _GetChildren(true) : nullptr;
 
-    // ###TODO_ELEMENT_TILE: Revisit this post-YII. See above. Don't want to queue tile if we're skipping it!
+    // Don't enqueue a tile if we're skipping it...
     if (!ready && !skipThisTile)
         args.InsertMissing(*this);
 
@@ -892,13 +769,12 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         }
     else if (_HasBackupGraphics())
         {
-        // ###TODO_ELEMENT_TILE: Revisit post-YII. Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
+        // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
         selected.push_back(this);
         return SelectParent::No;
         }
 
     return SelectParent::Yes;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -939,11 +815,6 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     if (!IsDisplayable())
         return Visibility::TooCoarse;
 
-#if !defined(NDEBUG)
-    if (s_forcedDepth >= 0)
-        return GetDepth() == s_forcedDepth ? Visibility::Visible : Visibility::TooCoarse;
-#endif
-
     bool hasContentRange = HasContentRange();
     if (!_HasChildren())
         {
@@ -952,6 +823,11 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 
         return Visibility::Visible; // it's a leaf node
         }
+
+    if (GetDepth() < args.GetMinDepth())
+        return Visibility::TooCoarse; // replace with children
+    else if (GetDepth() == args.GetMaxDepth())
+        return hasContentRange && IsContentCulled(args) ? Visibility::OutsideFrustum : Visibility::Visible;
 
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
@@ -1046,7 +922,7 @@ bvector<TileCPtr> Root::SelectTiles(DrawArgsR args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Pick(PickArgsR args, int depth) const
+void Tile::Pick(PickArgsR args, uint32_t depth) const
     {
     DgnDb::VerifyClientThread();
 
@@ -1467,9 +1343,33 @@ double DrawArgs::ComputeTileDistance(TileCR tile) const
 double DrawArgs::GetTileSizeModifier() const
     {
     TargetCP target = m_context.GetViewportR().GetRenderTarget();
-    return nullptr != target ? target->GetTileSizeModifier() : 1.0;
+    double targetMod = nullptr != target ? target->GetTileSizeModifier() : 1.0;
+    return targetMod * m_context.GetUpdatePlan().GetTileOptions().GetScale();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTimePoint DrawArgs::GetDeadline() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetDeadline();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DrawArgs::GetMinDepth() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetMinDepth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DrawArgs::GetMaxDepth() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -1858,7 +1758,7 @@ void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_PickGraphics(PickArgsR args, int depth) const
+void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
     {
     for (auto mesh : m_meshes)
         mesh->Pick(args);
