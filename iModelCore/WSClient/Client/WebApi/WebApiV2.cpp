@@ -553,11 +553,12 @@ ICancellationTokenPtr ct
 ) const
     {
     Utf8String url;
+    Utf8String instanceId;
     if (relatedObjectId.IsValid())
         {
         Utf8String schemaName = relatedObjectId.schemaName;
         Utf8String className = relatedObjectId.className;
-        Utf8String instanceId = relatedObjectId.remoteId;
+        instanceId = relatedObjectId.remoteId;
 
         url = GetUrl(CreateClassSubPath(schemaName, className));
         if (!instanceId.empty())
@@ -584,7 +585,7 @@ ICancellationTokenPtr ct
         {
         Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
         Utf8String className = objectCreationJson["instance"]["className"].asString();
-        Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
+        instanceId = objectCreationJson["instance"]["instanceId"].asString();
 
         url = GetUrl(CreateClassSubPath(schemaName, className));
         if (!instanceId.empty())
