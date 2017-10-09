@@ -10,7 +10,7 @@
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-
+#include "compareJson.h"
 static const char * s_messagePrefix = "comparedgnjs";
 void messagePrefix ()
     {
@@ -156,7 +156,21 @@ int main(int argc, char **argv)
 
     for (size_t i = 0; i < n0; i++)
         {
-        if (!allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i]))
+        int numNull = 0;
+        for (size_t k = 0; k < 2; k++)
+            {
+            if (!allData[k].m_geometry[i].IsValid ())
+                {
+                messagePrefix (); printf ("geometry[%d] in file %d is null\n", (int)i, (int)k);
+                numNull++;
+                }
+            }
+        // single null is error ..
+        if (numNull == 1)
+            return 1;
+        // 2 nulls is implied ok
+        // 0 nulls needs comparison
+        if (numNull == 0 &&!allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i]))
             {
             messagePrefix (); printf("FAIL: Mismatched geometry at index %d\n", (int)i);
             return 1;
