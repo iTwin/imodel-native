@@ -706,8 +706,6 @@ DbResult IModelJs::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueC
     if (SUCCESS != reader.Read(jsonInstance, instanceId))
         return BE_SQLITE_ERROR;
 
-    //WIP: JsonReader should return the id already. So this call should not be necessary.
-    jsonInstance[ECJsonUtilities::json_id()] = BeInt64Id((int64_t) instanceId.GetValueUnchecked()).ToHexStr();
     return BE_SQLITE_OK;
     }
 
