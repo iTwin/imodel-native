@@ -113,7 +113,7 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
         assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
      }
 
-    assert(status.isOK());
+    //assert(status.isOK());
                                                                 // Return status
     return status;
 }

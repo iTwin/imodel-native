@@ -1391,7 +1391,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     return meshP;    
     }
 
-template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clipId, bool isClipBoundary) const
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const
     {
     LOAD_NODE
 
@@ -1504,11 +1504,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 if (m_meshNode->m_nbClips > 0)
                     {
                     m_meshNode->ComputeMergedClips();
-                    if (clipId == 0 || m_meshNode->HasClip(clipId))
+                    if (coverageID == 0 || m_meshNode->HasClip(coverageID))
                         {
                         for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                             {
-                            if (diffSet.clientID == clipId)
+                            if (diffSet.clientID == coverageID)
                                 {
                                 anythingToApply = true;
                                 clipDiffSet = &diffSet;
@@ -1548,10 +1548,42 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 }
 
             int status = meshPtr->AppendMesh(toLoadNbPoints, toLoadPoints, 0, 0, 0, 0, 0, 0, 0, 0);
+            BeAssert(status == SUCCESS);
 
             if (ptIndices.IsValid() && ptIndices->size() > 0)
                 {
                 status = meshPtr->AppendMesh(0, 0, toLoadNbFaceIndexes, toLoadFaceIndexes, 0, 0, 0, toLoadUvCount, toLoadUv, toLoadUvIndex);
+                BeAssert(status == SUCCESS);
+                }
+
+            if (clips != nullptr)
+                {
+                static std::mutex mtx;
+                std::lock_guard<std::mutex> lock(mtx);
+                bvector<DPoint3d> clearedPts;
+                bvector<int32_t> clearedIndices;
+                bvector<int32_t> newUvsIndices;
+                bvector<DPoint2d> newUvs;
+                bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
+                map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+                GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery());
+
+                meshPtr = ScalableMeshMesh::Create();
+                //for (int clipID = 0; clipID < clips->size(); clipID++)
+                //    {
+                //    int polyfaceID = (*clips)[clipID]->IsMask() ? 1 : 0;
+                    if (!polyfaces[1].empty())
+                        {
+                        DifferenceSet clipped = DifferenceSet::FromPolyfaceSet(polyfaces[1], mapOfPoints, 1);
+                        clearedPts = clipped.addedVertices;
+                        clearedIndices = clipped.addedFaces;
+                        newUvsIndices = clipped.addedUvIndices;
+                        newUvs = clipped.addedUvs;
+                        status = meshPtr->AppendMesh(clearedPts.size(), clearedPts.data(), clearedIndices.size(), clearedIndices.data(), 0, 0, 0, newUvs.size(), newUvs.data(), newUvsIndices.data());
+                        BeAssert(status == SUCCESS);
+                        }
+                 //   }
+
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())

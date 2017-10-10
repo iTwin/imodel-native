@@ -28,7 +28,7 @@ DataSourceStatus DataSourceCURL::read(Buffer *dest, DataSize destSize, DataSize 
                                                             // Pass to superclass for read (Note: Real reads are down through download calls)
     DataSourceStatus status = Super::read(dest, destSize, readSize, size);
 
-    assert(readSize > 0);
+    //assert(readSize > 0);
 
     return status;
 }

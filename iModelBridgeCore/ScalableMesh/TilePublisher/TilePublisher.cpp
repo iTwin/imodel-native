@@ -378,6 +378,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 PublisherContext::Status TilePublisher::Publish(bvector<Byte>& outData)
     {
     if (m_meshes.empty()) return PublisherContext::Status::Success;
+    if (m_meshes[0]->Points().empty()) return PublisherContext::Status::Success;
     return this->Publish(*m_meshes[0], outData);
     }
 
@@ -990,6 +991,10 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
                     }
                 }
             }
+        }
+    else
+        {
+        BeAssert(!"Nothing to publish...");
         }
 
 

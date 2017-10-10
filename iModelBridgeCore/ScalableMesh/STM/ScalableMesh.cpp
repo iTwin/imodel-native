@@ -468,9 +468,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, bool withClips) const
+int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips) const
     {
-    return _Generate3DTiles(outContainerName, outDatasetName, server, progress, (withClips ? (uint64_t)-1 : (uint64_t)-2));
+    return _Generate3DTiles(outContainerName, outDatasetName, server, progress, clips, (clips.IsValid() ? (uint64_t)-1 : (uint64_t)-2));
     }
 
 BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -2915,7 +2915,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_Generate3DTiles
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
@@ -2999,7 +2999,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
                     BeAssert(false); // Could not create tileset output directory for coverage
                     return status;
                     }
-                if ((status = coverageMesh->_Generate3DTiles(coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, coverageID)) != SUCCESS)
+                if ((status = coverageMesh->_Generate3DTiles(coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, clips, coverageID)) != SUCCESS)
                     {
                     BeAssert(false); // Could not publish coverage
                     return status;
@@ -3012,9 +3012,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
             }
         }
 
-    status = m_scmIndexPtr->Publish3DTiles(path, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
+    status = m_scmIndexPtr->Publish3DTiles(path, m_reprojectionTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
     SMNodeGroupPtr rootTileset = m_scmIndexPtr->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
+
 
     for (auto& converageTileset : coverageTilesets)
         {
