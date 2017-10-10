@@ -46,7 +46,7 @@ private:
     int32_t               m_displayTime;
 
 public:
-    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast), m_viewport(nullptr), m_displayTime(0) {}
+    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Temporary), m_viewport(nullptr), m_displayTime(0) {}
 
     //! Construct a NotifyMessageDetails
     //! @param[in]  priority        The priority this message should be accorded by the NotificationManager.
@@ -54,7 +54,7 @@ public:
     //! @param[in]  detailedMsg     A comprehensive message that explains the issue in detail and potentially offers a solution.
     //! @param[in]  msgType         The type of message.
     //! @param[in]  openAlert       Whether an alert box should be displayed or not, and if so what kind.
-    NotifyMessageDetails(OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, OutputMessageType msgType=OutputMessageType::Toast, OutputMessageAlert openAlert=OutputMessageAlert::None)
+    NotifyMessageDetails(OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, OutputMessageType msgType=OutputMessageType::Temporary, OutputMessageAlert openAlert=OutputMessageAlert::None)
         {
         if (briefMsg)
             m_briefMsg.assign(briefMsg);
