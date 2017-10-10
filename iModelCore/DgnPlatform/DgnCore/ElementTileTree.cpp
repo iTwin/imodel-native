@@ -921,7 +921,9 @@ END_UNNAMED_NAMESPACE
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
-    if (nullptr != loads && loads->HasDeadline())
+    // We only create partial tiles for the 'root' tiles (the top-most displayable tiles) because they are the first tiles we generate for an empty view,
+    // and can always be substituted while higher-resolution child tiles are being (fully) generated.
+    if (!tile.IsParentDisplayable() && nullptr != loads && loads->HasDeadline())
         {
         auto now = BeTimePoint::Now();
         if (loads->GetDeadline() < now)
