@@ -133,7 +133,7 @@ static System::DateTime         DateTimeToManaged (BENTLEY_NAMESPACE_NAME::DateT
     {
     uint64_t julianDay;
     if (SUCCESS == nativeDateTime.ToJulianDay (julianDay))
-        return System::DateTime (BENTLEY_NAMESPACE_NAME::DateTime::JulianDayToCommonEraTicks(julianDay), DateTimeKindToManaged (nativeDateTime.GetInfo().GetKind()));
+        return System::DateTime (BENTLEY_NAMESPACE_NAME::DateTime::JulianDayToCommonEraMilliseconds(julianDay) * 10000, DateTimeKindToManaged (nativeDateTime.GetInfo().GetKind()));
     else
         return System::DateTime::Now;
     }
@@ -4502,7 +4502,7 @@ internal:
     ECValue (System::DateTime dateTime)
         {
         int64_t commonEraTicks = dateTime.Ticks;
-        uint64_t julianDay = BENTLEY_NAMESPACE_NAME::DateTime::CommonEraTicksToJulianDay (commonEraTicks);
+        uint64_t julianDay = BENTLEY_NAMESPACE_NAME::DateTime::CommonEraMillisecondsToJulianDay (commonEraTicks / 10000);
         BENTLEY_NAMESPACE_NAME::DateTime::Info  dateTimeInfo  = BENTLEY_NAMESPACE_NAME::DateTime::Info::CreateForDateTime (BENTLEY_NAMESPACE_NAME::DateTime::Kind::Utc);
         BENTLEY_NAMESPACE_NAME::DateTime        nativeDateTime;
         BENTLEY_NAMESPACE_NAME::DateTime::FromJulianDay (nativeDateTime, julianDay, dateTimeInfo);
