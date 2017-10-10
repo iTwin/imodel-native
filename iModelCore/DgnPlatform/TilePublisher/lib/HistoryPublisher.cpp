@@ -262,19 +262,25 @@ static void fabricateFakeRevisionData(Json::Value& revisionJson)
 //=======================================================================================
 struct TilesetRevisionPublisher : TilesetPublisher
 {
+    DEFINE_T_SUPER(TilesetPublisher);
+    
 private:
     WString     m_revisionName;
+    bool        m_preview;
+    int         m_index;
 
 public:    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index) : 
+TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index, bool preview) : m_preview(preview), m_index(index),
     TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
     { 
     m_revisionName = WPrintfString(L"Revision_%d", index);
-    m_revisionIndex = index;
+    if (preview)
+        m_revisionName += L"_Preview";
+
     m_dataDir.AppendToPath(m_revisionName.c_str()).AppendSeparator();
     }
 
@@ -297,8 +303,7 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
         return status;
     
 
-    if (!elementIds.empty())
-        {
+    if (!elementIds.empty())                                                                                                        {
         ProgressMeter               progressMonitor(*this);
         RevisionCollectionFilter    collectionFilter(elementIds);
         TileGenerator               tileGenerator(m_db, &collectionFilter, &progressMonitor);
@@ -307,6 +312,21 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
         }
 
     return PublisherContext::Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) override
+    {
+    T_Super::_AddBatchTableAttributes(json, attrs);
+
+    Json::Value revisions = Json::arrayValue;
+
+    for (size_t i=0; i<attrs.size(); i++)
+        revisions.append(m_index);
+
+    json[m_preview ? "preRevision" : "revision"] = std::move(revisions);
     }
    
 };  // TilesetRevisionPublisher
@@ -453,61 +473,70 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
 
         printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
-        if (!elementIds.empty())
+        Json::Value         revisionElementsJson = Json::objectValue;
+        DgnElementIdSet     addedOrModifiedIds, deletedOrModifiedIds;
+
+        for (size_t j=0; j<elementIds.size(); j++)
             {
-            Json::Value         revisionElementsJson = Json::objectValue;
-            DgnElementIdSet     addedOrModifiedIds, deletedIds;
+            auto elementId = elementIds.at(j);
 
-            for (size_t j=0; j<elementIds.size(); j++)
+            switch(opCodes.at(j))
                 {
-                auto elementId = elementIds.at(j);
+                case DbOpcode::Delete:
+                    deletedOrModifiedIds.insert(elementId);
+                    break;
 
-                switch(opCodes.at(j))
-                    {
-                    case DbOpcode::Delete:
-                        deletedIds.insert(elementId);
-                        break;
+                case DbOpcode::Insert:
+                    addedOrModifiedIds.insert(elementId);
+                    break;
 
-                    case DbOpcode::Insert:
-                        addedOrModifiedIds.insert(elementId);
-                        break;
-
-                    case DbOpcode::Update:
-                        deletedIds.insert(elementId);
-                        addedOrModifiedIds.insert(elementId);
-                        break;
-                    }
-                revisionElementsJson[elementId.ToString()] = (int) opCodes.at(j);
+                case DbOpcode::Update:
+                    deletedOrModifiedIds.insert(elementId);
+                    addedOrModifiedIds.insert(elementId);
+                    break;
                 }
+            revisionElementsJson[elementId.ToString()] = (int) opCodes.at(j);
+            }
 
-            Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+        Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
 
 #ifdef FABRICATE_FAKE_REVISION_DATA
-            fabricateFakeRevisionData(revisionJson); 
+        fabricateFakeRevisionData(revisionJson);
 #endif
 
-            if (!addedOrModifiedIds.empty())
-                {
-                TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1);
-                DgnModelIdSet               modelIds;
+        if (!addedOrModifiedIds.empty())
+            {
+            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, false);
+            DgnModelIdSet               modelIds;
 
-                for (auto& elementId : addedOrModifiedIds)
-                    modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
+            for (auto& elementId : addedOrModifiedIds)
+                modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
 
-                revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
-                revisionJson["models"] = revisionPublisher.GetModelsJson(modelIds);
-                }
-            
-            Utf8String  revisionName = Utf8PrintfString("Revision: %d", changeSets.size() - i);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
-
-            revisionJson["name"] = revisionName;
-            revisionJson["elements"] = std::move(revisionElementsJson);
-            revisionJsons.push_front(revisionJson);
+            revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
+            revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
         // Roll to previous revision.
         Utf8String          rollTo = (i == changeSets.size() - 1) ? "MasterFile" : changeSets.at(i+1)->GetId();
         VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), rollTo, Utf8String(tempDbName));
+
+        if (!deletedOrModifiedIds.empty())
+            {
+            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, true);
+            DgnModelIdSet               modelIds;
+
+            for (auto& elementId : deletedOrModifiedIds)
+                modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
+
+            revisionPublisher.PublishRevision(modelIds, deletedOrModifiedIds, params);
+            revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
+            }
+            
+        Utf8String  revisionName = Utf8PrintfString("Revision: %d", changeSets.size() - i);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
+
+        revisionJson["name"] = revisionName;
+        revisionJson["elements"] = std::move(revisionElementsJson);
+        revisionJsons.push_front(revisionJson);
         }
     Json::Value     revisionsJson;
     for (auto& revisionJson : revisionJsons)

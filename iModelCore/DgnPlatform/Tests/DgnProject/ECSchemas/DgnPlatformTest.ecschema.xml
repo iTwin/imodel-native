@@ -362,4 +362,44 @@
         <BaseClass>TestElement</BaseClass>
     </ECEntityClass>
 
+    <ECEntityClass typeName="ImodelJsTestElement">
+      <BaseClass>bis:PhysicalElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00"/>
+      </ECCustomAttributes>
+      <!-- NB: All properties must be auto-handled! -->
+      <ECProperty propertyName="IntegerProperty1" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty2" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty3" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty4" typeName="int"/>
+      <ECProperty propertyName="DoubleProperty1" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty2" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty3" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty4" typeName="double"/>
+      <ECProperty propertyName="PointProperty1" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty2" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty3" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty4" typeName="point3d"/>
+      <ECProperty propertyName="b" typeName="boolean"/>
+      <ECProperty propertyName="d" typeName="double"/>
+      <ECProperty propertyName="dt" typeName="dateTime"/>
+      <ECProperty propertyName="dtUtc" typeName="dateTime">
+        <ECCustomAttributes>
+          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+            <DateTimeKind>Utc</DateTimeKind>
+          </DateTimeInfo>
+        </ECCustomAttributes>
+      </ECProperty>
+      <ECProperty propertyName="i" typeName="int"/>
+      <ECProperty propertyName="l" typeName="long"/>
+      <ECProperty propertyName="s" typeName="string"/>
+      <ECProperty propertyName="p2d" typeName="point2d"/>
+      <ECProperty propertyName="p3d" typeName="point3d"/>
+      <ECStructProperty propertyName="Location" typeName="LocationStruct"/>
+      <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+      <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+      <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+      <ECStructArrayProperty propertyName="ArrayOfStructs" typeName="LocationStruct" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+
 </ECSchema>

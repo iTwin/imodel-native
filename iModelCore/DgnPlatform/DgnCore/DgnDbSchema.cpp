@@ -7,6 +7,33 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
+bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> AutoHandledPropertiesCollection::s_orphanCustomHandledProperties;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void AutoHandledPropertiesCollection::DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR eclass)
+    {
+    auto caClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    for (auto ecp : eclass.GetProperties(false))
+        {
+        if (ecp->IsDefined(*caClass))
+            s_orphanCustomHandledProperties[&ecp->GetClass()].push_back(ecp);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AutoHandledPropertiesCollection::IsOrphanCustomHandledProperty(ECN::ECPropertyCR ecp)
+    {
+    auto const& co = s_orphanCustomHandledProperties.find(&ecp.GetClass());
+    if (co == s_orphanCustomHandledProperties.end())
+        return false;
+    auto const& orphans = co->second;
+    return std::find(orphans.begin(), orphans.end(), &ecp) != orphans.end();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -95,7 +122,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
         // Auto-handling is the default. Custom-handling is opt-in. A property must have the CustomHandledProperty CA in order to be custom-handled.
         ECN::IECInstancePtr ca = prop->GetCustomAttribute(*m_coll.m_customHandledProperty);
 
-        bool isCustom = ca.IsValid();
+        bool isCustom = ca.IsValid() && !IsOrphanCustomHandledProperty(**m_i);
 
         if (isCustom != m_coll.m_wantCustomHandledProps)
             {
