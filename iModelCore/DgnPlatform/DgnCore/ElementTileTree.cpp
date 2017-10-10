@@ -1706,6 +1706,7 @@ void Tile::_Invalidate()
     m_backupGraphic = m_graphic;
     m_graphic = nullptr;
     m_debugGraphics.Reset();
+    m_generator.reset();
 
     m_contentRange = ElementAlignedBox3d();
 
@@ -2336,7 +2337,11 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         m_geometries.MarkIncomplete();
         }
 
-    // Collect geometry from each element
+    // Collect geometry from each element, until all elements processed or we run out of time
+    // Note: We assume geometry collection and mesh generation take approximately the same amount of time.
+    // So we will halt geometry collection when we are halfway to the deadline.
+    // We will generate meshes for all geometry collected up to that point. Yes, this may put us over the full deadline, but it's less complicated.
+    bool isPartialTile = false;
     TileR tile = GetTile();
     for (auto const& entry : m_elementCollector.GetEntries())
         {
@@ -2352,10 +2357,15 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
             m_tileContext.TruncateGeometryList(m_elementCollector.GetMaxElements());
             break;
             }
+        else if (loadContext.WantPartialTiles() && loadContext.IsPastCollectionDeadline())
+            {
+            isPartialTile = true;
+            break;
+            }
         }
 
     // Determine whether or not to subdivide this tile
-    if (!loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+    if (!isPartialTile && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
         {
         // If no elements were skipped and only a small number of elements exist within this tile's range:
         //  - Make it a leaf tile, if it contains no curved geometry; otherwise
@@ -2371,7 +2381,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
     if (loadContext.WasAborted())
         return Completion::Aborted;
 
-    // Facet geometry to produce meshes
+    // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
     bmap<GeomPartCP, bvector<GeometryCP>> parts;
     for (auto const& geom : m_geometries)
@@ -2417,10 +2427,21 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         collection.MarkCurved();
 
     output = std::move(collection);
-    return Completion::Full;
+    if (isPartialTile)
+        { THREADLOG.warning("Produced partial tile"); }
+
+    return isPartialTile ? Completion::Partial : Completion::Full;
     }
 
 END_ELEMENT_TILETREE_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::~Tile()
+    {
+    // Defined here for instantiation of destructor of std::unique_ptr<TileGenerator> which is incomplete type in header file.
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16

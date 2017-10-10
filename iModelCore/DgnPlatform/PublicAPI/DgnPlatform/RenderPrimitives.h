@@ -847,7 +847,6 @@ public:
     bool ContainsCurves() const     { return m_curved; }
     void MarkIncomplete()           { m_isComplete = false; }
     void MarkCurved()               { m_curved = true; }
-
 };
 
 //=======================================================================================

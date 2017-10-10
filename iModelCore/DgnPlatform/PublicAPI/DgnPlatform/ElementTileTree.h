@@ -81,6 +81,8 @@ public:
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
     Dgn::Render::SystemP GetRenderSystem() const {return m_loader->GetRenderSystem();}
+    bool IsPastCollectionDeadline() const { return nullptr != m_loader && m_loader->IsPastCollectionDeadline(); }
+    bool WantPartialTiles() const { return nullptr != m_loader && m_loader->WantPartialTiles(); }
 };
 
 //=======================================================================================
@@ -223,13 +225,15 @@ private:
     mutable ElementAlignedBox3d m_contentRange;
     mutable DebugGraphics       m_debugGraphics;
     double                      m_zoomFactor = 1.0;
-    bool                        m_hasZoomFactor = false;
-    bool                        m_displayable = true;
     uint64_t                    m_debugId;
     Render::GraphicPtr          m_backupGraphic;
+    TileGeneratorUPtr           m_generator;
+    bool                        m_hasZoomFactor = false;
+    bool                        m_displayable = true;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
+    ~Tile();
 
     void InitTolerance();
 
@@ -274,6 +278,8 @@ public:
 
     bool _HasBackupGraphics() const override { return m_backupGraphic.IsValid(); }
     void ClearBackupGraphic() { m_backupGraphic = nullptr; }
+
+    bool IsPartial() const { return nullptr != m_generator.get(); }
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
