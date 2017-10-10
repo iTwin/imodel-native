@@ -184,6 +184,7 @@ struct UpdatePlan
     public:
         // Optional time-out for generating root tiles (those with no displayable parents). If this time is exceeded, tile generation will halt, producing a partial tile.
         // The partial tile will later be refined until it is complete.
+        // Note: if the UpdatePlan has WantWait() == true, the UpdatePlan's GetQuitTime() is used instead.
         bool HasDeadline() const { return m_deadline.IsValid(); }
         BeTimePoint GetDeadline() const { return m_deadline; }
         void SetDeadline(BeTimePoint deadline) { m_deadline = deadline; }

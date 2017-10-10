@@ -580,7 +580,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -589,7 +589,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         }
 
     if (nullptr == loads)
-        loads = std::make_shared<TileLoadState>(tile);
+        loads = std::make_shared<TileLoadState>(tile, deadline);
 
     TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
@@ -1058,7 +1058,7 @@ void DrawArgs::DrawGraphics()
 * be cancelled - we have determined we do not need them to draw the current frame.
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::RequestTiles(MissingNodesCR missingNodes)
+void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
     {
     uint32_t numCanceled = 0;
 
@@ -1086,8 +1086,8 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
         {
         if (missing.GetTile().IsNotLoaded())
             {
-            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile());
-            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr);
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile(), deadline);
+            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr, deadline);
             }
         }
 
@@ -1549,11 +1549,11 @@ void Root::CancelTileLoad(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileRequests::RequestMissing() const
+void TileRequests::RequestMissing(BeTimePoint deadline) const
     {
     for (auto const& kvp : m_map)
         if (!kvp.second.empty())
-            kvp.first->RequestTiles(kvp.second);
+            kvp.first->RequestTiles(kvp.second, deadline);
     }
 
 /*---------------------------------------------------------------------------------**//**

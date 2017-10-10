@@ -478,7 +478,7 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
 
         // Wait for requests to complete
         // Note we are ignoring any time spent creating tile trees above...
-        context.m_requests.RequestMissing();
+        context.m_requests.RequestMissing(plan.GetQuitTime());
         for (auto& attach : m_attachments)
             {
             if (nullptr == attach.m_root)

@@ -135,14 +135,17 @@ struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
 {
 private:
     TileCPtr        m_tile;
+    BeTimePoint     m_deadline;
     BeAtomic<bool>  m_canceled;
 public:
-    explicit TileLoadState(TileCR tile) : m_tile(&tile) { }
+    explicit TileLoadState(TileCR tile, BeTimePoint deadline) : m_tile(&tile), m_deadline(deadline) { }
     DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
     TileCR GetTile() const { return *m_tile; }
+    BeTimePoint GetDeadline() const {return m_deadline;}
+    bool HasDeadline() const {return GetDeadline().IsValid();}
 
     struct PtrComparator
     {
@@ -346,8 +349,8 @@ protected:
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys);
-    void RequestTiles(MissingNodesCR);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline);
+    void RequestTiles(MissingNodesCR, BeTimePoint deadline);
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
     bvector<TileCPtr> SelectTiles(SceneContextR context);
@@ -437,7 +440,6 @@ protected:
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
 
-
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
@@ -461,6 +463,9 @@ protected:
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
+
+    BeTimePoint GetDeadline() const {return nullptr != m_loads ? m_loads->GetDeadline() : BeTimePoint();}
+    bool HasDeadline() const {return GetDeadline().IsValid();}
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -595,7 +600,7 @@ public:
 
     //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
     //! are not contained in this set of requests.
-    DGNPLATFORM_EXPORT void RequestMissing() const;
+    DGNPLATFORM_EXPORT void RequestMissing(BeTimePoint deadline) const;
 };
 
 //=======================================================================================
