@@ -283,7 +283,7 @@ void Root::LoadRootTile(DRange3dCR tileRange)
 #define LOAD_ASYNCH_ROOT
 #ifdef LOAD_ASYNCH_ROOT
     // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final display).
-    auto result = _RequestTile(*m_rootTile, nullptr, nullptr);
+    auto result = _RequestTile(*m_rootTile, nullptr, nullptr, BeTimePoint());
     result.wait();
 #endif
     }
