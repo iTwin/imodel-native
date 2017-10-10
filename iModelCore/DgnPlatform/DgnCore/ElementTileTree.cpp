@@ -1199,7 +1199,6 @@ BentleyStatus Loader::DoGetFromSource()
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     auto& tile = GetElementTile();
-    DgnDbR db = tile.GetRoot().GetDgnDb();
 
     uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
