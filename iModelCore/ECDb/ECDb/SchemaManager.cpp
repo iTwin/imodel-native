@@ -211,7 +211,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(GetECDb(), schemaImportToken));
     if (!policy.IsSupported())
         {
-        LOG.error("Failed to import ECSchemas: Caller has not provided an SchemaImportToken.");
+        LOG.error("Failed to import ECSchemas: Caller has not provided a SchemaImportToken.");
         return ERROR;
         }
 
@@ -242,13 +242,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (SUCCESS != ViewGenerator::DropECClassViews(GetECDb()))
         return ERROR;
 
-    if (SUCCESS != ViewGenerator::DropUpdatableViews(GetECDb()))
-        return ERROR;
-
-    if (SUCCESS != GetDbMap().MapSchemas(ctx, schemasToMap))
-        return ERROR;
-
-    return ViewGenerator::CreateUpdatableViews(GetECDb());
+    return GetDbMap().MapSchemas(ctx, schemasToMap);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -363,10 +357,7 @@ ECSchemaCP SchemaManager::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSch
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaManager::GetSchema(ECSchemaId schemaId, bool loadSchemaEntities) const
-    {
-    return GetReader().GetSchema(schemaId, loadSchemaEntities);
-    }
+ECSchemaCP SchemaManager::GetSchema(ECSchemaId schemaId, bool loadSchemaEntities) const { return GetReader().GetSchema(schemaId, loadSchemaEntities); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012

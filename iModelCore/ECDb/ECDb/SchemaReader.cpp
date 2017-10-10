@@ -424,9 +424,6 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
         if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Target))
             return nullptr;
-
-        //if (!relClass->Verify())
-        //    return nullptr;
         }
 
     return ecClass;
@@ -713,10 +710,10 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& outECSchemaKey, Context& ctx, ECSchemaId ctxECSchemaId, bool loadSchemaEntities) const
+BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& outECSchemaKey, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
     {
     bvector<SchemaDbEntry*> newlyLoadedSchemas;
-    if (SUCCESS != LoadSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId))
+    if (SUCCESS != LoadSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, schemaId))
         return ERROR;
 
     for (SchemaDbEntry* newlyLoadedSchema : newlyLoadedSchemas)
@@ -1140,7 +1137,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     {
                     double jd = stmt.GetValueDouble(colIx);
                     const uint64_t jdMsec = DateTime::RationalDayToMsec(jd);
-                    val.SetDateTimeTicks(DateTime::JulianDayToCommonEraTicks(jdMsec));
+                    val.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
                     break;
                     }
                     case PrimitiveType::PRIMITIVETYPE_Double:
@@ -1436,7 +1433,7 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ct
         if (baseClass == nullptr)
             return ERROR;
 
-        if (ECObjectsStatus::Success != ecClass->AddBaseClass(*baseClass))
+        if (ECObjectsStatus::Success != ecClass->AddBaseClass(*baseClass, false, false, false))
             return ERROR;
         }
 

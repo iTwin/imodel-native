@@ -412,19 +412,6 @@ public:
             BentleyStatus Validate() const;
         };
 
-    struct UpdatableViewInfo final
-        {
-        private:
-            Utf8String m_viewName;
-
-        public:
-            UpdatableViewInfo() {}
-            explicit UpdatableViewInfo(Utf8CP viewName) : m_viewName(viewName) {}
-
-            Utf8StringCR GetViewName() const { return m_viewName; }
-            bool HasView() const { return !m_viewName.empty(); }
-        };
-
     struct EditHandle final : NonCopyableClass
         {
     private:
@@ -455,8 +442,6 @@ private:
     std::vector<std::unique_ptr<DbIndex>> m_indexes;
     std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
-    UpdatableViewInfo m_updatableViewInfo;
-
     DbSchemaNameGenerator m_sharedColumnNameGenerator;
     LinkNode m_linkNode;
 
@@ -467,7 +452,7 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable, UpdatableViewInfo const&);
+    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     void InitializeSharedColumnNameGenerator(uint32_t existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
@@ -506,9 +491,6 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
-
-    UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
-    void SetUpdatableViewInfo(Utf8CP updatableViewName) { m_updatableViewInfo = UpdatableViewInfo(updatableViewName); }
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
     };
 
@@ -560,7 +542,7 @@ public:
         public:
             explicit TableCollection(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
-            DbTable* Add(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable, DbTable::UpdatableViewInfo const& updatableViewInfo);
+            DbTable* Add(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
             void Remove(Utf8StringCR tableName) const;
 
             DbTable const* Get(Utf8StringCR tableName) const;

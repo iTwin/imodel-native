@@ -484,7 +484,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "ExclusiveRootClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL,"
-                           "UpdatableViewName TEXT)");
+                           "UpdatableViewName TEXT)"); //UpdatableViewName is not used right now
 if (BE_SQLITE_OK != stat)
         return stat;
 

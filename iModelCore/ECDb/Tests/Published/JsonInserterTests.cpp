@@ -731,7 +731,8 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
 
         rapidjson::StringBuffer stringBuffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
-        json.Accept(writer);
+        if (!json.Accept(writer))
+            return ERROR;
 
         if (BE_SQLITE_OK != stmt.BindText(1, stringBuffer.GetString(), Statement::MakeCopy::No))
             return ERROR;

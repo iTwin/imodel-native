@@ -683,13 +683,13 @@ TEST_F(ECSqlSelectPrepareTests, Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, GroupBy)
     {
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I;")); //add semicoln
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B;"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc;"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry;"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY S")) << "group by column not in select clause is supported (although against standard)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)")) << "functions in group by is supported (although against standard)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY Length(S)"));
@@ -1602,6 +1602,9 @@ TEST_F(ECSqlInsertPrepareTests, Misc)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (ECInstanceId) VALUES (123)"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (412313)"));
 
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(ECClassId) VALUES (?)")) << "ECClassId cannot be inserted";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasP(ECClassId, SourceECInstanceId, TargetECInstanceId) VALUES (?,?,?)")) << "ECClassId cannot be inserted";
+
     // Class aliases
     //In SQLite they are not allowed, but ECSQL allows them. So test that ECDb properly ommits them
     //during preparation
@@ -1825,8 +1828,6 @@ TEST_F(ECSqlUpdatePrepareTests, DateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdatePrepareTests, Functions)
     {
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ECClassId <> 145"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ECClassId = 145"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(UPPER(S)) = LOWER (S)"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(I)=I")) << "lower/upper only make sense with strings, but no failure if used for other data types (like in SQLite)";
@@ -1869,6 +1870,13 @@ TEST_F(ECSqlUpdatePrepareTests, Misc)
     // Update ECInstanceId 
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET ECInstanceId = -3, I = 123")) << "Updating ECInstanceId is not allowed";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET [ECInstanceId] = -3, I = 123")) << "The bracketed property [ECInstanceId] refers to an ECProperty (and not to the system property ECInstanceId). Parsing [ECInstanceId] is not yet supported.";
+
+    // Update ECClassId 
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET ECClassId=?")) << "Updating ECClassId is not allowed";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSA SET ECClassId=?")) << "Updating ECClassId is not allowed";
+
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ECClassId <> 145")) << "ECClassId in where clause is supported";
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ECClassId = 145")) << "ECClassId in where clause is supported";
 
     //  Literals
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET B = true"));
@@ -1932,17 +1940,17 @@ TEST_F(ECSqlUpdatePrepareTests, Options)
 TEST_F(ECSqlUpdatePrepareTests, Polymorphic)
     {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSA SET I = 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I = 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractTablePerHierarchy SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractTablePerHierarchy SET I = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.THBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.THBase SET S = 'hello'"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TCBase SET S = 'hello'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.TCBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TCBase SET S = 'hello'"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     }
 
@@ -2024,9 +2032,9 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TH5 SET S='hello', S1='hello1', S3='hello3', S5='hello5'"));
 
     // Abstract classes
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I=123, S='hello'"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
@@ -2126,19 +2134,19 @@ TEST_F(ECSqlUpdatePrepareTests, AbstractClass)
                                                     </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
     
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstractNoSubclasses SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ts.BaseAbstractNoSubclasses SET Code=1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstractNoSubclasses SET Code=1"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstractTPHNoSubclasses SET Code=1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstractTPHNoSubclasses SET Code=1"));
 
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.Base SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ts.Base SET Code=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ts.Base SET Code=1"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseTPH SET Code=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ts.BaseTPH SET Code=1"));
 
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseAbstract SET Code=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ts.BaseAbstract SET Code=1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstract SET Code=1"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseTPHAbstract SET Code=1"));
@@ -2319,48 +2327,46 @@ TEST_F(ECSqlDeletePrepareTests, CommonGeometry)
 TEST_F(ECSqlDeletePrepareTests, From)
     {
     //Delete classes with base classes
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TH5"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TH5"));
 
     // Delete abstract classes
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasMyMixin"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PSAHasMyMixin"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract")) << "by contract non-polymorphic deletes on abstract classes are valid, but are a no-op";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasMyMixin"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PSAHasMyMixin"));
+
     // Delete mixins
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.MyMixin")) << "Mixins are invalid in DELETE statements.";
 
     // Delete structs
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.SAStruct")) << "Structs are invalid in DELETE statements.";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PStruct")) << "Structs are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.SAStruct")) << "Structs are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PStruct")) << "Structs are invalid in DELETE statements.";
 
     // Delete relationships
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PSAHasP")) << "FK relationships are invalid in DELETE statements.";
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.PSAHasPSA")) << "Link table relationships can be deleted.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PSAHasP")) << "FK relationships are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.PSAHasPSA")) << "Link table relationships can be deleted.";
 
     // Deleting CAs
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsca.DateTimeInfo")) << "Custom Attributes classes are invalid in DELETE statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsca.DateTimeInfo")) << "Custom Attributes classes are invalid in DELETE statements.";
 
     // Unmapped classes
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PUnmapped")) << "Unmapped classes cannot be used in DELETE statements.";
-
-    // Abstract classes
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract")) << "by contract non-polymorphic deletes on abstract classes are valid, but are a no-op";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PUnmapped")) << "Unmapped classes cannot be used in DELETE statements.";
 
     // Subclasses of abstract class
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Sub1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Sub1"));
 
     // Unsupported classes
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsm.AnyClass")) << "Cannot delete from AnyClass";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsm.InstanceCount")) << "Cannot delete from InstanceCount class";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsm.AnyClass")) << "Cannot delete from AnyClass";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY bsm.InstanceCount")) << "Cannot delete from InstanceCount class";
 
     // Missing schema alias / not existing ECClasses / not existing ECProperties
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY P SET I=123, L=100000")) << "Class name needs to be prefixed by schema alias.";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.BlaBla SET I=123"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY blabla.P SET I=123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY P SET I=123, L=100000")) << "Class name needs to be prefixed by schema alias.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.BlaBla SET I=123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY blabla.P SET I=123"));
 
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P SET Garbage='bla', I=123")) << "One of the properties does not exist in the target class.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P SET Garbage='bla', I=123")) << "One of the properties does not exist in the target class.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2435,15 +2441,15 @@ TEST_F(ECSqlDeletePrepareTests, Options)
 TEST_F(ECSqlDeletePrepareTests, Polymorphic)
     {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractTablePerHierarchy"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractTablePerHierarchy"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.THBase"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.THBase"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TCBase"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.TCBase"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TCBase"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?")) << "Polymorphic delete not supported as subclass is mapped to existing table which means it is readonly";
     }

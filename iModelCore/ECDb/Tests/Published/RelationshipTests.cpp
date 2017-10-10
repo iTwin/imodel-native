@@ -406,6 +406,51 @@ TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, LinkTableConstraintClassIdCols)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("LinkTableConstraintClassIdCols.ecdb",SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                        <ECSchema schemaName="Test" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                            <ECEntityClass typeName="BaseA" modifier="None">
+                                                 <ECCustomAttributes>
+                                                      <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                       </ClassMap>
+                                                 </ECCustomAttributes>
+                                                <ECProperty propertyName="BaseAProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="SubA" modifier="None">
+                                                <BaseClass>BaseA</BaseClass>
+                                                <ECProperty propertyName="SubAProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="BaseB" modifier="None">
+                                                 <ECCustomAttributes>
+                                                      <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                       </ClassMap>
+                                                 </ECCustomAttributes>
+                                                <ECProperty propertyName="BaseBProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECEntityClass typeName="SubB" modifier="None">
+                                                <BaseClass>BaseB</BaseClass>
+                                                <ECProperty propertyName="SubBProp1" typeName="int" />
+                                            </ECEntityClass>
+                                            <ECRelationshipClass typeName="Rel" modifier="None" strength="referencing">
+                                               <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                                                   <Class class="BaseA" />
+                                               </Source>
+                                               <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                   <Class class="BaseB" />
+                                               </Target>
+                                             </ECRelationshipClass>
+                                        </ECSchema>)xml")));
+
+    ASSERT_EQ(std::vector<Utf8String>({"Id","ECClassId","SourceId","TargetId"}), GetHelper().GetColumnNames("ts_Rel")) << "Link Table is not expected to have constraint class id columns";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
@@ -542,19 +587,16 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Parent(Code) VALUES(1)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey)) << stmt.GetECSql();
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(Name) VALUES('Child1')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(Name, MyParent.Id) VALUES('Child1',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey)) << stmt.GetECSql();
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SpecialChild(Name,SpecialName) VALUES('Child2','I am special')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SpecialChild(Name,SpecialName, MyParent.Id) VALUES('Child2','I am special',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(specialChildKey)) << stmt.GetECSql();
     stmt.Finalize();
     
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET MyParent.Id=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Name FROM ts.Child ORDER BY ECInstanceId"));

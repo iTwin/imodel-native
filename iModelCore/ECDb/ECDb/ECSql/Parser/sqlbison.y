@@ -648,10 +648,12 @@ where_clause:
 opt_group_by_clause:
         /* empty */      {$$ = SQL_NEW_RULE;}
     |   SQL_TOKEN_GROUP SQL_TOKEN_BY value_exp_commalist
-            {$$ = SQL_NEW_RULE;
+        {
+            $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
-            $$->append($3);}
+            $$->append($3);
+        }
     ;
 
 opt_having_clause:
@@ -2063,17 +2065,6 @@ value_exp_commalist:
     |   value_exp_commalist ',' value_exp
             {$1->append($3);
             $$ = $1;}
-    /*    this rule is only valid if we check predicates */
-    |   value_exp_commalist ';' value_exp
-        {
-            if (context->inPredicateCheck())
-            {
-                $1->append($3);
-                $$ = $1;
-            }
-            else
-                YYERROR;
-        }
     ;
 function_arg:
     

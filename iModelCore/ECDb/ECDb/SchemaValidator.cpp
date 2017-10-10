@@ -22,7 +22,6 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
 
     ValidBaseClassesRule baseClassesRule;
     ValidRelationshipRule relRule;
-    CyclicDependencyRule cyclicRule;
     ValidPropertyRule validPropertyRule;
     for (ECSchemaCP schema : schemas)
         {
@@ -33,11 +32,6 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
             {
             //per class rules
             bool succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
-            if (!succeeded)
-                valid = false;
-
-            //per class rules
-            succeeded = cyclicRule.Validate(issueReporter, *ecClass);
             if (!succeeded)
                 valid = false;
 
@@ -181,8 +175,11 @@ bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueRepo
     if (!ValidatePropertyName(issueReporter, ecClass, prop))
         isValid = false;
 
-    if (!ValidatePropertyStructType(issueReporter, ecClass, prop))
-        isValid = false;
+    if (ecClass.IsStructClass())
+        {
+        if (!ValidatePropertyStructType(issueReporter, *ecClass.GetStructClassCP(), prop))
+            isValid = false;
+        }
 
     if (prop.GetIsNavigation())
         {
@@ -238,9 +235,9 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporter const& issueReporter, ECN::ECStructClassCR owningStruct, ECN::ECPropertyCR prop) const
     {
-    ECClassCP structType = nullptr;
+    ECStructClassCP structType = nullptr;
     if (prop.GetIsStruct())
         structType = &prop.GetAsStructProperty()->GetType();
     else if (prop.GetIsArray())
@@ -253,93 +250,20 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporte
     if (structType == nullptr)
         return true; //prop is of primitive type or prim array type -> no validation needed
 
-    if (structType->Is(&ecClass))
+    if (structType->Is(&owningStruct))
         {
-        issueReporter.Report("ECClass '%s' contains the ECProperty '%s' which is of the same type or a derived type than this ECClass.",
-                             ecClass.GetFullName(), prop.GetName().c_str());
+        issueReporter.Report("Invalid cyclic struct reference: ECStructClass '%s' contains the property '%s' which is of the same type or a derived type than this ECStructClass.",
+                             owningStruct.GetFullName(), prop.GetName().c_str());
         return false;
+        }
+
+    for (ECPropertyCP prop : structType->GetProperties(false))
+        {
+        if (!ValidatePropertyStructType(issueReporter, owningStruct, *prop))
+            return false;
         }
 
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan   08/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaValidator::CyclicDependencyRule::Validate(IssueReporter const& issues, ECN::ECClassCR ecClass) const
-    {
-    Utf8String accessString;
-    if (HasRecusiveStructTypeProperty(ecClass, accessString))
-        {
-        issues.Report("ECClass '%s' contains the ECProperty '%s' which cycle back to itsef.", ecClass.GetFullName(), accessString.c_str());
-        return false;
-        }
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan   08/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECN::ECStructClassCP SchemaValidator::CyclicDependencyRule::GetStructType(ECN::ECPropertyCP ecProperty)
-    {
-    if (auto prop = ecProperty->GetAsStructArrayProperty())
-        return &prop->GetStructElementType();
-    else if (auto prop = ecProperty->GetAsStructProperty())
-        return &prop->GetType();
-
-    return nullptr;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan   08/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaValidator::CyclicDependencyRule::HasRecusiveStructTypeProperty(ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertyPath)
-    {
-
-    for (ECN::ECPropertyCP property : ecClass.GetProperties(true))
-        {
-        if (ECN::ECStructClassCP structType = GetStructType(property))
-            {
-            if (propertyPath.end() != std::find_if(propertyPath.begin(), propertyPath.end(), [&structType] (ECN::ECPropertyCP lhs) { return GetStructType(lhs) == structType; }))
-                {
-                propertyPath.push_back(property);
-                return true;
-                }
-
-            propertyPath.push_back(property);
-            if (HasRecusiveStructTypeProperty(*structType, propertyPath))
-                return true;
-
-            propertyPath.pop_back();
-            }
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan   08/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaValidator::CyclicDependencyRule::HasRecusiveStructTypeProperty(ECN::ECClassCR ecClass, Utf8StringR failedAccessString)
-    {
-    bvector<ECN::ECPropertyCP> propertyPath;
-    if (HasRecusiveStructTypeProperty(ecClass, propertyPath))
-        {
-        for (int i = 0; i < propertyPath.size(); i++)
-            {
-            if (i != 0)
-                failedAccessString.append(".");
-
-            ECN::ECPropertyCP property = propertyPath[i];
-            failedAccessString.append(property->GetName());
-            if (property->GetIsStructArray())
-                failedAccessString.append("[]");
-
-            }
-
-        return true;
-        }
-
-    return false;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

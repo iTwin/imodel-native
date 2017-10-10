@@ -1893,7 +1893,7 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
+TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicDeleteSharedTable.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
@@ -1908,46 +1908,16 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
-    bvector<Utf8String> tableNames = {"ClassA", "BaseHasDerivedA", "DerivedBHasChildren"};
+    std::vector<Utf8CP> tableNames{"ClassA", "BaseHasDerivedA", "DerivedBHasChildren"};
 
-    for (Utf8StringCR tableName : tableNames)
+    for (Utf8CP tableName : tableNames)
         {
         Utf8String selectSql = "SELECT count(*) FROM nsat_";
         selectSql.append(tableName);
         Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, selectSql.c_str())) << "Prepare failed for " << selectSql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Step failed for " << selectSql.c_str();
-        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName.c_str() << " is expected to be empty after DELETE FROM nsat.ClassA";
-        stmt.Finalize();
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Muhammad Hassan                  02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
-    {
-    SchemaItem testSchema(NestedStructArrayTestSchemaHelper::s_testSchemaXml);
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicDeleteTest.ecdb", testSchema));
-
-    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, false);
-
-    //Delete all Instances of the base class, all the structArrays should also be deleted.
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "DELETE FROM nsat.ClassA"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
-
-    bvector<Utf8String> tableNames = {"ClassA" , "DerivedA", "DerivedB", "DoubleDerivedA", "DoubleDerivedB", "DoubleDerivedC"};
-
-    for (Utf8StringCR tableName : tableNames)
-        {
-        Utf8String selectSql = "SELECT count(*) FROM nsat_";
-        selectSql.append(tableName);
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, selectSql.c_str())) << "Prepare failed for " << selectSql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql.c_str();
-        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName.c_str() << " is expected to be empty after DELETE FROM nsat.ClassA";
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, selectSql.c_str())) << selectSql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << selectSql.c_str();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName << " is expected to be empty after DELETE FROM nsat.ClassA";
         stmt.Finalize();
         }
     }
@@ -2032,15 +2002,19 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
                 </ECEntityClass>
               </ECSchema>)xml")));
 
-    ECInstanceKey sub1Key, sub10Key;
+    ECInstanceKey baseKey, sub1Key, sub10Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(baseKey, "INSERT INTO ts.Base(BaseProp) VALUES (100)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Key, "INSERT INTO ts.Sub1(BaseProp,SubProp) VALUES (100, 123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub10Key, "INSERT INTO ts.Sub10(BaseProp,SubProp) VALUES (100, 123)"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ts.Base SET BaseProp=200"));
-
     ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Base SET BaseProp=200"));
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ONLY ts.Base SET BaseProp=200"));
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, baseKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(200, stmt.GetValueInt(0));
     stmt.Finalize();
@@ -2048,51 +2022,38 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub1 WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(200, stmt.GetValueInt(0));
+    ASSERT_EQ(100, stmt.GetValueInt(0));
     stmt.Finalize();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ts.BaseAbstract SET BaseProp=200"));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.BaseAbstract WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(200, stmt.GetValueInt(0));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.BaseAbstract SET BaseProp=200"));
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub10 WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(200, stmt.GetValueInt(0));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ONLY ts.BaseAbstract SET BaseProp=200"));
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Base WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ts.Base WHERE ECInstanceId=?"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Base WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, baseKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, baseKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub1 WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub1Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.BaseAbstract WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ts.BaseAbstract WHERE ECInstanceId=?"));
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.BaseAbstract WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Sub10 WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, sub10Key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.BaseAbstract WHERE ECInstanceId=?"));
     stmt.Finalize();
     }
 
@@ -2113,45 +2074,15 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate)
     statement.Finalize();
     m_ecdb.SaveChanges();
 
-    bvector<Utf8String> tableNames = {"ClassA", "DerivedA", "DerivedB", "DoubleDerivedA", "DoubleDerivedB", "DoubleDerivedC"};
-
-    Utf8CP expectedValue = "UpdatedValue";
-    for (Utf8StringCR tableName : tableNames)
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT I,T FROM nsat_ClassA"));
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        Utf8String selectECSql = "SELECT I,T FROM nsat_";
-        selectECSql.append(tableName);
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, selectECSql.c_str()));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(2, stmt.GetValueInt(0)) << "Int value don't match for statement " << selectECSql.c_str();
-        ASSERT_STREQ(expectedValue, stmt.GetValueText(1)) << "String value don't match for statement " << selectECSql.c_str();
-        stmt.Finalize();
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "Int value doesn't match";
+        ASSERT_STREQ("UpdatedValue", stmt.GetValueText(1)) << "String value doesn't match";
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate_SharedTable)
-    {
-    // Create and populate a sample project
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicUpdateSharedTable.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.ecschema.xml")));
-    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
-
-    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,ECClassId,I,T FROM nsat.ClassA ORDER BY ECInstanceId"));
-    while (stmt.Step() != BE_SQLITE_DONE)
-        {
-        ASSERT_EQ(2, stmt.GetValueInt(2)) << "The values don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);
-        ASSERT_STREQ("UpdatedValue", stmt.GetValueText(3)) << "The values don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);
-        }
-    stmt.Finalize();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         08/15
