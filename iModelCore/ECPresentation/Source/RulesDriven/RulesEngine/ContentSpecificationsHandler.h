@@ -103,7 +103,7 @@ protected:
 
 protected:
     ContentSpecificationsHandler(Context& context) : m_context(context), m_modifierClasses(nullptr) {}
-    ContentSpecificationsHandler(ContentSpecificationsHandler const& other) : m_context(m_context), m_modifierClasses(nullptr) {}
+    ContentSpecificationsHandler(ContentSpecificationsHandler const& other) : m_context(other.m_context), m_modifierClasses(nullptr) {}
     virtual ~ContentSpecificationsHandler() {DELETE_AND_CLEAR(m_modifierClasses);}
     Context& GetContext() {return m_context;}
     Context const& GetContext() const {return m_context;}
