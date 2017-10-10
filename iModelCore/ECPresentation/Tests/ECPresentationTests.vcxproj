@@ -71,6 +71,7 @@
     <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp" />
     <ClCompile Include="Published\PresentationRules\RelatedPropertiesSpecificationTests.cpp" />
     <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
     <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />

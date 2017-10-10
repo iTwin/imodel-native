@@ -32,6 +32,7 @@ struct RulesDrivenECPresentationManagerTests : ::testing::Test
     void TearDown() override;
 
     RulesDrivenECPresentationManagerTests() : m_manager(nullptr) {}
+    ECSchemaCP GetSchema();
     ECClassCP GetClass(Utf8CP name);
     ECClassCP GetClass(Utf8CP schemaName, Utf8CP className);
     ECRelationshipClassCP GetRelationshipClass(Utf8CP name);

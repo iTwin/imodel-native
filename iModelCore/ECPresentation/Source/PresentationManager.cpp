@@ -61,6 +61,14 @@ NavNodeCPtr IECPresentationManager::GetParent(ECDbR connection, NavNodeCR node, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<SelectClassInfo> IECPresentationManager::GetContentClasses(ECDbR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& input, JsonValueCR options)
+    {
+    return _GetContentClasses(connection, preferredDisplayType, input, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptorCPtr IECPresentationManager::GetContentDescriptor(ECDbR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options)

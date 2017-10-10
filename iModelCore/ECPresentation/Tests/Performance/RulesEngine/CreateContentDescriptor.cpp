@@ -67,19 +67,17 @@ struct CreateContentDescriptorPerformanceTests : RulesEnginePerformanceTests
             )ruleset");
         return ruleset;
         }
-
-    bset<ECClassCP> GetDerivedClasses(ECClassCR base);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<ECClassCP> CreateContentDescriptorPerformanceTests::GetDerivedClasses(ECClassCR base)
+static bset<ECClassCP> GetDerivedClasses(ECDbCR db, ECClassCR base)
     {
     bset<ECClassCP> allDerivedClasses;
-    for (ECClassCP derivedClass : m_project.Schemas().GetDerivedClasses(base))
+    for (ECClassCP derivedClass : db.Schemas().GetDerivedClasses(base))
         {
-        bset<ECClassCP> const& derivedClasses = GetDerivedClasses(*derivedClass);
+        bset<ECClassCP> const& derivedClasses = GetDerivedClasses(db, *derivedClass);
         allDerivedClasses.insert(derivedClasses.begin(), derivedClasses.end());
         allDerivedClasses.insert(derivedClass);
         }
@@ -87,28 +85,35 @@ bset<ECClassCP> CreateContentDescriptorPerformanceTests::GetDerivedClasses(ECCla
     }
 
 /*---------------------------------------------------------------------------------**//**
-* The test is based on Version Compare use case where the library requests a content 
-* descriptor for all derived classes of BisCore:Element to find property relationship
-* paths.
+* The test is based on products' property selector use case where a content descriptor
+* is requested for all element subclasses classes.
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CreateContentDescriptorPerformanceTests, GetDescriptorForAllElementSubclasses)
     {    
     // set up selection
-    Timer t_selection("GetDescriptorForAllElementSubclasses: Set up selection");
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
-    bset<ECClassCP> allElementClassesSet = GetDerivedClasses(*elementClass);
+    bset<ECClassCP> allElementClassesSet = GetDerivedClasses(m_project, *elementClass);
     bvector<ECClassCP> allElementClasses(allElementClassesSet.begin(), allElementClassesSet.end());
     SelectionInfo selection(allElementClasses);
-    t_selection.Finish();
-    EXPECT_EQ(1278, allElementClasses.size());
-
-    // set up options
-    RulesDrivenECPresentationManager::ContentDescriptorOptions options = CreateContentOptions();
-    options.SetCreateFields(false);
-
+    
     // get the descriptor
-    Timer t_descriptor("GetDescriptorForAllElementSubclasses: Get descriptor");
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, options.GetJson());
-    t_descriptor.Finish();
+    Timer t_descriptor;
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson());
+    EXPECT_TRUE(descriptor.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on Version Compare use case where the library requests content 
+* classes for all derived classes of BisCore:Element to find property relationship
+* paths.
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CreateContentDescriptorPerformanceTests, GetContentClassesForBisElements)
+    {    
+    ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
+
+    Timer t_classes;
+    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson());
+    EXPECT_TRUE(!classes.empty());
     }

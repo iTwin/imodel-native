@@ -69,6 +69,30 @@ ECClassCP ECSchemaHelper::GetECClass(Utf8CP fullClassName) const
 ECClassCP ECSchemaHelper::GetECClass(ECClassId id) const {return m_db.Schemas().GetClass(id);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
+    {
+    static Utf8CP statementStr = "SELECT ECInstanceId FROM [meta].[ECClassDef] WHERE Name = ?";
+    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_db, statementStr);
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return bvector<ECClassCP>();
+        }
+    stmt->BindText(1, name, IECSqlBinder::MakeCopy::No);
+
+    bvector<ECClassId> ids;
+    while (DbResult::BE_SQLITE_ROW == stmt->Step())
+        ids.push_back(stmt->GetValueId<ECClassId>(0));
+
+    bvector<ECClassCP> classes;
+    for (ECClassId id : ids)
+        classes.push_back(m_db.Schemas().GetClass(id));
+    return classes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsSchemaHidden(ECSchemaCR ecSchema)

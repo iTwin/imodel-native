@@ -128,19 +128,19 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                 {
                 // create a temporary node for ECExpression evaluation context
                 ECClassId classId = args[0].GetValueId<ECClassId>();
-                NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetDb(), classId, instanceId, "");
+                NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetSchemaHelper().GetDb(), classId, instanceId, "");
                 NavNodesHelper::AddRelatedInstanceInfo(*thisNode, args[3].GetValueText());
 
                 // look for label override
-                ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetDb());
-                RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetDb(), *thisNode, GetContext().GetParentNode(), 
+                ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetDb());
+                RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
                     GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
                 LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
                 if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                     {
                     // evaluate the ECExpression to get the label
                     ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                        GetContext().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                        GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                     ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                     ECValue value;
                     if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -148,14 +148,14 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                         if (nullptr != GetContext().GetUsedClassesListener())
                             {
                             UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                                GetContext().GetDb(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
+                                GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
                             }
                         }
                     }
 
                 if (label.empty())
                     {
-                    ECClassCP ecClass = GetContext().GetDb().Schemas().GetClass(classId);
+                    ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
                     BeAssert(nullptr != ecClass);
 
                     // if the override didn't apply, look for instance label property
@@ -201,7 +201,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
         auto iter = GetCache().find(classId);
         if (GetCache().end() == iter)
             {
-            ECClassCP ecClass = GetContext().GetDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
             BeAssert(nullptr != ecClass);
 
             Utf8String label;
@@ -211,17 +211,17 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(args[1].GetValueInt64()); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
             if (ecClass->IsRelationshipClass())
-                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetDb().GetDbGuid(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
+                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
             else
-                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetDb().GetDbGuid(), *ecClass, "", groupedInstanceKeys);
+                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass, "", groupedInstanceKeys);
             
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetDb(), *thisNode, GetContext().GetParentNode(), 
+            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                    GetContext().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -229,7 +229,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
                     if (nullptr != GetContext().GetUsedClassesListener())
                         {
                         UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(), 
-                            GetContext().GetDb(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
+                            GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
                         }
                     }
                 }
@@ -287,7 +287,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetDb(), classId, instanceId, "");
+            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetSchemaHelper().GetDb(), classId, instanceId, "");
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(thisNode, GetContext().GetUserSettings());
 
             ECValue value;
@@ -298,7 +298,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 if (nullptr != GetContext().GetUsedClassesListener())
                     {
                     UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                        GetContext().GetDb(), GetContext().GetECExpressionsCache(), expression);
+                        GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), expression);
                     }
                 }
 
@@ -378,7 +378,7 @@ public:
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            ECClassCP ecClass = GetContext().GetDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
             if (nullptr == ecClass)
                 {
                 BeAssert(false);
@@ -399,14 +399,14 @@ public:
             // first, look for label override
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(groupedInstancesCount); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
-            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetDb().GetDbGuid(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetDb(), *thisNode, GetContext().GetParentNode(), 
+            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
+            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                    GetContext().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -414,7 +414,7 @@ public:
                     if (nullptr != GetContext().GetUsedClassesListener())
                         {
                         UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                            GetContext().GetDb(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
+                            GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
                         }
                     }
                 }
@@ -695,7 +695,7 @@ struct IsOfClassScalar : ECPresentation::ScalarFunction
         {
         BeAssert(3 == nArgs);
         ECClassId classId = args[0].GetValueId<ECClassId>();
-        ECClassCP ecClass = GetContext().GetDb().Schemas().GetClass(classId);
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
         BeAssert(nullptr != ecClass);
 
         Utf8CP className = args[1].GetValueText();
@@ -721,7 +721,7 @@ struct GetECClassIdScalar : ECPresentation::ScalarFunction
         BeAssert(2 == nArgs);
         Utf8CP className = args[0].GetValueText();
         Utf8CP schemaName = args[1].GetValueText();
-        ECClassId id = GetContext().GetDb().Schemas().GetClassId(schemaName, className);
+        ECClassId id = GetContext().GetSchemaHelper().GetDb().Schemas().GetClassId(schemaName, className);
         ctx.SetResultInt64(id.GetValueUnchecked());
         }
     };
@@ -1122,7 +1122,7 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
             Utf8String relationshipSchemaName, relationshipClassName;
             ECClassCP relationshipClass = nullptr;
             if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, key.m_fullRelationshipName)
-                || nullptr == (relationshipClass = GetContext().GetDb().Schemas().GetClass(relationshipSchemaName, relationshipClassName))
+                || nullptr == (relationshipClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(relationshipSchemaName, relationshipClassName))
                 || !relationshipClass->IsRelationshipClass())
                 {
                 BeAssert(false);
@@ -1149,7 +1149,7 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
                 return;
                 }
 
-            CachedECSqlStatementPtr stmt = cache.m_statements.GetPreparedStatement(GetContext().GetDb(), query.c_str());
+            CachedECSqlStatementPtr stmt = cache.m_statements.GetPreparedStatement(GetContext().GetSchemaHelper().GetDb(), query.c_str());
             if (stmt.IsNull())
                 {
                 BeAssert(false);
@@ -1182,7 +1182,7 @@ struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
         BeAssert(3 == nArgs);
         Utf8CP enumSchema = args[0].GetValueText();
         Utf8CP enumClass = args[1].GetValueText();
-        ECEnumerationCP enumeration = GetContext().GetDb().Schemas().GetEnumeration(enumSchema, enumClass);
+        ECEnumerationCP enumeration = GetContext().GetSchemaHelper().GetDb().Schemas().GetEnumeration(enumSchema, enumClass);
         if (nullptr == enumeration)
             {
             BeAssert(false);
@@ -1306,10 +1306,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomFunctionsContext::CustomFunctionsContext(ECDbR db, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, 
+CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, 
     ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener, 
     NavNodeCP parentNode, rapidjson::Value const* queryExtendedData)
-    : m_db(db), m_ruleset(ruleset), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache), 
+    : m_schemaHelper(schemaHelper), m_ruleset(ruleset), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache), 
     m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener), m_extendedData(queryExtendedData), m_localizationProvider(nullptr)
     {
     CustomFunctionsManager::GetManager().PushContext(*this);

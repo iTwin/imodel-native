@@ -52,8 +52,8 @@ private:
     ClassType const* m_class;
     int m_flags;
 public:
-    SupportedClassInfo() : m_class(nullptr) {}
-    SupportedClassInfo(ClassType const& ecClass) : m_class(&ecClass) {}
+    SupportedClassInfo() : m_class(nullptr), m_flags(0) {}
+    SupportedClassInfo(ClassType const& ecClass) : m_class(&ecClass), m_flags(0) {}
     SupportedClassInfo(ClassType const& ecClass, int flags) : m_class(&ecClass), m_flags(flags) {}
     bool operator<(SupportedClassInfo<ClassType> const& other) const
         {
@@ -211,6 +211,7 @@ public:
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP fullClassName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(ECClassId) const;
+    ECPRESENTATION_EXPORT bvector<ECClassCP> GetECClassesByName(Utf8CP name) const;
     ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;

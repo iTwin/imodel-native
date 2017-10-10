@@ -869,7 +869,7 @@ void QueryBasedNodesProvider::Initialize()
     DataSourceRelatedSettingsUpdater updater(GetDataSourceInfo(), GetContext());
 
     // set up the custom functions context
-    CustomFunctionsContext fnContext(GetContext().GetDb(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData());
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());

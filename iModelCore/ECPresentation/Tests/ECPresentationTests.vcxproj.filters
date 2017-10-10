@@ -73,6 +73,7 @@
     <ClCompile Include="Published\PresentationRules\PropertiesDisplaySpecificationTests.cpp" />
     <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />

@@ -115,7 +115,8 @@ struct ContentQueryBuilderTests : ::testing::Test
     {    
     ECSchemaHelper* m_schemaHelper;
     PresentationRuleSetPtr m_ruleset;
-    ContentQueryBuilder* m_builder;
+    ContentDescriptorBuilder* m_descriptorBuilder;
+    ContentQueryBuilder* m_queryBuilder;
     TestUserSettings m_settings;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
@@ -124,12 +125,13 @@ struct ContentQueryBuilderTests : ::testing::Test
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
 
-    ContentQueryBuilderTests() : m_builder(nullptr) {}
+    ContentQueryBuilderTests() : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr) {}
     
     void SetUp() override;
     void TearDown() override;
 
-    ContentQueryBuilder& GetBuilder() {return *m_builder;}
+    ContentDescriptorBuilder& GetDescriptorBuilder() {return *m_descriptorBuilder;}
+    ContentQueryBuilder& GetQueryBuilder() {return *m_queryBuilder;}
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     ECClassCP GetECClass(Utf8CP className);
     ContentQueryCPtr GetExpectedQuery();

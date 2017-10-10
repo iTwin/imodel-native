@@ -851,6 +851,16 @@ private:
             m_ecsql.append(prefix).append(".");
         Append("[ECClassId]");
         Comma();
+
+        if (nullptr != node.GetArguments() && 2 == node.GetArguments()->GetArgumentCount())
+            {
+            NodeCP classNameArg = node.GetArguments()->GetArgument(0);
+            NodeCP schemaNameArg = node.GetArguments()->GetArgument(1);
+            Utf8String qualifiedClassName = schemaNameArg->ToString().Trim("\"");
+            qualifiedClassName.append(":").append(classNameArg->ToString().Trim("\""));
+            m_usedClasses.push_back(qualifiedClassName);
+            }
+
         return true;
         }
 
@@ -1117,6 +1127,18 @@ private:
         {
         Append(node.ToString());
         }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleEqualtyNode(ComparisonNodeCR node)
+        {
+        Append(node.ToString());
+
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
+        if (left.EndsWith(".ClassName"))
+            m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
+        }
 
 public:
     bool StartArrayIndex(NodeCR) override {BeAssert(false); return false;}
@@ -1195,13 +1217,16 @@ public:
             case TOKEN_GreaterEqual:
             case TOKEN_Less:
             case TOKEN_LessEqual:
-            case TOKEN_Equal:
-            case TOKEN_NotEqual:
             case TOKEN_Minus:
             case TOKEN_Plus:
             case TOKEN_Star:
             case TOKEN_Slash:
                 Append(node.ToString());
+                break;
+            case TOKEN_Equal:
+            case TOKEN_NotEqual:
+                BeAssert(nullptr != dynamic_cast<ComparisonNodeCP>(&node));
+                HandleEqualtyNode(static_cast<ComparisonNodeCR>(node));
                 break;
             case TOKEN_StringConst:
                 BeAssert(nullptr != dynamic_cast<LiteralNode const*>(&node) 

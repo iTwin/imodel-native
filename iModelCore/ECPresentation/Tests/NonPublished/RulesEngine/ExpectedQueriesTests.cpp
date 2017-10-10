@@ -4581,6 +4581,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // NestedContentField_WithSingleStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -4595,6 +4596,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // NestedContentField_WithMultiStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -4616,6 +4618,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptor::Category category("name", "label", "", 1);
 
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         descriptor->GetAllFields().push_back(new ContentDescriptor::NestedContentField(category, "sprocket_field_name", "sprocket_field_label", ret_Sprocket, "sprocket",
@@ -4951,7 +4954,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, ECDbR db, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
     {
     for (auto pair : queries)
         {
@@ -4961,7 +4964,8 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, ECDbR 
         LOGI("Query: '%s'", name.c_str());
 
         JsonNavNodesFactory nodesFactory;
-        CustomFunctionsContext functionsContext(db, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+        ECSchemaHelper schemaHelper(db, relatedPathsCache, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -4976,7 +4980,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, ECDbR 
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, ECDbR db, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
     {
     for (auto pair : queries)
         {
@@ -4987,7 +4991,8 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, ECDbR db,
         LOGI("Query: '%s'", name.c_str());
         
         JsonNavNodesFactory nodesFactory;
-        CustomFunctionsContext functionsContext(db, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, nullptr);
+        ECSchemaHelper schemaHelper(db, relatedPathsCache, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, nullptr);
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -5012,9 +5017,10 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
     ECDbR db = ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb();
     TestUserSettings userSettings;
     ECExpressionsCache ecexpressionsCache;
+    RelatedPathsCache relatedPathsCache;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     CustomFunctionsInjector customFunctions(db);
 
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), db, *ruleset, userSettings, ecexpressionsCache);
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), db, *ruleset, userSettings, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), db, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), db, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
     }

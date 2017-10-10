@@ -22,6 +22,7 @@
 #include "QueryBuilder.h"
 #include "ECExpressionContextsProvider.h"
 #include "ECInstanceChangesDirector.h"
+#include "ContentClassesLocater.h"
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
@@ -45,6 +46,25 @@ static bool IsRulesetSupported(ECDbCR connection, PresentationRuleSetCR ruleset)
     RelatedPathsCache relatedPathsCache;
     ECSchemaHelper helper(connection, relatedPathsCache, nullptr);
     return helper.AreSchemasSupported(ruleset.GetSupportedSchemas());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static PresentationRuleSetPtr FindRuleset(RuleSetLocaterManager const& locaters, ECDbCR connection, Utf8CP rulesetId)
+    {
+    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(locaters, connection, rulesetId);
+    if (!ruleset.IsValid())
+        {
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
+        return nullptr;
+        }
+    if (!IsRulesetSupported(connection, *ruleset))
+        {
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
+        return nullptr;
+        }
+    return ruleset;
     }
 
 /*=================================================================================**//**
@@ -204,17 +224,9 @@ protected:
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
-        PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(m_manager.GetLocaters(), connection, rulesetId);
+        PresentationRuleSetPtr ruleset = FindRuleset(m_manager.GetLocaters(), connection, rulesetId);
         if (!ruleset.IsValid())
-            {
-            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
             return nullptr;
-            }
-        if (!IsRulesetSupported(connection, *ruleset))
-            {
-            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
-            return nullptr;
-            }
         _l2 = nullptr;
 
         // get various caches
@@ -224,7 +236,8 @@ protected:
         ECSqlStatementCache& statementsCache = m_manager.m_statementCache->GetCache(connection);
 
         // notify listener with ECClasses used in this ruleset
-        UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, connection, ecexpressionsCache, *ruleset);
+        ECSchemaHelper schemaHelper(connection, relatedPathsCache, &statementsCache);
+        UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, schemaHelper, ecexpressionsCache, *ruleset);
 
         // set up the nodes provider context
         _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Create context", NativeLogging::LOG_TRACE);
@@ -244,7 +257,6 @@ public:
 
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_UseCache = "UseCache";
-const Utf8CP RulesDrivenECPresentationManager::ContentDescriptorOptions::OPTION_NAME_CreateFields = "CreateFields";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
@@ -491,7 +503,7 @@ bool RulesDrivenECPresentationManager::_HasChild(ECDbR, NavNodeCR parent, NavNod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentProvider(BeSQLite::EC::ECDbR connection, ContentProviderKey const& key, SelectionInfo const& selectionInfo, ContentOptions const& options, bool createFields)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentProvider(BeSQLite::EC::ECDbR connection, ContentProviderKey const& key, SelectionInfo const& selectionInfo, ContentOptions const& options)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentProvider", NativeLogging::LOG_TRACE);
 
@@ -506,17 +518,9 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
 
     // get the ruleset
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
-    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(GetLocaters(), connection, options.GetRulesetId());
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, options.GetRulesetId());
     if (!ruleset.IsValid())
-        {
-        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", options.GetRulesetId()).c_str(), LOG_ERROR);
         return nullptr;
-        }
-    if (!IsRulesetSupported(connection, *ruleset))
-        {
-        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", options.GetRulesetId()).c_str(), LOG_INFO);
-        return nullptr;
-        }
     _l2 = nullptr;
 
     // get ruleset-related caches
@@ -535,7 +539,6 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     context->SetLocalizationContext(GetLocalizationProvider());
     context->SetSelectionContext(selectionInfo);
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
-    context->SetCreateFields(createFields);
     _l2 = nullptr;
     
     // get content specifications
@@ -561,13 +564,46 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
 SpecificationContentProviderPtr RulesDrivenECPresentationManager::GetContentProvider(ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options)
     {
     ContentProviderKey key(connection, options.GetRulesetId(), descriptor.GetPreferredDisplayType(), selectionInfo);
-    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, key, selectionInfo, options, true);
+    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, key, selectionInfo, options);
     if (cachedProvider.IsNull())
         return nullptr;
 
     SpecificationContentProviderPtr provider = cachedProvider->Clone();
     provider->SetContentDescriptor(descriptor);
     return provider;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<SelectClassInfo> RulesDrivenECPresentationManager::_GetContentClasses(ECDbR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions)
+    {
+    RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentClasses", NativeLogging::LOG_TRACE);
+
+    if (nullptr == preferredDisplayType || 0 == *preferredDisplayType) 
+        preferredDisplayType = ContentDisplayType::Undefined;
+
+    ContentOptions options(jsonOptions);
+
+    // get the ruleset
+    RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, options.GetRulesetId());
+    if (!ruleset.IsValid())
+        return bvector<SelectClassInfo>();
+    _l2 = nullptr;
+    
+    // get ruleset-related caches
+    IUserSettings const& settings = m_userSettings.GetSettings(ruleset->GetRuleSetId().c_str());
+    ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
+
+    // get connection-related caches
+    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection);
+    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection);
+
+    // locate the classes
+    ECSchemaHelper schemaHelper(connection, relatedPathsCache, &statementCache);
+    ContentClassesLocater::Context locaterContext(schemaHelper, *ruleset, preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
+    return ContentClassesLocater(locaterContext).Locate(classes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,9 +616,9 @@ ContentDescriptorCPtr RulesDrivenECPresentationManager::_GetContentDescriptor(EC
     if (nullptr == preferredDisplayType || 0 == *preferredDisplayType) 
         preferredDisplayType = ContentDisplayType::Undefined;
 
-    ContentDescriptorOptions options(jsonOptions);
+    ContentOptions options(jsonOptions);
     ContentProviderKey key(connection, options.GetRulesetId(), preferredDisplayType, selectionInfo);
-    ContentProviderCPtr provider = GetContentProvider(connection, key, selectionInfo, options, options.GetCreateFields());
+    ContentProviderCPtr provider = GetContentProvider(connection, key, selectionInfo, options);
     if (provider.IsValid())
         return provider->GetContentDescriptor();
     return nullptr;

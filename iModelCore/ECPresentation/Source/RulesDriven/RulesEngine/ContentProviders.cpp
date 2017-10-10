@@ -480,23 +480,11 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
 struct ContentSpecificationsVisitor : PresentationRuleSpecificationVisitor
 {
 private:
-    ContentQueryBuilder* m_queryBuilder;
     IParsedSelectionInfo const* m_selectionInfo;    
 protected:
-    ContentQueryBuilder& GetQueryBuilder() {return *m_queryBuilder;}
     IParsedSelectionInfo const* GetSelectionInfo() {return m_selectionInfo;}
 public:
-    ContentSpecificationsVisitor(ContentProviderContext const& context)
-        {
-        IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
-        ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
-
-        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetNodesLocater(), 
-            context.GetRuleset(), context.GetPreferredDisplayType().c_str(), context.GetUserSettings(), context.GetECExpressionsCache(), 
-            context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider, context.GetCreateFields());
-        
-        m_queryBuilder = new ContentQueryBuilder(params);
-        }
+    ContentSpecificationsVisitor(ContentProviderContext const& context) : m_selectionInfo(nullptr) {}
     virtual ~ContentSpecificationsVisitor() {}
     void SetCurrentSelection(IParsedSelectionInfo const* selection) {m_selectionInfo = selection;}
 };
@@ -507,6 +495,8 @@ public:
 struct DescriptorBuilder : ContentSpecificationsVisitor
 {
 private:
+    ContentDescriptorBuilder::Context* m_context;
+    ContentDescriptorBuilder* m_descriptorBuilder;
     ContentDescriptorPtr m_descriptor;
     
 protected:
@@ -528,7 +518,7 @@ protected:
             return;
             }
 
-        ContentDescriptorPtr specificationDescriptor = GetQueryBuilder().CreateDescriptor(specification, *GetSelectionInfo());
+        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetSelectionInfo());
         if (specificationDescriptor.IsValid())
             {
             QueryBuilderHelpers::Aggregate(m_descriptor, *specificationDescriptor);
@@ -543,7 +533,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(ContentInstancesOfSpecificClassesSpecificationCR specification) override
         {
-        ContentDescriptorPtr specificationDescriptor = GetQueryBuilder().CreateDescriptor(specification);
+        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification);
         if (specificationDescriptor.IsValid())
             {
             QueryBuilderHelpers::Aggregate(m_descriptor, *specificationDescriptor);
@@ -564,7 +554,7 @@ protected:
             return;
             }
 
-        ContentDescriptorPtr specificationDescriptor = GetQueryBuilder().CreateDescriptor(specification, *GetSelectionInfo());
+        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetSelectionInfo());
         if (specificationDescriptor.IsValid())
             {
             QueryBuilderHelpers::Aggregate(m_descriptor, *specificationDescriptor);
@@ -580,7 +570,18 @@ public:
     +---------------+---------------+---------------+---------------+---------------+--*/
     DescriptorBuilder(ContentProviderContextCR context)
         : ContentSpecificationsVisitor(context)
-        {}
+        {
+        IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
+        ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
+        m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetRuleset(),
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider);
+        m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    ~DescriptorBuilder() {DELETE_AND_CLEAR(m_descriptorBuilder); DELETE_AND_CLEAR(m_context);}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2017
@@ -594,6 +595,7 @@ public:
 struct QueryBuilder : ContentSpecificationsVisitor
 {
 private:
+    ContentQueryBuilder* m_queryBuilder;
     ContentDescriptorPtr m_descriptor;
     ContentQueryPtr m_union;
     
@@ -616,7 +618,7 @@ protected:
             return;
             }
 
-        ContentQueryPtr query = GetQueryBuilder().CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
+        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
         if (query.IsValid())
             {
             QueryBuilderHelpers::SetOrUnion(m_union, *query);
@@ -631,7 +633,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(ContentInstancesOfSpecificClassesSpecificationCR specification) override
         {
-        ContentQueryPtr query = GetQueryBuilder().CreateQuery(specification, *m_descriptor);
+        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor);
         if (query.IsValid())
             {
             QueryBuilderHelpers::SetOrUnion(m_union, *query);
@@ -652,7 +654,7 @@ protected:
             return;
             }
 
-        ContentQueryPtr query = GetQueryBuilder().CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
+        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
         if (query.IsValid())
             {
             QueryBuilderHelpers::SetOrUnion(m_union, *query);
@@ -669,8 +671,21 @@ public:
     QueryBuilder(ContentProviderContextCR context, ContentDescriptorCR descriptor)
         : ContentSpecificationsVisitor(context)
         {
+        IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
+        ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
+
+        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetNodesLocater(), 
+            context.GetRuleset(), context.GetUserSettings(), context.GetECExpressionsCache(), 
+            context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider);
+        
+        m_queryBuilder = new ContentQueryBuilder(params);
         m_descriptor = ContentDescriptor::Create(descriptor);
         }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    ~QueryBuilder() {DELETE_AND_CLEAR(m_queryBuilder);}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            04/2016
@@ -821,7 +836,7 @@ void ContentProvider::Initialize()
     m_initialized = true;
     m_executor.SetQuery(*_GetQuery());
         
-    CustomFunctionsContext fnContext(GetContext().GetDb(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -848,7 +863,7 @@ size_t ContentProvider::GetFullContentSetSize() const
             }
         else
             {            
-            CustomFunctionsContext fnContext(GetContext().GetDb(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr);
             if (GetContext().IsLocalizationContext())
                 fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -950,7 +965,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         {
         IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
         ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetNodesLocater(),
-            GetContext().GetRuleset(), GetContext().GetPreferredDisplayType().c_str(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
+            GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
             GetContext().GetCategorySupplier(), formatter, GetContext().GetLocalState());
         if (GetContext().IsLocalizationContext())
             params.SetLoacalizationProvider(&GetContext().GetLocalizationProvider());

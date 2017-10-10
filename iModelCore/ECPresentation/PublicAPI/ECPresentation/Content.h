@@ -168,6 +168,8 @@ public:
 
     //! Is the select polymorphic.
     bool IsSelectPolymorphic() const {return m_isPolymorphic;}
+    //! Set whether select is polymorphic.
+    void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
 
     //! Get the primary ECClass. 
     ECN::ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}

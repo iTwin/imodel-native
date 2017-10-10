@@ -80,6 +80,10 @@ protected:
 
 /** @name Content  
  *  @{ */
+    //! Get content classes from the list of supplied input classes.
+    //! @see GetContentClasses
+    virtual bvector<SelectClassInfo> _GetContentClasses(BeSQLite::EC::ECDbR, Utf8CP, bvector<ECN::ECClassCP> const&, JsonValueCR) = 0;
+
     //! Get the content descriptor based on the supplied parameters.
     //! @see GetContentDescriptor
     virtual ContentDescriptorCPtr _GetContentDescriptor(BeSQLite::EC::ECDbR, Utf8CP, SelectionInfo const&, JsonValueCR) = 0;
@@ -190,6 +194,13 @@ public:
 
 /** @name Content  
  *  @{ */
+    //! Get content classes from the list of supplied input classes.
+    //! @param[in] connection The connection to use for getting the content.
+    //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
+    //! @param[in] inputClasses Input classes to get content classes for.
+    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
+    ECPRESENTATION_EXPORT bvector<SelectClassInfo> GetContentClasses(BeSQLite::EC::ECDbR connection, Utf8CP preferredDisplayType, bvector<ECN::ECClassCP> const& inputClasses, JsonValueCR extendedOptions = Json::Value());
+
     //! Get the content descriptor based on the supplied parameters.
     //! @param[in] connection The connection to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.

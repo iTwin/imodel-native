@@ -24,7 +24,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithSingleStepRelationshipP
         new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
         });
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(field);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(field);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("NestedContentField_WithSingleStepRelationshipPath");
@@ -57,7 +57,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithMultiStepRelationshipPa
         new ContentDescriptor::ECPropertiesField(*widgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
         });
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(field);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(field);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("NestedContentField_WithMultiStepRelationshipPath");
@@ -94,7 +94,7 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithNestedContentFields)
             })
         });
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(field);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(field);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("NestedContentField_WithNestedContentFields");

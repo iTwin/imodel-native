@@ -14,6 +14,7 @@
 #include "NavigationQuery.h"
 #include "ECSchemaHelper.h"
 #include "QueryContracts.h"
+#include "ContentSpecificationsHandler.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -40,10 +41,10 @@ struct UsedClassesHelper
 private:
     UsedClassesHelper() {}
 public:
-    static void NotifyListenerWithUsedClasses(IUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, Utf8StringCR ecexpression);
-    static void NotifyListenerWithRulesetClasses(IUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, PresentationRuleSetCR);
-    static void NotifyListenerWithUsedClasses(IECDbUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, Utf8StringCR ecexpression);
-    static void NotifyListenerWithRulesetClasses(IECDbUsedClassesListener&, BeSQLite::EC::ECDbCR, ECExpressionsCache&, PresentationRuleSetCR);
+    static void NotifyListenerWithUsedClasses(IUsedClassesListener&, ECSchemaHelper const&, ECExpressionsCache&, Utf8StringCR ecexpression);
+    static void NotifyListenerWithRulesetClasses(IUsedClassesListener&, ECSchemaHelper const&, ECExpressionsCache&, PresentationRuleSetCR);
+    static void NotifyListenerWithUsedClasses(IECDbUsedClassesListener&, ECSchemaHelper const&, ECExpressionsCache&, Utf8StringCR ecexpression);
+    static void NotifyListenerWithRulesetClasses(IECDbUsedClassesListener&, ECSchemaHelper const&, ECExpressionsCache&, PresentationRuleSetCR);
 };
 
 /*=============================================================================**//**
@@ -151,51 +152,6 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                04/2015
-+===============+===============+===============+===============+===============+======*/
-struct ContentQueryBuilderParameters : QueryBuilderParameters
-{
-private:
-    Utf8CP m_preferredDisplayType;
-    INavNodeLocaterCR m_nodesLocater;
-    ILocalizationProvider const* m_localizationProvider;
-    IPropertyCategorySupplierR m_categorySupplier;
-    IECPropertyFormatter const* m_formatter;
-    bool m_createFields;
-public:
-    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, INavNodeLocaterCR nodesLocater, PresentationRuleSetCR ruleset, 
-        Utf8CP preferredDisplayType, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache,
-        IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, 
-        ILocalizationProvider const* localizationProvider = nullptr, bool createFields = true)
-        : QueryBuilderParameters(schemaHelper, ruleset, userSettings, ecexpressionsCache, localState), m_preferredDisplayType(preferredDisplayType), 
-        m_categorySupplier(categorySupplier), m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider),
-        m_createFields(createFields)
-        {}
-    void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
-    void SetLoacalizationProvider(ILocalizationProvider const* localizationProvider) {m_localizationProvider = localizationProvider;}
-    Utf8CP GetPreferredDisplayType() const {return m_preferredDisplayType;}
-    INavNodeLocaterCR GetNodesLocater() const {return m_nodesLocater;}
-    ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
-    IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
-    IECPropertyFormatter const* GetPropertyFormatter() const {return m_formatter;}
-    bool GetCreateFields() const {return m_createFields;}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
-+===============+===============+===============+===============+===============+======*/
-struct IParsedSelectionInfo
-{
-protected:
-    virtual bvector<ECClassCP> const& _GetClasses() const = 0;
-    virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR) const = 0;
-public:
-    virtual ~IParsedSelectionInfo() {}
-    bvector<ECClassCP> const& GetClasses() const {return _GetClasses();}
-    bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECClassCR selectClass) const {return _GetInstanceIds(selectClass);}
-};
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
 struct ParsedSelectionInfo : IParsedSelectionInfo
@@ -214,13 +170,71 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct ContentDescriptorBuilder
+{
+    struct Context : ContentSpecificationsHandler::Context
+    {
+    private:
+        IPropertyCategorySupplierR m_categorySupplier;
+        IECPropertyFormatter const* m_propertyFormatter;
+        ILocalizationProvider const* m_localizationProvider;
+    public:
+        Context(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, 
+            IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider) 
+            : ContentSpecificationsHandler::Context(helper, ruleset, preferredDisplayType), m_categorySupplier(categorySupplier), 
+            m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider)
+            {}
+        IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
+        IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
+        ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+    };
+    struct CreateDescriptorContext;
+
+private:
+    Context& m_context;
+    
+public:
+    ContentDescriptorBuilder(Context& context) : m_context(context) {}
+    Context& GetContext() {return m_context;}
+    Context const& GetContext() const {return m_context;}
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&) const;
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&) const;
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentInstancesOfSpecificClassesSpecificationCR) const;
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentDescriptor::NestedContentField const&) const;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct ContentQueryBuilderParameters : QueryBuilderParameters
+{
+private:
+    INavNodeLocaterCR m_nodesLocater;
+    ILocalizationProvider const* m_localizationProvider;
+    IPropertyCategorySupplierR m_categorySupplier;
+    IECPropertyFormatter const* m_formatter;
+public:
+    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, INavNodeLocaterCR nodesLocater, PresentationRuleSetCR ruleset, 
+        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, IPropertyCategorySupplierR categorySupplier, 
+        IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, ILocalizationProvider const* localizationProvider = nullptr)
+        : QueryBuilderParameters(schemaHelper, ruleset, userSettings, ecexpressionsCache, localState), m_categorySupplier(categorySupplier), 
+        m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider)
+        {}
+    void SetLoacalizationProvider(ILocalizationProvider const* localizationProvider) {m_localizationProvider = localizationProvider;}
+    INavNodeLocaterCR GetNodesLocater() const {return m_nodesLocater;}
+    ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+    IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
+    IECPropertyFormatter const* GetPropertyFormatter() const {return m_formatter;}
+    };
+
+/*=================================================================================**//**
 * Responsible for creating content queries based on presentation rules.
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
 struct ContentQueryBuilder
-{
-    struct SpecificationsVisitor;
-    
+{    
 private:
     ContentQueryBuilderParameters m_params;
     uint64_t m_contractIdsCounter;
@@ -231,10 +245,6 @@ public:
 
     ContentQueryBuilderParameters const& GetParameters() const {return m_params;}
     ContentQueryBuilderParameters& GetParameters() {return m_params;}
-
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentInstancesOfSpecificClassesSpecificationCR);
 
     ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
     ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
@@ -273,8 +283,6 @@ public:
 
     static BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> CreateIdSetFromJsonArray(RapidJsonValueCR);
     static ECValue CreateECValueFromJson(RapidJsonValueCR);
-
-    static void Reverse(RelatedClassPath&, Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

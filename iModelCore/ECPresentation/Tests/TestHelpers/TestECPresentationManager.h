@@ -132,6 +132,10 @@ protected:
     void _OnNodeCollapsed(ECDbR db, uint64_t nodeId) override {if (nullptr != m_onNodeCollapsedHandler) m_onNodeCollapsedHandler(db, nodeId);}
 
     // Content
+    bvector<SelectClassInfo> _GetContentClasses(ECDbR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options) override
+        {
+        return bvector<SelectClassInfo>();
+        }
     ContentDescriptorCPtr _GetContentDescriptor(ECDbR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options) override 
         {
         if (nullptr != m_contentDescriptorHandler)
