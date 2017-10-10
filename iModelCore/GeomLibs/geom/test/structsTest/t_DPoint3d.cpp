@@ -1,5 +1,8 @@
 #include "testHarness.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, FromArray)
     {
     DPoint3d point0 = DPoint3d::From (1.0, 1.0, 1.0);
@@ -9,6 +12,9 @@ TEST(DPoint3d, FromArray)
     Check::Near (point0, point1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, CrossProductToPointsXY)
     {
     DPoint3d point0 = DPoint3d::From (0.0, 0.0, 0.0);
@@ -28,6 +34,9 @@ TEST(DPoint3d, CrossProductToPointsXY)
     Check::Near (3.0, triple);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Zero)
     {
     DPoint3d point0 = DPoint3d::From (12.9, -4.3, -3.4);
@@ -40,6 +49,9 @@ TEST(DPoint3d, Zero)
     Check::Near (point2, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, InitFromArray)
     {
     DPoint3d point0, point2, point3, point6;
@@ -60,6 +72,9 @@ TEST(DPoint3d, InitFromArray)
     Check::Near (point1, point6);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, SetComponent)
     {
     DPoint3d point1 = DPoint3d::From (2.0, -7.9, 5.0);
@@ -97,6 +112,9 @@ TEST(DPoint3d, SetComponent)
     Check::Near (zz, zCoord);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Interpolate)
     {
     DPoint3d point0;
@@ -108,6 +126,9 @@ TEST(DPoint3d, Interpolate)
     Check::Near (point3, point0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, IsPointInSmallerSector)
     {
     DPoint3d point0 = DPoint3d::From (0.0, 0.0, 0.0);
@@ -128,6 +149,9 @@ TEST(DPoint3d, IsPointInSmallerSector)
     Check::True(vector5.IsPointInCCWector (point0, vector0, vector1, upVector));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Distance)
     {
     DPoint3d vector0 = DPoint3d::From (0.0, 0.0, 0.0);
@@ -149,6 +173,9 @@ TEST(DPoint3d, Distance)
     Check::Near (sqrt (188.84), distance);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, MaxAbs)
     {
     DPoint3d point0 = DPoint3d::From (-2.0, -15.0, 1.0);
@@ -159,6 +186,9 @@ TEST(DPoint3d, MaxAbs)
     Check::Near (5.0, maxVal1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, IsEqual)
     {
     DPoint3d point0 = DPoint3d::From (2.0, 2.0, 2.0);
@@ -174,6 +204,9 @@ TEST(DPoint3d, IsEqual)
     Check::True (!(point3.IsEqual (point4, tol1)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, NpcCoordinatesOf)
     {
     DPoint3d point0 = DPoint3d::From (0.0, 0.0, 0.0);
@@ -190,6 +223,9 @@ TEST(DPoint3d, NpcCoordinatesOf)
     Check::Near (point5, point6);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, IsDisconnect)
     {
     DPoint3d point0;
@@ -199,6 +235,9 @@ TEST(DPoint3d, IsDisconnect)
     Check::True (!(point1.IsDisconnect ()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Init)
     {
     DPoint3d point0, point2, point4, point6, point8, point10;
@@ -230,6 +269,9 @@ TEST(DPoint3d, Init)
     Check::Near (point11, point10);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, CrossProduct)
     {
     DPoint3d point0, point6, point7, point8, point9, point10;
@@ -257,6 +299,9 @@ TEST(DPoint3d, CrossProduct)
     Check::Near (point10, point9);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, DotProduct)
     {
     DPoint3d point0 = DPoint3d::From (1.0, 2.0, 3.0);
@@ -275,6 +320,9 @@ TEST(DPoint3d, DotProduct)
     Check::Near (point3, point2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, AngleTo)
     {
     DPoint3d point0 = DPoint3d::From (1.0, 0.0, 0.0);
@@ -306,6 +354,9 @@ TEST(DPoint3d, AngleTo)
     Check::Near (-PI/2, angle10);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, IsVectorInSmallerSector)
     {
     //DPoint3d point0 = DPoint3d::From (0.0, 0.0, 0.0);
@@ -326,6 +377,9 @@ TEST(DPoint3d, IsVectorInSmallerSector)
     Check::True(vector5.IsVectorInCCWSector (vector0, vector1, upVector));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, RotateXY)
     {
     DPoint3d point0,point5;
@@ -342,6 +396,9 @@ TEST(DPoint3d, RotateXY)
     Check::Near (point6, point5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, WeightedDifferenceOf)
     {
     DPoint3d point0, point5, point7;
@@ -359,6 +416,9 @@ TEST(DPoint3d, WeightedDifferenceOf)
     Check::Near (point7, point5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, MagnitudeSquared)
     {
     DPoint3d point0 = DPoint3d::From (6.0, -18.0, -9.0);
@@ -381,6 +441,9 @@ TEST(DPoint3d, MagnitudeSquared)
     Check::Near (point4, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, UnitPerpendicularXY)
     {
     DPoint3d point0;
@@ -390,6 +453,9 @@ TEST(DPoint3d, UnitPerpendicularXY)
     Check::Near (point2, point0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Negate)
     {
     DPoint3d point0, point3;
@@ -408,6 +474,9 @@ TEST(DPoint3d, Negate)
     Check::Near (point4, point3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, ScaleToLength)
     {
     DPoint3d point0;
@@ -426,6 +495,9 @@ TEST(DPoint3d, ScaleToLength)
     Check::Near (point3, point2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, IsParallelTo)
     {
     DPoint3d point0 = DPoint3d::From (2.0, 2.0, 2.0);
@@ -438,6 +510,9 @@ TEST(DPoint3d, IsParallelTo)
     Check::True (!(point2.IsPerpendicularTo (point1)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, SafeDivide)
     {
     DPoint3d point0, point3;
@@ -453,6 +528,9 @@ TEST(DPoint3d, SafeDivide)
     Check::Near (0.0, product);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, Subtract)
     {
     DPoint3d point0 = DPoint3d::From (1.0, 1.0, 1.0);
@@ -486,7 +564,10 @@ TEST(DPoint3d, Subtract)
     Check::Near (point14, point12);
     Check::Near (point16, point15);
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, MultiplyArrayByScales)
     {
     DPoint3d point0[2];
@@ -502,6 +583,9 @@ TEST(DPoint3d, MultiplyArrayByScales)
     Check::Near (point3, point0[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, DivideArrayByScales)
     {
     DPoint3d point0[2];
@@ -517,6 +601,9 @@ TEST(DPoint3d, DivideArrayByScales)
     Check::Near (point3, point0[1]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, FromProduct)
     {
     Transform transform0 = Transform::FromIdentity ();
@@ -531,6 +618,9 @@ TEST(DPoint3d, FromProduct)
     Check::Near (point1, point4);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, FromInterpolate)
     {
     DPoint3d point0 = DPoint3d::From (2.0, 3.0, 4.0);
@@ -600,12 +690,18 @@ void TestSums (double ax, double ay, double az)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DPoint3d, SumOf_Variants)
     {
     TestSums <DPoint3d, DVec3d> (2, 3, 0.12312);
     TestSums <DPoint2d, DVec2d> (2, 3, 0.12312);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,AppendInterpolated)
     {
     bvector<DPoint3d> points;
@@ -680,7 +776,10 @@ double &planeYFraction
         }
     return false;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,RayPlaneExample)
     {
     DPoint3d rayOrigin = DPoint3d::From (1,2,3);
@@ -698,6 +797,9 @@ TEST(DPoint3d,RayPlaneExample)
     }
     
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint4d,Interpolate)
     {
     DPoint4d pointA = DPoint4d::From (1,2,3, 1.25);
@@ -776,6 +878,9 @@ void CheckEvaluatedPointExtents (DEllipse3dCR ellipse)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,PrincipalExtents)
   {
 
@@ -786,6 +891,9 @@ TEST(DPoint3d,PrincipalExtents)
   }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,PolygonLinestringApproach)
   {
   bvector<DPoint3d> polygon;
@@ -853,6 +961,10 @@ void testCrossProduct (DPoint4dCR a, DPoint4dCR b, DPoint4dCR c, DPoint4dCR d, d
     Check::Near (0.0, d.DotProduct (b));
     Check::Near (0.0, d.DotProduct (c));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(DPoint4d,CrossProductA)
   {
   DPoint4d unitX = DPoint4d::From (1,0,0,0);
@@ -885,6 +997,9 @@ void testCrossProduct (DPoint4dCR a, DPoint4dCR b, DPoint4dCR c, DPoint4dCR d, d
 
   }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint4d,CrossProductB)
   {
   Check::StartScope ("CrossProduct is perpendicular to its args");
@@ -975,6 +1090,10 @@ static bvector<Utf8String> s_baseline
  Utf8String ("| 1.3333333333333332e-06  | 1.33333e-06 | 1.3333333e-06|"),
  Utf8String ("| 1.2857142857142858e-06  | 1.28571e-06 | 1.2857143e-06|"),
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(General,GFormat)
     {
     bvector <Utf8String> strings;
@@ -1006,7 +1125,9 @@ TEST(General,GFormat)
 #endif
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,MaxDistanceFromRay)
     {
     double rMax = 78;
@@ -1365,6 +1486,9 @@ TEST(DPoint3d, OperatorOverload)
     Check::True(point == pointCpy);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, CopyArrayOf3dPoints) 
     {
     bvector<DPoint3d> source = { DPoint3d::From(3,2,2),
@@ -1377,6 +1501,10 @@ TEST(DPoint3d, CopyArrayOf3dPoints)
     Check::Near( dest[2], DPoint3d::From(9,2,11));
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, LengthOfPolyline)
     {
     bvector<DPoint3d> source = { DPoint3d::From(0,0,0),
@@ -1402,6 +1530,10 @@ TEST(DPoint3d, LengthOfPolyline)
     printf("%0.18f    %0.18f\n", length, 4+2*sqrt(32));
     Check::Near(length, 4+2*sqrt(32));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, ConvexPolygon)
     {
     bvector<DPoint3d> pointsPolygon = { DPoint3d::From(5,1),
@@ -1413,6 +1545,10 @@ TEST(DPoint3d, ConvexPolygon)
     pointsPolygon[2] = DPoint3d::From(6.9, 3);
     Check::False(PolygonOps::IsConvex(pointsPolygon));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, NormalArea)
     {
     //planar polygon
@@ -1424,6 +1560,10 @@ TEST(DPoint3d, NormalArea)
     Check::Near(21, areaNormal.Magnitude());
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d, CentroidOfPolygon)
     {
     bvector<DPoint2d> pointsPolygon = { DPoint2d::From(0,0),
@@ -1436,6 +1576,10 @@ TEST(DPoint3d, CentroidOfPolygon)
     Check::Near(centroid, DPoint2d::From(2, 2));
     Check::Near(area, PolygonOps::Area(pointsPolygon));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,FromIntersectUnitPerpendicularsXY)
     {
     auto basePoint = DPoint3d::From (1,2,4);
@@ -1518,7 +1662,9 @@ void TestAlmostEqual (bvector<TPoint> &stroke0)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DPoint3d,AlmostEqualBvector)
     {
     auto arc = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,2,3), 2.5);

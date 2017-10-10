@@ -39,6 +39,9 @@ void testBiarc (DPoint3dCR pointA, DPoint3dCR pointB, Angle tangentAToChord, Ang
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Biarc,TEST0)
     {
     testBiarc (DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), Angle::FromDegrees (10.0), Angle::FromDegrees (15.0));
@@ -72,6 +75,9 @@ void testBiarcFamily (DPoint3dCR pointA0, Angle bearingA, DVec3dCR deltaA, size_
     Check::SaveTransformed (breakpoints);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Biarc,TEST1)
     {
     testBiarcFamily
@@ -124,6 +130,10 @@ void testTangentArcChain (bvector<double> const &radii, bvector<Angle> const &an
         }
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Biarc,TangentArcChain)
     {
     // simple S curves ..
@@ -175,6 +185,10 @@ DVec3dCR      intersectionLineTangent
 
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Biarc,LoopBack)
     {
     DPoint3d startPoint = DPoint3d::From (0,0,0);

@@ -172,6 +172,9 @@ size_t ValidationErrors ()
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean,RIMSBS0)
     {
     int oldVolume = Check::SetMaxVolume (10000);
@@ -393,16 +396,25 @@ void TestRectangles (double a0, double a1, double b0, double b1)
     CheckArea ("Parity", cvParity, areaParity);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, OverlappingRectangles)
     {
     TestRectangles (0, 4, 3, 5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, DisjointRectangles)
     {
     TestRectangles (0, 4, 5, 6);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, OuterInnerRectangles)
     {
     TestRectangles (0, 4, 1, 2);
@@ -410,6 +422,9 @@ TEST(AreaBoolean, OuterInnerRectangles)
 
 
 #ifdef Test3WayBoolean
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, ABC0)
     {
     double x0 = 0;
@@ -460,7 +475,9 @@ TEST(AreaBoolean, ABC0)
 
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, Splits)
     {
     auto pathA = CurveVector::CreateLinear (
@@ -495,6 +512,9 @@ TEST(AreaBoolean, Splits)
     Check::ClearGeometry ("AreaBoolean.Splits");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AreaBoolean, RectangleSplitEllipse)
     {
     double a = 10.0;
@@ -594,6 +614,9 @@ CurveVectorPtr ReadCurveVector (Utf8String source)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Mathieu,TestA)
     {
     CurveVectorPtr areaA = ReadCurveVector (s_areaA);
@@ -608,6 +631,9 @@ TEST(Mathieu,TestA)
 
     }
 #endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Mathieu,TestB)
     {
     CheckBSIBaseGeomMemory outerMemory ("MathieuTestB");
@@ -635,6 +661,9 @@ TEST(Mathieu,TestB)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Area, WindingNumber1)
     {
     // This path loops around over itself ...
@@ -667,6 +696,9 @@ TEST(Area, WindingNumber1)
     Check::Near (40.0, area1, "Area with corrected winding");
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Area, WindingNumber2)
     {
     double a0 = 100;
@@ -700,6 +732,9 @@ TEST(Area, WindingNumber2)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Area, WindingNumber3)
     {
     CurveVectorPtr disk0 = CurveVector::CreateDisk (DEllipse3d::FromVectors
@@ -723,6 +758,9 @@ TEST(Area, WindingNumber3)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Area, WindingNumber4)
     {
     CurveVectorPtr disk0 = CurveVector::CreateDisk (DEllipse3d::FromVectors
@@ -888,6 +926,9 @@ void SweptPolylineMoments (DPoint3dCR origin, DPoint3d *points, int numPoints,
         F1.x,            F1.y,            F1.z,             f);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Moments, Test1)
     {
     DPoint3d point[3] = {
@@ -912,6 +953,9 @@ TEST(Moments, Test1)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Moments, Test2)
     {
     DPoint3d centeredSquare[5] =
@@ -964,6 +1008,9 @@ TEST(Moments, Test2)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Moments, Test3)
     {
     DPoint3d point[3] = {
@@ -990,6 +1037,9 @@ TEST(Moments, Test3)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SplitCurves, Test1)
     {
     bvector<DPoint3d> rectanglePoints;
@@ -1024,6 +1074,9 @@ bool CheckAreaXY (CurveVectorCR curves, double expectedArea, char *name)
         && Check::Near (expectedArea, area, name);
     }    
 #ifdef abc
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ParityFixup, Test1)
     {
     bvector<DPoint3d> rectanglePoints;
@@ -1052,7 +1105,10 @@ TEST(ParityFixup, Test1)
  #endif
  
  
- TEST(FixupXY,DisjointShapes)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FixupXY,DisjointShapes)
     {
     CurveVectorPtr shape1 = CurveVector::CreateRectangle (0,0,300,400, 0);
     CurveVectorPtr shape2 = CurveVector::CreateRectangle (400, 0,600,400, 0);
@@ -1063,7 +1119,10 @@ TEST(ParityFixup, Test1)
     
     }
 
- TEST(FixupXY,FullCircle)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FixupXY,FullCircle)
     {
     CurveVectorPtr disk = CurveVector::CreateDisk (DEllipse3d::From (0,0,0,   1,0,0,   0,1,0, 0.0, Angle::TwoPi ()));
     Check::Print (disk, "original disk"); 
@@ -1074,6 +1133,9 @@ TEST(ParityFixup, Test1)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FixupXY,BowTie)
     {
     bvector<DPoint3d> poles
@@ -1101,6 +1163,9 @@ TEST(FixupXY,BowTie)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipToPlane,ElenieA)
 {
 bvector<DPoint3d> triangle
@@ -1129,6 +1194,9 @@ for (size_t i = 0; i < nClip; i++)
     Check::Int (nClip, 6);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipToPlane,ElenieB)
 {
 bvector<DPoint3d> triangle
@@ -1150,6 +1218,9 @@ bsiPolygon_clipToPlane(clipPoints, &nClip, &numLoop, MAX_CLIP_POINTS,
     Check::Int (nClip, 6);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipToPlane,ElenieC)
 {
 #define MAX_CLIP_POINTS 1000
@@ -1182,6 +1253,9 @@ for (double scale = 1.0; scale > 2.0e-7; scale *= 0.01)
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,AreaBooleanMultipleAreas)
     {
     auto oldVolume = Check::SetMaxVolume (1000);
@@ -1205,6 +1279,9 @@ TEST(CurveVector,AreaBooleanMultipleAreas)
     Check::SetMaxVolume (oldVolume);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,BoundaryFromCompressedFacets)
     {
     auto oldVolume = Check::SetMaxVolume (1000);
@@ -1397,6 +1474,9 @@ CurveVectorPtr CS_AreaIntersectionFailure_CurveVector1 ()
    }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,AreaIntersectionFailure0)
     {
     auto cv0 = CS_AreaIntersectionFailure_CurveVector0 ();

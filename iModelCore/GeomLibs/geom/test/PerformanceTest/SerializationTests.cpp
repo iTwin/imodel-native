@@ -128,6 +128,9 @@ struct PerformanceSerializationTests   : PerformanceTestFixture
             }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSerializationTests, ProfileCoordinate)
     {
     Profile("<Coordinate xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><xyz>0,0,0</xyz></Coordinate>", "Coordinate - All zeros", TEST_DETAILS);
@@ -143,12 +146,18 @@ TEST_F(PerformanceSerializationTests, ProfileCoordinate)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSerializationTests, ProfileFromDb)
     {
     DbDataReader dataReader(L"geomTestData.ecdb");
     Profile(dataReader, TEST_DETAILS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSerializationTests, ProfileFromXmlFile)
     {
     XmlFileDataReader dataReader(L"xmlSamples\\ICoordinate.xml");

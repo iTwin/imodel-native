@@ -8,7 +8,9 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 using namespace Eigen;
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Eigen, HelloWorld)
     {
     MatrixXd m(3,3);

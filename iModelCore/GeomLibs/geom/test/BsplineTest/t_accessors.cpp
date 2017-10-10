@@ -24,7 +24,9 @@ void CheckCurveAccess (MSBsplineCurveCP curve, bvector<DPoint3d> &pointA, bvecto
         Check::Near (pointC, curve->GetUnWeightedPole (j), "GetReverseUnweightedPole");
         }
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,PoleAccess)
     {
     bvector<DPoint3d> pointA;
@@ -121,7 +123,9 @@ void TestBasisFunctions (MSBsplineCurveCR curve)
     TestBasisFunctions (*curve);
     }
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(BsplineCurve,DistinctKnot)
     {
     TestDistinctKnots (4, true);
@@ -155,7 +159,9 @@ bool ScopedArrayTest (size_t n)
         }
     return true;
     }
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ScopedArray, Allocations)
     {
     for (size_t i = 1; i < 20000; i += 10 * i)
@@ -569,7 +575,9 @@ void HelloMatrix (size_t n)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ScopedRectangular,HelloWorld)
     {
     HelloMatrix (1);
@@ -619,6 +627,10 @@ bool CheckInverse3 (RotMatrixCR rmA)
         }
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ScopedRectangular,Gaussian3)
     {
     CheckInverse3 (RotMatrix::FromRowValues (
@@ -640,6 +652,9 @@ TEST(ScopedRectangular,Gaussian3)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ScopedRectangular,Gaussian1)
     {
     ScopedDMatrix A(1,1);
@@ -696,7 +711,9 @@ bool TestDiagonalInverse (double a, double b, ptrdiff_t n, ptrdiff_t numBelow, p
     double e = C.MaxAbsDiff (I);
     return Check::Near (1.0, 1.0 + e, "inversion round trip error");
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ScopedRectangular, MediumInverse)
     {
     // strongly diagonal test matrices. ...

@@ -4,6 +4,9 @@
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearch,DetailConstructors)
 {
 bvector<PathLocationDetail> data;
@@ -112,6 +115,9 @@ void PathTestLines (DVec3dCR upVector)
     ExerciseSearcher (*searcher, 4);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearch,OneLine)
     {
     PathTestLines(DVec3d::From (0,0,1));
@@ -166,6 +172,9 @@ void TestSearcherStrokes (CurveVectorPtr &cv, size_t maxPrint = 20)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearchStrokes,Bsplines)
     {
     bvector<IGeometryPtr> curves;
@@ -185,6 +194,9 @@ TEST(PathSearchStrokes,Bsplines)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearchStrokes,SpiralA)
     {
 
@@ -214,6 +226,9 @@ TEST(PathSearchStrokes,SpiralA)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearchStrokes,LineStrings)
     {
     bvector<IGeometryPtr> curves;
@@ -235,6 +250,9 @@ TEST(PathSearchStrokes,LineStrings)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearchStrokes,Lines)
     {
     bvector<IGeometryPtr> curves;
@@ -254,6 +272,9 @@ TEST(PathSearchStrokes,Lines)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearchStrokes,Arc)
     {
     bvector<IGeometryPtr> curves;
@@ -278,6 +299,9 @@ TEST(PathSearchStrokes,Arc)
 
 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearch,ExtendedPath)
     {
     DPoint3d xyzA = DPoint3d::From (10,0,0);
@@ -363,6 +387,9 @@ void ExerciseSearcherProjections (CurveVectorCR curves, DVec3dCR upVector, int n
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PathSearch,Projection)
     {
     DPoint3d xyzA = DPoint3d::From (3,4,0);
@@ -460,6 +487,9 @@ void TestTrim (bvector<DPoint2d> const &points, double d0, double d1)
     TestTrimA ("shifted b0,b1", points1, b0, b1, 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem3)
     {
     DPoint2d point0 = DPoint2d::From(303528.29747376870, 259323.12922432116);
@@ -485,6 +515,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem3)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem4)
     {
     DPoint2d point0 = DPoint2d::From(303004.79963605531, 259710.44863340567);
@@ -512,6 +545,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem4)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem5)
     {
 
@@ -527,6 +563,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem5)
     }
 
 // Confirm that a linestring with duplicate point produces a null tangent.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, NullTangent)
     {
 
@@ -563,6 +602,9 @@ TEST(ConceptStationTests, NullTangent)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
     TEST(ConceptStationTests, RoadSegmentsProblem6)
     {
     bvector<DPoint2d> points;
@@ -661,6 +703,9 @@ TEST(ConceptStationTests, NullTangent)
     TestTrim (points, 4571.6516636328242, 4811.7457230672644);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem7)
     {
     bvector<DPoint2d> points;
@@ -741,6 +786,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem7)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem8)
     {
     bvector<DPoint2d> points;
@@ -797,6 +845,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem8)
     TestTrim (points, 412.21369497198003, 763.85989015151711);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConceptStationTests, RoadSegmentsProblem9)
     {
     bvector<DPoint2d> points;
@@ -831,6 +882,9 @@ TEST(ConceptStationTests, RoadSegmentsProblem9)
     TestTrim (points, 139.94956368885721, 250.98884090152495);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorWithXIndex,CloneIntervals)
     {
     auto elevationCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -860,6 +914,9 @@ TEST(CurveVectorWithXIndex,CloneIntervals)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorWithXIndex,ClonePartialWithToleranceIssue)
     {
     double stationB = 30.0;

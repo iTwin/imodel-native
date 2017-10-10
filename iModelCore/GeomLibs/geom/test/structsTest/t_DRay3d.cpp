@@ -22,6 +22,9 @@ void rayIntersectPlaneTest (DPoint3d planeOrigin, DVec3d planeU, DVec3d planeV, 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DRay3d, IntersectPlane)
     {
     rayIntersectPlaneTest (DPoint3d::From (0,0,0), DVec3d::From (1,0,0), DVec3d::From (0,1,0), DPoint3d::From (1,2,3), 2,3);
@@ -61,6 +64,9 @@ void testClosestApproach (DRay3dCR rayA, DRay3dCR rayB)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DRay3d, ClosestApproach)
     {
     testClosestApproach (DRay3d::FromOriginAndVector (DPoint3d::From (1,2,3), DVec3d::From (0,1,0)),
@@ -92,13 +98,18 @@ void testRayCircleIntersectionXY (double cx, double cy, double r, double theta0,
     Check::EndScope ();
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d, IntersectCircleXY)
     {
     testRayCircleIntersectionXY (0,0, 1, 0, Angle::PiOver2 ());
     testRayCircleIntersectionXY (2, 3, 5, 0, 0.3);
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DRay3d, IntersectPlanes)
     {
     DPlane3d planeA = DPlane3d::FromOriginAndNormal (1,2,3, 0.4, 0.2, 1.2);
@@ -129,6 +140,9 @@ void TestTransverseIntersection (DTriangle3dCR triangle, DRay3dCR ray)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DTriangle3d,TransverseIntersection)
     {
     TestTransverseIntersection (
@@ -222,6 +236,9 @@ void TestIntersectHyperbolicParboloidA (double u, double v, double w00 = 1.0, do
     Check::True (Find (f, rayParams, n), "patch root");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d,IntersectHyperbolicParaboloid)
     {
     Check::StartScope ("HyperbolicParaboloid");
@@ -230,6 +247,9 @@ TEST(DRay3d,IntersectHyperbolicParaboloid)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d, Evaluate)
     {
     DSegment3d seg = DSegment3d::From(DPoint3d::From(2, 3, 2), DPoint3d::From(8, 9, 8));
@@ -240,6 +260,10 @@ TEST(DRay3d, Evaluate)
     Check::Near(seg.point[0], origin);
     Check::Near(seg.point[1], target);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d, DotVector)
     {
     DRay3d ray0 = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(9, 9, 9)); 

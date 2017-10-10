@@ -77,6 +77,9 @@ void RunConstraints (bvector<CurveConstraint> &constraints, void (*constructionM
         Check::SaveTransformed (*cp);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,HelloLines)
     {
 
@@ -122,6 +125,9 @@ TEST (Construction,HelloLines)
     Check::ClearGeometry ("Construction.HelloLines");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,PointPerpendicularNear)
     {
 
@@ -153,6 +159,9 @@ TEST (Construction,PointPerpendicularNear)
     Check::ClearGeometry ("Construction.PointPerpendicularNear");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,HelloCircles)
     {
     double a = 6.0;
@@ -209,6 +218,9 @@ TEST (Construction,HelloCircles)
     Check::ClearGeometry ("Construction.HelloCircles");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,TangentCircles1)
     {
 
@@ -256,7 +268,9 @@ TEST (Construction,TangentCircles1)
     Check::ClearGeometry ("Construction.TangentCircles1");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,TangentCircles2)
     {
     DPoint3d point0 = DPoint3d::From (0.4, 0.1);
@@ -311,6 +325,10 @@ void SaveClipped (ICurvePrimitivePtr &g, CurveVectorCR clipper, DRange3dCR clipp
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,TangentCircles3)
     {
     double c = 10.0;
@@ -360,7 +378,9 @@ TEST (Construction,TangentCircles3)
     Check::ClearGeometry ("Construction.TangentCircles3");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,TangentLines1)
     {
     bvector<Transform> transforms
@@ -386,7 +406,9 @@ TEST (Construction,TangentLines1)
     Check::ClearGeometry ("Construction.TangentLines1");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Construction,TangentLines2)
     {
     bvector<DPoint3d> centers {

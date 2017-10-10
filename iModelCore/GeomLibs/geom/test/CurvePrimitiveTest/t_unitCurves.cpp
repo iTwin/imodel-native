@@ -65,6 +65,9 @@ void TestTrackingCurveOffset (char const *message, ICurvePrimitiveR curve0, doub
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive, Tracking)
     {
     double r0 = 10.0;

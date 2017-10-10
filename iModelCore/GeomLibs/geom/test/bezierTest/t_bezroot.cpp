@@ -34,6 +34,9 @@ void TestOrder3RootsIn01 (double a0, double a1, double a2, int numStep)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierOrder3,RootsIn01)
     {
     static int numStep = 7;
@@ -98,6 +101,9 @@ virtual int  GetVectorIntegrandCount ()
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(GaussKronrod,SimplePowers)
     {
     BSIQuadraturePoints gauss3, kronrod, gauss5, gauss7, gaussToUse;
@@ -167,6 +173,9 @@ double logSeries (double u, int nMax)
         }
     return u * (1.0 - sum);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(LogSeries, Test)
     {
     printf ("\nSeries expandions of log (1+u)=u-u^2/2 + u^3/3 ....\n");
@@ -183,6 +192,9 @@ TEST(LogSeries, Test)
     }
     
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bezier,DerivativeBasis)
     {
     double basis0[MAX_BEZIER_ORDER];
@@ -257,7 +269,9 @@ TEST(Bezier,DerivativeBasis)
  // No significant error growth with order.   Largest errors have proportionally large function values.
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TensorProduct, FastEvaluatorDPoint3d)
     {
     bvector<DPoint3d> controlPoints;
@@ -299,6 +313,9 @@ TEST(TensorProduct, FastEvaluatorDPoint3d)
     }
     
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TensorProduct, FastEvaluatorDouble)
     {
     size_t uOrder = 5;
@@ -357,7 +374,9 @@ double EvaluateBilinear3(double a[], double s, double t)
     return s * t * a[0] + s * a[1] + t * a[2];
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bilinear,Hello)
     {
     double a[4] = {0.3, 1.1, 0.2, 0.0};
@@ -487,6 +506,9 @@ void CheckBezierCircleAngleDoubling (bvector<double> c, bvector<double> s, bvect
 
 // Test construction of a circle from a (weighted) bezier polynomial of various degrees and angle range.
 // Use double angle formulas to raise the angle coverage.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bezier,Circles)
     {
     static int s_noisyCircles = 0;

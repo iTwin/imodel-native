@@ -50,6 +50,9 @@ void TestSweeps (double thetaStart, double sweep)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Angle,NormalizeToSweep)
     {
     for (double sweep = 5.0; sweep < Angle::TwoPi (); sweep += 2.0)
@@ -61,7 +64,9 @@ TEST(Angle,NormalizeToSweep)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Printf,Pound)
     {
     for (double a = 1.0 / 64.0; a < 1000.0; a *= 2.0)
@@ -201,7 +206,9 @@ double& xe
     return( sts );
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CzechSpiral,NewtonStep)
     {
     double re = 1000;
@@ -228,6 +235,9 @@ void TestAngleConstructors (double radians)
     Check::Near (angle0, Angle::FromAtan2 (angle0.Sin (), angle0.Cos ()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AngleCR,CTORS)
     {
     TestAngleConstructors (0.0);
@@ -288,6 +298,9 @@ static void testYPR (AngleCR yaw, AngleCR pitch, AngleCR roll, bool checkBoth)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPRAngles,RotMatrixConversions)
     {
     double aa = -110.0;
@@ -332,6 +345,9 @@ void VerifyRotationSense (RotMatrix matrix, Angle expectedAngle, int idPerp, dou
     Check::Near (radians1, expectedAngle.Radians (), "id1 rotation");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,AngleSense)
     {
     Angle theta = Angle::FromDegrees (10.0);
@@ -350,7 +366,9 @@ TEST(YPR,AngleSense)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,NegativeYZ)
     {
     RotMatrix matrix = RotMatrix::FromRowValues
@@ -369,6 +387,9 @@ TEST(YPR,NegativeYZ)
     Check::True (rollC == rollB);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,AngleReflections)
     {
     bvector<double> referenceAngle;
@@ -686,6 +707,9 @@ bool TestYPRRoundTrips (YawPitchRollAngles angle0, size_t numTest,
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,RoundTripRadiansAndDegrees)
 {
 TestYPRRoundTrip_AllQuadrants (15);
@@ -716,6 +740,9 @@ void PrintUsageSums
               );
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,RepeatRoundTrip)
 {
 RadiansGenerator angleSource;
@@ -808,6 +835,10 @@ GEOMAPI_PRINTF (" (divergedTrig :max %.4lg :mean %.4lg :sdv %.4lg :n %g)\n",
               xyz.z, xyz.x, xyz.y);
         }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,DriftSuspects)
     {
     bvector<YawPitchRollAngles> candidates
@@ -852,6 +883,9 @@ TEST(YPR,DriftSuspects)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,DriftSuspectsSingleAxis)
     {
     static size_t numTheta = 180 * 257; // hit integer degrees exactly (within IEEE precision), and divide into a prime number of parts.
@@ -890,6 +924,10 @@ void TestYPROrder (double yawDegrees, double pitchDegrees, double rollDegrees)
     RotMatrix A = ypr.ToRotMatrix ();
     Check::Near (A, YPR);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPROrder,Test0)
     {
     TestYPROrder (0,0,0);
@@ -981,6 +1019,9 @@ void RunTests (double radians0)
 
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(YPR,StableTrigFunctions)
     {
     static size_t n = 1000000;
@@ -1064,6 +1105,9 @@ bool TestAngleInDegrees (double degrees)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AngleInDegrees,HelloWorld)
     {
     double shift = 5.0;
@@ -1084,7 +1128,10 @@ TEST(AngleInDegrees,HelloWorld)
             }
         }
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(OBM,PolygonIndexing)
     {
     // verify LEAP code triangle indexing for 5-point polygon:
@@ -1101,6 +1148,9 @@ TEST(OBM,PolygonIndexing)
     
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(stdvector, binarySearchBehavior)
 {
     bool doPrint = Check::PrintDeepStructs ();
@@ -1166,7 +1216,9 @@ TEST(stdvector, binarySearchBehavior)
     }
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(bvector, binarySearchBehavior)
 {
     bool doPrint = Check::PrintDeepStructs ();
@@ -1233,6 +1285,9 @@ TEST(bvector, binarySearchBehavior)
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Angle,OverlappableIntervals_CrudeCounts)
     {
     bvector<DSegment1d> intervalA, intervalB;
@@ -1270,6 +1325,10 @@ bool CheckDSegment (DSegment1dCR segment, double a0, double a1)
     return Check::Near (a0, segment.GetStart ())
         && Check::Near (a1, segment.GetEnd ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Angle,OverlappableIntervalsFixedFractions)
     {
     bvector<DSegment1d> intervalA, intervalB;
@@ -1363,6 +1422,9 @@ double FastIntegerPower (double a, uint32_t n)
     return product;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FastIntegerPower,Test0)
     {
     for (double f : bvector<double>{1.0, 2.0, 23492.2423423, 0.007687612, 1000.0, 10.0, 1000000.0})
@@ -1389,6 +1451,9 @@ TEST(FastIntegerPower,Test0)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Angle, Operators)
     {
     auto alpha = Angle::FromDegrees (10);
@@ -1500,6 +1565,10 @@ static bvector<uint32_t> windowsResult
 230, 232, 235, 237, 240, 242, 245, 247, 250, 252, 
 255
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(HSV,RoundOff)
     {
 #define MAXFACTOR 100
@@ -1530,6 +1599,9 @@ TEST(HSV,RoundOff)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(HSV,PrintFloatingPointGranularity)
     {
     for (int i = 1; i <= 256; i *= 2)

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_MTGFragmentSorter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -63,6 +63,10 @@ void TestStepGraph (int numSteps, int minDiagonal, int maxDiagonal)
     bsiMTGFragmentSorter_free (sorter);        
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MTGFragmentSorter,HelloWorld)
     {
     TestStepGraph (1, 0,-1);

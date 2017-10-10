@@ -76,6 +76,9 @@ void CheckCompatibleCurves (MSBsplineCurve **curveA, MSBsplineCurve **curveB, in
         PrintLengthFractions (curveB, lengthB, numCurves);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, CompatibleByArcLenth)
     {
     bvector<DPoint3d> pointA, pointB, pointC;
@@ -220,7 +223,9 @@ double Series3Term_yAtx (double x, double R, double L)
     return x * x * x / (6.0 * R * L);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,CubicTransition)
     {
     double a = 100.0;    // cubic is defined over this x length
@@ -309,6 +314,9 @@ TEST(BsplineCurve,CubicTransition)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral, L100R1500)
     {
     double Theta0 = 0.0;
@@ -353,6 +361,9 @@ TEST(Spiral, L100R1500)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
   TEST(Spiral, CompoundB)
     {
     DSpiral2dClothoid clothoid;
@@ -424,6 +435,9 @@ TEST(Spiral, L100R1500)
     PrintSpiralAtDistances ("clothoidl100R1500 with distances", clothoid, distances);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
   TEST(Spiral, LengthTest)
     {
     DSpiral2dClothoid clothoid;
@@ -482,7 +496,9 @@ MSBsplineCurvePtr MakeBsplineForDiscontinuityTests (int order, int numInterior, 
   }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,C1Discontinuity)
     {
     bvector<double> fraction1, fraction2;
@@ -533,6 +549,9 @@ TEST(BsplineCurve,C1Discontinuity)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (bspcurve,reduceKnots)
     {
     bvector<DPoint3d> poles;
@@ -586,7 +605,9 @@ TEST (bspcurve,reduceKnots)
     }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Bspline, IsParabola)
         {
         bvector<DPoint3d> points;
@@ -936,7 +957,9 @@ MSBsplineSurfacePtr CreateGridSurfaceWithMultipleKnots (DPoint3dCR origin, doubl
 
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface, Boundary100)
     {
     double a = 1000.0 / 3.0;
@@ -956,6 +979,9 @@ TEST(BsplineSurface, Boundary100)
 #endif        
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BSurfPatch,UniformKnotIntervals)
     {
     for (size_t order = 2; order < 5; order++)
@@ -997,6 +1023,9 @@ TEST(BSurfPatch,UniformKnotIntervals)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BSurfPatch,DoubledKnotIntervals)
     {
     for (size_t order = 3; order < 5; order++)
@@ -1134,7 +1163,9 @@ void TestFastIntersectCurveSurface (MSBsplineSurfacePtr &surface)
 
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineSurface,FastIntersectCurve0)
     {
     double q0I = 0.0;
@@ -1185,6 +1216,9 @@ double &g
 };
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BSurfFastProjection,Test1)
     {
     // Place a modestly curved bspline clearly out of the 0..1 range
@@ -1269,6 +1303,9 @@ struct NewtonTestLinear3 : FunctionRRRToRRR
     };
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Newton,Approx3)	
     {
     NewtonTestNonLinear3 funcB;
@@ -1554,6 +1591,9 @@ void SaveArcByCurvaturePassThrough (DPoint2d xy, double bearingRadians, double c
     Check::SaveTransformed(*cp);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,HermiteSplice)
     {
     bool doPrint = Check::PrintDeepStructs ();
@@ -1634,6 +1674,9 @@ TEST(Spiral,HermiteSplice)
     Check::ClearGeometry ("Spiral.HermiteSplice");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral, InflectedSpirals)
     {
     // q = (startCurvature, endCurvature) factors

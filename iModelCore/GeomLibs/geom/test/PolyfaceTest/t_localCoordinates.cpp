@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_localCoordinates.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -121,6 +121,9 @@ void AddPolygonB (bvector<DPoint3d> &polygon, bool addClosure = false)
         polygon.push_back (DPoint3d::From (3,1,0));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(LocalCoordinateScale, Test0)
     {
     bvector<DPoint3d> polygon, testPolygon;
@@ -160,6 +163,9 @@ void TestSweepToSolid (bvector<DPoint3d> &points, DVec3dCR sweepVector, bool tri
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SweepToSolid, Test0)
     {
     bvector<DPoint3d> points;
@@ -190,6 +196,9 @@ size_t k0, size_t k1
     Check::Near (a, xyz[k0].Distance(xyz[k1]), "edge lengths", xyz[i0].Magnitude ());   // force larger tolerance than usual
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SlabSystem,Test0)
     {
     // This is a slab, measuring a few centimeters along edges.

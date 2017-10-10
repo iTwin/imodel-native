@@ -1,7 +1,9 @@
 #include "testHarness.h"
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PreciseSum, Test1)
     {
     bvector<double> data;
@@ -134,7 +136,9 @@ void CheckCubic (double u0, double u1, double u2, bool printAll)
 
 
     static bool s_printAll = false;
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AnalyticRoots, Cubic3)
     {
     static double s_rangeScale = 1.0e6;
@@ -147,7 +151,9 @@ TEST(AnalyticRoots, Cubic3)
       }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AnalyticRoots, Cubic3X)
     {
     // root e = small positive -- e.g. in range 01 for sure,like the one interesting root for a cubic bezier 
@@ -157,7 +163,9 @@ TEST(AnalyticRoots, Cubic3X)
         CheckCubic (e, x0, x0 + 1.0, s_printAll);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 
 TEST(AnalyticRoots, Cubic1)
     {
@@ -237,7 +245,9 @@ void CheckQuartic (double u0, double u1, double u2, double u3, double tolerance)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AnalyticRoots, Quartic4)
     {
     static int s_applyFactor1 = false;
@@ -289,6 +299,10 @@ void CompareAnalyticQuarticWithBezier (double c0, double c1, double c2, double c
             Check::Near (roots1[i], roots2[i], "Compare roots");
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AnalyticRoots,QuarticFailureA)
     {
     CompareAnalyticQuarticWithBezier (3, -11.2, 6.279999999999999, 8.24, -3.32);

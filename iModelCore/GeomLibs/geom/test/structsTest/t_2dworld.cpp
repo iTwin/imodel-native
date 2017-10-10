@@ -428,6 +428,10 @@ size_t CountPointsInHull (DConvexPolygon2d const &hull, bvector<DPoint2d> const 
             n++;
     return n;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, ConvexHullQueries)
     {
 #define testA
@@ -525,6 +529,9 @@ TEST (Geometry, ConvexHullQueries)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, ConvexHullQueriesContstruction)
     {
 
@@ -560,6 +567,10 @@ DPoint2d Lisajoue (double theta, double a)
     double r = cos (a * theta);
     return DPoint2d::From (r * cos (theta), r * sin (theta));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, ConvexHullManyPoints)
     {
 
@@ -920,6 +931,10 @@ void TestPath (bvector<DPoint2d> const &points, DVec2d const &shift, double offs
     KeyinLinestring (shiftedPoints);
     KeyinTargets (announcer);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, PathBuilder)
     {
     bvector<DPoint2d> points
@@ -946,8 +961,9 @@ TEST (Geometry, PathBuilder)
 #endif
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, ScanRays)
     {
     bvector<DPoint2d> points
@@ -1095,6 +1111,9 @@ void PrintCameraSetup
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Geometry, WallStepper)
     {
     double cameraStep;

@@ -868,6 +868,9 @@ void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveT
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, DgnExtrusion)
     {
     double ax = 1.0;
@@ -922,8 +925,9 @@ TEST(SolidPrimitive, DgnExtrusion)
     
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateTorus0)
     {
     double sweep = 0.10;
@@ -946,6 +950,10 @@ TEST(SolidPrimitive, CreateTorus0)
         CheckPrimitive (torus, SolidPrimitiveType_DgnTorusPipe);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateTorus)
     {
     DgnTorusPipeDetail torusData (
@@ -961,6 +969,10 @@ TEST(SolidPrimitive, CreateTorus)
     torus->TryGetDgnTorusPipeDetail (torusData1);
     CheckPrimitive (torus, SolidPrimitiveType_DgnTorusPipe);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateTorus1)
     {
     DgnTorusPipeDetail torusData (
@@ -977,6 +989,9 @@ TEST(SolidPrimitive, CreateTorus1)
     CheckPrimitive (torus, SolidPrimitiveType_DgnTorusPipe);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateCone)
     {
     double rA = 1.3;
@@ -1017,6 +1032,10 @@ TEST(SolidPrimitive, CreateCone)
     CheckMomentMatch (cylinder, "cylinder", extrusion, "extrudedCircle");
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (SolidPrimitive,TrueCone)
     {
     Check::StartScope ("Cone Tip");
@@ -1033,7 +1052,9 @@ TEST (SolidPrimitive,TrueCone)
     Check::EndScope ();
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateZeroLengthCone)
     {
     double rA = 1.3;
@@ -1048,10 +1069,9 @@ TEST(SolidPrimitive, CreateZeroLengthCone)
     CheckPrimitive(cone, SolidPrimitiveType_DgnCone);
     }
 
-
-
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (SolidPrimitive, ConeAreaMoments)
     {
     double dz = 3.0;
@@ -1076,6 +1096,9 @@ TEST (SolidPrimitive, ConeAreaMoments)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateSphere)
     {
     DgnSphereDetail sphereData;
@@ -1098,7 +1121,9 @@ TEST(SolidPrimitive, CreateSphere)
     CheckPrimitive (sphere, SolidPrimitiveType_DgnSphere);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateBox)
     {
     DgnBoxDetail boxData (
@@ -1109,7 +1134,9 @@ TEST(SolidPrimitive, CreateBox)
     CheckPrimitive (box, SolidPrimitiveType_DgnBox);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateSkewedBox)
     {
     DgnBoxDetail boxData (
@@ -1120,7 +1147,9 @@ TEST(SolidPrimitive, CreateSkewedBox)
     CheckPrimitive (box, SolidPrimitiveType_DgnBox);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IsRectangle,Test0)
     {
     bvector<DPoint3d> points;
@@ -1146,6 +1175,10 @@ TEST(IsRectangle,Test0)
     points[4].x += 1.0;
     Check::False(PolylineOps::IsRectangle (points, A, B, true));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateExtrusion)
     {
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -1182,6 +1215,9 @@ TEST(SolidPrimitive, CreateExtrusion)
     CheckPrimitive (ruledSweep, SolidPrimitiveType_DgnRuledSweep);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateRuledBsplines)
     {
     bvector<DPoint3d> poleA, poleB;
@@ -1241,8 +1277,12 @@ void CheckRuledArcs (double b, double scale)
     ISolidPrimitivePtr ruledSweep = ISolidPrimitive::CreateDgnRuledSweep (ruledSweepData);
     CheckPrimitive (ruledSweep, SolidPrimitiveType_DgnRuledSweep);
     }
+
 // Fails in rayIntersectRule !!!!!
 // (Newer "closest point" works fine ....
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, CreateRuledArcs)
     {
     for (double f = 0.5; f < 3.0; f *= 2.0)
@@ -1253,7 +1293,9 @@ TEST(SolidPrimitive, CreateRuledArcs)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, Rotation)
     {
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
@@ -1302,7 +1344,9 @@ TEST(SolidPrimitive, Rotation)
 #endif
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TorusSurf,Implicits)
     {
     Polynomial::Implicit::Torus surface1 (10, 1, DgnTorusPipeDetail::GetReverseVector90 ());
@@ -1328,7 +1372,9 @@ TEST(TorusSurf,Implicits)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TorusSurf,RayPierce)
     {
     Polynomial::Implicit::Torus  surface (10, 1, DgnTorusPipeDetail::GetReverseVector90 ());
@@ -1421,8 +1467,9 @@ void CheckRotationDerivative (DVec3dCR axis, double angle)
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RotMatrix,Rotate90)
     {
     double d = 0.0;
@@ -1465,6 +1512,9 @@ double theta1
 );
 END_BENTLEY_GEOMETRY_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DMatrix4d, RotateMoments)
     {
     DMatrix4d wedgeMoments =
@@ -1482,7 +1532,9 @@ TEST (DMatrix4d, RotateMoments)
 
     }
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (SolidPrimitive,RotationalSolidMoments)
     {
     bvector<DPoint3d> trianglePoints;
@@ -1560,7 +1612,10 @@ void CheckBilinearPatch (DBilinearPatch3dCR patch)
             }    
          }
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST (BilinearPatch, Projections)
     {
     DPoint3d xyz00 = DPoint3d::From (0,0,0);
@@ -1596,7 +1651,10 @@ void CheckBilinearPatch (DBilinearPatch3dCR patch)
     Check::EndScope ();
 
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (SphereNormals, Test1)
     {
     static int s_dumpFaces = 0;
@@ -1648,7 +1706,10 @@ TEST (SphereNormals, Test1)
             }
         }
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,LinestringFaces)
     {
     bvector<DPoint3d> points;
@@ -1670,7 +1731,10 @@ TEST(SolidPrimitive,LinestringFaces)
     Check::True (pickData.size () >= 1, "Edge pick hits at least once");         
     }    
     
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,SelecteBlockIndices)
     {
     size_t numPartition = 15;
@@ -1729,7 +1793,10 @@ void testRotationalMoments (double cx, double cz, double ax, double az)
     Check::True (localProducts.ConvertInertiaProductsToPrincipalMoments (localToWorld, volume, centroid, axes, moments), "Convert to moments");
     Check::Near (expectedCentroid, centroid, "centroid");
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,RotateTorusCentroidInMoments)
     {
     testRotationalMoments (0,0,    3,0);
@@ -1745,7 +1812,10 @@ TEST(SolidPrimitive,RotateTorusCentroidInMoments)
     testRotationalMoments (1,0,    3,13);
 
     }    
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,DiskNormal)
     {
     for (double s = -1.0; s < 2.0; s += 2.0)
@@ -1896,7 +1966,10 @@ public:
 
 };
     
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,SplitTriangle)
     {
     double splitZ = 5.0;
@@ -1980,7 +2053,10 @@ void ComputeSplitVolumes (PolyfaceQueryCR polyface, bvector<DPlane3d> &splitPlan
             }
         }
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface,SplitVolumesA)
     {
     IFacetOptionsPtr options = IFacetOptions::Create ();
@@ -2057,6 +2133,9 @@ void TestTwoSidedMeshConstruction (IGeometry& g)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TwoSidedMesh,Test1)
     {
     Check::QuietFailureScope scoper;
@@ -2069,6 +2148,9 @@ TEST(TwoSidedMesh,Test1)
     Check::ClearGeometry ("SolidPrimitive.TwoSidedMesh");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TwoSidedMesh,Test2)
     {
     Check::QuietFailureScope scoper;
@@ -2203,6 +2285,9 @@ void CheckMessages (MeshAnnotationVector &messages, ISolidPrimitivePtr &solid, I
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, LineSegmentIntersection)
     {
     auto segment = ICurvePrimitive::CreateLine (DSegment3d::From (-4,0,0, 2,0,0));
@@ -2222,6 +2307,9 @@ TEST(SolidPrimitive, LineSegmentIntersection)
         }
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, LineStringIntersection)
     {
     bvector<DPoint3d> points
@@ -2247,6 +2335,9 @@ TEST(SolidPrimitive, LineStringIntersection)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, ArcIntersection)
     {
     auto segment = ICurvePrimitive::CreateArc (DEllipse3d::From (0,0,0,    4,0,0, 0,0.1,0,   0.0, Angle::TwoPi ()));
@@ -2270,6 +2361,9 @@ TEST(SolidPrimitive, ArcIntersection)
         }
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive, BCurveIntersection)
     {
     bvector<DPoint3d> poles
@@ -2300,7 +2394,9 @@ TEST(SolidPrimitive, BCurveIntersection)
     }    
 #endif
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,CurveVectorIntersection)
     {
     auto segment = ICurvePrimitive::CreateLine (DSegment3d::From (-2,0,0, 2,0,0));
@@ -2321,7 +2417,9 @@ TEST(SolidPrimitive,CurveVectorIntersection)
         }
     }    
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,IntersectRotatedCurveLine)
     {
     auto spaceCurve = ICurvePrimitive::CreateLine (DSegment3d::From (1,0,0, 3,0,3));
@@ -2334,6 +2432,9 @@ TEST(CurveCurve,IntersectRotatedCurveLine)
     Check::True (intersectionA.size () == 1 && intersectionB.size () == 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve,IntersectRotatedCurveArc)
     {
     auto spaceCurve = ICurvePrimitive::CreateArc (DEllipse3d::From (1,0,0,    2,0,0,  0,0,2, 0.0, Angle::DegreesToRadians (90.0)));
@@ -2346,6 +2447,9 @@ TEST(CurveCurve,IntersectRotatedCurveArc)
     Check::True (intersectionA.size () == 1 && intersectionB.size () == 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polynomials,Torus)
     {
     Polynomial::Implicit::Torus torus (1.5, 0.5, DgnTorusPipeDetail::GetReverseVector90 ());
@@ -2552,6 +2656,10 @@ void AnnounceAllSolids (void (*function)(bvector<IGeometryPtr> &))
         geometry.clear ();
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,FaceUV)
     {
     Check::QuietFailureScope scoper;
@@ -2561,7 +2669,9 @@ TEST(SolidPrimitive,FaceUV)
     Check::ClearGeometry ("SolidPrimitive.FaceUV");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,Facets)
     {
     Check::QuietFailureScope scoper;
@@ -2572,6 +2682,9 @@ TEST(SolidPrimitive,Facets)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,EdgeChains)
     {
     Check::QuietFailureScope scoper;

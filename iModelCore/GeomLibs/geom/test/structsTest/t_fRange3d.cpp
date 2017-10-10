@@ -1,6 +1,8 @@
 #include "testHarness.h"
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FRange3d, RangeDistance)
     {
     auto point0F = FPoint3d::From(3.0, 3.0, 8.0);
@@ -92,6 +94,9 @@ TEST(FRange3d, RangeDistance)
 //static DRange3d From(double x, double y, double z);
 //DRange3d From (DPoint3dCP point, int n);
 //From (bvector<DPoint3d> const &points);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FRange3d, Volume)
     {
     auto point0F = FPoint3d::From(-3.0, -3.0, -8.0);

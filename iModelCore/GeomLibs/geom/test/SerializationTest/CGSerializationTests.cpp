@@ -177,7 +177,9 @@ struct CGSerializationTests : ::testing::Test
         }
     };
 
-TEST_F(CGSerializationTests, RoundTripEllipticArc)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/TEST_F(CGSerializationTests, RoundTripEllipticArc)
     {
     DEllipse3d ellipseData = DEllipse3d::From (1,2,3,
         0,0,2,
@@ -186,6 +188,9 @@ TEST_F(CGSerializationTests, RoundTripEllipticArc)
     RoundTripCurvePrimitiveArc(ellipseData, false);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGSerializationTests, RoundTripCircularArc)
     {
     DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0, 
@@ -196,6 +201,9 @@ TEST_F(CGSerializationTests, RoundTripCircularArc)
     RoundTripCurvePrimitiveArc(ellipseData, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CGSerializationTests, RoundTripCircularDisk)
     {
     DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0, 

@@ -1,5 +1,8 @@
 #include "testHarness.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform, InitIdentity)
     {
     Transform transform0, transform2, transform4, transform5, transform6, transform7, transform8, transform9, transform11, transform12, transform14, transform16, transform17, transform18, transform19, transform21, transform23, transform25, transform26, transform27, transform28, transform30, transform31;
@@ -79,6 +82,9 @@ TEST(Transform, InitIdentity)
     Check::Near (transform32, transform31);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform, Multiply)
     {
     Transform transform0 = Transform::FromRowValues (1.0, 5.0, 3.0, -19.0, 8.0, 6.0, 9.0, -45.0, 4.0, 1.0, 2.0, -9.0);
@@ -176,6 +182,9 @@ void CheckTransformMultiply (TransformCR A, double bx, double by, double bz)
     Check::Near (C2, DPoint2d::From (AB2xy.x, AB2xy.y));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform, MultiplyA)
     {
     Transform A = Transform::FromRowValues (
@@ -209,6 +218,9 @@ void TestMixedProduct (TransformCR TA, TransformCR TB)
 
 
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, MixedProducts)
     {
     Transform TA = Transform::FromRowValues (
@@ -225,6 +237,9 @@ TEST (Transform, MixedProducts)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, Init1)
     {
     Transform transform0 = Transform::FromRowValues (1,2,3,4,5,6,7,8,9,10,11,12);
@@ -246,6 +261,9 @@ TEST (Transform, Init1)
     Check::Near (point3, DPoint3d::FromSumOf (origin, vectorZ, 1.0), "point3");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, Init2)
     {
     DPoint3d point0 = DPoint3d::From (1,2,3);
@@ -265,6 +283,9 @@ TEST (Transform, Init2)
     Check::Parallel (vector01, vectorA0, "Xpar(01)");
     
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, MaxDiff)
     {
     Transform transform0 = Transform::FromRowValues (1,2,3,4,5,6,7,8,9,10,11,12);
@@ -286,6 +307,9 @@ void CheckXY (DPoint3dCR xyz, DPoint2dCR xy, char const*name)
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, GetOriginAndVectors)
     {
     Transform transform0 = Transform::FromRowValues (100,2,3,  4,15,6, 7,8,19,10,11,12);
@@ -336,6 +360,9 @@ TEST (Transform, GetOriginAndVectors)
             vectorW3d.TripleProduct (vectorU3d, vectorV3d), "Determinant");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, Init3)
     {
     Transform transform0 = Transform::FromRowValues (100,2,3,  4,15,6, 7,8,19,10,11,12);
@@ -363,6 +390,9 @@ void testTransformImplicitPlane (TransformCR transform)
         vec0.z *= -0.3;
         }    
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, TransformPlane)
     {
     Transform transform;
@@ -428,6 +458,9 @@ void TestMixedTransforms (TransformCR transform, double ax, double ay, double az
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform,MixedTransforms)
     {
     Transform transform0 = Transform::FromRowValues (100,2,3,  4,15,6, 7,8,19,10,11,12);
@@ -477,6 +510,9 @@ void TestXYZW (TransformCR transform, double ax, double ay, double az, double aw
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform,XYZWTransforms)
     {
     Transform transform0 = Transform::FromRowValues (100,2,3,  4,15,6, 7,8,19, 10,11,12);
@@ -501,6 +537,9 @@ void TestQuickTranslate (TransformCR A, double ax, double ay, double az, double 
     Check::Near (BA, BA1, "Fast (scale, translate)*Transform");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform,QuickTranslate)
     {
     Transform A = Transform::FromRowValues (100,2,3,  4,15,6, 7,8,19,10,11,12);
@@ -553,6 +592,10 @@ void TestScaleAroundPlane (DPoint3dCR origin, DVec3dCR normal)
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, Mirror)
     {
     TestScaleAroundPlane (DPoint3d::From (0,0,0), DVec3d::From (1,0,0));
@@ -575,6 +618,9 @@ void testSolve (TransformCR forward)
         Check::True (AB.IsIdentity (), "Ainv*A=I");
         }
     }    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, Solve)
     {
     testSolve (Transform::FromRowValues
@@ -617,6 +663,9 @@ bool IsPointInFrontOfPlaneAsViewed (DMap4dCR map, DPoint3dCR planeOrigin, DVec3d
     return false;    
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DMatrix4d, IsPointInFrontAsViewed)
     {
     DPoint3d planeOrigin = DPoint3d::From (1,2,3);
@@ -691,6 +740,9 @@ Transform AssembleTranslateRotateScale (DPoint3dCR origin, RotMatrixCR rotation,
     return Transform::From (matrix, origin);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform, FactorTranslateRotateScale)
     {
     DPoint3d origin01 = DPoint3d::From (2,4,7);
@@ -734,6 +786,9 @@ Transform Transform_FromXRollYPitchZYawAroundPoint (DPoint3dCR fixedPoint, doubl
     return Transform::FromMatrixAndFixedPoint (product, fixedPoint);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Transform, BuildRollPitchYaw)
     {
     DPoint3d center = DPoint3d::From (1,2,3);
@@ -749,6 +804,9 @@ TEST (Transform, BuildRollPitchYaw)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConeTransforms,ValidateAxes)
     {
 #ifdef abc
@@ -1005,6 +1063,9 @@ void DMap3d::MultiplyTransform1 (bvector<DPoint3d> &data) const
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMap3d,LocalToWorld)
     {
     bvector <DPoint3d> points;
@@ -1039,8 +1100,10 @@ TEST(DMap3d,LocalToWorld)
         }
     }
 
-
-    TEST(DMap3d,MatrixAndFixedPoint)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DMap3d,MatrixAndFixedPoint)
     {
     bvector <DPoint3d> points;
     points.push_back (DPoint3d::From (0,0,0));
@@ -1075,6 +1138,9 @@ TEST(DMap3d,LocalToWorld)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMap3d,Compose)
     {
     for (auto theta : bvector<double> {0.0, 0.2, -0.2532423479879})
@@ -1190,6 +1256,9 @@ void DMap3dRoundoffTests (int selector, DVec3dCR vector)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DMap3d,RoundoffTest)
     {
     DVec3d vector = DVec3d::From (1,2,5);
@@ -1215,6 +1284,9 @@ void TestSweepToPlane (DVec3dCR sweepVector, DPlane3dCR plane)
         Check::Parallel (sweepVector, xyz1 - xyz);
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform,ProjectToPlane)
     {
     TestSweepToPlane (
@@ -1240,6 +1312,9 @@ TEST(Transform,ProjectToPlane)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Transform,ColumnAccess)
     {
     Transform transform0 = Transform::FromRowValues

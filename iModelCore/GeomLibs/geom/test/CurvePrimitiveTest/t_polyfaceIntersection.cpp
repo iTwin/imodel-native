@@ -3,7 +3,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_polyfaceIntersection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -375,6 +375,9 @@ int noisy
     Check::Near (0.0, volumeSum.Sum (), "interior and exterior volumes cancel");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,Grid0)
 {
 PolyfaceHeaderPtr gridA = UnitGridPolyface (
@@ -387,6 +390,9 @@ PolyfaceHeaderPtr gridB = UnitGridPolyface (
 TestMeshIntersection (gridA, gridB, 10, 1);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,Grid1)
 {
 PolyfaceHeaderPtr gridA = UnitGridPolyface (
@@ -400,6 +406,9 @@ TestMeshIntersection (gridA, gridB, 10, 1);
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,Slice)
 {
 PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -429,7 +438,9 @@ TestMeshIntersection (meshA, meshB, 3, 1);
 }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,Boxes)
 {
 PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -462,6 +473,9 @@ for (size_t i = 0; i < enclosedVolumes.size (); i++)
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,MultipleBoxes)
 {
 PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -657,6 +671,9 @@ void AppendImprintSegments (bvector<DSegment3dSizeSize> const &source, bvector<D
 
     }
 static int s_imprintNoisy = 20;
+/*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                     Earlin.Lutz  10/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,ImprintForCutFill)
     {
     PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -737,6 +754,9 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
     TEST(PolyfaceIntersection, ImprintFolded)
     {
     PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();

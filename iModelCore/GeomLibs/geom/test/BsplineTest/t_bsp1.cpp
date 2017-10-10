@@ -19,7 +19,9 @@ void freeSurfaces (MSBsplineSurfaceP surfaces, int n)
     BSIBaseGeom::Free (surfaces);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,SegmentDisjoint)
     {
     bvector<DPoint3d> poles;
@@ -46,7 +48,9 @@ TEST(BsplineCurve,SegmentDisjoint)
     freeCurves (split2, num2);    
     }
     
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface,SegmentDisjoint)
     {
     bvector<DPoint3d> poles;
@@ -79,7 +83,10 @@ TEST(BsplineSurface,SegmentDisjoint)
     freeSurfaces (split2, num2);
     freeSurfaces (split3, num3);
     }    
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface,ImposeBoundary)
     {    
     bvector<DPoint3d> surfacePoints;
@@ -164,6 +171,9 @@ UsageSums ScanTangentMagnitudes(ICurvePrimitiveCR cp, MSBsplineCurveCR curve, si
     return tangentMagnitude;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve, GrevilleLine)
     {
     size_t numSample = 100;
@@ -222,8 +232,9 @@ TEST(BsplineCurve, GrevilleLine)
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,GrevilleMovingAverages)
     {
     bvector<double>gridDistances;
@@ -282,7 +293,9 @@ void TestGrevilleFit (bvector<IGeometryPtr> &geometry, uint32_t minPoleMultiplie
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,GrevilleLineFit)
     {
     auto cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0));
@@ -300,6 +313,9 @@ TEST(BsplineCurve,GrevilleLineFit)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve, GrevilleSpiralFit)
     {
     bvector<IGeometryPtr> geometry;
@@ -307,8 +323,11 @@ TEST(BsplineCurve, GrevilleSpiralFit)
     TestGrevilleFit (geometry, 1, 19, 0);
     //TestGrevilleFit(geometry, 1, 12, 1);
     }
-#include <GeomSerialization/GeomSerializationApi.h>
 
+#include <GeomSerialization/GeomSerializationApi.h>
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve, GrevilleArcs)
     {
     bvector<IGeometryPtr> geometry;
@@ -317,8 +336,9 @@ TEST(BsplineCurve, GrevilleArcs)
     //TestGrevilleFit(geometry, 3, 8, 1);
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(bsiBezierDPoint4d,saturateKnotsInInterval)
     {
     DPoint4d points[4] =
@@ -409,6 +429,9 @@ void testTightSurfaceExtents (MSBsplineSurfacePtr &surface)
     SaveBox (localToWorld, localRange);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineSurface,TightPrincipalExtents)
     {
     double q0I = -0.3;
@@ -424,6 +447,9 @@ TEST(MSBsplineSurface,TightPrincipalExtents)
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtents");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
     {
     auto surface = SurfaceBubbleWithMidsideWeights ();
@@ -434,6 +460,9 @@ TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
     Check::ClearGeometry ("MSBsplineSurface.TightPrincipalExtentsWeighted");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSInterpolatingCurve,EndConditions)
     {
     bvector<bool> truefalse {true, false};
@@ -482,6 +511,10 @@ void DrawLine (DPoint3dCR xyz0, DPoint3dCR xyz1)
     {
     Check::SaveTransformed (bvector<DPoint3d>{xyz0, xyz1});
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,OffsetConstruction0)
     {
     double r0 = 100.0;
@@ -622,8 +655,9 @@ DEllipse3dR arc
         }
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,OffsetConstruction1)
     {
     bvector<DPoint3d> pi0 = bvector<DPoint3d> {DPoint3d::From (0,0,0), DPoint3d::From (0,60,0), DPoint3d::From (40,110,0)};
@@ -649,8 +683,9 @@ TEST(Spiral,OffsetConstruction1)
     Check::ClearGeometry ("Spiral.OffsetConstruction1");
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,OffsetConstruction2)
     {
     bvector<DPoint3d> pi0 = bvector<DPoint3d> {
@@ -675,7 +710,9 @@ TEST(Spiral,OffsetConstruction2)
         }
     Check::ClearGeometry ("Spiral.OffsetConstruction2");
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,PartialSpiralEvaluation)
     {
     double f0 = 0.1, f1 = 0.2;

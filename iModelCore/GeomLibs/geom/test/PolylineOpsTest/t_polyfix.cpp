@@ -255,6 +255,10 @@ void TestFixupLoops (bvector<bvector<DPoint3d>> &loops, bool expectAreaMatch, bo
     if (expectAreaMatch)
         Check::Near (fabs (area0), fabs (area1), "tiled aream matches raw");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyfix,Test0)
     {
     Check::EnableOutputInScope outputControl (10);
@@ -271,6 +275,9 @@ TEST(Polyfix,Test0)
     Check::ClearGeometry ("Polyfix.Test0");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyfix,SimpleHole)
     {
     // observed problem: hole whose sides both front on single sticks gets covered
@@ -297,7 +304,9 @@ TEST(Polyfix,SimpleHole)
     Check::ClearGeometry ("Polyfix.SimpleHole");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyfix,Arcs)
     {
     Check::EnableOutputInScope outputControl (10);
@@ -319,6 +328,9 @@ TEST(Polyfix,Arcs)
     Check::ClearGeometry ("Polyfix.Arcs");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyfix,SawTooth)
     {
     Check::EnableOutputInScope outputControl (10000);
@@ -368,6 +380,9 @@ void AppendSteps (bvector<DPoint3d> &points, DVec3dCR vectorU, DVec3dCR vectorV,
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyfix,HorizontalSteps)
     {
     Check::EnableOutputInScope outputControl (10);
