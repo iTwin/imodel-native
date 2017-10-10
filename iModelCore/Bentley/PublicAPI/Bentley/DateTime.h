@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/DateTime.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -350,25 +350,11 @@ struct DateTime
         //! @return Time in milliseconds since beginning of Common Era
         BENTLEYDLL_EXPORT static int64_t JulianDayToCommonEraMilliseconds(uint64_t julianDayMsec);
 
-        //! Computes Common Era ticks from the given the Julian Day number.
-        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-        //! A tick is a hectonanosecond which is 1E-7 seconds.
-        //! @param  [in] julianDayMsec Julian Day 
-        //! @return Time in ticks (hectonanoseconds) since beginning of Common Era
-        static int64_t JulianDayToCommonEraTicks(uint64_t julianDayMsec) { return JulianDayToCommonEraMilliseconds(julianDayMsec) * 10000; }
-
         //! Computes the Julian Day number from the given Common Era milliseconds.
         //! The Common Era begins at 0001-01-01 00:00:00 UTC.
         //! @param  [in] commonEraMsec Common Era milliseconds
         //! @return Julian Day number in milliseconds
         BENTLEYDLL_EXPORT static uint64_t CommonEraMillisecondsToJulianDay(int64_t commonEraMsec);
-
-        //! Computes the Julian Day number from the given Common Era ticks.
-        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-        //! A tick is a hectonanosecond which is 1E-7 seconds.
-        //! @param  [in] commonEraTicks Common Era ticks (1E-7 seconds).
-        //! @return Julian Day number in milliseconds
-        static uint64_t CommonEraTicksToJulianDay(int64_t commonEraTicks) { return CommonEraMillisecondsToJulianDay(commonEraTicks / 10000); }
 
         //! Converts this local DateTime to UTC
         //! @param  [out] utcDateTime Resulting DateTime object in UTC 
