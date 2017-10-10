@@ -63,7 +63,7 @@
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart PartName="pnglib"                 PartFile="png"          Repository="Libsrc-png"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
@@ -650,7 +650,7 @@
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
-        <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="CrunchLib"              PartFile="Crunch"               Repository="libsrc-crunch"/>
         <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
@@ -842,7 +842,7 @@
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
+    <SubPart PartName="rapidjsonapi"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
   </Part>
 
 </BuildContext>
