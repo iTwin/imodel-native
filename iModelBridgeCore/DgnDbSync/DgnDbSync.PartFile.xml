@@ -31,7 +31,7 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="VersionedV8_InternalSDK" />
-        <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+        <SubPart PartName="rapidxml2jsonapi" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
@@ -81,7 +81,7 @@
       <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
       <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
       <SubPart PartName="ScalableMeshV8SDK" />
-      <SubPart PartName="rapidxml2json" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+      <SubPart PartName="rapidxml2jsonapi" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
       <SubPart PartName="PublicAPI"/>
       <SubPart PartName="ImagePP"               PartFile="ImagePP"          Repository="ImagePP" />
       <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
@@ -197,7 +197,7 @@
     <SubPart PartName="DgnV8ConverterDLL"/>
     <Bindings>
         <PublicAPI Domain="json" />
-        <PublicAPI Domain="rapidjson" />
+        <PublicAPI Domain="rapidjsonapi" />
         <PublicAPI Domain="libxml" />
         <PublicAPI Domain="csmap" />
         <PublicAPI Domain="zlib" />
