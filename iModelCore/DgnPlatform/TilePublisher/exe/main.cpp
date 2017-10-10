@@ -53,6 +53,8 @@ enum class ParamId
     UserName,
     Password,
     Environment,
+    Project,
+    Repository,
     Invalid,
 };
 
@@ -92,6 +94,8 @@ static CommandParam s_paramTable[] =
         { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
         { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
         { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
+        { L"pr", L"project", L"Project for I-Model hub (History Publishing)", false, false },
+        { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -300,11 +304,34 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_environment = Utf8String(arg.m_value.c_str());
                 break;
 
+            case ParamId::Project:
+                m_project = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Repository:
+                m_repository = Utf8String(arg.m_value.c_str());
+                break;
+
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
+
+
+    if (m_wantHistory)
+        {
+        if (m_userName.empty() || m_password.empty())
+            {
+            printf ("Username and password are reaquired for history publishing\n");
+            return false;
+            }
+        if (!m_repository.empty())
+            haveInput = true;       // Attempt to acquire briefcase from project.
+        }
+
+    
     if (!haveInput)
         {
         printf("Input filename is required\n");
@@ -315,16 +342,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         m_outputDir = m_inputFileName.GetDirectoryName();
 
     if (m_tilesetName.empty())
-        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
-
-    if (m_wantHistory)
         {
-        if (m_userName.empty() || m_password.empty())
-            {
-            printf ("Username and password are reaquired for history publishing\n");
-            return false;
-            }
+        if (!m_inputFileName.empty())
+            m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        else if (!m_repository.empty())
+            m_tilesetName = WString(m_repository.c_str(), false);
         }
+
 
     return true;
     }

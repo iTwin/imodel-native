@@ -4,22 +4,22 @@
     <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
 
     <ECEntityClass typeName="MarkupExternalLink">
+        <BaseClass>bis:LinkElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <BaseClass>bis:LinkElement</BaseClass>
         <ECProperty propertyName="LinkedElementId" typeName="long">
           <ECCustomAttributes>
-            <CustomHandledProperty/>
+            <CustomHandledProperty xmlns="BisCore.1.0" />
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="MarkupExternalLinkGroup">
+        <BaseClass>bis:LinkElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <BaseClass>bis:LinkElement</BaseClass>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="RedlineModelBreaksDownRedline" strength="embedding" strengthDirection="Backward" modifier="None">
@@ -43,17 +43,17 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="RedlineModel">
+        <BaseClass>bis:GraphicalModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>bis:GraphicalModel2d</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialRedlineModel">
+        <BaseClass>bis:SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>bis:SpatialModel</BaseClass>
     </ECEntityClass>
     
     <ECEntityClass typeName="RedlineViewDefinition">

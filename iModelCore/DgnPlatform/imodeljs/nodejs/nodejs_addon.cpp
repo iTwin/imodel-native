@@ -821,6 +821,15 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         return Nan::New(s_constructor_template)->HasInstance(obj);
         }
 
+    void SetupPresentationManager()
+        {
+        BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
+        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+        IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        }
+
     //=======================================================================================
     // Base class for DgnDb "worker" helper classes that implement various DgnDb methods. 
     //! @bsiclass
@@ -860,83 +869,10 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::OpenDgnDb(m_db->m_dgndb, m_dbname, m_mode);
-
-            BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-            BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir,tempDir)));
-            m_db->m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-            IECPresentationManager::RegisterImplementation( m_db->m_presentationManager.get());
+            if (m_status == BE_SQLITE_OK)
+                m_db->SetupPresentationManager();
             }
         bool _HadError() override {return m_status != BE_SQLITE_OK;}
-        };
-
-
-    //=======================================================================================
-    //  Opens a DgnDb
-    //! @bsiclass
-    //=======================================================================================
-    struct OpenBriefcaseWorker : WorkerBase<DbResult>
-        {
-        Json::Value m_briefcaseToken; // input
-        Json::Value m_changeSetTokens;  // input
-
-        OpenBriefcaseWorker(NodeAddonDgnDb* db, Utf8CP briefcaseToken, Utf8CP changeSetTokens) :  WorkerBase(db, BE_SQLITE_OK), m_briefcaseToken(Json::Value::From(briefcaseToken)), m_changeSetTokens(Json::Value::From(changeSetTokens))
-            {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-            REQUIRE_ARGUMENT_STRING(0, briefcaseToken, BE_SQLITE_ERROR);
-            REQUIRE_ARGUMENT_STRING(1, changeSetTokens, BE_SQLITE_ERROR);
-            (new OpenBriefcaseWorker(db, *briefcaseToken, *changeSetTokens))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override
-            {
-            m_status = IModelJs::OpenBriefcase(m_db->m_dgndb, m_briefcaseToken, m_changeSetTokens);
-
-            BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-            BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
-            m_db->m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-            IECPresentationManager::RegisterImplementation(m_db->m_presentationManager.get());
-            }
-        bool _HadError() override { return m_status != BE_SQLITE_OK; }
-        };
-
-    //=======================================================================================
-    //  Get cached imodels and their briefcase versions
-    //! @bsiclass
-    //=======================================================================================
-    struct GetCachedBriefcaseInfosWorker : WorkerBase<DbResult>
-        {
-        BeFileName m_cachePath; // input
-        Json::Value m_cachedBriefcaseInfos; // output
-
-        GetCachedBriefcaseInfosWorker(NodeAddonDgnDb* db, Utf8CP cachePath) : WorkerBase(db, BE_SQLITE_OK), m_cachePath(cachePath, true)
-            {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-            REQUIRE_ARGUMENT_STRING(0, cachePath, BE_SQLITE_ERROR);
-            (new GetCachedBriefcaseInfosWorker(db, *cachePath))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override
-            {
-            m_status = IModelJs::GetCachedBriefcaseInfos(m_cachedBriefcaseInfos, m_cachePath);
-            }
-
-        bool _GetResult(v8::Local<v8::Value>& result) override
-            {
-            result = Nan::New(m_cachedBriefcaseInfos.ToString().c_str()).ToLocalChecked();
-            return true;
-            }
-
-        bool _HadError() override { return m_status != BE_SQLITE_OK; }
         };
 
     //=======================================================================================
@@ -1051,6 +987,63 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             }
         bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
+
+    //=======================================================================================
+    //  Sets up a briefcase and opens it
+    //! @bsiclass
+    //=======================================================================================
+    static NAN_METHOD(OpenBriefcaseSync)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        REQUIRE_ARGUMENT_STRING_SYNC(0, briefcaseToken, BE_SQLITE_ERROR);
+        REQUIRE_ARGUMENT_STRING_SYNC(1, changeSetTokens, BE_SQLITE_ERROR);
+
+        Json::Value jsonBriefcaseToken = Json::Value::From(*briefcaseToken);
+        Json::Value jsonChangeSetTokens = Json::Value::From(*changeSetTokens);
+
+        DbResult result = IModelJs::OpenBriefcase(db->m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
+        v8::Local<v8::Object> ret;
+        if (BE_SQLITE_OK != result)
+            {
+            ret = NodeUtils::CreateBentleyReturnErrorObject(result);
+            info.GetReturnValue().Set(ret);
+            return;
+            }
+
+        db->SetupPresentationManager();
+
+        ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
+    //  Get cached imodels and their briefcase versions
+    //! @bsiclass
+    //=======================================================================================
+    static NAN_METHOD(GetCachedBriefcaseInfosSync)
+        {
+        Nan::HandleScope scope;
+        REQUIRE_ARGUMENT_STRING_SYNC(0, cachePath, DgnDbStatus::BadRequest);
+
+        Json::Value cachedBriefcaseInfos;
+        BeFileName cacheFile(*cachePath, true);
+        DbResult result = IModelJs::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
+
+        v8::Local<v8::Object> ret;
+        if (BE_SQLITE_OK != result)
+            {
+            ret = NodeUtils::CreateBentleyReturnErrorObject(result);
+            }
+        else
+            {
+            auto retStrObj = Nan::New(cachedBriefcaseInfos.ToString().c_str()).ToLocalChecked();
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(retStrObj);
+            }
+
+        info.GetReturnValue().Set(ret);
+        }
 
     //=======================================================================================
     // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
@@ -1238,10 +1231,12 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //=======================================================================================
     struct ExecuteQueryWorker : WorkerBase<DbResult>
         {
-        Utf8String m_ecsql;
+        Utf8String m_ecsql; // input
+        Json::Value m_bindings; // input
         Json::Value m_rowsJson;  // output
 
-        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql, Utf8CP strBindings) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue),
+            m_bindings(Utf8String::IsNullOrEmpty(strBindings) ? Json::nullValue : Json::Value::From(strBindings)) {}
 
         static NAN_METHOD(Start)
             {
@@ -1249,7 +1244,9 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
             REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR);
-            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, BE_SQLITE_ERROR);
+
+            (new ExecuteQueryWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
@@ -1270,7 +1267,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, Json::nullValue);
+            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
@@ -1302,6 +1299,20 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
     //  Destruct the native wrapper object itself
     ~NodeAddonDgnDb() {}
+
+    static NAN_METHOD(SaveChanges)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+
+        auto stat = db->m_dgndb->SaveChanges();
+        info.GetReturnValue().Set((int)stat);
+        }
 
     static NAN_METHOD(CloseDgnDb)
         {
@@ -1342,7 +1353,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         t->SetClassName(Nan::New("DgnDb").ToLocalChecked());
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
-        Nan::SetPrototypeMethod(t, "openBriefcase", OpenBriefcaseWorker::Start);
+        Nan::SetPrototypeMethod(t, "openBriefcaseSync", OpenBriefcaseSync);
+        Nan::SetPrototypeMethod(t, "saveChanges", SaveChanges);
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
@@ -1353,7 +1365,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
-        Nan::SetPrototypeMethod(t, "getCachedBriefcaseInfos", GetCachedBriefcaseInfosWorker::Start);
+        Nan::SetPrototypeMethod(t, "getCachedBriefcaseInfosSync", GetCachedBriefcaseInfosSync);
         
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
@@ -1467,7 +1479,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         info.GetReturnValue().Set((int)status);
         }
 
-    static NAN_METHOD(GetValues)
+    static NAN_METHOD(GetRow)
         {
         v8::EscapableHandleScope scope(info.GetIsolate());
         NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
@@ -1476,8 +1488,11 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         IModelJs::GetRowAsJson(rowJson, *ns->m_stmt);
         // *** NEEDS WORK: Get the adapter to set the js object's properties directly
         v8::Local<v8::String> rowJsonStr = v8::String::NewFromUtf8(info.GetIsolate(), rowJson.ToString().c_str());
-        v8::Local<v8::Value> result = v8::JSON::Parse(rowJsonStr);
-        info.GetReturnValue().Set(scope.Escape(result));
+        v8::MaybeLocal<v8::Value> result = v8::JSON::Parse(info.GetIsolate(), rowJsonStr);
+        if (result.IsEmpty())
+            info.GetReturnValue().Set(v8::Local<v8::Value>(Nan::Undefined()));
+        else
+            info.GetReturnValue().Set(result.ToLocalChecked());
         }
 
     //  Create projections
@@ -1495,7 +1510,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "clearBindings", ClearBindings);
         Nan::SetPrototypeMethod(t, "bindValues", BindValues);
         Nan::SetPrototypeMethod(t, "step", Step);
-        Nan::SetPrototypeMethod(t, "getValues", GetValues);
+        Nan::SetPrototypeMethod(t, "getRow", GetRow);
         
         s_constructor_template.Reset(t);
 
