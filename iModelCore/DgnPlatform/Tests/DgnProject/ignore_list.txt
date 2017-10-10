@@ -8,7 +8,7 @@ IndirectLocksTest.*
 
 BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
 
-DgnElementTests.InsertPerformance1 # WIP Temporary "test" being used to compare C++ and imodeljs performance
+ImodelJsTest.MeasureInsertPerformance # WIP Temporary "test" being used to compare C++ and imodeljs performance
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention

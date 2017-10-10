@@ -1314,6 +1314,22 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         info.GetReturnValue().Set((int)stat);
         }
 
+    static NAN_METHOD(ImportSchema)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(0, schemaPathnameStrObj, BE_SQLITE_ERROR);
+        BeFileName schemaPathname(*schemaPathnameStrObj, true);
+
+        auto stat = IModelJs::ImportSchema(*db->m_dgndb, schemaPathname);
+        info.GetReturnValue().Set((int)stat);
+        }
+
     static NAN_METHOD(CloseDgnDb)
         {
         Nan::HandleScope scope;
@@ -1321,6 +1337,30 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         IModelJs::CloseDgnDb(*db->m_dgndb);
         db->m_dgndb = nullptr;
+        }
+
+    static NAN_METHOD(EnableTransactionManagement)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (db->m_dgndb->IsBriefcase())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+
+        BeFileName name(db->m_dgndb->GetFileName());
+
+        DbResult result;
+        result = db->m_dgndb->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+        if (BE_SQLITE_OK == result)
+            result = db->m_dgndb->SaveChanges();
+        if (BE_SQLITE_OK == result)
+            db->m_dgndb->CloseDb();
+        if (BE_SQLITE_OK == result)
+            db->m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        info.GetReturnValue().Set((int)result);
         }
     
     //  Create a native wrapper object that is linked to a new JS object
@@ -1355,7 +1395,9 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
         Nan::SetPrototypeMethod(t, "openBriefcaseSync", OpenBriefcaseSync);
         Nan::SetPrototypeMethod(t, "saveChanges", SaveChanges);
+        Nan::SetPrototypeMethod(t, "importSchema", ImportSchema);
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
+        Nan::SetPrototypeMethod(t, "enableTransactionManagement", EnableTransactionManagement);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementSync);
