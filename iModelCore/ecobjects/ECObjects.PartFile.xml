@@ -312,6 +312,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="SchemaComparison" BentleyBuildMakeFile="tools/SchemaComparison/SchemaComparison.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaComparisonExe">
+                Delivery/SchemaComparison.exe
+                Delivery/SchemaComparison.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
@@ -354,17 +364,23 @@
         <ProductDirectory Name="SchemaValidatorExe" Path=""/>
     </ProductDirectoryList>
 
+    <ProductDirectoryList ListName="SchemaComparison">
+        <ProductDirectory Name="SchemaComparisonExe"     Path=""/>
+    </ProductDirectoryList>
+
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
         <SubPart PartName="SchemaRoundtrip" />
         <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="SchemaComparison" />
         <SubProduct ProductName="ECObjects"/>
         <Directories DirectoryListName="ECObjects" />
         <Directories DirectoryListName="SchemaConverter" />
         <Directories DirectoryListName="SchemaResourceGenerator" />
         <Directories DirectoryListName="SchemaRoundtrip" />
         <Directories DirectoryListName="SchemaValidator" />
+        <Directories DirectoryListName="SchemaComparison" />
     </Product>
 
     <ProductDirectoryList ListName="ECObjectsTested">

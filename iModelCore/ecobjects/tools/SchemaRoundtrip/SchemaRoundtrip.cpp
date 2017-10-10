@@ -28,13 +28,14 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-r directories] [-d directory] [-a] [-s] [-u] \n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-r directories] [-d directory] [-a] [-s] [-u] \n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
             str, "Tool to roundtrip an ECSchema", "options:",
             " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
             " -d --schema DIR", "looks for the schema file in this directory",
             " -u --include", "include the standard schemas in the roundtripped schemas",
             " -a --all", "roundtrip the entire schema graph",
             " -s --sup", "roundtrip all the supplemental schemas",
+            " -n --noversion", "output schema will not be written with RR.ww.mm version information in the file name",
             "Notes:",
             "if the input path is a directory, all files matching '*.ecschema.xml' will be roundtripped",
             "if output directory is the same as the input directory, the files will be overwritten");
@@ -46,6 +47,7 @@ struct RoundtripOptions
     bvector<BeFileName> ReferenceDirectories;
 
     BeFileName          OutputDirectory;
+    bool                OutputIncludeVersionInfo = true;
 
     bool                HasSchemaDirectory = false;
     BeFileName          SchemaDirectory;
@@ -60,14 +62,17 @@ struct RoundtripOptions
 //---------------------------------------------------------------------------------------
 static void GetOutputFile
 (
-    BeFileName          &outputFile,
+    BeFileName         &outputFile,
     ECSchemaR          schema,
     RoundtripOptions   options
 )
     {
     WString schemaName;
 
-    schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
+    if (options.OutputIncludeVersionInfo)
+        schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
+    else
+        schemaName.AssignUtf8(schema.GetName().c_str());
     schemaName += L".ecschema.xml";
     BeFileName file(nullptr, options.OutputDirectory.GetName(), schemaName.c_str(), nullptr);
     outputFile = file;
@@ -268,6 +273,8 @@ static bool TryParseInput(int argc, char** argv, RoundtripOptions& options)
                     }
                 }
             }
+        else if (0 == strcmp(argv[i], "-n") || 0 == strcmp(argv[i], "--noversion"))
+            options.OutputIncludeVersionInfo = false;
         }
 
     return inputDefined && outputDefined;
@@ -308,6 +315,3 @@ int main(int argc, char** argv)
     s_logger->infov(L"Loading schema '%ls' for roundtrip", options.InputFile.GetName());
     return RoundtripSchema(options);
     }
-
-
-
