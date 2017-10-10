@@ -85,7 +85,8 @@ $(o)bondry$(oext) : $(baseDir)bondry.cpp  ${MultiCompileDepends}
 
 $(o)civdtm$(oext) : $(baseDir)civdtm.cpp  ${MultiCompileDepends}
 
-$(o)civuti$(oext) : $(baseDir)civuti.cpp  ${MultiCompileDepends}
+# Avoid LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+# $(o)civuti$(oext) : $(baseDir)civuti.cpp  ${MultiCompileDepends}
 
 $(o)clputi$(oext) : $(baseDir)clputi.cpp  ${MultiCompileDepends}
 
