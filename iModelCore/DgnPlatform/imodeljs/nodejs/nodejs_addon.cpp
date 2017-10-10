@@ -60,6 +60,13 @@
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
+#define REQUIRE_ARGUMENT_UINT32_SYNC_RV(i, var, errcode)                   \
+    if (info.Length() <= (i) || !info[i]->IsUint32()) {                         \
+        info.GetReturnValue().Set((int)errcode);          \
+        return;                                                                 \
+    }                                                                           \
+    auto var = v8::Uint32::New(info.GetIsolate(), info[i]->Uint32Value());
+
 #define REQUIRE_ARGUMENT_OBJ_SYNC(i, T, var, errcode)                           \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
         info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(errcode));       \
@@ -1339,7 +1346,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         db->m_dgndb = nullptr;
         }
 
-    static NAN_METHOD(EnableTransactionManagement)
+    static NAN_METHOD(SetBriefcaseId)
         {
         Nan::HandleScope scope;
         NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
@@ -1350,10 +1357,12 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             return;
             }
 
+        REQUIRE_ARGUMENT_UINT32_SYNC_RV(0, bidUInt32Obj, BE_SQLITE_ERROR);
+
         BeFileName name(db->m_dgndb->GetFileName());
 
         DbResult result;
-        result = db->m_dgndb->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+        result = db->m_dgndb->SetAsBriefcase(BeBriefcaseId(bidUInt32Obj->Value()));
         if (BE_SQLITE_OK == result)
             result = db->m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
@@ -1361,6 +1370,24 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         if (BE_SQLITE_OK == result)
             db->m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         info.GetReturnValue().Set((int)result);
+        }
+
+    static NAN_METHOD(GetBriefcaseId)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(Nan::Undefined());
+            return;
+            }
+        auto bid = db->m_dgndb->GetBriefcaseId();
+        if (!bid.IsValid())
+            {
+            info.GetReturnValue().Set(Nan::Undefined());
+            return;
+            }
+        info.GetReturnValue().Set(bid.GetValue());
         }
     
     //  Create a native wrapper object that is linked to a new JS object
@@ -1397,7 +1424,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "saveChanges", SaveChanges);
         Nan::SetPrototypeMethod(t, "importSchema", ImportSchema);
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
-        Nan::SetPrototypeMethod(t, "enableTransactionManagement", EnableTransactionManagement);
+        Nan::SetPrototypeMethod(t, "setBriefcaseId", SetBriefcaseId);
+        Nan::SetPrototypeMethod(t, "getBriefcaseId", GetBriefcaseId);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementSync);
