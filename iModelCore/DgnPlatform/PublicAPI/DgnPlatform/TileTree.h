@@ -146,6 +146,7 @@ public:
     TileCR GetTile() const { return *m_tile; }
     BeTimePoint GetDeadline() const {return m_deadline;}
     bool HasDeadline() const {return GetDeadline().IsValid();}
+    bool IsPastDeadline() const {return HasDeadline() && GetDeadline().IsInPast();}
 
     struct PtrComparator
     {

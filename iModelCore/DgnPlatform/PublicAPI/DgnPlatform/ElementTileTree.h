@@ -45,13 +45,14 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
+    BeTimePoint m_collectionDeadline;
+
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
     bool _IsExpired(uint64_t) override;
     folly::Future<BentleyStatus> _ReadFromDb() override;
-
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();
@@ -60,6 +61,8 @@ private:
     TileR GetElementTile();
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
+
+    bool IsPastCollectionDeadline() const;
 };
 
 //=======================================================================================

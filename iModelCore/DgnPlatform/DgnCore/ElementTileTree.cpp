@@ -921,7 +921,22 @@ END_UNNAMED_NAMESPACE
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
-    //
+    if (nullptr != loads && loads->HasDeadline())
+        {
+        auto now = BeTimePoint::Now();
+        if (loads->GetDeadline() < now)
+            {
+            // already out of time...
+            m_collectionDeadline = now;
+            }
+        else
+            {
+            // Assume it takes approx the same amount of time to collect geometry as to facet it
+            BeDuration duration = loads->GetDeadline() - now;
+            duration = BeDuration::FromSeconds(duration.ToSeconds() / 2.0);
+            m_collectionDeadline = now + duration;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1183,6 +1198,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
 TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
+bool Loader::IsPastCollectionDeadline() const { return m_collectionDeadline.IsValid() && m_collectionDeadline.IsInPast(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
