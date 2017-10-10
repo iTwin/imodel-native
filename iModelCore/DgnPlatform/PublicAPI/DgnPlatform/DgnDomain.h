@@ -71,24 +71,25 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct SchemaUpgradeOptions
 {
 //! Option to control upgrade of schemas in the DgnDb from the domains.
-enum class AllowedDomainUpgrades : int
+enum class DomainUpgradeOptions : int
     {
-    None, //!< Domain schemas will not be upgraded
-    UseDefaults, //!< Determines if incompatible changes are allowed based on the application's development phase. CompatibleOnly if the application is in Certified/Beta phase and IncompatibleAlso if the application is still in the Development phase. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
-    CompatibleOnly, //!< Allows only compatible schema upgrades - these are typically additions of classes, properties, and changes to custom attributes. 
-    IncompatibleAlso //!< Allows certain incompatible schema upgrades - this option should typically not be used in certified or beta builds. 
+    SkipUpgrade, //!< Domain schemas will neither be validated nor be upgraded. Used only internally. 
+    ValidateOnly, //!< Domain schemas will be validated. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    CompatibleOnly, //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes. 
+    IncompatibleAlso, //!< Domain schemas will be upgraded if necessary. Certain incompatible schema upgrades will be allowed - this option should not be used in certified or beta builds. 
+    UseDefaults //!< Upgrade domain schemas depending on the application's development phase. If the application is in Certified/Beta phase, the setting allows CompatibleOnly upgrades. Otherwise, it will allow IncompatibleAlso. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
     };
 
 private:
-    AllowedDomainUpgrades m_allowedDomainUpgrades;
+    DomainUpgradeOptions m_domainUpgradeOptions;
     bvector<DgnRevisionCP> m_upgradeRevisions;
 
 public:
     //! Default constructor
-    SchemaUpgradeOptions() : m_allowedDomainUpgrades(AllowedDomainUpgrades::None) {}
+    SchemaUpgradeOptions() : m_domainUpgradeOptions(DomainUpgradeOptions::ValidateOnly) {}
 
     //! Constructor to setup schema upgrades from the registered domains
-    SchemaUpgradeOptions(AllowedDomainUpgrades allowedDomainUpgrades) { SetUpgradeFromDomains(allowedDomainUpgrades); }
+    SchemaUpgradeOptions(DomainUpgradeOptions domainOptions) { SetUpgradeFromDomains(domainOptions); }
 
     //! Constructor to setup schema upgrades by merging a revision (that may contain schema changes).
     SchemaUpgradeOptions(DgnRevisionCR revision) { SetUpgradeFromRevision(revision); }
@@ -97,16 +98,16 @@ public:
     SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions) { SetUpgradeFromRevisions(revisions); }
 
     //! Setup to upgrade schemas from the registered domains
-    void SetUpgradeFromDomains(AllowedDomainUpgrades allowedDomainUpgrades = AllowedDomainUpgrades::UseDefaults)
+    void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::UseDefaults)
         {
-        m_allowedDomainUpgrades = allowedDomainUpgrades;
+        m_domainUpgradeOptions = domainOptions;
         m_upgradeRevisions.clear();
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
     void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision)
         {
-        m_allowedDomainUpgrades = AllowedDomainUpgrades::None;
+        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
         m_upgradeRevisions.clear();
         m_upgradeRevisions.push_back(&upgradeRevision);
         }
@@ -114,15 +115,15 @@ public:
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
     void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions)
         {
-        m_allowedDomainUpgrades = AllowedDomainUpgrades::None;
+        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
         m_upgradeRevisions = upgradeRevisions;
         }
 
-    //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
-    AllowedDomainUpgrades GetAllowedDomainUpgrades() const;
-
     //! Returns true if schemas are to be upgraded from the domains.
-    bool AreDomainUpgradesAllowed() const { return m_allowedDomainUpgrades != AllowedDomainUpgrades::None; }
+    bool AreDomainUpgradesAllowed() const;
+        
+    //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
+    DomainUpgradeOptions GetDomainOptions() const;
 
     //! Gets the revisions that are to be merged
     bvector<DgnRevisionCP> const& GetUpgradeRevisions() const { return m_upgradeRevisions; }

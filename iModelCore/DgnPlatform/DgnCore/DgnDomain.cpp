@@ -186,13 +186,21 @@ SchemaStatus DgnDomain::ValidateSchema(ECSchemaCR schema, DgnDbCR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaUpgradeOptions::AllowedDomainUpgrades SchemaUpgradeOptions::GetAllowedDomainUpgrades() const
+bool SchemaUpgradeOptions::AreDomainUpgradesAllowed() const
     {
-    if (m_allowedDomainUpgrades != SchemaUpgradeOptions::AllowedDomainUpgrades::UseDefaults)
-        return m_allowedDomainUpgrades;
+    return m_domainUpgradeOptions == DomainUpgradeOptions::UseDefaults || m_domainUpgradeOptions == DomainUpgradeOptions::CompatibleOnly || m_domainUpgradeOptions == DomainUpgradeOptions::IncompatibleAlso;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaUpgradeOptions::DomainUpgradeOptions SchemaUpgradeOptions::GetDomainOptions() const
+    {
+    if (m_domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::UseDefaults)
+        return m_domainUpgradeOptions;
 
     DevelopmentPhase appPhase = T_HOST.GetDevelopmentPhase();
-    return (appPhase == DevelopmentPhase::Development) ? SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso : SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso;
+    return (appPhase == DevelopmentPhase::Development) ? SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso : SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -449,17 +457,17 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    SchemaUpgradeOptions::AllowedDomainUpgrades allowedUpgrades = m_schemaUpgradeOptions.GetAllowedDomainUpgrades();
+    SchemaUpgradeOptions::DomainUpgradeOptions allowedUpgrades = m_schemaUpgradeOptions.GetDomainOptions();
     
     if (m_dgndb.IsBriefcase())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
-    SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
+    SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
     status = DoImportSchemas(importSchemas, importOptions);
     if (SchemaStatus::Success != status)
         return status;
 
-    if (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::IncompatibleAlso)
+    if (allowedUpgrades == SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)
         DeleteHandlers(); // Since ClassId-s can change, recreate the Handler-ClassId associations
 
     SyncWithSchemas();
@@ -497,10 +505,12 @@ SchemaStatus DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpg
     {
     m_schemaUpgradeOptions = schemaUpgradeOptions;
 
-    SchemaStatus status = ValidateSchemas();
-    if (status != SchemaStatus::Success && !(status == SchemaStatus::SchemaUpgradeRequired && m_schemaUpgradeOptions.AreDomainUpgradesAllowed()))
-        return status;
-
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = m_schemaUpgradeOptions.GetDomainOptions();
+    
+    SchemaStatus status = SchemaStatus::Success;
+    if (domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
+        status = ValidateSchemas();
+  
     if (status == SchemaStatus::Success)
         {
         SyncWithSchemas();
@@ -508,7 +518,9 @@ SchemaStatus DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpg
         return status;
         }
 
-    BeAssert(status == SchemaStatus::SchemaUpgradeRequired);
+    if (status != SchemaStatus::SchemaUpgradeRequired || domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly)
+        return status;
+
     return UpgradeSchemas();
     }
 
@@ -919,7 +931,6 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     if (!shouldHaveHandler)
         {
         BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
-
 #if !defined (NDEBUG)
         LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
                 typeid(handler).name(), handler.GetClassName().c_str());

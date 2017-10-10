@@ -199,6 +199,7 @@ public:
     double GetStart() const { return m_startTime; }
     double GetEnd() const { return m_endTime; }
     ElementAppearanceProfileId GetAppearanceId() const { return m_appearanceId; }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -239,6 +240,7 @@ public:
         };
         
     bool operator < (struct ElementSchedule const& rhs) const { return m_entries < rhs.m_entries; }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
