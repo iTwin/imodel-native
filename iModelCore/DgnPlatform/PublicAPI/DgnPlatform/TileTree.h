@@ -420,6 +420,7 @@ public:
     void OnAddToRangeIndex(DRange3dCR range, DgnElementId id);
     void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
     void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
+    virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
 };
 
 //=======================================================================================

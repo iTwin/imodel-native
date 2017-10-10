@@ -338,6 +338,15 @@ void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialModel::OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
+    {
+    if (m_root.IsValid())
+        m_root->_OnProjectExtentsChanged(newExtents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::Create(PhysicalPartitionCR modeledElement)
