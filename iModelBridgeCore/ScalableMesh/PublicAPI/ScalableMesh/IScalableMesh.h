@@ -204,7 +204,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
+        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, BENTLEY_NAMESPACE_NAME::Dgn::ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
@@ -451,7 +451,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, ClipVectorPtr clips = nullptr) const;
+        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, BENTLEY_NAMESPACE_NAME::Dgn::ClipVectorPtr clips = nullptr) const;
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
