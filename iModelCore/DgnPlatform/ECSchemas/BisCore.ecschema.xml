@@ -363,7 +363,6 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward" readOnly="True" description="The Model that contains this element.">
             <ECCustomAttributes>
-                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>2</StatementTypes>
                 </CustomHandledProperty>
@@ -946,7 +945,6 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement3dIsInCategory" direction="Forward" description="The Spatial Category used to categorize the 3D Geometric Element">
             <ECCustomAttributes>
-                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0">
                     <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
