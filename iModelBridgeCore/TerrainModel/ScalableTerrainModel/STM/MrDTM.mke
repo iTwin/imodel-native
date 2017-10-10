@@ -6,7 +6,7 @@
 #       $Date: 2013/03/28 15:11:29 $
 #     $Author: Andy.Farr $
 #
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -413,11 +413,8 @@ DLM_DEST                    = $(BC_DESKTOP)
 DLM_SYMB_DEST               = $(BC_Symbols)
 DLM_OBJECT_FILES            = $(nonUniformObjs) $(dlmObjs)
 DLM_NO_DELAYLOAD            = 1
-DLM_NO_DLS                  = 1
 DLM_NO_IMPLIB               = 0
-DLM_NO_DEF                  = 1
 DLM_NOENTRY                 = 1
-DLM_NOMSBUILTINS            = 1
 DLM_LIBRARY_FILES  = $(bcLibs)BCivilBase.lib \
 $(bcLibs)BCivilDTM.lib \
 $(IPP_LIB_FILES) \

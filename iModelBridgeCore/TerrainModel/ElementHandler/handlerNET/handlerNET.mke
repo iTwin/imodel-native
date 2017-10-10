@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: ElementHandler/handlerNET/handlerNET.mke $
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -100,9 +100,6 @@ DLM_OBJECT_DEST   = $(o)
 DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject) 
 DLM_NOINITFUNC    = 1
 DLM_NOENTRY       = 1
-DLM_NOMSBUILTINS  = 1
-DLM_NO_DEF        = 1
-DLM_NO_DLS        = 1
 
 LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyGeom.lib
 #LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)TerrainModelCore.lib

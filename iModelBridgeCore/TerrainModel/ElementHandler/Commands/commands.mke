@@ -159,9 +159,6 @@ DLM_OBJECT_DEST   = $(o)
 DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject) 
 DLM_NOINITFUNC    = 1
 DLM_NOENTRY       = 1
-DLM_NOMSBUILTINS  = 1
-DLM_NO_DEF        = 1
-DLM_NO_DLS        = 1
 
 LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)TerrainModelElementHandler$(libext) \
                       $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
