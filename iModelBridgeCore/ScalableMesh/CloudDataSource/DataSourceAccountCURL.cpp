@@ -173,13 +173,13 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     if (CURLE_OK != res)
         {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        assert(!"cURL error, download failed");
+        //assert(!"cURL error, download failed");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
     if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
-        assert(!"HTTP error, download failed or resource not found");
+        //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 
