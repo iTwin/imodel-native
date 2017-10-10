@@ -634,6 +634,7 @@ public:
     DgnElementId GetCurrentElementId() const { return m_curElemId; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     IFacetOptionsR GetFacetOptions() { return m_facetOptions; }
+    LoadContextCR GetLoadContext() const { return m_loadContext; }
 
     GraphicPtr FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder);
     GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
@@ -892,7 +893,7 @@ public:
 
     bool AnySkipped() const { return m_anySkipped; }
     Entries const& GetEntries() const { return m_entries; }
-    double ComputeLeafTolerance() const;
+    uint32_t GetMaxElements() const { return m_maxElements; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1139,7 +1140,6 @@ BentleyStatus Loader::_LoadTile()
 
         if (graphic.IsValid())
             tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
-
         }
 
     tile.ClearBackupGraphic();
@@ -1931,6 +1931,7 @@ public:
     MeshList GetMeshes();
     // Return a tight bounding volume
     DRange3dCR GetContentRange() const { return m_contentRange; }
+    TileCR GetTile() const { return m_tile; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2287,6 +2288,140 @@ MeshList MeshGenerator::GetMeshes()
     return meshes;
     }
 
+BEGIN_ELEMENT_TILETREE_NAMESPACE
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct TileGenerator
+{
+    enum class Completion
+    {
+        Full,       // Tile generation completed.
+        Partial,    // Tile generation partially completed. Can be resumed.
+        Aborted,    // Tile generation aborted (tile load canceled, or tile abandoned).
+    };
+private:
+    ElementCollector    m_elementCollector;
+    TileContext         m_tileContext;
+    MeshGenerator       m_meshGenerator;
+    GeometryList        m_geometries;
+
+    LoadContextCR GetLoadContext() const { return m_tileContext.GetLoadContext(); }
+    TileR GetTile() const { return const_cast<TileR>(m_meshGenerator.GetTile()); } // constructor receives as non-const...
+public:
+    TileGenerator(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements, TileR tile, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, GeometryOptionsCR geomOpts)
+    :   m_elementCollector(range, rangeIndex, minRangeDiagonalSquared, loadContext, maxElements),
+        m_tileContext(m_geometries, const_cast<RootR>(tile.GetElementRoot()), range, facetOptions, transformFromDgn, tolerance, loadContext),
+        m_meshGenerator(tile, geomOpts, loadContext)
+    {
+    // ElementCollector has now collected all elements valid for this tile, ordered from largest to smallest
+    }
+
+    Completion GenerateGeometry(Render::Primitives::GeometryCollection&);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::GeometryCollection& output)
+    {
+    LoadContextCR loadContext = GetLoadContext();
+    if (loadContext.WasAborted())
+        return Completion::Aborted;
+
+    if (m_elementCollector.AnySkipped())
+        {
+        // We may want to turn this into a leaf node if it contains strictly linear geometry - but we can't do that if any elements were excluded
+        m_geometries.MarkIncomplete();
+        }
+
+    // Collect geometry from each element
+    TileR tile = GetTile();
+    for (auto const& entry : m_elementCollector.GetEntries())
+        {
+        m_tileContext.ProcessElement(entry.second, entry.first);
+        if (loadContext.WasAborted())
+            {
+            m_geometries.clear();
+            break;
+            }
+        else if (m_tileContext.GetGeometryCount() >= m_elementCollector.GetMaxElements())
+            {
+            BeAssert(!tile.IsLeaf());
+            m_tileContext.TruncateGeometryList(m_elementCollector.GetMaxElements());
+            break;
+            }
+        }
+
+    // Determine whether or not to subdivide this tile
+    if (!loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+        {
+        // If no elements were skipped and only a small number of elements exist within this tile's range:
+        //  - Make it a leaf tile, if it contains no curved geometry; otherwise
+        //  - Mark it so that it will have only a single child tile, containing the same geometry faceted at a higher resolution
+        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
+        // Also note that if we're a child of a tile with zoom factor, we already have our own (higher) zoom factor
+        if (!m_geometries.ContainsCurves())
+            tile.SetIsLeaf();
+        else
+            tile.SetZoomFactor(1.0);
+        }
+
+    if (loadContext.WasAborted())
+        return Completion::Aborted;
+
+    // Facet geometry to produce meshes
+    Render::Primitives::GeometryCollection collection;
+    bmap<GeomPartCP, bvector<GeometryCP>> parts;
+    for (auto const& geom : m_geometries)
+        {
+        if (loadContext.WasAborted())
+            return Completion::Aborted;
+
+        auto part = geom->GetPart();
+        if (part.IsNull())
+            {
+            m_meshGenerator.AddMeshes(*geom, true);
+            continue;
+            }
+
+        auto iter = parts.find(part.get());
+        if (parts.end() == iter)
+            iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
+
+        iter->second.push_back(geom.get());
+        }
+
+    // Facet geometry part instances
+    for (auto& kvp : parts)
+        {
+        if (loadContext.WasAborted())
+            break;
+
+        m_meshGenerator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
+        }
+
+    if (!loadContext.WasAborted())
+        {
+        collection.Meshes() = m_meshGenerator.GetMeshes();
+        tile.SetContentRange(ElementAlignedBox3d(m_meshGenerator.GetContentRange()));
+        if (!m_geometries.IsComplete())
+            collection.MarkIncomplete();
+        }
+
+    if (collection.IsEmpty() && !m_geometries.empty())
+        collection.MarkIncomplete();
+
+    if (m_geometries.ContainsCurves())
+        collection.MarkCurved();
+
+    output = std::move(collection);
+    return Completion::Full;
+    }
+
+END_ELEMENT_TILETREE_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2311,68 +2446,37 @@ MeshList Tile::GenerateMeshes(GeometryList const& geometries, bool doRangeTest, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR context)
     {
-    Render::Primitives::GeometryCollection geom;
-
-    GeometryList geometries = CollectGeometry(context);
-    auto collection = CreateGeometryCollection(geometries, context);
-    if (context.WasAborted())
-        return Render::Primitives::GeometryCollection();
-
-    if (collection.IsEmpty() && !geometries.empty())
-        collection.MarkIncomplete();
-
-    if (geometries.ContainsCurves())
-        collection.MarkCurved();
-
-    return collection;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::Primitives::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, LoadContextCR context) const
-    {
-    GeometryOptions options;
     Render::Primitives::GeometryCollection collection;
-    bmap<GeomPartCP, bvector<GeometryCP>> parts;
-    MeshGenerator generator(*this, options, context);
+    auto& root = GetElementRoot();
+    auto model = root.GetModel();
+    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+        return collection;
 
-    for (auto const& geom : geometries)
+    uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element due to differing subcategories/classes in GeometryStream
+    auto sys = context.GetRenderSystem();
+    if (nullptr != sys)
+        maxFeatures = std::min(maxFeatures, sys->_GetMaxFeaturesPerBatch());
+
+    double minRangeDiagonalSq = s_minRangeBoxSize * m_tolerance;
+    minRangeDiagonalSq *= minRangeDiagonalSq;
+
+    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
+    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
+
+    Transform transformFromDgn;
+    transformFromDgn.InverseOf(root.GetLocation());
+
+    TileGenerator generator(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
+    auto status = generator.GenerateGeometry(collection);
+    switch (status)
         {
-        if (context.WasAborted())
+        case TileGenerator::Completion::Aborted:
+            return Render::Primitives::GeometryCollection();
+        case TileGenerator::Completion::Full:
+            // ###TODO: partial vs completed tiles
+        default:
             return collection;
-
-        auto part = geom->GetPart();
-        if (part.IsNull())
-            {
-            generator.AddMeshes(*geom, true);
-            continue;
-            }
-
-        auto iter = parts.find(part.get());
-        if (parts.end() == iter)
-            iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
-
-        iter->second.push_back(geom.get());
         }
-
-    for (auto& kvp : parts)
-        {
-        if (context.WasAborted())
-            break;
-
-        generator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
-        }
-
-    if (!context.WasAborted())
-        {
-        collection.Meshes() = generator.GetMeshes();
-        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
-        if (!geometries.IsComplete())
-            collection.MarkIncomplete();
-        }
-
-    return collection;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2383,102 +2487,6 @@ DRange3d Tile::GetDgnRange() const
     DRange3d range;
     GetRoot().GetLocation().Multiply(range, GetTileRange());
     return range;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-double ElementCollector::ComputeLeafTolerance() const
-    {
-#if defined(TODO_ELEMENT_TILE)
-    // This uses minimum zoom. It is far too small to use in the general case, and overkill for any geometry not modeled on tiny scales.
-    return DgnUnits::OneMillimeter() / s_minToleranceRatio;
-#else
-    // This function is used when we decide to create a leaf node because the tile's range contains too few elements to be worth subdividing.
-    // Computes the tile's tolerance based on the range of the smallest element within the range.
-    double minSizeSq = 0.0;
-    for (auto iter = m_entries.rbegin(); iter != m_entries.rend(); ++iter)
-        {
-        if (0.0 < (minSizeSq = iter->first))
-            break;
-        }
-
-    if (0.0 >= minSizeSq)
-        return 0.001;
-
-    return sqrt(minSizeSq) / s_minToleranceRatio;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
-    {
-    GeometryList geometries;
-
-    auto& root = GetElementRoot();
-    auto model = root.GetModel();
-    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
-        return geometries;
-
-    // Collect the set of largest elements for this tile's range, excluding any too small to contribute at this tile's tolerance.
-    uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element
-    auto sys = loadContext.GetRenderSystem();
-    if (nullptr != sys)
-        maxFeatures = std::min(maxFeatures, sys->_GetMaxFeaturesPerBatch());
-
-    double minRangeDiagonalSq = s_minRangeBoxSize * m_tolerance;
-    minRangeDiagonalSq *= minRangeDiagonalSq;
-    ElementCollector collector(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, loadContext, maxFeatures);
-
-    if (loadContext.WasAborted())
-        return geometries;
-
-    if (collector.AnySkipped())
-        {
-        // We may want to turn this into a leaf node if it contains strictly linear geometry - but we can't do that if any elements were excluded
-        geometries.MarkIncomplete();
-        }
-
-    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
-
-    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false);        // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
-    Transform transformFromDgn;
-    transformFromDgn.InverseOf(root.GetLocation());
-
-    // Process the geometry of each element selected for inclusion in this tile
-    TileContext tileContext(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, m_tolerance, loadContext);
-    for (auto const& entry : collector.GetEntries())
-        {
-        tileContext.ProcessElement(entry.second, entry.first);
-        if (loadContext.WasAborted())
-            {
-            geometries.clear();
-            break;
-            }
-        else if (tileContext.GetGeometryCount() >= maxFeatures)
-            {
-            BeAssert(!IsLeaf());
-            tileContext.TruncateGeometryList(maxFeatures);
-            break;
-            }
-        }
-
-    if (!loadContext.WasAborted() && !IsLeaf() && !HasZoomFactor() && !collector.AnySkipped() && collector.GetEntries().size() <= s_minElementsPerTile)
-        {
-        // If no elements were skipped and only a small number of elements exist within this tile's range:
-        //  - Make it a leaf tile, if it contains no curved geometry; otherwise
-        //  - Mark it so that it will have only a single child tile, containing the same geometry faceted at a higher resolution
-        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
-        // Also note that if we're a child of a tile with zoom factor, we already have our own (higher) zoom factor
-        if (!geometries.ContainsCurves())
-            SetIsLeaf();
-        else
-            SetZoomFactor(1.0);
-        }
-
-    return geometries;
     }
 
 /*---------------------------------------------------------------------------------**//**

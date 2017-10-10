@@ -26,6 +26,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Context);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPartBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileGenerator);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(Root);
@@ -34,6 +35,8 @@ DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
+
+typedef std::unique_ptr<TileGenerator> TileGeneratorUPtr;
 
 //#define TILECACHE_DEBUG
 
@@ -63,6 +66,7 @@ public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 
     bool IsPastCollectionDeadline() const;
+    bool WantPartialTiles() const { return m_collectionDeadline.IsValid(); }
 };
 
 //=======================================================================================
@@ -245,8 +249,6 @@ private:
     void _ValidateChildren() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-    Render::Primitives::GeometryList CollectGeometry(LoadContextCR context);
-    Render::Primitives::GeometryCollection CreateGeometryCollection(Render::Primitives::GeometryList const&, LoadContextCR context) const;
 
     Render::GraphicPtr GetDebugGraphics(Root::DebugOptions options) const;
 public:
