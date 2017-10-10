@@ -171,7 +171,7 @@ TEST_F(ExampleTests, CachingDataSource_PWDocumentRenameAndSync)
     txn1.GetCache().LinkInstanceToRoot(nullptr, documentId);
     txn1.Commit();
 
-    auto result = ds->GetObject(documentId, ICachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(documentId, ICachingDataSource::DataOrigin::RemoteData)->GetResult();
     if (!result.IsSuccess())
         {
         BeDebugLog(result.GetError().GetMessage().c_str());

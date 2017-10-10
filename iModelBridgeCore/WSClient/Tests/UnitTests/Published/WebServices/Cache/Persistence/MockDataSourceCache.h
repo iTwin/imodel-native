@@ -93,8 +93,8 @@ struct MockDataSourceCache : public IDataSourceCache
             CacheStatus (CachedResponseKeyCR responseKey, ECInstanceKeyMultiMap& instanceKeysOut));
         MOCK_METHOD2 (ReadResponseObjectIds,
             CacheStatus (CachedResponseKeyCR responseKey, bset<ObjectId>& instanceObjectIdsOut));
-        MOCK_METHOD3 (ReadInstance,
-            CacheStatus (ObjectIdCR, JsonValueR, JsonFormat));
+        MOCK_METHOD2 (ReadInstance,
+            CacheStatus (ObjectIdCR, JsonValueR));
         MOCK_METHOD1 (ReadInstance,
             IECInstancePtr (ObjectIdCR));
         MOCK_METHOD1 (ReadInstance,
