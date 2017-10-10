@@ -987,6 +987,8 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT void AddLights(Render::SceneLightsR, Render::TargetR) const;
+
+    void OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents);
 };
 
 //=======================================================================================

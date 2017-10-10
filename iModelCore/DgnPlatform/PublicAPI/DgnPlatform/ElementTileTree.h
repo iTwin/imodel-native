@@ -177,6 +177,7 @@ private:
     void RemoveCachedGeometry(DRange3dCR range, DgnElementId id);
     void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) override { RemoveCachedGeometry(range, id); }
     void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) override { RemoveCachedGeometry(oldRange, id); }
+    void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override;
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
@@ -280,6 +281,7 @@ public:
     void ClearBackupGraphic() { m_backupGraphic = nullptr; }
 
     bool IsPartial() const { return nullptr != m_generator.get(); }
+    void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

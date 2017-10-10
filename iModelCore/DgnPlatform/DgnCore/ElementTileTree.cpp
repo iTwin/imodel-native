@@ -1758,19 +1758,41 @@ bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void updateLowerBound(double& myValue, double parentOldValue, double parentNewValue)
+static void updateLowerBound(double& myValue, double parentOldValue, double parentNewValue, bool allowShrink)
     {
-    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && parentOldValue > parentNewValue)
+    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && (allowShrink || parentOldValue > parentNewValue))
         myValue = parentNewValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void updateUpperBound(double& myValue, double parentOldValue, double parentNewValue)
+static void updateUpperBound(double& myValue, double parentOldValue, double parentNewValue, bool allowShrink)
     {
-    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && parentOldValue < parentNewValue)
+    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && (allowShrink || parentOldValue < parentNewValue))
         myValue = parentNewValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
+    {
+    // The range of a spatial tile tree == the project extents.
+    // Note that currently we consider drawing outside of the project extents to be illegal.
+    // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
+    auto rootTile = static_cast<TileP>(GetRootTile().get());
+    if (Is3d() && nullptr != rootTile)
+        {
+        // ###TODO: What about non-spatial 3d models?
+        Transform tfToTile;
+        tfToTile.InverseOf(GetLocation());
+
+        DRange3d tileRange;
+        tfToTile.Multiply(tileRange, newExtents);
+
+        rootTile->UpdateRange(rootTile->GetRange(), tileRange, true);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1778,31 +1800,47 @@ static void updateUpperBound(double& myValue, double parentOldValue, double pare
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew)
     {
-    if (GetElementRoot().Is3d())
-        return; // range == project extents. ###TODO: What about non-spatial 3d models? ###TODO: What about when project extents are expanded?
+    // The range of a 2d tile tree == the range of geometry within the model.
+    // This can change whenever elements are added/removed/modified.
+    // Must update ranges of tiles to reflect change.
+    // Invalidating tiles for modified geometry is handled by _Invalidate()
+    if (!GetElementRoot().Is3d())
+        {
+        // ###TODO: What about non-spatial 3d models?
+        UpdateRange(parentOld, parentNew, false);
+        }
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink)
+    {
     // Expand outside bounds of range to match the new range
     // NB: It doesn't matter if the new range intersects the tile's range - may still need to expand
     DRange3d myOld = GetRange();
     if (nullptr == GetParent())
         {
-        m_range.UnionOf(parentOld, parentNew);
+        if (allowShrink)
+            m_range = ElementAlignedBox3d(parentNew);
+        else
+            m_range.UnionOf(parentOld, parentNew);
         }
     else
         {
-        updateLowerBound(m_range.low.x, parentOld.low.x, parentNew.low.x);
-        updateLowerBound(m_range.low.y, parentOld.low.y, parentNew.low.y);
-        updateLowerBound(m_range.low.z, parentOld.low.z, parentNew.low.z);
-        updateUpperBound(m_range.high.x, parentOld.high.x, parentNew.high.x);
-        updateUpperBound(m_range.high.y, parentOld.high.y, parentNew.high.y);
-        updateUpperBound(m_range.high.z, parentOld.high.z, parentNew.high.z);
+        updateLowerBound(m_range.low.x, parentOld.low.x, parentNew.low.x, allowShrink);
+        updateLowerBound(m_range.low.y, parentOld.low.y, parentNew.low.y, allowShrink);
+        updateLowerBound(m_range.low.z, parentOld.low.z, parentNew.low.z, allowShrink);
+        updateUpperBound(m_range.high.x, parentOld.high.x, parentNew.high.x, allowShrink);
+        updateUpperBound(m_range.high.y, parentOld.high.y, parentNew.high.y, allowShrink);
+        updateUpperBound(m_range.high.z, parentOld.high.z, parentNew.high.z, allowShrink);
         }
 
     auto children = _GetChildren(false);
     if (nullptr != children)
         {
         for (auto& child : *children)
-            child->_UpdateRange(myOld, GetRange());
+            static_cast<TileP>(child.get())->UpdateRange(myOld, GetRange(), allowShrink);
         }
 
     m_debugGraphics.Reset(); // so we changes to bounding volumes immediately...
