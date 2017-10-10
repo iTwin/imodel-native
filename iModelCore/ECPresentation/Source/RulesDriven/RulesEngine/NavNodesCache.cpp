@@ -23,12 +23,6 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define NAVNODES_CACHE_MEMORY_CACHE
 //#define NAVNODES_CACHE_PERSIST_ON_CHANGE
 
-#define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 1
-#define NAVNODES_CACHE_DB_VERSION_MINOR 0
-#define NAVNODES_CACHE_MEMORY_CACHE
-//#define NAVNODES_CACHE_PERSIST_ON_CHANGE
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
@@ -181,6 +175,8 @@ static JsonNavNodePtr CreateNodeFromStatement(Statement& stmt, JsonNavNodesFacto
     JsonNavNodePtr node = CreateNodeFromString(nodesFactory, connection, serializedNode);
     if (node.IsNull())
         return nullptr;
+
+    node->SetIsExpanded(!stmt.IsColumnNull(4));
 
     NavNodeExtendedData extendedData(*node);
     if (!stmt.IsColumnNull(2))
@@ -342,6 +338,17 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[ECInstanceId] INTEGER NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_AffectingInstances, ddl);
         m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_GroupedECInstances] ON [" NODESCACHE_TABLENAME_AffectingInstances "]([NodeId],[ECClassId],[ECInstanceId])");
+        }
+    if (!m_db.TableExists(NODESCACHE_TABLENAME_ExpandedNodes))
+        {
+        Utf8CP createTempTable = "CREATE TEMP TABLE [" NODESCACHE_TABLENAME_ExpandedNodes "] ("
+                                 "[NodeId] INTEGER NOT NULL)";
+        DbResult result = m_db.ExecuteSql(createTempTable);
+        BeAssert(result == BE_SQLITE_OK);
+
+        Utf8CP createUniqueIndex = "CREATE UNIQUE INDEX [UX_NodeIndex] ON [" NODESCACHE_TABLENAME_ExpandedNodes "]([NodeId])";
+        result = m_db.ExecuteSql(createUniqueIndex);
+        BeAssert(result == BE_SQLITE_OK);
         }
     m_db.SaveChanges();
     }
@@ -641,6 +648,9 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeCR node,
     CacheNodeKey(node);
     CacheNodeInstanceKeys(node);
 
+    if (node.IsExpanded())
+        SetIsExpanded(node.GetNodeId(), node.IsExpanded());
+
     LoggingHelper::LogMessage(Log::NavigationCache, GetNodeDebugString("Cached", node, isVirtual ? NodeVisibility::Virtual : NodeVisibility::Physical).c_str());
 
 #ifdef NAVNODES_CACHE_PERSIST_ON_CHANGE
@@ -847,9 +857,10 @@ JsonNavNodePtr NodesCache::_GetNode(uint64_t id, NodeVisibility visibility) cons
     if (node.IsValid() && NodeVisibility::Any == visibility)
         return node;
 
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data] "
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                        " WHERE [n].[Id] = ? ";
     if (NodeVisibility::Virtual == visibility)
         query.append("AND [n].[IsVirtual]");
@@ -1045,6 +1056,7 @@ void NodesCache::_Update(uint64_t nodeId, JsonNavNodeCR node)
         {
         CacheNodeKey(node);
         CacheNodeInstanceKeys(node);
+        SetIsExpanded(node.GetNodeId(), node.IsExpanded());
         }
 
     RemoveQuick(nodeId);
@@ -1563,10 +1575,11 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
     {
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data] "
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                        " WHERE [k].[Type] = ? AND [k].[ECClassId] = ? AND [k].[ECInstanceId] = ?";
     
     CachedStatementPtr stmt;
@@ -1591,10 +1604,11 @@ NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& key) const
     {
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data] "
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
                        " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[ECClassId] = ?";
     
     CachedStatementPtr stmt;
@@ -1619,11 +1633,12 @@ NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey const& key) const
     {
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data] "
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
-                       " WHERE     [k].[NodeId] = ?";
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
+                       " WHERE [k].[NodeId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1645,10 +1660,11 @@ NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey c
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeKey const& key) const
     {
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data] "
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
                        " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[Label] = ?";
     
     CachedStatementPtr stmt;
@@ -1784,3 +1800,25 @@ JsonNavNodePtr NodesCache::GetQuick(uint64_t id) const
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::Persist() {m_db.SaveChanges();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::SetIsExpanded(uint64_t nodeId, bool isExpanded) const
+    {
+    Utf8CP query;
+    if (isExpanded)
+        query = "INSERT INTO [" NODESCACHE_TABLENAME_ExpandedNodes "] ([NodeId]) VALUES (?) ";
+    else 
+        query = "DELETE FROM [" NODESCACHE_TABLENAME_ExpandedNodes "] WHERE [NodeId] = ?";
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindUInt64(1, nodeId);
+    stmt->Step();
+    }
