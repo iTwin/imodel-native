@@ -71,7 +71,18 @@ public:
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
     GRIDELEMENTS_EXPORT DPlane3d    GetPlane ();
-    
+
+    //! Translates grid to given point, 
+    //! @param[in] point    point to translate to
+    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus TranslateToPoint (DPoint3d point);
+
+    //! Rotates grid to given angle
+    //! @param[in] theta    angle to rotate to
+    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY (double theta);
+
+    //! Make an iterator over gridSurfaces that compose this Grid
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
+
     };
 
 END_GRIDS_NAMESPACE

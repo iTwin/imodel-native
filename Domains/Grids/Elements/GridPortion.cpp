@@ -111,4 +111,59 @@ DPlane3d GridPortion::GetPlane ()
     plane.normal = DVec3d::From (GetPropertyValueDPoint3d (prop_Normal ()));
     return plane;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+RepositoryStatus GridPortion::RotateToAngleXY (double theta)
+    {
+    RepositoryStatus status = RepositoryStatus::Success;
+    for (Dgn::ElementIteratorEntry pIterEntry : MakeIterator ())
+        {
+        GridSurfacePtr gridSurface = GetDgnDb ().Elements ().GetForEdit<GridSurface> (pIterEntry.GetElementId ());
+        gridSurface->RotateXY (theta);
+        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Update, "update GridSurface")))
+            return status;
+        gridSurface->Update ();
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+RepositoryStatus GridPortion::TranslateToPoint (DPoint3d point)
+    {
+    RepositoryStatus status = RepositoryStatus::Success;
+    Dgn::ElementIterator gridElements = MakeIterator ();
+
+    GridSurfaceCPtr firstGridElem = GetDgnDb ().Elements ().Get<GridSurface> ((*gridElements.begin()).GetElementId ());
+
+    DVec3d translation = DVec3d::FromStartEnd (firstGridElem->GetPlacement ().GetOrigin (), point);
+
+    for (Dgn::ElementIteratorEntry pIterEntry : gridElements)
+        {
+        GridSurfacePtr gridSurface = GetDgnDb ().Elements ().GetForEdit<GridSurface> (pIterEntry.GetElementId());
+        gridSurface->Translate (translation);
+        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Update, "update GridSurface")))
+            return status;
+        gridSurface->Update ();
+        }
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/17
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator GridPortion::MakeIterator () const
+    {
+    Dgn::ElementIterator iterator;
+    if (GetSubModelId ().IsValid ())
+        {
+        iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Model.Id=?");
+        iterator.GetStatement ()->BindId (1, GetSubModelId ());
+        }
+    return iterator;
+    }
+
 END_GRIDS_NAMESPACE
