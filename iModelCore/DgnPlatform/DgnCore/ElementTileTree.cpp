@@ -548,7 +548,7 @@ private:
     DRange3d                        m_range;
     DRange3d                        m_tileRange;
     BeSQLite::CachedStatementPtr    m_statement;
-    LoadContextCR                   m_loadContext;
+    LoadContext                     m_loadContext;
     Transform                       m_transformFromDgn;
     double                          m_minRangeDiagonalSquared;
     double                          m_minTextBoxSize;
@@ -640,6 +640,7 @@ public:
     GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
 
     void MarkIncomplete() { m_geometries.MarkIncomplete(); }
+    void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1142,10 +1143,19 @@ BentleyStatus Loader::_LoadTile()
             tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
         }
 
-    tile.ClearBackupGraphic();
-
-    tile.SetIsReady();
-    return SUCCESS;
+    if (!tile.IsPartial())
+        {
+        tile.ClearBackupGraphic();
+        tile.SetIsReady();
+        return SUCCESS;
+        }
+    else
+        {
+        // Mark partial tile as canceled so it becomes 'not loaded' again and we can resume tile generation from where we left off...
+        BeAssert(nullptr != m_loads);
+        m_loads->SetCanceled();
+        return ERROR;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1892,7 +1902,7 @@ private:
     double              m_facetAreaTolerance;
     BuilderMap          m_builderMap;
     DRange3d            m_tileRange;
-    LoadContextCR       m_loadContext;
+    LoadContext         m_loadContext;
     size_t              m_geometryCount = 0;
     FeatureTable        m_featureTable;
     DRange3d            m_contentRange = DRange3d::NullRange();
@@ -1933,6 +1943,7 @@ public:
     // Return a tight bounding volume
     DRange3dCR GetContentRange() const { return m_contentRange; }
     TileCR GetTile() const { return m_tile; }
+    void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2303,33 +2314,42 @@ struct TileGenerator
         Aborted,    // Tile generation aborted (tile load canceled, or tile abandoned).
     };
 private:
-    ElementCollector    m_elementCollector;
-    TileContext         m_tileContext;
-    MeshGenerator       m_meshGenerator;
-    GeometryList        m_geometries;
+    IFacetOptionsPtr                            m_facetOptions;
+    ElementCollector                            m_elementCollector;
+    TileContext                                 m_tileContext;
+    MeshGenerator                               m_meshGenerator;
+    GeometryList                                m_geometries;
+    ElementCollector::Entries::const_iterator   m_elementIter;
+    uint32_t                                    m_useCount = 1;
 
     LoadContextCR GetLoadContext() const { return m_tileContext.GetLoadContext(); }
     TileR GetTile() const { return const_cast<TileR>(m_meshGenerator.GetTile()); } // constructor receives as non-const...
 public:
     TileGenerator(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements, TileR tile, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, GeometryOptionsCR geomOpts)
-    :   m_elementCollector(range, rangeIndex, minRangeDiagonalSquared, loadContext, maxElements),
+    :   m_facetOptions(&facetOptions),
+        m_elementCollector(range, rangeIndex, minRangeDiagonalSquared, loadContext, maxElements),
         m_tileContext(m_geometries, const_cast<RootR>(tile.GetElementRoot()), range, facetOptions, transformFromDgn, tolerance, loadContext),
         m_meshGenerator(tile, geomOpts, loadContext)
     {
     // ElementCollector has now collected all elements valid for this tile, ordered from largest to smallest
+    m_elementIter = m_elementCollector.GetEntries().begin();
     }
 
-    Completion GenerateGeometry(Render::Primitives::GeometryCollection&);
+    Completion GenerateGeometry(Render::Primitives::GeometryCollection&, LoadContextCR loadContext);
+    uint32_t GetAndIncrementUseCount() { return ++m_useCount; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::GeometryCollection& output)
+TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::GeometryCollection& output, LoadContextCR loadContext)
     {
-    LoadContextCR loadContext = GetLoadContext();
     if (loadContext.WasAborted())
         return Completion::Aborted;
+
+    // When we resume tile generation, we have a new Loader, therefore need a new LoadContext...
+    m_meshGenerator.SetLoadContext(loadContext);
+    m_tileContext.SetLoadContext(loadContext);
 
     if (m_elementCollector.AnySkipped())
         {
@@ -2343,8 +2363,9 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
     // We will generate meshes for all geometry collected up to that point. Yes, this may put us over the full deadline, but it's less complicated.
     bool isPartialTile = false;
     TileR tile = GetTile();
-    for (auto const& entry : m_elementCollector.GetEntries())
+    for (/*m_elementIter*/; m_elementCollector.GetEntries().end() != m_elementIter; ++m_elementIter)
         {
+        auto const& entry = *m_elementIter;
         m_tileContext.ProcessElement(entry.second, entry.first);
         if (loadContext.WasAborted())
             {
@@ -2359,10 +2380,13 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
             }
         else if (loadContext.WantPartialTiles() && loadContext.IsPastCollectionDeadline())
             {
-            isPartialTile = true;
+            isPartialTile = (++m_elementIter) != m_elementCollector.GetEntries().end();
             break;
             }
         }
+
+    if (loadContext.WasAborted())
+        return Completion::Aborted;
 
     // Determine whether or not to subdivide this tile
     if (!isPartialTile && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
@@ -2377,9 +2401,6 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         else
             tile.SetZoomFactor(1.0);
         }
-
-    if (loadContext.WasAborted())
-        return Completion::Aborted;
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
@@ -2412,12 +2433,19 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         m_meshGenerator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
         }
 
-    if (!loadContext.WasAborted())
+    if (loadContext.WasAborted())
+        return Completion::Aborted;
+
+    collection.Meshes() = m_meshGenerator.GetMeshes();
+    if (!isPartialTile)
         {
-        collection.Meshes() = m_meshGenerator.GetMeshes();
         tile.SetContentRange(ElementAlignedBox3d(m_meshGenerator.GetContentRange()));
         if (!m_geometries.IsComplete())
             collection.MarkIncomplete();
+        }
+    else
+        {
+        collection.MarkIncomplete();
         }
 
     if (collection.IsEmpty() && !m_geometries.empty())
@@ -2428,7 +2456,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     output = std::move(collection);
     if (isPartialTile)
-        { THREADLOG.warning("Produced partial tile"); }
+        m_geometries.clear(); // NB: Retains curved/complete flags...clear so partial tile skips already-processed geometry next time around.
 
     return isPartialTile ? Completion::Partial : Completion::Full;
     }
@@ -2468,6 +2496,23 @@ MeshList Tile::GenerateMeshes(GeometryList const& geometries, bool doRangeTest, 
 Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR context)
     {
     Render::Primitives::GeometryCollection collection;
+    if (nullptr != m_generator.get())
+        {
+        THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
+        auto status = m_generator->GenerateGeometry(collection, context);
+        switch (status)
+            {
+            case TileGenerator::Completion::Aborted:
+                // clear out collection and fall-through...
+                collection = Render::Primitives::GeometryCollection();
+            case TileGenerator::Completion::Full:
+                // no longer need to save generator...fall-through...
+                m_generator.reset();
+            default:
+                return collection;
+            }
+        }
+
     auto& root = GetElementRoot();
     auto model = root.GetModel();
     if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
@@ -2487,14 +2532,18 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     Transform transformFromDgn;
     transformFromDgn.InverseOf(root.GetLocation());
 
-    TileGenerator generator(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
-    auto status = generator.GenerateGeometry(collection);
+    // ###TODO: Avoid heap alloc if don't want partial tiles...
+    TileGeneratorUPtr generator = std::make_unique<TileGenerator>(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
+    auto status = generator->GenerateGeometry(collection, context);
     switch (status)
         {
         case TileGenerator::Completion::Aborted:
             return Render::Primitives::GeometryCollection();
-        case TileGenerator::Completion::Full:
-            // ###TODO: partial vs completed tiles
+        case TileGenerator::Completion::Partial:
+            // Save generator to resume later and fall-through...
+            BeAssert(context.WantPartialTiles());
+            THREADLOG.warning("Produced partial tile");
+            m_generator = std::move(generator);
         default:
             return collection;
         }
@@ -2523,6 +2572,17 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
     if (Visibility::OutsideFrustum == vis)
         {
         _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    // Ensure partial root tiles are completed before generating child tiles...
+    // NB: We don't mark the partial tiles as 'ready'...wait until they are complete.
+    if (IsPartial())
+        {
+        args.InsertMissing(*this);
+        if (_HasGraphics())
+            selected.push_back(this);
+
         return SelectParent::No;
         }
 
