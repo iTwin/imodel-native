@@ -1329,6 +1329,8 @@ void SQLiteCacheNodesProvider::InitializeNodes()
         if (node.IsNull())
             continue;
 
+        node->SetIsExpanded(!statement->IsColumnNull(2));
+
         if (!statement->IsColumnNull(1))
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(1));
 
@@ -1449,9 +1451,10 @@ void CachedHierarchyLevelProvider::InitDatasourceIds(uint64_t const* physicalPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [ex].[NodeId] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] ";
     query.append("AND [ds].[Id] IN (").append(m_datasourceIds).append(") ");
     query.append("ORDER BY [n].[ROWID]");
@@ -1500,9 +1503,10 @@ CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [ex].[NodeId] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] "
                         "       AND [ds].[VirtualParentNodeId] ";
     if (0 == GetContext().GetPhysicalParentNodeId())

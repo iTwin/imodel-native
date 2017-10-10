@@ -78,6 +78,7 @@ public:
 #define NODESCACHE_TABLENAME_DataSourceClasses  "DataSourceClasses"
 #define NODESCACHE_TABLENAME_DataSourceSettings "DataSourceSettings"
 #define NODESCACHE_TABLENAME_Nodes              "Nodes"
+#define NODESCACHE_TABLENAME_ExpandedNodes      "ExpandedNodes"
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
 #define NODESCACHE_TABLENAME_AffectingInstances "AffectingECInstances"
 
@@ -117,6 +118,7 @@ private:
     void CacheNodeInstanceKeys(NavNodeCR);
     void ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateChildDatasources);
     bool IsUpdatesDisabled(HierarchyLevelInfo const& info) const;
+    void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
 
     NavNodeCPtr LocateECInstanceNode(ECInstanceNodeKey const&) const;
     NavNodeCPtr LocateECClassGroupingNode(ECClassGroupingNodeKey const&) const;
