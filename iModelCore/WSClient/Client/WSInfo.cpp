@@ -11,6 +11,7 @@
 #define INFO_Serialized_ServerVersion   "version"
 #define INFO_Serialized_WebApiVersion   "webApi"
 #define INFO_Serialized_ServerType      "type"
+#define Info_MasServerHeader            "Mas-Server"
 
 const BeVersion WSInfo::s_serverR1From("01.00.00.00");
 const BeVersion WSInfo::s_serverR2From("01.01.00.00");
@@ -101,7 +102,7 @@ Utf8String WSInfo::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
-    Utf8CP serverHeader = headers.GetMassServer();
+    Utf8CP serverHeader = headers.GetValue(Info_MasServerHeader);
     if (nullptr == serverHeader)
         serverHeader = headers.GetServer();
     
