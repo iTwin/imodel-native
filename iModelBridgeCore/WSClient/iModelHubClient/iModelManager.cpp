@@ -176,7 +176,7 @@ RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), ResponseOptions::None, m_cancellationToken)->GetResult ();
+    auto result = m_connection->RelinquishCodesLocksInternal (which, db.GetBriefcaseId (), ResponseOptions::None, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially

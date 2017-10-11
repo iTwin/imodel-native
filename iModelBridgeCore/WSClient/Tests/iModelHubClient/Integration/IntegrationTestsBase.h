@@ -31,6 +31,7 @@ protected:
     static int    s_progressRetryCount;
     ScopediModelHubHost *m_pHost;
     Utf8String m_projectId;
+    DgnCategoryId m_categoryId;
 
     Request::ProgressCallback CreateProgressCallback();
     void CheckProgressNotified();

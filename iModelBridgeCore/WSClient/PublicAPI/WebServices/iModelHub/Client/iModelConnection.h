@@ -195,6 +195,10 @@ private:
     StatusTaskPtr AcquireCodesLocksInternal(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
+    
+    //! Delete all currently held codes and/or locks by specific briefcase.
+    StatusTaskPtr RelinquishCodesLocksInternal(IBriefcaseManager::Resources resourcesToRelinquish, BeSQLite::BeBriefcaseId briefcaseId,
+        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //Returns birefcases information for given query. Query should have its filter already set.
     BriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;
@@ -446,7 +450,7 @@ public:
     IMODELHUBCLIENT_EXPORT StatusTaskPtr DemoteCodesLocks(Dgn::DgnLockSet const& locks, Dgn::DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeSQLite::BeGuidCR seedFileId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Delete all currently held codes abd locks by specific briefcase.
+    //! Delete all currently held codes and locks by specific briefcase.
     //! @param[in] briefcaseId
     //! @param[in] options
     //! @param[in] cancellationToken

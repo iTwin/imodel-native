@@ -3005,6 +3005,30 @@ ICancellationTokenPtr                   cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           10/2017
+//---------------------------------------------------------------------------------------
+StatusTaskPtr iModelConnection::RelinquishCodesLocksInternal
+(
+IBriefcaseManager::Resources            resourcesToRelinquish,
+BeBriefcaseId                           briefcaseId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::RelinquishCodesLocks";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+
+    if (static_cast<bool>(resourcesToRelinquish & IBriefcaseManager::Resources::Locks))
+        LockDeleteAllJsonRequest (changeset, briefcaseId);
+
+    if (static_cast<bool>(resourcesToRelinquish & IBriefcaseManager::Resources::Codes))
+        CodeDiscardReservedJsonRequest(changeset, briefcaseId);
+
+    return SendChangesetRequest(changeset, options, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::RelinquishCodesLocks
@@ -3014,12 +3038,7 @@ IBriefcaseManager::ResponseOptions      options,
 ICancellationTokenPtr                   cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::RelinquishCodesLocks";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    LockDeleteAllJsonRequest (changeset, briefcaseId);
-    CodeDiscardReservedJsonRequest(changeset, briefcaseId);
-    return SendChangesetRequest(changeset, options, cancellationToken);
+    return RelinquishCodesLocksInternal(IBriefcaseManager::Resources::All, briefcaseId, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

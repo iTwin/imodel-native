@@ -16,6 +16,7 @@
 #include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/BackDoor.h"
 #include <DgnPlatform/DgnDbTables.h>
 #include "MockHttpHandler.h"
+#include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -1589,6 +1590,170 @@ TEST_F(iModelManagerTests, GetCodeNextAvailable)
     auto templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(codeSequence, 10, 5)->GetResult();
     auto resultTemplate = templatesResult.GetValue();
     EXPECT_EQ("0015", resultTemplate.GetValue());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             10/2017
+//---------------------------------------------------------------------------------------
+static PhysicalElementPtr InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, BeSQLite::BeGuidCR federationGuid = BeSQLite::BeGuid(), DgnCodeCR code = DgnCode())
+    {
+    GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(model, categoryId);
+    EXPECT_TRUE(element.IsValid());
+    element->SetFederationGuid(federationGuid);
+    element->SetCode(code);
+    EXPECT_TRUE(element->Insert().IsValid());
+    return element;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             10/2017
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, PlantScenario)
+    {
+    auto briefcase1 = AcquireBriefcase();
+    DgnDbR db = briefcase1->GetDgnDb();
+
+    EXPECT_FALSE(db.BriefcaseManager().IsBulkOperation());
+    db.BriefcaseManager().StartBulkOperation();
+    EXPECT_TRUE(db.BriefcaseManager().IsBulkOperation());
+
+    auto physicalModel = CreateModel("Model1", db);
+    db.SaveChanges();
+    auto categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), "DefaultCategory");
+
+    CodeSpecPtr unitCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Unit", CodeScopeSpec::CreateModelScope());
+    EXPECT_TRUE(unitCodeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, unitCodeSpec->Insert());
+
+    // Create related element scope codeSpec
+    Utf8CP fakeRelationship = "Fake.EquipmentScopedByUnit"; // relationship name not validated by CodeScopeSpec yet
+    CodeSpecPtr equipmentCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Equipment", CodeScopeSpec::CreateRelatedElementScope(fakeRelationship, CodeScopeSpec::ScopeRequirement::FederationGuid));
+    EXPECT_TRUE(equipmentCodeSpec.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, equipmentCodeSpec->Insert());
+    EXPECT_TRUE(equipmentCodeSpec->IsRelatedElementScope());
+    EXPECT_STREQ(equipmentCodeSpec->GetScope().GetRelationship().c_str(), fakeRelationship);
+    EXPECT_TRUE(equipmentCodeSpec->GetScope().IsFederationGuidRequired());
+
+    db.SaveChanges("1");
+    PushPendingChanges(*briefcase1);
+
+    BeSQLite::BeGuid unitGuid(true);
+    BeSQLite::BeGuid equipment1Guid(true);
+
+    // Check what is next available code
+    auto codeSequence = CodeSequence(equipmentCodeSpec->GetCodeSpecId(), unitGuid.ToString(), "P-#");
+    auto templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(codeSequence, 1, 1)->GetResult();
+    auto resultTemplate = templatesResult.GetValue();
+    EXPECT_EQ("1", resultTemplate.GetValue());
+
+    // Create codes to reserve
+    DgnCode unitCode = unitCodeSpec->CreateCode(*physicalModel, "U1");
+    DgnCode equipment1Code = equipmentCodeSpec->CreateCode(unitGuid, "P-1");
+
+    DgnCodeSet codesToReserve;
+    codesToReserve.insert(unitCode);
+    codesToReserve.insert(equipment1Code);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesToReserve).Result());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Use codes
+    PhysicalElementPtr unitElement = InsertPhysicalElement(*physicalModel, categoryId, unitGuid, unitCode);
+    PhysicalElementPtr equipment1Element = InsertPhysicalElement(*physicalModel, categoryId, equipment1Guid, equipment1Code);
+
+    EXPECT_EQ(unitCode, unitElement->GetCode());
+    EXPECT_EQ(equipment1Code, equipment1Element->GetCode());
+
+    //ReserveCode "P-2"
+    DgnCodeSet codesToReserve1;
+    DgnCode equipment2Code = equipmentCodeSpec->CreateCode(unitGuid, "P-2");
+    codesToReserve1.insert(equipment2Code);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesToReserve1).Result());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve1));
+
+    db.SaveChanges("2");
+    PushPendingChanges(*briefcase1);
+
+    //RelinquishLocks – this should not affect ReservedCodes
+    db.BriefcaseManager().RelinquishLocks();
+
+    // Check what is next available code
+    codeSequence = CodeSequence(equipmentCodeSpec->GetCodeSpecId(), unitGuid.ToString(), "P-#");
+    templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(codeSequence, 1, 1)->GetResult();
+    resultTemplate = templatesResult.GetValue();
+    EXPECT_EQ("3", resultTemplate.GetValue());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             10/2017
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, RelinquishCodesLocks)
+    {
+    //Prapare imodel and acquire briefcases
+    auto briefcase1 = AcquireBriefcase();
+    DgnDbR db = briefcase1->GetDgnDb();
+
+    //Create a model and push
+    auto model1 = CreateModel("Model1", db);
+    db.SaveChanges();
+    PushPendingChanges(*briefcase1, true);
+
+    // Acquire lock
+    LockRequest req;
+    req.Insert(db, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireLocks(req, IBriefcaseManager::ResponseOptions::LockState).Result());
+    ExpectLocksCount(*briefcase1, 1);
+
+    // Reserve code
+    DgnCodeSet codesToReserve;
+    DgnCode code = MakeStyleCode("CodeToReserve", db);
+    codesToReserve.insert(code);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesToReserve).Result());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Relinquish locks
+    db.BriefcaseManager().RelinquishLocks();
+
+    // Check locks are relinquished
+    ExpectLocksCount(*briefcase1, 0);
+
+    // Check codes are still reserved
+    codesToReserve.clear();
+    codesToReserve.insert(code);
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Acquire lock again
+    req.Clear();
+    req.Insert(db, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireLocks(req, IBriefcaseManager::ResponseOptions::LockState).Result());
+    ExpectLocksCount(*briefcase1, 1);
+
+    // Relinquish codes
+    db.BriefcaseManager().RelinquishCodes();
+
+    // Check codes were relinquished
+    codesToReserve.clear();
+    codesToReserve.insert(code);
+    EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Check locks are still acquired
+    ExpectLocksCount(*briefcase1, 1);
+
+    // Reserve code again
+    codesToReserve.clear();
+    codesToReserve.insert(code);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesToReserve).Result());
+    EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Relinquish codes and locks
+    db.BriefcaseManager().Relinquish(IBriefcaseManager::Resources::All);
+
+    // Check code is not reserved
+    codesToReserve.clear();
+    codesToReserve.insert(code);
+    EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(codesToReserve));
+
+    // Check lock was released
+    ExpectLocksCount(*briefcase1, 0);
     }
 
 //---------------------------------------------------------------------------------------

@@ -162,7 +162,7 @@ void IntegrationTestsBase::CreateInitialSeedDb()
     DgnDbPtr seedDb = m_pHost->CreateTestDb("Test_Seed");
     EXPECT_TRUE(seedDb.IsValid());
     m_seed = seedDb->GetFileName();
-    CreateCategory("DefaultCategory", *seedDb);
+    m_categoryId = CreateCategory("DefaultCategory", *seedDb);
     BeSQLite::DbResult result = seedDb->SaveChanges();
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, result);
     seedDb->CloseDb();

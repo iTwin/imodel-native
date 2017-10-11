@@ -46,8 +46,8 @@ RepositoryStatus AcquireLock(DgnDbR db, DgnModelCR model, LockLevel level = Lock
 
 PhysicalPartitionPtr CreateModeledElement (Utf8CP name, DgnDbR db);
 DgnElementCPtr CreateAndInsertModeledElement (Utf8CP name, DgnDbR db);
-DgnModelPtr CreateModel (PhysicalPartitionCR partition, DgnDbR db);
-DgnModelPtr CreateModel (Utf8CP name, DgnDbR db);
+PhysicalModelPtr CreateModel (PhysicalPartitionCR partition, DgnDbR db);
+PhysicalModelPtr CreateModel (Utf8CP name, DgnDbR db);
 DgnElementCPtr CreateElement (DgnModelR model, bool acquireLocks = true);
 DgnElementPtr Create3dElement (DgnModelR model);
 DgnElementPtr Create2dElement (DgnModelR model);
