@@ -605,3 +605,20 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # To be equal to: instance.MakeValueIterator().QueryCount()
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (83 ms)
+
+ECInstancesCompatibility.ReadInstances
+    # bim0200dev, x64, DEBUG
+    # Affan: These classes have been moved into there on PerfDomain. Either the test should not use those classes anymore or it should import following domain.
+    # [ RUN      ] ECInstancesCompatibility.ReadInstances
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElement]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHBase]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] BeAssert - F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
+    # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
