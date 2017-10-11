@@ -54,7 +54,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
         {
         //we create the raster only once per dataset. Apparently there is some race condition if we do it in the render threads.
-        if (indexHeader.m_textured == IndexTexture::Streaming) 
+        if (indexHeader.m_textured == SMTextureType::Streaming) 
             {
 
             SQLiteNodeHeader nodeHeader;
@@ -98,8 +98,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
             //path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
-            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
-            assert(m_raster != nullptr);
+            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d, true);        
             }
         }
 
@@ -314,6 +313,16 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
         }
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
+    {
+    if (m_masterHeader.m_textured == SMTextureType::Streaming && m_raster == nullptr)
+        {   
+        return false;         
+        }
+
+    return true;
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
     SMSQLiteFilePtr sqlFilePtr;
@@ -383,7 +392,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
-    if (m_masterHeader.m_textured == IndexTexture::Streaming)
+    if (m_masterHeader.m_textured == SMTextureType::Streaming)
         {
         dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
         return true;

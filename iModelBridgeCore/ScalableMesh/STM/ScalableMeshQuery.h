@@ -1550,8 +1550,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool invertClips = false);
 
             bool IsLoaded() const;
-            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;
-            bool IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr) const;
+            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const;
+            bool IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const;
                 
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 

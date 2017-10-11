@@ -44,24 +44,32 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     else
 */
 #endif
-   if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-        }    
-    else
-        {
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
-        }
 
-    pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+    try
+        {     
+       if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            }    
+        else
+            {
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            }
 
-#ifndef VANCOUVER_API
-    if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        //NEEDS_WORK_SM : Imagepp cache doesn't work with very large image.
-        //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+    #ifndef VANCOUVER_API
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            //NEEDS_WORK_SM : Imagepp cache doesn't work with very large image.
+            //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+            }
+    #endif
         }
-#endif
+    catch (HFCException& )
+        {
+        pRasterFile = nullptr;
+        }
 
     return pRasterFile;
     }
@@ -87,6 +95,11 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
+    if (pRasterFile == nullptr)
+        { 
+        HFCPtr<HRARASTER> pVoidRaster;
+        return pVoidRaster;
+        }
 
     pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
     pObjectStore = new HRSObjectStore(s_rasterMemPool,
@@ -107,7 +120,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
     return LoadRaster(rasterFile, path, targetCS, extentInTargetCS);
     }
 
-HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective)
     {
 
     if (s_rasterMemPool == nullptr)
@@ -116,6 +129,12 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
+
+    if (pRasterFile == nullptr)
+        {
+        HFCPtr<HRARASTER> pVoidRaster;
+        return pVoidRaster;
+        }
 
 	GCSCP pRasterGcs = nullptr;
 
@@ -192,6 +211,14 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         // Compute the expected mean error in destination CS
         double ExpectedMeanError = MIN(pixelExtentInDgnCS.GetWidth() * 0.5, pixelExtentInDgnCS.GetHeight() * 0.5);
         double ExpectedMaxError = MIN(pixelExtentInDgnCS.GetWidth(), pixelExtentInDgnCS.GetHeight());
+
+        //Increase the error so that a simplifed model is always returned by CreateAdaptedModel. This is for avoiding some problem that the grid transsfo model is having with BingMap 
+        //(TFS 760210) and considering that 3SM only uses a transfo matrix when reprojecting.
+        if (forceProjective)
+            {
+            ExpectedMeanError = 50000000;
+            ExpectedMaxError = 50000000;
+            }
 
         HFCPtr<HGF2DTransfoModel> pAdaptedModel = HCPGCoordUtility::CreateAdaptedModel(*pReprojectionModel, imageLiteExtent, step, ExpectedMeanError, ExpectedMaxError, nullptr, nullptr, nullptr, nullptr);
         if (pAdaptedModel != nullptr)

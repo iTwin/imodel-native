@@ -247,11 +247,17 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         Preload data that will be required
         -----------------------------------------------------------------------------*/
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;
-
+     
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/
         virtual void CancelPreloadData() = 0;
+
+        /**----------------------------------------------------------------------------
+        Is texture data is available. Should always return true but for streamed 
+        texture source (e.g : BingMap)
+        -----------------------------------------------------------------------------*/
+        virtual bool IsTextureAvailable() = 0;
 
         /**----------------------------------------------------------------------------
         Register a scalable mesh to the store (useful for streaming type store).

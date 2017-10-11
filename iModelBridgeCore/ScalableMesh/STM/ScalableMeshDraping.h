@@ -115,7 +115,9 @@ struct MeshTraversalQueue
 		bool m_isReprojected;
 
 
-        void ComputeDirectionOfNextNode(MeshTraversalStep& start);
+        void                                 ComputeDirectionOfNextNode(MeshTraversalStep& start);
+        IScalableMeshNodePlaneQueryParamsPtr GetPlaneQueryParam(size_t depth, size_t segmentId);
+        
 
     public:
 
@@ -123,7 +125,7 @@ struct MeshTraversalQueue
 
         MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear, Transform reprojectionTransform=Transform::FromIdentity()) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {
-			m_isReprojected = reprojectionTransform.IsIdentity();
+			m_isReprojected = !reprojectionTransform.IsIdentity();
 			if (m_isReprojected)
 				m_reproTransform = reprojectionTransform;
 		};

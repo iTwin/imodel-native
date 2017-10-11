@@ -7774,7 +7774,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_indexHeader.m_resolution = 0.0f;
-    m_indexHeader.m_textured = IndexTexture::None;
+    m_indexHeader.m_textured = SMTextureType::None;
     m_isGenerating = true;
     m_loadNeighbors = true;
 
@@ -8930,7 +8930,7 @@ bool SMPointIndex<POINT, EXTENT>::IsBalanced() const
     }
 
 template<class POINT, class EXTENT>
-IndexTexture SMPointIndex<POINT, EXTENT>::IsTextured() const
+SMTextureType SMPointIndex<POINT, EXTENT>::IsTextured() const
     {
     HINVARIANTS;
 
@@ -8938,7 +8938,7 @@ IndexTexture SMPointIndex<POINT, EXTENT>::IsTextured() const
     }
 
 template<class POINT, class EXTENT>
-void SMPointIndex<POINT, EXTENT>::SetTextured(IndexTexture textureState)
+void SMPointIndex<POINT, EXTENT>::SetTextured(SMTextureType textureState)
     {
     m_indexHeader.m_textured = textureState;
     }

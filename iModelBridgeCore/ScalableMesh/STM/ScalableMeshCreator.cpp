@@ -419,7 +419,7 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
-    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Embedded);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Embedded);
     m_scmPtr->TextureFromRaster(mosaicPtr);
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
@@ -429,12 +429,45 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
 StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
+
+	GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+	GetProgress()->SetTotalNumberOfSteps(1);
+	GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_TEXTURING_STREAMED;
+	GetProgress()->ProgressStepIndex() = 1;
+	GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
+
     DRange3d range;
     m_scmPtr->GetRange(range);
-    BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
-    ITextureProviderPtr mapboxPtr = new StreamTextureProvider(url, range, cs);
-    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Streaming);
+
+    //TFS# 761652 - Avoid reprojection at this stage so that the minimum pixel resolution is consistent whatever the reprojection is.
+    BaseGCSCPtr cs; //(GetGCS().GetGeoRef().GetBasePtr();)
+    
+    DRange2d extent2d = DRange2d::From(range);
+    
+    HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
+
+    if (streamingRaster == nullptr)
+        {
+        return ERROR;
+        }
+                    
+    double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
+    double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
+
+    Transform unitTransform;
+    unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
+    unitTransform.Multiply(range.low, range.low);
+    unitTransform.Multiply(range.high, range.high);
+
+    ITextureProviderPtr mapboxPtr = new StreamTextureProvider(streamingRaster, range);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
+	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
+	((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     m_scmPtr->TextureFromRaster(mapboxPtr);
+
+	GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
     return SUCCESS;
     }
 
