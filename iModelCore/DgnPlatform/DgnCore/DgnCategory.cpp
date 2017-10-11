@@ -718,13 +718,14 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
     ECN::ECValue descr;
     properties.GetValue(props, "Description");
 
-    return DgnSubCategory::CreateParams(db, categoryId, codeValue.GetUtf8CP(), Appearance(props.GetUtf8CP()), !descr.IsNull() ? descr.GetUtf8CP() : "");
+    Json::Value val = Json::Value::From(Utf8String(props.GetUtf8CP()));
+    return DgnSubCategory::CreateParams(db, categoryId, codeValue.GetUtf8CP(), Appearance(val), !descr.IsNull() ? descr.GetUtf8CP() : "");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
+DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, bool ignoreErrors, DgnDbStatus* inStat)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
     auto params = DgnSubCategory::CreateParamsFromECInstance(db, properties, inStat);
@@ -735,7 +736,7 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN:
 
     bset<Utf8String> ignoreProps;
     ignoreProps.insert("Parent");
-    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, false, ignoreProps);
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, ignoreErrors, ignoreProps);
 
     stat = ele->_SetPropertyValues(properties, filter);
     return (DgnDbStatus::Success == stat) ? ele : nullptr;
