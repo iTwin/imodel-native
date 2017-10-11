@@ -33,9 +33,11 @@
     <category name="BeSQLite">
         <priority value="error"/>
     </category>
+    <!--
     <category name="BimTeleporter">
         <priority value="info"/>
     </category>
+    -->
     <category name="BimTeleporter.Performance">
         <priority value="info"/>
     </category>

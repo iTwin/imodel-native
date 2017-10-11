@@ -78,6 +78,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_subCategoryClass;
         ECN::ECClassCP      m_linkModelClass;
         ECN::ECClassCP      m_annotationTextStyle;
+        ECN::ECClassCP      m_textureClass;
 
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
@@ -104,6 +105,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportFonts(Json::Value& out);
         BentleyStatus ExportGeometryParts(Json::Value& out);
         BentleyStatus ExportLineStyles(Json::Value& out);
+        BentleyStatus ExportTextures(Json::Value& out);
         BentleyStatus ExportAuthorities(Json::Value& out);
         BentleyStatus ExportViews(Json::Value& out);
         BentleyStatus ExportCategories(Json::Value& out);
