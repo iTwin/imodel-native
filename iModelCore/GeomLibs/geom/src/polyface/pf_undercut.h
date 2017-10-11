@@ -212,11 +212,11 @@ PolyfaceHeaderPtr &polyfaceBOverA
     PolygonVectorOps::Multiply (out1, localToWorld);
     PolygonVectorOps::Multiply (out2, localToWorld);
     bvector<PolyfaceHeaderPtr> result;
-    SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
+    SavePolygons (result, out1, nullptr, true); // We know (really?) that there will only be at most polyface back.
     if (result.size () > 0)
         polyfaceAOverB = result[0];
     result.clear ();
-    SavePolygons(result, out2, nullptr);
+    SavePolygons(result, out2, nullptr, true);
     if (result.size () > 0)
         polyfaceBOverA = result[0];
     }

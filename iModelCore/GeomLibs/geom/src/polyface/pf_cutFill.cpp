@@ -1514,7 +1514,8 @@ bvector<TaggedPolygonVector> &debugShapes
     
 static void AddPolygons (
 IPolyfaceConstructionR builder,
-TaggedPolygonVectorR polygons
+TaggedPolygonVectorR polygons,
+bool reverseForPositiveXYArea = false
 )
     {
     // We know this is variable indexed ...
@@ -1526,8 +1527,17 @@ TaggedPolygonVectorR polygons
         builder.FindOrAddPoints (
                 polygons[i].GetPointsR (),
                 polygons[i].GetPointSize (), 0, indices);
-        for (size_t i = 0; i < indices.size (); i++)
-            pointIndex.push_back ((int)(indices[i] + indexShift));
+        if (reverseForPositiveXYArea && PolygonOps::AreaXY (polygons[i].GetPointsR ()) < 0.0)
+            {
+            size_t n = indices.size ();
+            for (size_t i = 0; i < indices.size (); i++)
+                pointIndex.push_back ((int)(indices[n - 1 - i] + indexShift));
+            }
+        else
+            {
+            for (size_t i = 0; i < indices.size (); i++)
+                pointIndex.push_back ((int)(indices[i] + indexShift));
+            }
         pointIndex.push_back (0);
         indices.clear ();
     }
@@ -1537,7 +1547,8 @@ TaggedPolygonVectorR polygons
 static void SavePolygons (
 bvector<PolyfaceHeaderPtr> &result,
 TaggedPolygonVectorR polygons,
-TaggedPolygonVectorP polygonB
+TaggedPolygonVectorP polygonB,
+bool reverseForPositiveXYArea = false
 )
     {
     IFacetOptionsPtr facetOptions = IFacetOptions::Create ();
@@ -1545,9 +1556,9 @@ TaggedPolygonVectorP polygonB
     facetOptions->SetNormalsRequired (false);
     IPolyfaceConstructionPtr builder = PolyfaceConstruction::Create (*facetOptions);
     builder->GetClientMeshR ().SetNumPerFace (0);
-    AddPolygons (*builder, polygons);
+    AddPolygons (*builder, polygons, reverseForPositiveXYArea);
     if (NULL != polygonB)
-        AddPolygons (*builder, *polygonB);
+        AddPolygons (*builder, *polygonB, reverseForPositiveXYArea);
     PolyfaceHeaderPtr headerPtr = builder->GetClientMeshPtr ();
     if (headerPtr->Point ().size () > 0)
         result.push_back (headerPtr);
