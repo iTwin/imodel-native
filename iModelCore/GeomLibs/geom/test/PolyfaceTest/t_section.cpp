@@ -1298,7 +1298,8 @@ void SaveTransformed (bvector<PolyfaceHeaderPtr> &meshes, double xShiftFactor = 
                 Check::Shift (0, dY, 0);
                 size_t numOpen, numClosed;
                 auto boundary = mesh->ExtractBoundaryStrings (numOpen, numClosed);
-                Check::SaveTransformed (*boundary);
+                if (boundary.IsValid () && boundary->size () > 0)
+                    Check::SaveTransformed (*boundary);
                 Check::Shift (0, -2.0 * dY, 0);
                 }
             }
@@ -1600,7 +1601,6 @@ TEST(Polyface,MultiMeshVisibilityA)
     Check::ClearGeometry ("Polyface.MultiMeshVisibilityA");
     }
 
-extern bool DGNJSFileToGeometry (char const *filename, bvector<IGeometryPtr> &geometry);
 void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bvector<size_t> indices, size_t numFacetsAtEachEnd)
     {
     bvector<PolyfaceHeaderPtr> activeMesh, visibleParts;
@@ -1630,19 +1630,29 @@ void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bve
     Check::Shift (dX, 0, 0);
     SaveTransformed (visibleParts, 0.0, true);
     }
+
+bool DGNJSFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry);
 TEST(Polyface,MultiMeshVisibilityB)
     {
-    bvector<char const*> filenames {
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
-
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_2.dgnjs",
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_4.dgnjs",
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
-
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_6.dgnjs",
-        "d:/mskfiles/mesh/2017/dgnjs/poulinB/BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs"
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    BeFileName outputPath;
+    BeTest::GetHost().GetOutputRoot(outputPath);
+    printf (" DocumnetRoot %ls\n", dataPath.c_str ());
+    printf (" OutputPath %ls\n", outputPath.c_str ());
+    dataPath.AppendToPath (L"GeomLibsTestData");
+    dataPath.AppendToPath (L"Polyface");
+    dataPath.AppendToPath (L"MultiMeshVisibilityB");
+    bvector<IGeometryPtr> g0;
+    bvector<WCharCP> filenames {
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_2.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_4.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_6.dgnjs",
+        L"BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs"
         };
     bvector<PolyfaceHeaderPtr> allMesh;
     auto range = DRange3d::NullRange ();
@@ -1650,7 +1660,9 @@ TEST(Polyface,MultiMeshVisibilityB)
     for (auto &filename : filenames)
         {
         bvector<IGeometryPtr> geometry;
-        if (DGNJSFileToGeometry (filename, geometry))
+        auto fullPath = dataPath;
+        fullPath.AppendToPath (filename);
+        if (DGNJSFileToGeometry (fullPath, geometry))
             {
             for (auto g : geometry)
                 {
@@ -1675,5 +1687,72 @@ TEST(Polyface,MultiMeshVisibilityB)
         RunSelectiveVisibility (dX, allMesh, bvector<size_t> {3,4,6}, 2);
 
         Check::ClearGeometry ("Polyface.MultiMeshVisibilityB");
+        }
+    }
+
+struct MeshAreaCounts : SignCounter
+{
+void AddToCounts (PolyfaceHeaderPtr &mesh)
+    {
+    auto visitor = PolyfaceVisitor::Attach (*mesh);
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        auto area = PolygonOps::AreaXY (visitor->Point ());
+        Announce (area);
+        }
+    }
+};
+
+TEST(Polyface,MultiMeshVisibilityC)
+    {
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+
+    bvector<PolyfaceHeaderPtr> allMesh;
+    auto range = DRange3d::NullRange ();
+    static double s_scale = 1.0 / 1024.0;
+
+    dataPath.AppendToPath (L"GeomLibsTestData");
+    dataPath.AppendToPath (L"Polyface");
+    dataPath.AppendToPath (L"MultiMeshVisibilityC");
+    bvector<IGeometryPtr> g0;
+
+    for (auto fileNumber : bvector<uint32_t>{9,18})
+        {
+        bvector<IGeometryPtr> geometry;
+        auto fullPath = dataPath;
+        WChar filename[1024];
+        swprintf (filename, L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_%d.dgnjs", fileNumber);
+        fullPath.AppendToPath (filename);
+
+        if (!DGNJSFileToGeometry (fullPath, geometry))
+            break;
+        static int s_fixAreas = 1;
+        for (auto g : geometry)
+            {
+            auto mesh = g->GetAsPolyfaceHeader ();
+            if (mesh.IsValid ())
+                {
+                MeshAreaCounts areas;
+                areas.AddToCounts (mesh);
+                if (s_fixAreas && areas.NumPositive () == 0 && areas.NumNegative () > 0)
+                    mesh->ReverseIndicesAllFaces ();
+                for (auto &xyz : mesh->Point ())
+                    xyz.Scale (s_scale);
+                allMesh.push_back (mesh);
+                range.Extend (mesh->Point ());
+                }
+            }
+        }
+    if (allMesh.size () > 0)
+        {
+        SaveTransformed (allMesh, 0.0, true);
+        double dX = 1.5 * range.XLength ();
+        bvector<PolyfaceHeaderPtr> visibleParts;
+        PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
+        Check::Shift (dX, 0, 0);
+        SaveTransformed (visibleParts, 0.0, true);
+
+        Check::ClearGeometry ("Polyface.MultiMeshVisibilityC");
         }
     }

@@ -1514,8 +1514,7 @@ bvector<TaggedPolygonVector> &debugShapes
     
 static void AddPolygons (
 IPolyfaceConstructionR builder,
-TaggedPolygonVectorR polygons,
-bool reverseForPositiveXYArea = false
+TaggedPolygonVectorR polygons
 )
     {
     // We know this is variable indexed ...
@@ -1527,17 +1526,8 @@ bool reverseForPositiveXYArea = false
         builder.FindOrAddPoints (
                 polygons[i].GetPointsR (),
                 polygons[i].GetPointSize (), 0, indices);
-        if (reverseForPositiveXYArea && PolygonOps::AreaXY (polygons[i].GetPointsR ()) < 0.0)
-            {
-            size_t n = indices.size ();
-            for (size_t i = 0; i < indices.size (); i++)
-                pointIndex.push_back ((int)(indices[n - 1 - i] + indexShift));
-            }
-        else
-            {
-            for (size_t i = 0; i < indices.size (); i++)
-                pointIndex.push_back ((int)(indices[i] + indexShift));
-            }
+        for (size_t i = 0; i < indices.size (); i++)
+            pointIndex.push_back ((int)(indices[i] + indexShift));
         pointIndex.push_back (0);
         indices.clear ();
     }
@@ -1547,8 +1537,7 @@ bool reverseForPositiveXYArea = false
 static void SavePolygons (
 bvector<PolyfaceHeaderPtr> &result,
 TaggedPolygonVectorR polygons,
-TaggedPolygonVectorP polygonB,
-bool reverseForPositiveXYArea = false
+TaggedPolygonVectorP polygonB
 )
     {
     IFacetOptionsPtr facetOptions = IFacetOptions::Create ();
@@ -1556,9 +1545,9 @@ bool reverseForPositiveXYArea = false
     facetOptions->SetNormalsRequired (false);
     IPolyfaceConstructionPtr builder = PolyfaceConstruction::Create (*facetOptions);
     builder->GetClientMeshR ().SetNumPerFace (0);
-    AddPolygons (*builder, polygons, reverseForPositiveXYArea);
+    AddPolygons (*builder, polygons);
     if (NULL != polygonB)
-        AddPolygons (*builder, *polygonB, reverseForPositiveXYArea);
+        AddPolygons (*builder, *polygonB);
     PolyfaceHeaderPtr headerPtr = builder->GetClientMeshPtr ();
     if (headerPtr->Point ().size () > 0)
         result.push_back (headerPtr);

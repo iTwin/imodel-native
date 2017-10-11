@@ -189,7 +189,6 @@ PolyfaceHeaderPtr &polyfaceBOverA
 
     polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
     polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
-
     double planarityAbsTol = s_undercutLocalRelTol * inputRange.low.Distance (inputRange.high);
     DPoint3d rangeCenter;
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
@@ -212,11 +211,11 @@ PolyfaceHeaderPtr &polyfaceBOverA
     PolygonVectorOps::Multiply (out1, localToWorld);
     PolygonVectorOps::Multiply (out2, localToWorld);
     bvector<PolyfaceHeaderPtr> result;
-    SavePolygons (result, out1, nullptr, true); // We know (really?) that there will only be at most polyface back.
+    SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
     if (result.size () > 0)
         polyfaceAOverB = result[0];
     result.clear ();
-    SavePolygons(result, out2, nullptr, true);
+    SavePolygons(result, out2, nullptr);
     if (result.size () > 0)
         polyfaceBOverA = result[0];
     }
