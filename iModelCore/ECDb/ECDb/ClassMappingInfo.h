@@ -71,11 +71,10 @@ private:
     BentleyStatus EvaluateNonRootClassMapStrategy(ClassMap const& baseClassMap);
     BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(ClassMap const& baseClassMap);
 
-    ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     DbMap const& GetDbMap() const;
     IssueReporter const& Issues() const;
 
-    static MapStrategy GetDefaultStrategy(ECN::ECClassCR);
+    static ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap, ECDbCR, ECN::ECClassCR);
 
 public:
     ClassMappingInfo(SchemaImportContext& ctx, ECN::ECClassCR ecClass) : m_ctx(ctx), m_ecClass(ecClass) {}
@@ -83,6 +82,7 @@ public:
 
     ClassMappingStatus Initialize();
 
+    ECN::ECClassCR GetClass() const { return m_ecClass; }
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
     Utf8StringCR GetTableName() const {return m_tableName;}
