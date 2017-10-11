@@ -13,7 +13,6 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Message Types for NotificationManager::OutputMessage
-//! @private
 enum class OutputMessageType
 {
     Toast       = 0,
@@ -21,6 +20,19 @@ enum class OutputMessageType
     Sticky      = 2,
     InputField  = 3,
     Alert       = 4     //!< Modal
+};
+
+//! Relative Position for NotifyMessageDetails::SetTemporaryTypeDetails
+enum class RelativePosition
+{
+    Left        = 0,
+    Top         = 1,
+    Right       = 2,
+    Bottom      = 3,
+    TopLeft     = 4,
+    TopRight    = 5,
+    BottomLeft  = 6,
+    BottomRight = 7
 };
 
 //=======================================================================================
@@ -44,6 +56,7 @@ private:
     DgnViewportCP         m_viewport;
     Point2d               m_displayPoint;
     int32_t               m_displayTime;
+    RelativePosition      m_relativePosition;
 
 public:
     NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Temporary), m_viewport(nullptr), m_displayTime(0) {}
@@ -69,6 +82,7 @@ public:
         m_viewport = nullptr;
         m_displayPoint.Init(0, 0);
         m_displayTime = 0;
+        m_relativePosition = RelativePosition::TopRight;
         }
 
     OutputMessagePriority GetPriority() const { return m_priority; } //!< Get the priority value of this NotifyMessageDetails.
@@ -84,19 +98,22 @@ public:
     void SetDetailedMsg(Utf8CP msg)  { m_detailedMsg.AssignOrClear(msg);} //!< Set the detailed message for this NotifyMessageDetails.
 
     //! Set OutputMessageType.Temporary message details.
-    //! @param[in]  viewport        Viewport over which to display the temporary type message.
-    //! @param[in]  displayPoint    Point at which to display the temporary type message.
-    //! @param[in]  displayTime     Amount of time, in milliseconds, to display the temporary type message.
-    void SetTemporaryTypeDetails (DgnViewportCP viewport, Point2dCR displayPoint, int32_t displayTime)
+    //! @param[in]  viewport            Viewport over which to display the temporary type message.
+    //! @param[in]  displayPoint        Point at which to display the temporary type message.
+    //! @param[in]  displayTime         Amount of time, in milliseconds, to display the temporary type message.
+    //! @param[in]  relativePosition    Position relative to displayPoint at which to display the temporary type message.
+    void SetTemporaryTypeDetails (DgnViewportCP viewport, Point2dCR displayPoint, int32_t displayTime=4000, RelativePosition relativePosition=RelativePosition::TopRight)
         {
         m_viewport = viewport;
         m_displayPoint = displayPoint;
-        m_displayTime = displayTime;        
+        m_displayTime = displayTime;     
+        m_relativePosition = relativePosition;
         }
 
-    DgnViewportCP GetTemporaryTypeViewport() const { return m_viewport; } //!< Get the viewport of this NotifyMessageDetails.
-    Point2d GetTemporaryTypeDisplayPoint() const { return m_displayPoint; } //!< Get the display point of this NotifyMessageDetails.
-    int32_t GetTemporaryTypeDisplayTime() const { return m_displayTime; } //!< Get the display time of this NotifyMessageDetails.
+    DgnViewportCP GetTemporaryTypeViewport() const { return m_viewport; } //!< Get the OutputMessageType.Temporary viewport of this NotifyMessageDetails.
+    Point2d GetTemporaryTypeDisplayPoint() const { return m_displayPoint; } //!< Get the OutputMessageType.Temporary display point of this NotifyMessageDetails.
+    int32_t GetTemporaryTypeDisplayTime() const { return m_displayTime; } //!< Get the OutputMessageType.Temporary display time of this NotifyMessageDetails.
+    RelativePosition GetTemporaryTypeRelativePosition() const { return m_relativePosition; } //!< Get the OutputMessageType.Temporary relative position of this NotifyMessageDetails.
 };
 
 
