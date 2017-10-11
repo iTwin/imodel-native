@@ -80,6 +80,7 @@
             <!-- Not supported in DgnDb
             <Directory ProductDirectoryName="UnitTests-GeomLibs-Tests-ProductData" ProductSubDirectory="GeomLibs-Tests-ProductData" SourceName="Delivery/UnitTests/GeomLibs-Tests-ProductData"/>
             -->
+		    <Directory ProductDirectoryName="UnitTests-GeomLibsTestData" SourceName="Delivery\UnitTests\GeomLibsTestData"/>
         </Bindings>
     </Part>
 
