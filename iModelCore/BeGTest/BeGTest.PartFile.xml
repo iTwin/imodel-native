@@ -37,8 +37,8 @@
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
-        <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
-        <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
+        <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData"/>
+        <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData" LibType="static"/>
 
         <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData"/>
         <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData" LibType="static"/>
