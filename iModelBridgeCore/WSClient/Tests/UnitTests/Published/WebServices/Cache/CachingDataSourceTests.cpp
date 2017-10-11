@@ -163,7 +163,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_CancelledAndSameThreadUsedInThenTask
         EXPECT_FALSE(result.IsSuccess());
         EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
     }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
@@ -183,7 +182,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_FileExistsAndCancelled_ReturnsCancel
     auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), nullptr, token)->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,7 +220,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerDoesNotReturnMetaSchema_GetsSc
     EXPECT_TRUE(nullptr != txn.GetCache().GetAdapter().GetECSchema("MetaSchema"));
     EXPECT_TRUE(nullptr != txn.GetCache().GetAdapter().GetECSchema("UserSchema"));
     }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
@@ -249,7 +246,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursMetaSchema_GetsAllSchema
         }));
 
     CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,7 +278,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursUserAndDeprecatedSchemas
 
     CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
     }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
@@ -301,7 +296,6 @@ TEST_F(CachingDataSourceTests, FailedObjects_AppendFailures_ItemsAddedAtTheEnd)
     failedObjects.AppendFailures(moreFailedObjects);
     EXPECT_THAT(failedObjects, SizeIs(3));
     EXPECT_EQ(failedObjects.at(2).GetObjectLabel(), "ItemC");
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,7 +342,6 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
         auto result = ds->UpdateSchemas(nullptr)->GetResult();
         ASSERT_TRUE(result.IsSuccess());
     }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
@@ -379,7 +372,6 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_Queries
 
     auto result = ds->UpdateSchemas(nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -427,7 +419,6 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
 
     ASSERT_TRUE(nullptr != ds->StartCacheTransaction().GetCache().GetAdapter().GetECSchema("SchemaWithReferance"));
     ASSERT_TRUE(nullptr != ds->StartCacheTransaction().GetCache().GetAdapter().GetECSchema("ReferancedSchema"));
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,7 +482,6 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
 
     ASSERT_TRUE(nullptr != ds->StartCacheTransaction().GetCache().GetAdapter().GetECSchema("SchemaWithReferance"));
     ASSERT_TRUE(nullptr != ds->StartCacheTransaction().GetCache().GetAdapter().GetECSchema("ReferancedSchema"));
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
