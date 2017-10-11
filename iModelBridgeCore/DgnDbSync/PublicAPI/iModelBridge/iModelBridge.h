@@ -167,8 +167,8 @@ struct iModelBridge
         UseGcsTransformWithScaling,             //!< Convert using a best fit transform that includes scaling to GCS grid coordinates.
         };
 
-    //! Interface implemented by an agent that can check of a file is assigned to a specified bridge
-    struct FileAssignmentChecker
+    //! Interface implemented by an agent that can get the document properties associated with a local file and can check of a file is assigned to a specified bridge
+    struct IDocumentPropertiesAccessor
         {
         // Check if the specified file is assigned to the specified bridge.
         //! @param fn   The name of the file that is to be converted
@@ -211,7 +211,7 @@ struct iModelBridge
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
-        FileAssignmentChecker* m_assignmentChecker = nullptr;
+        IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         WString m_thisBridgeRegSubKey;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
@@ -253,8 +253,8 @@ struct iModelBridge
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
-        void SetAssignmentChecker(FileAssignmentChecker& c) {m_assignmentChecker = &c;}
-        FileAssignmentChecker* GetAssignmentChecker() const {return m_assignmentChecker;}
+        void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
+        IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
         IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
         };
 
@@ -437,9 +437,44 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
-   //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
+    //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
     //!revision comparison operations work well in sqlite. Return true if a schema change was detected.
     virtual bool _UpgradeDynamicSchema(DgnDbR db) { return false; }
+
+    //! @name Document Properties Helper Functions
+    //! @{
+
+    // @private
+    IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
+
+    //! Find or create a RepositoryLink Element that is associated with a source file. This function attempts to look up the document properties for the
+    //! file. (See Params::IDocumentPropertiesAccessor.) The RepositoryLink will be defined with a code that is equal to the document's GUID, if possible.
+    //! And the link's URI property will be set to the document's URN, if possible.
+    //! on the 
+    //! @param db               The briefcase.
+    //! @param params           The bridge params
+    //! @param localFileName    The filename of the source file.
+    //! @param defaultCode      The CodeValue to use if a document GUID cannot be found
+    //! @param defaultURN       The URN to use if no URN can be found
+    //! @param createIfNecessary If true, the link element is created if it is not already in the BIM.
+    //! @return The ElementId of the RepositoryLink element or an invalid ID if none could be found or created.
+    IMODEL_BRIDGE_EXPORT static DgnElementId FindOrCreateRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary = true);
+
+    //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
+    IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
+
+    //! Create a "PartitionOriginatesFromRepository" relationship between a partition model and a RepositoryLink element.
+    //! @param db               The briefcase.
+    //! @param informationPartitionElementId  The element that represents the partition model.
+    //! @param repoLinkElementId The RepositoryLinkElement
+    //! @return non-zero status if the relationship instance could not be inserted in the briefcase.
+    static DgnDbStatus InsertPartitionOriginatesFromRepositoryRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
+        {
+        return InsertLinkTableRelationship(db, BIS_REL_PartitionOriginatesFromRepository, informationPartitionElementId, repoLinkElementId);
+        }
+
+    //! @}
+
     //! @name Helper functions
     //! @{
 

@@ -39,7 +39,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
+struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
     enum class EffectiveServerError
         {

@@ -476,12 +476,11 @@ Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLi
 //---------------------------------------------------------------------------------------
 bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     {
-    if (nullptr == m_assignmentChecker) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
+    if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
-    return m_assignmentChecker->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+    return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
     }
 
-#ifdef WIP_WIP_WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -515,7 +514,7 @@ LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary)
+DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary)
     {
     auto lmodel = GetRepositoryLinkModel(db, createIfNecessary);
     if (!lmodel.IsValid())
@@ -526,18 +525,36 @@ DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, BeFileNameCR lo
     // Get the document's properties 
     
     // Prefer to get the properties assigned by ProjectWise, if possible.
-    if (nullptr != _GetParams().GetAssignmentChecker())
-        _GetParams().GetAssignmentChecker()->_GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str())); 
+    if (nullptr != params.GetDocumentPropertiesAccessor())
+        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
 
     if (docProps.m_docGUID.empty())
         {
         docProps.m_webURN = defaultURN;
-        DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, defaultCode.c_str());   // Make sure the fake GUID is really unique
-        docProps.m_docGUID = code.GetValueUtf8CP();
+        docProps.m_docGUID = defaultCode;
         }
+
+    // Check to see if we already have RepositoryLink for this code
+    auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, docProps.m_docGUID.c_str()));
+    if (rlinkElementId.IsValid())
+        return rlinkElementId;
+
+    if (!createIfNecessary)
+        return DgnElementId();
 
     //  Make the RepositoryLink, using the GUID as its code, and the WebURN as its URI
     auto rlink = RepositoryLink::Create(*lmodel, docProps.m_webURN.c_str(), docProps.m_docGUID.c_str());
+
+    rlink->SetRepositoryGuid(docProps.m_docGUID);
+
+    //  Store the additional document properties, if any
+    if (!docProps.m_desktopURN.empty() || !docProps.m_otherPropertiesJSON.empty())
+        {
+        Json::Value jsonValue = Json::Value::From(docProps.m_otherPropertiesJSON);
+        jsonValue["desktopURN"] = docProps.m_desktopURN;
+        jsonValue["webURN"] = docProps.m_webURN;
+        rlink->SetDocumentProperties(jsonValue);
+        }
 
     auto rlinkPersist = rlink->Insert();
     if (!rlinkPersist.IsValid())
@@ -548,4 +565,20 @@ DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, BeFileNameCR lo
 
     return rlinkPersist->GetElementId();
     }
-#endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson      09/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName)
+    {
+    auto relClass = db.Schemas().GetClass(schemaName, relClassName);
+    if (nullptr == relClass || nullptr == relClass->GetRelationshipClassCP())
+        {
+        BeAssert(false);
+        return DgnDbStatus::NotFound;
+        }
+    EC::ECInstanceKey relKey;
+    auto status = db.InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), source, target);
+    BeAssert(BE_SQLITE_OK == status);
+    return (BE_SQLITE_OK == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }

@@ -768,8 +768,8 @@ void iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties
     if (!m_stateDb.TableExists("DocumentProperties"))
         return;
 
-    //                                               0         1           2
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DocGuid, DesktopURN, WebURN FROM DocumentProperties WHERE (LocalFilePath=?)"); // TODO: OtherProperties
+    //                                               0         1           2       3
+    auto stmt = m_stateDb.GetCachedStatement("SELECT DocGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return;
@@ -777,7 +777,7 @@ void iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties
     props.m_docGUID             = stmt->GetValueText(0);
     props.m_desktopURN          = stmt->GetValueText(1);
     props.m_webURN              = stmt->GetValueText(2);
-    // props.m_otherPropertiesJSON = stmt->GetValueText(3); TODO
+    props.m_otherPropertiesJSON = stmt->GetValueText(3);
     }
 
 /*

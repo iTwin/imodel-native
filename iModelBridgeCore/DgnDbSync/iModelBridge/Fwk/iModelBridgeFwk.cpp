@@ -911,7 +911,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
-        params.SetAssignmentChecker(*this);
+        params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     }
 
