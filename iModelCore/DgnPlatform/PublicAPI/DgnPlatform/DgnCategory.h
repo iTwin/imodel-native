@@ -78,7 +78,7 @@ public:
 
         void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
         Appearance() {Init();}
-        explicit Appearance(Utf8StringCR val) {FromJson(val);}
+        explicit Appearance(JsonValueCR val) { FromJson(val); }
 
         void SetInvisible(bool val) {m_invisible=val;}
         bool GetDontPlot() const {return m_dontPlot;}
@@ -487,7 +487,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     protected:
-        DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, DgnDbStatus* stat) override;
+        DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, bool ignoreErrors, DgnDbStatus* stat) override;
         void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }

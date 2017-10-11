@@ -310,12 +310,11 @@ protected:
     bset<DgnSubCategoryId>                      m_usedSubCategories;
     Json::Value                                 m_schedulesJson;
     T_ScheduleEntryMaps                         m_scheduleEntryMaps;
-    int                                         m_revisionIndex = -1;
-
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
+
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
     TILEPUBLISHER_EXPORT void CleanDirectories(BeFileNameCR dataDir);
@@ -341,6 +340,8 @@ protected:
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
+    TILEPUBLISHER_EXPORT virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs);
+
 
     BeFileName GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier);
     Utf8String GetTilesetURL(DgnModelId modelId, ClassifierInfo const* classifier);
@@ -377,13 +378,12 @@ public:
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
-
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
+    void AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) { _AddBatchTableAttributes(json, attrs); }
 
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
-    int GetRevisionIndex() const { return m_revisionIndex; }
 
     template<typename T> static Json::Value IdSetToJson(T const& ids)
         {
@@ -476,6 +476,7 @@ private:
 
     Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCPtr& textureImage, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
+
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();                                         

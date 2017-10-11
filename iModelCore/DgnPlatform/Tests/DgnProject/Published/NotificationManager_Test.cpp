@@ -81,7 +81,7 @@ TEST_F(NotificationManagerTest, GetMsgType_default)
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
     Utf8CP brief = "This is fatal";
     NotifyMessageDetails x(priority, brief);
-    ASSERT_EQ(OutputMessageType::Toast, x.GetMsgType());
+    ASSERT_EQ(OutputMessageType::Temporary, x.GetMsgType());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,11 +91,13 @@ TEST_F(NotificationManagerTest, GetMsgType_setType)
     {
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
     Utf8CP brief = "This is fatal";
-    OutputMessageType type = OutputMessageType::Temporary;
+    OutputMessageType type = OutputMessageType::Toast;
     NotifyMessageDetails x(priority, brief, NULL, type);
     ASSERT_EQ(type, x.GetMsgType());
-    x.SetMsgType(OutputMessageType::Sticky);
-    ASSERT_EQ(OutputMessageType::Sticky, x.GetMsgType());
+
+    type = OutputMessageType::Sticky;
+    x.SetMsgType(type);
+    ASSERT_EQ(type, x.GetMsgType());
     }
 
 /*---------------------------------------------------------------------------------**//**

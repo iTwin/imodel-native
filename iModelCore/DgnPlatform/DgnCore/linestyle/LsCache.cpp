@@ -97,7 +97,7 @@ void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite
         return;
         }
 
-    //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    // NOTE -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     id = std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1);
     }
 
@@ -645,14 +645,7 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
             LsStrokePatternComponent (pLocation)
     {
     uint32_t id = pLocation->GetComponentId().GetValue();
-    m_hardwareLineCode = 0;
-    if (id <= MAX_LINECODE)
-#if defined (WIP_LINESTYLE)
-        m_hardwareLineCode = id;
-#else
-        //  I am not certain that geometry textures will ever support line codes
-        m_hardwareLineCode = 0;
-#endif
+    m_hardwareLineCode = ((id <= MAX_LINECODE) ? id : 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -660,63 +653,53 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
-#if defined (WIP_LINESTYLE)
-    if (GetLocation ()->IsInternalDefault ())
-        return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
+    uint32_t hwStyle = GetHardwareStyle();
 
-    GraphicParams saveMatSymb;
-    saveMatSymb = *context->GetGraphicParams (); // Copy current GraphicParams
-
-#if defined (NEEDS_WORK_DGNITEM)
-    // Keep GeometryParams and GraphicParams in synch...operations like drop lstyle use GeometryParams not GraphicParams.
-    GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams (), false, false, false, true, false);
-#endif
-
-    // It's important to set the style via GeometryParams, not GraphicParams, for printing to work correctly.
-    context->GetCurrentGeometryParams ()->SetLineStyle (style);
-    context->CookGeometryParams ();
-    context->GetIDrawGeom ().ActivateGraphicParams (context->GetGraphicParams ()); // Activate the new matsymb
-
-    // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
-    OvrGraphicParamsP ovrMatSymb = context->GetOverrideGraphicParams ();
-    uint32_t    saveFlags = ovrMatSymb->GetFlags ();
-
-    if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
+    // NOTE: Hardware line codes aren't supported when generating textures...
+    //       Do we need to worry about a hwStyle of 0 after a non-zero hwStyle? Hopefully we don't have to do this all the time just in case we need to clear a previous non-zero hwStyle?!?
+    //       Worth noting that we will lose the hwStyle if we implement "drop linestyle" as we may not have or know a lstyle id...
+    if (!context.GetCreatingTexture() && hwStyle >= MIN_LINECODE || hwStyle <= MAX_LINECODE)
         {
-        ovrMatSymb->SetFlags (saveFlags & ~MATSYMB_OVERRIDE_Style);
-        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
+        Render::GeometryParamsCR baseParams = context.GetGeometryParams();
+
+        if (baseParams.GetCategoryId().IsValid()) // NOTE: LineStyleRangeCollector doesn't care about base symbology...
+            {
+            ViewContextR            viewContext = context.GetViewContext();
+            Render::GraphicParams   tmpGraphicParams;
+            Render::GeometryParams  tmpGeomParams(baseParams);
+
+            viewContext.CookGeometryParams(tmpGeomParams, tmpGraphicParams);
+
+            switch (hwStyle)
+                {
+                case 1:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code1);
+                    break;
+                case 2:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code2);
+                    break;
+                case 3:
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code3);
+                    break;
+                case 4:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code4);
+                    break;
+                case 5:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code5);
+                    break;
+                case 6:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code6);
+                    break;
+                case 7:
+                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code7);
+                    break;
+                }
+
+            context.GetGraphicR().ActivateGraphicParams(tmpGraphicParams);
+            }
         }
-
-    context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
-
-    // Restore GraphicParams to previous state, GeometryParams will be restored in GeometryParamsStateSaver destructor...
-    context->GetIDrawGeom ().ActivateGraphicParams (&saveMatSymb);
-
-    if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
-        {
-        ovrMatSymb->SetFlags (saveFlags);
-        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
-        }
-
-    return SUCCESS;
-#else
-
-    #if defined(NOTNOW)
-    int32_t style = GetHardwareStyle ();
-    if (style >= MIN_LINECODE || style <= MAX_LINECODE)
-        {
-        //  I would like to do this here but it doesn't work with geometry textures.  I don't know if that will be fixed.
-        //  Need to save and restore the GraphicParams
-        GraphicParamsR params = context.GetGraphicParamsR();
-        params.SetLinePixels(Render::LinePixels(style));
-        context.GetGraphicR().ActivateGraphicParams(params);
-        context.GetGraphicR().AddLineString (nPoints, inPoints);
-        return BSISUCCESS;
-        }
-    #endif
 
     return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
