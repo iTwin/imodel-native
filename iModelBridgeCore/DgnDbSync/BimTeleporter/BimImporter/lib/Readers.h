@@ -45,6 +45,7 @@ static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
 static Utf8CP const JSON_TYPE_ElementHasLinks = "ElementHasLinks";
 static Utf8CP const JSON_TYPE_AnnotationTextStyle = "AnnotationTextStyle";
 static Utf8CP const JSON_TYPE_LineStyleElement = "LineStyleElement";
+static Utf8CP const JSON_TYPE_Texture = "Texture";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -71,7 +72,7 @@ struct Reader
         DgnDbP GetDgnDb();
         SyncInfo* GetSyncInfo();
 
-        ECN::ECClassCP GetClassFromKey(Utf8CP classKey);
+        virtual ECN::ECClassCP _GetClassFromName(Utf8CP classKey, Json::Value& element);
 
         virtual Utf8CP _GetElementType() { return "Object"; }
         virtual BentleyStatus _Read(Json::Value& object) = 0;
@@ -144,7 +145,7 @@ struct ElementReader : Reader
     {
     DEFINE_T_SUPER(Reader);
     protected:
-        uint64_t m_instanceId;
+        DgnElementId m_instanceId;
 
         BentleyStatus RemapModelId(Json::Value& element);
         DgnModelId GetMappedModelId(Json::Value& element, Utf8CP propertyName = "Model");
@@ -155,10 +156,11 @@ struct ElementReader : Reader
         ECN::IECInstancePtr _CreateInstance(Json::Value& object) override;
         BentleyStatus _Read(Json::Value& object) override;
         Utf8CP _GetElementType() override { return "Element"; }
+        ECN::ECClassCP _GetClassFromName(Utf8CP classKey, Json::Value& element) override;
 
         virtual BentleyStatus _OnInstanceCreated(ECN::IECInstanceR instance) { return SUCCESS; }
         virtual BentleyStatus _OnElementCreated(DgnElementR element, ECN::IECInstanceR properties) { return SUCCESS; }
-        virtual ECN::ECClassId _GetRelationshipClassId();
+        virtual Utf8String _GetRelationshipClassName();
     public:
         using Reader::Reader;
     };
@@ -407,4 +409,14 @@ struct ElementHasLinksReader : Reader
         using Reader::Reader;
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TextureReader : ElementReader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& texture) override;
+    public:
+        using ElementReader::ElementReader;
+    };
 END_BIM_TELEPORTER_NAMESPACE

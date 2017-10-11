@@ -60,7 +60,7 @@ $(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
 
 $(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
 
-#$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
+$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
 
 $(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
 
