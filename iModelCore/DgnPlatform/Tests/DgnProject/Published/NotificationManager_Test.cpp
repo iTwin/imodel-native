@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/NotificationManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -53,7 +53,7 @@ TEST_F(NotificationManagerTest, GetOpenAlert_setAlert)
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
     OutputMessageAlert openAlert = OutputMessageAlert::Dialog;
     Utf8CP brief = "This is fatal";
-    NotifyMessageDetails x(priority, brief, NULL, 0, openAlert);
+    NotifyMessageDetails x(priority, brief, NULL, OutputMessageType::Alert, openAlert);
     ASSERT_TRUE(openAlert == x.GetOpenAlert());
     x.SetOpenAlert(OutputMessageAlert::Dialog);
     ASSERT_EQ(OutputMessageAlert::Dialog, x.GetOpenAlert());
@@ -65,7 +65,6 @@ TEST_F(NotificationManagerTest, GetOpenAlert_setAlert)
 TEST_F(NotificationManagerTest, GetBriefMsg_SetBriefMsg)
     {
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
-//    OutputMessageAlert openAlert = OutputMessageAlert::None;
     Utf8CP brief = "This is fatal";
     NotifyMessageDetails x(priority, brief);
     if( brief != x.GetBriefMsg())
@@ -75,30 +74,30 @@ TEST_F(NotificationManagerTest, GetBriefMsg_SetBriefMsg)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KyleDeeds  08/09
+* @bsimethod                                                    Dan.East        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NotificationManagerTest, GetMsgAttributes_default)
+TEST_F(NotificationManagerTest, GetMsgType_default)
     {
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
-//    OutputMessageAlert openAlert = OutputMessageAlert::None;
     Utf8CP brief = "This is fatal";
     NotifyMessageDetails x(priority, brief);
-    ASSERT_EQ(0, x.GetMsgAttributes());
+    ASSERT_EQ(OutputMessageType::Temporary, x.GetMsgType());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KyleDeeds  08/09
+* @bsimethod                                                    Dan.East        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NotificationManagerTest, GetMsgAttributes_setAttr)
+TEST_F(NotificationManagerTest, GetMsgType_setType)
     {
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
-    OutputMessageAlert openAlert = OutputMessageAlert::None;
     Utf8CP brief = "This is fatal";
-    long attr = 1;
-    NotifyMessageDetails x(priority, brief, NULL, attr, openAlert);
-    ASSERT_EQ(attr, x.GetMsgAttributes());
-    x.SetMsgAttributes(12);
-    ASSERT_EQ(12, x.GetMsgAttributes());
+    OutputMessageType type = OutputMessageType::Toast;
+    NotifyMessageDetails x(priority, brief, NULL, type);
+    ASSERT_EQ(type, x.GetMsgType());
+
+    type = OutputMessageType::Sticky;
+    x.SetMsgType(type);
+    ASSERT_EQ(type, x.GetMsgType());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,14 +106,13 @@ TEST_F(NotificationManagerTest, GetMsgAttributes_setAttr)
 TEST_F(NotificationManagerTest, GetDetailedMsg_SetDetailedMsg)
     {
     OutputMessagePriority priority = OutputMessagePriority::Fatal;
-    OutputMessageAlert openAlert = OutputMessageAlert::None;
     Utf8CP brief = "This is fatal";
     Utf8CP detailMsg = "This is a long message";
-    long attr = 1;
-    NotifyMessageDetails x(priority, brief, detailMsg, attr, openAlert);
+    NotifyMessageDetails x(priority, brief, detailMsg);
     if(detailMsg != x.GetDetailedMsg())
         FAIL();
-    x.SetDetailedMsg("This is a too long message");
-    ASSERT_STREQ("This is a too long message", x.GetDetailedMsg().c_str());
+    Utf8CP tooLongMsg = "This is a too long message";
+    x.SetDetailedMsg(tooLongMsg);
+    ASSERT_STREQ(tooLongMsg, x.GetDetailedMsg().c_str());
     }
 

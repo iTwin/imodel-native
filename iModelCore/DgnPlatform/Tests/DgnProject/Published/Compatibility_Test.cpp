@@ -879,7 +879,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 
     if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
         {
-        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly));
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly));
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(db.IsValid());
