@@ -1,6 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/RulesEngine/CreateContentDescriptor.cpp $
+|  $Source: Tests/Performance/RulesEngine/ContentPerformanceTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +===============+===============+===============+===============+===============+======*/
-struct CreateContentDescriptorPerformanceTests : RulesEnginePerformanceTests
+struct ContentPerformanceTests : RulesEnginePerformanceTests
     {
     BeFileName _SupplyProjectPath() const override
         {
@@ -89,7 +89,7 @@ static bset<ECClassCP> GetDerivedClasses(ECDbCR db, ECClassCR base)
 * is requested for all element subclasses classes.
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CreateContentDescriptorPerformanceTests, GetDescriptorForAllElementSubclasses)
+TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     {    
     // set up selection
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
@@ -98,7 +98,7 @@ TEST_F(CreateContentDescriptorPerformanceTests, GetDescriptorForAllElementSubcla
     SelectionInfo selection(allElementClasses);
     
     // get the descriptor
-    Timer t_descriptor;
+    Timer _timer;
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson());
     EXPECT_TRUE(descriptor.IsValid());
     }
@@ -109,11 +109,52 @@ TEST_F(CreateContentDescriptorPerformanceTests, GetDescriptorForAllElementSubcla
 * paths.
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CreateContentDescriptorPerformanceTests, GetContentClassesForBisElements)
+TEST_F(ContentPerformanceTests, GetContentClassesForBisElements)
     {    
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
 
-    Timer t_classes;
+    Timer _timer;
     bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson());
     EXPECT_TRUE(!classes.empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on a use case where application has a list of instance keys and wants
+* to get their display labels.
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetDisplayLabels)
+    {
+    // getting labels of all geometric elements in the dataset
+    NavNodeKeyList keys;
+    ECSqlStatement stmt;
+    stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+
+    // start the timer
+    Timer _timer;
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, nullptr, selection, options.GetJson());
+
+    // modify the descriptor to include display labels and exclude all other fields
+    ContentDescriptorPtr labelsDescriptor = ContentDescriptor::Create(*descriptor);
+    labelsDescriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+    bvector<ContentDescriptor::Field*> fields = labelsDescriptor->GetVisibleFields();
+    for (ContentDescriptor::Field const* field : fields)
+        {
+        if (!field->IsDisplayLabelField())
+            labelsDescriptor->RemoveField(*field);
+        }
+
+    // get the content
+    ContentCPtr content = m_manager->GetContent(m_project, *labelsDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+    EXPECT_EQ(keys.size(), content->GetContentSet().GetSize());
+
+    for (ContentSetItemCPtr record : content->GetContentSet())
+        EXPECT_TRUE(record.IsValid());
     }

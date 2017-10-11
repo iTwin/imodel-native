@@ -79,8 +79,9 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
     BeStringUtilities::Split(relatedPropertySpec.GetPropertyNames().c_str(), ",", propertyNames);
     std::for_each(propertyNames.begin(), propertyNames.end(), [](Utf8StringR name){name.Trim();});
         
-    ECSchemaHelper::RelationshipClassPathOptions options(relatedClass, GetRelationshipDirection(relatedPropertySpec), 0, GetContext().GetRuleset().GetSupportedSchemas(), 
-        relatedPropertySpec.GetRelationshipClassNames(), relatedPropertySpec.GetRelatedClassNames(), GetContext().GetRelationshipUseCounts());
+    ECSchemaHelper::RelationshipClassPathOptions options(relatedClass, GetRelationshipDirection(relatedPropertySpec), 0, 
+        GetContext().GetRuleset().GetSupportedSchemas().c_str(), relatedPropertySpec.GetRelationshipClassNames().c_str(), 
+        relatedPropertySpec.GetRelatedClassNames().c_str(), GetContext().GetRelationshipUseCounts());
     bvector<bpair<RelatedClassPath, bool>> paths = GetContext().GetSchemaHelper().GetRelationshipClassPaths(options);
 
     for (auto pair : paths)
@@ -198,8 +199,8 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& help
     {
     int skipRelatedLevel = specification.IsRecursive() ? -1 : specification.GetSkipRelatedLevel();
     ECSchemaHelper::RelationshipClassPathOptions options(nodeClass, GetRelationshipDirection(specification), 
-        skipRelatedLevel, ruleset.GetSupportedSchemas(), specification.GetRelationshipClassNames(), 
-        specification.GetRelatedClassNames(), context.GetRelationshipUseCounts());
+        skipRelatedLevel, ruleset.GetSupportedSchemas().c_str(), specification.GetRelationshipClassNames().c_str(), 
+        specification.GetRelatedClassNames().c_str(), context.GetRelationshipUseCounts());
     bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = helper.GetRelationshipClassPaths(options);
 
     bvector<RelatedClassPath> paths;

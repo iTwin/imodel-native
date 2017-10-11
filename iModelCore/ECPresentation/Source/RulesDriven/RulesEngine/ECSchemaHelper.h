@@ -93,69 +93,7 @@ typedef bmap<ECEntityClassCP, bool, ECClassNameComparer> ECClassSet;
 //! A set of ECClass & ECRelationshipClass pairs.
 typedef bset<RelatedClass> RelatedClassSet;
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2017
-+===============+===============+===============+===============+===============+======*/
-struct RelatedPathsCache
-{
-    struct Key
-        {
-        ECClassCP m_rootClass;
-        ECEntityClassCP m_targetClass;
-        int m_specificationId;
-
-        Key() : m_rootClass(nullptr), m_targetClass(nullptr), m_specificationId(0) {}
-        Key(ECClassCR rootClass, ECEntityClassCP targetClass, int specificationId)
-            : m_rootClass(&rootClass), m_targetClass(targetClass), m_specificationId(specificationId)
-            {}
-        bool operator<(Key const& other) const
-            {
-            if (m_rootClass < other.m_rootClass)
-                return true;
-            if (m_rootClass > other.m_rootClass)
-                return false;
-            if (m_targetClass < other.m_targetClass)
-                return true;
-            if (m_targetClass > other.m_targetClass)
-                return false;
-            return m_specificationId < other.m_specificationId;
-            }
-        };
-
-    struct Result
-        {
-        bvector<bpair<RelatedClassPath, bool>> m_paths;
-        bmap<ECRelationshipClassCP, int> m_relationshipCounter;
-        Result() {}
-        Result(bvector<bpair<RelatedClassPath, bool>> paths, bmap<ECRelationshipClassCP, int> relationshipCounter)
-            : m_paths(paths), m_relationshipCounter(relationshipCounter)
-            {}
-        };
-
-private:
-    bmap<Key, Result> m_cache;
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                02/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    Result const* Get(Key const& key) const
-        {
-        auto iter = m_cache.find(key);
-        if (m_cache.end() == iter)
-            return nullptr;
-        return &iter->second;
-        }
-    
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                02/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    Result const* Put(Key const& key, Result&& result)
-        {
-        return &m_cache.Insert(key, result).first->second;
-        }
-};
-
+struct RelatedPathsCache;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
@@ -168,19 +106,15 @@ struct ECSchemaHelper : NonCopyableClass
         ECClassCR m_sourceClass;
         int m_relationshipDirection;
         int m_depth;
-        Utf8String m_supportedSchemas;
-        Utf8String m_supportedRelationships;
-        Utf8String m_supportedClasses;
+        Utf8CP m_supportedSchemas;
+        Utf8CP m_supportedRelationships;
+        Utf8CP m_supportedClasses;
         ECEntityClassCP m_targetClass;
         bmap<ECRelationshipClassCP, int>& m_relationshipsUseCounter;
-        int m_specificationId;
 
         ECPRESENTATION_EXPORT RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
-            Utf8StringCR supportedSchemas, Utf8StringCR supportedRelationships, Utf8StringCR supportedClasses,
+            Utf8CP supportedSchemas, Utf8CP supportedRelationships, Utf8CP supportedClasses,
             bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr);
-
-        void SetSpecificationId(int id) {m_specificationId = id;}
-        int GetSpecificationId() const {return m_specificationId;}
         };
 
 private:
@@ -218,6 +152,60 @@ public:
     ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
     ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
     ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2017
++===============+===============+===============+===============+===============+======*/
+struct RelatedPathsCache
+{
+    struct Key
+        {
+        ECClassCP m_sourceClass;
+        int m_relationshipDirection;
+        int m_depth;
+        Utf8String m_supportedSchemas;
+        Utf8String m_supportedRelationships;
+        Utf8String m_supportedClasses;
+        ECEntityClassCP m_targetClass;
+
+        Key() : m_sourceClass(nullptr), m_targetClass(nullptr), m_relationshipDirection(0), m_depth(0) {}
+        Key(ECSchemaHelper::RelationshipClassPathOptions const& options);
+        bool operator<(Key const& other) const;
+        };
+
+    struct Result
+        {
+        bvector<bpair<RelatedClassPath, bool>> m_paths;
+        bmap<ECRelationshipClassCP, int> m_relationshipCounter;
+        Result() {}
+        Result(bvector<bpair<RelatedClassPath, bool>> paths, bmap<ECRelationshipClassCP, int> relationshipCounter)
+            : m_paths(paths), m_relationshipCounter(relationshipCounter)
+            {}
+        };
+
+private:
+    bmap<Key, Result> m_cache;
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                02/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Result const* Get(Key const& key) const
+        {
+        auto iter = m_cache.find(key);
+        if (m_cache.end() == iter)
+            return nullptr;
+        return &iter->second;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                02/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Result const* Put(Key const& key, Result&& result)
+        {
+        return &m_cache.Insert(key, result).first->second;
+        }
 };
 
 /*=================================================================================**//**

@@ -2810,9 +2810,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         // find all applying relationship paths
         bmap<ECRelationshipClassCP, int> relationshipCounter;
         ECSchemaHelper::RelationshipClassPathOptions options(*rootClass, relationshipDirection, specification.GetSkipRelatedLevel(), 
-            supportedSchemas, specification.GetRelationshipClassNames(), specification.GetRelatedClassNames(), 
+            supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(), 
             relationshipCounter, groupingResolver.GetGroupingClass());
-        options.SetSpecificationId(specificationId);
         bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
 
         // create a select info for each path

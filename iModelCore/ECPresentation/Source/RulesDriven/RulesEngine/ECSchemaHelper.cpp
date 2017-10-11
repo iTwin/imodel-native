@@ -10,6 +10,48 @@
 #include "ECSchemaHelper.h"
 #include "LoggingHelper.h"
 
+#define NUMERIC_LESS_COMPARE(lhs, rhs) \
+    if (lhs < rhs) \
+        return true; \
+    if (lhs > rhs) \
+        return false; \
+
+#define STR_LESS_COMPARE(name, lhs, rhs) \
+    int cmp_##name = lhs.CompareTo(rhs); \
+    if (cmp_##name < 0) \
+        return true; \
+    if (cmp_##name > 0) \
+        return false; \
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPathsCache::Key::Key(ECSchemaHelper::RelationshipClassPathOptions const& options)
+    {
+    m_sourceClass = &options.m_sourceClass;
+    m_relationshipDirection = options.m_relationshipDirection;
+    m_depth = options.m_depth;
+    m_supportedSchemas = options.m_supportedSchemas;
+    m_supportedRelationships = options.m_supportedRelationships;
+    m_supportedClasses = options.m_supportedClasses;
+    m_targetClass = options.m_targetClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPathsCache::Key::operator<(Key const& other) const
+    {
+    NUMERIC_LESS_COMPARE(m_sourceClass, other.m_sourceClass);
+    NUMERIC_LESS_COMPARE(m_targetClass, other.m_targetClass);
+    NUMERIC_LESS_COMPARE(m_relationshipDirection, other.m_relationshipDirection);
+    NUMERIC_LESS_COMPARE(m_depth, other.m_depth);
+    STR_LESS_COMPARE(classes, m_supportedClasses, other.m_supportedClasses);
+    STR_LESS_COMPARE(relationships, m_supportedRelationships, other.m_supportedRelationships);
+    STR_LESS_COMPARE(schemas, m_supportedSchemas, other.m_supportedSchemas);
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -996,12 +1038,11 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
-    Utf8StringCR supportedSchemas, Utf8StringCR supportedRelationships, Utf8StringCR supportedClasses,
+    Utf8CP supportedSchemas, Utf8CP supportedRelationships, Utf8CP supportedClasses,
     bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass)
     : m_relationshipsUseCounter(relationshipsUseCounter), m_sourceClass(sourceClass), m_supportedSchemas(supportedSchemas),
     m_supportedRelationships(supportedRelationships), m_supportedClasses(supportedClasses)
     {
-    m_specificationId = -1;
     m_relationshipDirection = relationshipDirection;
     m_depth = depth;
     m_targetClass = targetClass;
@@ -1013,24 +1054,21 @@ ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECCla
 bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
     {
     // look for cached results first
-    if (-1 != options.GetSpecificationId())
+    RelatedPathsCache::Key key(options);
+    RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache.Get(key);
+    if (nullptr != cacheResult)
         {
-        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationId());
-        RelatedPathsCache::Result const* result = m_relatedPathsCache.Get(key);
-        if (nullptr != result)
-            {
-            for (auto const& pair : result->m_relationshipCounter)
-                options.m_relationshipsUseCounter[pair.first] += pair.second;
-            return result->m_paths;
-            }
+        for (auto const& pair : cacheResult->m_relationshipCounter)
+            options.m_relationshipsUseCounter[pair.first] += pair.second;
+        return cacheResult->m_paths;
         }
 
     bvector<bpair<RelatedClassPath, bool>> paths;
     SupportedEntityClassInfos classInfos = GetECClassesFromClassList(options.m_supportedClasses, true);
     SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(options.m_supportedRelationships);
     SupportedClassesResolver resolver(GetECSchemas(options.m_supportedSchemas), 
-        (classInfos.empty() && options.m_supportedClasses.empty()) ? nullptr : &classInfos, 
-        (relationshipInfos.empty() && options.m_supportedRelationships.empty()) ? nullptr : &relationshipInfos);
+        (classInfos.empty() && 0 == *options.m_supportedClasses) ? nullptr : &classInfos, 
+        (relationshipInfos.empty() && 0 == *options.m_supportedRelationships) ? nullptr : &relationshipInfos);
     
     bset<RelatedClass> usedRelationships;
     ECClassVirtualSet sourceSet(options.m_sourceClass);
@@ -1047,13 +1085,8 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
             options.m_relationshipDirection, options.m_depth, options.m_targetClass, false);
         }
     
-    // cache if necessary
-    if (-1 != options.GetSpecificationId())
-        {
-        RelatedPathsCache::Key key(options.m_sourceClass, options.m_targetClass, options.GetSpecificationId());
-        m_relatedPathsCache.Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
-        }
-
+    // cache
+    m_relatedPathsCache.Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
     return paths;
     }
 
