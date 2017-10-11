@@ -636,7 +636,7 @@ struct ECPrimitiveChange : ECChange
             {
             if (GetState() != ChangeState::Modified)
                 {
-                BeAssert(false && "Cannot set both OLD and NEW for change that is not makred as MODIFIED");
+                BeAssert(false && "Cannot set both OLD and NEW for change that is not marked as MODIFIED");
                 return ERROR;
                 }
 
