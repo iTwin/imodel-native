@@ -631,15 +631,15 @@ IGeometryPtr ECJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper)
     {
-    return JsonToECInstance(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, remapper);
+    return JsonToECInstance(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, ignoreUnknownProperties, remapper);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, IECSchemaRemapperCP remapper)
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper)
     {
     if (!jsonValue.isObject())
         return ERROR;
@@ -656,7 +656,11 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
             remapper->ResolvePropertyName(remappedMemberName, currentClass);
         ECPropertyP ecProperty = currentClass.GetPropertyP(remappedMemberName.c_str());
         if (ecProperty == nullptr)
+            {
+            if (ignoreUnknownProperties)
+                continue;
             return ERROR;
+            }
 
         Utf8String accessString = currentAccessString.empty() ? remappedMemberName : currentAccessString + "." + remappedMemberName;
         if (ecProperty->GetIsPrimitive())
@@ -672,7 +676,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
             }
         else if (ecProperty->GetIsStruct())
             {
-            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, remapper))
+            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, ignoreUnknownProperties, remapper))
                 return ERROR;
 
             continue;

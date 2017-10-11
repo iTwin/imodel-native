@@ -479,7 +479,7 @@ struct JsonECInstanceConverter final
         ~JsonECInstanceConverter() = delete;
 
         //JsonCpp
-        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
+        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr);
         static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, Json::Value const&, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
@@ -489,7 +489,7 @@ struct JsonECInstanceConverter final
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
     public:
-        ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, IECClassLocaterR, IECSchemaRemapperCP remapper = nullptr);
+        ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr);
         ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, IECClassLocaterR);
     };
 
