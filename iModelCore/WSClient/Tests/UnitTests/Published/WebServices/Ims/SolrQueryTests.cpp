@@ -30,6 +30,9 @@ indent  - Indent document
 sort    - Sorts response
         - SetSort(Category, ResponseSort::Type)
 */
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, Ctor_EmptyQuery)
     {
     SolrQuery queryBuilder;
@@ -44,6 +47,9 @@ TEST_F(SolrQueryTests, Ctor_EmptyQuery)
     EXPECT_STREQ(queryBuilder.ToString().c_str(), "");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetQuery)
     {
     SolrQuery query;
@@ -51,6 +57,9 @@ TEST_F(SolrQueryTests, SetQuery)
     EXPECT_STREQ(query.GetQuery().c_str(), "Zip:35801");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetFilter)
     {
     SolrQuery query;
@@ -61,6 +70,9 @@ TEST_F(SolrQueryTests, SetFilter)
     EXPECT_STREQ(query.GetFilter().c_str(), "Zip:(35801 OR 35802)");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetSelect)
     {
     SolrQuery query;
@@ -74,6 +86,9 @@ TEST_F(SolrQueryTests, SetSelect)
     EXPECT_STREQ(query.GetSelect().c_str(), "UserId,Zip");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetResponseFormat)
     {
     SolrQuery query;
@@ -83,6 +98,9 @@ TEST_F(SolrQueryTests, SetResponseFormat)
     EXPECT_STREQ(query.GetResponseFormat().c_str(), "standard");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetSort)
     {
     SolrQuery query;
@@ -96,6 +114,9 @@ TEST_F(SolrQueryTests, SetSort)
     EXPECT_STREQ(query.GetSort().c_str(), "Zip asc,UserId desc");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetStart)
     {
     SolrQuery query;
@@ -107,6 +128,9 @@ TEST_F(SolrQueryTests, SetStart)
     EXPECT_STREQ(query.GetStart().c_str(), "0");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetRows)
     {
     SolrQuery query;
@@ -118,6 +142,9 @@ TEST_F(SolrQueryTests, SetRows)
     EXPECT_STREQ(query.GetRows().c_str(), "1");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, SetIndent)
     {
     SolrQuery query;
@@ -127,6 +154,9 @@ TEST_F(SolrQueryTests, SetIndent)
     EXPECT_STREQ(query.GetIndent().c_str(), "false");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetQuery)
     {
     SolrQuery query;
@@ -134,6 +164,9 @@ TEST_F(SolrQueryTests, ToString_SetQuery)
     EXPECT_STREQ(query.ToString().c_str(), "?q=Zip:35801");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetFilter)
     {
     SolrQuery query;
@@ -144,6 +177,9 @@ TEST_F(SolrQueryTests, ToString_SetFilter)
     EXPECT_STREQ(query.ToString().c_str(), "?fq=Zip:(35801 OR 35802)");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetSelect)
     {
     SolrQuery query;
@@ -157,6 +193,9 @@ TEST_F(SolrQueryTests, ToString_SetSelect)
     EXPECT_STREQ(query.ToString().c_str(), "?fl=UserId,Zip");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetResponseFormat)
     {
     SolrQuery query;
@@ -166,6 +205,9 @@ TEST_F(SolrQueryTests, ToString_SetResponseFormat)
     EXPECT_STREQ(query.ToString().c_str(), "?wt=standard");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetSort)
     {
     SolrQuery query;
@@ -179,6 +221,9 @@ TEST_F(SolrQueryTests, ToString_SetSort)
     EXPECT_STREQ(query.ToString().c_str(), "?sort=Zip asc,UserId desc");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetStart)
     {
     SolrQuery query;
@@ -190,6 +235,9 @@ TEST_F(SolrQueryTests, ToString_SetStart)
     EXPECT_STREQ(query.ToString().c_str(), "?start=0");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetRows)
     {
     SolrQuery query;
@@ -201,6 +249,9 @@ TEST_F(SolrQueryTests, ToString_SetRows)
     EXPECT_STREQ(query.ToString().c_str(), "?rows=1");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_SetIndent)
     {
     SolrQuery query;
@@ -211,6 +262,9 @@ TEST_F(SolrQueryTests, ToString_SetIndent)
     }
 
 //--------------------Ims API Doc Examples Tests--------------------//
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_wt_indent)
     {
     SolrQuery query;
@@ -221,6 +275,9 @@ TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_wt_indent)
     EXPECT_STREQ(query.ToString().c_str(), "?q=Email:\"jibin.samuel@bentley.com\"&fl=UserId&wt=json&indent=true");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_wt_indent2)
     {
     SolrQuery query;
@@ -231,6 +288,9 @@ TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_wt_indent2)
     EXPECT_STREQ(query.ToString().c_str(), "?q=UserId:\"20ADABDC-14B2-4AE7-A09B-66DE100227E6\"&fl=Email&wt=json&indent=true");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_fq_wt_indent)
     {
     SolrQuery query;
@@ -242,6 +302,9 @@ TEST_F(SolrQueryTests, ToString_Conglomerate_q_fl_fq_wt_indent)
     EXPECT_STREQ(query.ToString().c_str(), "?q=RoleId:\"88710CD6-4AA3-45B1-92B3-AB834A7A017E\"&fq=OrganizationId:\"065CFE00-3141-48C1-A3C6-EF4854C019D8\"&fl=UserId&wt=json&indent=true");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_fq_start_rows_wt_indent)
     {
     SolrQuery query;
@@ -253,6 +316,9 @@ TEST_F(SolrQueryTests, ToString_Conglomerate_fq_start_rows_wt_indent)
     EXPECT_STREQ(query.ToString().c_str(), "?fq=UserId:(\"20ADABDC-14B2-4AE7-A09B-66DE100227E6\" OR \"6B54BD1D-DEBD-4954-A26D-A6017D6FF8B0\")&start=0&rows=100&wt=json&indent=true");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_sort_wt_indent)
     {
     SolrQuery query;
@@ -262,6 +328,9 @@ TEST_F(SolrQueryTests, ToString_Conglomerate_sort_wt_indent)
     EXPECT_STREQ(query.ToString().c_str(), "?sort=FirstName desc&wt=json&indent=true");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrQueryTests, ToString_Conglomerate_q_wt_indent)
     {
     SolrQuery query;

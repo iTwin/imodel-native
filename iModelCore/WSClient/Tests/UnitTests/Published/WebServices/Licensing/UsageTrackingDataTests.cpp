@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Licensing/UsageTrackingDataTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UsageTrackingDataTests.h"
@@ -11,6 +11,9 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Wil.Maier    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UsageTrackingDataTests, ToJson_With_ProjectID)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());
@@ -24,6 +27,9 @@ TEST_F (UsageTrackingDataTests, ToJson_With_ProjectID)
     EXPECT_EQ ("projectId", usage["ProjectID"].asString ());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Wil.Maier    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UsageTrackingDataTests, ToJson_Without_ProjectID)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());
@@ -37,6 +43,9 @@ TEST_F (UsageTrackingDataTests, ToJson_Without_ProjectID)
     EXPECT_TRUE (usage["ProjectID"].asString ().empty ());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Wil.Maier    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UsageTrackingDataTests, ToJson_EmptyUsage)
     {
     UsageTrackingData utd;
@@ -44,12 +53,18 @@ TEST_F (UsageTrackingDataTests, ToJson_EmptyUsage)
     EXPECT_TRUE (usage.isNull ());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Wil.Maier    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UsageTrackingDataTests, IsEmpty_Empty)
     {
     UsageTrackingData utd;
     EXPECT_TRUE (utd.IsEmpty ());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Wil.Maier    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UsageTrackingDataTests, IsEmpty_NotEmpty)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());

@@ -26,6 +26,9 @@ void UsageTrackingTests::TearDown()
     UsageTracking::Uninitialize ();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UsageTrackingTests, PostSingleUsage)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
@@ -49,6 +52,9 @@ TEST_F(UsageTrackingTests, PostSingleUsage)
     }
 
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UsageTrackingTests, PostMultipleUsage)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
@@ -71,6 +77,9 @@ TEST_F(UsageTrackingTests, PostMultipleUsage)
     EXPECT_EQ(UsageTracking::Status::Success, status);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UsageTrackingTests, PostEmptyUsage)
     {
     UsageTrackingData utd;

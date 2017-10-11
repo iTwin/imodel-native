@@ -20,6 +20,9 @@ void ImsClientTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
@@ -33,6 +36,9 @@ TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
     client->RequestToken(Credentials("Foo", "Boo"))->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
     {
     auto tokenStr = StubSamlTokenXML();
@@ -48,6 +54,9 @@ TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
     EXPECT_EQ(tokenStr, result.GetValue()->AsString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
@@ -67,6 +76,9 @@ TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
     client->RequestToken(Credentials("Foo", "Boo"), "http://applies.to.url", 123)->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByCredentialsWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetimee)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
@@ -86,6 +98,9 @@ TEST_F(ImsClientTests, GetToken_ByCredentialsWithZeroLifetime_SendsRequestToRetr
     client->RequestToken(Credentials("Foo", "Boo"), "http://applies.to.url", 0)->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByParentToken_SendsRequestToRetrieveToken)
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
@@ -108,6 +123,9 @@ TEST_F(ImsClientTests, GetToken_ByParentToken_SendsRequestToRetrieveToken)
     client->RequestToken(parentToken, "http://applies.to.url", 123)->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetime)
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
@@ -130,6 +148,9 @@ TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetr
     client->RequestToken(parentToken, "http://applies.to.url", 0)->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByCredentialsToAnyEnvironment_ValidatesCertificate)
     {
     GetHandler().ForAnyRequest([&] (Http::RequestCR request)
@@ -154,6 +175,9 @@ TEST_F(ImsClientTests, GetToken_ByCredentialsToAnyEnvironment_ValidatesCertifica
     EXPECT_EQ(3, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_ByTokenToAnyEnvironment_ValidatesCertificate)
     {
     GetHandler().ForAnyRequest([&] (Http::RequestCR request)
@@ -178,21 +202,33 @@ TEST_F(ImsClientTests, GetToken_ByTokenToAnyEnvironment_ValidatesCertificate)
     EXPECT_EQ(3, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, IsLoginRedirect_NonLoginUrl_False)
     {
     EXPECT_FALSE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com/other")));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, IsLoginRedirect_StatusNotOK_False)
     {
     EXPECT_FALSE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::Found, "http://test.com//IMS/Account/Login?foo")));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, IsLoginRedirect_IMSLoginUrlAndStatusOK_True)
     {
     EXPECT_TRUE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParameter)
     {
 #if defined (BENTLEY_WIN32)
@@ -208,6 +244,9 @@ TEST_F(ImsClientTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParame
     EXPECT_STREQ(signInUrl.c_str(), ImsClient::GetFederatedSignInUrl(*info).c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
     {
 #if defined (BENTLEY_WIN32)
@@ -224,6 +263,9 @@ TEST_F(ImsClientTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
     EXPECT_STREQ(signInUrl.c_str(), ImsClient::GetFederatedSignInUrl(*info, domainName).c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Tomas.Tamasauskas    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetA2PUrl)
     {
     GetHandler().ForFirstRequest([&](Http::RequestCR request)
@@ -242,6 +284,9 @@ TEST_F(ImsClientTests, GetA2PUrl)
     EXPECT_NE("https://something.bentley.com", url);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Tomas.Tamasauskas    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetA2PUrl_FailsToRegisterToken)
     {
     GetHandler().ForFirstRequest([&](Http::RequestCR request)
