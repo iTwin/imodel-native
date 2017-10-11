@@ -38,6 +38,9 @@ void testDecimate (int select, bvector<DPoint3d> &points, double shortEdge, size
     Check::EndScope ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,DecimateByEdgeCollapseWithBoundaryControl)
     {
     bvector<DPoint3d> points
@@ -82,6 +85,10 @@ void testScopes ()
     }
     ScopeTester d(2);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CPP,ScopeTester)
     {
     printf ("BEGINSCOPES\n");

@@ -942,6 +942,9 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface, StitchCube)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1050,7 +1053,9 @@ TEST(Polyface, StitchCube)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ClipCube_OnePlaneCuts)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1087,6 +1092,9 @@ TEST (Polyface, ClipCube_OnePlaneCuts)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ClipCube_TwoPlanesCut)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1129,8 +1137,9 @@ TEST (Polyface, ClipCube_TwoPlanesCut)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface, ClipSphere)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1169,6 +1178,9 @@ TEST(Polyface, ClipSphere)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, Disk)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1187,6 +1199,9 @@ TEST (PolyfaceConstruction, Disk)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, CylinderSides)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1199,6 +1214,9 @@ TEST (PolyfaceConstruction, CylinderSides)
     ExaminePolyface (builder->GetClientMeshR (), "CylinderSides");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, CylinderCapped)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1256,12 +1274,19 @@ void TestSkewedCone (char const* title, bool capped)
     builder->GetClientMeshR ().Triangulate ();
     ExaminePolyface (builder->GetClientMeshR (), title);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, WackyCone)
     {
     TestSkewedCone ("Uncapped Skew cone", false);
     TestSkewedCone ("Capped Skew cone", true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, BsplineSurface)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1293,6 +1318,9 @@ TEST (PolyfaceConstruction, BsplineSurface)
     Check::ClearGeometry ("PolyfaceConstruction.BsplineSurface");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurface1)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1363,7 +1391,9 @@ TEST(PolyfaceConstruction, BsplineSurface1)
     
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurface2)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1407,6 +1437,9 @@ TEST(PolyfaceConstruction, BsplineSurface2)
     surface->ComputeSecondMomentAreaProducts (products);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurface3)
     {
     //varunused double mySize = SetTransformToNewGridSpot (*builder);
@@ -1455,6 +1488,9 @@ TEST(PolyfaceConstruction, BsplineSurface3)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurfaceEdgeHiding)
     {
         // Sort of a dtm ...
@@ -1486,6 +1522,9 @@ TEST(PolyfaceConstruction, BsplineSurfaceEdgeHiding)
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, Bspline1)
     {
     bvector<DPoint3d> points;
@@ -1548,7 +1587,9 @@ TEST(PolyfaceConstruction, Bspline1)
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(points, &weights, &knots, 3, false, false);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceHeader, BsplineCurve2)
     {
     bvector<DPoint3d> points;
@@ -1576,10 +1617,9 @@ TEST(PolyfaceHeader, BsplineCurve2)
 
 
 
-
-
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface,IlluminationName)
     {
     PolyfaceHeaderPtr header = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -1716,7 +1756,9 @@ void testSweptLinestrings (size_t numContour, double z0, double zStep, bool capp
     }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef abc
 TEST(PolyfaceConstruction, Box)
     {
@@ -1754,6 +1796,10 @@ TEST(PolyfaceConstruction, Box)
     MeshHeaderElement mesh = MeshHeaderElement.CreateMeshElement(dgnModel, null, pc.GetClientMesh());
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,SweptLinestring)
     {
     testSweptLinestrings (2, 0,1, false, 3, 0);
@@ -1769,6 +1815,9 @@ TEST(Polyface,SweptLinestring)
     testSweptLinestrings (3, 0, 2, true, 4, 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, RotateGPA)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1810,6 +1859,9 @@ TEST (Polyface, RotateGPA)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, Contours)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -1827,6 +1879,9 @@ TEST (Polyface, Contours)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ClosedContours)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1856,7 +1911,9 @@ TEST (Polyface, ClosedContours)
     ExaminePolyface (builder->GetClientMeshR (), "ClosedGPATower");
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, LinearSweep)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1952,6 +2009,9 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, Triangulation)
     {
     TestPolyfaceConstructionTriangulation (3, false);
@@ -1961,6 +2021,9 @@ TEST(PolyfaceConstruction, Triangulation)
     Check::ClearGeometry ("PolyfaceConstruction.Triangulation");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, SpaceTriangulation)
     {
     bvector<DPoint3d> points {
@@ -2002,6 +2065,9 @@ bool isTransformed
     Check::True (product.IsIdentity ());    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, Stack)
     {
     Transform translation = Transform::FromRowValues (
@@ -2062,7 +2128,9 @@ MSBsplineCurvePtr CreateTestCenterline ()
     }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, Tube)
     {
     double circleRadius = 1.0;
@@ -2229,6 +2297,9 @@ bool normals
                 numEdgePerSection + 1, numSectionEdge+1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, Tube2)
     {
     double circleRadius = 1.0;
@@ -2258,6 +2329,9 @@ PrintPolyface (mesh, "Tube Surface", stdout, s_maxPolyfacePrint, false);
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 static int s_checkNormals = 1;
 TEST(PolyfaceConstruction, DimpleNormals)
     {
@@ -2459,6 +2533,9 @@ void TestGridSample (int numPerFace, int numPerRow, int numRow)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_FRAGMENT(PolyfaceVisitor,ParamToDetail)
     {
     TestGridSample (3, 6, 5);
@@ -2466,7 +2543,9 @@ TEST_FRAGMENT(PolyfaceVisitor,ParamToDetail)
     }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, NGonFaces)
     {
     //varunused Int64 allocationCounter = BSIBaseGeom::GetAllocationDifference ();
@@ -2498,6 +2577,10 @@ void TestReversal (PolyfaceHeaderR mesh)
     Check::Size (numPositiveA, numNegativeB);
     Check::Size (numPositiveB, numNegativeA);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ReverseIndexed)
     {
     PolyfaceHeaderPtr header = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -2517,6 +2600,10 @@ TEST (Polyface, ReverseIndexed)
     pointIndex.push_back (0);
     TestReversal (*header);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ReverseCoordinate)
     {
     for (int numPerFace : bvector<int> {3,4})
@@ -2537,6 +2624,9 @@ TEST (Polyface, ReverseCoordinate)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, ReverseCoordinateGrid)
     {
     int numPerRow = 5;
@@ -2557,6 +2647,9 @@ TEST (Polyface, ReverseCoordinateGrid)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, Reverse1)
     {
     PolyfaceHeaderPtr headerA = PolyfaceHeader::CreateFixedBlockIndexed (4);
@@ -2646,11 +2739,17 @@ TEST (Polyface, Reverse1)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_FRAGMENT(TestInstanceMacros,Test1)
     {
     printf ("TestInstanceMacrosTest1\n");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CubeMoments)
     {
     IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
@@ -2728,6 +2827,10 @@ void CheckCylinderCurvature (MSBsplineSurfaceCR surface, double u, double v, DRa
     Check::True (myNormal.IsPerpendicularTo (unitB), "surface normal");
     Check::True (unitA.IsPerpendicularTo (axis.direction), "cone axis");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, ConeNormals)
     {
     DEllipse3d e0 = DEllipse3d::From (0,0,0, 1,0,0, 0,1,0, 0.0, Angle::TwoPi ());
@@ -2789,7 +2892,10 @@ void BlindCopyFaceLoops (PolyfaceHeaderR mesh, bvector<DPoint3d> &points)
             points.push_back (visitor->Point()[i]);
         }    
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceCoordinateQuads, Test1)
     {
     int numPerFace = 4;
@@ -2834,7 +2940,10 @@ void AddQuads (IPolyfaceConstructionPtr &builder, DPoint3d xyz00, DPoint3d xyz11
             }
         }
     }    
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceSplit, Connectivity1)
     {
     IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
@@ -2880,7 +2989,9 @@ PolyfaceHeaderPtr BoxMesh (DPoint3d xyz00, double ax, double ay, double az)
     return builder->GetClientMeshPtr ();
     }    
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface, ClipPlaneSet1)
     {
     PolyfaceHeaderPtr box = BoxMesh (DPoint3d::From (0,0,0), 5.0, 3.0, 2.0);
@@ -2901,6 +3012,9 @@ TEST(Polyface, ClipPlaneSet1)
     PrintPolyfaceXYZ (*clippedMesh, "CubeClippedBy2XYSquares", s_maxPolyfacePrint);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface, ClipPlaneSet2)
     {
     PolyfaceHeaderPtr box = BoxMesh (DPoint3d::From (0,0,0), 5.0, 3.0, 2.0);
@@ -2933,6 +3047,9 @@ TEST(Polyface, ClipPlaneSet2)
     PrintPolyfaceXYZ (*clippedMesh, "CubeClippedBy2XYSquares", s_maxPolyfacePrint);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,ClipRoadSurface)
     {
     // Make a bit of road .....
@@ -2982,6 +3099,9 @@ void ToBvector (T *data, int n, bvector<T> &bdata)
         bdata.push_back (data[i]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polygon,Decomposition)
     {
     bvector<DPoint3d> points;
@@ -3035,6 +3155,10 @@ void Print (DoubleEndedQueue<size_t> &queue, CharCP message)
         printf (" %d", (int)queue.GetFromLeft (i));
     printf (")\n");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DoubleEndedQueue,ForwardInsert)
     {
     size_t baseValue = 100;
@@ -3159,6 +3283,10 @@ TaggedPolygon ExtractPolygon (bvector<DPoint3d> const &point, bvector<size_t> co
         polygon.Add (point[i]);
     return polygon;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ConvexHull,FromPolyline)
     {
     bvector<DPoint3d> points;
@@ -3216,6 +3344,9 @@ TEST(ConvexHull,FromPolyline)
     Check::Near (areaRange.High (), areaRange.Low (), "Polyline hull area indpenendent of start point");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,ConstrainedTriangulation)
     {
     bvector<bvector<DPoint3d>> loops;
@@ -3299,6 +3430,9 @@ TEST(Polyface,ConstrainedTriangulation)
     Check::ClearGeometry ("Polyface.ConstrainedTriangulation");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,CollectLinearGeometry)
     {
     CurveVectorPtr rectangleA = CurveVector::CreateRectangle(0,0,   100,100, 0);
@@ -3337,6 +3471,10 @@ double ZSweepVolume (PolyfaceHeaderCR mesh, double planeZ)
     mesh.DirectionalAreaAndVolume (origin, areaXYZ, volumeXYZ, centroidX, centroidY, centroidZ);
     return volumeXYZ.z;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,DragFaces)
     {
     double dx = 1.0;
@@ -3372,6 +3510,9 @@ TEST(Polyface,DragFaces)
     Check::Near (volume0 + 2.0 * numY * xyAreaPerFacet * zSweep, volume1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceBuilder,AddPolygon)
     {
     auto builder = CreateBuilder (true, true);
@@ -3422,6 +3563,10 @@ double dy
     Check::Size(num1 + num2, mergedMesh->GetNumFacet(), "combined mesh facet count");
     Check::Size(numPurged, purgedMesh->GetNumFacet(), "combined mesh facet count");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceBuilder,DuplicateGrid)
     {
     IFacetOptionsPtr options = IFacetOptions::CreateForSurfaces();
@@ -3452,6 +3597,9 @@ TEST(PolyfaceBuilder,DuplicateGrid)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MaximalPlanarFaces0)
     {
     //    7
@@ -3585,6 +3733,9 @@ TEST(Polyface,MaximalPlanarFaces0)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MaximalPlanarFaces1)
     {
     static int numX = 3;
@@ -3610,8 +3761,10 @@ TEST(Polyface,MaximalPlanarFaces1)
         }
 
     }
-	
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,ConvexSetPunch)
     {
     // Sort of a dtm ...
@@ -3818,6 +3971,9 @@ void AddShiftedPoints (bvector<DPoint3d> &xyz0, bvector<DPoint3d> const &xyz1, D
         xyz0.push_back (xyz + shift);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CulvertPunchA)
     {
     double dy = 20.0;
@@ -3934,6 +4090,9 @@ Angle tiltAngle                 //!< [in] angle to tilt away from perpendicular 
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,CulvertPunchB)
     {
     // Sort of a dtm ...

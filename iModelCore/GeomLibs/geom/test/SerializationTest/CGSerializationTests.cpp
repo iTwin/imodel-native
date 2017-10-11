@@ -179,7 +179,8 @@ struct CGSerializationTests : ::testing::Test
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
-+---------------+---------------+---------------+---------------+---------------+------*/TEST_F(CGSerializationTests, RoundTripEllipticArc)
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CGSerializationTests, RoundTripEllipticArc)
     {
     DEllipse3d ellipseData = DEllipse3d::From (1,2,3,
         0,0,2,

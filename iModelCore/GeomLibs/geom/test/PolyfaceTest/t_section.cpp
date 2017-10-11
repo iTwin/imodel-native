@@ -1630,6 +1630,10 @@ void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bve
     Check::Shift (dX, 0, 0);
     SaveTransformed (visibleParts, 0.0, true);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityB)
     {
     bvector<char const*> filenames {

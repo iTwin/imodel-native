@@ -19,6 +19,9 @@ void AppendOneBasedTriangleIndices (bvector<int> &indices, int i0, int i1, int i
     indices.push_back (0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,AverageNormalsWithDegenerateTriangles)
     {
     double zz = 1.0;
