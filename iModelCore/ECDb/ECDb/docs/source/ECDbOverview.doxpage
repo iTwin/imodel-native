@@ -588,8 +588,12 @@
     Description of the ClassMap properties:
 
     - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
-        - @c NotMapped : The class is not mapped to any database table. If the class has subclasses, the MapStrategy
-        applies to the subclasses, too 
+        - @c NotMapped : The class is not mapped to any database table. 
+            - If the class has subclasses, the MapStrategy applies to the subclasses, too.
+            - If the class is used as constraint class in a relationship, the relationship must also be marked 'NotMapped'.
+            - If the class is a relationship class with @ref ECDbForeignKeyMapping, the class containing the navigation property of the relationship
+             must also be marked 'NotMapped'.
+            - The strategy may not be applied to relationship classes @b deriving from a relationship class with @ref ECDbForeignKeyMapping.
         - @c OwnTable (default): This class is mapped to its own table.
         - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table. See also section <i>Additional customization for MapStrategy TablePerHierarchy</i>
         - @c ExistingTable : This class is mapped to an existing table. the class must be sealed (see BentleyApi::ECN::ECClassModifier).

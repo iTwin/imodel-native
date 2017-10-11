@@ -754,11 +754,10 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext&)
+ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext& ctx)
     {
     DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
-
     return ClassMappingStatus::Success;
     }
 

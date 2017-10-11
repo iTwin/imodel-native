@@ -33,51 +33,6 @@ BentleyStatus DbMapValidator::Initialize() const
             }
         }
 
-    if (m_mode == Mode::All)
-        {
-        CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Table");
-        if (stmt == nullptr)
-            return ERROR;
-
-        while (stmt->Step() == BE_SQLITE_ROW)
-            {
-            DbTable const* table = GetDbSchema().FindTable(stmt->GetValueId<DbTableId>(0));
-            if (table == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-            }
-
-        stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Class");
-        if (stmt == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        while (stmt->Step() == BE_SQLITE_ROW)
-            {
-            const ECClassId classId = stmt->GetValueId<ECClassId>(0);
-            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
-            if (ecClass == nullptr)
-                {
-                Issues().Report("Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
-                return ERROR;
-                }
-
-            ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
-            if (classMap == nullptr)
-                {
-                Issues().Report("Could not load class map for ECClass %s from the file.", ecClass->GetFullName());
-                return ERROR;
-                }
-            }
-
-        return SUCCESS;
-        }
-
-
     Statement relStmt;
     if (BE_SQLITE_OK != relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint"))
         {
@@ -585,6 +540,8 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         return ERROR;
         }
 
+    //store class maps from cache in local vector as validation might load more classes into the cache and
+    //therefore invalidate the iterator
     std::vector<ClassMap const*> classMaps;
     for (bpair<ECClassId, ClassMapPtr> const& entry : m_dbMap.GetClassMapCache())
         {
@@ -592,9 +549,10 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         }
 
     for (ClassMap const* classMap : classMaps)
-
-    if (SUCCESS != ValidateClassMap(*classMap))
-        return ERROR;
+        {
+        if (SUCCESS != ValidateClassMap(*classMap))
+            return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -604,6 +562,9 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
     {
+    if (SUCCESS != ValidateMapStrategy(classMap))
+        return ERROR;
+
     if (classMap.GetType() == ClassMap::Type::NotMapped)
         {
         if (classMap.GetPropertyMaps().Size() != 0)
@@ -821,35 +782,81 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) const
     {
-    const bool hasBaseClasses = classMap.GetClass().HasBaseClasses();
     MapStrategyExtendedInfo const& actualStrat = classMap.GetMapStrategy();
-    
     switch (actualStrat.GetStrategy())
         {
             case MapStrategy::ExistingTable:
             {
-            if (hasBaseClasses || classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
+            if (classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
                 {
-                Issues().Report("The class '%s' has the map strategy 'ExistingTable' but is not sealed or has a base class. Only sealed classes without base class can be mapped with 'ExistingTable'.", classMap.GetClass().GetFullName());
+                Issues().Report("The class '%s' has the map strategy 'ExistingTable' but is not sealed. Only sealed classes can be mapped with 'ExistingTable'.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
-            break;
+
+            if (classMap.GetClass().HasBaseClasses())
+                {
+                ECClassCP baseClass = classMap.GetClass().GetBaseClasses()[0];
+                ClassMap const* baseClassMap = m_dbMap.GetClassMap(*baseClass);
+                BeAssert(baseClassMap != nullptr);
+
+                if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
+                    {
+                    Issues().Report("The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy 'TablePerHierarchy'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName());
+                    return ERROR;
+                    }
+                }
+
+            return SUCCESS;
             }
 
             case MapStrategy::OwnTable:
             {
-            if (classMap.GetClass().IsRelationshipClass())
+            if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
                 {
-                Issues().Report("The relationship class '%s' has the map strategy 'OwnTable'. This is not valid for relationship classes.", classMap.GetClass().GetFullName());
+                BeAssert(false && "DbMap validation caught a programmer error");
+                Issues().Report("The relationship class '%s' has the map strategy 'OwnTable'. This is not valid for relationship classes mapped as foreign key.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
+
+            if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable && classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
+                {
+                Issues().Report("The link table relationship class '%s' has the map strategy 'OwnTable'. This is only valid for sealed link table relationship classes.", classMap.GetClass().GetFullName());
+                return ERROR;
+                }
+
+            return SUCCESS;
+            }
+
+            case MapStrategy::NotMapped:
+            {
+            if (!classMap.GetClass().IsRelationshipClass())
+                {
+                for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : m_dbMap.GetLightweightCache().GetRelationshipClassesForConstraintClass(classMap.GetClass().GetId()))
+                    {
+                    ECClassCP relClass = GetECDb().Schemas().GetClass(kvPair.first);
+                    if (relClass == nullptr)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+
+                    ClassMap const* relClassMap = m_dbMap.GetClassMap(*relClass);
+                    if (relClassMap == nullptr || relClassMap->GetMapStrategy().GetStrategy() != MapStrategy::NotMapped)
+                        {
+                        Issues().Report("The class '%s' has the map strategy 'NotMapped' but is used as constraint class in the ECRelationshipClass '%s' which has the map strategy '%s'. If a constraint class is not mapped, the relationship must also have the strategy 'NotMapped'.",
+                                        classMap.GetClass().GetFullName(),
+                                        relClass->GetFullName(), MapStrategyExtendedInfo::ToString(relClassMap->GetMapStrategy().GetStrategy()));
+                        return ERROR;
+                        }
+                    }
+                }
+
+            return SUCCESS;
             }
 
             default:
-                break;
+                return SUCCESS;
         }
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1200,6 +1207,42 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         return SUCCESS;
         }
 
+    NavigationECPropertyCR navProp = *propMap.GetProperty().GetAsNavigationProperty();
+    const MapStrategy expectedRelMapStrategy = NavigationPropertyMap::GetRelationshipEnd(navProp, NavigationPropertyMap::NavigationEnd::From) == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
+    MapStrategy actualRelMapStrategy;
+    {
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT MapStrategy FROM " TABLE_ClassMap " WHERE ClassId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindId(1, navProp.GetRelationshipClass()->GetId()) ||
+        BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    actualRelMapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
+    stmt = nullptr;
+    }
+
+    if (expectedRelMapStrategy != actualRelMapStrategy)
+        {
+        if (actualRelMapStrategy == MapStrategy::NotMapped)
+            Issues().Report("The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy 'NotMapped'. If the navigation property's relationship has this strategy, the navigation property's class must also have it.", navProp.GetClass().GetFullName(), navProp.GetName().c_str());
+        else
+            {
+            Issues().Report("The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy '%s'. The expected map strategy however is '%s'",
+                            navProp.GetClass().GetFullName(), navProp.GetName().c_str(), MapStrategyExtendedInfo::ToString(actualRelMapStrategy), MapStrategyExtendedInfo::ToString(expectedRelMapStrategy));
+            BeAssert(false && "Programmer error. Navigation property's relationship class has unexpected map strategy.");
+            }
+
+        return ERROR;
+        }
+
     const bool isPhysicalFk = propMap.HasForeignKeyConstraint();
     NavigationPropertyMap::IdPropertyMap const& idPropMap = propMap.GetIdPropertyMap();
     DbColumn const& idCol = idPropMap.GetColumn();
@@ -1207,7 +1250,7 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
     NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propMap.GetRelECClassIdPropertyMap();
     DbColumn const& relClassIdCol = relClassIdPropMap.GetColumn();
 
-    if (propMap.GetProperty().GetAsNavigationProperty()->GetRelationshipClass()->GetClassModifier() == ECClassModifier::Sealed)
+    if (navProp.GetRelationshipClass()->GetClassModifier() == ECClassModifier::Sealed)
         {
         if (relClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
