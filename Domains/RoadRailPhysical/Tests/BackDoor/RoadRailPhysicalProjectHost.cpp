@@ -350,12 +350,12 @@ RoadDesignSpeedDefinitionPtr RoadRailPhysicalTestsFixture::InsertRoadDesignSpeed
 //---------------------------------------------------------------------------------------
 BentleyStatus RoadRailPhysicalTestsFixture::InsertTestPointNames(RoadwayStandardsModelCR model)
     {
-    TravelwayPointName::CreateAndInsert(model, "CL", "Center-line");
-    TravelwayPointName::CreateAndInsert(model, "EOTW_L", "Edge-of-Travelway left-side");
-    TravelwayPointName::CreateAndInsert(model, "EOTW_R", "Edge-of-Travelway right-side");
+    TravelwaySignificantPointDef::CreateAndInsert(model, "CL", "Center-line");
+    TravelwaySignificantPointDef::CreateAndInsert(model, "EOTW_L", "Edge-of-Travelway left-side");
+    TravelwaySignificantPointDef::CreateAndInsert(model, "EOTW_R", "Edge-of-Travelway right-side");
 
-    TravelwaySidePointName::CreateAndInsert(model, "EOS_L", "Edge-of-Shoulder left-side");
-    TravelwaySidePointName::CreateAndInsert(model, "EOS_R", "Edge-of-Shoulder right-side");
+    TravelwaySideSignificantPointDef::CreateAndInsert(model, "EOS_L", "Edge-of-Shoulder left-side");
+    TravelwaySideSignificantPointDef::CreateAndInsert(model, "EOS_R", "Edge-of-Shoulder right-side");
     
     return BentleyStatus::SUCCESS;
     }
@@ -368,7 +368,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
     auto definitionCPtr = TravelwayDefinitionElement::Get(model.GetDgnDb(), model.GetModeledElement()->GetElementId());
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
-    auto clPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "CL"));
+    auto clPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "CL"));
 
     TravelwayDefinitionElement::SetOriginPoint(*definitionCPtr, *clPointCPtr);
 
@@ -385,7 +385,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
 
     RoadLaneComponent::CreateAndInsert(model, points);
 
-    auto eotwLPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOTW_L"));
+    auto eotwLPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOTW_L"));
 
     TypicalSectionSlopeConstraint::CreateAndInsert(*eotwLPointCPtr, *leftPointCPtr,
         *TypicalSectionConstraintConstantSlope::Create(model, -0.05), 1);
@@ -410,7 +410,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertFourLanes(TypicalSectionPortio
 
     RoadLaneComponent::CreateAndInsert(model, points);
 
-    auto eotwRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOTW_R"));
+    auto eotwRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOTW_R"));
     TypicalSectionHorizontalConstraint::CreateAndInsert(*eotwRPointCPtr, *rightPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 3.0), 1);
     TypicalSectionVerticalConstraint::CreateAndInsert(*eotwRPointCPtr, *rightPointCPtr,
@@ -432,7 +432,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSect
     {
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
-    auto eotwRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOTW_R"));
+    auto eotwRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOTW_R"));
 
     auto rightPointCPtr = TypicalSectionPoint::CreateAndInsert(model);
 
@@ -463,7 +463,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSect
 
     RoadShoulderComponent::CreateAndInsert(model, points); // Paved shoulder
 
-    auto eosRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOS_R"));
+    auto eosRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOS_R"));
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*eosRPointCPtr, *rightPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 1.0), 1);
@@ -495,7 +495,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertSideSlopeRightSide(TypicalSect
     {
     DefinitionModelCP standardsModelCP = model.GetModeledElement()->GetModel()->ToDefinitionModel();
 
-    auto eosRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *TypicalSectionPointName::QueryByName(*standardsModelCP, "EOS_R"));
+    auto eosRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOS_R"));
 
     auto ecHingePointCPtr = TypicalSectionPoint::CreateAndInsert(model);
 

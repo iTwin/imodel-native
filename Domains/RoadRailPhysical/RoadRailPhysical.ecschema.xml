@@ -731,26 +731,26 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TypicalSectionPointName" displayLabel="Point name" modifier="Abstract">
+    <ECEntityClass typeName="SignificantPointDefinition" displayLabel="Significant Point Definition" modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwayPointName" displayLabel="Travelway Point name" modifier="Sealed">
-        <BaseClass>TypicalSectionPointName</BaseClass>
+    <ECEntityClass typeName="TravelwaySignificantPointDef" displayLabel="Travelway Significant Point Definition" modifier="Sealed">
+        <BaseClass>SignificantPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwaySidePointName" displayLabel="TravelwaySide Point name" modifier="Sealed">
-        <BaseClass>TypicalSectionPointName</BaseClass>
+    <ECEntityClass typeName="TravelwaySideSignificantPointDef" displayLabel="TravelwaySide Significant Point Definition" modifier="Sealed">
+        <BaseClass>SignificantPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwayStructurePointName" displayLabel="TravelwayStructure Point Name" modifier="Sealed">
-        <BaseClass>TypicalSectionPointName</BaseClass>
+    <ECEntityClass typeName="TravelwayStructureSignificantPointDef" displayLabel="TravelwayStructure Significant Point Definition" modifier="Sealed">
+        <BaseClass>SignificantPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -761,14 +761,14 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="PointName" relationshipName="ITypicalSectionConstraintPointRefersToName" direction="Forward"/>
+        <ECNavigationProperty propertyName="SignificantPointDef" relationshipName="ITypicalSectionConstraintPointRefersToSignificantDef" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ITypicalSectionConstraintPointRefersToName" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+    <ECRelationshipClass typeName="ITypicalSectionConstraintPointRefersToSignificantDef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Points">
             <Class class="ITypicalSectionConstraintPoint"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Point name">
-            <Class class="TypicalSectionPointName"/>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refer to 1 Significant Point Def">
+            <Class class="SignificantPointDefinition"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="TypicalSectionPoint" displayLabel="Point" description="Point construct in a TypicalSection definition">
