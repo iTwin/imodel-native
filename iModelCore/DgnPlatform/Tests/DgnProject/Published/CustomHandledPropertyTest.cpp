@@ -773,6 +773,11 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
         ASSERT_TRUE(linkid.IsValid());
         //Repositorylink
         RepositoryLinkPtr rlink = RepositoryLink::Create(*linkModel, "http://www.outlook.com", "Rlink Lable");
+        BeGuid guid;
+        guid.Create();
+        rlink->SetRepositoryGuid(guid);
+        ASSERT_TRUE(guid == rlink->GetRepositoryGuid());
+        ASSERT_TRUE(guid == rlink->GetPropertyValueGuid("RepositoryGuid"));
         ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "RepositoryGuid"));
         BeTest::SetFailOnAssert(false);
         ASSERT_EQ(DgnDbStatus::BadRequest, rlink->SetPropertyValue(rindex, ECN::ECValue("Description")));
