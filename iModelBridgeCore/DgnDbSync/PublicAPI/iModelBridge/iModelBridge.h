@@ -176,6 +176,12 @@ struct iModelBridge
         //! @return true if the specified bridge should convert the specified file
         // *** NEEDS WORK: Should probably use and check relative paths
         virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+
+        // Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
+        //! @param[in] fn   The name of the file that is to be converted
+        //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
+        // *** NEEDS WORK: Should probably use and check relative paths
+        virtual void _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
         };
 
     //! Parameters that are common to all bridges.

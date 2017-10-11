@@ -760,6 +760,26 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
     return reg;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+    {
+    if (!m_stateDb.TableExists("DocumentProperties"))
+        return;
+
+    //                                               0         1           2
+    auto stmt = m_stateDb.GetCachedStatement("SELECT DocGuid, DesktopURN, WebURN FROM DocumentProperties WHERE (LocalFilePath=?)"); // TODO: OtherProperties
+    stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return;
+
+    props.m_docGUID             = stmt->GetValueText(0);
+    props.m_desktopURN          = stmt->GetValueText(1);
+    props.m_webURN              = stmt->GetValueText(2);
+    // props.m_otherPropertiesJSON = stmt->GetValueText(3); TODO
+    }
+
 /*
 "Don't pass empty string to bridge"
 

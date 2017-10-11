@@ -1397,6 +1397,14 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+    {
+    return GetRegistry()._GetDocumentProperties(props, fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()

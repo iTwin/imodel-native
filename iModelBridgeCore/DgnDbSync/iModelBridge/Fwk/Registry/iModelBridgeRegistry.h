@@ -67,6 +67,7 @@ private:
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override;
+    void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
 
     static void InitCrt(bool quietAsserts);
 

@@ -198,24 +198,31 @@ DgnElementId Converter::CreateRepositoryLink(DgnV8FileR file)
     if (!lmodel.IsValid())
         return DgnElementId();
 
-    Utf8String codevalue, uri;
-    ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
+    iModelBridgeDocumentProperties docProps;
 
-    // Why call CreateUniqueCode? The second argument to RepositoryLink::Create is used as its CodeValue.
-    // So, this string must be unique within linkModel. Since linkModel is used by all jobs, the string we use
-    // to identify the link must be unique across all jobs. I would like to qualify the name (or the scope)
-    // of the link code with the job, but I can't. We call this function in order to map in the root file 
-    // before we create the job. Next best solution would be to use the job's name as a prefix for the link names.
-    // But we don't always have a name for the job. The default is just "Job". So, we have to fall back on 
-    // making link names unique in an arbitrary way. It really doesn't matter in the end. 
-    // The RepositoryLink also stores a URI, and that is what actually identifies the file.
+    // Get the document's properties 
+    
+    // Prefer to get the properties assigned by ProjectWise, if possible.
+    if (nullptr != _GetParams().GetAssignmentChecker())
+        _GetParams().GetAssignmentChecker()->_GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str())); 
 
-    DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, codevalue.c_str());
-    auto rlink = RepositoryLink::Create(*lmodel, uri.c_str(), code.GetValueUtf8CP());
+    if (docProps.m_docGUID.empty())
+        {
+        //  Fall back on whatever is in the Document Moniker, as interpreted by the installed DocumentManager
+        Utf8String codevalue, uri;
+        ComputeRepositoryLinkCodeValueAndUri(docProps.m_docGUID, docProps.m_webURN, file);
+
+        DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, docProps.m_docGUID.c_str());   // Make sure the fake GUID is really unique
+        docProps.m_docGUID = code.GetValueUtf8CP();
+        }
+
+    //  Make the RepositoryLink, using the GUID as its code, and the WebURN as its URI
+    auto rlink = RepositoryLink::Create(*lmodel, docProps.m_webURN.c_str(), docProps.m_docGUID.c_str());
+
     auto rlinkPersist = rlink->Insert();
     if (!rlinkPersist.IsValid())
         {
-        ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), Utf8PrintfString("Insert RepositoryLink with code value=[%s] failed", codevalue.c_str()).c_str());;
+        ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), Utf8PrintfString("Insert RepositoryLink with code value=[%s] failed", docProps.m_docGUID.c_str()).c_str());;
         BeAssert(false);
         return DgnElementId();
         }

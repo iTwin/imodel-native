@@ -480,3 +480,72 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
         return true;
     return m_assignmentChecker->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
     }
+
+#ifdef WIP_WIP_WIP
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary)
+    {
+    Utf8String partitionName = "RepositoryLinksPartition"; //iModelBridge::L10N.GetString(iModelBridge::L10N::??::RepositoryLinksPartitionName());    TODO
+    DgnCode partitionCode = LinkPartition::CreateCode(*db.Elements().GetRootSubject(), partitionName.c_str());
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    if (partitionId.IsValid())
+        return LinkModel::Get(db, DgnModelId(partitionId.GetValue()));
+
+    if (!createIfNecessary)
+        return nullptr;
+
+    LinkPartitionPtr ed = LinkPartition::Create(*db.Elements().GetRootSubject(), partitionName.c_str());
+    LinkPartitionCPtr partition = ed->InsertT<LinkPartition>();
+    if (!partition.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    auto lm = LinkModel::Create(LinkModel::CreateParams(db, partition->GetElementId()));
+    if (lm->Insert() != DgnDbStatus::Success)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    return lm;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary)
+    {
+    auto lmodel = GetRepositoryLinkModel(db, createIfNecessary);
+    if (!lmodel.IsValid())
+        return DgnElementId();
+
+    iModelBridgeDocumentProperties docProps;
+
+    // Get the document's properties 
+    
+    // Prefer to get the properties assigned by ProjectWise, if possible.
+    if (nullptr != _GetParams().GetAssignmentChecker())
+        _GetParams().GetAssignmentChecker()->_GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str())); 
+
+    if (docProps.m_docGUID.empty())
+        {
+        docProps.m_webURN = defaultURN;
+        DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, defaultCode.c_str());   // Make sure the fake GUID is really unique
+        docProps.m_docGUID = code.GetValueUtf8CP();
+        }
+
+    //  Make the RepositoryLink, using the GUID as its code, and the WebURN as its URI
+    auto rlink = RepositoryLink::Create(*lmodel, docProps.m_webURN.c_str(), docProps.m_docGUID.c_str());
+
+    auto rlinkPersist = rlink->Insert();
+    if (!rlinkPersist.IsValid())
+        {
+        BeAssert(false);
+        return DgnElementId();
+        }
+
+    return rlinkPersist->GetElementId();
+    }
+#endif

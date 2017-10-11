@@ -196,6 +196,7 @@ protected:
     void InitLogging();
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
     IModelBridgeRegistry& GetRegistry();
 
     DgnProgressMeter& GetProgressMeter() const;
