@@ -43,71 +43,6 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Ren
     }
 
 /*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageGraphic::CreateTexture(ViewContextR context)
-    {
-    if (m_texture.IsNull())
-        m_texture = context.CreateTexture(m_image);
-
-    return m_texture.IsValid();
-    };
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ImageGraphic::AddToGraphic(Render::GraphicBuilderR graphic) const
-    {
-    if (m_texture.IsValid())
-        graphic.AddTile(*m_texture, m_corners);
-
-    if (!m_drawBorder && m_texture.IsValid()) // Always show border when texture isn't available...
-        return;
-
-    DPoint3d pts[5];
-
-    pts[0] = m_corners.m_pts[0];
-    pts[1] = m_corners.m_pts[1];
-    pts[2] = m_corners.m_pts[3];
-    pts[3] = m_corners.m_pts[2];
-    pts[4] = pts[0];
-
-    if (m_texture.IsValid())
-        graphic.AddLineString(5, pts);
-    else
-        graphic.AddShape(5, pts, true); // Draw filled shape for pick...
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ImageGraphic::AddToGraphic2d(Render::GraphicBuilderR graphic, double displayPriority) const
-    {
-    GraphicBuilder::TileCorners corners = m_corners;
-
-    corners.m_pts[0].z = corners.m_pts[1].z = corners.m_pts[2].z = corners.m_pts[3].z = displayPriority;
-
-    if (m_texture.IsValid())
-        graphic.AddTile(*m_texture, corners);
-
-    if (!m_drawBorder && m_texture.IsValid()) // Always show border when texture isn't available...
-        return;
-
-    DPoint2d pts[5];
-
-    pts[0].Init(corners.m_pts[0]);
-    pts[1].Init(corners.m_pts[1]);
-    pts[2].Init(corners.m_pts[3]);
-    pts[3].Init(corners.m_pts[2]);
-    pts[4] = pts[0];
-
-    if (m_texture.IsValid())
-        graphic.AddLineString2d(5, pts, displayPriority);
-    else
-        graphic.AddShape2d(5, pts, true, displayPriority); // Draw filled shape for pick...
-    }
-
-/*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
@@ -226,18 +161,6 @@ bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
             TextStringCR text = *GetAsTextString();
 
             localToWorld.InitFrom(text.GetOrientation(), text.GetOrigin());
-            break;
-            }
-
-        case GeometryType::Image:
-            {
-            GraphicBuilder::TileCorners const& corners = GetAsImage()->GetTileCorners();
-            DPoint3d origin = corners.m_pts[0];
-            DVec3d xVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[1]);
-            DVec3d yVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[2]);
-            RotMatrix rMatrix = RotMatrix::From2Vectors(xVec, yVec);
-
-            localToWorld.InitFrom(rMatrix, origin);
             break;
             }
 
@@ -415,19 +338,6 @@ static bool getRange(TextStringCR text, DRange3dR range, TransformCP transform)
     }
 
 /*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(ImageGraphicCR geom, DRange3dR range, TransformCP transform)
-    {
-    range = geom.GetRange();
-
-    if (nullptr != transform)
-        transform->Multiply(range, range);
-
-    return true;
-    }
-
-/*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometricPrimitive::GetRange(DRange3dR range, TransformCP transform) const
@@ -481,13 +391,6 @@ bool GeometricPrimitive::GetRange(DRange3dR range, TransformCP transform) const
         case GeometryType::TextString:
             {
             TextStringCR geom = *GetAsTextString();
-
-            return getRange(geom, range, transform);
-            }
-
-        case GeometryType::Image:
-            {
-            ImageGraphicCR geom = *GetAsImage();
 
             return getRange(geom, range, transform);
             }
@@ -559,14 +462,6 @@ bool GeometricPrimitive::TransformInPlace(TransformCR transform)
 
             geom.ApplyTransform(transform);
 
-            return true;
-            }
-
-        case GeometryType::Image:
-            {
-            ImageGraphicR geom = *GetAsImage();
-
-            geom.ApplyTransform(transform);
             return true;
             }
 
@@ -648,7 +543,6 @@ bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primiti
 #endif
 
         case GeometryType::TextString: // <- Don't currently need to compare TextString...
-        case GeometryType::Image: // <- Don't currently need to compare Images...
         default:
             return false;
         }
@@ -706,13 +600,6 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
         case GeometryType::TextString:
             {
             TextStringPtr geom = GetAsTextString()->Clone();
-
-            return new GeometricPrimitive(geom);
-            }
-
-        case GeometryType::Image:
-            {
-            ImageGraphicPtr geom = GetAsImage()->Clone();
 
             return new GeometricPrimitive(geom);
             }
@@ -786,14 +673,6 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicBuilderR graphic) const
             TextStringCR geom = *GetAsTextString();
 
             graphic.AddTextString(geom);
-            break;
-            }
-
-        case GeometryType::Image:
-            {
-            ImageGraphicCR image = *GetAsImage();
-
-            image.AddToGraphic(graphic);
             break;
             }
 
@@ -914,7 +793,6 @@ GeometricPrimitive::GeometricPrimitive(MSBsplineSurfacePtr const& source) {m_typ
 GeometricPrimitive::GeometricPrimitive(PolyfaceHeaderPtr const& source) {m_type = GeometryType::Polyface; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(IBRepEntityPtr const& source) {m_type = GeometryType::BRepEntity; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(TextStringPtr const& source) {m_type = GeometryType::TextString; m_data = source;}
-GeometricPrimitive::GeometricPrimitive(ImageGraphicPtr const& source) {m_type = GeometryType::Image; m_data = source;}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -926,7 +804,6 @@ GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfacePtr const& sour
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceHeaderPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
-GeometricPrimitivePtr GeometricPrimitive::Create(ImageGraphicPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -938,7 +815,6 @@ GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfaceCR source) {MSB
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityCR source) {IBRepEntityPtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
-GeometricPrimitivePtr GeometricPrimitive::Create(ImageGraphicCR source) {ImageGraphicPtr clone = source.Clone(); return Create(clone);}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Shaun.Sewall    02/17
@@ -960,7 +836,6 @@ MSBsplineSurfacePtr GeometricPrimitive::GetAsMSBsplineSurface() const {return (G
 PolyfaceHeaderPtr GeometricPrimitive::GetAsPolyfaceHeader() const {return (GeometryType::Polyface == m_type ? static_cast <PolyfaceHeaderP> (m_data.get()) : nullptr);}
 IBRepEntityPtr GeometricPrimitive::GetAsIBRepEntity() const {return (GeometryType::BRepEntity == m_type ? static_cast <IBRepEntityP> (m_data.get()) : nullptr);}
 TextStringPtr GeometricPrimitive::GetAsTextString() const {return (GeometryType::TextString == m_type ? static_cast <TextStringP> (m_data.get()) : nullptr);}
-ImageGraphicPtr GeometricPrimitive::GetAsImage() const {return (GeometryType::Image == m_type ? static_cast <ImageGraphicP> (m_data.get()) : nullptr);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/15
@@ -1877,43 +1752,7 @@ void GeometryStreamIO::Writer::Append(GeometricPrimitiveCR elemGeom)
         case GeometricPrimitive::GeometryType::TextString:
             Append(*elemGeom.GetAsTextString());
             break;
-
-        case GeometricPrimitive::GeometryType::Image:
-            Append(*elemGeom.GetAsImage());
-            break;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(ImageGraphicCR source)
-    {
-    if (!source.GetImage().IsValid())
-        return;
-
-    FlatBufferBuilder fbb;
-
-    auto byteData = fbb.CreateVector(source.GetImage().GetByteStream().GetData(), source.GetImage().GetByteStream().GetSize());
-
-    FB::ImageBuilder builder(fbb);
-    GraphicBuilder::TileCorners const& corners = source.GetTileCorners();
-
-    builder.add_tileCorner0((FB::DPoint3d*) &corners.m_pts[0]);
-    builder.add_tileCorner1((FB::DPoint3d*) &corners.m_pts[1]);
-    builder.add_tileCorner2((FB::DPoint3d*) &corners.m_pts[2]);
-    builder.add_tileCorner3((FB::DPoint3d*) &corners.m_pts[3]);
-    builder.add_drawBorder(source.GetDrawBorder());
-    builder.add_useFillTint(source.GetUseFillTint());
-    builder.add_width(source.GetImage().GetWidth());
-    builder.add_height(source.GetImage().GetHeight());
-    builder.add_format((uint32_t) source.GetImage().GetFormat());
-    builder.add_byteData(byteData);
-
-    auto mloc = builder.Finish();
-
-    fbb.Finish(mloc);
-    Append(Operation(OpCode::Image, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2447,30 +2286,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, TextStringR text) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& out) const
-    {
-    if (OpCode::Image != egOp.m_opCode)
-        return false;
-
-    auto ppfb = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
-
-    ByteStream byteData(ppfb->byteData()->Data(), ppfb->byteData()->Length());
-    Render::Image image(ppfb->width(), ppfb->height(), std::move(byteData), (Render::Image::Format) ppfb->format());
-    GraphicBuilder::TileCorners corners;
-
-    corners.m_pts[0] = (nullptr == ppfb->tileCorner0() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner0()));
-    corners.m_pts[1] = (nullptr == ppfb->tileCorner1() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner1()));
-    corners.m_pts[2] = (nullptr == ppfb->tileCorner2() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner2()));
-    corners.m_pts[3] = (nullptr == ppfb->tileCorner3() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner3()));
-
-    out = ImageGraphic::Create(std::move(image), corners, ppfb->drawBorder(), ppfb->useFillTint());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr& elemGeom) const
@@ -2892,10 +2707,6 @@ static void debugGeomId(GeometryStreamIO::IDebugOutput& output, GeometricPrimiti
             geomType.assign("TextString");
             break;
 
-        case GeometricPrimitive::GeometryType::Image:
-            geomType.assign("ImageGraphic");
-            break;
-
         default:
             geomType.assign("Unknown");
             break;
@@ -3284,12 +3095,6 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             case GeometryStreamIO::OpCode::TextString:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::TextString\n").c_str());
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::Image:
-                {
-                output._DoOutputLine(Utf8PrintfString("OpCode::ImageGraphic\n").c_str());
                 break;
                 }
 
@@ -4091,45 +3896,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
-            case GeometryStreamIO::OpCode::Image:
-                {
-                entryId.Increment();
-                currGraphic->SetGeometryStreamEntryId(&entryId);
-
-                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
-                    break;
-
-                ImageGraphicPtr imagePtr;
-
-                if (!reader.Get(egOp, imagePtr))
-                    break;
-
-                if (nullptr == context.GetIPickGeom())
-                    imagePtr->CreateTexture(context); // Draw border for pick as well as to avoid zombie even if texture fails...
-
-                if (!imagePtr->GetUseFillTint())
-                    {
-                    Render::GeometryParams tintParams = geomParams;
-
-                    tintParams.SetFillDisplay(FillDisplay::Always);
-                    tintParams.SetFillColor(ColorDef(254, 255, 255)); // Don't use ColorDef::White() to avoid being affeceted by white on white reversal...
-
-                    geomParamsChanged = true;
-                    DrawHelper::CookGeometryParams(context, tintParams, *currGraphic, geomParamsChanged);
-                    geomParamsChanged = true;
-                    }
-                else
-                    {
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    }
-
-                if (context.Is3dView())
-                    imagePtr->AddToGraphic(*currGraphic);
-                else
-                    imagePtr->AddToGraphic2d(*currGraphic, geomParams.GetNetDisplayPriority());
-                break;
-                }
-
             default:
                 break;
             }
@@ -4391,9 +4157,6 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::TextString:
             return EntryType::TextString;
-
-        case GeometryStreamIO::OpCode::Image:
-            return EntryType::ImageGraphic;
 
         default:
             BeAssert(false); return EntryType::Unknown;
@@ -5290,10 +5053,6 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
             opCode = GeometryStreamIO::OpCode::TextString;
             break;
 
-        case GeometricPrimitive::GeometryType::Image:
-            opCode = GeometryStreamIO::OpCode::Image;
-            break;
-
         default:
             opCode = GeometryStreamIO::OpCode::Invalid;
             break;
@@ -5643,29 +5402,6 @@ bool GeometryBuilder::Append(TextAnnotationCR text, CoordSystem coord)
     GeometryProcessor::Process(annotationDraw, m_dgnDb);
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(ImageGraphicCR geom, CoordSystem coord)
-    {
-    if (CoordSystem::Local == coord)
-        {
-        DRange3d localRange;
-
-        if (!getRange(geom, localRange, nullptr))
-            return false;
-
-        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::Image);
-        m_writer.Append(geom);
-
-        return true;
-        }
-
-    GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(geom);
-
-    return AppendWorld(*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**

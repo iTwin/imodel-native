@@ -33,10 +33,6 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
-// For YII - redline models contain ImageGraphic geoemtric primitives - the texture currently cannot be stored in the tile cache because we have
-// no access to its image data in _AddTile().
-// #define DISABLE_TILE_CACHE_2D_YII
-
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
@@ -1042,11 +1038,6 @@ bool Loader::IsCacheable() const
     auto const& tile = GetElementTile();
     if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
         return false;
-
-#if defined(DISABLE_TILE_CACHE_2D_YII)
-    if (tile.GetElementRoot().Is2d())
-        return false;
-#endif
 
     return true;
 #endif

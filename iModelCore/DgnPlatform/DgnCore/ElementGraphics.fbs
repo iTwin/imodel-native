@@ -85,24 +85,6 @@ table OCBRepData
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
-table Image
-    {
-    drawBorder:ubyte;
-    useFillTint:ubyte;
-    tileCorner0:DPoint3d;
-    tileCorner1:DPoint3d;
-    tileCorner2:DPoint3d;
-    tileCorner3:DPoint3d;
-    width:uint;
-    height:uint;
-    format:uint;
-    byteData:[ubyte];
-
-    } // Image
-
-//=======================================================================================
-// @bsiclass                                                    
-//=======================================================================================
 table GeometryPart
     {
     geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
