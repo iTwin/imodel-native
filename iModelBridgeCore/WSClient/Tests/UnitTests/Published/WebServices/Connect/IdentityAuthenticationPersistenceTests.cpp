@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/IdentityAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,9 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenNotCalled_ReturnsNull)
     {
     StubLocalState localState;
@@ -24,6 +27,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenNotCalled_Return
     ASSERT_EQ(nullptr, persistence.GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenWithNullCalled_ReturnsNull)
     {
     StubLocalState localState;
@@ -34,6 +40,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenWithNullCalled_R
     ASSERT_EQ(nullptr, persistence.GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSameToken)
     {
     StubLocalState localState;
@@ -45,6 +54,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSa
     EXPECT_EQ(*token, *persistence.GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenNotCalled_ReturnsInvalid)
     {
     StubLocalState localState;
@@ -53,6 +65,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenNotCalled
     EXPECT_EQ(DateTime(), persistence.GetTokenSetTime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalledWithNull_ReturnsInvalid)
     {
     StubLocalState localState;
@@ -63,6 +78,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalledWit
     EXPECT_EQ(DateTime(), persistence.GetTokenSetTime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalled_ReturnsSetTime)
     {
     StubLocalState localState;
@@ -77,6 +95,9 @@ TEST_F(IdentityAuthenticationPersistenceTests, GetTokenSetTime_SetTokenCalled_Re
     EXPECT_BETWEEN(before, setTime, after);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(IdentityAuthenticationPersistenceTests, GetCredentials_Always_ReturnsEmpty)
     {
     StubLocalState localState;

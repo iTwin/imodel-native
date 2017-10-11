@@ -11,6 +11,9 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Andrius.Zonys                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSuccess)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
@@ -33,6 +36,9 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Andrius.Zonys                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
@@ -71,6 +77,9 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSu
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Andrius.Zonys                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ProgressCallbackPassedForMultiChunkUpload_ProgressReported)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
@@ -124,6 +133,9 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ProgressCallbackPassed
     ASSERT_TRUE(result.IsSuccess());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Andrius.Zonys                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_ReturnsError)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());

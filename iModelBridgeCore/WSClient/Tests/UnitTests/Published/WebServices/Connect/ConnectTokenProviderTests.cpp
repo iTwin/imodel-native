@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTokenProviderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTokenProviderTests.h"
@@ -24,6 +24,9 @@ void ConnectTokenProviderTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, GetToken_PersistedToken_ReturnsTokenFromPersistence)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();
@@ -36,6 +39,9 @@ TEST_F(ConnectTokenProviderTests, GetToken_PersistedToken_ReturnsTokenFromPersis
     EXPECT_EQ(token, provider.GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, GetToken_NotPersistedToken_ReturnsNullptr)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();
@@ -47,6 +53,9 @@ TEST_F(ConnectTokenProviderTests, GetToken_NotPersistedToken_ReturnsNullptr)
     EXPECT_EQ(nullptr, provider.GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsNotSet_ReturnsNull)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();
@@ -58,6 +67,9 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsNotSet_ReturnsNull)
     EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();
@@ -71,6 +83,9 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSet_CallsImsServerToRet
     provider.UpdateToken()->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, UpdateToken_TokenRequestReturnsError_Nullptr)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();
@@ -85,6 +100,9 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_TokenRequestReturnsError_Nullptr)
     EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSetAndTokenRecieved_SetsTokenToPersistenceAndReturns)
     {
     auto persistence = std::make_shared<MockConnectAuthenticationPersistence>();

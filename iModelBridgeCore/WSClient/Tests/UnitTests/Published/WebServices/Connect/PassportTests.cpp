@@ -25,6 +25,9 @@ void PassportTests::TearDown()
     Passport::Uninintialize();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PassportTests, User_Has_Passport)
     {
     Json::Value bodyJson = true;
@@ -38,6 +41,9 @@ TEST_F (PassportTests, User_Has_Passport)
     EXPECT_EQ (SUCCESS, status);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PassportTests, User_Doesnt_Have_Passport)
     {
     Json::Value bodyJson = false;

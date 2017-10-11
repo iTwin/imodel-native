@@ -15,6 +15,9 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescription)
     {
     auto error = CachingDataSource::Error(WSError());
@@ -23,6 +26,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescripti
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::Success);
@@ -31,6 +37,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescriptio
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError);
@@ -39,6 +48,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEm
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::SchemaError);
@@ -47,6 +59,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDesc
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::DataNotCached);
@@ -55,6 +70,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDe
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErrorAndMessageSet)
     {
     auto error = CachingDataSource::Error("TestMessage");
@@ -64,6 +82,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErro
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_WSError_NetworkError)
     {
     auto error = CachingDataSource::Error(WSError::CreateServerNotSupportedError());
@@ -75,6 +96,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_WSError_NetworkError)
     EXPECT_EQ(WSError::CreateServerNotSupportedError().GetDescription(), error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorPassed_StatusIsInternalCacheErrorAndMessageAndDescriptionSet)
     {
     auto error = CachingDataSource::Error(AsyncError("A", "B"));
@@ -84,6 +108,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorPassed_StatusIsInternalCacheE
     EXPECT_EQ("B", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMessageAndDescriptionSet)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::FunctionalityNotSupported, AsyncError("A", "B"));
@@ -97,6 +124,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMess
     EXPECT_EQ("B", error.GetDescription());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, nullptr);
@@ -105,6 +135,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     EXPECT_FALSE(error.GetMessage().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_NotCanceledCancellationTokenPassed_SetsStatus)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, SimpleCancellationToken::Create(false));
@@ -113,6 +146,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_NotCanceledCancellationTokenPassed_Sets
     EXPECT_FALSE(error.GetMessage().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CanceledCancellationTokenPassed_SetsStatusCanceledAndNoMessage)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, SimpleCancellationToken::Create(true));
@@ -122,6 +158,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CanceledCancellationTokenPassed_SetsSta
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_SetsSuccessWithoutMessage)
     {
     auto error = CachingDataSource::Error(CacheStatus::OK);
@@ -131,6 +170,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_SetsSuccessWi
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_SetsInternalCacheErrorWithMessage)
     {
     auto error = CachingDataSource::Error(CacheStatus::Error);
@@ -140,6 +182,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_SetsIntern
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusDataNotCachedStatusPassed_SetsStatusDataNotCachedWithMessage)
     {
     auto error = CachingDataSource::Error(CacheStatus::DataNotCached);
@@ -149,6 +194,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusDataNotCachedStatusPassed_Se
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCanceledCancellationTokenPassed_SetsInternalCacheErrorWithMessage)
     {
     auto error = CachingDataSource::Error(CacheStatus::Error, SimpleCancellationToken::Create(false));
@@ -158,6 +206,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCancele
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_CanceledCancellationTokenPassed_SetsStatusCanceled)
     {
     auto error = CachingDataSource::Error(CacheStatus::OK, SimpleCancellationToken::Create(true));

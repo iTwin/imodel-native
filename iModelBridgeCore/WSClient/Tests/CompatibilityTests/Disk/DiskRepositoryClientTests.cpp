@@ -67,6 +67,9 @@ struct DiskRepositoryClientTests : Test
         }
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCreatationSucceeds)
     {
     BeFileName path = s_testFolder;
@@ -89,6 +92,9 @@ TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCr
         })->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileNotChanged_SameEtags)
     {
     BeFileName path = s_testFolder;
@@ -112,6 +118,9 @@ TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileNotChanged_SameEt
     EXPECT_FALSE(fileResponse3.IsModified());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileChanged_DifferentEtags)
     {
     BeFileName path = s_testFolder;

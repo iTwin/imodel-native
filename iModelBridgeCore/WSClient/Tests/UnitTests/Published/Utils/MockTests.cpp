@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,9 @@
 #include "../WebServices/Connect/MockImsClient.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     11/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MockTests, Ctor_Default_Builds)
     {
     MockCachingDataSource();

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/UnitTests/Published/WebServices/Client/Response/WSObjectsReaderV2Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,9 @@
 
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsNullValue_ReturnsFalse)
     {
     BeTest::SetFailOnAssert(false);
@@ -25,6 +28,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsNullValue_ReturnsFalse)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsEmptyObject_ReturnsTrue)
     {
     auto json = ToRapidJson("{}");
@@ -40,6 +46,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsEmptyObject_ReturnsTrue)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsEmptyInstanceList_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "instances" : [] })");
@@ -53,6 +62,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonAsEmptyInstanceList_ReturnsT
     EXPECT_EQ(0, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonWithOneInstance_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "instances" : [ {} ] })");
@@ -66,6 +78,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesIsValid_JsonWithOneInstance_ReturnsTrue)
     EXPECT_EQ(1, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesSize_JsonWithThreeInstances_ReturnsThree)
     {
     auto json = ToRapidJson(R"({ "instances" : [ {}, {}, {} ] })");
@@ -79,6 +94,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesSize_JsonWithThreeInstances_ReturnsThree
     EXPECT_EQ(3, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstancesSize_JsonWithOneInstanceWithRelatedInstance_ReturnsOnlyOneForMainInstance)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -112,6 +130,9 @@ TEST_F(WSObjectsReaderV2Tests, InstancesSize_JsonWithOneInstanceWithRelatedInsta
     EXPECT_EQ(1, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstanceIsValid_JsonWithOneInstanceButWithNoMetaData_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({ "instances" : [ {} ] })");
@@ -125,6 +146,9 @@ TEST_F(WSObjectsReaderV2Tests, InstanceIsValid_JsonWithOneInstanceButWithNoMetaD
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, InstanceIsValid_JsonWithInstanceWithoutProperties_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({ "instances" : 
@@ -145,6 +169,9 @@ TEST_F(WSObjectsReaderV2Tests, InstanceIsValid_JsonWithInstanceWithoutProperties
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, ReadInstance_JsonInstanceWithoutETag_ReturnsEmptyETag)
     {
     auto json = ToRapidJson(R"({ "instances" :
@@ -165,6 +192,9 @@ TEST_F(WSObjectsReaderV2Tests, ReadInstance_JsonInstanceWithoutETag_ReturnsEmpty
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithInstanceWithoutRelationships_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "instances" : 
@@ -183,6 +213,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithInstanceWith
     EXPECT_TRUE((*instances.begin()).GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithRelationshipsButNotArray_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -204,6 +237,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithRelationship
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithRelationshipsWithArray_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -223,6 +259,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesIsValid_JsonWithRelationship
     EXPECT_FALSE(instance.GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstanceIsValid_JsonWithRelationshipInstanceWithoutMetaData_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -244,6 +283,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstanceIsValid_JsonWithRelationshipI
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstanceIsValid_JsonWithRelationshipInstanceWithoutProperties_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -269,6 +311,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstanceIsValid_JsonWithRelationshipI
     EXPECT_TRUE((*instance.GetRelationshipInstances().begin()).IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelatedInstanceIsValid_JsonWithNoRelatedInstance_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -295,6 +340,9 @@ TEST_F(WSObjectsReaderV2Tests, RelatedInstanceIsValid_JsonWithNoRelatedInstance_
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithOneInstance_ReturnsInstance)
     {
     auto json = ToRapidJson(R"({ "instances" : 
@@ -317,6 +365,9 @@ TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithOneInstance_ReturnsInstance)
     EXPECT_TRUE(instance.GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, BeginIncrement_JsonWithTwoInstances_ReturnsSecondInstance)
     {
     auto json = ToRapidJson(R"({ "instances" : 
@@ -348,6 +399,9 @@ TEST_F(WSObjectsReaderV2Tests, BeginIncrement_JsonWithTwoInstances_ReturnsSecond
     EXPECT_TRUE(instance.GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, GetETag_QuoteEtagsSetToTrue_ReturnsETagWithQuotes)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -381,6 +435,9 @@ TEST_F(WSObjectsReaderV2Tests, GetETag_QuoteEtagsSetToTrue_ReturnsETagWithQuotes
     EXPECT_STREQ("\"TestEtagB\"", (*instance.GetRelationshipInstances().begin()).GetETag().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, GetETag_QuoteEtagsSetToFalse_ReturnsRawETag)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -414,6 +471,9 @@ TEST_F(WSObjectsReaderV2Tests, GetETag_QuoteEtagsSetToFalse_ReturnsRawETag)
     EXPECT_STREQ("TestEtagB", (*instance.GetRelationshipInstances().begin()).GetETag().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithOneInstanceWithOneRelatedInstance_ReturnsInstanceWithRelationship)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -468,6 +528,9 @@ TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithOneInstanceWithOneRelatedInstance_R
     EXPECT_TRUE(relatedInstance.IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, BeginIncrement_JsonWithOneInstanceWithTwoRelatedInstances_ReturnsInstanceWithAllRelationships)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -529,6 +592,9 @@ TEST_F(WSObjectsReaderV2Tests, BeginIncrement_JsonWithOneInstanceWithTwoRelatedI
     EXPECT_TRUE(it == instance.GetRelationshipInstances().end());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithInstanceAndRelationshipWithoutProperties_ReturnsEmptyObjectsForProperties)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -567,6 +633,9 @@ TEST_F(WSObjectsReaderV2Tests, Begin_JsonWithInstanceAndRelationshipWithoutPrope
     EXPECT_TRUE(relInstance.GetRelatedInstance().GetProperties().MemberBegin() == relInstance.GetRelatedInstance().GetProperties().MemberEnd());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesSize_JsonWithInstanceWithoutRelationships_ReturnsZero)
     {
     auto json = ToRapidJson(R"({"instances" : 
@@ -590,6 +659,9 @@ TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesSize_JsonWithInstanceWithout
     EXPECT_EQ(0, relationships.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV2Tests, RelationshipInstancesSize_JsonWithInstanceWithRelationships_ReturnsRelationshipCount)
     {
     auto json = ToRapidJson(R"({"instances" : 
