@@ -673,25 +673,25 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
             switch (hwStyle)
                 {
                 case 1:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code1);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code1);
                     break;
                 case 2:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code2);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code2);
                     break;
                 case 3:
                     tmpGraphicParams.SetLinePixels(Render::LinePixels::Code3);
                     break;
                 case 4:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code4);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code4);
                     break;
                 case 5:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code5);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code5);
                     break;
                 case 6:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code6);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code6);
                     break;
                 case 7:
-                    tmpGraphicParams.SetLinePixels(Render::GraphicParams::LinePixels::Code7);
+                    tmpGraphicParams.SetLinePixels(Render::LinePixels::Code7);
                     break;
                 }
 
