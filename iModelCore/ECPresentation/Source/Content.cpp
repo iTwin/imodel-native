@@ -14,6 +14,7 @@
 const Utf8CP ContentDisplayType::Undefined = "Undefined";
 const Utf8CP ContentDisplayType::Grid = "Grid";
 const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
+const Utf8CP ContentDisplayType::List = "List";
 const Utf8CP ContentDisplayType::Graphics = "Graphics";
 
 static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR);

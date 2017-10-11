@@ -3733,7 +3733,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("SelectedNodeInstances_AddsNestedRelatedProperties2", *query);
         }
 
-    // SelectedNodeInstances_SetsShowImagesFlag
+    // SetsShowImagesFlag
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
@@ -3749,10 +3749,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
 
-        RegisterQuery("SelectedNodeInstances_SetsShowImagesFlag", *query);
+        RegisterQuery("SetsShowImagesFlag", *query);
         }
 
-    // SelectedNodeInstances_SetsShowLabelsFlagForGridContentType
+    // SetsShowLabelsFlagForGridContentType
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
@@ -3770,26 +3770,46 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectAll();
         query->From(*nested);
         query->OrderBy(Utf8PrintfString(FUNCTION_NAME_GetSortingValue "(%s), %s", ContentQueryContract::DisplayLabelFieldName, ContentQueryContract::ECInstanceIdFieldName).c_str());
-        RegisterQuery("SelectedNodeInstances_SetsShowLabelsFlagForGridContentType", *query);
+        RegisterQuery("SetsShowLabelsFlagForGridContentType", *query);
 #else
-        RegisterQuery("SelectedNodeInstances_SetsShowLabelsFlagForGridContentType", *nested);
+        RegisterQuery("SetsShowLabelsFlagForGridContentType", *nested);
 #endif
         }
 
-    // SelectedNodeInstances_SetsKeysOnlyFlagForGraphicsContentType
+    // SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Graphics);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
-
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
-        descriptor->SetContentFlags((int)ContentFlags::KeysOnly);
+        descriptor->SetContentFlags((int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields);
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
         query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
 
-        RegisterQuery("SelectedNodeInstances_SetsKeysOnlyFlagForGraphicsContentType", *query);
+        RegisterQuery("SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType", *query);
+        }
+
+    // SetsNoFieldsAndShowLabelsFlagsForListContentType
+        {
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::List);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields);
+        
+        ComplexContentQueryPtr nested = ComplexContentQuery::Create();
+        nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
+        nested->From(b1_Class1A, false, "this");
+        nested->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+
+#ifdef WIP_SORTING_GRID_CONTENT
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectAll();
+        query->From(*nested);
+        query->OrderBy(Utf8PrintfString(FUNCTION_NAME_GetSortingValue "(%s), %s", ContentQueryContract::DisplayLabelFieldName, ContentQueryContract::ECInstanceIdFieldName).c_str());
+        RegisterQuery("SetsNoFieldsAndShowLabelsFlagsForListContentType", *query);
+#else
+        RegisterQuery("SetsNoFieldsAndShowLabelsFlagsForListContentType", *nested);
+#endif
         }
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClass

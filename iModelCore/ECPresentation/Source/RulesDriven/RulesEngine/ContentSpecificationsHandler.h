@@ -97,6 +97,7 @@ private:
 
 protected:
     virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning) = 0;
+    virtual bool _ShouldIncludeRelatedProperties() const {return true;}
     virtual void _AppendClass(SelectClassInfo const&) = 0;
     ECPRESENTATION_EXPORT virtual void _OnBeforeAppendClassInfos(bvector<SupportedEntityClassInfo>&);
     ECPRESENTATION_EXPORT virtual void _OnBeforeAppendClassPaths(bvector<RelatedClassPath>&);

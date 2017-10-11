@@ -256,13 +256,23 @@ void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor
     BeAssert(0 == descriptor.GetContentFlags());
 
     if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Grid, displayType))
+        {
         descriptor.AddContentFlag(ContentFlags::ShowLabels);
-    
-    if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
+        {
         descriptor.AddContentFlag(ContentFlags::MergeResults);
-    
-    if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
+        {
+        descriptor.AddContentFlag(ContentFlags::NoFields);
         descriptor.AddContentFlag(ContentFlags::KeysOnly);
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::List, displayType))
+        {
+        descriptor.AddContentFlag(ContentFlags::NoFields);
+        descriptor.AddContentFlag(ContentFlags::ShowLabels);
+        }
 
     if (spec.GetShowImages())
         descriptor.AddContentFlag(ContentFlags::ShowImages);

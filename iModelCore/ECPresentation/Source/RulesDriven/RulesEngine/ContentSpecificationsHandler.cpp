@@ -219,21 +219,24 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     {
     if (GetContext().IsClassHandled(ecClass))
         return;
-        
+    
+    SelectClassInfo info(ecClass, isSpecificationPolymorphic);
+
     bvector<RelatedClass> navigationPropertiesPaths;
     PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, RelatedClassPath(), RelationshipMeaning::SameInstance);
     ECPropertyIterable properties = ecClass.GetProperties(true);
     for (ECPropertyCP prop : properties)
         AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
+    
+    if (_ShouldIncludeRelatedProperties())
+        {
+        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), ecClass, "this", spec.GetRelatedProperties(), false);
+        for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
+            relatedPropertyPaths.push_back({navigationPropertyPath});
+        info.SetRelatedPropertyPaths(relatedPropertyPaths);
+        }
 
-    bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), ecClass, "this", spec.GetRelatedProperties(), false);
-    for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
-        relatedPropertyPaths.push_back({navigationPropertyPath});
-
-    SelectClassInfo info(ecClass, isSpecificationPolymorphic);
-    info.SetRelatedPropertyPaths(relatedPropertyPaths);
     _AppendClass(info);
-
     GetContext().SetClassHandled(ecClass);
     }
 
@@ -266,10 +269,13 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         SelectClassInfo appendInfo(selectClass, isSelectPolymorphic);
         appendInfo.SetPathToPrimaryClass(path);
         
-        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), selectClass, "this", spec.GetRelatedProperties(), true);
-        for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
-            relatedPropertyPaths.push_back({navigationPropertyPath});
-        appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
+        if (_ShouldIncludeRelatedProperties())
+            {
+            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), selectClass, "this", spec.GetRelatedProperties(), true);
+            for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
+                relatedPropertyPaths.push_back({navigationPropertyPath});
+            appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
+            }
 
         _AppendClass(appendInfo);
         }

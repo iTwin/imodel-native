@@ -274,3 +274,98 @@ TEST_F (ContentQueryBuilderTests, NestsFilterExpressionQuery)
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
+    {
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.SetShowImages(true);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsShowImagesFlag");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Grid);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+        
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsShowLabelsFlagForGridContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Graphics);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::List);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsNoFieldsAndShowLabelsFlagsForListContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }

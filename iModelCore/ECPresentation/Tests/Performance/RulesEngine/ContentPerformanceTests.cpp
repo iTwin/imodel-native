@@ -32,36 +32,32 @@ struct ContentPerformanceTests : RulesEnginePerformanceTests
         // taken from Gist
         PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(R"ruleset(
             <PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
-                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-                <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
+                <!-- Content rules -->
+                <!-- Grid / DGN view -->
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
                     <ContentRelatedInstances RelationshipClassNames='BisCore:ModelContainsElements' RequiredDirection='Forward' />
                 </ContentRule>
-    
-                <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
                     <ContentRelatedInstances RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' RequiredDirection='Backward' />
                 </ContentRule>
-    
-                <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
                     <ContentRelatedInstances RelationshipClassNames='BisCore:ElementOwnsChildElements' RelatedClassNames='BisCore:Element' RequiredDirection='Forward' IsRecursive='true' />
                     <SelectedNodeInstances />
                 </ContentRule>
-    
-                <ContentRule Condition='SelectedNode.ECInstance.IsOfClass("PhysicalElement", "BisCore")' OnlyIfNotHandled='true'>
-                    <SelectedNodeInstances>
-                        <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
-                    </SelectedNodeInstances>
-                </ContentRule>
-    
-                <ContentRule Condition='SelectedNode.ECInstance.IsOfClass("SpatialLocationElement", "BisCore")' OnlyIfNotHandled='true'>
-                    <SelectedNodeInstances>
-                        <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
-                    </SelectedNodeInstances>
-                </ContentRule>
-    
+                <!-- Any other (property pane, list, other) -->
                 <ContentRule OnlyIfNotHandled='true'>
                     <SelectedNodeInstances />
                 </ContentRule>
+
+                <!-- Content modifiers that apply to any content rule -->
+                <ContentModifier ClassName="PhysicalElement" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+                </ContentModifier>
+                <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+                </ContentModifier>
 
             </PresentationRuleSet>
             )ruleset");
@@ -138,20 +134,10 @@ TEST_F(ContentPerformanceTests, GetDisplayLabels)
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, nullptr, selection, options.GetJson());
-
-    // modify the descriptor to include display labels and exclude all other fields
-    ContentDescriptorPtr labelsDescriptor = ContentDescriptor::Create(*descriptor);
-    labelsDescriptor->SetContentFlags((int)ContentFlags::ShowLabels);
-    bvector<ContentDescriptor::Field*> fields = labelsDescriptor->GetVisibleFields();
-    for (ContentDescriptor::Field const* field : fields)
-        {
-        if (!field->IsDisplayLabelField())
-            labelsDescriptor->RemoveField(*field);
-        }
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::List, selection, options.GetJson());
 
     // get the content
-    ContentCPtr content = m_manager->GetContent(m_project, *labelsDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson());
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(keys.size(), content->GetContentSet().GetSize());
 

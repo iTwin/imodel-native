@@ -100,6 +100,7 @@ enum class ContentFlags
     ShowLabels =     1 << 2, //!< Each content record additionally has a label
     MergeResults =   1 << 3, //!< All content records are merged into a single record
     DistinctValues = 1 << 4, //!< Content has only distinct values
+    NoFields =       1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
     };
 
 //=======================================================================================
@@ -118,6 +119,9 @@ struct ContentDisplayType
 
     //! Property pane content type. By default adds ContentFlags::MergeResults flag.
     ECPRESENTATION_EXPORT static const Utf8CP PropertyPane;
+    
+    //! List view content type. By default adds ContentFlags::NoFields and ContentFlags::ShowLabels flags.
+    ECPRESENTATION_EXPORT static const Utf8CP List;
 
     //! Content type for graphic content controls, e.g. the viewport. 
     //! By default adds ContentFlags::KeysOnly flag.

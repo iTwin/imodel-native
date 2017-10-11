@@ -449,13 +449,14 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     
     // create content request options
     Json::Value contentOptions = _CreateContentOptionsForSelection(evt);
+    Utf8CP contentDisplayType = _GetContentDisplayType();
 
     // create the selection info
     SelectionInfo selection(*m_manager, evt);
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection(), nullptr, selection, contentOptions);
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection(), contentDisplayType, selection, contentOptions);
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

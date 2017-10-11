@@ -317,6 +317,10 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool _Supports(ECPropertyCR ecProperty) override
         {
+        // don't support any properties if descriptor has NoFields flag
+        if (m_descriptor.HasContentFlag(ContentFlags::NoFields))
+            return false;
+
         // don't support hidden properties
         if (!m_propertyInfos.ShouldDisplay(ecProperty, m_actualClass))
             return false;
@@ -421,6 +425,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _ShouldIncludeRelatedProperties() const override {return !m_descriptor->HasContentFlag(ContentFlags::NoFields);}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                10/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
     PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning) override
         {
         return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, propertyClass, pathToSelectClass, relationshipMeaning);
@@ -441,7 +450,9 @@ protected:
             }
 
         m_descriptor->GetSelectClasses().push_back(classInfo);
-        AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass());
+
+        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+            AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass());
         }
 
 public:
@@ -509,7 +520,7 @@ public:
         if (m_descriptor->GetSelectClasses().empty())
             return nullptr;
 
-        if (nullptr != m_specification)
+        if (nullptr != m_specification && !m_descriptor->HasContentFlag(ContentFlags::NoFields))
             {
             QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, m_specification->GetCalculatedProperties(),
                 GetContext().GetLocalizationProvider(), GetContext().GetRuleset(), nullptr);
