@@ -1454,7 +1454,7 @@ GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRa
 
     IGeometryPtr geom = IGeometry::Create(&prim);
     GeometryList geomList;
-    geomList.push_back(*Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db));
+    geomList.push_back(*Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db, false));
     auto part = GeomPart::Create(range, geomList);
     m_map.Insert(key, part);
 

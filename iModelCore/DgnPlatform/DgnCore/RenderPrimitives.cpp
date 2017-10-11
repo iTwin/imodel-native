@@ -74,9 +74,10 @@ struct PrimitiveGeometry : Geometry
 private:
     IGeometryPtr        m_geometry;
     bool                m_inCache = false;
+    bool                m_disjoint;
 
-    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db)
-        : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
+    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
+        : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry), m_disjoint(disjoint) { }
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
@@ -84,9 +85,10 @@ private:
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
 public:
-    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db)
+    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
         {
-        return new PrimitiveGeometry(geometry, tf, range, elemId, params, isCurved, db);
+        BeAssert(!disjoint || geometry.GetAsCurveVector().IsValid());
+        return new PrimitiveGeometry(geometry, tf, range, elemId, params, isCurved, db, disjoint);
         }
 };
 
@@ -1234,34 +1236,11 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
-        // ###TODO_ELEMENT_TILE: This is not precisely accurate. Need to handle:
-        //  - boundary type 'none' not actually containing point string; and
-        //  - boundary type 'none' containing multiple curves, any number of which may be point strings
-        // where 'point string' refers to any of:
-        //   - point string curve primitive type;
-        //   - line string (with any boundary type) containing 1 point
-        //   - line string (with any boundary type) containing 2 identical points
-        bool disjoint = CurveVector::BOUNDARY_TYPE_None == curveVector->GetBoundaryType();
-        if (!disjoint && 1 == strokePoints.size())
-            {
-            // A 'point' is actually a zero-length line...
-            auto const& points = strokePoints.front().m_points;
-            switch (points.size())
-                {
-                case 1:
-                    disjoint = true;
-                    break;
-                case 2:
-                    disjoint = *points.begin() == *(points.begin()+1);
-                    break;
-                }
-            }
-
         if (!strokePoints.empty())
             {
             bool isPlanar = curveVector->IsAnyRegionType();
             BeAssert(isPlanar == GetDisplayParams().HasRegionOutline());
-            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), disjoint, isPlanar));
+            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar));
             }
         }
 
@@ -1355,9 +1334,9 @@ GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db)
+GeometryPtr Geometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
     {
-    return PrimitiveGeometry::Create(geometry, tf, range, entityId, params, isCurved, db);
+    return PrimitiveGeometry::Create(geometry, tf, range, entityId, params, isCurved, db, disjoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1379,7 +1358,7 @@ GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, bool disjoint)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -1388,15 +1367,15 @@ bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
     auto tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
 
-    return AddGeometry(geom, isCurved, displayParams, tf, range);
+    return AddGeometry(geom, isCurved, displayParams, tf, range, disjoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range)
+bool GeometryAccumulator::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range, bool disjoint)
     {
-    GeometryPtr geometry = Geometry::Create(geom, transform, range, GetElementId(), displayParams, isCurved, GetDgnDb());
+    GeometryPtr geometry = Geometry::Create(geom, transform, range, GetElementId(), displayParams, isCurved, GetDgnDb(), disjoint);
     if (geometry.IsNull())
         return false;
 
@@ -1435,14 +1414,14 @@ PolyfaceHeaderPtr cloneGeometry(PolyfaceQueryCR query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
+bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, bool disjoint)
     {
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
 
     bool isCurved = curves.ContainsNonLinearPrimitive();
     IGeometryPtr geom = IGeometry::Create(CurveVectorPtr(&curves));
-    return AddGeometry(*geom, isCurved, displayParams, transform);
+    return AddGeometry(*geom, isCurved, displayParams, transform, disjoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1452,7 +1431,7 @@ bool GeometryAccumulator::Add(ISolidPrimitiveR primitive, DisplayParamsCR displa
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
     IGeometryPtr geom = IGeometry::Create(ISolidPrimitivePtr(&primitive));
-    return AddGeometry(*geom, isCurved, displayParams, transform);
+    return AddGeometry(*geom, isCurved, displayParams, transform, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1462,7 +1441,7 @@ bool GeometryAccumulator::Add(RefCountedMSBsplineSurface& surface, DisplayParams
     {
     bool isCurved = (surface.GetUOrder() > 2 || surface.GetVOrder() > 2);
     IGeometryPtr geom = IGeometry::Create(MSBsplineSurfacePtr(&surface));
-    return AddGeometry(*geom, isCurved, displayParams, transform);
+    return AddGeometry(*geom, isCurved, displayParams, transform, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1477,7 +1456,7 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 
     DRange3d range = polyface.PointRange();
     IGeometryPtr geom = IGeometry::Create(PolyfaceHeaderPtr(&polyface));
-    AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), range);
+    AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), range, false);
     return true;
     }
 
@@ -2091,7 +2070,7 @@ void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
 void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
-    m_accum.Add(*curve, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2109,7 +2088,7 @@ void GeometryListBuilder::AddTile(TileCorners const& corners, DisplayParamsCR pa
         };
 
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(shapePoints, 5));
-    m_accum.Add(*curve, false, params, GetLocalToWorldTransform());
+    m_accum.Add(*curve, false, params, GetLocalToWorldTransform(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2147,7 +2126,7 @@ void GeometryListBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool fil
         curve->push_back(gapSegment);
         }
 
-    m_accum.Add(*curve, filled, curve->IsAnyRegionType() ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, filled, curve->IsAnyRegionType() ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2165,8 +2144,8 @@ void GeometryListBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddLineString(int numPoints, DPoint3dCP points)
     {
-    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
-    m_accum.Add(*curve, false, GetLinearDisplayParams(), GetLocalToWorldTransform());
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreateLineString(points, numPoints));
+    _AddCurveVectorR(*curve, false); // possibly a zero-length line segment (== disjoint)...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2185,7 +2164,7 @@ void GeometryListBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, do
 void GeometryListBuilder::_AddPointString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
-    m_accum.Add(*curve, false, GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*curve, false, GetLinearDisplayParams(), GetLocalToWorldTransform(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2351,11 +2330,68 @@ void GeometryListBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isDisjointCurvePrimitive(ICurvePrimitiveCR prim)
+    {
+    switch (prim.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            return true;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            DSegment3dCR segment = *prim.GetLineCP();
+            return segment.IsAlmostSinglePoint();
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            bvector<DPoint3d> const& points = *prim.GetLineStringCP();
+            return 1 == points.size() || (2 == points.size() && points[0].AlmostEqual(points[1]));
+            }
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::AddCurveVector(CurveVectorR curves, bool isFilled, bool disjoint)
+    {
+    BeAssert(!isFilled || !disjoint);
+    m_accum.Add(curves, isFilled, curves.IsAnyRegionType() ? GetMeshDisplayParams(isFilled) : GetLinearDisplayParams(), GetLocalToWorldTransform(), disjoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
     {
-    m_accum.Add(curves, isFilled, curves.IsAnyRegionType() ? GetMeshDisplayParams(isFilled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    bool haveDisjoint = false, haveContinuous = false;
+    if (!isFilled && CurveVector::BOUNDARY_TYPE_None == curves.GetBoundaryType())
+        {
+        for (auto const& prim : curves)
+            {
+            if (isDisjointCurvePrimitive(*prim))
+                haveDisjoint = true;
+            else
+                haveContinuous = true;
+            }
+        }
+    else
+        {
+        haveContinuous = true;
+        }
+
+    BeAssert(haveDisjoint || haveContinuous);
+    if (haveDisjoint != haveContinuous)
+        {
+        // The typical case...
+        AddCurveVector(curves, isFilled, haveDisjoint);
+        return;
+        }
+
+    // ###TODO: Must split up disjoint and continuous into two separate curve vectors...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2390,7 +2426,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
         {
         Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
         auto cv = curves.Clone(tf);
-        m_accum.Add(*cv, isFilled, cv->IsAnyRegionType() ? GetMeshDisplayParams(isFilled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
+        _AddCurveVectorR(*cv, isFilled);
         }
     }
 
@@ -2400,7 +2436,7 @@ void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled,
 void GeometryListBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
-    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2410,7 +2446,7 @@ void GeometryListBuilder::_AddBSplineCurveR(RefCountedMSBsplineCurveR bcurve, bo
     {
     MSBsplineCurvePtr pBcurve(&bcurve);
     CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(pBcurve));
-    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform());
+    m_accum.Add(*cv, filled, bcurve.params.closed ? GetMeshDisplayParams(filled) : GetLinearDisplayParams(), GetLocalToWorldTransform(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
