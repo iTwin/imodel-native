@@ -472,7 +472,7 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
 
                 TextString nodeIdString;
 
-                DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z * 1.10};
+                DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z};
 
                 char buffer[1000];
                 BeStringUtilities::FormatUInt64(buffer, nodeId);
@@ -1174,14 +1174,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
     else
         {  
-        bvector<IScalableMeshNodePtr> nodes;
-        for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
-        m_smPtr->SetCurrentlyViewedNodes(nodes);
         status = GetProgressiveQueryEngine()->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
 
         m_currentDrawingInfoPtr->m_meshNodes.clear();
 
         status = GetProgressiveQueryEngine()->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+		bvector<IScalableMeshNodePtr> nodes;
+		for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
+		for (auto& nodeP : m_currentDrawingInfoPtr->m_overviewNodes) nodes.push_back(nodeP.get());
+		m_smPtr->SetCurrentlyViewedNodes(nodes);
         assert(status == SUCCESS);
         
         //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
