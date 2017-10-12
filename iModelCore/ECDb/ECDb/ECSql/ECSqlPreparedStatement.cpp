@@ -793,7 +793,7 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNa
             {
                 case Exp::Type::LiteralValue:
                 {
-                if (idValueExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Null)
+                if (idValueExp->GetTypeInfo().IsNull())
                     m_mode = Mode::UserProvidedNullExp;
                 else
                     m_mode = Mode::UserProvidedOtherExp;
@@ -830,7 +830,7 @@ ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Mode ECSqlInsertPreparedState
         {
             case Exp::Type::LiteralValue:
             {
-            if (idValueExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Null)
+            if (idValueExp->GetTypeInfo().IsNull())
                 return Mode::UserProvidedNullExp;
 
             return Mode::UserProvidedOtherExp;

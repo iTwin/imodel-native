@@ -234,7 +234,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
 
     ECSqlTypeInfo const& castOperandTypeInfo = GetCastOperand()->GetTypeInfo();
-    if (castOperandTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null) //NULL can always be cast
+    if (castOperandTypeInfo.IsNull()) //NULL can always be cast
         return FinalizeParseStatus::Completed;
 
     if (!castOperandTypeInfo.IsPrimitive())
@@ -690,7 +690,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
+    if (typeInfo.IsNull())
         {
         ctx.AppendToECSql("NULL");
         if (HasParentheses())

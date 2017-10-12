@@ -298,7 +298,7 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
             return ERROR;
             }
 
-        if (lhsTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
+        if (lhsTypeInfo.IsNull() && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
             ctx.GetECDb().GetImpl().Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
