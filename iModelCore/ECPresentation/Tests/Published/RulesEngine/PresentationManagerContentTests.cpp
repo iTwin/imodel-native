@@ -2850,27 +2850,204 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenParametersEqual)
+    {
+    // set up selection
+    SelectionInfo selection("aaa", true, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsCachedWhenParametersEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_EQ(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_Connection)
+    {
+    // set up a different connection
+    ECDbTestProject project2;
+    project2.Create("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", "RulesEngineTest.01.00.ecschema.xml");
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType)
     {
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentProviderUseCache", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson());
 
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str(), false);
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
 
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider)
+    {
+    // set up selection 1
+    SelectionInfo selection1("A", false, *NavNodeKeyListContainer::Create());
+    
+    // set up selection 2
+    SelectionInfo selection2("B", false, *NavNodeKeyListContainer::Create());
 
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create());
+    
+    // set up selection 2
+    SelectionInfo selection2("", true, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+    
+    // set up selection 2
+    SelectionInfo selection2("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)3)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)4))
+        }));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId)
+    {
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set 1
+    PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_1", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules1);
+    ContentRuleP rule1 = new ContentRule("", 1, false);
+    rule1->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules1->AddPresentationRule(*rule1);
+    
+    // create the rule set 2
+    PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_2", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules2);
+    ContentRuleP rule2 = new ContentRule("", 1, false);
+    rule2->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules2->AddPresentationRule(*rule2);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options1(rules1->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson());
+    RulesDrivenECPresentationManager::ContentOptions options2(rules2->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson());
+
+    // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
     }
 

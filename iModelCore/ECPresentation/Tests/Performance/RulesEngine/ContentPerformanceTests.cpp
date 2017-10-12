@@ -144,3 +144,32 @@ TEST_F(ContentPerformanceTests, GetDisplayLabels)
     for (ContentSetItemCPtr record : content->GetContentSet())
         EXPECT_TRUE(record.IsValid());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetPropertyPaneContentForAllGeometricElements)
+    {
+    // getting content for all geometric elements in the dataset
+    NavNodeKeyList keys;
+    ECSqlStatement stmt;
+    stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+
+    // start the timer
+    Timer _timer;
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, options.GetJson());
+
+    // get the content
+    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+    EXPECT_EQ(1, content->GetContentSet().GetSize());
+    EXPECT_TRUE(content->GetContentSet().Get(0).IsValid());
+    }
