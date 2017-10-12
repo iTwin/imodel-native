@@ -122,6 +122,17 @@ The bridge's assets are separate from the framework's assets. The DgnPlatformLib
 A bridge should call BentleyApi::Dgn::iModelBridge::L10N::GetString to look up its own translatable strings.
 A bridge must override _SupplySqlangRelPath to specify the location of its .db3 file, relative to its own assets directory.
 A bridge must define its own translatable string tables using the IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START macro, and @em not the BENTLEY_TRANSLATABLE_STRINGS_START macro.
+
+@anchor ANCHOR_Provenance
+<h2>Provenance</h2>
+An iModelBridge is responsible for storing provenance data that relates the elements and models in the iModel to information in the source documents.
+Currently, the only required provenance is model to document. Provenance at the element level is currently optional.
+
+<h3>PartitionOriginatesFromRepository</h3>
+A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
+Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
+
 */
 
 //=======================================================================================
@@ -167,8 +178,8 @@ struct iModelBridge
         UseGcsTransformWithScaling,             //!< Convert using a best fit transform that includes scaling to GCS grid coordinates.
         };
 
-    //! Interface implemented by an agent that can check of a file is assigned to a specified bridge
-    struct FileAssignmentChecker
+    //! Interface implemented by an agent that can get the document properties associated with a local file and can check of a file is assigned to a specified bridge
+    struct IDocumentPropertiesAccessor
         {
         // Check if the specified file is assigned to the specified bridge.
         //! @param fn   The name of the file that is to be converted
@@ -176,6 +187,12 @@ struct iModelBridge
         //! @return true if the specified bridge should convert the specified file
         // *** NEEDS WORK: Should probably use and check relative paths
         virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+
+        // Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
+        //! @param[in] fn   The name of the file that is to be converted
+        //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
+        // *** NEEDS WORK: Should probably use and check relative paths
+        virtual void _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
         };
 
     //! Parameters that are common to all bridges.
@@ -205,7 +222,7 @@ struct iModelBridge
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
-        FileAssignmentChecker* m_assignmentChecker = nullptr;
+        IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         WString m_thisBridgeRegSubKey;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
@@ -247,8 +264,8 @@ struct iModelBridge
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
-        void SetAssignmentChecker(FileAssignmentChecker& c) {m_assignmentChecker = &c;}
-        FileAssignmentChecker* GetAssignmentChecker() const {return m_assignmentChecker;}
+        void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
+        IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
         IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
         };
 
@@ -431,9 +448,45 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
-   //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
+    //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
     //!revision comparison operations work well in sqlite. Return true if a schema change was detected.
     virtual bool _UpgradeDynamicSchema(DgnDbR db) { return false; }
+
+    //! @name Document Properties Helper Functions
+    //! @{
+
+    // @private
+    IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
+
+    //! Insert or update a RepositoryLink Element refers to a specified source file. 
+    //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file. 
+    //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found, 
+    //! the CodeValue for the RepositoryLink Element will be set to the document's GUID, and the element's URI property will be set to the document's URN.
+    //! If DMS document properties cannot be found, this function will use the supplied defaultCode and defaultURN to set up the RepositoryLink.
+    //! @param db               The briefcase.
+    //! @param params           The bridge params
+    //! @param localFileName    The filename of the source file.
+    //! @param defaultCode      The CodeValue to use if a document GUID cannot be found
+    //! @param defaultURN       The URN to use if no URN can be found
+    //! @param queryOnly        If true, this function only checks to see if a RepositoryLink element is already in the briefcase. 
+    //! @return The ElementId of the RepositoryLink element in the briefcase or an invalid ID if none could be found or created.
+    IMODEL_BRIDGE_EXPORT static DgnElementId WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly = false);
+
+    //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
+    IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
+
+    //! Create a "PartitionOriginatesFromRepository" relationship between a partition model and a RepositoryLink element.
+    //! @param db               The briefcase.
+    //! @param informationPartitionElementId  The element that represents the partition model.
+    //! @param repoLinkElementId The RepositoryLinkElement
+    //! @return non-zero status if the relationship instance could not be inserted in the briefcase.
+    static DgnDbStatus InsertPartitionOriginatesFromRepositoryRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
+        {
+        return InsertLinkTableRelationship(db, BIS_REL_PartitionOriginatesFromRepository, informationPartitionElementId, repoLinkElementId);
+        }
+
+    //! @}
+
     //! @name Helper functions
     //! @{
 

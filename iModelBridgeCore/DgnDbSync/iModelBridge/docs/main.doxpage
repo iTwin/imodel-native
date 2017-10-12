@@ -44,6 +44,8 @@ a bridge to do one-off publishing or to serve as a test harness for the bridge's
 
 See @ref ANCHOR_iModelUnitsAndGCS "Units and GCS" for converting source data into the coordinate system of the iModel.
 
+See @ref ANCHOR_Provenance "Provenance" for the provenance that bridges must created and maintain.
+
 @anchor iModelBridge_getInstance
 @anchor ANCHOR_BridgeLoading
 <h2>Supplying and Loading a Bridge</h2>

@@ -306,8 +306,20 @@ Utf8String SyncInfo::GetUniqueName(WStringCR fullFileName)
     //  Therefore, we must distinguish between like-named files in different directories.
     //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
     //  the unique names of the files must be unaffected.
-    //  To achieve this balance, we use only as much of the full path as we need to distinguish between 
-    //  like-named files in different directories.
+
+    // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
+    iModelBridgeDocumentProperties docProps;
+    GetConverter().GetDocumentProperties(docProps, BeFileName(fullFileName));
+    if (!docProps.m_docGUID.empty())
+        {
+        Utf8String lguid(docProps.m_docGUID);
+        lguid.ToLower();
+        return lguid;
+        }
+
+    // If we do not have a GUID, we try to compute a stable unique name from the filename.
+    // The full path should be unique already. To get something that is stable, we use only as much of 
+    // the full path as we need to distinguish between like-named files in different directories.
     WString uniqueName(fullFileName);
     auto pdir = m_converter.GetParams().GetInputRootDir();
     if (!pdir.empty() && (pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))

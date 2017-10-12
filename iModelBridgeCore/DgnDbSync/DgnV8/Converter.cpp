@@ -139,35 +139,6 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinkModelPtr Converter::GetOrCreateRepositoryLinkModel()
-    {
-    DgnDbR db = GetDgnDb();
-
-    Utf8String partitionName = Converter::ConverterDataStrings().GetString(Converter::ConverterDataStrings::RepositoryLinksPartitionName());
-    DgnCode partitionCode = LinkPartition::CreateCode(*db.Elements().GetRootSubject(), partitionName.c_str());
-    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-    if (partitionId.IsValid())
-        return LinkModel::Get(db, DgnModelId(partitionId.GetValue()));
-
-    LinkPartitionPtr ed = LinkPartition::Create(*db.Elements().GetRootSubject(), partitionName.c_str());
-    LinkPartitionCPtr partition = ed->InsertT<LinkPartition>();
-    if (!partition.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    auto lm = LinkModel::Create(LinkModel::CreateParams(db, partition->GetElementId()));
-    if (lm->Insert() != DgnDbStatus::Success)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    return lm;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
     {
     auto const& moniker = file.GetDocument().GetMoniker();
@@ -186,55 +157,21 @@ void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8Strin
         uri.append(path.c_str());
         }
 
-    code = Utf8String(moniker.GetPortableName().c_str());
+    code = uri;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId Converter::CreateRepositoryLink(DgnV8FileR file)
+DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
     {
-    auto lmodel = GetOrCreateRepositoryLinkModel();
-    if (!lmodel.IsValid())
-        return DgnElementId();
-
+    //  Fall back on whatever is in the Document Moniker, as interpreted by the installed DocumentManager
     Utf8String codevalue, uri;
     ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
 
-    // Why call CreateUniqueCode? The second argument to RepositoryLink::Create is used as its CodeValue.
-    // So, this string must be unique within linkModel. Since linkModel is used by all jobs, the string we use
-    // to identify the link must be unique across all jobs. I would like to qualify the name (or the scope)
-    // of the link code with the job, but I can't. We call this function in order to map in the root file 
-    // before we create the job. Next best solution would be to use the job's name as a prefix for the link names.
-    // But we don't always have a name for the job. The default is just "Job". So, we have to fall back on 
-    // making link names unique in an arbitrary way. It really doesn't matter in the end. 
-    // The RepositoryLink also stores a URI, and that is what actually identifies the file.
-
-    DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, codevalue.c_str());
-    auto rlink = RepositoryLink::Create(*lmodel, uri.c_str(), code.GetValueUtf8CP());
-    auto rlinkPersist = rlink->Insert();
-    if (!rlinkPersist.IsValid())
-        {
-        ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), Utf8PrintfString("Insert RepositoryLink with code value=[%s] failed", codevalue.c_str()).c_str());;
-        BeAssert(false);
-        return DgnElementId();
-        }
-
-    return rlinkPersist->GetElementId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId Converter::FindRepositoryLink(DgnV8FileR file)
-    {
-    auto lmodel = GetOrCreateRepositoryLinkModel();
-    if (!lmodel.IsValid())
-        return DgnElementId();
-    Utf8String codevalue, uri;
-    ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
-    auto lcode = RepositoryLink::CreateCode(*lmodel, codevalue.c_str());
-    return GetDgnDb().Elements().QueryElementIdByCode(lcode);
+    auto rlinkId = iModelBridge::WriteRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue, uri);
+    BeAssert(rlinkId.IsValid());
+    return rlinkId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,9 +203,7 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
         }
 
     //  Make sure the file has a corresponding RepositoryLink in the BIM
-    DgnElementId rlinkId = FindRepositoryLink(file);
-    if (!rlinkId.IsValid())
-        rlinkId = CreateRepositoryLink(file);
+    DgnElementId rlinkId = WriteRepositoryLink(file);
 
     //  Cache the file's syncinfo id and its RepositoryLink id in memory for quick access during this conversion/update
     file.AddAppData(V8FileSyncInfoIdAppData::GetKey(), new V8FileSyncInfoIdAppData(provenance.m_syncId, provenance.m_idPolicy, rlinkId));
@@ -939,23 +874,6 @@ Sheet::ElementPtr Converter::CreateSheet(Utf8CP name, DgnV8ModelCR v8Model)
     return sheet;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson      09/16
-//---------------------------------------------------------------------------------------
-DgnDbStatus Converter::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName)
-    {
-    auto relClass = db.Schemas().GetClass(schemaName, relClassName);
-    if (nullptr == relClass || nullptr == relClass->GetRelationshipClassCP())
-        {
-        BeAssert(false);
-        return DgnDbStatus::NotFound;
-        }
-    EC::ECInstanceKey relKey;
-    auto status = db.InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), source, target);
-    BeAssert(BE_SQLITE_OK == status);
-    return (BE_SQLITE_OK == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * Given a DgnV8Model and a new model name, create a new DgnModel in the DgnDb and return its DgnModelId.
 * @bsimethod                                    Sam.Wilson      09/14
@@ -1042,8 +960,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
         modeledElementId = partition->GetElementId();
 
-        InsertLinkTableRelationship(GetDgnDb(), BIS_REL_PartitionOriginatesFromRepository, 
-                                        partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
+        iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDb(), partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
         }
     else
         {
