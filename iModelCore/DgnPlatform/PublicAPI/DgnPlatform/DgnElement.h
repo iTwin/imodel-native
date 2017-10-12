@@ -366,8 +366,12 @@ struct AutoHandledPropertiesCollection
     ECN::ECClassCP m_autoHandledProperty;
     ECSqlClassParams::StatementType m_stype;
     bool m_wantCustomHandledProps;
+    static bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> s_orphanCustomHandledProperties;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
+    
+    static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
+    static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
@@ -3517,7 +3521,8 @@ public:
     //! @param stat  Optional. If not null, an error status is returned here if the element cannot be created.
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
     //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
-    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat = nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, bool ignoreUnknownProperties, DgnDbStatus* stat = nullptr) const;
 
     template<class T> RefCountedPtr<T> Create(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const {return dynamic_cast<T*>(CreateElement(properties,stat).get());}
 

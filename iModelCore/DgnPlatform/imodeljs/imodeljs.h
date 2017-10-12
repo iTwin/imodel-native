@@ -69,7 +69,9 @@ struct IModelJs
         DGNPLATFORM_EXPORT static BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
         };
 
-    DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR);
+    typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
+
+    DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenDgnDb(DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult OpenBriefcase(DgnDbPtr& db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens);
     DGNPLATFORM_EXPORT static void CloseDgnDb(DgnDbR dgndb);

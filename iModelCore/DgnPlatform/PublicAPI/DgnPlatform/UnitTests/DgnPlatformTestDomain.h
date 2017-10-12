@@ -76,6 +76,26 @@ BEGIN_BENTLEY_DPTEST_NAMESPACE
 struct TestItemHandler;
 #endif
 struct TestElementHandler;
+struct ImodelJsTestElementHandler;
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct ImodelJsTestElement : Dgn::PhysicalElement
+{
+    friend struct ImodelJsTestElementHandler;
+    DGNELEMENT_DECLARE_MEMBERS("ImodelJsTestElement", Dgn::PhysicalElement)
+public:
+    ImodelJsTestElement(CreateParams const& cp) : Dgn::PhysicalElement(cp) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct ImodelJsTestElementHandler : Dgn::dgn_ElementHandler::Physical
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS("ImodelJsTestElement", ImodelJsTestElement, ImodelJsTestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+};
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15

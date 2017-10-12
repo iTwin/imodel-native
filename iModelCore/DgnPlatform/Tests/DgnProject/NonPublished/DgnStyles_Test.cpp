@@ -529,6 +529,5 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
         ASSERT_TRUE(LsComponentType::Internal == child->GetComponentType());
         LsInternalComponent * internalComponent = (LsInternalComponent*) child;
         ASSERT_TRUE(nullptr != internalComponent);
-        ASSERT_TRUE(0 == internalComponent->GetHardwareStyle());
         }
     }
