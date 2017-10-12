@@ -11,9 +11,9 @@ WARNINGS_UP     = 1
 
 appName         = BaseGeoCoord
 baseDir         = $(_MakeFilePath)
-publicAPISrc    = $(baseDir)PublicAPI/
-o               = $(OutBuildDir)$(appname)/
 SrcGeoCoord     = $(SrcRoot)GeoCoord/
+publicAPISrc    = $(SrcGeoCoord)PublicAPI/GeoCoord/
+o               = $(OutBuildDir)$(appname)/
 
 nameToDefine    = STANDALONE_BSI
 %include cdefapnd.mki

@@ -1,18 +1,19 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: BaseGeoCoord/GeoCoordPrewire.mke $
+#     $Source: GeoCoord.Prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-baseDir         = $(_MakeFilePath)
+PublicApiDir    = $(OutBuildContexts)GeoCoord/PublicAPI/
+srcDir          = $(_MakeFilePath)
 
 #----------------------------------------------------------------------
 # Put the BaseGeoCoord publicAPI file into the output directory so it
 # is available to other builds.
 #----------------------------------------------------------------------
 always:
-    ~linkdir "$(BuildContext)PublicAPI/GeoCoord=$(baseDir)PublicAPI"
+   ~linkdir "$(PublicApiDir)GeoCoord=$(srcDir)PublicAPI\GeoCoord"
 

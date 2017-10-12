@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BaseGeoCoord/PublicAPI/basegeocoordapi.h $
+|     $Source: PublicAPI/GeoCoord/basegeocoordapi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
