@@ -101,13 +101,11 @@ public:
     void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::UseDefaults)
         {
         m_domainUpgradeOptions = domainOptions;
-        m_upgradeRevisions.clear();
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
     void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision)
         {
-        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
         m_upgradeRevisions.clear();
         m_upgradeRevisions.push_back(&upgradeRevision);
         }
@@ -115,18 +113,17 @@ public:
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
     void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions)
         {
-        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
         m_upgradeRevisions = upgradeRevisions;
         }
 
-    //! Returns true if schemas are to be upgraded from the domains.
-    bool AreDomainUpgradesAllowed() const;
-        
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
-    DomainUpgradeOptions GetDomainOptions() const;
+    DomainUpgradeOptions GetDomainUpgradeOptions() const;
 
     //! Gets the revisions that are to be merged
     bvector<DgnRevisionCP> const& GetUpgradeRevisions() const { return m_upgradeRevisions; }
+
+    //! Returns true if schemas are to be upgraded from the domains.
+    bool AreDomainUpgradesAllowed() const;
 };
 
 //=======================================================================================

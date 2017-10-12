@@ -184,7 +184,7 @@ SchemaStatus DgnDomain::ValidateSchema(ECSchemaCR schema, DgnDbCR dgndb) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
+* @bsimethod                                Ramanujam.Raman                    10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchemaUpgradeOptions::AreDomainUpgradesAllowed() const
     {
@@ -194,7 +194,7 @@ bool SchemaUpgradeOptions::AreDomainUpgradesAllowed() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaUpgradeOptions::DomainUpgradeOptions SchemaUpgradeOptions::GetDomainOptions() const
+SchemaUpgradeOptions::DomainUpgradeOptions SchemaUpgradeOptions::GetDomainUpgradeOptions() const
     {
     if (m_domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::UseDefaults)
         return m_domainUpgradeOptions;
@@ -457,7 +457,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    SchemaUpgradeOptions::DomainUpgradeOptions allowedUpgrades = m_schemaUpgradeOptions.GetDomainOptions();
+    SchemaUpgradeOptions::DomainUpgradeOptions allowedUpgrades = m_schemaUpgradeOptions.GetDomainUpgradeOptions();
     
     if (m_dgndb.IsBriefcase())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
@@ -505,23 +505,17 @@ SchemaStatus DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpg
     {
     m_schemaUpgradeOptions = schemaUpgradeOptions;
 
-    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = m_schemaUpgradeOptions.GetDomainOptions();
-    
     SchemaStatus status = SchemaStatus::Success;
-    if (domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
+    if (m_schemaUpgradeOptions.GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
         status = ValidateSchemas();
   
     if (status == SchemaStatus::Success)
         {
         SyncWithSchemas();
         OnDbOpened();
-        return status;
         }
 
-    if (status != SchemaStatus::SchemaUpgradeRequired || domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly)
-        return status;
-
-    return UpgradeSchemas();
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
