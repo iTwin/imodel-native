@@ -123,7 +123,7 @@ struct MeshTraversalQueue
 
         MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear, Transform reprojectionTransform=Transform::FromIdentity()) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {
-			m_isReprojected = reprojectionTransform.IsIdentity();
+			m_isReprojected = !reprojectionTransform.IsIdentity();
 			if (m_isReprojected)
 				m_reproTransform = reprojectionTransform;
 		};
@@ -155,6 +155,8 @@ struct MeshTraversalQueue
         void CollectAll();
 
         void CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes);
+
+		IScalableMeshNodePlaneQueryParamsPtr GetPlaneQueryParam(size_t depth, size_t segmentId);
 
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();

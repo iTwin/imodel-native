@@ -111,6 +111,24 @@ double SMDrapedPoint::_GetDistanceAlong() const
     return dynamic_cast<SMDrapedLine*>(m_lineRef.get())->GetDistanceUntil(m_pt);
     }
 
+IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size_t depth, size_t segmentId)
+{
+	IScalableMeshNodePlaneQueryParamsPtr paramsLine = IScalableMeshNodePlaneQueryParams::CreateParams();
+	paramsLine->SetLevel(depth);
+
+	DPoint3d pointOnDirection, origin;
+	DVec3d drapeDirection = DVec3d::From(0, 0, -1);
+	m_reproTransform.Multiply(origin, m_polylineToDrape[segmentId]);
+
+	pointOnDirection.SumOf(origin, drapeDirection);
+	m_reproTransform.Multiply(pointOnDirection, pointOnDirection);
+
+	DPlane3d targetCuttingPlane = DPlane3d::From3Points(m_polylineToDrape[segmentId], m_polylineToDrape[segmentId + 1], pointOnDirection);
+	paramsLine->SetPlane(targetCuttingPlane);
+
+	return paramsLine;
+}
+
 void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes)
     {
     for (size_t segment = 0; segment < m_numPointsOnPolyline - 1; segment++)
@@ -122,14 +140,25 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
         bvector<IScalableMeshNodePtr> outNodes;
         for (auto& node : inputNodes)
             {
-            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-                                                                                   node->GetLevel(),
-                                                                                   ray,
-                                                                                   true,
-                                                                                   DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
-                                                                                   true,
-                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
-            node->RunQuery(query, outNodes);
+			if (!m_isReprojected)
+			{
+				ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+					node->GetLevel(),
+					ray,
+					true,
+					DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
+					true,
+					ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
+				node->RunQuery(query, outNodes);
+			}
+			else
+			{
+				IScalableMeshNodePlaneQueryParamsPtr paramsLine(GetPlaneQueryParam(m_levelForDrapeLinear, segment));
+
+				ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<DPoint3d, DRange3d> query(range, node->GetLevel(), paramsLine->GetPlane(), paramsLine->GetDepth());
+
+				node->RunQuery(query, outNodes);
+			}
             }
 
         for (auto& node : outNodes)
@@ -973,36 +1002,76 @@ void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>&
             }
         }
     }
+static bool s_drapeAlongTurnOff = false;
+static bool s_zeroTranslation = true;
+static bool s_tryDoublePts = true;
+
 
 bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
-    //bvector<bvector<DPoint3d>> coverages;
-    IScalableMeshPtr targetedMesh = m_scmPtr;
-   // m_scmPtr->GetAllCoverages(coverages);
-    //if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+	if (s_drapeAlongTurnOff)
+		return false;
 
-    if (m_type == DTMAnalysisType::Fast)
-        {
-        m_levelForDrapeLinear = std::min((size_t)5, targetedMesh->GetTerrainDepth());
-        targetedMesh->GetCurrentlyViewedNodes(m_nodeSelection);
-        }
-    DVec3d vecDirection = DVec3d::FromXYAngleAndMagnitude(directionOfVector, 1);
-    vecDirection.z = slopeOfVector;
+	//bvector<bvector<DPoint3d>> coverages;
+	IScalableMeshPtr targetedMesh = m_scmPtr;
+	// m_scmPtr->GetAllCoverages(coverages);
+	//if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
 
-    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
-    params->SetUseUnboundedRay(false);
-    IScalableMeshNodeRayQueryPtr query = targetedMesh->GetNodeQueryInterface();
-    params->SetLevel(m_levelForDrapeLinear);
+	if (m_type == DTMAnalysisType::Fast)
+	{
+		m_levelForDrapeLinear = std::min((size_t)5, targetedMesh->GetTerrainDepth());
+		targetedMesh->GetCurrentlyViewedNodes(m_nodeSelection);
+	}
+	DVec3d vecDirection = DVec3d::FromXYAngleAndMagnitude(directionOfVector, 1);
+	vecDirection.z = slopeOfVector;
 
-    bvector<IScalableMeshNodePtr> nodes;
-    params->SetDirection(vecDirection);
-    DPoint3d depthVal = DPoint3d::From(1000, 1000, 1000);
-    params->SetDepth(depthVal.x);
-    DPoint3d transformedPt = point;
-    m_UorsToStorage.Multiply(transformedPt);
+	IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+	params->SetUseUnboundedRay(false);
+	IScalableMeshNodeRayQueryPtr query = targetedMesh->GetNodeQueryInterface();
+	params->SetLevel(m_levelForDrapeLinear);
+
+	bvector<IScalableMeshNodePtr> nodes;
+
+	if (m_scmPtr->IsCesium3DTiles())
+	{
+		if (s_tryDoublePts)
+		{
+			DPoint3d origin = DPoint3d::From(0, 0, 0);
+			DPoint3d endPts = DPoint3d::From(vecDirection.x, vecDirection.y, vecDirection.z);
+
+			Transform dirTransformD(m_UorsToStorage);
+
+			dirTransformD.Multiply(origin);
+			dirTransformD.Multiply(endPts);
+
+			DVec3d vecDir2(DVec3d::FromStartEnd(origin, endPts));
+			vecDir2.Normalize();
+			vecDir2 = vecDir2;
+		}
+
+		Transform dirTransform(m_UorsToStorage);
+
+		if (s_zeroTranslation)
+		{
+			dirTransform.form3d[0][3] = 0;
+			dirTransform.form3d[1][3] = 0;
+			dirTransform.form3d[2][3] = 0;
+		}
+
+		dirTransform.Multiply(vecDirection);
+		vecDirection.Normalize();
 
 
-    QueryNodesBasedOnParams(nodes, transformedPt, params, targetedMesh);
+	}
+
+	params->SetDirection(vecDirection);
+	DPoint3d depthVal = DPoint3d::From(1000, 1000, 1000);
+	params->SetDepth(depthVal.x);
+	DPoint3d transformedPt = point;
+	m_UorsToStorage.Multiply(transformedPt);
+
+
+	QueryNodesBasedOnParams(nodes, transformedPt, params, targetedMesh);
     bvector<bool> clips;
     bool ret = false;
     for (auto& node : nodes)
