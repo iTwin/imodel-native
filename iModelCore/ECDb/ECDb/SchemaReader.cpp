@@ -294,11 +294,11 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-
     ECClassP classFromCache = nullptr;
     if (TryGetClassFromCache(classFromCache, ecClassId))
         return classFromCache;
+
+    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
 
     const int schemaIdColIx = 0;
     const int nameColIx = 1;
