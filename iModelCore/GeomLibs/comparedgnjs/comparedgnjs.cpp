@@ -214,7 +214,7 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 			return false;
 		// 2 nulls is implied ok
 		// 0 nulls needs comparison
-		if (numNull == 0 && !allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i]))
+		if (numNull == 0 && !allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i], compareTol))
 		{
 			messagePrefix(); printf("FAIL: Mismatched geometry at index %d\n", (int)i);
 			return false;
@@ -514,9 +514,9 @@ int main(int argc, char **argv)
         messagePrefix ("    -v2         beginning and end confirmation of filenames, Top level geometry counts. (geometry compare only)\n");
 		messagePrefix ("    -v3		  verbose json compare (JSON string compare mode only)\n");
         messagePrefix ("    -v11         all of above plus echo complete file contents (packed strings)\n");
+		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (default is 1.0e-12)\n");
 		messagePrefix ("    -d<N>		  allows <N> number of differences when comparing numeric values (JSON string compare mode only)\n");
-		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (JSON string compare mode only; default is 1.0e-12)\n");
-		messagePrefix ("    -j         force a json string compare, rather than the determined default\n");
+		messagePrefix ("    -j         force a JSON string compare, rather than the determined default\n");
 		messagePrefix ("    -g         force a geometric compare, rather than the determined default\n");
         messagePrefix ("    Read geometry from each file.  Compare with IGeometry::IsAlmostEqual.\n");
         return 1;
