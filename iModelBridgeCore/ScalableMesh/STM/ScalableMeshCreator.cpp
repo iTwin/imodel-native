@@ -439,16 +439,19 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
 
     DRange3d range;
     m_scmPtr->GetRange(range);
-    BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
 
+    //TFS# 761652 - Avoid reprojection at this stage so that the minimum pixel resolution is consistent whatever the reprojection is.
+    BaseGCSCPtr cs; //(GetGCS().GetGeoRef().GetBasePtr();)
+    
     DRange2d extent2d = DRange2d::From(range);
+    
     HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
 
     if (streamingRaster == nullptr)
         {
         return ERROR;
         }
-
+                    
     double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
     double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
 

@@ -111,6 +111,7 @@ double SMDrapedPoint::_GetDistanceAlong() const
     return dynamic_cast<SMDrapedLine*>(m_lineRef.get())->GetDistanceUntil(m_pt);
     }
 
+
 IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size_t depth, size_t segmentId)
 {
 	IScalableMeshNodePlaneQueryParamsPtr paramsLine = IScalableMeshNodePlaneQueryParams::CreateParams();
@@ -129,6 +130,7 @@ IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size
 	return paramsLine;
 }
 
+
 void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes)
     {
     for (size_t segment = 0; segment < m_numPointsOnPolyline - 1; segment++)
@@ -142,23 +144,23 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
             {
 			if (!m_isReprojected)
 			{
-				ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-					node->GetLevel(),
-					ray,
-					true,
-					DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
-					true,
-					ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
-				node->RunQuery(query, outNodes);
+            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+                                                                                   node->GetLevel(),
+                                                                                   ray,
+                                                                                   true,
+                                                                                   DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
+                                                                                   true,
+                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
+            node->RunQuery(query, outNodes);
 			}
 			else
-			{
+                {   
 				IScalableMeshNodePlaneQueryParamsPtr paramsLine(GetPlaneQueryParam(m_levelForDrapeLinear, segment));
 
-				ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<DPoint3d, DRange3d> query(range, node->GetLevel(), paramsLine->GetPlane(), paramsLine->GetDepth());
+                ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<DPoint3d, DRange3d> query(range, node->GetLevel(), paramsLine->GetPlane(), paramsLine->GetDepth());
 
-				node->RunQuery(query, outNodes);
-			}
+                node->RunQuery(query, outNodes);
+                }             
             }
 
         for (auto& node : outNodes)
@@ -191,22 +193,10 @@ void MeshTraversalQueue::CollectAll()
 				{
 				continue;
 				}
-			}
-
+			}       
 		else
 		    {
-			IScalableMeshNodePlaneQueryParamsPtr paramsLine = IScalableMeshNodePlaneQueryParams::CreateParams();
-			paramsLine->SetLevel(m_levelForDrapeLinear);
-
-			DPoint3d pointOnDirection, origin;
-			DVec3d drapeDirection = DVec3d::From(0, 0, -1);
-			m_reproTransform.Multiply(origin, m_polylineToDrape[segment]);
-
-			pointOnDirection.SumOf(origin, drapeDirection);
-			m_reproTransform.Multiply(pointOnDirection, pointOnDirection);
-
-			DPlane3d targetCuttingPlane = DPlane3d::From3Points(m_polylineToDrape[segment], m_polylineToDrape[segment + 1], pointOnDirection);
-			paramsLine->SetPlane(targetCuttingPlane);
+            IScalableMeshNodePlaneQueryParamsPtr paramsLine(GetPlaneQueryParam(m_levelForDrapeLinear, segment));
 
 			IScalableMeshMeshQueryPtr queryLine = m_scm->GetMeshQueryInterface(MESH_QUERY_PLANE_INTERSECT);
 			if (queryLine->Query(nodes, NULL, 0, paramsLine) != SUCCESS)
@@ -1387,6 +1377,8 @@ struct Location
     Location(size_t first, size_t last, int seg) : idxFirst(first), idxLast(last), segment(seg) {}
     };
 
+//#define DEACTIVATE_PARALLEL_DRAPE
+
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
 
@@ -1410,15 +1402,24 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
     if (!m_nodeSelection.empty()) queue.CollectAll(m_nodeSelection);
     else queue.CollectAll();
     size_t nOfNodesToSplit = queue.GetNumberOfNodes();
+
+#ifdef DEACTIVATE_PARALLEL_DRAPE
+    size_t chunkSize = nOfNodesToSplit;
+#else
     size_t chunkSize = nOfNodesToSplit < 8 ? 1 : nOfNodesToSplit / 8;
+#endif
+
     bvector<bvector<MeshTraversalStep>> stepData;
 
+#ifndef DEACTIVATE_PARALLEL_DRAPE
     for (size_t i = 0; i < 8; ++i)
+#endif
         {
         bvector<MeshTraversalStep> chunks;
         queue.GetNodes(chunks, chunkSize);
         stepData.push_back(chunks);
         }
+
     if (queue.HasNodesToProcess())
         {
         bvector<MeshTraversalStep> chunks;
@@ -1446,7 +1447,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
                     DTMDrapedLinePtr drapeForTile;
                     size_t nAdded = 0;
                     if (dtmPtr != nullptr)
-                        {
+                        {   
                         DTMStatusInt status = dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &line[0] + node.currentSegment, (int)2);
                         for (size_t i = 0; status == DTM_SUCCESS && i < drapeForTile->GetPointCount(); ++i)
                             {

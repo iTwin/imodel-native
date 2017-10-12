@@ -2138,7 +2138,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, SMStoreDataT
         {
         std::unique_ptr<DataSource::Buffer[]> dest;
         auto readSize = this->LoadDataBlock(dataSourceAccount, dest, dataSizeKnown);
-        assert(readSize > 0); // something went wrong loading streaming data block
+        //assert(readSize > 0); // something went wrong loading streaming data block
         if (readSize > 0)
             {
             m_pIsLoaded = true;

@@ -115,7 +115,9 @@ struct MeshTraversalQueue
 		bool m_isReprojected;
 
 
-        void ComputeDirectionOfNextNode(MeshTraversalStep& start);
+        void                                 ComputeDirectionOfNextNode(MeshTraversalStep& start);
+        IScalableMeshNodePlaneQueryParamsPtr GetPlaneQueryParam(size_t depth, size_t segmentId);
+        
 
     public:
 
