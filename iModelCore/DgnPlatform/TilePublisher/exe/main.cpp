@@ -54,6 +54,8 @@ enum class ParamId
     Environment,
     Project,
     Repository,
+    GlobeOn,
+    GlobeOff,
     Invalid,
 };
 
@@ -95,6 +97,8 @@ static CommandParam s_paramTable[] =
         { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
         { L"pr", L"project", L"Project for I-Model hub (History Publishing)", false, false },
         { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
+        { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
+        { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -311,6 +315,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_repository = Utf8String(arg.m_value.c_str());
                 break;
 
+            case ParamId::GlobeOn:
+                m_globeMode = PublisherContext::GlobeMode::On;
+                break;
+
+            case ParamId::GlobeOff:
+                m_globeMode = PublisherContext::GlobeMode::Off;
+                break;
 
             default:
                 printf("Unrecognized command option %ls\n", av[i]);

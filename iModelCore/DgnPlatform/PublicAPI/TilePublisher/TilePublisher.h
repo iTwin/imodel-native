@@ -234,6 +234,14 @@ struct PublisherContext : TileGenerator::ITileCollector
         Compressed,         
         };
 
+    enum class GlobeMode
+        {
+        FromDisplayStyle,   // Turn globe on based on display style setting.
+        Off,                // Turn globe off always.
+        On,                 // Turn globe on always.
+        };
+
+
     enum class Status
         {
         Success = SUCCESS,
@@ -311,8 +319,10 @@ protected:
     bset<DgnSubCategoryId>                      m_usedSubCategories;
     Json::Value                                 m_schedulesJson;
     T_ScheduleEntryMaps                         m_scheduleEntryMaps;
+    GlobeMode                                   m_globeMode = GlobeMode::FromDisplayStyle;
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
+
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
 
@@ -378,7 +388,7 @@ public:
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     void AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) { _AddBatchTableAttributes(json, attrs); }
 

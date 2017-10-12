@@ -42,6 +42,7 @@ struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
         }
     };  // CompareChangeSet
 
+#ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -68,6 +69,7 @@ static void getChangedGeometricElements(bvector<DgnElementId>& elementIds, bvect
         opcodes.push_back(opcode);
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
@@ -275,7 +277,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index, bool preview) : m_preview(preview), m_index(index),
     TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) 
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) 
     { 
     m_revisionName = WPrintfString(L"Revision_%d", index);
     if (preview)
@@ -348,7 +350,7 @@ struct BaselinePublisher : TilesetPublisher
 +---------------+---------------+---------------+---------------+---------------+------*/
 BaselinePublisher(DgnDbR db, PublisherParamsR params,  DgnViewIdSet const& viewIds, DgnViewId defaultViewId) : 
     TilesetPublisher(db, viewIds, defaultViewId, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput()) { }
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -467,10 +469,16 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
     for (int i = 0; i<changeSets.size(); i++)
         {
-        bvector<DgnElementId>   elementIds;
-        bvector<DbOpcode>       opCodes;
+        bvector<DgnRevisionPtr>             thisRevisions(1, changeSets.at(i));
+        VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*tempDb, thisRevisions, true);
+
+        bvector<BentleyApi::ECN::ECClassId> ecClassIds;
+        bvector<DgnElementId>               elementIds;
+        bvector<DbOpcode>                   
+        opCodes;
              
-        getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
+        changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
+        //getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
 
         printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
         Json::Value         revisionElementsJson = Json::objectValue;
