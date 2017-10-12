@@ -536,6 +536,11 @@ DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, 
         urn = docProps.m_webURN;
         }
 
+    if (urn.empty())
+        {
+        urn = Utf8String(localFileName);
+        }
+
     // Check to see if we already have a RepositoryLink for this code
     auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, code.c_str()));
 

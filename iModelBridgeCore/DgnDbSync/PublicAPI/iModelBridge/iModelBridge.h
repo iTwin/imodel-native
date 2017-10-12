@@ -122,6 +122,17 @@ The bridge's assets are separate from the framework's assets. The DgnPlatformLib
 A bridge should call BentleyApi::Dgn::iModelBridge::L10N::GetString to look up its own translatable strings.
 A bridge must override _SupplySqlangRelPath to specify the location of its .db3 file, relative to its own assets directory.
 A bridge must define its own translatable string tables using the IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START macro, and @em not the BENTLEY_TRANSLATABLE_STRINGS_START macro.
+
+@anchor ANCHOR_Provenance
+<h2>Provenance</h2>
+An iModelBridge is responsible for storing provenance data that relates the elements and models in the iModel to information in the source documents.
+Currently, the only required provenance is model to document. Provenance at the element level is currently optional.
+
+<h3>PartitionOriginatesFromRepository</h3>
+A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
+Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
+
 */
 
 //=======================================================================================
