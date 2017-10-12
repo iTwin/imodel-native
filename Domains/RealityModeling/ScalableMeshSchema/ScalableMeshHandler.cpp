@@ -288,7 +288,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                              const Transform&                            smToDgnUorTransform,
                              ScalableMeshDisplayCacheManager*            mgr, 
                              bset<uint64_t>&                             activeClips, 
-                             bool                                        displayTexture)
+                             bool                                        displayTexture, 
+                             bool                                        isCesium)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -466,8 +467,19 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
             */
 #ifndef NDEBUG
             if (s_showTiles)
-                { 
+                {                 
                 DRange3d contentExtent(meshNodes[nodeInd]->GetContentExtent());
+
+                if (isCesium)
+                    {
+                    context.PopTransformClip();
+
+                    DPoint3d box[8];
+                    contentExtent.Get8Corners(box);
+                    smToDgnUorTransform.Multiply(box, 8);
+                    contentExtent = DRange3d::From(box, 8);                    
+                    }               
+
                 __int64  nodeId(meshNodes[nodeInd]->GetNodeId());
 
                 TextString nodeIdString;
@@ -499,6 +511,12 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                 box[3] = box[7];
                 
                 context.GetIDrawGeom().DrawLineString3d(5, &box[3], nullptr);                
+
+
+                if (isCesium)
+                    {
+                    context.PushTransform(smToDgnUorTransform);
+                    }
                 }
 #endif
 
@@ -705,8 +723,8 @@ virtual Completion _Process(ViewContextR viewContext) override
         }
     else    
     if (s_drawInProcess)
-        {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache,  m_activeClips, m_displayTexture);
+        {        
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache,  m_activeClips, m_displayTexture, m_currentDrawingInfoPtr->m_smPtr->IsCesium3DTiles());
         }
             
     return completionStatus;
@@ -1008,9 +1026,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         //if the view has not changed.
         if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false && !m_forceRedraw)                
             {
-            //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
-
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture);
+            //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));            
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture, m_smPtr->IsCesium3DTiles());
             
             return;                        
             }   
@@ -1192,8 +1209,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         needProgressive = true;
         }                         
 
+    
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture);
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture, m_smPtr->IsCesium3DTiles());
 
 
     if (needProgressive)
