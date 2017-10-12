@@ -158,7 +158,6 @@ struct MeshTraversalQueue
 
         void CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes);
 
-		IScalableMeshNodePlaneQueryParamsPtr GetPlaneQueryParam(size_t depth, size_t segmentId);
 
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();
