@@ -1197,7 +1197,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 keyList.push_back(nodeKey);
                 INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
                 SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
-                RulesDrivenECPresentationManager::ContentOptions options ("Items", false);
+                RulesDrivenECPresentationManager::ContentOptions options ("Items");
                 if ( m_db->m_presentationManager == nullptr)
                     {
                     m_status = DgnDbStatus::BadArg;
