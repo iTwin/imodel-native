@@ -1159,6 +1159,26 @@ void RunDTMTriangulateTest2()
 	dtmP->GetBoundary(bound);*/
 }
 
+void RunCompareLineTest()
+{
+	WString path = WString(L"c:\\work\\line1.p");
+	FILE* mesh = _wfopen(path.c_str(), L"rb");
+	size_t nVerts = 0;
+	fread(&nVerts, sizeof(size_t), 1, mesh);
+	bvector<DPoint3d> poly;
+	poly.resize(nVerts);
+	fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+	fclose(mesh);
+	path = WString(L"c:\\work\\line2.p");
+	mesh = _wfopen(path.c_str(), L"rb");
+	size_t nVerts2 = 0;
+	fread(&nVerts2, sizeof(size_t), 1, mesh);
+	bvector<DPoint3d> poly2;
+	poly2.resize(nVerts2);
+	fread(&poly2[0], sizeof(DPoint3d), nVerts2, mesh);
+	fclose(mesh);
+}
+
 void RunDTMSTMTriangulateTest()
     {
     WString pathMeshes = L"E:\\makeTM\\newcliptm";
@@ -1783,7 +1803,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //DarylsTestFunction();
    // RunDTMClipTest();
-    RunDTMTriangulateTest2();
+   // RunDTMTriangulateTest2();
+	RunCompareLineTest();
 	//RunMergePolygons();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();

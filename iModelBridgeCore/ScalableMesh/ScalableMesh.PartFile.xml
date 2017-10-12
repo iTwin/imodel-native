@@ -275,7 +275,7 @@
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
-<ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
+        <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
         <!--<ProductDirectory Name="http" Path="Dlls" Deliver="true"/>-->
@@ -327,7 +327,10 @@
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="ScalableMeshV8SDK"  Deliver="false" Path="Dlls\ScalableMeshV8SDK" />
-    </ProductDirectoryList>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"  Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="false"/>   
+</ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />

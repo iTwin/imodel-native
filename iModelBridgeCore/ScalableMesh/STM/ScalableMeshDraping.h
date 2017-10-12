@@ -158,6 +158,7 @@ struct MeshTraversalQueue
 
         void CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes);
 
+
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();
         bool NextAlongElevation();

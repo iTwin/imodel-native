@@ -3565,7 +3565,7 @@ template <class POINT> int ScalableMeshNodePlaneQuery<POINT>::_Query(bvector<ISc
     ScalableMeshNodePlaneQueryParams* params = (ScalableMeshNodePlaneQueryParams*)scmQueryParamsPtr.get();
 
     vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> nodes;
-    ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, Extent3dType> query(m_scmIndexPtr->GetContentExtent(), m_scmIndexPtr->GetDepth(), params->GetPlane(), params->GetDepth());
+    ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, Extent3dType> query(m_scmIndexPtr->GetContentExtent(), scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(), params->GetPlane(), params->GetDepth());
     m_scmIndexPtr->Query(&query, nodes);
     if (0 == nodes.size()) return ERROR;
     for (auto& node : nodes)
