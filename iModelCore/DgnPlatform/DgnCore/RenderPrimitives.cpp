@@ -2367,13 +2367,17 @@ void GeometryListBuilder::AddCurveVector(CurveVectorR curves, bool isFilled, boo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
     {
-    bool haveDisjoint = false, haveContinuous = false;
+    size_t numDisjoint = 0;
+    bool haveContinuous = false;
+
+    // NB: Somebody might stick a 'point' or point string into a curve vector with a boundary...
+    // No idea what they expect us to do if it also contains continuous curves but it's dumb anyway.
     if (!isFilled && CurveVector::BOUNDARY_TYPE_None == curves.GetBoundaryType())
         {
         for (auto const& prim : curves)
             {
             if (isDisjointCurvePrimitive(*prim))
-                haveDisjoint = true;
+                ++numDisjoint;
             else
                 haveContinuous = true;
             }
@@ -2383,6 +2387,7 @@ void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
         haveContinuous = true;
         }
 
+    bool haveDisjoint = numDisjoint > 0;
     BeAssert(haveDisjoint || haveContinuous);
     if (haveDisjoint != haveContinuous)
         {
@@ -2391,7 +2396,17 @@ void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
         return;
         }
 
-    // ###TODO: Must split up disjoint and continuous into two separate curve vectors...
+    // Must split up disjoint and continuous into two separate curve vectors...
+    // Note std::partition does not preserve relative order, but we don't care because boundary type NONE.
+    std::partition(curves.begin(), curves.end(), [](ICurvePrimitivePtr const& arg) { return !isDisjointCurvePrimitive(*arg); });
+    auto firstDisjoint = curves.begin() + (curves.size() - numDisjoint);
+
+    CurveVectorPtr disjointCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    disjointCurves->insert(disjointCurves->begin(), firstDisjoint, curves.end());
+    curves.erase(firstDisjoint, curves.end());
+
+    AddCurveVector(curves, false, false);
+    AddCurveVector(*disjointCurves, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
