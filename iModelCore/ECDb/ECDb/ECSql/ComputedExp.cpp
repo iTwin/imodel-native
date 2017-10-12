@@ -127,38 +127,18 @@ bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Par
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
     {
-    //parameter types are determined later, so exclude them from type checking
-    const bool lhsIsParameter = lhs.IsParameterExp();
-    const bool rhsIsParameter = rhs.IsParameterExp();
+    //The parser imposes as little comparability restrictions on top of the ECSQL grammar as possible.
+    //It is the aim of the parser to control comparability either by the grammar or by SQLite
+
     ECSqlTypeInfo const& lhsTypeInfo = lhs.GetTypeInfo();
     ECSqlTypeInfo const& rhsTypeInfo = rhs.GetTypeInfo();
     const ECSqlTypeInfo::Kind lhsTypeKind = lhsTypeInfo.GetKind();
     const ECSqlTypeInfo::Kind rhsTypeKind = rhsTypeInfo.GetKind();
-    const bool lhsIsNull = lhsTypeKind == ECSqlTypeInfo::Kind::Null;
-    const bool rhsIsNull = rhsTypeKind == ECSqlTypeInfo::Kind::Null;
-
-    if (lhsIsNull || rhsIsNull)
-        {
-        if (m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot &&
-            m_op != BooleanSqlOperator::EqualTo && m_op != BooleanSqlOperator::NotEqualTo)
-            {
-            ctx.Issues().Report("Type mismatch in expression '%s'. NULL can only be used with operators IS, IS NOT, = or <>.", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-        }
-
-    if (m_op == BooleanSqlOperator::Is || m_op == BooleanSqlOperator::IsNot)
-        {
-        if (!lhsIsNull && !rhsIsNull)
-            {
-            ctx.Issues().Report("Type mismatch in expression '%s'. Operators IS or IS NOT can only be used with NULL.", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-        }
 
     //first check whether types on both sides match generally for comparisons
     Utf8String canCompareErrorMessage;
-    if (!lhsIsParameter && !rhsIsParameter && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
+    //parameter types are determined later, so exclude them from type checking
+    if (!lhs.Contains(Exp::Type::Parameter) && !rhs.Contains(Exp::Type::Parameter) && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
         {
         if (canCompareErrorMessage.empty())
             ctx.Issues().Report("Type mismatch in expression '%s'.", ToECSql().c_str());
@@ -166,16 +146,6 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
             ctx.Issues().Report("Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
 
         return FinalizeParseStatus::Error;
-        }
-
-    if (m_op == BooleanSqlOperator::Like || m_op == BooleanSqlOperator::NotLike)
-        {
-        if ((!lhsIsParameter && (!lhsTypeInfo.IsPrimitive() || lhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)) ||
-            (!rhsIsParameter && (!rhsTypeInfo.IsPrimitive() || rhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)))
-            {
-            ctx.Issues().Report("Type mismatch in expression '%s'. LIKE operator only supported with string operands.", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
         }
 
     const bool lhsIsStructWithStructArray = (lhsTypeKind == ECSqlTypeInfo::Kind::Struct && ContainsStructArrayProperty(lhsTypeInfo.GetStructType()));

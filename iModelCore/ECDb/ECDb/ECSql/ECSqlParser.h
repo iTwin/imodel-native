@@ -42,10 +42,9 @@ public:
     void const* const GetFinalizeParseArg() const;
     void PopFinalizeParseArg();
 
-    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
-    bool IsEndClassOfRelationship(ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
     Utf8String GenerateAlias();
 
     int TrackECSqlParameter(ParameterExp& parameterExp);
@@ -162,8 +161,8 @@ private:
     BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const*, bool isPolymorphic) const;
-    BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const*, ECSqlType, bool isPolymorphic) const;
+    BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
     BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseTruthValue(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* node) const { return ParseValueExp(exp, node); }
 

@@ -234,7 +234,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
 
     ECSqlTypeInfo const& castOperandTypeInfo = GetCastOperand()->GetTypeInfo();
-    if (castOperandTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null) //NULL can always be cast
+    if (castOperandTypeInfo.IsNull()) //NULL can always be cast
         return FinalizeParseStatus::Completed;
 
     if (!castOperandTypeInfo.IsPrimitive())
@@ -549,8 +549,9 @@ void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
 Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
-
+        return FinalizeParseStatus::NotCompleted;
+        
+    SetTypeInfo(GetRhsExp()->GetTypeInfo());
     return FinalizeParseStatus::Completed;
     }
 
@@ -638,9 +639,10 @@ int64_t LiteralValueExp::GetValueAsInt64() const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool LiteralValueExp::GetValueAsBoolean() const
     {
-    if (m_value.EqualsI("TRUE"))
+    if (m_value.EqualsIAscii("TRUE"))
         return true;
-    if (m_value.EqualsI("FALSE"))
+
+    if (m_value.EqualsIAscii("FALSE"))
         return false;
 
     BeAssert(false && "value doesn't represent a boolean value of 'true' or 'false'");
@@ -688,7 +690,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
-    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
+    if (typeInfo.IsNull())
         {
         ctx.AppendToECSql("NULL");
         if (HasParentheses())

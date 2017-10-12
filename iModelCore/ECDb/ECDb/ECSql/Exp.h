@@ -346,7 +346,7 @@ struct Exp : NonCopyableClass
     private:
         Type m_type;
         Exp* m_parent = nullptr;
-        mutable Exp::Collection m_derivedTables;
+        mutable Exp::Collection m_children;
         bool m_isComplete = false;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
@@ -354,25 +354,24 @@ struct Exp : NonCopyableClass
         virtual void _ToECSql(ECSqlRenderContext&) const = 0;
         virtual Utf8String _ToString() const = 0;
 
+        void Find(std::vector<Exp const*>& expList, Type candidateType, bool recursive) const;
+
     protected:
         explicit Exp(Type type) : m_type(type) {}
 
         void SetIsComplete() { m_isComplete = true; }
 
         template <typename TExp>
-        TExp const* GetChild(size_t index) const { return m_derivedTables.Get<TExp>(index); }
+        TExp const* GetChild(size_t index) const { return m_children.Get<TExp>(index); }
         template <typename TExp>
         TExp* GetChildP(size_t index) const
             {
-            Exp* child = m_derivedTables[index];
+            Exp* child = m_children[index];
             BeAssert(child == nullptr || dynamic_cast<TExp*> (child) != nullptr);
             return static_cast<TExp*> (child);
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
-        //Collection& GetChildrenR() const { return m_derivedTables; }
-        void FindRecursive(std::vector<Exp const*>& expList, Type ofType) const;
-        void FindInDirectDecendents(std::vector<Exp const*>& expList, Type ofType) const;
 
     public:
         virtual ~Exp() {}
@@ -395,9 +394,9 @@ struct Exp : NonCopyableClass
         Type GetType() const { return m_type; }
         bool IsParameterExp() const { return GetType() == Type::Parameter; }
         Exp const* GetParent() const { return m_parent; }
-        Collection const& GetChildren() const { return m_derivedTables; }
-        Collection& GetChildrenR() { return m_derivedTables; }
-        size_t GetChildrenCount() const { return m_derivedTables.size(); }
+        Collection const& GetChildren() const { return m_children; }
+        Collection& GetChildrenR() { return m_children; }
+        size_t GetChildrenCount() const { return m_children.size(); }
 
         //! Converts this expression into an ECSQL snippet.
         //! The child expressions are considered in this conversion.
@@ -411,7 +410,8 @@ struct Exp : NonCopyableClass
 
         static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
         Exp const* FindParent(Exp::Type) const;
-        std::vector<Exp const*> Find(Type ofType, bool recursive) const;
+        bool Contains(Type candidateType) const;
+        std::vector<Exp const*> Find(Type candidateType, bool recursive) const;
     };
 
 typedef Exp const* ExpCP;

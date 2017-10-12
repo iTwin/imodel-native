@@ -63,7 +63,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareLimitOffsetExp(ECSqlPrepareContext&, LimitOffsetExp const&);
         static ECSqlStatus PrepareLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const&);
         static ECSqlStatus PrepareNaturalJoinExp(ECSqlPrepareContext&, NaturalJoinExp const&);
-        static ECSqlStatus PrepareNullLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const&, size_t targetExpNativeSqlSnippetCount);
+        static ECSqlStatus PrepareNullExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ComputedExp const&, size_t targetExpNativeSqlSnippetCount);
         static ECSqlStatus PrepareOrderByExp(ECSqlPrepareContext&, OrderByExp const&);
         static ECSqlStatus PrepareParameterExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ParameterExp const&);
         static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext&, QualifiedJoinExp const&);
@@ -83,7 +83,6 @@ struct ECSqlExpPreparer final
         static ECSqlStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const&);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
 
-        static bool IsNullExp(ExpCR);
     };
 
 

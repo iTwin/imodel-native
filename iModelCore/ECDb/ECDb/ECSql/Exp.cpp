@@ -18,32 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 Utf8CP const Exp::ASTERISK_TOKEN = "*";
 
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    09/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindRecursive(std::vector<Exp const*>& expList, Exp::Type ofType) const
-    {
-    if (GetType() == ofType)
-        expList.push_back(this);
-
-    for (Exp const* child : m_derivedTables)
-        child->FindRecursive(expList, ofType);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    09/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindInDirectDecendents(std::vector<Exp const*>& expList, Exp::Type ofType) const
-    {
-    if (GetType() == ofType)
-        expList.push_back(this);
-
-    for (Exp const* child : m_derivedTables)
-        {
-        if (child->GetType() == ofType)
-            expList.push_back(this);
-        }
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
@@ -60,17 +34,45 @@ Exp const* Exp::FindParent(Exp::Type type) const
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool Exp::Contains(Exp::Type candidateType) const
+    {
+    if (GetType() == candidateType)
+        return true;
+
+    for (Exp const* child : m_children)
+        {
+        if (child->Contains(candidateType))
+            return true;
+        }
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::vector<Exp const*> Exp::Find(Exp::Type ofType, bool recusive) const
+std::vector<Exp const*> Exp::Find(Exp::Type candidateType, bool recursive) const
     {
     std::vector<Exp const*> tmp;
-    if (recusive)
-        FindRecursive(tmp, ofType);
-    else
-        FindInDirectDecendents(tmp, ofType);
-
+    Find(tmp, candidateType, recursive);
     return tmp;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+void Exp::Find(std::vector<Exp const*>& expList, Exp::Type candidateType, bool recursive) const
+    {
+    if (GetType() == candidateType)
+        expList.push_back(this);
+
+    if (!recursive)
+        return;
+
+    for (Exp const* child : m_children)
+        child->Find(expList, candidateType, recursive);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -80,9 +82,9 @@ size_t Exp::AddChild(std::unique_ptr<Exp> child)
     {
     BeAssert(child != nullptr);
     child->m_parent = this;
-    m_derivedTables.m_collection.push_back(std::move(child));
+    m_children.m_collection.push_back(std::move(child));
     //return index of added child
-    return m_derivedTables.size() - 1;
+    return m_children.size() - 1;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -106,7 +108,7 @@ BentleyStatus Exp::FinalizeParsing(ECSqlParseContext& ctx)
             }
         }
 
-    for (Exp* child : m_derivedTables)
+    for (Exp* child : m_children)
         {
         if (SUCCESS != child->FinalizeParsing(ctx))
             return ERROR;
