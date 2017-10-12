@@ -293,7 +293,7 @@ TEST_F(RelationshipMappingTestFixture, InvalidCases)
                                                             "      <Class class='PhysicalElement' />"
                                                             "    </Target>"
                                                             "  </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "FK rels cannot have NotMapped map strategy if constraint class is not mapped";
+                                                            "</ECSchema>"))) << "Subclasses of FK rels cannot have NotMapped map strategy";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -323,7 +323,7 @@ TEST_F(RelationshipMappingTestFixture, InvalidCases)
 TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                            "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                            "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                             "    <ECEntityClass typeName='A' modifier='None'>"
                                                             "        <ECProperty propertyName='AProp' typeName='int' />"
@@ -345,11 +345,45 @@ TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
                                                             "           <Class class='B' />"
                                                             "       </Target>"
                                                             "     </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too";
+                                                            "</ECSchema>"))) << "ECRelationshipClass with FK mapping cannot have a ClassMap CA with MapStrategy NotMapped. The Navigation Property class must have NotMapped instead";
 
     {
     ASSERT_EQ(SUCCESS, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                                     "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "<ECSchema schemaName='Test2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                     "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                     "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECEntityClass typeName='B' modifier='None'>"
+                                                                     "        <ECCustomAttributes>"
+                                                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                     "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                     "            </ClassMap>"
+                                                                     "        </ECCustomAttributes>"
+                                                                     "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                                     "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                                     "        <ECCustomAttributes>"
+                                                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                     "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                     "            </ClassMap>"
+                                                                     "        </ECCustomAttributes>"
+                                                                     "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                                     "           <Class class='A' />"
+                                                                     "       </Source>"
+                                                                     "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                                     "           <Class class='B' />"
+                                                                     "       </Target>"
+                                                                     "     </ECRelationshipClass>"
+                                                                     "</ECSchema>"))) << "Nav prop class has NotMapped strategy, rel has it";
+    EXPECT_EQ(MapStrategy::OwnTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test2", "A")).GetStrategy());
+    EXPECT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test2", "B")).GetStrategy());
+    EXPECT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test2", "Rel")).GetStrategy());
+    }
+
+    ASSERT_EQ(ERROR, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                     "<ECSchema schemaName='Test3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                      "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                                      "    <ECEntityClass typeName='A' modifier='None'>"
                                                                      "        <ECProperty propertyName='AProp' typeName='int' />"
@@ -371,15 +405,10 @@ TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
                                                                      "           <Class class='B' />"
                                                                      "       </Target>"
                                                                      "     </ECRelationshipClass>"
-                                                                     "</ECSchema>"))) << "Nav prop class has NotMapped strategy, but rel doesn't";
-
-    ASSERT_EQ(MapStrategy::OwnTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "A")).GetStrategy());
-    ASSERT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "B")).GetStrategy());
-    ASSERT_EQ(MapStrategy::ForeignKeyRelationshipInTargetTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Rel")).GetStrategy());
-    }
+                                                                     "</ECSchema>"))) << "Nav prop class has NotMapped strategy, rel doesn't";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                            "<ECSchema schemaName='Test20' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                            "<ECSchema schemaName='Test4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                             "    <ECEntityClass typeName='A' modifier='None'>"
                                                             "        <ECCustomAttributes>"
@@ -401,8 +430,314 @@ TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
                                                             "           <Class class='B' />"
                                                             "       </Target>"
                                                             "     </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "Parent class has NotMapped strategy, but rel doesn't.";
+                                                            "</ECSchema>"))) << "Parent class has NotMapped strategy, rel doesn't.";
 
+    ASSERT_EQ(ERROR, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                     "<ECSchema schemaName='Test5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                     "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                     "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECEntityClass typeName='B' modifier='None'>"
+                                                                     "        <ECCustomAttributes>"
+                                                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                     "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                     "            </ClassMap>"
+                                                                     "        </ECCustomAttributes>"
+                                                                     "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                                     "       <Source multiplicity='(0..*)' polymorphic='True' roleLabel='references'>"
+                                                                     "           <Class class='A' />"
+                                                                     "       </Source>"
+                                                                     "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                                     "           <Class class='B' />"
+                                                                     "       </Target>"
+                                                                     "     </ECRelationshipClass>"
+                                                                     "</ECSchema>"))) << "Target constraint class of Link Table rel has NotMapped";
+
+    ASSERT_EQ(ERROR, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                   "<ECSchema schemaName='Test6' alias='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                   "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                   "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                   "    </ECEntityClass>"
+                                                                   "    <ECEntityClass typeName='BaseB' modifier='None'>"
+                                                                   "        <ECCustomAttributes>"
+                                                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                   "            </ClassMap>"
+                                                                   "        </ECCustomAttributes>"
+                                                                   "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                   "    </ECEntityClass>"
+                                                                   "    <ECEntityClass typeName='B1' modifier='None'>"
+                                                                   "        <ECCustomAttributes>"
+                                                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                   "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                   "            </ClassMap>"
+                                                                   "        </ECCustomAttributes>"
+                                                                   "        <BaseClass>BaseB</BaseClass>"
+                                                                   "        <ECProperty propertyName='B1Prop' typeName='int' />"
+                                                                   "    </ECEntityClass>"
+                                                                   "    <ECEntityClass typeName='B2' modifier='None'>"
+                                                                   "        <BaseClass>BaseB</BaseClass>"
+                                                                   "        <ECProperty propertyName='B2Prop' typeName='int' />"
+                                                                   "    </ECEntityClass>"
+                                                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                                   "       <Source multiplicity='(0..*)' polymorphic='True' roleLabel='references'>"
+                                                                   "           <Class class='A' />"
+                                                                   "       </Source>"
+                                                                   "       <Target multiplicity='(0..*)' polymorphic='True' abstractConstraintClass='BaseB' roleLabel='is referenced by'>"
+                                                                   "           <Class class='B1' />"
+                                                                   "           <Class class='B2' />"
+                                                                   "       </Target>"
+                                                                   "     </ECRelationshipClass>"
+                                                                   "</ECSchema>"))) << "One of the two Target constraint class of Link Table rel has NotMapped";
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("notmappedcatests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test7" alias="ts7" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml"),
+                                                        SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test7_Supp" alias="ts7_supp" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                               <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+
+                                                               <ECCustomAttributes>
+                                                                    <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+                                                                        <PrimarySchemaReference>
+                                                                            <SchemaName>Test7</SchemaName>
+                                                                            <MajorVersion>1</MajorVersion>
+                                                                            <WriteVersion>0</WriteVersion>
+                                                                            <MinorVersion>0</MinorVersion>
+                                                                        </PrimarySchemaReference>
+                                                                        <Precedence>9900</Precedence>
+                                                                        <Purpose>Localization</Purpose>                                                             
+                                                                    </SupplementalSchema>
+                                                               </ECCustomAttributes>
+
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml")})) << "Schema import where NotMapped is applied via supplementation";
+    
+    EXPECT_EQ(MapStrategy::OwnTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test7", "A")).GetStrategy());
+    EXPECT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test7", "B")).GetStrategy());
+    EXPECT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test7", "Rel")).GetStrategy());
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("notmappedcatests.ecdb"));
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test8" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml"),
+                                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test8_Supp" alias="ts8_supp" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                               <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+
+                                                               <ECCustomAttributes>
+                                                                    <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+                                                                        <PrimarySchemaReference>
+                                                                            <SchemaName>Test8</SchemaName>
+                                                                            <MajorVersion>1</MajorVersion>
+                                                                            <WriteVersion>0</WriteVersion>
+                                                                            <MinorVersion>0</MinorVersion>
+                                                                        </PrimarySchemaReference>
+                                                                        <Precedence>9900</Precedence>
+                                                                        <Purpose>Localization</Purpose>                                                             
+                                                                    </SupplementalSchema>
+                                                               </ECCustomAttributes>
+
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml")})) << "NotMapped is applied via supplementation only to rel, not to nav prop class";
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("notmappedcatests.ecdb"));
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test9" alias="ts9" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml"),
+                                               SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test9_Supp" alias="ts9_supp" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                               <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+
+                                                               <ECCustomAttributes>
+                                                                    <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+                                                                        <PrimarySchemaReference>
+                                                                            <SchemaName>Test9</SchemaName>
+                                                                            <MajorVersion>1</MajorVersion>
+                                                                            <WriteVersion>0</WriteVersion>
+                                                                            <MinorVersion>0</MinorVersion>
+                                                                        </PrimarySchemaReference>
+                                                                        <Precedence>9900</Precedence>
+                                                                        <Purpose>Localization</Purpose>                                                             
+                                                                    </SupplementalSchema>
+                                                               </ECCustomAttributes>
+
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml")})) << "NotMapped is applied via supplementation only to nav prop class, not to rel class";
+    }
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                     "<ECSchema schemaName='Test10' alias='ts10' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                     "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECEntityClass typeName='B' modifier='None'>"
+                                                                     "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                                     "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                                     "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                                     "           <Class class='A' />"
+                                                                     "       </Source>"
+                                                                     "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                                     "           <Class class='B' />"
+                                                                     "       </Target>"
+                                                                     "     </ECRelationshipClass>"
+                                                                     "</ECSchema>")));
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                                              <ECSchema schemaName="Test10" alias="ts10" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                                               <ECEntityClass typeName="A" modifier="None">
+                                                                    <ECProperty propertyName="AProp" typeName="int" />
+                                                               </ECEntityClass>
+                                                               <ECEntityClass typeName="B" modifier="None">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                   <ECProperty propertyName="BProp" typeName="int" />
+                                                                   <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>
+                                                                </ECEntityClass>
+                                                                <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                                                                   <ECCustomAttributes>
+                                                                       <ClassMap xmlns="ECDbMap.02.00">
+                                                                           <MapStrategy>NotMapped</MapStrategy>
+                                                                       </ClassMap>
+                                                                   </ECCustomAttributes>
+                                                                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                                                                    <Class class="A" />
+                                                                  </Source>
+                                                                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is referenced by">
+                                                                    <Class class="B" />
+                                                                  </Target>
+                                                                 </ECRelationshipClass>
+                                                             </ECSchema>)xml"))) << "Changing map strategy to NotMapped in schema update is not supported";
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -4267,7 +4602,7 @@ TEST_F(RelationshipMappingTestFixture, UpgradeModifierFromSealed)
         EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract never supported";
 
         schemaV2.Sprintf(schema, "None");
-        EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaV2)));
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to None is not supported for link tables as it would change the mapping type";
         }
     }
 

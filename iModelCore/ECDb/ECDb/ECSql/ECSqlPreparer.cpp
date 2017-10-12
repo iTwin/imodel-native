@@ -625,16 +625,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeS
 ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp)
     {
     //WIP_ECSQL: Add support for PointXD
+    NativeSqlBuilder nativeSqlBuilder;
     ECSqlTypeInfo const& typeInfo = exp.GetTypeInfo();
     if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
         {
-        BeAssert(false && "Preparation of NULL expression must be called in context of the target expression.");
-        return ECSqlStatus::Error;
+        nativeSqlBuilder.Append("null");
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        return ECSqlStatus::Success;
         }
 
     Utf8StringCR expValue = exp.GetValue();
 
-    NativeSqlBuilder nativeSqlBuilder;
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
 

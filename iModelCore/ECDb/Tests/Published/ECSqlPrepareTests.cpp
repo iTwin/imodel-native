@@ -621,7 +621,13 @@ TEST_F(ECSqlSelectPrepareTests, From)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM blabla.PSA"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, blabla FROM ecsql.PSA"));
     }
-
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                       10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectPrepareTests, SubQuery)
+    {
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (SELECT COUNT(*) FROM ecsql.PSA)"));
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -825,6 +831,8 @@ TEST_F(ECSqlSelectPrepareTests, Join)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, LikeOperator)
     {
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE null"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE NULL"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam%'"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I LIKE 'Sam%'"));

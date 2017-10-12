@@ -152,36 +152,6 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
 
     return subset;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-bset<ECN::ECClassId> const& LightweightCache::GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const
-    {
-    if (m_contraintClassDirectRelationships.empty())
-        {
-        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-            "SELECT RCC.ClassId, RC.RelationshipClassId  FROM ec_RelationshipConstraintClass RCC "
-            "INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
-            "GROUP BY RCC.ClassId, RC.RelationshipClassId ");
-        
-        ECClassId oldCurrentClassId;
-        bset<ECN::ECClassId>* relationships = nullptr;
-        while (stmt->Step() == BE_SQLITE_ROW)
-            {
-            ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
-            ECClassId relationshipClassId = stmt->GetValueId<ECClassId>(1);
-            if (oldCurrentClassId != constraintClassId)
-                {
-                oldCurrentClassId = constraintClassId;
-                relationships = &m_contraintClassDirectRelationships[constraintClassId];
-                }
-        
-            relationships->insert(relationshipClassId);
-            }
-        }
-
-    return m_contraintClassDirectRelationships[constraintId];
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -194,13 +164,11 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
 
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
     CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-        "SELECT [RC].[RelationshipClassId], " 
-        "       [RC].[RelationshipEnd] "
-        "FROM   [ec_RelationshipConstraint] [RC] "
-        "       INNER JOIN [ec_RelationshipConstraintClass] [RCC] ON [RCC].[ConstraintId] = [RC].[Id] "
-        "       LEFT JOIN [" TABLE_ClassHierarchyCache "] [CBC] ON [CBC].[BaseClassId] = [RCC].[ClassId] "
-        "       AND [RC].[IsPolymorphic] = " SQLVAL_True " "
-        "WHERE  COALESCE ([CBC].[ClassId], [RCC].[ClassId]) = ?; ");
+        "SELECT rc.RelationshipClassId, rc.RelationshipEnd "
+        "FROM ec_RelationshipConstraint rc "
+        "INNER JOIN ec_RelationshipConstraintClass rcc ON rcc.ConstraintId=rc.Id "
+        "LEFT JOIN " TABLE_ClassHierarchyCache " ch ON ch.BaseClassId=rcc.ClassId AND rc.IsPolymorphic= " SQLVAL_True " "
+        "WHERE COALESCE(ch.ClassId,rcc.ClassId) = ?");
 
     if (stmt == nullptr)
         {
@@ -343,7 +311,6 @@ void LightweightCache::Reset()
     m_storageDescriptions.clear();
     m_relationshipPerTable.clear();
     m_tablesPerClassId.clear();
-    m_contraintClassDirectRelationships.clear();
     }
 
 

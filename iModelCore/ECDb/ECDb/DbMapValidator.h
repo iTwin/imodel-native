@@ -15,16 +15,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct DbMapValidator final : NonCopyableClass
     {
-    enum class Mode
-        {
-        InMemory,
-        All
-        };
-
     private:
         DbMap const& m_dbMap;
         SchemaImportContext& m_schemaImportContext;
-        Mode m_mode = Mode::All;
 
         mutable bmap<DbColumnId, bset<DbIndex const*>> m_indexesByColumnCache;
 
@@ -54,7 +47,7 @@ struct DbMapValidator final : NonCopyableClass
         IssueReporter const& Issues() const { return m_dbMap.Issues(); }
 
     public:
-        DbMapValidator(DbMap const& dbMap, SchemaImportContext& ctx, Mode validationMode = Mode::All) : m_dbMap(dbMap), m_schemaImportContext(ctx), m_mode(validationMode) {}
+        DbMapValidator(DbMap const& dbMap, SchemaImportContext& ctx) : m_dbMap(dbMap), m_schemaImportContext(ctx) {}
         ~DbMapValidator() {}
 
         BentleyStatus Validate() const;

@@ -44,8 +44,8 @@ ConstraintECInstanceIdPropertyMap const* RelationshipClassMap::GetConstraintECIn
     {
     if (constraintEnd == ECRelationshipEnd_Source)
         return GetSourceECInstanceIdPropMap();
-    else
-        return GetTargetECInstanceIdPropMap();
+
+    return GetTargetECInstanceIdPropMap();
     }
 
 //---------------------------------------------------------------------------------------
@@ -55,8 +55,8 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
     {
     if (constraintEnd == ECRelationshipEnd_Source)
         return GetSourceECClassIdPropMap();
-    else
-        return GetTargetECClassIdPropMap();
+
+    return GetTargetECClassIdPropMap();
     }
 
 
@@ -75,10 +75,6 @@ RelationshipClassEndTableMap const* RelationshipClassEndTableMap::GetBaseClassMa
     ECRelationshipClassCP relationshipClass = static_cast<ECRelationshipClassCP>(GetClass().GetBaseClasses().front());
     if (ClassMapCP classMap = GetDbMap().GetClassMap(*relationshipClass))
         return &classMap->GetAs<RelationshipClassEndTableMap>();
-
-    BeAssert(ctx != nullptr);
-    if (GetDbMap().MapRelationshipClass(*ctx, *relationshipClass) == ClassMappingStatus::Success)
-        return &GetDbMap().GetClassMap(*relationshipClass)->GetAs<RelationshipClassEndTableMap>();
 
     BeAssert(false);
     return nullptr;
@@ -99,6 +95,88 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetForeignEnd() const
     {
     return GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
+    {
+    RelationshipClassEndTableMap const* baseClassMap = GetBaseClassMap(&ctx.GetImportCtx());
+    if (baseClassMap != nullptr)
+        return MapSubClass(*baseClassMap);
+
+    //End table relationship is always mapped to virtual table.
+    //we use nav properties to generate views dynamically
+    if (SUCCESS != DbMappingManager::Tables::CreateVirtualTableForFkRelationship(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
+        return ClassMappingStatus::Error;
+
+    if (SUCCESS != MapSystemColumns())
+        return ClassMappingStatus::Error;
+    
+    DbTable* vtable = GetTables().front();
+    {////////SourceECInstanceId
+    DbColumn const* sourceIdCol = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceIdCol});
+    if (propMap == nullptr || sourceIdCol == nullptr)
+        {
+        BeAssert(false && "Failed to create SourceECInstanceId PropertyMap");
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(propMap, 2) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    GetConstraintMapR(ECRelationshipEnd_Source).SetECInstanceIdPropMap(propMap.get());
+    }/////////////////////////
+
+    {////////SourceECClassId
+    DbColumn const* sourceClassIdCol = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceClassIdCol});
+    if (propMap == nullptr || sourceClassIdCol == nullptr)
+        {
+        BeAssert(false && "Failed to create SourceECClassId PropertyMap");
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(propMap, 3) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    GetConstraintMapR(ECRelationshipEnd_Source).SetECClassIdPropMap(propMap.get());
+    }/////////////////////////
+
+    {////////TargetECInstanceId
+    DbColumn const* targetIdCol = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetIdCol});
+    if (propMap == nullptr || targetIdCol == nullptr)
+        {
+        BeAssert(false && "Failed to create PropertyMap TargetECInstanceId");
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(propMap, 4) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    GetConstraintMapR(ECRelationshipEnd_Target).SetECInstanceIdPropMap(propMap.get());
+    }/////////////////////////
+
+    {////////TargetECClassId
+    DbColumn const* targetEClassIdCol = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetEClassIdCol});
+    if (propMap == nullptr || targetEClassIdCol == nullptr)
+        {
+        BeAssert(false && "Failed to create PropertyMap TargetECClassId");
+        return ClassMappingStatus::Error;
+        }
+
+    if (GetPropertyMapsR().Insert(propMap, 5) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    GetConstraintMapR(ECRelationshipEnd_Target).SetECClassIdPropMap(propMap.get());
+    }/////////////////////////
+
+    return ClassMappingStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -194,85 +272,6 @@ ClassMappingStatus RelationshipClassEndTableMap::MapSubClass(RelationshipClassEn
         return ClassMappingStatus::Error;
 
     targetEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
-
-    return ClassMappingStatus::Success;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
-    {
-    if (RelationshipClassEndTableMap const* baseClassMap = GetBaseClassMap(&ctx.GetImportCtx()))
-        return MapSubClass(*baseClassMap);
-
-    //End table relationship is always mapped to virtual table.
-    //we use nav properties to generate views dynamically
-    if (SUCCESS != DbMappingManager::Tables::CreateVirtualTableForFkRelationship(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
-        return ClassMappingStatus::Error;
-
-    if (SUCCESS != MapSystemColumns())
-        return ClassMappingStatus::Error;
-    
-    DbTable* vtable = GetTables().front();
-    {////////SourceECInstanceId
-    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
-    RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceId});
-    if (propMap == nullptr || sourceECInstanceId == nullptr)
-        {
-        BeAssert(false && "Failed to create PropertyMap SourceECInstanceId");
-        return ClassMappingStatus::Error;
-        }
-
-    if (GetPropertyMapsR().Insert(propMap, 2) != SUCCESS)
-        return ClassMappingStatus::Error;
-    std::vector <DbTable const*> list;
-    GetConstraintMapR(ECRelationshipEnd_Source).SetECInstanceIdPropMap(propMap.get());
-    }/////////////////////////
-
-    {////////SourceECClassId
-    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
-    RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECClassId});
-    if (propMap == nullptr || sourceECClassId == nullptr)
-        {
-        BeAssert(false && "Failed to create PropertyMap SourceECClassId");
-        return ClassMappingStatus::Error;
-        }
-
-    if (GetPropertyMapsR().Insert(propMap, 3) != SUCCESS)
-        return ClassMappingStatus::Error;
-
-    GetConstraintMapR(ECRelationshipEnd_Source).SetECClassIdPropMap(propMap.get());
-    }/////////////////////////
-
-    {////////TargetECInstanceId
-    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
-    RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECInstanceId});
-    if (propMap == nullptr || targetECInstanceId == nullptr)
-        {
-        BeAssert(false && "Failed to create PropertyMap TargetECInstanceId");
-        return ClassMappingStatus::Error;
-        }
-
-    if (GetPropertyMapsR().Insert(propMap, 4) != SUCCESS)
-        return ClassMappingStatus::Error;
-
-    GetConstraintMapR(ECRelationshipEnd_Target).SetECInstanceIdPropMap(propMap.get());
-    }/////////////////////////
-
-    {////////TargetECClassId
-    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
-    RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECClassId});
-    if (propMap == nullptr || targetECClassId == nullptr)
-        {
-        BeAssert(false && "Failed to create PropertyMap TargetECClassId");
-        return ClassMappingStatus::Error;
-        }
-
-    if (GetPropertyMapsR().Insert(propMap, 5) != SUCCESS)
-        return ClassMappingStatus::Error;
-
-    GetConstraintMapR(ECRelationshipEnd_Target).SetECClassIdPropMap(propMap.get());
-    }/////////////////////////
 
     return ClassMappingStatus::Success;
     }
