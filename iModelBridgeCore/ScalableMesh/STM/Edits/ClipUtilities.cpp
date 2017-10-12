@@ -1706,7 +1706,8 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
     s_nclip++;
     int clipVal = (int)s_nclip;
 
-    volatile bool dbg = false;
+    bool dbg = false;
+#ifndef NDEBUG
     if (dbg)
         {
         WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpreclipmeshregion_";
@@ -1734,6 +1735,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
             fclose(polyCliPFile);
             }
         }
+#endif
 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
     triangleBoxes.resize(clippedMesh->GetPointIndexCount() / 3, DRange2d::NullRange());
