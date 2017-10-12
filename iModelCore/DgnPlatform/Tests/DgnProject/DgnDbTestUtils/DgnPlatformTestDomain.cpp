@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGN
 
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
+HANDLER_DEFINE_MEMBERS(ImodelJsTestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
@@ -547,6 +548,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
+    RegisterHandler(ImodelJsTestElementHandler::GetHandler());
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());

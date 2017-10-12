@@ -409,6 +409,14 @@ void DgnElement::Dump(Utf8StringR str, ComparePropertyFilter const& filter) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* inStat) const
     {
+    return CreateElement(properties, false, inStat);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, bool ignoreUnknownProperties, DgnDbStatus* inStat) const
+    {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
@@ -420,7 +428,7 @@ DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, DgnDbSta
         return nullptr;
         }
 
-    return handler->_CreateNewElement(GetDgnDb(), properties, inStat);
+    return handler->_CreateNewElement(GetDgnDb(), properties, ignoreUnknownProperties, inStat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,7 +512,7 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR source, SetPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, bool ignoreErrors, DgnDbStatus* inStat)
     {
     auto params = DgnElement::InitCreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
@@ -517,7 +525,7 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IEC
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, ignoreErrors);
     stat = ele->_SetPropertyValues(properties, filter);
 
     return (DgnDbStatus::Success == stat) ? ele : nullptr;

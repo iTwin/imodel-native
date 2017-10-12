@@ -78,26 +78,11 @@ Utf8String PublishTileData::GetJsonString() const
 struct BatchTableBuilder
 {
 private:
-
-    static constexpr uint32_t InvalidIndex = 0xffffffff;
-    struct ScheduleInfo
-        {
-        uint32_t    m_index;
-        uint32_t    m_entry;
-
-        ScheduleInfo() { }
-        ScheduleInfo(uint32_t index, uint32_t entry) : m_index(index), m_entry(entry) { }
-        };
-
-    typedef bmap<uint16_t, ScheduleInfo> T_ScheduleInfoMap;
-          
     Json::Value                             m_json; // "HIERARCHY": object
     DgnDbR                                  m_db;
     bool                                    m_is3d;
-    bool                                    m_isClassifier;
     DgnCategoryId                           m_uncategorized;
     FeatureAttributesMapCR                  m_attrs;
-    bvector<T_ScheduleInfoMap>              m_schedules;
     bmap<DgnElementId, DgnElementId>        m_assemblyIds;
     bmap<DgnSubCategoryId, DgnCategoryId>   m_categoryIds;
                             
@@ -174,33 +159,6 @@ DgnElementId QueryAssemblyId(DgnElementId childId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     AddSchedules(PublisherContext::T_ScheduleEntryMaps& scheduleEntryMaps)
-    {
-    for (auto& scheduleEntryMap : scheduleEntryMaps)
-        {
-        T_ScheduleInfoMap           scheduleMap;
-        bmap<uint32_t, uint32_t>    usedEntries;
-
-        for (auto& featureAttribute : m_attrs)
-            {
-            auto    found = scheduleEntryMap.find(featureAttribute.first.GetElementId());
-
-            if (found != scheduleEntryMap.end())
-                {
-                auto    scheduleEntry = found->second;
-                auto    insertPair = usedEntries.Insert(scheduleEntry, usedEntries.size());
-
-                scheduleMap[featureAttribute.second] = ScheduleInfo(insertPair.first->second, scheduleEntry);
-                }
-            }
-        m_schedules.push_back(std::move(scheduleMap));
-        }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InitUncategorizedCategory()
@@ -215,11 +173,13 @@ void InitUncategorizedCategory()
     }
 
 public:
+    Json::Value& GetJson()  { return m_json; }
+    Utf8String ToString()   { return getJsonString(m_json); }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, Utf8CP labelProperty=nullptr, bmap<DgnElementId, uint32_t>* classifierColors = nullptr, PublisherContext::T_ScheduleEntryMaps* scheduleMaps = nullptr, int revisionIndex = -1)
-    : m_json(Json::objectValue), m_db(db), m_is3d(is3d), m_isClassifier(isClassifier), m_attrs(attrs)
+BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, PublisherContext& context) : m_json(Json::objectValue), m_db(db), m_is3d(is3d), m_attrs(attrs)
     {
     InitUncategorizedCategory();
 
@@ -227,16 +187,9 @@ BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isCla
                             elementIds     = Json::arrayValue, 
                             assemblyIds    = Json::arrayValue, 
                             categoryIds    = Json::arrayValue,
-                            subCategoryIds = Json::arrayValue,
-                            labels         = Json::arrayValue,
-                            colors         = Json::arrayValue;
+                            subCategoryIds = Json::arrayValue;
 
     bool                    validLabelsFound = false;
-    bvector<Json::Value>    schedules;
-
-    if (nullptr != scheduleMaps)
-        for (auto& scheduleMap : *scheduleMaps)
-            schedules.push_back(Json::arrayValue);
                         
     for (auto const& kvp : attrs)
         {
@@ -250,66 +203,16 @@ BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isCla
         subCategoryIds[index] = attr.GetSubCategoryId().ToString();
         categoryIds[index]    = QueryCategoryId(attr.GetSubCategoryId()).ToString();
 
-        if (nullptr != labelProperty)
-            {
-            ECN::ECValue    value;
-
-            auto element = db.Elements().Get<DgnElement> (elementId);
-            if (element.IsValid() &&                                                        
-
-                DgnDbStatus::Success == element->GetPropertyValue(value, labelProperty))
-                {
-                labels[index] = value.GetUtf8CP();
-                validLabelsFound = true;
-                }
-            else
-                labels[index] = Json::Value::GetNull();
-            }
-        if (nullptr != classifierColors) 
-            colors[index] = (*classifierColors)[elementId];
-
-        if (nullptr != scheduleMaps)
-            {
-            for (size_t i=0; i<scheduleMaps->size(); i++)
-                {
-                auto&   scheduleMap = scheduleMaps->at(i);
-                auto    found = scheduleMap.find(elementId);
-
-                schedules.at(i)[index] = (found == scheduleMap.end()) ? Json::Value::GetNull() : found->second;
-                }
-            }
         }
+    
     m_json["geomClass"]   = std::move(geomClasses);
     m_json["element"]     = std::move(elementIds);
     m_json["assembly"]    = std::move(assemblyIds);
     m_json["subCategory"] = std::move(subCategoryIds);
     m_json["category"]    = std::move(categoryIds);
 
-    if (validLabelsFound)
-        m_json["label"] = std::move(labels);
-
-    if (nullptr != classifierColors)
-        m_json["classifierColor"] = std::move(colors);
-
-    if (nullptr != scheduleMaps)
-        for (size_t i=0; i<scheduleMaps->size(); i++)
-            m_json[Utf8PrintfString("schedule%d", i).c_str()] = std::move(schedules[i]);
-
-    if (revisionIndex >= 0)
-        {
-        Json::Value revisions = Json::arrayValue;
-
-        for (size_t i=0; i<m_attrs.size(); i++)
-           revisions.append(revisionIndex);
-
-        m_json["revision"] = std::move(revisions);
-        }
+    context.AddBatchTableAttributes (m_json, attrs);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ToString()   { return getJsonString(m_json); }
 
 
 };  // BatchTableBuilder
@@ -777,6 +680,34 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::_AddBatchTableAttributes(Json::Value& batchTableJson, FeatureAttributesMapCR attrs)
+    {
+    if (!m_scheduleEntryMaps.empty())
+        {
+        bvector<Json::Value>    schedules;
+
+        for (auto& scheduleMap : m_scheduleEntryMaps)
+            schedules.push_back(Json::arrayValue);
+
+        for (auto const& kvp : attrs)
+            {
+            for (size_t i=0; i<m_scheduleEntryMaps.size(); i++)
+                {
+                auto&   scheduleMap = m_scheduleEntryMaps.at(i);
+                auto    found = scheduleMap.find(kvp.first.GetElementId());
+
+                schedules.at(i)[kvp.second] = (found == scheduleMap.end()) ? Json::Value::GetNull() : found->second;
+                }
+            }
+        for (size_t i=0; i<schedules.size(); i++)
+            batchTableJson[Utf8PrintfString("schedule%d", i).c_str()] = std::move(schedules[i]);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
@@ -877,7 +808,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
         }
 
-    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, nullptr, nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
+    BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
     Utf8String      batchTableStr = batchTableBuilder.ToString();
 
     Utf8String      featureTableStr = featureTableData.GetJsonString();
@@ -933,7 +864,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), false, "Name", nullptr, m_context.GetScheduleEntryMaps().empty() ? nullptr : &m_context.GetScheduleEntryMaps(), m_context.GetRevisionIndex());
+        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
         batchTableStr = batchTableBuilder.ToString();
         }
 
@@ -1002,13 +933,14 @@ struct ClassifierTileWriter
     T_PointMap                      m_meshPointMap;
     ModelSpatialClassifierCR        m_classifier;
     bmap<DgnElementId, uint32_t>    m_elementColors;
+    PublisherContext&               m_context;
 
     static constexpr double         s_pointTolerance = 1.0E-6;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier) : m_range(range), m_classifier(classifier), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
+ClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : m_context(context), m_range(range), m_classifier(classifier), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
     { 
     m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
     m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
@@ -1324,6 +1256,49 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddLabelsToBatchTable(Json::Value& json, FeatureAttributesMap const& attrs, char const* labelECProperty, DgnDbR db)
+    {
+    bool            validLabelsFound = false;
+    Json::Value     labels = Json::arrayValue;
+
+    for (auto const& kvp : attrs)
+        {
+        uint32_t            index = kvp.second;
+        DgnElementId        elementId = kvp.first.GetElementId();
+
+        ECN::ECValue    value;
+
+        auto element = db.Elements().Get<DgnElement> (elementId);
+        if (element.IsValid() &&
+
+            DgnDbStatus::Success == element->GetPropertyValue(value, labelECProperty))
+            {
+            labels[index] = value.GetUtf8CP();
+            validLabelsFound = true;
+            }
+        else
+            labels[index] = Json::Value::GetNull();
+        }
+    if (validLabelsFound)
+        json["label"] = std::move(labels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddColorsToBatchTable(Json::Value& json, FeatureAttributesMap const& attrs)
+    {
+    Json::Value     colors = Json::arrayValue;
+
+    for (auto const& kvp : attrs)
+        colors[kvp.second] = m_elementColors[kvp.first.GetElementId()];
+
+    json["classifierColor"] = std::move(colors);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
@@ -1344,7 +1319,11 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     padTo4ByteBoundary(m_featureBinary);
     featureAttributes.RemoveUndefined();
 
-    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, "Name", m_elementColors.empty() ? nullptr : &m_elementColors);
+    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), m_context);
+
+    AddLabelsToBatchTable(batchTableBuilder.GetJson(), featureAttributes, "Name", db);
+    AddColorsToBatchTable(batchTableBuilder.GetJson(), featureAttributes);
+
     Utf8String          batchTableStr = batchTableBuilder.ToString(), 
                         featureTableStr = getJsonString(m_featureTable);
 
@@ -1372,9 +1351,7 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }
-
 };  // ClassifierTileWriter
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017                                                                                                                                                    
@@ -1386,14 +1363,13 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     for (auto& mesh : geometry.Meshes())
         contentRange.Extend(mesh->Points());
 
-    ClassifierTileWriter      writer(contentRange, classifier);
+    ClassifierTileWriter      writer(contentRange, classifier, m_context);
 
     writer.AddGeometry(geometry, classifiedRange, m_tile.GetAttributes());
     writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
     m_tile.SetPublishedRange (contentRange);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
@@ -1420,7 +1396,6 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData const& tile
     FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }       
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
