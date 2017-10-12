@@ -141,7 +141,7 @@ protected:
     void _AddTriMesh(TriMeshArgs const& args) { }
     void _AddDgnOle(DgnOleDraw*) { }
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) { }
-    GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const { }
+    GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const { return nullptr; }
 public:
     static FakeGraphicBuilderPtr Create(CreateParamsCR params) { return new FakeGraphicBuilder(params); }
 };
@@ -213,7 +213,7 @@ struct GraphicProcessorSystem : FakeSystem
 {
 protected:
     GraphicProcessorP m_proc;
-
+public:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return new PrimitiveBuilder(*const_cast<GraphicProcessorSystem*>(this), params); }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
@@ -225,7 +225,7 @@ protected:
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& list, DgnDbR db) const override { m_proc->ProcessGraphicList(std::move(list)); return FakeGraphic::Create(db); }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR db, TransformCR tf, ClipVectorCP clip) const override { m_proc->ProcessBranch(std::move(branch), tf, clip); return FakeGraphic::Create(db); }
     GraphicPtr _CreateBatch(GraphicR gf, FeatureTable&& feats) const override { m_proc->ProcessBatch(gf, std::move(feats)); return FakeGraphic::Create(gf.GetDgnDb()); }
-public:
+
     GraphicProcessorSystem(GraphicProcessorR proc) { Reset(proc); }
 
     void Reset(GraphicProcessorR proc) { m_proc = &proc; }

@@ -957,12 +957,13 @@ void Mesh::AddPolyline(MeshPolylineCR polyline)
     
     if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
         {
-        BeAssert(false);
+        // BeAssert(false);
         return;
         }
         
 
-    m_polylines.push_back(polyline); }
+    m_polylines.push_back(polyline);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
