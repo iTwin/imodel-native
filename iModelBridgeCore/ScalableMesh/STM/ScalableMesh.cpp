@@ -678,7 +678,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         { // Open json streaming format
         auto directory = BeFileName::GetDirectoryName(filePath);
         isLocal = BeFileName::DoesPathExist(directory.c_str());
-        if (!isLocal)
+        if (!isLocal && newBaseEditsFilePath.empty())
             {
             wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
             if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
@@ -688,9 +688,12 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     else if (WString(filePath).ContainsI(L"realitydataservices") && WString(filePath).ContainsI(L"S3MXECPlugin"))
         { // Open from ProjectWise Context share
         isLocal = false;
-        wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
-        if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
-        newBaseEditsFilePath.Assign(temp);
+        if (newBaseEditsFilePath.empty())
+            {
+            wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+            if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
+            newBaseEditsFilePath.Assign(temp);
+            }
         }
     else
         {
