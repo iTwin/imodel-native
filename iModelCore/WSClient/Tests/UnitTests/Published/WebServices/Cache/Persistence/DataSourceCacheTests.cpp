@@ -4614,7 +4614,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
     EXPECT_EQ(0, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
 
@@ -4625,7 +4625,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
-    EXPECT_EQ("TestName", fileName);
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 
@@ -4647,14 +4647,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileNameProperty_SuccessAndReturnsLabel)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass2", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-
+    
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
+    
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);
     }
@@ -4662,30 +4662,30 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileSizeProperty_SuccessAndReturnsFileSize)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass3", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-
+    
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
+    
     EXPECT_EQ("", fileName);
     EXPECT_EQ(42, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass4", "Foo"}, {{"Name", "TestName"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
-    EXPECT_EQ("TestName", fileName);
+    
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 
