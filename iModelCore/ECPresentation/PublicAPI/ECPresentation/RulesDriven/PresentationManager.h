@@ -130,7 +130,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     struct ContentOptions : JsonCppAccessor
         {
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_UseCache;
 
         //! Constructor. Creates a read-only accessor.
         ContentOptions(JsonValueCR data) : JsonCppAccessor(data) {}
@@ -144,10 +143,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
-        //! Constructor.
-        //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        //! @param[in] useCache Defines whether content caching is enabled
-        ContentOptions(Utf8CP rulesetId, bool useCache) : ContentOptions(rulesetId) {SetUseCache(useCache);}
         
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
@@ -155,11 +150,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
         //! Set the ruleset ID.
         void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
-
-        //! Get whether cache should be used
-        bool GetUseCache() const {return GetJson().isMember(OPTION_NAME_UseCache) ? GetJson()[OPTION_NAME_UseCache].asBool() : true;}
-        //! Set whether cache should be used
-        void SetUseCache(bool useCache) {AddMember(OPTION_NAME_UseCache, useCache);}
         };
 
 private:

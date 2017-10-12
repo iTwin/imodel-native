@@ -256,7 +256,6 @@ public:
 };
 
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
-const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_UseCache = "UseCache";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
@@ -508,13 +507,9 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentProvider", NativeLogging::LOG_TRACE);
 
     OnConnection(connection);
-    SpecificationContentProviderPtr provider;
-    if (options.GetUseCache())
-        {
-        provider = m_contentCache->GetProvider(key);
-        if (provider.IsValid())
-            return provider;
-        }
+    SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key);
+    if (provider.IsValid())
+        return provider;
 
     // get the ruleset
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
@@ -553,8 +548,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     if (!provider.IsValid())
         return nullptr;
 
-    if (options.GetUseCache())
-        m_contentCache->CacheProvider(key, *provider);
+    m_contentCache->CacheProvider(key, *provider);
     return provider;
     }
 

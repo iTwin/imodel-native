@@ -1161,7 +1161,7 @@ SelectionInfo::SelectionInfo(bvector<ECClassCP> const& classes)
     NavNodeKeyList keys;
     for (ECClassCP ecClass : classes)
         keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
-    m_keys = NavNodeKeyListContainer::Create(std::move(keys));
+    m_keys = NavNodeKeyListContainer::Create(keys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1189,27 +1189,20 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                05/2016
+* @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectionInfo::operator==(SelectionInfo const& other) const
+Utf8StringCR SelectionInfo::GetHash() const
     {
-    if (m_isValid != other.m_isValid || !m_selectionProviderName.Equals(other.m_selectionProviderName) || m_isSubSelection != other.m_isSubSelection)
-        return false;
-
-    if (m_keys->size() != other.m_keys->size())
-        return false;
-
-    for (auto thisIter = m_keys->begin(); thisIter != m_keys->end(); ++thisIter)
+    if (m_isValid && m_hash.empty())
         {
-        for (auto otherIter = other.m_keys->begin(); otherIter != other.m_keys->end(); ++otherIter)
-            {
-            NavNodeKeyCP thisKey = (*thisIter).get();
-            NavNodeKeyCP otherKey = (*otherIter).get();
-            if (0 != thisKey->Compare(*otherKey))
-                return false;
-            }
+        MD5 h;
+        h.Add(m_selectionProviderName.c_str(), m_selectionProviderName.SizeInBytes());
+        h.Add(&m_isSubSelection, sizeof(bool));
+        for (NavNodeKeyCPtr const& key : *m_keys)
+            h.Add(key->GetHash().c_str(), key->GetHash().SizeInBytes());
+        m_hash = h.GetHashString();
         }
-    return true;
+    return m_hash;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1233,46 +1226,6 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR f
     else
         formattedLabel = ecProperty.GetDisplayLabel();
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectionInfo::operator<(SelectionInfo const& other) const
-    {
-    if (!m_isValid)
-        return false;
-
-    if (!m_isSubSelection && other.m_isSubSelection)
-        return true;
-    if (m_isSubSelection && !other.m_isSubSelection)
-        return false;
-
-    int providerCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
-    if (providerCmp < 0)
-        return true;
-    if (providerCmp > 0)
-        return false;
-
-    if (m_keys->size() < other.m_keys->size())
-        return true;
-    if (m_keys->size() > other.m_keys->size())
-        return false;
-
-    for (auto thisIter = m_keys->begin(); thisIter != m_keys->end(); ++thisIter)
-        {
-        for (auto otherIter = other.m_keys->begin(); otherIter != other.m_keys->end(); ++otherIter)
-            {
-            NavNodeKeyCP thisKey = (*thisIter).get();
-            NavNodeKeyCP otherKey = (*otherIter).get();
-            int keyCmp = thisKey->Compare(*otherKey);
-            if (keyCmp < 0)
-                return true;
-            if (keyCmp > 0)
-                return false;
-            }
-        }
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

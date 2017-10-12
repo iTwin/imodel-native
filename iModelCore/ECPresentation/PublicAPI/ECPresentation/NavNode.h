@@ -10,6 +10,7 @@
 
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/ExtendedData.h>
+#include <Bentley/md5.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -33,6 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NavNodeKey : RefCountedBase
 {
 private:
     Utf8String m_type;
+    mutable Utf8String m_hash;
 
 protected:
     NavNodeKey(Utf8String type) : m_type(type) {}
@@ -44,6 +46,7 @@ protected:
     virtual ECInstanceNodeKey const* _AsECInstanceNodeKey() const {return nullptr;}
     virtual DisplayLabelGroupingNodeKey const* _AsDisplayLabelGroupingNodeKey() const {return nullptr;}
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const;
 
 public:
     //! Try to get this key as a @ref ECClassGroupingNodeKey.
@@ -65,6 +68,8 @@ public:
     //! @note Similar nodes can be unequal, e.g. label grouping node keys are similar if labels match, but they're not
     //! equal because they represent different nodes.
     bool IsSimilar(NavNodeKey const& other) const {return _IsSimilar(other);}
+    //! Get hash string of this node key.
+    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
 
     //! Get the type of the @ref NavNode.
     Utf8StringCR GetType() const {return m_type;}
@@ -123,6 +128,7 @@ protected:
 protected:
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 public:
     //! Get the node id.
     uint64_t GetNodeId() const {return m_nodeId;}
@@ -183,9 +189,9 @@ private:
         }
     ~ECPropertyGroupingNodeKey() {DELETE_AND_CLEAR(m_value);}
 protected:
-    ECPRESENTATION_EXPORT virtual bool _IsSimilar(NavNodeKey const& other) const override;
-    virtual ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
+    ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
 public:
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(JsonValueCR);
@@ -233,9 +239,9 @@ protected:
         : GroupingNodeKey(nodeId, type), m_label(label) 
         {}
 protected:
-    ECPRESENTATION_EXPORT virtual bool _IsSimilar(NavNodeKey const& other) const override;
-    virtual DisplayLabelGroupingNodeKey const* _AsDisplayLabelGroupingNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
+    DisplayLabelGroupingNodeKey const* _AsDisplayLabelGroupingNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
 public:
     //! Create a @ref DisplayLabelGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<DisplayLabelGroupingNodeKey> Create(JsonValueCR);
@@ -271,10 +277,11 @@ private:
         : NavNodeKey(NAVNODE_TYPE_ECInstanceNode), m_instanceKey(classId, instanceId)
         {}
 protected:
-    ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const override;
-    ECPRESENTATION_EXPORT virtual bool _IsSimilar(NavNodeKey const& other) const override;
-    virtual ECInstanceNodeKey const* _AsECInstanceNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT int _Compare(NavNodeKey const& other) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
+    ECInstanceNodeKey const* _AsECInstanceNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECInstanceNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<ECInstanceNodeKey> Create(JsonValueCR);
@@ -526,36 +533,36 @@ struct NavNodeKeySetContainer : INavNodeKeysContainer
 {
 //__PUBLISH_SECTION_END__
 private:
-    NavNodeKeySetCP m_set;
-    bool m_ownsSet;
+    NavNodeKeySet m_set;
+    NavNodeKeySet const* m_ptr;
 private:
-    NavNodeKeySetContainer(NavNodeKeySetCR set, bool makeCopy) : m_set(makeCopy ? new NavNodeKeySet(set) : &set), m_ownsSet(makeCopy) {}
-    NavNodeKeySetContainer(NavNodeKeySet&& set) : m_ownsSet(true) {NavNodeKeySetP thisSet = new NavNodeKeySet(); thisSet->swap(set); m_set = thisSet;}
-    ~NavNodeKeySetContainer() {if (m_ownsSet) delete m_set;}
+    NavNodeKeySetContainer(NavNodeKeySet set) : m_set(set), m_ptr(&m_set) {}
+    NavNodeKeySetContainer(NavNodeKeySet const* set) : m_ptr(set) {}
 protected:
-    void* _CreateBegin() const override {return new NavNodeKeySet::const_iterator(m_set->begin());}
-    void* _CreateEnd() const override {return new NavNodeKeySet::const_iterator(m_set->end());}
-    void* _Find(NavNodeKeyCPtr key) const override {return new NavNodeKeySet::const_iterator(m_set->find(key));}
+    void* _CreateBegin() const override {return new NavNodeKeySet::const_iterator(m_ptr->begin());}
+    void* _CreateEnd() const override {return new NavNodeKeySet::const_iterator(m_ptr->end());}
+    void* _Find(NavNodeKeyCPtr key) const override {return new NavNodeKeySet::const_iterator(m_ptr->find(key));}
     void* _Copy(void const* other) const override {return new NavNodeKeySet::const_iterator(*static_cast<NavNodeKeySet::const_iterator const*>(other));}
     void _Destroy(void* iter) const override {delete static_cast<NavNodeKeySet::const_iterator*>(iter);}
     NavNodeKeyCPtr _Dereference(void const* iter) const override {return **static_cast<NavNodeKeySet::const_iterator const*>(iter);}
     bool _Equals(void const* lhs, void const* rhs) const override {return *static_cast<NavNodeKeySet::const_iterator const*>(lhs) == *static_cast<NavNodeKeySet::const_iterator const*>(rhs);}
     void _Assign(void* lhs, void const* rhs) const override {*static_cast<NavNodeKeySet::const_iterator*>(lhs) = *static_cast<NavNodeKeySet::const_iterator const*>(rhs);}
     void _Inc(void* iter) const override {++(*static_cast<NavNodeKeySet::const_iterator*>(iter));}
-    size_t _GetSize() const override {return m_set->size();}
+    size_t _GetSize() const override {return m_ptr->size();}
 //__PUBLISH_SECTION_START__
 public:
     //! Creates an empty set-driven @ref NavNodeKey container.
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create();
     
-    //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey set.
+    //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey set pointer.
     //! @param[in] set The set to create the container from.
-    //! @param[in] makeCopy Should a copy of the supplied set be made. If not, the caller has to make 
-    //! sure the supplied set remains valid for the lifetime of this container.
-    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeySetCR set, bool makeCopy = false);
+    //! @note The container does not take ownership of the provided set - it has to remain valid
+    //! for the container's lifetime and destroyed afterwards by the caller.
+    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeySet const* set);
 
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey set.
-    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeySet&& set);
+    //! @param[in] set The set to create the container from.
+    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeySet set);
 };
 
 //=======================================================================================
@@ -567,23 +574,22 @@ struct NavNodeKeyListContainer : INavNodeKeysContainer
 {
 //__PUBLISH_SECTION_END__
 private:
-    NavNodeKeyListCP m_list;
-    bool m_ownsList;
+    NavNodeKeyList m_list;
+    NavNodeKeyList const* m_ptr;
 private:
-    NavNodeKeyListContainer(NavNodeKeyListCR list, bool makeCopy) : m_list(makeCopy ? new NavNodeKeyList(list) : &list), m_ownsList(makeCopy) {}
-    NavNodeKeyListContainer(NavNodeKeyList&& list) : m_ownsList(true) {NavNodeKeyListP thisList = new NavNodeKeyList(); thisList->swap(list); m_list = thisList;}
-    ~NavNodeKeyListContainer() {if (m_ownsList) delete m_list;}
+    NavNodeKeyListContainer(NavNodeKeyList list) : m_list(list), m_ptr(&m_list) {}
+    NavNodeKeyListContainer(NavNodeKeyList const* list) : m_ptr(list) {}
 protected:
-    void* _CreateBegin() const override {return new NavNodeKeyList::const_iterator(m_list->begin());}
-    void* _CreateEnd() const override {return new NavNodeKeyList::const_iterator(m_list->end());}
-    void* _Find(NavNodeKeyCPtr key) const override {return new NavNodeKeyList::const_iterator(std::find(m_list->begin(), m_list->end(), key));}
+    void* _CreateBegin() const override {return new NavNodeKeyList::const_iterator(m_ptr->begin());}
+    void* _CreateEnd() const override {return new NavNodeKeyList::const_iterator(m_ptr->end());}
+    void* _Find(NavNodeKeyCPtr key) const override {return new NavNodeKeyList::const_iterator(std::find(m_ptr->begin(), m_ptr->end(), key));}
     void* _Copy(void const* other) const override {return new NavNodeKeyList::const_iterator(*static_cast<NavNodeKeyList::const_iterator const*>(other));}
     void _Destroy(void* iter) const override {delete static_cast<NavNodeKeyList::const_iterator*>(iter);}
     NavNodeKeyCPtr _Dereference(void const* iter) const override {return **static_cast<NavNodeKeyList::const_iterator const*>(iter);}
     bool _Equals(void const* lhs, void const* rhs) const override {return *static_cast<NavNodeKeyList::const_iterator const*>(lhs) == *static_cast<NavNodeKeyList::const_iterator const*>(rhs);}
     void _Assign(void* lhs, void const* rhs) const override {*static_cast<NavNodeKeyList::const_iterator*>(lhs) = *static_cast<NavNodeKeyList::const_iterator const*>(rhs);}
     void _Inc(void* iter) const override {++(*static_cast<NavNodeKeyList::const_iterator*>(iter));}
-    size_t _GetSize() const override {return m_list->size();}
+    size_t _GetSize() const override {return m_ptr->size();}
 //__PUBLISH_SECTION_START__
 public:
     //! Creates an empty vector-driven @ref NavNodeKey container.
@@ -591,12 +597,13 @@ public:
     
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey vector.
     //! @param[in] list The vector to create the container from.
-    //! @param[in] makeCopy Should a copy of the supplied vector be made. If not, the caller has to make 
-    //! sure the supplied vector remains valid for the lifetime of this container.
-    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyListCR list, bool makeCopy = false);
-    
+    //! @note The container does not take ownership of the provided list - it has to remain valid
+    //! for the container's lifetime and destroyed afterwards by the caller.
+    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList const* list);
+        
     //! Creates @ref NavNodeKey container using the supplied @ref NavNodeKey vector.
-    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList&& list);
+    //! @param[in] list The vector to create the container from.
+    ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList list);
 };
 
 typedef bvector<BeSQLite::EC::ECInstanceKey> GroupedInstanceKeysList;

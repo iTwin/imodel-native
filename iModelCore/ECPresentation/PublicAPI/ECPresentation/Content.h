@@ -31,6 +31,7 @@ private:
     INavNodeKeysContainerCPtr m_keys;
     bool m_isSubSelection;
     bool m_isValid;
+    mutable Utf8String m_hash;
 
 public:
     //! Constructor. Creates an invalid selection info object.
@@ -64,16 +65,20 @@ public:
     ECPRESENTATION_EXPORT SelectionInfo(bvector<ECN::ECClassCP> const& classes);
 
     //! Compare this selection event info object with the supplied one.
-    ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
+    bool operator==(SelectionInfo const& other) const {return GetHash() == other.GetHash();}
     
     //! Compare this selection event info object with the supplied one.
-    ECPRESENTATION_EXPORT bool operator<(SelectionInfo const& other) const;
+    bool operator<(SelectionInfo const& other) const {return GetHash().CompareTo(other.GetHash()) < 0;}
     
     //! Assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo const& other);
 
     //! Move assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo&& other);
+    
+    //! Get hash string for this selection info.
+    //! @note Depending on the size of node keys container, this might be an expensive operation.
+    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
 
     //! Is this struct valid.
     bool IsValid() const {return m_isValid;}

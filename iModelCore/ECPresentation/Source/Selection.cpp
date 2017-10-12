@@ -29,7 +29,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    INavNodeKeysContainerCPtr GetSelection() const {return NavNodeKeySetContainer::Create(m_keys);}
+    INavNodeKeysContainerCPtr GetSelection() const {return NavNodeKeySetContainer::Create(&m_keys);}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
@@ -253,7 +253,7 @@ void SelectionManager::AddToSelection(ECDbR db, Utf8CP source, bool isSubSelecti
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    AddToSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    AddToSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,7 +278,7 @@ void SelectionManager::RemoveFromSelection(ECDbR db, Utf8CP source, bool isSubSe
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    RemoveFromSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    RemoveFromSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +303,7 @@ void SelectionManager::ChangeSelection(ECDbR db, Utf8CP source, bool isSubSelect
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    ChangeSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    ChangeSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -397,7 +397,7 @@ SelectionChangedEvent::SelectionChangedEvent(IConnectionCacheCR connectionCache,
             keys.insert(key);
             }
         }
-    m_keys = NavNodeKeySetContainer::Create(std::move(keys));
+    m_keys = NavNodeKeySetContainer::Create(keys);
 
     if (json.isMember(JSON_MEMBER_ExtendedData) && json[JSON_MEMBER_ExtendedData].isObject() && !json[JSON_MEMBER_ExtendedData].empty())
         {

@@ -305,7 +305,7 @@ TEST_F(MultipleECDbSelectionTest, ChangeSelection)
     m_manager->ChangeSelection(s_project1->GetECDb(), "TestSource2", false, *key2, CreateExtendedData());
 
     ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->end() != m_manager->GetSelection(s_project1->GetECDb())->find(key2));
-    ASSERT_FALSE(m_manager->GetSelection(s_project2->GetECDb())->end() != m_manager->GetSelection(s_project2->GetECDb())->find(key2));
+    ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->end() == m_manager->GetSelection(s_project2->GetECDb())->find(key2));
     }
 
 //---------------------------------------------------------------------------------------
