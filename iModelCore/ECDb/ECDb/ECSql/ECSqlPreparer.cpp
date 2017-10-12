@@ -141,21 +141,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
         return ECSqlStatus::Error;
         }
 
-        for (size_t i = 0; i < tokenCount; i++)
-            {
-            NativeSqlBuilder nativeSqlBuilder;
-            if (exp.HasParentheses())
-                nativeSqlBuilder.AppendParenLeft();
+    for (size_t i = 0; i < tokenCount; i++)
+        {
+        NativeSqlBuilder nativeSqlBuilder;
+        if (exp.HasParentheses())
+            nativeSqlBuilder.AppendParenLeft();
 
-            nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(ExpHelper::ToSql(exp.GetOperator())).AppendSpace().Append(rhsSqlTokens[i]);
+        nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(ExpHelper::ToSql(exp.GetOperator())).AppendSpace().Append(rhsSqlTokens[i]);
 
-            if (exp.HasParentheses())
-                nativeSqlBuilder.AppendParenRight();
+        if (exp.HasParentheses())
+            nativeSqlBuilder.AppendParenRight();
 
-            nativeSqlSnippets.push_back(nativeSqlBuilder);
-            }
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        }
 
-        return ECSqlStatus::Success;
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -168,8 +168,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     ComputedExp const* lhsOperand = exp.GetLeftOperand();
     ComputedExp const* rhsOperand = exp.GetRightOperand();
 
-    const bool lhsIsNullExp = IsNullExp(*lhsOperand);
-    const bool rhsIsNullExp = IsNullExp(*rhsOperand);
+    const bool lhsIsNullExp = !lhsOperand->IsParameterExp() && lhsOperand->GetTypeInfo().IsNull();
+    const bool rhsIsNullExp = !rhsOperand->IsParameterExp() && rhsOperand->GetTypeInfo().IsNull();
 
     NativeSqlBuilder::List lhsNativeSqlSnippets;
     NativeSqlBuilder::List rhsNativeSqlSnippets;
@@ -204,11 +204,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         {
         //if both operands are NULL, pass 1 as sql snippet count
         size_t targetSqliteSnippetCount = rhsIsNullExp ? 1 : rhsNativeSqlSnippets.size();
-        PrepareNullLiteralValueExp(lhsNativeSqlSnippets, ctx, lhsOperand->GetAs<LiteralValueExp>(), targetSqliteSnippetCount);
+        PrepareNullExp(lhsNativeSqlSnippets, ctx, *lhsOperand, targetSqliteSnippetCount);
         }
 
     if (rhsIsNullExp)
-        PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, rhsOperand->GetAs<LiteralValueExp>(), lhsNativeSqlSnippets.size());
+        PrepareNullExp(rhsNativeSqlSnippets, ctx, *rhsOperand, lhsNativeSqlSnippets.size());
 
     const size_t nativeSqlSnippetCount = lhsNativeSqlSnippets.size();
     if (nativeSqlSnippetCount != rhsNativeSqlSnippets.size())
@@ -321,8 +321,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
     if (!exp.NeedsCasting())
         return PrepareValueExp(nativeSqlSnippets, ctx, *castOperand);
 
-    const bool castOperandIsNull = IsNullExp(*castOperand);
-    if (castOperandIsNull)
+    if (!castOperand->IsParameterExp() && castOperand->GetTypeInfo().IsNull())
         return PrepareNullCastExp(nativeSqlSnippets, ctx, exp);
 
     NativeSqlBuilder::List operandNativeSqlSnippets;
@@ -624,21 +623,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeS
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp)
     {
-    //WIP_ECSQL: Add support for PointXD
     NativeSqlBuilder nativeSqlBuilder;
     ECSqlTypeInfo const& typeInfo = exp.GetTypeInfo();
     if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
         {
-        nativeSqlBuilder.Append("null");
-        nativeSqlSnippets.push_back(nativeSqlBuilder);
-        return ECSqlStatus::Success;
+        BeAssert(false && "NULL exp should never be called indirectly but always in context of its RHS exp");
+        return PrepareNullExp(nativeSqlSnippets, ctx, exp, 1);
         }
 
     Utf8StringCR expValue = exp.GetValue();
 
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
-
+    
     if (typeInfo.IsPrimitive())
         {
         switch (typeInfo.GetPrimitiveType())
@@ -687,7 +684,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareNullLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp, size_t targetExpNativeSqlSnippetCount)
+ECSqlStatus ECSqlExpPreparer::PrepareNullExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const& exp, size_t targetExpNativeSqlSnippetCount)
     {
     if (targetExpNativeSqlSnippetCount == 0)
         {
@@ -1293,21 +1290,23 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& nativeSql, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
     bool isFirstItem = true;
-    for (Exp const* argExp : exp.GetChildren())
+    for (Exp const* childExp : exp.GetChildren())
         {
+        ValueExp const& argExp = childExp->GetAs<ValueExp>();
+
         if (!isFirstItem)
             nativeSql.AppendComma();
 
         NativeSqlBuilder::List nativeSqlArgumentList;
         ECSqlStatus status;
-        if (IsNullExp(*argExp))
+        if (!argExp.IsParameterExp() && argExp.GetTypeInfo().IsNull())
             {
             //for functions we only support args of single column primitive types so far, therefore an ECSQL NULL
             //always means a single SQLite NULL
-            status = PrepareNullLiteralValueExp(nativeSqlArgumentList, ctx, argExp->GetAs<LiteralValueExp>(), 1);
+            status = PrepareNullExp(nativeSqlArgumentList, ctx, argExp, 1);
             }
         else
-            status = PrepareValueExp(nativeSqlArgumentList, ctx, argExp->GetAs<ValueExp>());
+            status = PrepareValueExp(nativeSqlArgumentList, ctx, argExp);
 
         if (!status.IsSuccess())
             return status;
@@ -1526,10 +1525,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
     {
     BeAssert(nativeSqlSnippetLists.empty());
     size_t index = 0;
-    for (Exp const* valueExp : exp.GetChildren())
+    for (Exp const* childExp : exp.GetChildren())
         {
-        BeAssert(valueExp != nullptr);
-
+        BeAssert(childExp != nullptr);
+        ValueExp const& valueExp = childExp->GetAs<ValueExp>();
         const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
 
         NativeSqlBuilder::List nativeSqlSnippets;
@@ -1537,19 +1536,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
         ECSqlStatus stat = ECSqlStatus::Success;
-        if (valueExp->IsParameterExp())
-            stat = PrepareParameterExp(nativeSqlSnippets, ctx, valueExp->GetAs<ParameterExp>());
-        else if (IsNullExp(*valueExp))
+        if (valueExp.IsParameterExp())
+            stat = PrepareParameterExp(nativeSqlSnippets, ctx, valueExp.GetAs<ParameterExp>());
+        else if (valueExp.GetTypeInfo().IsNull())
             {
             if (targetNativeSqlSnippetCount > 0)
                 {
                 //if value is null exp, we need to pass target operand snippets
-                BeAssert(dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
-                stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, valueExp->GetAs<LiteralValueExp>(), targetNativeSqlSnippetCount);
+                stat = PrepareNullExp(nativeSqlSnippets, ctx, valueExp, targetNativeSqlSnippetCount);
                 }
             }
         else if (targetNativeSqlSnippetCount > 0)
-            stat = PrepareValueExp(nativeSqlSnippets, ctx, valueExp->GetAs<ValueExp>());
+            stat = PrepareValueExp(nativeSqlSnippets, ctx, valueExp);
 
         if (!stat.IsSuccess())
             return stat;
@@ -1643,16 +1641,5 @@ BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpres
                 return BooleanSqlOperator::And;
         }
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECSqlExpPreparer::IsNullExp(ExpCR exp)
-    {
-    return exp.GetType() == Exp::Type::LiteralValue &&
-        (static_cast<LiteralValueExp const&> (exp).GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Null);
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

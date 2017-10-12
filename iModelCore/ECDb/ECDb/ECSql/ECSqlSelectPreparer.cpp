@@ -221,9 +221,9 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     const int startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount();
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
-    if (ECSqlExpPreparer::IsNullExp(*innerExp))
+    if (!innerExp->IsParameterExp() && innerExp->GetTypeInfo().IsNull())
         { 
-        ECSqlStatus status = ECSqlExpPreparer::PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, innerExp->GetAs<LiteralValueExp>(), referenceSqliteSnippetCount);
+        ECSqlStatus status = ECSqlExpPreparer::PrepareNullExp(nativeSqlSnippets, ctx, *innerExp, referenceSqliteSnippetCount);
         if (!status.IsSuccess())
             return status;
         }
