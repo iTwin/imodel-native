@@ -1125,20 +1125,35 @@ ECInstanceChangeResult ECInstanceChangeResult::Error(Utf8String message)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceChangeResult ECInstanceChangeResult::Ignore(Utf8String reason)
+    {
+    ECInstanceChangeResult result(SUCCESS);
+    result.m_errorMessage = reason;
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    if (SUCCESS == m_status)
+    if (SUCCESS == m_status && !m_changedValue.IsUninitialized())
         {
-        json.AddMember("IsSuccess", true, json.GetAllocator());
+        json.AddMember("Status", 0, json.GetAllocator());
         json.AddMember("Value", ValueHelpers::GetJsonFromECValue(m_changedValue, &json.GetAllocator()), json.GetAllocator());
+        }
+    else if (SUCCESS == m_status)
+        {
+        json.AddMember("Status", 1, json.GetAllocator());
+        json.AddMember("IgnoreReason", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
         }
     else
         {
-        json.AddMember("IsSuccess", false, json.GetAllocator());
+        json.AddMember("Status", 2, json.GetAllocator());
         json.AddMember("ErrorMessage", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
         }
     return json;

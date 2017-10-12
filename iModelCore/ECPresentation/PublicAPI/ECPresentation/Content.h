@@ -1131,6 +1131,7 @@ private:
 public:
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Success(ECN::ECValue changedValue);
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Error(Utf8String message);
+    ECPRESENTATION_EXPORT static ECInstanceChangeResult Ignore(Utf8String reason = "");
 
     ECInstanceChangeResult(ECInstanceChangeResult const& other)
         : m_status(other.m_status), m_changedValue(other.m_changedValue), m_errorMessage(other.m_errorMessage)
