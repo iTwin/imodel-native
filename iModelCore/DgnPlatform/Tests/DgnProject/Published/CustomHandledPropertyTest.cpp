@@ -779,11 +779,16 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
         ASSERT_TRUE(guid == rlink->GetRepositoryGuid());
         ASSERT_TRUE(guid == rlink->GetPropertyValueGuid("RepositoryGuid"));
         ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "RepositoryGuid"));
-        BeTest::SetFailOnAssert(false);
-        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->SetPropertyValue(rindex, ECN::ECValue("Description")));
-        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->GetPropertyValue(checkValue, rindex));
+        ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyValue(checkValue, rindex));
+        size_t checkGuidSize;
+        BeGuid* checkGuid = (BeGuid*)checkValue.GetBinary(checkGuidSize);
+        ASSERT_EQ(sizeof(BeGuid), checkGuidSize);
+        ASSERT_TRUE(guid == *checkGuid);
+        ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "Description"));
+        ASSERT_EQ(DgnDbStatus::Success, rlink->SetPropertyValue(rindex, ECN::ECValue("Description")));
+        ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyValue(checkValue, rindex));
+        ASSERT_STREQ("Description", checkValue.GetUtf8CP());
         ASSERT_TRUE(rlink->Insert().IsValid());
-        BeTest::SetFailOnAssert(true);
         //EmbeddedFileLink
         EmbeddedFileLinkPtr emlink = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, ""));
         ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(enindex, "Name"));
