@@ -279,6 +279,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void SetDisplayTexture(bool displayTexture);
         
+        SCALABLEMESH_SCHEMA_EXPORT bool GetDisplayTexture() const { return m_displayTexture; }
+        
         SCALABLEMESH_SCHEMA_EXPORT void ClearAllDisplayMem();
                 
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
