@@ -334,7 +334,12 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 		toReturn = toReturn && compareHandler(a[i], b[i], typeCounts, propertyCounts, errorTracker, dif);
 		// If false, break loop and return immediately
 		if (!toReturn)
+		{
+			char toInsert[18];
+			snprintf(toInsert, sizeof(toInsert), "[%d]", i);
+			errorTracker.insert(errorTracker.begin(), toInsert);
 			break;
+		}
 	}
 	return toReturn;
 	}
@@ -385,7 +390,6 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 		// If toReturn becomes false at any point, push the property and break (will cause a chain reaction up the stack)
 		if (!toReturn)
 		{
-			errorTracker.insert(errorTracker.begin(), "...");
 			errorTracker.insert(errorTracker.begin(), iter.memberName());
 			return false;
 		}
@@ -449,11 +453,23 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 		if (verbose == 3)
 		{
 			// If failed, print out the results of error tracing
-			messagePrefix("		<Error Tracking> ---------------------------------------------------------------\n");
+			messagePrefix("-------------------- Error Tracking --------------------\n");
 			size_t vectorSize = errorTracker.size();
+			bool needMessagePrefix = true;
 			for (size_t i = 0; i < vectorSize; i++)
 			{
-				messagePrefix(); printf("	%s\n", errorTracker[i].c_str());
+				if (needMessagePrefix)
+					messagePrefix();
+				if (i < vectorSize - 1 && errorTracker[i + 1].c_str()[0] == '[')	// Is an array that failed at a specific index; include index on same line
+				{
+					printf("%s", errorTracker[i].c_str());
+					needMessagePrefix = false;
+				}
+				else
+				{
+					printf("%s\n", errorTracker[i].c_str());
+					needMessagePrefix = true;
+				}
 			}
 		}
 	}
@@ -464,7 +480,7 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 	if (verbose == 3)
 	{
 		// Print out counts of each type
-		messagePrefix("		<Type Counts (up to failure/completion)> ----------------------------------------------------------------------\n");
+		messagePrefix("--------------------Type Counts (up to failure/completion) --------------------\n");
 		messagePrefix(); printf("	Numbers: %d\n", typeCounts.numbers);
 		messagePrefix(); printf("	Arrays:	%d\n", typeCounts.arrays);
 		messagePrefix(); printf("	Objects: %d\n", typeCounts.objects);
@@ -472,7 +488,7 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 		messagePrefix(); printf("	Booleans: %d\n", typeCounts.booleans);
 		messagePrefix(); printf("	Nulls: %d\n", typeCounts.nulls);
 		// Print out counts of each property
-		messagePrefix("		<Property Counts (up to failure/completion)> ------------------------------------------------------------------\n");
+		messagePrefix("-------------------- Property Counts (up to failure/completion) --------------------\n");
 		for (auto& x : propertyCounts)
 		{
 			messagePrefix(); printf("	%s:	%d\n", x.first.c_str(), x.second);
