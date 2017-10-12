@@ -64,8 +64,8 @@ BentleyStatus BisJson1ImporterImpl::InitializeSchemas()
         m_schemaNameToKey.insert(pair);
         }
 
-    m_orthographicViewClass = m_dgndb->Schemas().GetClass(BIS_ECSCHEMA_NAME, "OrthographicViewDefinition");
-    m_sheetViewClass = m_dgndb->Schemas().GetClass(BIS_ECSCHEMA_NAME, "SheetViewDefinition");
+    m_orthographicViewClass = nullptr;
+    m_sheetViewClass = nullptr;
 
     return SUCCESS;
     }
@@ -193,6 +193,8 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new ModelSelectorReader(this);
     else if (objectType.Equals(JSON_TYPE_DisplayStyle))
         reader = new DisplayStyleReader(this);
+    else if (objectType.Equals(JSON_TYPE_Texture))
+        reader = new TextureReader(this);
     else if (objectType.Equals(JSON_TYPE_LineStyleElement))
         reader = new LineStyleReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementRefersToElement))
@@ -335,6 +337,22 @@ DgnGeometryPartId BisJson1ImporterImpl::_RemapGeometryPartId(DgnGeometryPartId s
         return m_remap.Add(sourceId, DgnGeometryPartId(elemId.GetValue()));
         }
     return dest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnTextureId BisJson1ImporterImpl::_RemapTextureId(DgnTextureId sourceId)
+    {
+    DgnTextureId dest = m_remap.Find(sourceId);
+    if (dest.IsValid())
+        return dest;
+
+    DgnElementId destTexture = m_syncInfo->LookupElement(sourceId);
+    if (destTexture.IsValid())
+        return m_remap.Add(sourceId, DgnTextureId(destTexture.GetValue()));
+
+    return DgnTextureId();
     }
 
 //---------------------------------------------------------------------------------------
