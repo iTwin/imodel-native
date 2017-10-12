@@ -1721,9 +1721,9 @@ TEST(Polyface,MultiMeshVisibilityC)
         {
         bvector<IGeometryPtr> geometry;
         auto fullPath = dataPath;
-        WChar filename[1024];
-        swprintf (filename, L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_%d.dgnjs", fileNumber);
-        fullPath.AppendToPath (filename);
+        WString filename;
+        filename.Sprintf (L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_%d.dgnjs", fileNumber);
+        fullPath.AppendToPath (filename.c_str ());
 
         if (!DGNJSFileToGeometry (fullPath, geometry))
             break;
