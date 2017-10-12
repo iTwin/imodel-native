@@ -989,6 +989,14 @@ public:
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
 
+    //! Get the DMS document properties for a specified file, if available.
+    void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)
+        {
+        if (nullptr != _GetParams().GetDocumentPropertiesAccessor())
+            _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
+        }
+
+
     //! @name Graphics Conversion Utilties
     //! @{
     DGNDBSYNC_EXPORT static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale);
