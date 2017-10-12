@@ -447,18 +447,19 @@ public:
     // @private
     IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
 
-    //! Find or create a RepositoryLink Element that is associated with a source file. This function attempts to look up the document properties for the
-    //! file. (See Params::IDocumentPropertiesAccessor.) The RepositoryLink will be defined with a code that is equal to the document's GUID, if possible.
-    //! And the link's URI property will be set to the document's URN, if possible.
-    //! on the 
+    //! Insert or update a RepositoryLink Element refers to a specified source file. 
+    //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file. 
+    //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found, 
+    //! the CodeValue for the RepositoryLink Element will be set to the document's GUID, and the element's URI property will be set to the document's URN.
+    //! If DMS document properties cannot be found, this function will use the supplied defaultCode and defaultURN to set up the RepositoryLink.
     //! @param db               The briefcase.
     //! @param params           The bridge params
     //! @param localFileName    The filename of the source file.
     //! @param defaultCode      The CodeValue to use if a document GUID cannot be found
     //! @param defaultURN       The URN to use if no URN can be found
-    //! @param createIfNecessary If true, the link element is created if it is not already in the BIM.
-    //! @return The ElementId of the RepositoryLink element or an invalid ID if none could be found or created.
-    IMODEL_BRIDGE_EXPORT static DgnElementId FindOrCreateRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary = true);
+    //! @param queryOnly        If true, this function only checks to see if a RepositoryLink element is already in the briefcase. 
+    //! @return The ElementId of the RepositoryLink element in the briefcase or an invalid ID if none could be found or created.
+    IMODEL_BRIDGE_EXPORT static DgnElementId WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly = false);
 
     //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
     IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);

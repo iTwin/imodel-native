@@ -163,13 +163,13 @@ void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8Strin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId Converter::CreateRepositoryLink(DgnV8FileR file)
+DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
     {
     //  Fall back on whatever is in the Document Moniker, as interpreted by the installed DocumentManager
     Utf8String codevalue, uri;
     ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
 
-    auto rlinkId = iModelBridge::FindOrCreateRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue, uri);
+    auto rlinkId = iModelBridge::WriteRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue, uri);
     BeAssert(rlinkId.IsValid());
     return rlinkId;
     }
@@ -203,7 +203,7 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
         }
 
     //  Make sure the file has a corresponding RepositoryLink in the BIM
-    DgnElementId rlinkId = CreateRepositoryLink(file);
+    DgnElementId rlinkId = WriteRepositoryLink(file);
 
     //  Cache the file's syncinfo id and its RepositoryLink id in memory for quick access during this conversion/update
     file.AddAppData(V8FileSyncInfoIdAppData::GetKey(), new V8FileSyncInfoIdAppData(provenance.m_syncId, provenance.m_idPolicy, rlinkId));

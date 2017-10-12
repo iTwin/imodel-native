@@ -1038,7 +1038,7 @@ public:
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
-    DgnElementId CreateRepositoryLink(DgnV8FileR file);
+    DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
     DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);

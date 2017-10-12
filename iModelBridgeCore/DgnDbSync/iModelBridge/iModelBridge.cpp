@@ -514,49 +514,75 @@ LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId iModelBridge::FindOrCreateRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool createIfNecessary)
+DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly)
     {
-    auto lmodel = GetRepositoryLinkModel(db, createIfNecessary);
+    auto lmodel = GetRepositoryLinkModel(db, !queryOnly);
     if (!lmodel.IsValid())
         return DgnElementId();
 
-    iModelBridgeDocumentProperties docProps;
-
     // Get the document's properties 
-    
+    iModelBridgeDocumentProperties docProps;
+    Utf8String code(defaultCode);
+    Utf8String urn(defaultURN);
+
     // Prefer to get the properties assigned by ProjectWise, if possible.
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
 
-    if (docProps.m_docGUID.empty())
+    if (!docProps.m_docGUID.empty())
         {
-        docProps.m_webURN = defaultURN;
-        docProps.m_docGUID = defaultCode;
+        // Use the GUID as the code, if we have it.
+        code = docProps.m_docGUID;
+        urn = docProps.m_webURN;
         }
 
-    // Check to see if we already have RepositoryLink for this code
-    auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, docProps.m_docGUID.c_str()));
-    if (rlinkElementId.IsValid())
+    // Check to see if we already have a RepositoryLink for this code
+    auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, code.c_str()));
+
+    if (queryOnly)
         return rlinkElementId;
 
-    if (!createIfNecessary)
-        return DgnElementId();
+    // We will be creating or updating the RepositoryLink element.
+    // Get a writable element to work with.
+    RepositoryLinkPtr rlink;
 
-    //  Make the RepositoryLink, using the GUID as its code, and the WebURN as its URI
-    auto rlink = RepositoryLink::Create(*lmodel, docProps.m_webURN.c_str(), docProps.m_docGUID.c_str());
+    if (rlinkElementId.IsValid())
+        {
+        auto rlinkPersist = db.Elements().Get<RepositoryLink>(rlinkElementId);
+        if (!rlinkPersist.IsValid())
+            {
+            BeAssert(false);
+            return DgnElementId();
+            }
+        rlink = rlinkPersist->MakeCopy<RepositoryLink>();
+        }
+    else
+        {
+        rlink = RepositoryLink::Create(*lmodel, urn.c_str(), code.c_str());
+        }
 
-    rlink->SetRepositoryGuid(docProps.m_docGUID);
+    // Set the element's properties.
+    rlink->SetUrl(urn.c_str());
 
-    //  Store the additional document properties, if any
+    if (!docProps.m_docGUID.empty())
+        {
+        BeGuid beguid;
+        if (SUCCESS == beguid.FromString(docProps.m_docGUID.c_str()))
+            rlink->SetRepositoryGuid(beguid);
+        }
+
     if (!docProps.m_desktopURN.empty() || !docProps.m_otherPropertiesJSON.empty())
         {
-        Json::Value jsonValue = Json::Value::From(docProps.m_otherPropertiesJSON);
+        Json::Value jsonValue = Json::objectValue;
         jsonValue["desktopURN"] = docProps.m_desktopURN;
         jsonValue["webURN"] = docProps.m_webURN;
+        jsonValue["properties"] = Json::Value::From(docProps.m_otherPropertiesJSON);
         rlink->SetDocumentProperties(jsonValue);
         }
 
-    auto rlinkPersist = rlink->Insert();
+    // Write the element
+    auto rlinkPersist = (rlink->GetElementId().IsValid())? rlink->Update(): rlink->Insert();
+
     if (!rlinkPersist.IsValid())
         {
         BeAssert(false);
