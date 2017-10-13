@@ -721,8 +721,6 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     {
-    DgnDbR db = *m_db;
-
     // (Note: superclass iModelBridgeWithSyncInfoBase::_OnConvertToBim has already attached my syncinfo file to the bim.)
 
     iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
