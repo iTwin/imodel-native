@@ -6929,6 +6929,13 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!IsLoaded())
         Load();
 
+    static std::atomic<uint64_t> currentIter = 0;
+
+    if (progress != nullptr && this->m_nodeHeader.m_level == 0)
+        {
+        currentIter = 0;
+        }
+
     pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     
     if (!m_nodeHeader.m_IsLeaf)
@@ -6981,7 +6988,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     // Report progress
     if (progress != nullptr)
         {
-        static std::atomic<uint64_t> currentIter = 0;
         static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++currentIter);
         }
     return true;
