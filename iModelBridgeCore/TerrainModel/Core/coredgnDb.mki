@@ -82,5 +82,5 @@ CCompPDBName = $(appName)
 #Disable unreachable code warning this is because of the dbg=DTM_TRACE_VALUE(0)
 cuser + -wd4505 -wd4702
 
-%warn Need to remove 4189 warning local variable is initialized but not referenced.
+%message Need to remove 4189 warning local variable is initialized but not referenced.
 cuser + -wd4189
