@@ -476,7 +476,140 @@ Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLi
 //---------------------------------------------------------------------------------------
 bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     {
-    if (nullptr == m_assignmentChecker) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
+    if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
-    return m_assignmentChecker->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+    return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary)
+    {
+    Utf8String partitionName = "RepositoryLinksPartition"; //iModelBridge::L10N.GetString(iModelBridge::L10N::??::RepositoryLinksPartitionName());    TODO
+    DgnCode partitionCode = LinkPartition::CreateCode(*db.Elements().GetRootSubject(), partitionName.c_str());
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    if (partitionId.IsValid())
+        return LinkModel::Get(db, DgnModelId(partitionId.GetValue()));
+
+    if (!createIfNecessary)
+        return nullptr;
+
+    LinkPartitionPtr ed = LinkPartition::Create(*db.Elements().GetRootSubject(), partitionName.c_str());
+    LinkPartitionCPtr partition = ed->InsertT<LinkPartition>();
+    if (!partition.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    auto lm = LinkModel::Create(LinkModel::CreateParams(db, partition->GetElementId()));
+    if (lm->Insert() != DgnDbStatus::Success)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    return lm;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly)
+    {
+    auto lmodel = GetRepositoryLinkModel(db, !queryOnly);
+    if (!lmodel.IsValid())
+        return DgnElementId();
+
+    // Get the document's properties 
+    iModelBridgeDocumentProperties docProps;
+    Utf8String code(defaultCode);
+    Utf8String urn(defaultURN);
+
+    // Prefer to get the properties assigned by ProjectWise, if possible.
+    if (nullptr != params.GetDocumentPropertiesAccessor())
+        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
+
+    if (!docProps.m_docGUID.empty())
+        {
+        // Use the GUID as the code, if we have it.
+        code = docProps.m_docGUID;
+        urn = docProps.m_webURN;
+        }
+
+    if (urn.empty())
+        {
+        urn = Utf8String(localFileName);
+        }
+
+    // Check to see if we already have a RepositoryLink for this code
+    auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, code.c_str()));
+
+    if (queryOnly)
+        return rlinkElementId;
+
+    // We will be creating or updating the RepositoryLink element.
+    // Get a writable element to work with.
+    RepositoryLinkPtr rlink;
+
+    if (rlinkElementId.IsValid())
+        {
+        auto rlinkPersist = db.Elements().Get<RepositoryLink>(rlinkElementId);
+        if (!rlinkPersist.IsValid())
+            {
+            BeAssert(false);
+            return DgnElementId();
+            }
+        rlink = rlinkPersist->MakeCopy<RepositoryLink>();
+        }
+    else
+        {
+        rlink = RepositoryLink::Create(*lmodel, urn.c_str(), code.c_str());
+        }
+
+    // Set the element's properties.
+    rlink->SetUrl(urn.c_str());
+
+    if (!docProps.m_docGUID.empty())
+        {
+        BeGuid beguid;
+        if (SUCCESS == beguid.FromString(docProps.m_docGUID.c_str()))
+            rlink->SetRepositoryGuid(beguid);
+        }
+
+    if (!docProps.m_desktopURN.empty() || !docProps.m_otherPropertiesJSON.empty())
+        {
+        Json::Value jsonValue = Json::objectValue;
+        jsonValue["desktopURN"] = docProps.m_desktopURN;
+        jsonValue["webURN"] = docProps.m_webURN;
+        jsonValue["properties"] = Json::Value::From(docProps.m_otherPropertiesJSON);
+        rlink->SetDocumentProperties(jsonValue);
+        }
+
+    // Write the element
+    auto rlinkPersist = (rlink->GetElementId().IsValid())? rlink->Update(): rlink->Insert();
+
+    if (!rlinkPersist.IsValid())
+        {
+        BeAssert(false);
+        return DgnElementId();
+        }
+
+    return rlinkPersist->GetElementId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson      09/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName)
+    {
+    auto relClass = db.Schemas().GetClass(schemaName, relClassName);
+    if (nullptr == relClass || nullptr == relClass->GetRelationshipClassCP())
+        {
+        BeAssert(false);
+        return DgnDbStatus::NotFound;
+        }
+    EC::ECInstanceKey relKey;
+    auto status = db.InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), source, target);
+    BeAssert(BE_SQLITE_OK == status);
+    return (BE_SQLITE_OK == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }

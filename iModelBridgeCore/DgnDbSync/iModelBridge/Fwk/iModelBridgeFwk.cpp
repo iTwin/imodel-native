@@ -911,7 +911,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
-        params.SetAssignmentChecker(*this);
+        params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     }
 
@@ -1394,6 +1394,14 @@ static DgnRevisionPtr createRevision(DgnDbR db)
 bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
     {
     return GetRegistry()._IsFileAssignedToBridge(fn, bridgeRegSubKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+    {
+    return GetRegistry()._GetDocumentProperties(props, fn);
     }
 
 /*---------------------------------------------------------------------------------**//**

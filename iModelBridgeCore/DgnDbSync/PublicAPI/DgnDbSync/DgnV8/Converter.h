@@ -976,7 +976,10 @@ public:
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
 
-    DGNDBSYNC_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
+    static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME)
+        {
+        return iModelBridge::InsertLinkTableRelationship(db, relClassName, source, target, schemaName);
+        }
 
     DGNDBSYNC_EXPORT static void SetDllSearchPath(BentleyApi::BeFileNameCR v8Path, BentleyApi::BeFileNameCP realdwgPath = nullptr);
 
@@ -985,6 +988,14 @@ public:
     void AddFinisher(IFinishConversion& f) {m_finishers.push_back(&f);}
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
+
+    //! Get the DMS document properties for a specified file, if available.
+    void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)
+        {
+        if (nullptr != _GetParams().GetDocumentPropertiesAccessor())
+            _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
+        }
+
 
     //! @name Graphics Conversion Utilties
     //! @{
@@ -1034,13 +1045,9 @@ public:
     //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
-    //! Make sure that we have a model to store RepositoryLinks
-    LinkModelPtr GetOrCreateRepositoryLinkModel();
-
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
-    DgnElementId CreateRepositoryLink(DgnV8FileR file);
-    //! Find the existing a RepositoryLink that represents this file in the BIM and cache it in memory
-    DgnElementId FindRepositoryLink(DgnV8FileR file);
+    DgnElementId WriteRepositoryLink(DgnV8FileR file);
+
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
     DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
 

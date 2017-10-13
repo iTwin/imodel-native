@@ -39,7 +39,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeFwk : iModelBridge::FileAssignmentChecker
+struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
     enum class EffectiveServerError
         {
@@ -196,6 +196,7 @@ protected:
     void InitLogging();
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
     IModelBridgeRegistry& GetRegistry();
 
     DgnProgressMeter& GetProgressMeter() const;

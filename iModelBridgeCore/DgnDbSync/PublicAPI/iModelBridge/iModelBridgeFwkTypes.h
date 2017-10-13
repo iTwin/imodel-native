@@ -19,10 +19,20 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+//! Properties that may be assigned to a document by its home document control system (DCS).
+struct iModelBridgeDocumentProperties
+    {
+    Utf8String m_docGUID; //!< The GUID assigned to the document
+    Utf8String m_webURN; //!< The URN to use when referring to this document over the Internet
+    Utf8String m_desktopURN; //!< The URN to use when referring to this document from a desktop program
+    Utf8String m_otherPropertiesJSON; //!< Other properties of the document, in JSON format
+    };
+
 struct IModelBridgeRegistry : IRefCounted
     {
     virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
     virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) = 0;
+    virtual void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) = 0;
     };
 
 //! The bridge's affinity to some source file.
