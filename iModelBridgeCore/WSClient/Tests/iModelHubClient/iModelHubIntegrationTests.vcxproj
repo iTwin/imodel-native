@@ -83,6 +83,7 @@
     <ClCompile Include="IMHSClientExe\IMHSClientExe.cpp" />
     <ClCompile Include="Integration\Briefcase_Tests.cpp" />
     <ClCompile Include="Integration\Client_Tests.cpp" />
+    <ClCompile Include="Integration\Domain_Tests.cpp" />
     <ClCompile Include="Integration\EventParserTests.cpp" />
     <ClCompile Include="Integration\Events_Tests.cpp" />
     <ClCompile Include="Integration\Failure_Tests.cpp" />
