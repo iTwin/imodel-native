@@ -1044,7 +1044,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     EXPECT_EQ("TestContent", SimpleReadFile(result.GetValue().GetFilePath()));
     }
 
-TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithoutNameAndSizeAndFileHasInstanceLabel)
+TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithGeneratedFileNameAsLabelMightBeNotSuitable)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
@@ -1065,14 +1065,14 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         {
         EXPECT_EQ(0, bytesTransfered);
         EXPECT_EQ(0, bytesTotal);
-        EXPECT_EQ("TestLabel", label);
+        EXPECT_EQ("", label);
         onProgressCalled++;
         };
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        EXPECT_EQ(L"TestLabel", filePath.GetFileNameAndExtension());
+        EXPECT_EQ(L"TestLabeledClass_TestId", filePath.GetFileNameAndExtension());
         progress(0, 42);
         return CreateCompletedAsyncTask(WSFileResult());
         }));

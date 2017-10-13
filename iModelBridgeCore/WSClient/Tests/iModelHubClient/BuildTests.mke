@@ -59,5 +59,8 @@ $(BuildContext)Delivery/iModelHubNativeTests/PerformanceTests.json : $(baseDir)I
 $(BuildContext)Delivery/iModelHubNativeTests/DgnPlatformTest.ecschema.xml : $(baseDir)ECSchemas/DgnPlatformTest.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema.xml : $(baseDir)ECSchemas/SchemaVersionTest.02.02.02.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
 $(BuildContext)Delivery/iModelHubNativeTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

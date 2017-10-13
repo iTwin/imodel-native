@@ -13,6 +13,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <Bentley/bmap.h>
 #include <BeHttp/HttpClient.h>
+#include <DgnPlatform/DgnDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -354,7 +355,7 @@ iModelConnectionPtr IntegrationTestsBase::ConnectToiModel(ClientCR client, iMode
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas             01/2016
 //---------------------------------------------------------------------------------------
-BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfoCR imodelInfo, bool pull)
+BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfoCR imodelInfo, bool pull, bool forceDomainUpgrade)
     {
     auto acquireResult = client.AcquireBriefcaseToDir (imodelInfo, m_pHost->GetOutputDirectory(), pull, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult ();
     EXPECT_SUCCESS(acquireResult);
@@ -362,7 +363,10 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
     BeFileName dbPath = acquireResult.GetValue ()->GetLocalPath();
     EXPECT_TRUE (dbPath.DoesPathExist ());
 
-    DgnDbPtr db = DgnDb::OpenDgnDb (nullptr, dbPath, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
+    auto schemaUpgradeOptions = forceDomainUpgrade
+        ? SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)
+        : SchemaUpgradeOptions();
+    DgnDbPtr db = DgnDb::OpenDgnDb (nullptr, dbPath, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions));
     EXPECT_TRUE(db.IsValid());
 
     auto briefcaseResult = client.OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
