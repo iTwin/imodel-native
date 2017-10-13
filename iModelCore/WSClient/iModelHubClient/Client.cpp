@@ -737,16 +737,25 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
     return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Success(briefcaseInfo));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikolinuas            07/2017
+//---------------------------------------------------------------------------------------
+DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions)
+    {
+    bvector<DgnRevisionCP> changeSetsToMerge;
+    ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
+
+    auto upgradeOptions = SchemaUpgradeOptions(changeSetsToMerge);
+    upgradeOptions.SetUpgradeFromDomains(domainUpgradeOptions);
+    return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, upgradeOptions));
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets)
     {
-    bvector<DgnRevisionCP> changeSetsToMerge;
-    ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
-
-    return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(changeSetsToMerge)));
+    return OpenWithSchemaUpgradeInternal(status, filePath, changeSets);
     }
 
 //---------------------------------------------------------------------------------------
@@ -782,7 +791,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
@@ -838,7 +847,7 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
         db->CloseDb();
 
         BeSQLite::DbResult status;
-        db = OpenWithSchemaUpgrade(&status, filePath, changeSets);
+        db = OpenWithSchemaUpgradeInternal(&status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
         if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
             StatusResult result = StatusResult::Error(Error(db, status));
@@ -1253,7 +1262,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
