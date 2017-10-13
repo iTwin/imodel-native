@@ -505,7 +505,7 @@ struct TestiModelHubClient : DgnDbServerClientUtils
         return repoPath;
         }
 
-    TestiModelHubClient(WebServices::UrlProvider::Environment environment) : DgnDbServerClientUtils(environment)
+    TestiModelHubClient(WebServices::UrlProvider::Environment environment) : DgnDbServerClientUtils(environment, 0)
         {
         }
 
