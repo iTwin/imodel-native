@@ -424,11 +424,6 @@ BeFileStatus BeFile::Close()
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    #ifndef NDEBUG
-        if (AS_FDES(m_handle) <= 2)
-            printf("Warning closing file handle %d\n", AS_FDES(m_handle));
-    #endif
-
     if (close(AS_FDES(m_handle)) == 0)
         {
         m_handle = INVALID_HANDLE_VALUE;
