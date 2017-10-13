@@ -524,6 +524,23 @@ LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isRepositoryLinkChanged(RepositoryLinkCR e1, RepositoryLinkCR e2)
+    {
+    if (e1.GetDocumentProperties() != e2.GetDocumentProperties())
+        return true;
+
+    if (e1.GetRepositoryGuid() != e2.GetRepositoryGuid())
+        return true;
+
+    if (0 != BeStringUtilities::StricmpAscii(e1.GetUrl(), e2.GetUrl()))
+        return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly)
     {
     auto lmodel = GetRepositoryLinkModel(db, !queryOnly);
@@ -547,9 +564,7 @@ DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, 
         }
 
     if (urn.empty())
-        {
         urn = Utf8String(localFileName);
-        }
 
     // Check to see if we already have a RepositoryLink for this code
     auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, code.c_str()));
@@ -560,21 +575,11 @@ DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, 
     // We will be creating or updating the RepositoryLink element.
     // Get a writable element to work with.
     RepositoryLinkPtr rlink;
-
-    if (rlinkElementId.IsValid())
-        {
-        auto rlinkPersist = db.Elements().Get<RepositoryLink>(rlinkElementId);
-        if (!rlinkPersist.IsValid())
-            {
-            BeAssert(false);
-            return DgnElementId();
-            }
+    RepositoryLinkCPtr rlinkPersist = db.Elements().Get<RepositoryLink>(rlinkElementId);
+    if (rlinkPersist.IsValid())
         rlink = rlinkPersist->MakeCopy<RepositoryLink>();
-        }
     else
-        {
         rlink = RepositoryLink::Create(*lmodel, urn.c_str(), code.c_str());
-        }
 
     // Set the element's properties.
     rlink->SetUrl(urn.c_str());
@@ -595,16 +600,30 @@ DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, 
         rlink->SetDocumentProperties(jsonValue);
         }
 
-    // Write the element
-    auto rlinkPersist = (rlink->GetElementId().IsValid())? rlink->Update(): rlink->Insert();
+    // Don't request locks or write anything unless we know that there is a change.
+    if (rlinkPersist.IsValid() && !isRepositoryLinkChanged(*rlinkPersist, *rlink))
+        return rlinkPersist->GetElementId();
 
-    if (!rlinkPersist.IsValid())
+    // Request locks and codes explicity. That is because a bridge can possibly create a RepositoryLink in one of its callbacks
+    // such as _OpenSource that is called before we go into bulk insert mode.
+    IBriefcaseManager::Request req;
+    rlink->PopulateRequest(req, (rlink->GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success != db.BriefcaseManager().Acquire(req).Result())
         {
         BeAssert(false);
         return DgnElementId();
         }
 
-    return rlinkPersist->GetElementId();
+    // Write the element
+    auto rlinkPost = (rlink->GetElementId().IsValid())? rlink->Update(): rlink->Insert();
+
+    if (!rlinkPost.IsValid())
+        {
+        BeAssert(false);
+        return DgnElementId();
+        }
+
+    return rlinkPost->GetElementId();
     }
 
 //---------------------------------------------------------------------------------------
