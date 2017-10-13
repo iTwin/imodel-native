@@ -264,7 +264,7 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
     std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.getChild(2), false);
+    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.getChild(2), ECSqlType::Insert, false);
     if (SUCCESS != stat)
         return stat;
 
@@ -298,7 +298,7 @@ BentleyStatus ECSqlParser::ParseUpdateStatementSearched(std::unique_ptr<UpdateSt
     exp = nullptr;
     //rule: update_statement_searched: SQL_TOKEN_UPDATE table_ref SQL_TOKEN_SET assignment_commalist opt_where_clause
     std::unique_ptr<ClassRefExp> classRefExp = nullptr;
-    BentleyStatus stat = ParseTableRef(classRefExp, parseNode.getChild(1));
+    BentleyStatus stat = ParseTableRef(classRefExp, parseNode.getChild(1), ECSqlType::Update);
     if (SUCCESS != stat)
         return stat;
 
@@ -364,7 +364,7 @@ BentleyStatus ECSqlParser::ParseDeleteStatementSearched(std::unique_ptr<DeleteSt
     {
     //rule: delete_statement_searched: SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause
     std::unique_ptr<ClassRefExp> classRefExp = nullptr;
-    BentleyStatus stat = ParseTableRef(classRefExp, parseNode.getChild(2));
+    BentleyStatus stat = ParseTableRef(classRefExp, parseNode.getChild(2), ECSqlType::Delete);
     if (SUCCESS != stat)
         return stat;
 
@@ -1112,7 +1112,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
     for (size_t n = 0; n < table_ref_commalist->count(); n++)
         {
         std::unique_ptr<ClassRefExp> classRefExp = nullptr;
-        BentleyStatus stat = ParseTableRef(classRefExp, table_ref_commalist->getChild(n));
+        BentleyStatus stat = ParseTableRef(classRefExp, table_ref_commalist->getChild(n), ECSqlType::Select);
         if (stat != SUCCESS)
             return stat;
 
@@ -1128,7 +1128,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType) const
     {
     if (SQL_ISRULE(parseNode, qualified_join) || SQL_ISRULE(parseNode, ecrelationship_join))
         {
@@ -1149,11 +1149,11 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
     OSQLParseNode const* opt_only = parseNode->getChild(0);
     OSQLParseNode const* second = parseNode->getChild(1);
 
-    bool isPolymorphic = !(opt_only->getTokenID() == SQL_TOKEN_ONLY);
+    const bool isPolymorphic = !(opt_only->getTokenID() == SQL_TOKEN_ONLY);
     if (SQL_ISRULE(second, table_node))
         {
         std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-        if (SUCCESS != ParseTableNode(classNameExp, second, isPolymorphic))
+        if (SUCCESS != ParseTableNode(classNameExp, second, ecsqlType, isPolymorphic))
             return ERROR;
 
         OSQLParseNode const* table_primary_as_range_column = parseNode->getChild(2);
@@ -1242,7 +1242,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
         }
 
     std::unique_ptr<ClassRefExp> from_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     ECSqlJoinType join_type = ECSqlJoinType::InnerJoin;
@@ -1250,12 +1250,12 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
         return ERROR;
 
     std::unique_ptr<ClassRefExp> to_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     //TODO: need to decide whether we support ONLY in USING clause.
     std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNode(table_node, parseNode->getChild(5/*table_node*/), true))
+    if (SUCCESS != ParseTableNode(table_node, parseNode->getChild(5/*table_node*/), ECSqlType::Select, true))
      return ERROR;
 
     OSQLParseNode const* op_relationship_direction = parseNode->getChild(6/*op_relationship_direction*/);
@@ -1288,7 +1288,7 @@ BentleyStatus ECSqlParser::ParseQualifiedJoin(std::unique_ptr<JoinExp>& exp, OSQ
         }
 
     std::unique_ptr<ClassRefExp> from_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     ECSqlJoinType joinType = ECSqlJoinType::InnerJoin;
@@ -1299,7 +1299,7 @@ BentleyStatus ECSqlParser::ParseQualifiedJoin(std::unique_ptr<JoinExp>& exp, OSQ
             return ERROR;
 
         std::unique_ptr<ClassRefExp> to_table_ref = nullptr;
-        if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(4/*table_ref*/)))
+        if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(4/*table_ref*/), ECSqlType::Select))
             return ERROR;
 
         exp = std::make_unique<NaturalJoinExp>(std::move(from_table_ref), std::move(to_table_ref), joinType);
@@ -1310,7 +1310,7 @@ BentleyStatus ECSqlParser::ParseQualifiedJoin(std::unique_ptr<JoinExp>& exp, OSQ
         return ERROR;
 
     std::unique_ptr<ClassRefExp> to_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     std::unique_ptr<JoinSpecExp> join_spec = nullptr;
@@ -1333,11 +1333,11 @@ BentleyStatus ECSqlParser::ParseCrossUnion(std::unique_ptr<CrossJoinExp>& exp, O
         }
 
     std::unique_ptr<ClassRefExp> from_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     std::unique_ptr<ClassRefExp> to_table_ref = nullptr;
-    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/)))
+    if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
     exp = std::make_unique<CrossJoinExp>(std::move(from_table_ref), std::move(to_table_ref));
@@ -1475,7 +1475,7 @@ BentleyStatus ECSqlParser::ParseNamedColumnsJoin(std::unique_ptr<NamedProperties
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OSQLParseNode const* parseNode, bool isPolymorphic) const
+BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType, bool isPolymorphic) const
     {
     exp = nullptr;
 
@@ -1495,10 +1495,10 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
 
     BeAssert(className != nullptr && schemaName != nullptr);
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className))
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className, ecsqlType, isPolymorphic))
         return ERROR;
 
-    exp = std::make_unique<ClassNameExp>(className->c_str(), schemaName->c_str(), catalogName != nullptr ? catalogName->c_str() : nullptr, classNameExpInfo, isPolymorphic);
+    exp = std::make_unique<ClassNameExp>(*className, *schemaName, catalogName, classNameExpInfo, isPolymorphic);
     return SUCCESS;
     }
 
@@ -2683,7 +2683,7 @@ void ECSqlParseContext::PopFinalizeParseArg() { m_finalizeParseArgs.pop_back(); 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className)
+BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
     {
     BeAssert(!schemaNameOrAlias.empty());
     ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect);
@@ -2702,6 +2702,13 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
         }
 
     ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*map, ecsqlType, isPolymorphicExp));
+    if (!policy.IsSupported())
+        {
+        Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ERROR;
+        }
+
     if (map == nullptr)
         {
         Issues().Report("Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className.c_str());
@@ -2767,18 +2774,6 @@ void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelations
         }
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlParseContext::IsEndClassOfRelationship(ECClassCR searchClass, ECRelationshipEnd searchEnd, ECRelationshipClassCR relationshipClass)
-    {
-    ECRelationshipConstraintCR constraintEnd =
-        (searchEnd == ECRelationshipEnd::ECRelationshipEnd_Source) ? relationshipClass.GetSource() : relationshipClass.GetTarget();
-
-    bmap<ECClassId, ECClassCP> classes;
-    GetConstraintClasses(classes, constraintEnd);
-    return classes.find(searchClass.GetId()) != classes.end();
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2013

@@ -133,8 +133,8 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
             NativeSqlBuilder::List rhsNativeSqlSnippets;
             ValueExp const* valueExp = assignmentExp.GetValueExp();
             //if value is null exp, we need to pass target operand snippets
-            if (ECSqlExpPreparer::IsNullExp(*valueExp))
-                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, valueExp->GetAs<LiteralValueExp>(), sqlSnippetCount);
+            if (!valueExp->IsParameterExp() && valueExp->GetTypeInfo().IsNull())
+                stat = ECSqlExpPreparer::PrepareNullExp(rhsNativeSqlSnippets, ctx, *valueExp, sqlSnippetCount);
             else
                 stat = ECSqlExpPreparer::PrepareValueExp(rhsNativeSqlSnippets, ctx, *valueExp);
 

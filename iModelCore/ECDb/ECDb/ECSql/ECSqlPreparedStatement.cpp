@@ -455,12 +455,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     PrepareInfo prepareInfo(ctx, exp.GetAs<InsertStatementExp>());
 
     ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, false /* INSERT is always non-polymorphic*/));
-    if (!policy.IsSupported())
-        {
-        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, false /* INSERT is always non-polymorphic*/)).IsSupported() && "Should have been caught before");
 
     if (prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
@@ -798,7 +793,7 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &idPropNa
             {
                 case Exp::Type::LiteralValue:
                 {
-                if (idValueExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Null)
+                if (idValueExp->GetTypeInfo().IsNull())
                     m_mode = Mode::UserProvidedNullExp;
                 else
                     m_mode = Mode::UserProvidedOtherExp;
@@ -835,7 +830,7 @@ ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Mode ECSqlInsertPreparedState
         {
             case Exp::Type::LiteralValue:
             {
-            if (idValueExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Null)
+            if (idValueExp->GetTypeInfo().IsNull())
                 return Mode::UserProvidedNullExp;
 
             return Mode::UserProvidedOtherExp;
@@ -874,12 +869,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     {
     PrepareInfo prepareInfo(ctx, exp.GetAs<UpdateStatementExp>());
 
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic()));
-    if (!policy.IsSupported())
-        {
-        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
 
     ECSqlStatus stat = CheckForReadonlyProperties(prepareInfo);
     if (stat != ECSqlStatus::Success)
@@ -1265,17 +1255,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
-    DeleteStatementExp const& deleteExp = exp.GetAs<DeleteStatementExp>();
-    ClassNameExp const* classNameExp = deleteExp.GetClassNameExp();
-    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, classNameExp->IsPolymorphic()));
-    if (!policy.IsSupported())
-        {
-        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
+    BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
     //WIP this will probably not be enough
     return SingleECSqlPreparedStatement::_Prepare(ctx, exp);
     }

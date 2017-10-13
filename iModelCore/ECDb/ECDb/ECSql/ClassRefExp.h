@@ -94,9 +94,12 @@ private:
     Utf8String _ToString () const override;
 
 public:
-    ClassNameExp(Utf8CP className, Utf8CP schemaAlias, Utf8CP catalog, std::shared_ptr<Info> info, bool isPolymorphic = true)
-        : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_catalogName(catalog), m_info(info)
-        {}
+    ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8StringCP catalogName, std::shared_ptr<Info> info, bool isPolymorphic = true)
+        : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_info(info)
+        {
+        if (catalogName != nullptr)
+            m_catalogName = *catalogName;
+        }
 
     bool HasMetaInfo() const { return m_info != nullptr;}
     ClassNameExp::Info const& GetInfo() const { return *m_info;}

@@ -63,6 +63,7 @@ struct ECSqlTypeInfo final
         bool CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessage = nullptr) const;
 
         Kind GetKind() const { return m_kind; }
+        bool IsNull() const { return m_kind == Kind::Null; }
         bool IsPrimitive() const { return m_kind == Kind::Primitive; }
         bool IsNumeric() const { return IsExactNumeric() || IsApproximateNumeric(); }
         bool IsExactNumeric() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_Integer || m_primitiveType == ECN::PRIMITIVETYPE_Long); }
