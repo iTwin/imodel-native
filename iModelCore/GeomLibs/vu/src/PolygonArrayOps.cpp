@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: vu/src/PolygonArrayOps.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
@@ -132,7 +132,14 @@ void PolygonVectorOps::AppendWithParentIndices (TaggedPolygonVectorR dest, Tagge
         }
     }
     
-    
+void PolygonVectorOps::ReverseForAreaXYSign (TaggedPolygonVector &polygons, double factor)
+    {
+    for (auto & p : polygons)
+        {
+        if (PolygonOps::AreaXY (p.GetPointsR ()) < 0.0)
+            DPoint3dOps::Reverse (p.GetPointsR ());
+        }
+    }    
 //! Search for polygons that are non-planar.
 //! Triangulate nonplanar polygons.
 //! When a polygon is triangulated, one triangle replaces it, others go at end.

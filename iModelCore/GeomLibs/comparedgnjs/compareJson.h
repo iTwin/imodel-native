@@ -9,6 +9,7 @@
 #include <bentley/bvector.h>
 #include <Bentley/WString.h>
 
+
 // This structure records navigation along a path into a json Value true.
 struct JsonPathPosition {
 Json::Value value;  // !!! ???? !!! Should this be pointer or reference?
