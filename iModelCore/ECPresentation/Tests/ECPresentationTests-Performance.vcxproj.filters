@@ -21,6 +21,7 @@
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="Performance\RulesEngine\CreateContentDescriptor.cpp" />
     <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
+    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />

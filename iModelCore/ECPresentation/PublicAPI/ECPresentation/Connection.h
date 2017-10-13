@@ -76,11 +76,36 @@ public:
 };
 
 //=======================================================================================
+//! A connection manager interface which provides connection (BeSQLite::EC::ECDb) by its id (guid)
+//! and manages connections listeners.
+//! @ingroup GROUP_Presentation
+// @bsiclass                                    Saulius.Skliutas                10/2017
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IConnectionManager : IConnectionCache
+{
+protected:
+    //! @see AddListener
+    virtual void _AddListener(IConnectionsListener&) = 0;
+
+    //! @see DropListener
+    virtual void _DropListener(IConnectionsListener&) = 0;
+
+public:
+    //! Add listener which listens for connection events.
+    //! @param[in] listener The listener which will listen for connection events.
+    void AddListener(IConnectionsListener& listener) { _AddListener(listener); }
+
+    //! Drop listener.
+    //! @param[in] listener The listener which which should be dropped.
+    void DropListener(IConnectionsListener& listener) { _DropListener(listener); }
+};
+
+//=======================================================================================
 //! Manager that stores currently open connections and can get one of them by 
 //! connection ID.
 // @bsiclass                                    Grigas.Petraitis                11/2016
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ConnectionManager : IConnectionCache
+struct EXPORT_VTABLE_ATTRIBUTE ConnectionManager : IConnectionManager
 {
 private:
     bmap<Utf8String, BeSQLite::EC::ECDb*> m_activeConnections;
@@ -92,12 +117,12 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT BeSQLite::EC::ECDb* _GetConnection(Utf8CP connectionId) const override;
+    void _AddListener(IConnectionsListener& listener) override { m_listeners.push_back(&listener); }
+    void _DropListener(IConnectionsListener& listener) override { m_listeners.erase(std::find(m_listeners.begin(), m_listeners.end(), &listener)); }
 
 public:
     ECPRESENTATION_EXPORT void NotifyConnectionOpened(BeSQLite::EC::ECDbR connection);
     ECPRESENTATION_EXPORT void NotifyConnectionClosed(BeSQLite::EC::ECDbR connection);
-    void AddListener(IConnectionsListener& listener) {m_listeners.push_back(&listener);}
-    void DropListener(IConnectionsListener& listener) {m_listeners.erase(std::find(m_listeners.begin(), m_listeners.end(), &listener));}
 
 //__PUBLISH_SECTION_END__
 public:

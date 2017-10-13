@@ -27,7 +27,7 @@ struct NodesCacheTests : ::testing::Test
 
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
-    TestConnectionCache m_connectionCache;
+    TestConnectionManager m_connectionCache;
     NodesCache* m_cache;
 
     void SetUp() override
@@ -38,7 +38,7 @@ struct NodesCacheTests : ::testing::Test
         BeFileName temporaryDirectory;
         BeTest::GetHost().GetTempDir(temporaryDirectory);
         m_cache = _CreateNodesCache(temporaryDirectory);
-        m_connectionCache.Cache(s_project->GetECDb());
+        m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
         }
 
     virtual void TearDown() override
@@ -148,7 +148,7 @@ void NodesCacheTests::Test_Clear_Full()
     // cache root data source for a different connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.Cache(project2.GetECDb());
+    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
     DataSourceInfo rootInfo2(project2.GetECDbCR().GetDbGuid(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
     
@@ -209,7 +209,7 @@ void NodesCacheTests::Test_Clear_ByConnection()
     // cache root data source for a different connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.Cache(project2.GetECDb());
+    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
     DataSourceInfo rootInfo2(project2.GetECDbCR().GetDbGuid(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -926,7 +926,7 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
     // create a new connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.Cache(project2.GetECDb());
+    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
     
     // cache root data source for the first connection
     DataSourceInfo rootInfo1(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
@@ -2038,17 +2038,86 @@ TEST_F(DiskNodesCacheTests, Updates_IsExpandedFlag)
     Test_Updates_IsExpandedFlag();
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsitest                                      Saulius.Skliutas                09/2017
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
-//    {
-//    BeFileName tempDir;
-//    BeTest::GetHost().GetTempDir(tempDir);
-//    NodesCache* secondCache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, NodesCacheType::Disk);
-//
-//    Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
-//    Utf8CP secondCacheName = secondCache->GetDb().GetDbFileName();
-//
-//    EXPECT_STRNE(firstCacheName, secondCacheName);
-//    }
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
+    {
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    NodesCache* secondCache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, NodesCacheType::Disk);
+
+    Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
+    Utf8CP secondCacheName = secondCache->GetDb().GetDbFileName();
+
+    EXPECT_STRNE(firstCacheName, secondCacheName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenInstances)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, NodesCacheType::Disk);
+    // mock connection opening
+    m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+
+    // cache should not be cleaned
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ClearCacheIfHierarchyWasModified)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // cache some nodes
+    bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // change connection file last modification time
+    BeFileName dbFile(s_project->GetECDbPath());
+    time_t modTime;
+    dbFile.GetFileTime(nullptr, nullptr, &modTime);
+    modTime += 100;
+    dbFile.SetFileTime(nullptr, &modTime);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, NodesCacheType::Disk);
+
+    // mock connection opening
+    m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+
+    // cache should be empty
+    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+    }

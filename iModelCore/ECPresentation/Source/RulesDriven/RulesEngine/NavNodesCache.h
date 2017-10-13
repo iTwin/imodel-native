@@ -89,6 +89,7 @@ public:
 #define NODESCACHE_TABLENAME_Nodes              "Nodes"
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
 #define NODESCACHE_TABLENAME_AffectingInstances "AffectingECInstances"
+#define NODESCACHE_TABLENAME_Connections        "Connections"
 
 // Note: nodes cache uses a small in-memory structure of size NODESCACHE_QUICK_Size to store
 // the most recently used data sources whose size is at least NODESCACHE_QUICK_Boundary nodes.
@@ -100,12 +101,12 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
-struct NodesCache : IHierarchyCache, INavNodeLocater
+struct NodesCache : IHierarchyCache, INavNodeLocater, IConnectionsListener
 {
 private:
     JsonNavNodesFactory const& m_nodesFactory;
     INodesProviderContextFactoryCR m_contextFactory;
-    IConnectionCacheCR m_connections;
+    IConnectionManagerR m_connections;
     NodesCacheType m_type;
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
@@ -142,6 +143,9 @@ private:
     void RemoveQuick(uint64_t) const;
     JsonNavNodePtr GetQuick(uint64_t) const;
 
+    void OnConnectionClosed(BeSQLite::EC::ECDbCR);
+    void OnFirstConnection(BeSQLite::EC::ECDbCR);
+
 protected:
     // IHierarchyCache
     ECPRESENTATION_EXPORT JsonNavNodePtr _GetNode(uint64_t, NodeVisibility) const override;
@@ -158,8 +162,11 @@ protected:
     // INavNodeLocater
     ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override;
 
+    // IConnectionsListener
+    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
+
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionCacheCR, NodesCacheType);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerR, NodesCacheType);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(HierarchyLevelInfo const&, NavNodesProviderR);

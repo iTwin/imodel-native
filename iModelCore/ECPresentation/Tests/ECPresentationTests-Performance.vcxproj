@@ -23,6 +23,7 @@
     <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeEventSourceTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
     <ClCompile Include="Performance\RulesEngine\CreateContentDescriptor.cpp" />
+    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp" />
     <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
     <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
     <ClCompile Include="TestHelpers\IssueReporter.cpp" />
