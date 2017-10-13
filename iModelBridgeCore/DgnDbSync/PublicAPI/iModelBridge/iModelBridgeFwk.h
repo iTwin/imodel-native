@@ -150,6 +150,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_repositoryName;                //!< A repository in the iModelHub project
         Http::Credentials m_credentials;            //!< User credentials
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
+        uint8_t m_maxRetryCount = 2;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining

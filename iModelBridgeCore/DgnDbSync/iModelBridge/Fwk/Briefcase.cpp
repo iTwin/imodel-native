@@ -69,6 +69,7 @@ SERVER:\n\
     --server-repository=    (required)  The name of a repository in the project.\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
+    --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
     ");
     }
 
@@ -84,6 +85,18 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
             // Not a fwk argument. We will forward it to the bridge.
             m_bargs.push_back(argv[iArg]);  // Keep the string alive
             bargptrs.push_back(m_bargs.back().c_str());
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-retries="))
+            {
+            int n = atoi(getArgValue(argv[iArg]).c_str());
+            if (n < 0 || 256 >= n)
+                {
+                fprintf(stderr, "%s - invalid retries value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
+                return BSIERROR;
+                }
+            m_maxRetryCount = (uint8_t)n;
             continue;
             }
 
@@ -417,6 +430,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     {
     BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must initialize the host before calling this.");
 
+    if (m_serverArgs.m_maxRetryCount > 0)
+        GetLogger().infov("Server max retry count = %d", (int)m_serverArgs.m_maxRetryCount);
+
     // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
 
@@ -424,7 +440,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     Http::HttpClient::Initialize(assetsDir);
     BeAssert(nullptr == m_clientUtils);
-    m_clientUtils = s_utilsForTesting? s_utilsForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment);
+    m_clientUtils = s_utilsForTesting? s_utilsForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount);
     Tasks::AsyncError serror;
     if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
         {

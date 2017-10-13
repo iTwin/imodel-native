@@ -28,9 +28,10 @@ protected:
     iModel::Hub::BriefcasePtr m_briefcase;
     iModel::Hub::Error m_lastServerError;
 	Utf8String m_projectId;
+    uint8_t m_maxRetryCount {};
 
 public:
-    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment);
+    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries);
 
     //! Sign in to iModel Hub Services via Connect. If sign in succeeds, that moves this object to a valid state.
     //! @return non-zero error status if signin failed.

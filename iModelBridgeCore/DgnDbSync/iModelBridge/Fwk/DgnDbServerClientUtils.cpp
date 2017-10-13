@@ -79,8 +79,9 @@ static WebServices::ClientInfoPtr getClientInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment)
+DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries)
     {
+    m_maxRetryCount = nretries;
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
     ClientHelper::Initialize(getClientInfo(), getLocalState());
     }
@@ -225,12 +226,38 @@ StatusInt DgnDbServerClientUtils::CreateRepository(Utf8CP repoName, BeFileNameCR
 StatusInt DgnDbServerClientUtils::PullMergeAndPush(Utf8CP descr)
     {
     auto progress = getHttpProgressMeter();
-    auto result = m_briefcase->PullMergeAndPush(descr, false, progress, progress)->GetResult();
+    auto result = m_briefcase->PullMergeAndPush(descr, false, progress, progress, nullptr, m_maxRetryCount)->GetResult();
     if (result.IsSuccess())
         return SUCCESS;
 
     m_lastServerError = result.GetError();
     return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool delayBeforeRetry()
+    {
+    int sleepTime = rand() % 5000;
+    BeThreadUtilities::BeSleep(sleepTime);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isTemporaryError(Error error)
+    {
+    switch (error.GetId())
+        {
+        case Error::Id::AnotherUserPushing:
+        case Error::Id::PullIsRequired:
+        case Error::Id::DatabaseTemporarilyLocked:
+        case Error::Id::iModelHubOperationFailed:
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,23 +266,31 @@ StatusInt DgnDbServerClientUtils::PullMergeAndPush(Utf8CP descr)
 StatusInt DgnDbServerClientUtils::PullAndMerge()
     {
     auto progress = getHttpProgressMeter();
-    auto result = m_briefcase->PullAndMerge(progress)->GetResult();
-    if (result.IsSuccess())
-        return SUCCESS;
+    uint8_t attempt = 0;
+    do {
+        auto result = m_briefcase->PullAndMerge(progress)->GetResult();
+        if (result.IsSuccess())
+            return SUCCESS;
+        m_lastServerError = result.GetError();
+        }
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
 
-    m_lastServerError = result.GetError();
     return ERROR;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
+static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel::Hub::BriefcasePtr briefcase)
     {
     // Save briefcase path
     auto briefcasePath = db->GetFileName();
 
     // Get changeSets that should be applied during DgnDb reopen
-    auto downloadChangeSetsResult = m_briefcase->GetiModelConnection().DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId())->GetResult();
+    auto downloadChangeSetsResult = briefcase->GetiModelConnection().DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId())->GetResult();
+    if (!downloadChangeSetsResult.IsSuccess())
+        return downloadChangeSetsResult;
+
     auto downloadedChangeSets = downloadChangeSetsResult.GetValue();
 
     // Close briefcase, dgndb,…
@@ -270,10 +305,25 @@ StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
 
     Dgn::SchemaUpgradeOptions options(changeSetVector);
     db = DgnDb::OpenDgnDb(&dbres, BeFileName(briefcasePath), Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, options));
-    if (db.IsNull())
-        return ERROR;
+    BeAssert(db.IsValid());
 
-    return SUCCESS;
+    return downloadChangeSetsResult;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
+    {
+    uint8_t attempt = 0;
+    do {
+        auto result = tryPullAndMergeSchemaRevisions(db, m_briefcase);
+        if (result.IsSuccess())
+            return SUCCESS;
+        m_lastServerError = result.GetError();
+        }
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,10 +334,14 @@ StatusInt DgnDbServerClientUtils::AcquireLocks(LockRequest& req, DgnDbR db)
     IBriefcaseManager::Request breq;
     std::swap(breq.Locks(), req);
 
-    auto response = GetRepositoryManager(db)->Acquire(breq, db);
-    if (RepositoryStatus::Success == response.Result())
-        return SUCCESS;
+    uint8_t attempt = 0;
+    do  {
+        auto response = GetRepositoryManager(db)->Acquire(breq, db);
+        if (RepositoryStatus::Success == response.Result())
+            return SUCCESS;
+        m_lastServerError = Error(Error::Id::Unknown);
+        }
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
 
-    m_lastServerError = Error(Error::Id::Unknown);
     return ERROR;
     }
