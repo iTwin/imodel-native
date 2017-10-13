@@ -13,12 +13,10 @@
     </Part>
 
     <Part Name="LoggingNativeLog4cxx" BMakeFile="src\native\log4cxx\log4cxx.mke" ApiNumber="B02">
-        <SubPart PartName="PublicAPI" PartFile="log4cxx" Repository="Libsrc-Log4cxx"/>
+        <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
         <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
-        <SubPart PartName="all"                     PartFile="apr"        Repository="libsrc-Apr" />
-        <SubPart PartName="log4cxx"                 PartFile="log4cxx"    Repository="libsrc-Log4cxx" />
         <Bindings>
             <Libs>Delivery\bentleylog4cxx$(libext)</Libs>
             <Assemblies>Delivery\bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
@@ -27,10 +25,9 @@
 
     <Part Name="LoggingNative" OnlyPlatforms="x86,x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
-        <SubPart PartName="all"                     PartFile="apr"        Repository="libsrc-Apr" />
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
         <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
-        <SubPart PartName="log4cxx"                 PartFile="log4cxx"    Repository="libsrc-Log4cxx" />
+        <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>
 

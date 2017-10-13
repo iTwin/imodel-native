@@ -66,9 +66,9 @@ Objects =% $(MultiCompileObjectList)
 #   Create the Windows NT DLL from Objects
 #-----------------------------------------------------------------------
 LINKER_LIBRARIES   =    $(ContextSubpartsLibs)Bentley.lib \
-                        $(ContextSubpartsLibs)liblog4cxx010.lib \
-                        $(BuildContextSubParts)Libs/libapr010502.lib \
-                        $(BuildContextSubParts)Libs/libaprutil010504.lib \
+                        $(BuildContextSubParts)StaticLibs/liblog4cxx010.lib \
+                        $(BuildContextSubParts)StaticLibs/libapr010502.lib \
+                        $(BuildContextSubParts)StaticLibs/libaprutil010504.lib \
                         ws2_32.lib odbc32.lib advapi32.lib mswsock.lib Rpcrt4.lib
 
 # Cannot use libsmtp in DgnDb due to licensing concerns.
