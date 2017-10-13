@@ -96,22 +96,9 @@ BreakOnFailure = 0
     BreakOnFailure = 1
 %endif
 
-FilePAth=${LogDir}/CheckStatus.txt
-
-%if defined(IgnoreFailure)
-    always:
-        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure) $(TARGET_PLATFORM)
-		 
-    %iffile $(FilePAth)
-        %message $(FilePAth) found.
-        always:
-	           python $(_makeFilePath)CleanAndRebuild.py $[@dir $(ResultsCapture)] $(BreakOnFailure) $(IgnoreFailure) $(exeName).exe $(_makeFilePath) $(TARGET_PLATFORM)
-    %endif
-%else 
-    always:
-        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
+always:
+     python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
 		
-%endif
      
 always:
     ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
