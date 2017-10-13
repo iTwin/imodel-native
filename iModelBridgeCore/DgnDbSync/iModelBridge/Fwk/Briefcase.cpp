@@ -17,6 +17,8 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
 
+static DgnDbServerClientUtils* s_utilsForTesting;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -394,12 +396,18 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseSharedLocks()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::Briefcase_Shutdown()
     {
-    if (nullptr != m_clientUtils)
-        {
+    if (nullptr != m_clientUtils && m_clientUtils != s_utilsForTesting)
         delete m_clientUtils;       // This relases the DgnDbBriefcase
-        m_clientUtils = nullptr;
-        }
-    //AsyncTasksManager::StopThreadingAndWait();
+        
+    m_clientUtils = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetDgnDbServerClientUtilsForTesting(DgnDbServerClientUtils& utils)
+    {
+    s_utilsForTesting = &utils;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,7 +424,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     Http::HttpClient::Initialize(assetsDir);
     BeAssert(nullptr == m_clientUtils);
-    m_clientUtils = new DgnDbServerClientUtils(m_serverArgs.m_environment);
+    m_clientUtils = s_utilsForTesting? s_utilsForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment);
     Tasks::AsyncError serror;
     if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
         {

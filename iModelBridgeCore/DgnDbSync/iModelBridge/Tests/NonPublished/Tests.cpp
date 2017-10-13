@@ -14,6 +14,8 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
+#include "../../Fwk/DgnDbServerClientUtils.h"
+#include <Bentley/BeFileName.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -98,12 +100,8 @@ struct iModelBridgeTests : ::testing::Test
 //=======================================================================================
 struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
 {
-    BeFileName m_bcName;
-    DgnDbPtr m_db;
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
-    BentleyStatus _OnConvertToBim(DgnDbR db) override {m_db=&db; return BSISUCCESS;}
-    void _OnConvertedToBim(BentleyStatus) override {m_db=nullptr;}
     BentleyStatus _ConvertToBim(SubjectCR jobSubject) override {DoTests(jobSubject); return BentleyStatus::SUCCESS;}
     SubjectCPtr _FindJob() override {return nullptr;}
     SubjectCPtr _InitializeJob() override {return nullptr;}
@@ -112,7 +110,7 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
 
     void DoTests(SubjectCR jobSubject);
 
-    iModelBridgeSyncInfoFileTester(BeFileNameCR f) : m_bcName(f) {}
+    iModelBridgeSyncInfoFileTester() : iModelBridgeBase() {}
 };
 
 //=======================================================================================
@@ -121,15 +119,15 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
 struct TestSourceItemNoId : iModelBridgeSyncInfoFile::ISourceItem
     {
     Utf8String m_content;
-    SHA1 m_sha1;
 
     TestSourceItemNoId(Utf8StringCR content) : m_content(content) {}
     Utf8String _GetId() override  {return "";}
     double _GetLastModifiedTime() override {return 0.0;}
     Utf8String _GetHash() override
         {
-        m_sha1(m_content);
-        return m_sha1.GetHashString();
+        SHA1 sha1;
+        sha1(m_content);
+        return sha1.GetHashString();
         }
     };
 
@@ -140,15 +138,15 @@ struct TestSourceItemWithId : iModelBridgeSyncInfoFile::ISourceItem
     {
     Utf8String m_id;
     Utf8String m_content;
-    SHA1 m_sha1;
 
     TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content) : m_id(id), m_content(content) {}
     Utf8String _GetId() override  {return m_id;}
     double _GetLastModifiedTime() override {return 0.0;}
     Utf8String _GetHash() override
         {
-        m_sha1(m_content);
-        return m_sha1.GetHashString();
+        SHA1 sha1;
+        sha1(m_content);
+        return sha1.GetHashString();
         }
     };
 
@@ -420,7 +418,7 @@ TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
     BeFileName bcName;
     GetWriteableCopyOfSeed(bcName, L"Test1.bim");
 
-    iModelBridgeSyncInfoFileTester b(bcName);
+    iModelBridgeSyncInfoFileTester b;
     iModelBridgeSacAdapter::ParseCommandLineForBeTest(b, {{L"--input=",L"unused"}, {L"--output=",bcName}});
 
     WCharCP noArgs[] = {L""};
@@ -472,3 +470,361 @@ TEST_F(iModelBridgeTests, FwkArgs)
 
     // Too bad - there's almost nothing we can test in the fwk. We'd need to connect to iModelHub to check the real validity of the parameters.
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName getiModelBridgeTestsOutputDir()
+    {
+    BeFileName testDir;
+    BeTest::GetHost().GetOutputRoot(testDir);
+    testDir.AppendToPath(L"iModelBridgeTests");
+    testDir.AppendToPath(L"Fwk");
+    return testDir;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Sam.Wilson   10/17
+//=======================================================================================
+BEGIN_BENTLEY_DGN_NAMESPACE
+struct TestiModelHubClient : DgnDbServerClientUtils
+{
+    BeFileName m_serverRepo;
+    DgnDbP m_briefcase;
+    struct
+        {
+        bool haveTxns;
+        } m_expect {};
+
+
+    static BeFileName MakeFakeRepoPath(Utf8CP repoName)
+        {
+        BeFileName repoPath = getiModelBridgeTestsOutputDir();
+        repoPath.AppendToPath(L"Repos");
+        repoPath.AppendToPath(WString(repoName,true).c_str());
+        return repoPath;
+        }
+
+    TestiModelHubClient(WebServices::UrlProvider::Environment environment) : DgnDbServerClientUtils(environment)
+        {
+        }
+
+    BentleyStatus SignIn(Tasks::AsyncError* servererror, Http::Credentials credentials) override
+        {
+        return BSISUCCESS;
+        }
+
+    BentleyStatus QueryProjectId(WebServices::WSError* wserror, Utf8StringCR bcsProjectName) override
+        {
+        m_projectId = "Foo";
+        return BSISUCCESS;
+        }
+
+    void SetProjectId(Utf8CP guid) override {m_projectId=guid;}
+
+    bool IsSignedIn() const override {return true;}
+
+    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
+        {
+        m_serverRepo = MakeFakeRepoPath(repoName);
+        if (!m_serverRepo.EndsWith(L".bim"))
+            m_serverRepo.append(L".bim");
+        BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName());
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
+        return BSISUCCESS;
+        }
+
+    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override
+        {
+        if (m_serverRepo.empty())
+            {
+            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
+            return BSIERROR;
+            }
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
+
+        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+        db->SaveChanges();
+
+        return BSISUCCESS;
+        }
+
+    StatusInt OpenBriefcase(Dgn::DgnDbR db) override
+        {
+        m_briefcase = &db;
+        return BSISUCCESS;
+        }
+
+    void CloseBriefcase() override
+        {
+        m_briefcase = nullptr;
+        }
+
+    StatusInt PullMergeAndPush(Utf8CP) override
+        {
+        CaptureChangeSet(m_briefcase);
+        return BSISUCCESS;
+        }
+
+    void CaptureChangeSet(DgnDbP);
+
+    StatusInt PullAndMerge() override
+        {
+        return BSISUCCESS;
+        }
+
+    StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override
+        {
+        return BSISUCCESS;
+        }
+
+    iModel::Hub::Error const& GetLastError() const override
+        {
+        return m_lastServerError;
+        }
+
+    IRepositoryManagerP GetRepositoryManager(DgnDbR db) override
+        {
+        BeAssert(false); return nullptr;
+        }
+
+    StatusInt AcquireLocks(LockRequest&, DgnDbR) override
+        {
+        return BSISUCCESS;
+        }
+};
+END_BENTLEY_DGN_NAMESPACE
+
+//=======================================================================================
+// @bsistruct                                                   Sam.Wilson   04/17
+//=======================================================================================
+struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
+{
+    TestSourceItemWithId m_i0;
+    TestSourceItemWithId m_i1;
+    TestiModelHubClient& m_testIModelHubClient;
+
+    struct
+        {
+        bool findJobSubject;
+        bool anyChanges;
+        bool anyDeleted;
+        } m_expect {};
+
+    WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
+    BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
+    void _DeleteSyncInfo() override {iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());}
+    void _OnSourceFileDeleted() override {}
+
+    SubjectCPtr _FindJob() override
+        {
+        DgnCode jobCode = Subject::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        auto jobId = GetDgnDbR().Elements().QueryElementIdByCode(jobCode);
+        EXPECT_EQ(m_expect.findJobSubject, jobId.IsValid());
+        return GetDgnDbR().Elements().Get<Subject>(jobId);
+        }
+
+    SubjectCPtr _InitializeJob() override
+        {
+        EXPECT_TRUE(!m_expect.findJobSubject);
+
+        // Set up the model and category that my superclass's DoTest method uses
+        DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
+        DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
+
+        auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        return subjectObj->InsertT<Subject>();
+        }
+
+    BentleyStatus _ConvertToBim(SubjectCR jobSubject) override
+        {
+        DoConvertToBim(jobSubject);
+        return BentleyStatus::SUCCESS;
+        }
+
+    void DoConvertToBim(SubjectCR jobSubject);
+
+    void ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector&);
+
+    iModelBridgeTests_Test1_Bridge(TestiModelHubClient& tc)
+        :
+        iModelBridgeWithSyncInfoBase(),
+        m_i0("0", "i0WithId initial"),
+        m_i1("1", "i1WithId initial"),
+        m_testIModelHubClient(tc)
+        {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool anyTxnsInFile(DgnDbR db)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
+    return (BE_SQLITE_ROW == stmt.Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestiModelHubClient::CaptureChangeSet(DgnDbP db)
+    {
+    ASSERT_TRUE(db != nullptr);
+
+    ASSERT_TRUE(db->IsBriefcase());
+
+    ASSERT_EQ(m_expect.haveTxns, anyTxnsInFile(*db));
+
+    DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
+
+    if (!changeSet.IsValid())
+        {
+        ASSERT_TRUE(!m_expect.haveTxns);
+        return;
+        }
+
+    ASSERT_TRUE(m_expect.haveTxns);
+
+    ASSERT_TRUE(changeSet.IsValid());
+    ASSERT_EQ(Dgn::RevisionStatus::Success, db->Revisions().FinishCreateRevision());
+    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
+
+    // *** TBD: test for expected changes
+    changeSet->Dump(*db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+    {
+    iModelBridgeSyncInfoFile::ROWID scope = 0;  // we don't use scopes in this test
+    Utf8CP itemKind = "";   // we don't use kinds in this test
+
+    auto change = changeDetector._DetectChange(scope, itemKind, item);
+    if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
+        {
+        changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
+        return;
+        }
+    
+    ASSERT_TRUE(m_expect.anyChanges);
+    iModelBridgeSyncInfoFile::ConversionResults results;
+    results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+    ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
+    {
+    DgnDbR db = *m_db;
+
+    // (Note: superclass iModelBridgeWithSyncInfoBase::_OnConvertToBim has already attached my syncinfo file to the bim.)
+
+    iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
+
+    // Convert the "items" in my (non-existant) source file.
+    ConvertItem(m_i0, *changeDetector);
+    ConvertItem(m_i1, *changeDetector);
+
+    //  Garbage-collect the elements that were abandoned.
+    changeDetector->_DeleteElementsNotSeen();
+
+    bool anyChanges = (changeDetector->GetElementsConverted() != 0);
+
+    ASSERT_EQ((m_expect.anyChanges || m_expect.anyDeleted), anyChanges);
+
+    m_testIModelHubClient.m_expect.haveTxns = anyChanges;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, Test1)
+    {
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(getiModelBridgeTestsOutputDir()));
+    
+    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
+    // The fwk won't try to load this file, since we will register a fake bridge.
+    BeFileName fakeBridgeName(getiModelBridgeTestsOutputDir());
+    fakeBridgeName.AppendToPath(L"iModelBridgeTestsTest1");
+    BeFile fakeBridgeFile;
+    ASSERT_EQ(BeFileStatus::Success, fakeBridgeFile.Create(fakeBridgeName, true));
+    fakeBridgeFile.Close();
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.Test1");
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", getiModelBridgeTestsOutputDir().c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_Test1");
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");
+    args.push_back(L"--fwk-create-repository-if-necessary");
+    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+    args.push_back(L"--server-user=username=username");
+    args.push_back(L"--server-password=\"password><!@\"");
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));
+    BeFileName platformAssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // the platform's assets dir will serve just find as the test bridge's assets dir.
+    args.push_back(L"--fwk-input=Foo");
+
+    bvector<WCharCP> argptrs;
+    for (auto& arg: args)
+        argptrs.push_back(arg.c_str());
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestiModelHubClient testClient(WebServices::UrlProvider::Environment::Qa);
+    iModelBridgeFwk::SetDgnDbServerClientUtilsForTesting(testClient);
+
+    // Register the test bridge that fwk should run
+    iModelBridgeTests_Test1_Bridge testBridge(testClient);
+    iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    int argc = (int)argptrs.size();
+    wchar_t const** argv = argptrs.data();
+    if (true)
+        {
+        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = false;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        }
+
+    if (true)
+        {
+        // Modify an item 
+        testBridge.m_i0.m_content = "changed";
+
+        // and run an update
+        // This time, we expect to find the repo and briefcase already there.
+        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        }
+
+    if (true)
+        {
+        // Run an update with no changes
+        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        }
+    }
+
+#include "../../Fwk/DgnDbServerClientUtils.cpp"

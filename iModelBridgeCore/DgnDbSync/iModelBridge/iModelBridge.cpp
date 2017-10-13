@@ -456,6 +456,16 @@ BentleyStatus iModelBridge::L10N::Initialize(BeSQLite::L10N::SqlangFiles const &
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson              07/17
 //---------------------------------------------------------------------------------------
+void iModelBridge::L10N::Terminate()
+    {
+    if (s_bridgeL10NLookup)
+        delete s_bridgeL10NLookup;
+    s_bridgeL10NLookup = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              07/17
+//---------------------------------------------------------------------------------------
 Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLite::L10N::StringId name)
     {
     bool hasString = false;

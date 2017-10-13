@@ -313,6 +313,8 @@ public:
         //! @see _SupplySqlangRelPath
         IMODEL_BRIDGE_EXPORT static BentleyStatus Initialize(BeSQLite::L10N::SqlangFiles const&);
 
+        IMODEL_BRIDGE_EXPORT static void Terminate();
+
         //! Retrieve a localized string by Namespace and Name. This function looks in both the db3 file specified by _SupplySqlangRelPath and in the platform/framework db3.
         //! @param[in] nameSpace the namespace of the string.
         //! @param[in] name the name of the string.
