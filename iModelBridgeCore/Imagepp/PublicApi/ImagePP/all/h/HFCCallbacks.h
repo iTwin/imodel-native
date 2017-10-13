@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbacks.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -112,7 +112,7 @@ public:
     IMAGEPP_EXPORT const WString&   GetUser                    () const;
     IMAGEPP_EXPORT const WString&   GetPassword                () const;
     IMAGEPP_EXPORT const WString&   GetServer                  () const;
-
+    
 private:
     // authentication's members
     WString         m_User;
@@ -163,14 +163,17 @@ public:
 
     IMAGEPP_EXPORT void             SetUser                    (const WString&          pi_User);
     IMAGEPP_EXPORT void             SetPassword                (const WString&          pi_Password);
+    IMAGEPP_EXPORT void             SetServer                  (const WString&          pi_Server);
 
     IMAGEPP_EXPORT const WString&   GetUser                    () const;
-    IMAGEPP_EXPORT const WString&   GetPassword                () const;
-
+    IMAGEPP_EXPORT const WString&   GetPassword                () const;    
+    IMAGEPP_EXPORT const WString&   GetServer() const;
+    
 private:
     // authentication's members
     WString         m_User;
     WString         m_Password;
+    WString         m_Server;
     };
 
 

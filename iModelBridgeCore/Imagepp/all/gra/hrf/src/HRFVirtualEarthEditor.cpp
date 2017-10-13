@@ -12,6 +12,7 @@
 
 
 #include "HRFVirtualEarthEditor.h"
+#include <ImagePP/all/h/HFCCallbacks.h>
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
 #include <Imagepp/all/h/HRFPngFile.h>
@@ -26,6 +27,9 @@ void VirtualEarthTileQuery::_Run()
     {
     HttpSession& session = m_rasterFile.GetThreadLocalHttpSession();
     HttpRequest request(m_tileUri.c_str());
+
+    SetProxyInfo(request);
+
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         return;

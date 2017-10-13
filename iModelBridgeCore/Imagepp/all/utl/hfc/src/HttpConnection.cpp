@@ -2,11 +2,15 @@
 |
 |     $Source: all/utl/hfc/src/HttpConnection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ImageppInternal.h>
 #include <ImagePPInternal/HttpConnection.h>
+#include <ImagePP/all/h/HFCCallbacks.h>
+#include <ImagePP/all/h/HFCCallbackRegistry.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 static std::atomic<uint32_t> s_curl_initTermCount(0);
 
@@ -214,7 +218,13 @@ HttpRequestStatus HttpSession::InternalRequest(HttpResponsePtr& response, HttpRe
         curl_easy_setopt (m_curl, CURLOPT_PROXYUSERNAME, request.GetProxyCredentials ().GetUsername().c_str ());
     if (!request.GetProxyCredentials ().GetPassword().empty())
         curl_easy_setopt (m_curl, CURLOPT_PROXYPASSWORD, request.GetProxyCredentials ().GetPassword().c_str ());
-        
+    
+    if (!request.GetProxyUrl().empty())
+        { 
+        curl_easy_setopt(m_curl, CURLOPT_PROXY, request.GetProxyUrl().c_str());
+        curl_easy_setopt(m_curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+        }
+              
     curl_easy_setopt (m_curl, CURLOPT_TIMEOUT_MS, (long)request.GetTimeoutMs ());
 
     curl_slist* curlRequestHeader = NULL;
@@ -241,4 +251,26 @@ HttpRequestStatus HttpSession::InternalRequest(HttpResponsePtr& response, HttpRe
     return HttpRequestStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                                   Mathieu.St-Pierre  10/2017
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void SetProxyInfo(HttpRequest& request)
+    {
+    HFCAuthenticationCallback* pCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->GetCallback(HFCAuthenticationCallback::CLASS_ID);
+    HFCProxyAuthentication proxyAuthentication;
 
+    if (pCallback != nullptr && pCallback->GetAuthentication(&proxyAuthentication))
+        {
+        Utf8String userStr(proxyAuthentication.GetUser().c_str());
+        Utf8String passStr(proxyAuthentication.GetPassword().c_str());
+
+        Credentials proxyCredential(userStr.c_str(), passStr.c_str());
+
+        request.SetProxyCredentials(proxyCredential);
+
+        Utf8String proxyUrlStr(proxyAuthentication.GetServer().c_str());
+        request.SetProxyUrl(proxyUrlStr.c_str());
+        }
+    }
+
+END_IMAGEPP_NAMESPACE

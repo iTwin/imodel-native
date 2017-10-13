@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCCallbacks.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -412,6 +412,11 @@ void HFCProxyAuthentication::SetPassword (const WString& pi_Password)
     m_Password = pi_Password;
     }
 
+void HFCProxyAuthentication::SetServer(const WString& pi_Server)
+    {
+    m_Server = pi_Server;
+    }
+
 const WString& HFCProxyAuthentication::GetUser () const
     {
     return m_User;
@@ -420,6 +425,11 @@ const WString& HFCProxyAuthentication::GetUser () const
 const WString& HFCProxyAuthentication::GetPassword () const
     {
     return m_Password;
+    }
+
+const WString& HFCProxyAuthentication::GetServer() const
+    {
+    return m_Server;
     }
 
 //-----------------------------------------------------------------------------
