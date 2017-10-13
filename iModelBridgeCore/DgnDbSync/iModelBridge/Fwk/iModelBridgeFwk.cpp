@@ -210,6 +210,7 @@ void iModelBridgeFwk::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"iModelHub", NativeLogging::LOG_INFO);
     //NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
@@ -224,13 +225,13 @@ static BeFileName  GetDefaultAssetsDirectory()
 
     fwkAssetsDirRaw.AppendToPath(L"..");
     fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"assets");                        // we want:         blah/iModelBridgeFwk/assets
+    fwkAssetsDirRaw.AppendToPath(L"Assets");                        // we want:         blah/iModelBridgeFwk/assets
     if (fwkAssetsDirRaw.DoesPathExist())
         return fwkAssetsDirRaw;
 
     //Try default assets folder relative the program directory
     fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
-    fwkAssetsDirRaw.AppendToPath(L"assets");
+    fwkAssetsDirRaw.AppendToPath(L"Assets");
     return fwkAssetsDirRaw;
     }
 

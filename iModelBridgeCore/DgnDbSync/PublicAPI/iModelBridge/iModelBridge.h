@@ -128,6 +128,13 @@ A bridge must define its own translatable string tables using the IMODELBRIDGEFX
 An iModelBridge is responsible for storing provenance data that relates the elements and models in the iModel to information in the source documents.
 Currently, the only required provenance is model to document. Provenance at the element level is currently optional.
 
+If a bridge tracks a file in its syncinfo, it should use the document GUID rather than the filename as the key. To get the document GUID, do this:
+<verbatim>
+iModelBridgeDocumentProperties docProps;
+    if (nullptr != _GetParams().GetDocumentPropertiesAccessor())
+        _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
+</verbatim>
+
 <h3>PartitionOriginatesFromRepository</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
 Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
