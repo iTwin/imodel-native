@@ -32,6 +32,7 @@ protected:
 
 public:
     DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries);
+    virtual ~DgnDbServerClientUtils() {}
 
     //! Sign in to iModel Hub Services via Connect. If sign in succeeds, that moves this object to a valid state.
     //! @return non-zero error status if signin failed.
