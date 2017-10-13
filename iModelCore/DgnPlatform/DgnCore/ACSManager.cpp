@@ -502,7 +502,7 @@ void AuxCoordSystem::_Pick(PickContextR context) const
     if (nullptr == (pickGeom = context.GetIPickGeom()))
         return;
 
-    pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::Interior) + 1000)); // Make really low priority...
+    pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::TextBox) - 1)); // Make lower priority than edge hits but higher priority than interior hits...
 
     DPoint3d origin = _GetOrigin();
     auto graphic = context.CreateWorldGraphic();

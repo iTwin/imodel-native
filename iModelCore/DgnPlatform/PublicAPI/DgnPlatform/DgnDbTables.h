@@ -16,6 +16,7 @@
 #define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)         "bis_" name
 #define BE_PROP_NAME(__val__)   static constexpr Utf8CP prop_##__val__() {return #__val__;}
+#define BE_JSON_PROP_NAMESPACE(__val__) static constexpr Utf8CP json_prop_namespace_##__val__() {return #__val__;}
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with BIS_SCHEMA macro for use in ECSql)

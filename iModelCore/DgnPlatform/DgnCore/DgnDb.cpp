@@ -137,14 +137,9 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 
     if (BE_SQLITE_OK != (rc = InitializeSchemas(params)))
         {
-        // *** NEEDS WORK: how can we be sure that DbClose won't automatically save the partial changes?
-        // Should we call AbandonChanges(); here?
         m_txnManager = nullptr; // Deletes ref counted ptr so that statement caches are freed
         return rc;
         }
-
-    if (BE_SQLITE_OK != (rc = MergeSchemaRevisions(params))) 
-        return rc;
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
     m_geoLocation.Load();
@@ -158,7 +153,19 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions();
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = schemaUpgradeOptions.GetDomainUpgradeOptions();
+
     SchemaStatus status = Domains().InitializeSchemas(schemaUpgradeOptions);
+    if (status != SchemaStatus::Success && (status != SchemaStatus::SchemaUpgradeRequired || domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly))
+        return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
+
+    DbResult result;
+    if (BE_SQLITE_OK != (result = MergeSchemaRevisions(params)))
+        return result;
+
+    if (status == SchemaStatus::SchemaUpgradeRequired && domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
+        status = Domains().UpgradeSchemas();
+
     return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 
