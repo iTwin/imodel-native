@@ -97,6 +97,7 @@ public:
         DGNPLATFORM_EXPORT Render::TextureMapping::Mode GetMode() const;
         DGNPLATFORM_EXPORT Render::TextureMapping::Params GetTextureMapParams() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
+        DGNPLATFORM_EXPORT double GetPatternWeight() const;
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
         DgnTextureId Relocate(DgnImportContext& context);

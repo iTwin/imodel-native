@@ -84,6 +84,14 @@ Render::TextureMapping::Mode RenderingAsset::TextureMap::GetMode() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double RenderingAsset::TextureMap::GetPatternWeight() const
+    {
+    return m_value[RENDER_MATERIAL_PatternWeight].asDouble(1.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Marc Neely      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::TextureMapping::Params RenderingAsset::TextureMap::GetTextureMapParams() const 
@@ -95,7 +103,7 @@ Render::TextureMapping::Params RenderingAsset::TextureMap::GetTextureMapParams()
         return mapParams;
 
     Render::TextureMapping::Trans2x3 trans = GetTransform();
-    return Render::TextureMapping::Params(GetMode(), trans, 1.0, Units::Relative != GetUnits());
+    return Render::TextureMapping::Params(GetMode(), trans, GetPatternWeight(), Units::Relative != GetUnits());
     }
 
 /*---------------------------------------------------------------------------------**//**
