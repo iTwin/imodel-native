@@ -16,6 +16,7 @@
 #include <WebServices/iModelHub/Client/iModelManager.h>
 #include <WebServices/iModelHub/Client/iModelAdmin.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <DgnPlatform/DgnDomain.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -60,6 +61,8 @@ private:
 
     BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
 
+    //! Opens iModel with schema upgrade and custom DomainUpgradeOptions
+    static DgnDbPtr OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly);
 
 public:
     //! Set custom handler.
