@@ -28,8 +28,13 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         {
         WString programFullPath = WString(argv0, true);
         m_programPath = BeFileName (BeFileName::DevAndDir, programFullPath.c_str());
+        if (m_programPath.IsEmpty()) // We get progdir from argv[0] , if we execute it from CWD argv[0] is blank. in which case BeFileName is not able to resolve full path. So creating path ".\" 
+            {
+            m_programPath.AppendString(L".");
+            m_programPath.AppendSeparator();
+            }
         m_programPath.BeGetFullPathName ();
-        m_programName = BeFileName::GetFileNameWithoutExtension (programFullPath.c_str());
+        m_programName = BeFileName::GetFileNameWithoutExtension (m_programPath.c_str());
         }
     void GetRunRoot (char const* argv0, BeFileName& path)
         {
