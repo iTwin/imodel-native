@@ -42,7 +42,7 @@
 // These are the ImagerySet tag that we use when requesting tiles URI. 
 // See Bing map "Get Imagery Metadata": http://msdn.microsoft.com/en-us/library/ff701716.aspx
 // *** DO NOT MODIFY unless bing map API is changing.
-#define BING_MAPS_METADATA_URL    L"http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
+#define BING_MAPS_METADATA_URL    L"https://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
 
 // Tags use to format server request
 #define SUBDOMAIN_TAG   L"{subdomain}"
@@ -184,8 +184,13 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     ReplaceTagInString(urlRequest, IMAGERYSET_TAG, imagerySetLabel);
     ReplaceTagInString(urlRequest, BINGMAPSKEY_TAG, bingMapKey);
 
+    
     HttpSession session;
     HttpRequest request(Utf8String(urlRequest).c_str());
+
+    SetProxyInfo(request);
+   
+
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         throw HFCCannotOpenFileException(GetURL()->GetURL());
