@@ -25,6 +25,13 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         IScalableMeshTextureGeneratorPtr m_textureGeneratorPtr;
 
     public : 
+       
+        struct ProxyInfo
+            {
+            Utf8String m_user;
+            Utf8String m_password;
+            Utf8String m_serverUrl;
+            };
 
         virtual int                     _GetVersion() const {return 1;} // Do not override!
         virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
@@ -45,6 +52,8 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             }
 
         virtual Utf8String _GetProjectID() const { return Utf8String(); }
+
+        virtual ProxyInfo _GetProxyInfo() const { return ProxyInfo(); }
 
     #ifdef VANCOUVER_API
         virtual DgnModelRefP _GetActiveModelRef() const

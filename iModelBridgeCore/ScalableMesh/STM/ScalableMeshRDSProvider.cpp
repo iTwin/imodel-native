@@ -166,7 +166,7 @@ void ScalableMeshRDSProvider::UpdateToken()
         m_AzureConnection.m_tokenTimer += 1000 * 60 * 50;
         assert(!"Problem with the handshake");
         }
-    }
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
