@@ -260,7 +260,7 @@ void ScalableMeshLib::Host::Initialize()
 
     s_bingAuthCallback = new BingAuthenticationCallback();
 
-    HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());    
+    //HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());    
     }
 
 /*---------------------------------------------------------------------------------**//**
