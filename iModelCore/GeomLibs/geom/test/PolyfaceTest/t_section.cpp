@@ -1838,3 +1838,96 @@ TEST(Polyface,MultiMeshVisibilityD)
 
         }
     }
+
+bool loadAndRunMMV (bvector<WCharCP> filenames, char const *outputName)
+    {
+    bvector<IGeometryPtr> allGeometry;
+    bvector<PolyfaceHeaderPtr> allMesh;
+    DRange3d range;
+    range.Init ();
+    for (auto filename : filenames)
+        {
+        if (ReadDgnjsGeometry (allGeometry, 1, L"Polyface", L"MultiMeshVisibilityE", filename))
+            {
+            for (auto &g : allGeometry)
+                {
+                PolyfaceHeaderPtr mesh = g->GetAsPolyfaceHeader ();
+                if (g.IsValid ())
+                    {
+                    allMesh.push_back (mesh);
+                    range.Extend (mesh->Point ());
+                    Check::SaveTransformed (mesh);
+                    }
+                }
+            }
+        }
+    if (allMesh.size () > 1)
+        {
+        double dX = range.XLength ();
+        bvector<PolyfaceHeaderPtr> visibleParts;
+        PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
+        Check::Shift (dX, 0, 0);
+        SaveTransformed (visibleParts, 0.0, true);
+        Check::ClearGeometry (outputName);
+        return true;
+        }
+    return false;
+    }
+TEST(Polyface,MultiMeshVisibilityE)
+    {
+    bvector<IGeometryPtr> allGeometry;
+    bvector<PolyfaceHeaderPtr> allMesh;
+    DRange3d range;
+    range.Init ();
+    for (auto filename : bvector<WCharCP> {
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_9.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_11.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_13.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_15.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_17.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_19.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_21.dgnjs",
+
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_22.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_24.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_26.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_28.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_30.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_32.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_34.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_36.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_38.dgnjs",
+            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_40.dgnjs"
+            })
+        {
+        if (ReadDgnjsGeometry (allGeometry, 1, L"Polyface", L"MultiMeshVisibilityE", filename))
+            {
+            for (auto &g : allGeometry)
+                {
+                PolyfaceHeaderPtr mesh = g->GetAsPolyfaceHeader ();
+                if (g.IsValid ())
+                    {
+                    allMesh.push_back (mesh);
+                    range.Extend (mesh->Point ());
+                    Check::SaveTransformed (mesh);
+                    }
+                }
+            }
+        }
+    if (allMesh.size () > 1)
+        {
+        double dX = range.XLength ();
+        bvector<PolyfaceHeaderPtr> visibleParts;
+        PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
+        Check::Shift (dX, 0, 0);
+        SaveTransformed (visibleParts, 0.0, true);
+        Check::ClearGeometry ("Polyface.MultiMeshVisibilityE");
+        }
+    }
+
+
