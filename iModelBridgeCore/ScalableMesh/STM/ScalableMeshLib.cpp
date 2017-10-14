@@ -99,9 +99,10 @@ WebServiceKey GetBingKey()
     Utf8String serviceUrl = _getUrl();
     Utf8String bingKeyUrl = serviceUrl.append("/ContextKeyServiceSchema/BingApiKey");
 */
-    Utf8String rdsURL(ScalableMeshRDSProvider::GetBuddiUrl());
 
-    if (true/*Service::IsProductionServer(serviceUrl)*/) //Production server do not know this API yet, return the local key if Connected for the moment.
+    Utf8String rdsURL(ScalableMeshRDSProvider::GetBuddiUrl());
+    
+    if (rdsURL.StartsWithI("https://connect-realitydataservices.bentley.com") && true) //Production server do not know this API yet, return the local key if Connected for the moment.
         {
         bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
         return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
