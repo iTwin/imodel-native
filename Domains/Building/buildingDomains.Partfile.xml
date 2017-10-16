@@ -23,6 +23,7 @@
         <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
         <SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/>
         <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
+        <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
         <SubPart PartName="DgnPlatformDLL"             PartFile="DgnPlatform"           Repository="DgnPlatform" />
 
         <Bindings>
@@ -103,13 +104,13 @@
         <SubPart PartName="ConstraintModel"                 PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
         <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
         <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
-        <SubPart PartName="BuildingDomain"/>
         <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="ElectricalDomains"               PartFile="ElectricalDomains"        Repository="DgnDomains-Electrical"/>
         <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
         <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
         <SubPart PartName="AecUnitsDomain"                  PartFile="AecUnits"                 Repository="DgnDomains-DesignModelingUnits"/>
         <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
+        <SubPart PartName="BuildingDomain"/>
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>
 
