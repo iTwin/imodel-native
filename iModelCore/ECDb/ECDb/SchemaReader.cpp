@@ -560,7 +560,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
     const double relError = stmt->GetValueDouble(relErrorColIx);
     Utf8CP presUnitsStr = stmt->IsColumnNull(presUnitColIx) ? nullptr : stmt->GetValueText(presUnitColIx);
-    
+
     koq = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateKindOfQuantity(koq, koqName))
         return ERROR;
@@ -573,8 +573,12 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     koq->SetDescription(description);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    koq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr));
-    BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+    if (!koq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr)))
+        {
+        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        return ERROR;
+        }
+
     koq->SetRelativeError(relError);
 
     if (!Utf8String::IsNullOrEmpty(presUnitsStr))
