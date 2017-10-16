@@ -2143,6 +2143,7 @@ PolyfaceHeaderPtr &meshBHidden
     PolyfaceHeader::ComputeOverAndUnderXY (*hider, nullptr, *hidable, nullptr, meshAOverB, meshBUnderA);
     if (meshBUnderA.IsValid ())
         {
+        meshBUnderA->Triangulate();
         PolyfaceHeader::ComputePunchXYByPlaneSets (*meshBUnderA, *hidable, &meshBHidden, &meshBVisible);
         }
     }
