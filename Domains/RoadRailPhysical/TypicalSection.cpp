@@ -359,6 +359,19 @@ OverallTypicalSectionAlignmentCPtr OverallTypicalSectionAlignment::CreateAndInse
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void OverallTypicalSectionAlignment::_GenerateElementGeom()
+    {
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
+
+    auto rectPtr = CurveVector::CreateRegularPolygonXY({ 0.0, 0.0, 0.0 }, 0.2, 4, true);
+    geomBuilderPtr->Append(*rectPtr);
+
+    geomBuilderPtr->Finish(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 OverallTypicalSectionPortionPtr OverallTypicalSectionPortion::Create(OverallTypicalSectionBreakDownModelCR model, 
@@ -382,6 +395,27 @@ OverallTypicalSectionPortionPtr OverallTypicalSectionPortion::Create(OverallTypi
 TypicalSectionComponentElement::TypicalSectionComponentElement(CreateParams const& params):
     T_Super(params)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TypicalSectionComponentElement::_GenerateElementGeom()
+    {
+    bvector<DPoint2d> points;
+    for (auto pointId : QueryPointIds())
+        {
+        auto dgnElementCPtr = GetDgnDb().Elements().GetElement(pointId);
+        auto pointCP = dynamic_cast<ITypicalSectionConstraintPointCP>(dgnElementCPtr.get());
+        points.push_back(pointCP->GetPosition());
+        }
+
+    auto curvePtr = CurveVector::CreateLinear(points.begin(), points.size(), 
+        _IsClosed() ? CurveVector::BoundaryType::BOUNDARY_TYPE_Outer : CurveVector::BoundaryType::BOUNDARY_TYPE_Open);
+
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), DPoint2d());
+    geomBuilderPtr->Append(*curvePtr);
+    geomBuilderPtr->Finish(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,7 +472,7 @@ DgnDbStatus TypicalSectionComponentElement::SetPoints(TypicalSectionComponentEle
 
     for (size_t index = 0; index < pointIndices.size(); index++)
         {
-        if (pointIndices[index] - 1 == index) // Existing row, position didn't change
+        if (index < originalPointIdSize && pointIndices[index] - 1 == index) // Existing row, position didn't change
             continue;
 
         if (index >= originalPointIdSize) // New row
@@ -528,7 +562,12 @@ RoadLaneComponentCPtr RoadLaneComponent::CreateAndInsert(TypicalSectionPortionBr
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -562,7 +601,12 @@ RoadShoulderComponentCPtr RoadShoulderComponent::CreateAndInsert(TypicalSectionP
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -592,7 +636,12 @@ BufferComponentCPtr BufferComponent::CreateAndInsert(TypicalSectionPortionBreakD
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -632,7 +681,12 @@ SideSlopeConditionComponentCPtr SideSlopeConditionComponent::CreateAndInsert(Typ
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -693,7 +747,12 @@ CurbComponentCPtr CurbComponent::CreateAndInsert(TypicalSectionPortionBreakDownM
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -723,7 +782,12 @@ BarrierComponentCPtr BarrierComponent::CreateAndInsert(TypicalSectionPortionBrea
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }
@@ -753,7 +817,12 @@ PavementComponentCPtr PavementComponent::CreateAndInsert(TypicalSectionPortionBr
 
     auto cPtr = ptr->Insert();
     if (cPtr.IsValid())
+        {
         SetPoints(*cPtr, points);
+
+        ptr->GenerateElementGeom();
+        cPtr = ptr->Update();
+        }
 
     return cPtr;
     }

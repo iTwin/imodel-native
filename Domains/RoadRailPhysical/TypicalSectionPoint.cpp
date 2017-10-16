@@ -185,9 +185,25 @@ DgnDbStatus TypicalSectionPoint::SetSignificantPointDef(SignificantPointDefiniti
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TypicalSectionPoint::_GenerateElementGeom()
+    {
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
+
+    auto horizLinePtr = CurveVector::CreateLinear({ { -0.2, 0.0 }, { 0.2, 0.0 } });
+    geomBuilderPtr->Append(*horizLinePtr);
+
+    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.2 },{ 0.0, 0.2 } });
+    geomBuilderPtr->Append(*vertLinePtr);
+
+    geomBuilderPtr->Finish(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDownModelCR model)
+TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDownModelCR model, DPoint2dCP position)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
@@ -195,15 +211,23 @@ TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDow
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
         RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(), CreateCode(model));
 
-    return new TypicalSectionPoint(createParams);
+    TypicalSectionPointPtr retVal(new TypicalSectionPoint(createParams));
+
+    if (position)
+        {
+        retVal->SetPosition(*position);
+        retVal->GenerateElementGeom();
+        }
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointCPtr TypicalSectionPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model)
+TypicalSectionPointCPtr TypicalSectionPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, DPoint2dCP position)
     {
-    auto ptr = Create(model);
+    auto ptr = Create(model, position);
     if (ptr.IsNull())
         return nullptr;
 
@@ -213,7 +237,7 @@ TypicalSectionPointCPtr TypicalSectionPoint::CreateAndInsert(TypicalSectionPorti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef)
+TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCP position)
     {
     if (!model.GetModelId().IsValid() || !pointDef.GetElementId().IsValid())
         return nullptr;
@@ -222,15 +246,23 @@ TypicalSectionPointPtr TypicalSectionPoint::Create(TypicalSectionPortionBreakDow
         RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(), 
         SignificantPointDefinition::CreateCode(model, pointDef.GetCode().GetValueUtf8()));
 
-    return new TypicalSectionPoint(createParams, pointDef);
+    TypicalSectionPointPtr retVal(new TypicalSectionPoint(createParams, pointDef));
+
+    if (position)
+        {
+        retVal->SetPosition(*position);
+        retVal->GenerateElementGeom();
+        }
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPointCPtr TypicalSectionPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef)
+TypicalSectionPointCPtr TypicalSectionPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCP position)
     {
-    auto ptr = Create(model, pointDef);
+    auto ptr = Create(model, pointDef, position);
     if (ptr.IsNull())
         return nullptr;
 
@@ -266,24 +298,26 @@ TypicalSectionProxyPoint::TypicalSectionProxyPoint(CreateParams const& params, S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionProxyPointPtr TypicalSectionProxyPoint::Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef)
+TypicalSectionProxyPointPtr TypicalSectionProxyPoint::Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCR position)
     {
     if (!model.GetModelId().IsValid() || !pointDef.GetElementId().IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(), 
+        RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()), Placement2d(position, AngleInDegrees()), 
         SignificantPointDefinition::CreateCode(model, pointDef.GetCode().GetValueUtf8()));
 
-    return new TypicalSectionProxyPoint(createParams, pointDef);
+    TypicalSectionProxyPointPtr retVal(new TypicalSectionProxyPoint(createParams, pointDef));
+    retVal->GenerateElementGeom();
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionProxyPointCPtr TypicalSectionProxyPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef)
+TypicalSectionProxyPointCPtr TypicalSectionProxyPoint::CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCR position)
     {
-    auto ptr = Create(model, pointDef);
+    auto ptr = Create(model, pointDef, position);
     if (ptr.IsNull())
         return nullptr;
 
@@ -298,6 +332,22 @@ DgnDbStatus TypicalSectionProxyPoint::SetSignificantPointDef(SignificantPointDef
     SetPropertyValue("SignificantPointDef", newVal ? newVal->GetElementId() : Dgn::DgnElementId());
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TypicalSectionProxyPoint::_GenerateElementGeom()
+    {
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
+
+    auto horizLinePtr = CurveVector::CreateLinear({ { -0.2, 0.0 },{ 0.2, 0.0 } });
+    geomBuilderPtr->Append(*horizLinePtr);
+
+    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.2 },{ 0.0, 0.2 } });
+    geomBuilderPtr->Append(*vertLinePtr);
+
+    geomBuilderPtr->Finish(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

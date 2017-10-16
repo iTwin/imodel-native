@@ -70,6 +70,9 @@ public:
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
+
+    static BentleyStatus Create2dView(Dgn::DefinitionModelR model, Utf8CP viewName,
+        Dgn::CategorySelectorR categorySelector, Dgn::DgnModelId modelToDisplay, Dgn::DisplayStyle2dR displayStyle);
 };
 
 typedef RoadRailPhysicalTestsFixture RoadRailPhysicalTests;

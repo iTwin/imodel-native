@@ -242,13 +242,14 @@ protected:
     explicit OverallTypicalSectionAlignment(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
+    virtual void _GenerateElementGeom() override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(OverallTypicalSectionAlignment)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(OverallTypicalSectionAlignment)
 
-    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentPtr Create(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin);
-    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentCPtr CreateAndInsert(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR origin);
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentPtr Create(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR position);
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionAlignmentCPtr CreateAndInsert(OverallTypicalSectionBreakDownModelCR model, DPoint2dCR position);
 }; // OverallTypicalSectionAlignment
 
 //=======================================================================================
@@ -290,6 +291,9 @@ protected:
     //! @private
     explicit TypicalSectionComponentElement(CreateParams const& params);
 
+    virtual void _GenerateElementGeom();
+    virtual bool _IsClosed() const { return false; }
+
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionComponentElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionComponentElement)
@@ -297,6 +301,8 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetPoints(TypicalSectionComponentElementCR component, bvector<ITypicalSectionConstraintPointCP> const& points);
 
     ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryPointIds() const;
+
+    ROADRAILPHYSICAL_EXPORT void GenerateElementGeom() { _GenerateElementGeom(); }
 }; // TypicalSectionComponentElement
 
 //=======================================================================================
@@ -311,6 +317,8 @@ friend struct TravelwayStructureComponentElementHandler;
 protected:
     //! @private
     explicit TravelwayStructureComponentElement(CreateParams const& params);
+
+    virtual bool _IsClosed() const override { return true; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayStructureComponentElement)
@@ -329,6 +337,8 @@ friend struct TravelwayComponentElementHandler;
 protected:
     //! @private
     explicit TravelwayComponentElement(CreateParams const& params);
+
+    virtual bool _IsClosed() const override { return false; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayComponentElement)
@@ -368,6 +378,8 @@ friend struct TravelwaySideComponentElementHandler;
 protected:
     //! @private
     explicit TravelwaySideComponentElement(CreateParams const& params);
+
+    virtual bool _IsClosed() const override { return true; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwaySideComponentElement)
@@ -470,6 +482,8 @@ friend struct SideSlopeConditionComponentHandler;
 protected:
     //! @private
     explicit SideSlopeConditionComponent(CreateParams const& params);
+
+    virtual bool _IsClosed() const override { return false; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SideSlopeConditionComponent)

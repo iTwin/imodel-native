@@ -120,9 +120,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ITypicalSectionConstraintPoint
 {
 protected:
     virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const = 0;
+    virtual Dgn::DgnElementR _GetITypicalSectionConstraintPointToDgnElementR() { return *const_cast<Dgn::DgnElementP>(&_GetITypicalSectionConstraintPointToDgnElement()); }
+    virtual void _GenerateElementGeom() = 0;
 
 public:
     Dgn::DgnElementId GetConstraintPointId() const { return _GetITypicalSectionConstraintPointToDgnElement().GetElementId(); }
+    DPoint2d GetPosition() const { return _GetITypicalSectionConstraintPointToDgnElement().ToGeometrySource2d()->GetPlacement().GetOrigin(); }
+    void SetPosition(DPoint2dCR position) { _GetITypicalSectionConstraintPointToDgnElementR().ToGeometrySource2dP()->SetPlacement(Dgn::Placement2d(position, AngleInDegrees())); }
+    void GenerateElementGeom() { _GenerateElementGeom(); }
 }; // ITypicalSectionConstraintTarget
 
 //=======================================================================================
@@ -145,15 +150,16 @@ protected:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(TypicalSectionPortionBreakDownModelCR scope);
 
     virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
+    virtual void _GenerateElementGeom() override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPoint)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionPoint)
 
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPtr Create(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPtr Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPtr Create(TypicalSectionPortionBreakDownModelCR model, DPoint2dCP position = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, DPoint2dCP position = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointPtr Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCP position = nullptr);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCP position = nullptr);
 
     SignificantPointDefinitionCP GetSignificantPointDef() const { return SignificantPointDefinition::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("SignificantPointDef")).get(); }
     ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetSignificantPointDef(SignificantPointDefinitionCP newVal);
@@ -176,13 +182,14 @@ protected:
     explicit TypicalSectionProxyPoint(CreateParams const& params, SignificantPointDefinitionCR pointDef);
 
     virtual Dgn::DgnElementCR _GetITypicalSectionConstraintPointToDgnElement() const override { return *this; }
+    virtual void _GenerateElementGeom() override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionProxyPoint)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TypicalSectionProxyPoint)
 
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointPtr Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef);
-    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointPtr Create(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCR position);
+    ROADRAILPHYSICAL_EXPORT static TypicalSectionProxyPointCPtr CreateAndInsert(TypicalSectionPortionBreakDownModelCR model, SignificantPointDefinitionCR pointDef, DPoint2dCR position);
 
     SignificantPointDefinitionCP GetSignificantPointDef() const { return SignificantPointDefinition::Get(GetDgnDb(), GetPropertyValueId<Dgn::DgnElementId>("SignificantPointDef")).get(); }
     ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetSignificantPointDef(SignificantPointDefinitionCP newVal);
