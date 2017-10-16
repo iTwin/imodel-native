@@ -120,8 +120,9 @@ private:
 
                 // if properties in this field are similar, the new property should be included in this field
                 bool isNewPropertyRelated = !m_relatedClassPath.empty();
-                bool areSimilar = ArePropertiesSimilar(ecProperty, prop.GetProperty());
-                areSimilar &= (prop.IsRelated() == isNewPropertyRelated) && (&m_actualClass == &prop.GetPropertyClass() || !isNewPropertyRelated);
+                bool areSimilar = (prop.IsRelated() == isNewPropertyRelated) && (&m_actualClass == &prop.GetPropertyClass() || !isNewPropertyRelated);
+                if (areSimilar)
+                    areSimilar = ArePropertiesSimilar(ecProperty, prop.GetProperty());
                 if (areSimilar)
                     {
                     mergeField = field->AsPropertiesField();
