@@ -50,7 +50,10 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BeHttp.lib \
                       $(SubpartLibs)WebServicesClient.lib \
                       $(SubpartLibs)VersionCompare.lib \
-                      $(SubpartLibs)BeFolly.lib           
+                      $(SubpartLibs)ECPresentation.lib \
+                      $(SubpartLibs)BeFolly.lib     
+                
+                            
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

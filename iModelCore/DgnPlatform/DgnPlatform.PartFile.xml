@@ -639,6 +639,13 @@
         </Bindings>
     </Part>
 
+    <!-- Presentation rules for tile publisher -->
+    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
+        </Bindings>
+    </Part>
+
     <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
@@ -655,7 +662,8 @@
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
         <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
-    
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
+        <SubPart PartName="TilePublisherAssets" PartFile="DgnPlatform"          Repository="DgnPlatform"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>

@@ -8,6 +8,7 @@
 #include <TilePublisher/CesiumPublisher.h>
 #include <VersionCompare/VersionCompare.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include <ECPresentation/IECPresentationManager.h>
 #include "Constants.h"
 
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
@@ -17,6 +18,8 @@ USING_NAMESPACE_VERSIONCOMPARE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+
 
 //=======================================================================================
 // @bsistruct                                                   Diego.Pinate    09/17
@@ -41,6 +44,7 @@ struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
         return ChangeSet::ConflictResolution::Replace;
         }
     };  // CompareChangeSet
+
 
 #ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
@@ -167,6 +171,27 @@ static ClientPtr   doSignIn(PublisherParams const& params)
 
     Tasks::AsyncError error;        
     return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static RulesDrivenECPresentationManager*    registerPresentationManager()
+    {
+    // Initialize RulesDrivenECPresentationManager
+    BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();  
+    BeFileName rulesetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+
+    rulesetsDir.AppendToPath(L"PresentationRules");
+
+    RulesDrivenECPresentationManager::Paths paths (rulesetsDir, tempDir);
+    RulesDrivenECPresentationManager*   manager = new RulesDrivenECPresentationManager(paths);
+    
+    RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str());
+    manager->GetLocaters().RegisterLocater(*locater);
+    IECPresentationManager::RegisterImplementation(manager);
+
+    return manager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,8 +388,6 @@ PublisherContext::Status Initialize()
     m_json["name"] = rootNameUtf8;
 
     // TODO - Set ground point.
-
-    
     ExtractViewSelectors (m_defaultViewId, m_allModelSelectors, m_allCategorySelectors, m_allDisplayStyles, m_all2dModelIds);
 
     if (!m_defaultViewId.IsValid())
@@ -432,6 +455,7 @@ PublisherContext::Status Publish(PublisherParamsR params, Json::Value&& revision
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(PublisherParamsR params)
     {
+    auto presentationManager = registerPresentationManager();
     auto client = doSignIn(params);
     
     if (!client.IsValid())
@@ -478,7 +502,6 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         opCodes;
              
         changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
-        //getChangedGeometricElements(elementIds, opCodes, tempDb, changeSets.at(i)); 
 
         printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
         Json::Value         revisionElementsJson = Json::objectValue;
@@ -503,6 +526,33 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                     addedOrModifiedIds.insert(elementId);
                     break;
                 }
+
+            Json::Value propertyData;
+            changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), true, propertyData);
+            // Contains raw data of the properties values
+
+            Json::Value& values         = propertyData["ContentSet"][0]["Values"];
+            // Contains display values for the properties for UI
+            Json::Value& displayValues  = propertyData["ContentSet"][0]["DisplayValues"];
+
+            // Property names will be empty if there are no property changes in element
+            bvector<Utf8String> propertyNames = values.getMemberNames();
+
+            printf ("For OpCode: %d - %d changes found\n", opCodes.at(j), (int) propertyNames.size());
+
+            static Utf8String s_opCodeCompare("__ver_compare___Opcode");
+            for (auto const& propertyName : propertyNames)
+                {
+                if (propertyName == s_opCodeCompare)
+                    continue;
+
+                Utf8String propertyValueCurrent = displayValues[propertyName]["Current"].asString();
+                Utf8String propertyValueTarget = displayValues[propertyName]["Target"].asString();
+
+                if (propertyValueCurrent != propertyValueTarget)
+                    printf ("Property: %s changed from %s to %s\n", propertyName.c_str(), propertyValueCurrent.c_str(), propertyValueTarget.c_str());
+                }
+
             revisionElementsJson[elementId.ToString()] = (int) opCodes.at(j);
             }
 
