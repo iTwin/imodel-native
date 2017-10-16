@@ -479,50 +479,17 @@ void VerifyJsonRawFormat(JsonValueCR instance)
     EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
 
     EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
-
-    EXPECT_TRUE(instance.isMember("TestProperty"));
     }
 
-void VerifyJsonDisplayDataFormat(JsonValueCR instance)
-    {
-    EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
-    EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
-
-    EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
-
-    EXPECT_TRUE(instance.isMember("TestProperty"));
-    }
-
-TEST_F(DataSourceCacheTests, GetInstance_RawFormat_ReturnsPlaceholderInstanceWithExpectedFormat)
+TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceWithExpectedFormat)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
 
     Json::Value instance;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance, DataSourceCache::JsonFormat::Raw));
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance));
 
     VerifyJsonRawFormat(instance);
-    }
-
-TEST_F(DataSourceCacheTests, GetInstance_DisplayFormat_ReturnsDisplayInstanceWithExpectedFormat)
-    {
-    auto cache = GetTestCache();
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
-
-    Json::Value instance;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance, DataSourceCache::JsonFormat::Display));
-
-    EXPECT_EQ("TestSchema.TestClass", instance[DataSourceCache_PROPERTY_ClassKey].asString());
-    EXPECT_EQ("Foo", instance[DataSourceCache_PROPERTY_RemoteId].asString());
-
-    EXPECT_TRUE(instance.isMember("$DisplayInfo"));
-    EXPECT_TRUE(instance.isMember("$DisplayData"));
-    EXPECT_TRUE(instance.isMember("$RawData"));
-
-    EXPECT_TRUE(instance["$DisplayInfo"].isMember("Categories"));
-
-    VerifyJsonDisplayDataFormat(instance["$DisplayData"]);
-    VerifyJsonRawFormat(instance["$RawData"]);
     }
 
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
@@ -4647,7 +4614,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
     EXPECT_EQ(0, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
 
@@ -4658,7 +4625,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
-    EXPECT_EQ("TestName", fileName);
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 
@@ -4680,14 +4647,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileNameProperty_SuccessAndReturnsLabel)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass2", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-
+    
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
+    
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);
     }
@@ -4695,30 +4662,30 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileSizeProperty_SuccessAndReturnsFileSize)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass3", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-
+    
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
+    
     EXPECT_EQ("", fileName);
     EXPECT_EQ(42, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
-
+    
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass4", "Foo"}, {{"Name", "TestName"}});
-
+    
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-
-    EXPECT_EQ("TestName", fileName);
+    
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 

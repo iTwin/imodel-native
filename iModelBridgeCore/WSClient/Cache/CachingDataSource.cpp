@@ -637,7 +637,6 @@ AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObject
 (
 ObjectIdCR objectId,
 DataOrigin origin,
-IDataSourceCache::JsonFormat format,
 ICancellationTokenPtr ct
 )
     {
@@ -661,7 +660,7 @@ ICancellationTokenPtr ct
             CachedObjectInfo objectInfo = txn.GetCache().GetCachedObjectInfo(objectId);
             if (objectInfo.IsFullyCached() || IChangeManager::ChangeStatus::Created == objectInfo.GetChangeStatus())
                 {
-                txn.GetCache().ReadInstance(objectId, *cachedData, format);
+                txn.GetCache().ReadInstance(objectId, *cachedData);
                 }
 
             if (!cachedData->isNull())
@@ -709,7 +708,7 @@ ICancellationTokenPtr ct
                 }
 
             auto cachedData = std::make_shared<Json::Value>();
-            txn.GetCache().ReadInstance(objectId, *cachedData, format);
+            txn.GetCache().ReadInstance(objectId, *cachedData);
 
             if (cachedData->isNull())
                 {

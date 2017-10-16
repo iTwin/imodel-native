@@ -803,7 +803,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut, JsonFormat format)
+CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instanceDataOut)
     {
     instanceDataOut = Json::nullValue;
 
@@ -830,37 +830,14 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
         return CacheStatus::DataNotCached;
         }
 
-    if (JsonFormat::Display == format)
-        {
-        instanceDataOut[DataSourceCache_PROPERTY_ClassKey] = ECDbHelper::ECClassKeyFromClass(*ecClass);
-        instanceDataOut[DataSourceCache_PROPERTY_RemoteId] = objectId.remoteId;
-
-        //Deprecated: Use presentation rules instead. Adapter doesn't do any formatting anymore
-        //JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings));
-        JsonECSqlSelectAdapter adapter(*statement);
-        JsonValueR instanceDisplayData = instanceDataOut[DataSourceCache_PROPERTY_DisplayData];
-        //Deprecated: Use presentation rules instead. Adapter doesn't do any formatting anymore
-        //adapter.GetRowDisplayInfo(instanceDataOut[DataSourceCache_PROPERTY_DisplayInfo]);
-
-        if (SUCCESS != adapter.GetRowInstance(instanceDisplayData, ecClass->GetId()))
-            {
-            instanceDataOut = Json::nullValue;
-            return CacheStatus::Error;
-            }
-
-        instanceDisplayData[DataSourceCache_PROPERTY_RemoteId] = objectId.remoteId;
-        }
-
-    JsonValueR instanceRawData = JsonFormat::Display == format ? instanceDataOut[DataSourceCache_PROPERTY_RawData] : instanceDataOut;
-
     JsonECSqlSelectAdapter adapter(*statement);
-    if (SUCCESS != adapter.GetRowInstance(instanceRawData, ecClass->GetId()))
+    if (SUCCESS != adapter.GetRowInstance(instanceDataOut, ecClass->GetId()))
         {
         instanceDataOut = Json::nullValue;
         return CacheStatus::Error;
         }
 
-    instanceRawData[DataSourceCache_PROPERTY_RemoteId] = objectId.remoteId;
+    instanceDataOut[DataSourceCache_PROPERTY_RemoteId] = objectId.remoteId;
 
     return CacheStatus::OK;
     }
@@ -1875,15 +1852,6 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
 
         if (nullptr != fileSizeP)
             fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, "FileDependentProperties", "FileSize");
-
-        if (fileNamePropertyName.empty())
-            {
-            ECPropertyCP labelProperty = ecClass->GetInstanceLabelProperty();
-            if (nullptr != labelProperty)
-                {
-                fileNamePropertyName = Utf8String(labelProperty->GetName());
-                }
-            }
 
         Utf8PrintfString ecSql
             (
