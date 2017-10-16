@@ -41,49 +41,6 @@ public:
     };
 
 //=======================================================================================
-// @bsiclass                                                Krischan.Eberle      02/2017
-//+===============+===============+===============+===============+===============+======
-struct IdSequences final : NonCopyableClass
-    {
-public:
-    //the numbers are the indexes into the sequence vector of SequenceManager. So they
-    //must match the order of the names in the name vector passed in the ctor
-    enum class Key : uint32_t
-        {
-        InstanceId = 0,
-        SchemaId = 1,
-        SchemaReferenceId,
-        ClassId,
-        ClassHasBaseClassesId,
-        PropertyId,
-        PropertyPathId,
-        RelationshipConstraintId,
-        RelationshipConstraintClassId,
-        CustomAttributeId,
-        EnumId,
-        KoqId,
-        PropertyCategoryId,
-        PropertyMapId,
-        TableId,
-        ColumnId,
-        IndexId,
-        IndexColumnId
-        };
-
-private:
-    BeBriefcaseBasedIdSequenceManager m_sequenceManager;
-
-    //cache the vector of sequence name to avoid creation of the vector for every ECDb instance
-    static bvector<Utf8CP> const* s_sequenceNames; //no need to release a static non-POD variable (Bentley C++ coding standards)
-
-public:
-    explicit IdSequences(ECDbR ecdb) : m_sequenceManager(ecdb, *s_sequenceNames) {}
-
-    BeBriefcaseBasedIdSequence const& GetSequence(Key key) const { return m_sequenceManager.GetSequence(Enum::Convert<Key, uint32_t>(key)); }
-    BeBriefcaseBasedIdSequenceManager const& GetManager() const { return m_sequenceManager; }
-    };
-
-//=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
 // @bsiclass                                                Krischan.Eberle      12/2014
@@ -143,14 +100,19 @@ private:
     SettingsHolder m_settings;
 
     StatementCache m_sqliteStatementCache;
-    IdSequences m_idSequences;
+    BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
+    static const uint32_t s_instanceIdSequenceKey = 0;
+
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
     mutable ClearCacheCounter m_clearCacheCounter;
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequences(ecdb) { m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); }
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+        { 
+        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); 
+        }
 
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
@@ -195,7 +157,7 @@ public:
     ECDb::Settings const& GetSettings() const { return m_settings.GetSettings(); }
 
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
-    BeBriefcaseBasedIdSequence const& GetSequence(IdSequences::Key sequenceKey) const { return m_idSequences.GetSequence(sequenceKey); }
+    BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

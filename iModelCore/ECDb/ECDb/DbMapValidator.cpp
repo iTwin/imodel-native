@@ -901,23 +901,11 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
         return ERROR;
         }
 
-    const std::vector<DbTable const*> otherEndTables = ForeignKeyPartitionView::GetOtherEndTables(m_dbMap.GetECDb(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy());
-    if (otherEndTables.size() > 1)
+    DbTable const* otherEndTable = nullptr;
+    if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, m_dbMap.GetECDb(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
         {
-        Utf8String tableStr;
-        bool isFirstTable = true;
-        for (DbTable const* table : otherEndTables)
-            {
-            if (!isFirstTable)
-                tableStr.append(",");
-
-            tableStr.append(table->GetName().c_str());
-            isFirstTable = false;
-            }
-
-        Issues().Report("The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint: %s.",
-                        relMap.GetClass().GetFullName(), relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target",
-                        tableStr.c_str());
+        Issues().Report("The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint.",
+                        relMap.GetClass().GetFullName(), relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target");
         return ERROR;
         }
 

@@ -693,7 +693,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         BeAssert(idBinder != nullptr);
 
         ECInstanceId generatedId;
-        const DbResult dbStat = GetECDb().GetImpl().GetSequence(IdSequences::Key::InstanceId).GetNextValue(generatedId);
+        const DbResult dbStat = GetECDb().GetImpl().GetInstanceIdSequence().GetNextValue(generatedId);
         if (BE_SQLITE_OK != dbStat)
             {
             ECDbLogger::LogSqliteError(GetECDb(), dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");

@@ -89,7 +89,7 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId = ?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -253,39 +253,40 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         return itor->second;
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
-    ECClassId mixInId;
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-            "SELECT [CA].[ContainerId] "
-            "FROM   " TABLE_Class " C "
-            "       INNER JOIN " TABLE_CustomAttribute " CA ON [CA].[ClassId] = [C].[Id] "
-            "       INNER JOIN " TABLE_Schema " S ON [S].[Id] = [C].[SchemaId] AND [C].[Name] = 'IsMixin' AND [S].[Name] = 'CoreCustomAttributes' "
-            "WHERE  [CA].[ContainerId] = ? ");
 
-    BeAssert(stmt != nullptr);
-    stmt->BindId(1, classId);
-    bool isMixin = (stmt->Step() == BE_SQLITE_ROW);
-    if (isMixin)
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
-            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-            "WHERE ch.BaseClassId=?1 ");
-    else
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-            "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
-            "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-            "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-            "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-            "WHERE ch.BaseClassId=?1 AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow);
+    bool isMixin = false;
+        {
+        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
+            "SELECT ca.ContainerId FROM " TABLE_Class " c "
+            " INNER JOIN " TABLE_CustomAttribute " ca ON ca.ClassId=c.Id "
+            " INNER JOIN " TABLE_Schema " s ON s.Id=c.SchemaId AND c.Name='IsMixin' AND s.Name='CoreCustomAttributes' "
+            "WHERE ca.ContainerId=?");
 
+        BeAssert(stmt != nullptr);
+        stmt->BindId(1, classId);
+        isMixin = (stmt->Step() == BE_SQLITE_ROW);
+        }
+
+    Utf8CP sql = isMixin ? "SELECT ch.ClassId, t.Name FROM " TABLE_ClassHasTablesCache " ct"
+        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+        "WHERE ch.BaseClassId=?" 
+        :
+        "SELECT ch.ClassId, t.Name FROM " TABLE_ClassHasTablesCache " ct"
+        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+        "WHERE ch.BaseClassId=? AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow;
+
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql);;
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
-        DbTableId tableId = stmt->GetValueId<DbTableId>(1);
-        DbTable const* table = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableId);
+        Utf8CP tableName = stmt->GetValueText(1);
+        DbTable const* table = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableName);
         BeAssert(table != nullptr);
         std::vector<ECClassId>& horizontalPartition = subset[table];
         if (derivedClassId == classId)
@@ -351,8 +352,14 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        auto fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetDbMap().GetECDb(), relClassMap.GetRelationshipClass());
-        for (auto partition : fkView->GetPartitions(true/*onlyPhysical*/))
+        std::unique_ptr<ForeignKeyPartitionView> fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetDbMap().GetECDb(), relClassMap.GetRelationshipClass());
+        if (fkView == nullptr)
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+
+        for (ForeignKeyPartitionView::Partition const* partition : fkView->GetPartitions(true/*onlyPhysical*/))
             {
             DbTable const& endTable = partition->GetTable();
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
@@ -371,10 +378,10 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
         }
     else
         {
-        for (auto& kp : lwmc.GetHorizontalPartitionsForClass(classId))
+        for (auto const& kp : lwmc.GetHorizontalPartitionsForClass(classId))
             {
-            auto table = kp.first;
-            auto& deriveClassList = kp.second;
+            DbTable const* table = kp.first;
+            std::vector<ECClassId> const& deriveClassList = kp.second;
             derviedClassSet.insert(deriveClassList.begin(), deriveClassList.end());
             if (deriveClassList.empty())
                 continue;
@@ -389,7 +396,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
             }
         }
     //add vertical partitions
-    for (auto table : lwmc.GetVerticalPartitionsForClass(classId))
+    for (DbTable const* table : lwmc.GetVerticalPartitionsForClass(classId))
         {
         if (table->GetType() == DbTable::Type::Virtual)
             continue;

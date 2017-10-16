@@ -47,7 +47,7 @@ void TableMap::Initialize(Utf8StringCR tableName)
     DbSchema const& dbSchema = m_ecdb.Schemas().GetDbMap().GetDbSchema();
     m_tableName = tableName;
 
-    DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
+    DbTable const* dbTable = dbSchema.FindTable(tableName);
     if (!dbTable || !dbTable->IsValid() || dbSchema.IsNullTable(*dbTable))
         {
         m_isMapped = false;
@@ -262,7 +262,7 @@ void TableClassMap::InitEndTableRelationshipMaps()
         NavigationPropertyMap::IdPropertyMap const& idPropertyMap = navPropertyMap.GetIdPropertyMap();
         DbColumn const& idColumn = idPropertyMap.GetColumn();
 
-        if (idColumn.GetTable().GetId() != m_tableMap.GetDbTable()->GetId())
+        if (idColumn.GetTable() != *m_tableMap.GetDbTable())
             continue; // Navigation property isn't really written to this table. todo: is this even possible?
 
         NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropertyMap = navPropertyMap.GetRelECClassIdPropertyMap();
@@ -303,7 +303,7 @@ void TableClassMap::InitPropertyColumnMaps()
         SingleColumnDataPropertyMap const& singleColumnMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
 
         DbColumn const& column = singleColumnMap.GetColumn();
-        if (column.GetTable().GetId() != m_tableMap.GetDbTable()->GetId() || column.IsVirtual())
+        if (column.GetTable() != *m_tableMap.GetDbTable() || column.IsVirtual())
             continue; // Skip properties that don't belong to, or not written to the current table. 
         
         int columnIndex = m_tableMap.GetColumnIndexByName(column.GetName());
