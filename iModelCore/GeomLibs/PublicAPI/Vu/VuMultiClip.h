@@ -211,6 +211,9 @@ TaggedPolygonVector* insidePolygons,
 TaggedPolygonVector* outsidePolygons,
 TaggedPolygonVector* debugPolygons
 );
+
+//! Reverse all faces for which areaXY * factor < 0.
+void ReverseForAreaXYSign (TaggedPolygonVector &polygons, double factor = 1.0);
 };
 
 

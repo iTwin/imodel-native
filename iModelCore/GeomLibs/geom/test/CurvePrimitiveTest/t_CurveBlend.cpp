@@ -1694,6 +1694,33 @@ bool DGNJSFileToGeometry (char const *filename, bvector<IGeometryPtr> &geometry)
     return ReadAsString (filename, string)
         && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
     }
+
+bool ReadAsString (BeFileName &filename, Utf8String &string)
+    {
+
+    string.clear ();
+    BeFile file;
+    if (BeFileStatus::Success == file.Open (filename, BeFileAccess::Read))
+        {
+        bvector<Byte> bytes;
+        if (BeFileStatus::Success == file.ReadEntireFile (bytes))
+            {
+            for (auto b : bytes)
+                string.push_back (b);
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool DGNJSFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry)
+    {
+    geometry.clear ();
+    Utf8String string;
+    return ReadAsString (filename, string)
+        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/

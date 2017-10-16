@@ -189,7 +189,6 @@ PolyfaceHeaderPtr &polyfaceBOverA
 
     polyfaceA.AddToTaggedPolygons (polygonA, 0, 0, filterA);
     polyfaceB.AddToTaggedPolygons (polygonB, 0, 0, filterB);
-
     double planarityAbsTol = s_undercutLocalRelTol * inputRange.low.Distance (inputRange.high);
     DPoint3d rangeCenter;
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
