@@ -58,12 +58,16 @@
 #define AEC_KOQ_LIQUID_VOLUME_SMALL           "LIQUID_VOLUME_SMALL"
 #define AEC_KOQ_LIQUID_VOLUME_LARGE           "LIQUID_VOLUME_LARGE"
 #define AEC_KOQ_PROCESS_PIPING_PRESSURE       "PROCESS_PIPING_PRESSURE"
+#define AEC_KOQ_PRESSURE                      "PRESSURE"
 #define AEC_KOQ_PROCESS_PIPING_TEMPERATURE    "PROCESS_PIPING_TEMPERATURE"
+#define AEC_KOQ_TEMPERATURE                   "TEMPERATURE"
 #define AEC_KOQ_PROCESS_PIPING_FLOW           "PROCESS_PIPING_FLOW"
+#define AEC_KOQ_FLOW                          "FLOW"
 #define AEC_KOQ_WEIGHT                        "WEIGHT"
 #define AEC_KOQ_CURRENT                       "CURRENT"
 #define AEC_KOQ_FORCE                         "FORCE"
 #define AEC_KOQ_POWER                         "POWER"
+#define AEC_KOQ_ELECTRIC_POTENTIAL            "ELECTRIC_POTENTIAL"
 
 
 
@@ -96,6 +100,8 @@
 
 #define AEC_UNIT_CELSIUS                       "CELSIUS"
 #define AEC_UNIT_FAHRENHEIT                    "FAHRENHEIT"
+#define AEC_UNIT_KELVIN                        "K"
+
 
 #define AEC_UNIT_G                             "G"
 #define AEC_UNIT_KG                            "KG"
@@ -120,6 +126,9 @@
 #define AEC_UNIT_CUB_FT_PER_MIN                "CUB.FT/MIN"
 #define AEC_UNIT_GALLON_PER_MIN                "GALLON/MIN"
 
+#define AEC_UNIT_VOLT                          "VOLT"
+#define AEC_UNIT_KILOVOLT                      "KILOVOLT"
+#define AEC_UNIT_MEGAVOLT                      "MEGAVOLT"
 
 
 

@@ -256,7 +256,7 @@ DgnDbPtr AecUnitsTestFixture::OpenDgnDb()
 	m_workingBimFile.AppendToPath(L"AecUnits.bim");
 
 	// Initialize parameters needed to create a DgnDb
-	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly);
+	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes,  Dgn::SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly);
 
 	// Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
 	BeSQLite::DbResult openStatus;
