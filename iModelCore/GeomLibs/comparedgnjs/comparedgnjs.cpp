@@ -123,14 +123,13 @@ bool findProperty(Json::Value const &source, CharCP targetName, Json::Value &val
 // <li> -t<n> is a setting that changes the tolerance for numeric compares
 // <li> -j forces JSON string compare
 // <li> -g forces geometric compare
-// <li> -d performs a directory comparison of all the containing files
 // <li>Anything not beginning with a dash is loaded as the filename in a JsonData structure.
+// <li> If given two files, compares them normally. If given two directories, compares the directories. If given a file and directory, check if file exists in directory.
 // </ul>
 bool parseCommandLine (int argc, char **argv,
 int &verbose,   // numeric value from -v0, -v1, -v2.  Assumed initialized by caller.
 int &userType,		// numeric value assigned from -js. Assumed to be 1 by caller (compare geometries), otherwise, compares json
 int &dif,
-bool &directoryMode,
 bvector<JsonData> &data
 )
     {
@@ -164,10 +163,6 @@ bvector<JsonData> &data
 			else if (s[1] == 'g' && s[2] == '\0')
 				{
 				userType = 1;
-				}
-			else if (s[1] == 'd' && s[2] == '\0')
-				{
-				directoryMode = true;
 				}
             else
                 {
@@ -550,13 +545,15 @@ int main(int argc, char **argv)
     int verbose = 0;    // enables final filename echos
 	int type = 1;		// acts as the default type (is changed depending on what type of file comes in)
 	int userType = 0;	// user-declared type of comparison (0 for default... 1 for geometric compare... 2 for json property compare)
-	bool directoryMode = false;		// compares entire directories if user specified -r
 	int dif = 0;
 	bool canUseGeometry = true;
-    if (!parseCommandLine (argc, argv, verbose, userType, dif, directoryMode, allData) || allData.size () != 2)
+    if (!parseCommandLine (argc, argv, verbose, userType, dif, allData) || allData.size () != 2)
         {
         messagePrefix (); printf ("exe name:   %s\n", argv[0]);
-        messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-dNN] [-tNN] [-a] <fileA || directoryA> <fileB || directoryB>\n");
+        messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-nNN] [-tNN] <fileA || directoryA> <fileB || directoryB>\n");
+		messagePrefix("		If given two files, compares them with one of two compare methods...\n");
+		messagePrefix("		If given two directories, compares the contents of the directories individually...\n");
+		messagePrefix("		If given a file and a directory, check if file exists in directory...\n");
 		messagePrefix ("  Note: Geometry compare uses IGeometry::IsAlmostEqual.\n");
         messagePrefix ("    -v0         no output except errors.\n");
         messagePrefix ("    -v1         final confirmation of matched filenames (geometry compare only)\n");
@@ -565,30 +562,18 @@ int main(int argc, char **argv)
 		messagePrefix("    -v11         all of above plus echo complete file contents (packed strings; geometry compare only)\n");
 		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (default is 1.0e-12)\n");
 		messagePrefix ("    -n<N>		  allows <N> number of differences when comparing numeric values (JSON string compare mode only)\n");
-		messagePrefix("	  -d		compares entire directories (ignores verbosity for individual files)\n");
 		messagePrefix ("    -j         force a JSON string compare, rather than the determined default\n");
 		messagePrefix ("    -g         force a geometric compare, rather than the determined default\n");
         return 1;
         }
 
-	// if running in directory mode, ensure the user gave the names of two directories
-	if (directoryMode)
+	BeFileName folderPath1(allData[0].m_filename.c_str());
+	BeFileName folderPath2(allData[1].m_filename.c_str());
+
+	if (BeFileName::IsDirectory(folderPath1) && BeFileName::IsDirectory(folderPath2))	// Comparing two directories
 		{
 		verbose = 0;	// Ignore verbosity for every file (just print out success or fail, so user may do specific comparison after)
 		messagePrefix(); printf("*** Verbosity has been turned off for directory comparison\n");
-		BeFileName folderPath1(allData[0].m_filename.c_str());
-		BeFileName folderPath2(allData[1].m_filename.c_str());
-		
-		if (!BeFileName::IsDirectory(folderPath1))
-		{
-			messagePrefix(); printf("Unable to locate directory (%s) to use directory compare mode\n", allData[0].m_filename.c_str());
-			return 1;
-		}
-		if (!BeFileName::IsDirectory(folderPath2))
-		{
-			messagePrefix(); printf("Unable to locate directory (%s) to use directory compare mode\n", allData[1].m_filename.c_str());
-			return 1;
-		}
 
 		// grab all files from each directory
 		bvector<WString> files1;
@@ -677,7 +662,39 @@ int main(int argc, char **argv)
 
 		return retVal;
 		}
+	else if (!BeFileName::IsDirectory(folderPath1) && !BeFileName::IsDirectory(folderPath2))	// Given two files to compare
+		{
+		return launchCompare(allData, canUseGeometry, type, verbose, userType, dif);
+		}
+	else	// Check if file exists in directory
+		{
+		WString fullPath;
+		if (BeFileName::IsDirectory(folderPath1))
+			{
+			BeFileName file(allData[1].m_filename.c_str());
+			fullPath = folderPath1.GetName();
+			if (fullPath[fullPath.size() - 1] != '\\')
+				fullPath.append(L"\\");
+			fullPath.append(file.GetName());
+			}
+		else
+			{
+			BeFileName file(allData[0].m_filename.c_str());
+			fullPath = folderPath2.GetName();
+			if (fullPath[fullPath.size() - 1] != '\\')
+				fullPath.append(L"\\");
+			fullPath.append(file.GetName());
+			}
 
-	// Not running in directory mode... simply compare the two files given	
-	return launchCompare(allData, canUseGeometry, type, verbose, userType, dif);
+		if (!(BeFileName::DoesPathExist(fullPath.c_str())))
+		{
+			messagePrefix(); printf("file not found (%ls)\n", fullPath.c_str());
+			return 1;
+		}
+		else
+		{
+			messagePrefix(); printf("successfully found file at location (%ls)\n", fullPath.c_str());
+			return 0;
+		}
+		}
 	}
