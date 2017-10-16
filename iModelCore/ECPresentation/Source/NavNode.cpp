@@ -171,6 +171,17 @@ MD5 GroupingNodeKey::_ComputeHash() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<uint64_t, uint64_t>::const_iterator GroupingNodeKey::_RemapNodeId(bmap<uint64_t, uint64_t> const& remapInfo)
+    {
+    auto iter = remapInfo.find(m_nodeId);
+    if (remapInfo.end() != iter)
+        m_nodeId = iter->second;
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(JsonValueCR json)
