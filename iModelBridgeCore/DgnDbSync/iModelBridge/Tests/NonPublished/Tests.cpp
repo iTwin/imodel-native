@@ -487,8 +487,10 @@ static BeFileName getiModelBridgeTestsOutputDir()
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
 BEGIN_BENTLEY_DGN_NAMESPACE
-struct TestiModelHubClient : DgnDbServerClientUtils
+struct TestiModelHubFX : iModelHubFX
 {
+	Utf8String m_projectId;
+    iModel::Hub::Error m_lastServerError;
     BeFileName m_serverRepo;
     DgnDbP m_briefcase;
     struct
@@ -503,10 +505,6 @@ struct TestiModelHubClient : DgnDbServerClientUtils
         repoPath.AppendToPath(L"Repos");
         repoPath.AppendToPath(WString(repoName,true).c_str());
         return repoPath;
-        }
-
-    TestiModelHubClient(WebServices::UrlProvider::Environment environment) : DgnDbServerClientUtils(environment, 0)
-        {
         }
 
     BentleyStatus SignIn(Tasks::AsyncError* servererror, Http::Credentials credentials) override
@@ -603,7 +601,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 {
     TestSourceItemWithId m_i0;
     TestSourceItemWithId m_i1;
-    TestiModelHubClient& m_testIModelHubClient;
+    TestiModelHubFX& m_testiModelHubFX;
 
     struct
         {
@@ -647,12 +645,12 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     void ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector&);
 
-    iModelBridgeTests_Test1_Bridge(TestiModelHubClient& tc)
+    iModelBridgeTests_Test1_Bridge(TestiModelHubFX& tc)
         :
         iModelBridgeWithSyncInfoBase(),
         m_i0("0", "i0WithId initial"),
         m_i1("1", "i1WithId initial"),
-        m_testIModelHubClient(tc)
+        m_testiModelHubFX(tc)
         {}
 };
 
@@ -669,7 +667,7 @@ static bool anyTxnsInFile(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestiModelHubClient::CaptureChangeSet(DgnDbP db)
+void TestiModelHubFX::CaptureChangeSet(DgnDbP db)
     {
     ASSERT_TRUE(db != nullptr);
 
@@ -736,7 +734,7 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
 
     ASSERT_EQ((m_expect.anyChanges || m_expect.anyDeleted), anyChanges);
 
-    m_testIModelHubClient.m_expect.haveTxns = anyChanges;
+    m_testiModelHubFX.m_expect.haveTxns = anyChanges;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,18 +773,18 @@ TEST_F(iModelBridgeTests, Test1)
         argptrs.push_back(arg.c_str());
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestiModelHubClient testClient(WebServices::UrlProvider::Environment::Qa);
-    iModelBridgeFwk::SetDgnDbServerClientUtilsForTesting(testClient);
+    TestiModelHubFX testiModelHubFX;
+    iModelBridgeFwk::SetiModelHubFXForTesting(testiModelHubFX);
 
     // Register the test bridge that fwk should run
-    iModelBridgeTests_Test1_Bridge testBridge(testClient);
+    iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
     int argc = (int)argptrs.size();
     wchar_t const** argv = argptrs.data();
     if (true)
         {
-        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -803,7 +801,7 @@ TEST_F(iModelBridgeTests, Test1)
 
         // and run an update
         // This time, we expect to find the repo and briefcase already there.
-        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -815,7 +813,7 @@ TEST_F(iModelBridgeTests, Test1)
     if (true)
         {
         // Run an update with no changes
-        testClient.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;

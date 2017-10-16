@@ -24,7 +24,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnDbServerClientUtils;
+struct iModelHubFX;
 
 //=======================================================================================
 // @bsiclass
@@ -180,7 +180,7 @@ protected:
     BeFileName m_briefcaseName;
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
-    DgnDbServerClientUtils* m_clientUtils;
+    iModelHubFX* m_clientUtils;
     EffectiveServerError m_lastServerError;
     bvector<DgnModelId> m_modelsInserted;
     iModelBridge* m_bridge;
@@ -248,7 +248,7 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
 
     //! @private
-    IMODEL_BRIDGE_FWK_EXPORT static void SetDgnDbServerClientUtilsForTesting(DgnDbServerClientUtils&);
+    IMODEL_BRIDGE_FWK_EXPORT static void SetiModelHubFXForTesting(iModelHubFX&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
 
