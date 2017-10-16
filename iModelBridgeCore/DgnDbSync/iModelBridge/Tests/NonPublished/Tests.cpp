@@ -822,5 +822,3 @@ TEST_F(iModelBridgeTests, Test1)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
     }
-
-#include "../../Fwk/DgnDbServerClientUtils.cpp"
