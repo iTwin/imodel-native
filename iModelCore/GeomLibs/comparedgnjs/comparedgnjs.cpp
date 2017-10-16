@@ -10,6 +10,7 @@
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley\BeDirectoryIterator.h>
 #include <json/writer.h>
 #include "compareJson.h"
 
@@ -36,23 +37,23 @@ bool Load(bool &canUseGeometry, int &type, int verbose = 0)
 	m_geometry.clear();
 	BeFileName path(m_filename);
 	BeFile file;
-	file.Create(path.c_str(), false);
+	// file.Create(path.c_str(), false);
 	if (!(BeFileName::DoesPathExist(path.c_str())))
 	{
-		messagePrefix(); printf("  file not found (%ls)\n", path.c_str());
+		messagePrefix(); printf("file not found (%ls)\n", path.c_str());
 		return false;
 	}
 
 	ByteStream entireFile;
 	if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Read))
 	{
-		messagePrefix(); printf("file.Open failed (%ls)", path.c_str());
+		messagePrefix(); printf("file.Open failed (%ls)\n", path.c_str());
 		return false;
 	}
 
 	if (BeFileStatus::Success != file.ReadEntireFile(entireFile))
 	{
-		messagePrefix(); printf("file.ReadEntireFile failed (%ls)", path.c_str());
+		messagePrefix(); printf("file.ReadEntireFile failed (%ls)\n", path.c_str());
 		return false;
 	}
 	Utf8String str((Utf8P)entireFile.GetDataP());
@@ -118,16 +119,18 @@ bool findProperty(Json::Value const &source, CharCP targetName, Json::Value &val
 //	 <li>  3: verbose json compare (only has an effect if used together with -js)
 //   <li> 10: output file contents.  This is a packed json string.
 //   </ul>
-// <li> -d<n> is a setting that allows a certain number of numeric differences in json compare.
+// <li> -n<n> is a setting that allows a certain number of numeric differences in json compare.
 // <li> -t<n> is a setting that changes the tolerance for numeric compares
 // <li> -j forces JSON string compare
 // <li> -g forces geometric compare
+// <li> -d performs a directory comparison of all the containing files
 // <li>Anything not beginning with a dash is loaded as the filename in a JsonData structure.
 // </ul>
 bool parseCommandLine (int argc, char **argv,
 int &verbose,   // numeric value from -v0, -v1, -v2.  Assumed initialized by caller.
 int &userType,		// numeric value assigned from -js. Assumed to be 1 by caller (compare geometries), otherwise, compares json
 int &dif,
+bool &directoryMode,
 bvector<JsonData> &data
 )
     {
@@ -146,7 +149,7 @@ bvector<JsonData> &data
                 {
                 verbose = value;
                 }
-			else if (1 == sscanf (s, "-d%d", &value))
+			else if (1 == sscanf (s, "-n%d", &value))
 				{
 				dif = value;
 				}
@@ -161,6 +164,10 @@ bvector<JsonData> &data
 			else if (s[1] == 'g' && s[2] == '\0')
 				{
 				userType = 1;
+				}
+			else if (s[1] == 'd' && s[2] == '\0')
+				{
+				directoryMode = true;
 				}
             else
                 {
@@ -194,7 +201,7 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 	}
 	if (n0 != n1)
 	{
-		messagePrefix(); printf("FAIL: Mismatched geometry counts %d != %d\n", (int)n0, (int)n1);
+		messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry counts %d != %d\n", (int)n0, (int)n1);
 		return 1;
 	}
 
@@ -216,12 +223,12 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 		// 0 nulls needs comparison
 		if (numNull == 0 && !allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i], compareTol))
 		{
-			messagePrefix(); printf("FAIL: Mismatched geometry at index %d\n", (int)i);
+			messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry at index %d\n", (int)i);
 			return false;
 		}
 	}
-	if (verbose > 0)
-		messagePrefix(); printf("SUCCESS: (%s) isAlmostEqual (%s)\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
+
+	messagePrefix(); printf("     GEOMETRY COMPARE SUCCESS: Files are equal!\n");
 	return true;
 	}
 // Function that iterates through an ARRAY and appends to errorTracker
@@ -292,7 +299,7 @@ bool compareItems(double a, double b, int &dif)
 		}
 		else
 		{
-			messagePrefix(); printf("	FAIL: Mismatched number values [%.12f and %.12f]\n", a, b);
+			messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched number values [%.12f and %.12f]\n", a, b);
 			return false;
 		}
 	}
@@ -305,7 +312,7 @@ bool compareItems(const char* a, const char* b)		// Does not take into account c
 	}
 	else
 	{
-		messagePrefix("	FAIL: Mismatched string values\n");
+		messagePrefix("     JSON COMPARE FAIL: Mismatched string values\n");
 		return false;
 	}
 }
@@ -322,7 +329,7 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 		appendArrayToErrorTracker(a, errorTracker);
 		errorTracker.insert(errorTracker.begin(), "[");
 
-		messagePrefix(); printf("	FAIL: Mismatched array lengths file 1: [%d] file 2: [%d]\n", a.size(), b.size());
+		messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched array lengths file 1: [%d] file 2: [%d]\n", a.size(), b.size());
 		return false;
 	}
 	
@@ -356,7 +363,7 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 		appendPropertiesToErrorTracker(a, errorTracker);
 		errorTracker.insert(errorTracker.begin(), "{");
 
-		messagePrefix(); printf("	FAIL: Mismatched property list lengths file 1: [%d] file 2: [%d]\n", a.size(), b.size());
+		messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched property list lengths file 1: [%d] file 2: [%d]\n", a.size(), b.size());
 		return false;
 	}
 
@@ -382,7 +389,7 @@ bool compareObjects(Json::Value const &a, Json::Value const &b, struct TypeCount
 			appendPropertiesToErrorTracker(a, errorTracker);
 			errorTracker.insert(errorTracker.begin(), "{");
 
-			messagePrefix(); printf("	FAIL: Property %s of file 1 not in file 2\n", iter.memberName());
+			messagePrefix(); printf("     JSON COMPARE FAIL: Property %s of file 1 not in file 2\n", iter.memberName());
 			return false;
 		}
 
@@ -400,7 +407,7 @@ bool compareHandler(Json::Value const &a, Json::Value const &b, struct TypeCount
 	{
 	if (a.type() != b.type())
 	{
-		messagePrefix(); printf("	FAIL: Type mismatch (%d != %d)\n", a.type(), b.type());
+		messagePrefix(); printf("     JSON COMPARE FAIL: Type mismatch (%d != %d)\n", a.type(), b.type());
 		return false;
 	}
 
@@ -475,93 +482,202 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 	}
 	else
 	{
-		messagePrefix(); printf("	SUCCESS: (%s) is equal to (%s)\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
+		messagePrefix(); printf("     JSON COMPARE SUCCESS: Files are equal!\n");
 	}
 	if (verbose == 3)
 	{
 		// Print out counts of each type
 		messagePrefix("--------------------Type Counts (up to failure/completion) --------------------\n");
-		messagePrefix(); printf("	Numbers: %d\n", typeCounts.numbers);
-		messagePrefix(); printf("	Arrays:	%d\n", typeCounts.arrays);
-		messagePrefix(); printf("	Objects: %d\n", typeCounts.objects);
-		messagePrefix(); printf("	Strings: %d\n", typeCounts.strings);
-		messagePrefix(); printf("	Booleans: %d\n", typeCounts.booleans);
-		messagePrefix(); printf("	Nulls: %d\n", typeCounts.nulls);
+		messagePrefix(); printf("Numbers: %d\n", typeCounts.numbers);
+		messagePrefix(); printf("Arrays:	%d\n", typeCounts.arrays);
+		messagePrefix(); printf("Objects: %d\n", typeCounts.objects);
+		messagePrefix(); printf("Strings: %d\n", typeCounts.strings);
+		messagePrefix(); printf("Booleans: %d\n", typeCounts.booleans);
+		messagePrefix(); printf("Nulls: %d\n", typeCounts.nulls);
 		// Print out counts of each property
 		messagePrefix("-------------------- Property Counts (up to failure/completion) --------------------\n");
 		for (auto& x : propertyCounts)
 		{
-			messagePrefix(); printf("	%s:	%d\n", x.first.c_str(), x.second);
+			messagePrefix(); printf("%s: %d\n", x.first.c_str(), x.second);
 		}
 	}
 	return retVal;
 	}
-extern "C"
-int main(int argc, char **argv) 
-    {
-    bvector<JsonData> allData;
-    int verbose = 1;    // enables final filename echos
-	int type = 1;		// acts as the default type (is changed depending on what type of file comes in)
-	int userType = 0;	// user-declared type of comparison (0 for default... 1 for geometric compare... 2 for json property compare)
-	int dif = 0;
-	bool canUseGeometry = true;
-    if (!parseCommandLine (argc, argv, verbose, userType, dif, allData) || allData.size () != 2)
-        {
-        messagePrefix (); printf ("exe name:   %s\n", argv[0]);
-        messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-dNN] [-tNN] <fileA> <fileB>\n");
-        messagePrefix ("    -v0         no output except errors.\n");
-        messagePrefix ("    -v1         final confirmation of matched filenames (geometry compare only)\n");
-        messagePrefix ("    -v2         beginning and end confirmation of filenames, Top level geometry counts. (geometry compare only)\n");
-		messagePrefix ("    -v3		  verbose json compare (JSON string compare mode only)\n");
-        messagePrefix ("    -v11         all of above plus echo complete file contents (packed strings)\n");
-		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (default is 1.0e-12)\n");
-		messagePrefix ("    -d<N>		  allows <N> number of differences when comparing numeric values (JSON string compare mode only)\n");
-		messagePrefix ("    -j         force a JSON string compare, rather than the determined default\n");
-		messagePrefix ("    -g         force a geometric compare, rather than the determined default\n");
-        messagePrefix ("    Read geometry from each file.  Compare with IGeometry::IsAlmostEqual.\n");
-        return 1;
-        }
-
-    // load json and geometry objects from each file.
-    int errors = 0;
-    for (size_t i = 0; i < allData.size (); i++)
-        {
-        if (!allData[i].Load (canUseGeometry, type, verbose))
-            {
-            messagePrefix (); printf ("Unable to read from (%s)\n", allData[i].m_filename.c_str ());
-            errors++;
-            }
-		if (userType == 1 && !canUseGeometry)
-			{
-			messagePrefix(); printf("Unable to parse json into geometry from (%s)\n", allData[i].m_filename.c_str());
-			messagePrefix("Try adding argument -j for a JSON string compare instead\n");
+int launchCompare(bvector<JsonData> allData, bool &canUseGeometry, int &type, int &verbose, int &userType, int &dif)
+	{
+	// load json and geometry objects from each file.
+	for (size_t i = 0; i < allData.size(); i++)
+	{
+		if (!allData[i].Load(canUseGeometry, type, verbose))
+		{
+			messagePrefix(); printf("	Unable to read from (%s)\n", allData[i].m_filename.c_str());
 			return 1;
-			}
-        }
-    if (errors > 0)
-        return 1;
+		}
+		if (userType == 1 && !canUseGeometry)
+		{
+			messagePrefix(); printf("	Unable to parse json into geometry from (%s)\n", allData[i].m_filename.c_str());
+			return 1;
+		}
+	}
 
 	if (userType != 0 && userType != type)
 		type = userType;
 
 	if (type == 1)
-		{	// Type 1 comparison: geometric compare
-		if (verbose >= 1)
-			messagePrefix("***Geometric Compare***\n");
+	{	// Type 1 comparison: geometric compare
 		if (compareGeometry(allData, verbose))
 			return 0;
 		else
 			return 1;
-		}
+	}
 	if (type == 2)
-		{	// Type 2 comparison: json objects
-		if (verbose >= 1)
-			messagePrefix("***JSON String Compare***\n");
+	{	// Type 2 comparison: json objects
 		if (compareJSON(allData, verbose, dif)) {
 			return 0;
 		}
 		else {
 			return 1;
 		}
+	}
+
+	// Type should always be a 1 or 2... error
+	return 1;
+	}
+extern "C"
+int main(int argc, char **argv) 
+    {
+    bvector<JsonData> allData;
+    int verbose = 0;    // enables final filename echos
+	int type = 1;		// acts as the default type (is changed depending on what type of file comes in)
+	int userType = 0;	// user-declared type of comparison (0 for default... 1 for geometric compare... 2 for json property compare)
+	bool directoryMode = false;		// compares entire directories if user specified -r
+	int dif = 0;
+	bool canUseGeometry = true;
+    if (!parseCommandLine (argc, argv, verbose, userType, dif, directoryMode, allData) || allData.size () != 2)
+        {
+        messagePrefix (); printf ("exe name:   %s\n", argv[0]);
+        messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-dNN] [-tNN] [-a] <fileA || directoryA> <fileB || directoryB>\n");
+		messagePrefix ("  Note: Geometry compare uses IGeometry::IsAlmostEqual.\n");
+        messagePrefix ("    -v0         no output except errors.\n");
+        messagePrefix ("    -v1         final confirmation of matched filenames (geometry compare only)\n");
+        messagePrefix ("    -v2         beginning and end confirmation of filenames, Top level geometry counts. (geometry compare only)\n");
+		messagePrefix ("    -v3		  verbose json compare (JSON string compare mode only)\n");
+		messagePrefix("    -v11         all of above plus echo complete file contents (packed strings; geometry compare only)\n");
+		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (default is 1.0e-12)\n");
+		messagePrefix ("    -n<N>		  allows <N> number of differences when comparing numeric values (JSON string compare mode only)\n");
+		messagePrefix("	  -d		compares entire directories (ignores verbosity for individual files)\n");
+		messagePrefix ("    -j         force a JSON string compare, rather than the determined default\n");
+		messagePrefix ("    -g         force a geometric compare, rather than the determined default\n");
+        return 1;
+        }
+
+	// if running in directory mode, ensure the user gave the names of two directories
+	if (directoryMode)
+		{
+		verbose = 0;	// Ignore verbosity for every file (just print out success or fail, so user may do specific comparison after)
+		messagePrefix(); printf("*** Verbosity has been turned off for directory comparison\n");
+		BeFileName folderPath1(allData[0].m_filename.c_str());
+		BeFileName folderPath2(allData[1].m_filename.c_str());
+		
+		if (!BeFileName::IsDirectory(folderPath1))
+		{
+			messagePrefix(); printf("Unable to locate directory (%s) to use directory compare mode\n", allData[0].m_filename.c_str());
+			return 1;
 		}
+		if (!BeFileName::IsDirectory(folderPath2))
+		{
+			messagePrefix(); printf("Unable to locate directory (%s) to use directory compare mode\n", allData[1].m_filename.c_str());
+			return 1;
+		}
+
+		// grab all files from each directory
+		bvector<WString> files1;
+		bvector<WString> files2;
+		BeFileName sourceDir1(folderPath1);
+		BeFileName sourceDir2(folderPath2);
+		BeFileName filename;
+		bool isDir;
+		for (BeDirectoryIterator dir(sourceDir1); dir.GetCurrentEntry(filename, isDir, true) == SUCCESS; dir.ToNext())
+			{
+			// only grab file name itself
+			if (!filename.IsDirectory())
+				files1.push_back(filename.GetFileNameWithoutExtension().append(L".").append(filename.GetExtension()));
+			}
+		for (BeDirectoryIterator dir(sourceDir2); dir.GetCurrentEntry(filename, isDir, true) == SUCCESS; dir.ToNext())
+			{
+			if (!filename.IsDirectory())
+				files2.push_back(filename.GetFileNameWithoutExtension().append(L".").append(filename.GetExtension()));
+			}
+
+		// reveal files that are missing from one directory to another
+		bvector<WString> onlyFolder1;
+		bvector<WString> onlyFolder2;
+
+		std::remove_copy_if(files1.begin(), files1.end(), std::back_inserter(onlyFolder1),
+			[&files2](const WString& arg)
+			{ return (std::find(files2.begin(), files2.end(), arg) != files2.end()); });
+		std::remove_copy_if(files2.begin(), files2.end(), std::back_inserter(onlyFolder2),
+			[&files1](const WString& arg)
+			{ return (std::find(files1.begin(), files1.end(), arg) != files1.end()); });
+		for (size_t i = 0; i < onlyFolder1.size(); i++)
+			files1.erase(std::remove(files1.begin(), files1.end(), onlyFolder1[i]), files1.end());
+		for (size_t i = 0; i < onlyFolder2.size(); i++)
+			files2.erase(std::remove(files2.begin(), files2.end(), onlyFolder2[i]), files2.end());
+
+		if (onlyFolder1.size() > 0)
+		{
+			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
+			if (onlyFolder1.size() <= 0)
+			{
+				messagePrefix(); printf("(none)\n\n");
+			}
+			else
+			{
+				for (size_t i = 0; i < onlyFolder1.size(); i++)
+				{
+					messagePrefix(); printf("%s\n", Utf8String(onlyFolder1[i]).c_str());
+				}
+				printf("\n");
+			}
+		}
+		if (onlyFolder2.size() > 0)
+		{
+			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[1].m_filename.c_str(), allData[0].m_filename.c_str());
+			if (onlyFolder2.size() <= 0)
+			{
+				messagePrefix(); printf("(none)\n\n");
+			}
+			else {
+				for (size_t i = 0; i < onlyFolder2.size(); i++)
+				{
+					messagePrefix(); printf("%s\n", Utf8String(onlyFolder2[i]).c_str());
+				}
+				printf("\n");
+			}
+		}
+
+
+		// compare matched files one by one (all items in files1 vector should also be in files2 vector and vise-versa by now)
+		int retVal = 0;
+		for (size_t i = 0; i < files1.size(); i++)
+			{
+			bvector<JsonData> fileData;
+			// file 1 full path
+			WString filePath1 = folderPath1.GetName();
+			filePath1.append(L"\\").append(files1[i]);
+			// file 2 full path
+			WString filePath2 = folderPath2.GetName();
+			filePath2.append(L"\\").append(files2[i]);
+			// set up vector and pass to comparison functions
+			fileData.push_back(JsonData(Utf8String(filePath1.c_str())));
+			fileData.push_back(JsonData(Utf8String(filePath2.c_str())));
+			messagePrefix(); printf("%ws:\n", files1[i].c_str());
+			retVal += launchCompare(fileData, canUseGeometry, type, verbose, userType, dif);
+			}
+
+		return retVal;
+		}
+
+	// Not running in directory mode... simply compare the two files given	
+	return launchCompare(allData, canUseGeometry, type, verbose, userType, dif);
 	}
