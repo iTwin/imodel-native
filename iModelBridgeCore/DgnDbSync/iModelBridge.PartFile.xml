@@ -21,19 +21,19 @@
         </Bindings>
     </Part>
 
-    <Part Name="Docs-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="Docs-Windows" DeferType="BuildDocs" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="Docs" />
     </Part>
 
-    <Part Name="Docs-Unix-Shim" OnlyPlatforms="Linux*">
+    <Part Name="Docs-Unix-Shim" DeferType="BuildDocs" OnlyPlatforms="Linux*">
         <SubPart PartName="Docs-Unix" LibType="Static"/>
     </Part>
 
-    <Part Name="Docs-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+    <Part Name="Docs-Unix" DeferType="BuildDocs" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
         <SubPart PartName="Docs" />
     </Part>
 
-    <Part Name="Docs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke" >
+    <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke" >
         <SubPart PartName="iModelBridgeLibrary" />
         <Bindings>
             <Directory SourceName="Delivery/docs" ProductDirectoryName="iModelBridgeDoc" />
@@ -235,7 +235,7 @@
     </Part>
 
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
-    <Part Name="Tests">
+    <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="UnitTests-NonPublished"/>
     </Part>
 
