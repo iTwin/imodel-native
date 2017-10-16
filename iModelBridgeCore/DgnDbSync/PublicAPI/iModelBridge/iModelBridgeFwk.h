@@ -150,6 +150,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_repositoryName;                //!< A repository in the iModelHub project
         Http::Credentials m_credentials;            //!< User credentials
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
+        uint8_t m_maxRetryCount = 2;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining
@@ -186,7 +187,7 @@ protected:
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
     JobDefArgs m_jobEnvArgs;                  // the framework's command-line arguments
     ServerArgs m_serverArgs;            // the framework's command-line arguments that pertain to the iModelHub
-    FwkRepoAdmin m_repoAdmin;
+    FwkRepoAdmin* m_repoAdmin {};
 
     BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
@@ -222,7 +223,7 @@ protected:
     WString GetMutexName();
     int RunExclusive(int argc, WCharCP argv[]);
     int UpdateExistingBim();
-    void SetBridgeParams(iModelBridge::Params&);
+    void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
 
@@ -245,6 +246,11 @@ public:
 
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void SetDgnDbServerClientUtilsForTesting(DgnDbServerClientUtils&);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 };

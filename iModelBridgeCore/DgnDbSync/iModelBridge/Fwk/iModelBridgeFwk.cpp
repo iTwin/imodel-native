@@ -50,9 +50,16 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+static iModelBridge* s_bridgeForTesting;
+
 #ifdef _WIN32
 static int s_maxWaitForMutex = 60000;
 #endif
+
+void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
+    {
+    s_bridgeForTesting = &b;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -199,10 +206,12 @@ void iModelBridgeFwk::InitLogging()
 
     fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridge", NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
-    //NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridge", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelHub", NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
     }
 
@@ -897,7 +906,7 @@ static BeFileName findBridgeAssetsDir(BeFileNameCR bridgeLibDir)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
+void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin* ra)
     {
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     params.m_briefcaseName = m_briefcaseName;
@@ -905,7 +914,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
     params.GetReportFileName().BeDeleteFile();
     params.m_assetsDir = m_jobEnvArgs.m_bridgeAssetsDir;
     params.m_libraryDir = m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName();
-    params.m_repoAdmin = &m_repoAdmin;
+    params.m_repoAdmin = ra;
     params.m_inputFileName = m_jobEnvArgs.m_inputFileName;
     params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
     params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
@@ -920,6 +929,12 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::LoadBridge()
     {
+    if (s_bridgeForTesting)
+        {
+        m_bridge = s_bridgeForTesting;
+        return BentleyStatus::SUCCESS;
+        }
+
     auto getInstance = m_jobEnvArgs.LoadBridge();
     if (nullptr == getInstance)
         return BentleyStatus::ERROR;
@@ -939,7 +954,7 @@ BentleyStatus iModelBridgeFwk::LoadBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::InitBridge()
     {
-    SetBridgeParams(m_bridge->_GetParams());
+    SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);
 
     if (BentleyStatus::SUCCESS != m_bridge->_ParseCommandLine((int)m_bargptrs.size(), m_bargptrs.data()))
         {
@@ -948,10 +963,12 @@ BentleyStatus iModelBridgeFwk::InitBridge()
         return BentleyStatus::ERROR;
         }
 
-    SetBridgeParams(m_bridge->_GetParams());    // make sure that MY definition of these params is used!
+    SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);    // make sure that MY definition of these params is used!
 
     if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
         return BentleyStatus::ERROR;
+
+    BeAssert((m_bridge->_GetParams().GetRepositoryAdmin() == m_repoAdmin) && "Bridge must use the RepositoryAdmin that the fwk supplies");
 
     return BentleyStatus::SUCCESS;
     }
@@ -1019,6 +1036,15 @@ void iModelBridgeFwk::SaveBriefcaseId()
 //    m_stateDb.SaveChanges();
 //    }
 
+struct HostTerminator
+    {
+    ~HostTerminator()
+        {
+        DgnViewLib::GetHost().Terminate(true);
+        iModelBridge::L10N::Terminate();
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1067,21 +1093,24 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return RETURN_STATUS_CONVERTER_ERROR;
 
     // Initialize the DgnViewLib Host.
+    m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
-    SetBridgeParams(params);
+    SetBridgeParams(params, m_repoAdmin);
 
     BeFileName fwkAssetsDir(m_jobEnvArgs.m_fwkAssetsDir);
     BeFileName fwkDb3 = fwkAssetsDir;
     fwkDb3.AppendToPath(L"sqlang");
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
-    Dgn::iModelBridgeBimHost host(params.GetRepositoryAdmin(), fwkAssetsDir, fwkDb3, ""); // *** TBD: product name = job name
+    Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, ""); // *** TBD: product name = job name
     DgnViewLib::Initialize(host, true);
 
     //  Initialize the bridge-specific L10N
     BeFileName bridgeSqlangPath(params.GetAssetsDir());
     bridgeSqlangPath.AppendToPath(m_bridge->_SupplySqlangRelPath().c_str());
     iModelBridge::L10N::Initialize(BeSQLite::L10N::SqlangFiles(bridgeSqlangPath));
+
+    HostTerminator terminateHostOnReturn;
 
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
@@ -1303,7 +1332,7 @@ void iModelBridgeFwk::LogStderr()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeFwk::iModelBridgeFwk() : m_repoAdmin(*this)
+iModelBridgeFwk::iModelBridgeFwk()
     {
     m_clientUtils = nullptr;
     }
