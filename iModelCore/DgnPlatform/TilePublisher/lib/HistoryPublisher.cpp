@@ -453,6 +453,28 @@ PublisherContext::Status Publish(PublisherParamsR params, Json::Value&& revision
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModelIdSet   getElementModelIds(DgnElementIdSet const& elementIds, DgnDbR db)
+    {
+    DgnModelIdSet       modelIds;
+
+    for (auto& elementId : elementIds)
+        {
+        auto modelId = db.Elements().Get<DgnElement>(elementId)->GetModelId();
+
+        if (modelIds.find(modelId) == modelIds.end())
+            {
+            auto model = db.Models().GetModel(modelId);
+
+            if (nullptr != model->ToGeometricModelP())
+                modelIds.insert(modelId);
+            }
+        }
+    return modelIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(PublisherParamsR params)
     {
     auto presentationManager = registerPresentationManager();
@@ -498,8 +520,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         bvector<BentleyApi::ECN::ECClassId> ecClassIds;
         bvector<DgnElementId>               elementIds;
-        bvector<DbOpcode>                   
-        opCodes;
+        bvector<DbOpcode>                   opCodes;
              
         changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
 
@@ -509,7 +530,10 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         for (size_t j=0; j<elementIds.size(); j++)
             {
-            auto elementId = elementIds.at(j);
+            auto            elementId = elementIds.at(j);
+            Json::Value     elementJson = Json::objectValue;
+            
+            elementJson["op"] = (int) opCodes.at(j);
 
             switch(opCodes.at(j))
                 {
@@ -522,38 +546,37 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                     break;
 
                 case DbOpcode::Update:
+                    {
                     deletedOrModifiedIds.insert(elementId);
                     addedOrModifiedIds.insert(elementId);
+
+                    Json::Value propertyData;
+                    changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), false, propertyData);
+
+                    Json::Value displayValues = propertyData["ContentSet"][0]["DisplayValues"];
+                    bvector<Utf8String> propertyNames = displayValues.getMemberNames();
+                    static Utf8String s_opCodeCompare("__ver_compare___Opcode");
+
+                    for (auto const& propertyName : propertyNames)
+                        {
+                        Utf8String propertyValueCurrent = displayValues[propertyName]["Current"].asString();
+                        Utf8String propertyValueTarget = displayValues[propertyName]["Target"].asString();
+
+                        if (propertyName != s_opCodeCompare && propertyValueCurrent != propertyValueTarget)
+                            {
+                            Json::Value     propertyChangeJson;
+
+                            propertyChangeJson["name"] = propertyName;
+                            propertyChangeJson["pre"] = propertyValueTarget;
+                            propertyChangeJson["post"] = propertyValueCurrent;
+
+                            elementJson["prop"] = propertyChangeJson;
+                            }
+                        }
                     break;
+                    }
                 }
-
-            Json::Value propertyData;
-            changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), true, propertyData);
-            // Contains raw data of the properties values
-
-            Json::Value& values         = propertyData["ContentSet"][0]["Values"];
-            // Contains display values for the properties for UI
-            Json::Value& displayValues  = propertyData["ContentSet"][0]["DisplayValues"];
-
-            // Property names will be empty if there are no property changes in element
-            bvector<Utf8String> propertyNames = values.getMemberNames();
-
-            printf ("For OpCode: %d - %d changes found\n", opCodes.at(j), (int) propertyNames.size());
-
-            static Utf8String s_opCodeCompare("__ver_compare___Opcode");
-            for (auto const& propertyName : propertyNames)
-                {
-                if (propertyName == s_opCodeCompare)
-                    continue;
-
-                Utf8String propertyValueCurrent = displayValues[propertyName]["Current"].asString();
-                Utf8String propertyValueTarget = displayValues[propertyName]["Target"].asString();
-
-                if (propertyValueCurrent != propertyValueTarget)
-                    printf ("Property: %s changed from %s to %s\n", propertyName.c_str(), propertyValueCurrent.c_str(), propertyValueTarget.c_str());
-                }
-
-            revisionElementsJson[elementId.ToString()] = (int) opCodes.at(j);
+            revisionElementsJson[elementId.ToString()] = std::move(elementJson);
             }
 
         Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
@@ -565,12 +588,11 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         if (!addedOrModifiedIds.empty())
             {
             TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, false);
-            DgnModelIdSet               modelIds;
+            DgnModelIdSet               modelIds = getElementModelIds(addedOrModifiedIds, *tempDb);
 
-            for (auto& elementId : addedOrModifiedIds)
-                modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
+            if (!modelIds.empty())
+                revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
 
-            revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
             revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
@@ -581,12 +603,11 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         if (!deletedOrModifiedIds.empty())
             {
             TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, true);
-            DgnModelIdSet               modelIds;
+            DgnModelIdSet               modelIds = getElementModelIds(deletedOrModifiedIds, *tempDb);
 
-            for (auto& elementId : deletedOrModifiedIds)
-                modelIds.insert(tempDb->Elements().Get<DgnElement>(elementId)->GetModelId());
+            if (!modelIds.empty())
+                revisionPublisher.PublishRevision(modelIds, deletedOrModifiedIds, params);
 
-            revisionPublisher.PublishRevision(modelIds, deletedOrModifiedIds, params);
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
             
