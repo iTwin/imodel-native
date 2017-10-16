@@ -398,7 +398,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_isTerrain = false; // default, always non terrain
         indexHeader->m_singleFile = false; // default, always multifile
         indexHeader->m_isCesiumFormat = true; // default, always cesium datasets
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+        indexHeader->m_rootNodeBlockID = HPMBlockID(rootNodeBlockID); // default, starts at 0
 
         BeFileName baseUrl(m_masterFileName.c_str());
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
@@ -422,6 +422,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
             }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
