@@ -152,14 +152,7 @@ StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t&
     // Replace old root node with new one
     m_tilesetRootNode = tileset;
 
-#ifndef NDEBUG
-    if (SUCCESS != this->SaveTileToCacheWithExistingTileIDs(m_tilesetRootNode["root"]) ||
-        m_groupCachePtr->GetGroupForNodeIDFromCache(priorityNodeID) == nullptr)
-        return ERROR;
-    return SUCCESS;
-#else
     return this->SaveTileToCacheWithExistingTileIDs(m_tilesetRootNode["root"]);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,57 +214,6 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
                 return ERROR;
             }
         }
-//    if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
-//        {
-//        uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
-//#ifndef NDEBUG
-//        nodeIDChecker(nodeID);
-//#endif
-//        //this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
-//        //{
-//        //    // Indicate that the header for the node with id nodeID is ready to be consumed
-//        //    // This is to unblock other threads that might be waiting for this group to complete loading.
-//        //    auto nodeHeader = this->GetNodeHeader(nodeID);
-//        //    assert(nodeHeader != nullptr);
-//        //    nodeHeader->offset = 0;
-//        //}
-//        if (SUCCESS != this->SaveNode(nodeID, &jsonNode))
-//            return ERROR;
-//
-//        if (jsonNode.isMember("children"))
-//            {
-//            for (auto& child : jsonNode["children"])
-//                {
-//                if (SUCCESS != tileTreeMapGenerator(child))
-//                    return ERROR;
-//                }
-//            }
-//        return SUCCESS;
-//        }
-//    else
-//        {
-//        assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
-//        BeFileName contentURL(jsonNode["content"]["url"].asString());
-//        WString groupIDStr = BEFILENAME(GetFileNameWithoutExtension, contentURL);
-//        WString prefix = groupIDStr.substr(0, 2);
-//        WString extension = BEFILENAME(GetExtension, contentURL);
-//        groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
-//        uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
-//        SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, groupID);
-//        newGroup->SetURL(DataSourceURL(contentURL.c_str()));
-//        newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-//        //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-//        newGroup->m_tilesetRootNode = jsonNode;
-//        assert(jsonNode.isMember("SMRootID"));
-//        nodeIDChecker(jsonNode["SMRootID"].asUInt());
-//        return newGroup->SaveNode(jsonNode["SMRootID"].asUInt(), &newGroup->m_tilesetRootNode);
-//
-//        //assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
-//        //SMNodeGroupPtr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
-//        //newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-//        //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-//        //this->m_tileTreeChildrenGroups[groupID] = newGroup;
-//        }
     return SUCCESS;
     }
 
@@ -463,7 +405,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 return ERROR;
                 }
 
-            bool mustGenerateIDs = true; // !tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id");
+            bool mustGenerateIDs = !tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id");
             if (SUCCESS != this->SaveTilesetToCache(tileset, priorityNodeID, mustGenerateIDs))
                 {
                 m_isLoading = false;
@@ -643,6 +585,12 @@ Json::Value* SMNodeGroup::GetSMMasterHeaderInfo()
     if (m_tilesetRootNode.isMember("root") && m_tilesetRootNode["root"].isMember("SMMasterHeader"))
         return &m_tilesetRootNode["root"]["SMMasterHeader"];
     return nullptr;
+    }
+
+uint64_t SMNodeGroup::GetRootTileID()
+    {
+    assert(m_tilesetRootNode.isMember("root"));
+    return m_tilesetRootNode["root"]["SMHeader"]["id"].asUInt();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -906,7 +854,8 @@ SMGroupCache::SMGroupCache(node_header_cache* nodeCache)
 SMNodeGroupPtr SMGroupCache::GetGroupForNodeIDFromCache(const uint64_t& nodeId)
     {
     std::lock_guard<std::mutex> lock(m_cacheMutex);
-    assert(m_downloadedGroupsPtr->count(nodeId) == 1);
+    if (m_downloadedGroupsPtr->count(nodeId) == 0)
+        return nullptr;
     return m_downloadedGroupsPtr->operator[](nodeId);
     }
 
