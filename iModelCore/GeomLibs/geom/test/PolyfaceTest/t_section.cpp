@@ -1839,7 +1839,10 @@ TEST(Polyface,MultiMeshVisibilityD)
         }
     }
 
-bool loadAndRunMMV (bvector<WCharCP> filenames, char const *outputName)
+bool LoadAndRunMMV (wchar_t const * dataDirectory, bvector<WCharCP> filenames, char const *outputName,
+bool oneCall = true     // true ==> one call to MultiMeshVisiblePartsXYByPlaneSets.
+                        // false==> emulate the loop of clips, output each step.
+)
     {
     bvector<IGeometryPtr> allGeometry;
     bvector<PolyfaceHeaderPtr> allMesh;
@@ -1847,7 +1850,7 @@ bool loadAndRunMMV (bvector<WCharCP> filenames, char const *outputName)
     range.Init ();
     for (auto filename : filenames)
         {
-        if (ReadDgnjsGeometry (allGeometry, 1, L"Polyface", L"MultiMeshVisibilityE", filename))
+        if (ReadDgnjsGeometry (allGeometry, 1, L"Polyface", dataDirectory, filename))
             {
             for (auto &g : allGeometry)
                 {
@@ -1864,10 +1867,61 @@ bool loadAndRunMMV (bvector<WCharCP> filenames, char const *outputName)
     if (allMesh.size () > 1)
         {
         double dX = range.XLength ();
-        bvector<PolyfaceHeaderPtr> visibleParts;
-        PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
-        Check::Shift (dX, 0, 0);
-        SaveTransformed (visibleParts, 0.0, true);
+        double dY = range.YLength ();
+        if (oneCall)
+            {
+            bvector<PolyfaceHeaderPtr> visibleParts;
+            PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (allMesh, visibleParts);
+            Check::Shift (dX, 0, 0);
+            SaveTransformed (visibleParts, 0.0, true);
+            }
+        else
+            {
+            // These braces are to define scope for the shifter.
+                {
+                SaveAndRestoreCheckTransform shifter (dX,0,0);
+                for (size_t i = 0; i < allMesh.size (); i++)
+                    {
+                    Check::Shift (0, dY, 0);
+                    Check::SaveTransformed (allMesh[i]);
+                    }
+                Check::Shift (dX, 0, 0);
+                }
+            for (size_t i = 0; i < allMesh.size (); i++)
+                {
+                PolyfaceHeaderPtr visibleI = allMesh[i]->Clone ();
+                SaveAndRestoreCheckTransform shifter (dX,0,0);
+                Check::SaveTransformed (visibleI);
+                for (size_t j = 0; j < allMesh.size () && visibleI.IsValid (); j++)
+                    {
+                    Check::Shift (0, dY, 0);
+                    if (j == i)
+                        continue;
+                    PolyfaceHeaderPtr meshAOverB, meshBUnderA;
+                    PolyfaceHeaderPtr meshBVisible, meshBHidden;
+                    PolyfaceHeader::ComputeOverAndUnderXY (*allMesh[j], nullptr, *visibleI, nullptr, meshAOverB, meshBUnderA);
+                    Check::Shift (0, dY,0);
+                    if (meshAOverB.IsValid ())
+                        Check::SaveTransformed (meshAOverB);
+                    if (meshBUnderA.IsValid ())
+                        Check::SaveTransformed (meshBUnderA);
+                    if (meshBUnderA.IsValid ())
+                        {
+                        meshBUnderA->Triangulate();
+                        PolyfaceHeader::ComputePunchXYByPlaneSets (*meshBUnderA, *visibleI, &meshBHidden, &meshBVisible);
+                        if (meshBVisible.IsValid () || meshBHidden.IsValid ())
+                            {
+                            Check::Shift (0, dY,0);
+                            if (meshBHidden.IsValid ())
+                                Check::SaveTransformed (meshBHidden);
+                            visibleI = meshBVisible;
+                            }
+                        }
+                    Check::Shift (0, dY,0);
+                    Check::SaveTransformed (visibleI);
+                    }
+                }
+            }
         Check::ClearGeometry (outputName);
         return true;
         }
@@ -1879,14 +1933,15 @@ TEST(Polyface,MultiMeshVisibilityE)
     bvector<PolyfaceHeaderPtr> allMesh;
     DRange3d range;
     range.Init ();
-    for (auto filename : bvector<WCharCP> {
+
+    for (WCharCP filename : bvector<WCharCP> {
             L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
-            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs",
             L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_9.dgnjs",
-            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_11.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_11.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_13.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_15.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_17.dgnjs",
@@ -1895,9 +1950,9 @@ TEST(Polyface,MultiMeshVisibilityE)
 
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_22.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_24.dgnjs",
-            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_26.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_26.dgnjs",
             L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_28.dgnjs",
-            //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_30.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_30.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_32.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_34.dgnjs",
             //L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_36.dgnjs",
@@ -1930,4 +1985,16 @@ TEST(Polyface,MultiMeshVisibilityE)
         }
     }
 
-
+TEST(Polyface,MultiMeshVisibilityF)
+    {
+    LoadAndRunMMV (
+        L"MultiMeshVisibilityF",
+        bvector<WCharCP> {
+            L"1road.dgnjs",
+            L"1gradeA.dgnjs",
+            L"1gradeB.dgnjs"
+            },
+        "Polyface.MultiMeshVisibilityF",
+        false
+        );
+    }

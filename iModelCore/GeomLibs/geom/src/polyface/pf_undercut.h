@@ -374,10 +374,14 @@ VuMask mergeMask        // apply to all 4 edges of deletable pair
                     bool merge = parentA != parentD;
                     if (parentA == parentD)
                         {
-                        if (SameClusterAroundVertex (nodeA, m_faceClusters, exteriorMask))
-                            merge = true;
-                        if (SameClusterAroundVertex (nodeD, m_faceClusters, exteriorMask))
-                            merge = true;
+                        static int s_checkVertex = 1;
+                        if (s_checkVertex)
+                            {
+                            if (SameClusterAroundVertex (nodeA, m_faceClusters, exteriorMask))
+                                merge = true;
+                            if (SameClusterAroundVertex (nodeD, m_faceClusters, exteriorMask))
+                                merge = true;
+                            }
                         }
                     if (merge)
                         {
@@ -427,6 +431,9 @@ bool ShardHealer::HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> 
     for (auto &shard : shards)
         {
         size_t n = shard.size ();
+        if (0 == n)
+            continue;
+
         m_loopIndex.clear ();
         m_loopXYZ.clear ();
         for (size_t i = 0; i < n; i++)
