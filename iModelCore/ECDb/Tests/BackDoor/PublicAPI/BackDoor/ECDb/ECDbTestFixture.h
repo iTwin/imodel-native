@@ -37,6 +37,8 @@ struct RestrictedSchemaImportECDb : ECDb
 //=======================================================================================    
 struct ECDbTestFixture : public ::testing::Test
     {
+public:
+
 private:
     struct FixtureECDb final : ECDb
         {
@@ -80,6 +82,7 @@ private:
 
     static bool s_isInitialized;
     static SeedECDbManager* s_seedECDbManager;
+    static ProfileVersion const* s_expectedProfileVersion;
 
     static SeedECDbManager& SeedECDbs();
 
@@ -117,6 +120,8 @@ public:
     static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
     static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName = nullptr);
     static BentleyStatus ReadECSchema(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
+
+    static ProfileVersion const& ExpectedProfileVersion() { return *s_expectedProfileVersion; }
     };
 
 END_ECDBUNITTESTS_NAMESPACE
