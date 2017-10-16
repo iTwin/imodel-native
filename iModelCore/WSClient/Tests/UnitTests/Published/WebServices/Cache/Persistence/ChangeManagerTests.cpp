@@ -15,6 +15,10 @@ using std::shared_ptr;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, IsSyncActive_SyncSetActiveToTrue_True)
     {
     auto cache = GetTestCache();
@@ -22,12 +26,18 @@ TEST_F(ChangeManagerTests, IsSyncActive_SyncSetActiveToTrue_True)
     EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, IsSyncActive_SyncNotActive_False)
     {
     auto cache = GetTestCache();
     EXPECT_FALSE(cache->GetChangeManager().IsSyncActive());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag)
     {
     // Arrange
@@ -41,6 +51,9 @@ TEST_F(ChangeManagerTests, SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSy
     EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateObject_SyncSetToActive_Success)
     {
     // Arrange
@@ -54,6 +67,9 @@ TEST_F(ChangeManagerTests, CreateObject_SyncSetToActive_Success)
     EXPECT_TRUE(instance.IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObject_Success)
     {
     // Arrange
@@ -73,6 +89,9 @@ TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObjec
     EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_SyncSetToActiveAndDeletingCreatedObject_Error)
     {
     // Arrange
@@ -89,6 +108,9 @@ TEST_F(ChangeManagerTests, DeleteObject_SyncSetToActiveAndDeletingCreatedObject_
     EXPECT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_SyncSetToActive_Success)
     {
     // Arrange
@@ -104,6 +126,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_SyncSetToActive_Success)
     EXPECT_TRUE(relationship.IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteRelationship_SyncSetToActiveAndDeletingCreatedRelationship_Error)
     {
     // Arrange
@@ -122,6 +147,9 @@ TEST_F(ChangeManagerTests, DeleteRelationship_SyncSetToActiveAndDeletingCreatedR
     EXPECT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Error)
     {
     // Arrange
@@ -138,12 +166,18 @@ TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Er
     EXPECT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_InvalidClassIds_ReturnsInvalid)
     {
     auto cache = GetTestCache();
     EXPECT_EQ(nullptr, cache->GetChangeManager().GetLegacyParentRelationshipClass(ECClassId(UINT64_C(99999)), ECClassId(UINT64_C(99999))));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_ReturnsSameClass)
     {
     auto cache = CreateTestCache();
@@ -159,6 +193,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_Retur
     EXPECT_TRUE(relClass1->GetTarget().SupportsClass(*cache->GetAdapter().GetECClass(classId)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_CallsOnSchemaChangedListenerOnlyFirstTime)
     {
     MockECDbSchemaChangeListener listener;
@@ -180,6 +217,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_Calls
     cache->UnRegisterSchemaChangeListener(&listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentParameters_ReturnsDifferentClasses)
     {
     auto cache = CreateTestCache();
@@ -214,6 +254,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentParameters_
     EXPECT_TRUE(relClass2->GetTarget().SupportsClass(*cache->GetAdapter().GetECClass(classId3)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentSchemasWithSameNamedClasses_ReturnsDifferentClasses)
     {
     auto cache = CreateTestCache();
@@ -235,6 +278,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentSchemasWith
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClassId2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_ExistingClasses_ReturnsValidRelationshipForCreateRelationship)
     {
     auto cache = CreateTestCache();
@@ -258,6 +304,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_ExistingClasses_Retu
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, parent, child));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_GenerateNewClassFalse_DoesNotGenerateNewClassAndReturnsNullForNotExisting)
     {
     MockECDbSchemaChangeListener listener;
@@ -278,6 +327,9 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_GenerateNewClassFals
     cache->UnRegisterSchemaChangeListener(&listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateObject_RemoteIdIsEmpty_SetsRemoteId)
     {
     // Arrange
@@ -289,6 +341,9 @@ TEST_F(ChangeManagerTests, CreateObject_RemoteIdIsEmpty_SetsRemoteId)
     ASSERT_NE("", cache->FindInstance(instance).remoteId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateObject_PropertiesPassed_InstanceSavedToCache)
     {
     // Arrange
@@ -307,6 +362,9 @@ TEST_F(ChangeManagerTests, CreateObject_PropertiesPassed_InstanceSavedToCache)
     EXPECT_EQ("TestValue", instanceJson["TestProperty"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_NotExistingObject_Error)
     {
     // Arrange
@@ -320,6 +378,9 @@ TEST_F(ChangeManagerTests, ModifyObject_NotExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     {
     // Arrange
@@ -338,6 +399,9 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     EXPECT_EQ("OldValue", instanceJson["TestProperty2"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_CreatedObject_SuccessAndLeavesStatusCreatedAndSameNumber)
     {
     // Arrange
@@ -351,6 +415,9 @@ TEST_F(ChangeManagerTests, ModifyObject_CreatedObject_SuccessAndLeavesStatusCrea
     EXPECT_EQ(1, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_ModifiedObject_LeavesStatusModifiedAndSameNumber)
     {
     // Arrange
@@ -364,6 +431,9 @@ TEST_F(ChangeManagerTests, ModifyObject_ModifiedObject_LeavesStatusModifiedAndSa
     EXPECT_EQ(1, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_DeletedObject_Error)
     {
     // Arrange
@@ -379,6 +449,9 @@ TEST_F(ChangeManagerTests, ModifyObject_DeletedObject_Error)
     EXPECT_EQ(1, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_NotExistingObject_Error)
     {
     // Arrange
@@ -392,6 +465,9 @@ TEST_F(ChangeManagerTests, DeleteObject_NotExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_ExistingObject_RemovesObjectFromCacheAndKeepsChange)
     {
     // Arrange
@@ -405,6 +481,9 @@ TEST_F(ChangeManagerTests, DeleteObject_ExistingObject_RemovesObjectFromCacheAnd
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_CreatedObject_RemovesInstanceAndMarksAsDeleted)
     {
     // Arrange
@@ -418,6 +497,9 @@ TEST_F(ChangeManagerTests, DeleteObject_CreatedObject_RemovesInstanceAndMarksAsD
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_ModifiedObject_RemovesObjectFromCacheAndSetsStatusDeletedAndIncrementsChangeNumber)
     {
     // Arrange
@@ -432,6 +514,9 @@ TEST_F(ChangeManagerTests, DeleteObject_ModifiedObject_RemovesObjectFromCacheAnd
     EXPECT_EQ(2, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteObject_DeletedObject_Error)
     {
     // Arrange
@@ -446,6 +531,9 @@ TEST_F(ChangeManagerTests, DeleteObject_DeletedObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_RemoteIdIsEmpty_SetsRemoteId)
     {
     // Arrange
@@ -459,6 +547,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_RemoteIdIsEmpty_SetsRemoteId)
     EXPECT_NE("", cache->FindRelationship(relationship).remoteId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_NotExistingSourceAndTarget_Error)
     {
     // Arrange
@@ -472,6 +563,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_NotExistingSourceAndTarget_Error)
     ASSERT_FALSE(relationship.IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_SuchRelationshipBetweenInstancesAlreadyExists_Error)
     {
     // Arrange
@@ -491,6 +585,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_SuchRelationshipBetweenInstancesAl
     ASSERT_FALSE(relationship.IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_ValidRelationshipEndsWithECInstanceKeys_RelationshipSavedInCache)
     {
     // Arrange
@@ -508,6 +605,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_ValidRelationshipEndsWithECInstanc
     EXPECT_EQ(1, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CreateRelationship_ValidRelationshipEndsWithObjectIds_RelationshipSavedInCache)
     {
     // Arrange
@@ -525,6 +625,9 @@ TEST_F(ChangeManagerTests, CreateRelationship_ValidRelationshipEndsWithObjectIds
     EXPECT_EQ(1, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteRelationship_ExistingRelationship_RemovesRelationshipFromCacheAndKeepsChange)
     {
     // Arrange
@@ -538,6 +641,9 @@ TEST_F(ChangeManagerTests, DeleteRelationship_ExistingRelationship_RemovesRelati
     EXPECT_EQ(1, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteRelationship_CreatedRelationship_RemovesRelationshipAndMarksAsDeleted)
     {
     // Arrange
@@ -554,6 +660,9 @@ TEST_F(ChangeManagerTests, DeleteRelationship_CreatedRelationship_RemovesRelatio
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DeleteRelationship_DeletedRelationship_Error)
     {
     // Arrange
@@ -568,6 +677,9 @@ TEST_F(ChangeManagerTests, DeleteRelationship_DeletedRelationship_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_NonExistingObject_Error)
     {
     // Arrange
@@ -578,6 +690,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_NonExistingObject_Error)
     ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(nonExistingInstance, isFileModified));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_InstanceWithoutFile_Error)
     {
     // Arrange
@@ -588,6 +703,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_InstanceWithoutFile_Error)
     ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_FileNotChanged_HasNoChanges)
     {
     // Arrange
@@ -600,6 +718,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChanged_HasNoChanges)
     EXPECT_FALSE(isFileModified);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_FileNotChangedAndLocationChanged_HasNoChanges)
     {
     // Arrange
@@ -613,6 +734,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChangedAndLocationChang
     EXPECT_FALSE(isFileModified);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_FileChanged_HasChanges)
     {
     // Arrange
@@ -629,6 +753,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileChanged_HasChanges)
     EXPECT_TRUE(isFileModified);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, DetectFileModification_FileChangedAndLocationChanged_HasChanges)
     {
     // Arrange
@@ -644,6 +771,9 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileChangedAndLocationChanged_
     EXPECT_TRUE(isFileModified);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
     {
     // Arrange
@@ -657,6 +787,9 @@ TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_EmptyFilePathPassed_Error)
     {
     // Arrange
@@ -668,6 +801,9 @@ TEST_F(ChangeManagerTests, ModifyFile_EmptyFilePathPassed_Error)
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_FileCacheLocationNotSet_CachesFileToPersistentLocationAndSetsChangeStatus)
     {
     // Arrange
@@ -684,6 +820,9 @@ TEST_F(ChangeManagerTests, ModifyFile_FileCacheLocationNotSet_CachesFileToPersis
     EXPECT_EQ("NewContent", SimpleReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_FileCacheLocationSetToExternal_CachesFileToExternalLocation)
     {
     // Arrange
@@ -701,6 +840,9 @@ TEST_F(ChangeManagerTests, ModifyFile_FileCacheLocationSetToExternal_CachesFileT
     EXPECT_EQ("NewContent", SimpleReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_CopyFileTrue_CopiesFileToPersistentLocationAndLeavesOriginal)
     {
     // Arrange
@@ -718,6 +860,9 @@ TEST_F(ChangeManagerTests, ModifyFile_CopyFileTrue_CopiesFileToPersistentLocatio
     EXPECT_TRUE(filePath.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_TwiceWithDifferentFiles_LeavesChangeNumberAndChangesContentAndRemovesOldFile)
     {
     // Arrange
@@ -734,6 +879,9 @@ TEST_F(ChangeManagerTests, ModifyFile_TwiceWithDifferentFiles_LeavesChangeNumber
     EXPECT_EQ("B", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_TwiceWithSameFileName_LeavesChangeNumberAndChangesContentInSameFile)
     {
     // Arrange
@@ -752,6 +900,9 @@ TEST_F(ChangeManagerTests, ModifyFile_TwiceWithSameFileName_LeavesChangeNumberAn
     EXPECT_EQ("B", SimpleReadFile(path1));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_FileAlreadyCached_ReplacesFileAndSetsChangeStatusAndKeepsCacheTag)
     {
     // Arrange
@@ -768,6 +919,9 @@ TEST_F(ChangeManagerTests, ModifyFile_FileAlreadyCached_ReplacesFileAndSetsChang
     EXPECT_EQ("OldTag", cache->ReadFileCacheTag(cache->FindInstance(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFile_SameCachedFilePathPassed_DoesNotChangeFilePathAndSetsChangeStatus)
     {
     // Arrange
@@ -783,6 +937,9 @@ TEST_F(ChangeManagerTests, ModifyFile_SameCachedFilePathPassed_DoesNotChangeFile
     EXPECT_TRUE(path.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_NotExistingInstance_Error)
     {
     auto cache = GetTestCache();
@@ -792,6 +949,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_NotExistingInstance_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithoutFile_Error)
     {
     auto cache = GetTestCache();
@@ -802,6 +962,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithoutFile_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_SuccessAndFileRenamed)
     {
     // Arrange
@@ -816,6 +979,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_SuccessAnd
     EXPECT_EQ(L"Foo.txt", newFilePath.GetFileNameAndExtension());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFileRenamed)
     {
     // Arrange
@@ -834,6 +1000,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFil
     EXPECT_EQ(L"NewName.foo", newFilePath.GetFileNameAndExtension());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithFileInExternalLocation_SuccessAndFileRenamed)
     {
     // Arrange
@@ -847,6 +1016,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithFileInExternalLocation_Suc
     EXPECT_EQ(L"RenamedFile.txt", path.GetFileNameAndExtension());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNameNotChanged_SuccessAndFilePathNotChanged)
     {
     // Arrange
@@ -862,6 +1034,9 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNameNotChan
     EXPECT_EQ(oldFilePath, newFilePath);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNewNameContainsInvalidSymbols_RenamesWithValidFileName)
     {
     // Arrange
@@ -875,12 +1050,18 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNewNameCont
     EXPECT_EQ(L"Foo#Boo.txt", newFilePath.GetFileNameAndExtension());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ChangesIsEmpty_NoChanges_True)
     {
     ChangeManager::Changes changes;
     EXPECT_TRUE(changes.IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ChangesIsEmpty_FileChangeAdded_False)
     {
     ChangeManager::Changes changes;
@@ -888,12 +1069,18 @@ TEST_F(ChangeManagerTests, ChangesIsEmpty_FileChangeAdded_False)
     EXPECT_FALSE(changes.IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, HasChanges_NoChanges_False)
     {
     auto cache = GetTestCache();
     EXPECT_FALSE(cache->GetChangeManager().HasChanges());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, HasChanges_CreatedObject_True)
     {
     auto cache = GetTestCache();
@@ -901,6 +1088,9 @@ TEST_F(ChangeManagerTests, HasChanges_CreatedObject_True)
     EXPECT_TRUE(cache->GetChangeManager().HasChanges());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, HasChanges_CreatedRelationship_True)
     {
     // Arrange
@@ -910,6 +1100,9 @@ TEST_F(ChangeManagerTests, HasChanges_CreatedRelationship_True)
     EXPECT_TRUE(cache->GetChangeManager().HasChanges());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, HasChanges_ChangedFile_True)
     {
     // Arrange
@@ -921,6 +1114,9 @@ TEST_F(ChangeManagerTests, HasChanges_ChangedFile_True)
     EXPECT_TRUE(cache->GetChangeManager().HasChanges());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_NoChanges_Empty)
     {
     // Arrange
@@ -933,6 +1129,9 @@ TEST_F(ChangeManagerTests, GetChanges_NoChanges_Empty)
     EXPECT_TRUE(changes.IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_CreatedObject_ReturnsInstance)
     {
     // Arrange
@@ -948,6 +1147,9 @@ TEST_F(ChangeManagerTests, GetChanges_CreatedObject_ReturnsInstance)
     EXPECT_CONTAINS(changes.GetObjectChanges(), change);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_DeletedObject_ReturnsChanges)
     {
     // Arrange
@@ -964,6 +1166,9 @@ TEST_F(ChangeManagerTests, GetChanges_DeletedObject_ReturnsChanges)
     EXPECT_EQ(1, changes.GetObjectChanges().begin()->GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_ModifiedFile_ReturnsChange)
     {
     // Arrange
@@ -980,6 +1185,9 @@ TEST_F(ChangeManagerTests, GetChanges_ModifiedFile_ReturnsChange)
     EXPECT_CONTAINS(changes.GetFileChanges(), change);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_GetOnlySyncReady_ReturnOnlyReadyInstances)
     {
     // Arrange
@@ -995,6 +1203,9 @@ TEST_F(ChangeManagerTests, GetChanges_GetOnlySyncReady_ReturnOnlyReadyInstances)
     EXPECT_CONTAINS(changes.GetObjectChanges(), change);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedObject_ReturnsInstance)
     {
     // Arrange
@@ -1011,6 +1222,9 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedObject_ReturnsIn
     EXPECT_EQ(instanceB, changes.GetObjectChanges().begin()->GetInstanceKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndModifiedFile_ReturnsChange)
     {
     // Arrange
@@ -1027,6 +1241,9 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndModifiedFile_ReturnsCha
     EXPECT_EQ(instance, changes.GetFileChanges().begin()->GetInstanceKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedRelationship_ReturnsChange)
     {
     // Arrange
@@ -1042,6 +1259,9 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedRelationship_Ret
     EXPECT_EQ(relationship, changes.GetRelationshipChanges().begin()->GetInstanceKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_NotExistingObject_NoChangesStatus)
     {
     // Arrange
@@ -1054,6 +1274,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_NotExistingObject_NoChangesStatus)
     EXPECT_EQ(ChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_NoChanges_ReturnsNoChange)
     {
     // Arrange
@@ -1065,6 +1288,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_NoChanges_ReturnsNoChange)
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, change.GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_CreatedInstance_ReturnsObjectChange)
     {
     // Arrange
@@ -1078,6 +1304,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_CreatedInstance_ReturnsObjectChange)
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_ModifiedObject_ModifiedStatus)
     {
     // Arrange
@@ -1090,6 +1319,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_ModifiedObject_ModifiedStatus)
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, change.GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_DeletedObject_DeletedStatus)
     {
     // Arrange
@@ -1102,6 +1334,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_DeletedObject_DeletedStatus)
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, change.GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_CreatedObjectWithSyncStatusNotReady_SyncStatusNotReady)
     {
     // Arrange
@@ -1113,6 +1348,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_CreatedObjectWithSyncStatusNotReady_S
     EXPECT_EQ(ChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChange_ModificationsOneAfterOther_ChangeNumbersInSequence)
     {
     // Arrange
@@ -1134,6 +1372,9 @@ TEST_F(ChangeManagerTests, GetObjectChange_ModificationsOneAfterOther_ChangeNumb
     EXPECT_LT(changeB.GetChangeNumber(), changeC.GetChangeNumber());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetRelationshipChange_NonExistingRelationship_ReturnsNoChange)
     {
     // Arrange
@@ -1147,6 +1388,9 @@ TEST_F(ChangeManagerTests, GetRelationshipChange_NonExistingRelationship_Returns
     EXPECT_FALSE(change.GetTargetKey().IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetRelationshipChange_NotChangedRelationship_ReturnsNoChange)
     {
     // Arrange
@@ -1161,6 +1405,9 @@ TEST_F(ChangeManagerTests, GetRelationshipChange_NotChangedRelationship_ReturnsN
     EXPECT_EQ(cache->FindInstance({"TestSchema.TestClass", "B"}), change.GetTargetKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetRelationshipChange_CreatedRelationship_ReturnsRelationshipChange)
     {
     // Arrange
@@ -1179,6 +1426,9 @@ TEST_F(ChangeManagerTests, GetRelationshipChange_CreatedRelationship_ReturnsRela
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetFileChange_NoChanges_ReturnsNoChange)
     {
     // Arrange
@@ -1190,6 +1440,9 @@ TEST_F(ChangeManagerTests, GetFileChange_NoChanges_ReturnsNoChange)
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, change.GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetFileChange_ModifiedFile_ReturnsFileChange)
     {
     // Arrange
@@ -1204,6 +1457,9 @@ TEST_F(ChangeManagerTests, GetFileChange_ModifiedFile_ReturnsFileChange)
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncStatus_NonExistingObject_Error)
     {
     // Arrange
@@ -1217,6 +1473,9 @@ TEST_F(ChangeManagerTests, SetSyncStatus_NonExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncStatus_NotChangedObject_Error)
     {
     // Arrange
@@ -1230,6 +1489,9 @@ TEST_F(ChangeManagerTests, SetSyncStatus_NotChangedObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncStatus_CreatedObject_SuccessAndChangesStatus)
     {
     // Arrange
@@ -1242,6 +1504,9 @@ TEST_F(ChangeManagerTests, SetSyncStatus_CreatedObject_SuccessAndChangesStatus)
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetObjectChange(instance).GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncStatus_CreatedRelationship_SuccessAndChangesStatus)
     {
     // Arrange
@@ -1254,6 +1519,9 @@ TEST_F(ChangeManagerTests, SetSyncStatus_CreatedRelationship_SuccessAndChangesSt
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetRelationshipChange(relationship).GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, SetSyncStatus_ModfiedFile_SuccessAndChangesStatus)
     {
     // Arrange
@@ -1267,6 +1535,9 @@ TEST_F(ChangeManagerTests, SetSyncStatus_ModfiedFile_SuccessAndChangesStatus)
     EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetFileChange(instance).GetSyncStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectNotInCache_NoChange)
     {
     // Arrange
@@ -1278,6 +1549,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectNotInCache_NoChange)
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectCached_NoChange)
     {
     // Arrange
@@ -1292,6 +1566,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectCached_NoChange)
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectCreated_Created)
     {
     // Arrange
@@ -1303,6 +1580,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectCreated_Created)
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectModified_Modified)
     {
     // Arrange
@@ -1315,6 +1595,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectModified_Modified)
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectDeleted_Deleted)
     {
     // Arrange
@@ -1327,6 +1610,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectDeleted_Deleted)
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetObjectChangeStatus_CreatedObjectDeleted_Deleted)
     {
     // Arrange
@@ -1339,6 +1625,9 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_CreatedObjectDeleted_Deleted)
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_NotExistingInstance_ReturnsInvalid)
     {
     // Arrange
@@ -1352,6 +1641,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_NotExistingInstance_ReturnsInval
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, revision->GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_NotChangedObject_ReturnsInvalidButFilled)
     {
     // Arrange
@@ -1369,6 +1661,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_NotChangedObject_ReturnsInvalidB
     EXPECT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObject_ReturnsValid)
     {
     // Arrange
@@ -1387,6 +1682,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObject_ReturnsValid)
     ASSERT_NE(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithSyncStatusNotReady_ReturnsWithSameSyncStatus)
     {
     // Arrange
@@ -1405,6 +1703,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithSyncStatusNotRe
     ASSERT_NE(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithProperties_ReturnsAllNonNullProperties)
     {
     // Arrange
@@ -1421,6 +1722,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithProperties_Retu
     EXPECT_EQ(properties, *revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStructProperty_NullStructPropertyNotReturned_REGRESSION)
     {
     // Arrange
@@ -1437,6 +1741,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStruct
     EXPECT_EQ(properties, *revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStructProperty_NonNullStructPropertyIsReturned_REGRESSION)
     {
     // Arrange
@@ -1456,6 +1763,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedObjectWithClassWithStruct
     EXPECT_EQ(properties, *revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObject_ReturnsValid)
     {
     // Arrange
@@ -1475,6 +1785,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObject_ReturnsValid)
     ASSERT_NE(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithSyncStatusNotReady_ReturnsWithSameStatus)
     {
     // Arrange
@@ -1494,6 +1807,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithSyncStatusNotR
     ASSERT_NE(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithProperties_ReturnsModifiedPropertiesOnly)
     {
     // Arrange
@@ -1513,6 +1829,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_ModifiedObjectWithProperties_Ret
     EXPECT_EQ(expected, *revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedObject_ReturnsValid)
     {
     // Arrange
@@ -1532,6 +1851,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedObject_ReturnsValid)
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedObjectWithSyncStatusNotReady_ReturnsWithSameStatus)
     {
     // Arrange
@@ -1551,6 +1873,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedObjectWithSyncStatusNotRe
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedRelationship_ReturnsValid)
     {
     // Arrange
@@ -1569,6 +1894,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedRelationship_ReturnsValid
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedRelationshipWithSyncStatusNotReady_ReturnsWithSameStatus)
     {
     // Arrange
@@ -1587,6 +1915,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_CreatedRelationshipWithSyncStatu
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedRelationship_ReturnsValid)
     {
     // Arrange
@@ -1606,6 +1937,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedRelationship_ReturnsValid
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedRelationshipWithSyncStatusNotReady_ReturnsWithSameStatus)
     {
     // Arrange
@@ -1625,6 +1959,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedRelationshipWithSyncStatu
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedCreatedRelationship_ReturnsValid)
     {
     // Arrange
@@ -1644,6 +1981,9 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedCreatedRelationship_Retur
     ASSERT_EQ(nullptr, revision->GetChangedProperties());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadFileRevision_NotChanged_ReturnsInvalid)
     {
     // Arrange
@@ -1665,6 +2005,9 @@ TEST_F(ChangeManagerTests, ReadFileRevision_NotChanged_ReturnsInvalid)
     EXPECT_EQ("", revision->GetFileCacheTag());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadFileRevision_ModifiedExistingFile_ReturnsValidWithFilePathAndOldTag)
     {
     // Arrange
@@ -1688,6 +2031,9 @@ TEST_F(ChangeManagerTests, ReadFileRevision_ModifiedExistingFile_ReturnsValidWit
     EXPECT_EQ(cache->ReadFilePath(instance), revision->GetFilePath());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadFileRevision_AddedFile_ReturnsValidWithFilePathAndNoTag)
     {
     // Arrange
@@ -1709,6 +2055,9 @@ TEST_F(ChangeManagerTests, ReadFileRevision_AddedFile_ReturnsValidWithFilePathAn
     EXPECT_EQ(cache->ReadFilePath(instance), revision->GetFilePath());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadFileRevision_ModifiedFileWithSyncStatusNotReady_ReturnsWithSameStatus)
     {
     // Arrange
@@ -1729,12 +2078,18 @@ TEST_F(ChangeManagerTests, ReadFileRevision_ModifiedFileWithSyncStatusNotReady_R
     EXPECT_EQ(cache->ReadFilePath(instance), revision->GetFilePath());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_NoChanges_Success)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitLocalDeletions());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedDeletedObject_ChangeRemoved)
     {
     // Arrange
@@ -1748,6 +2103,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedDeletedObject_ChangeRemov
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedObjectDeletedAndCommitedWithCreationRevision_DeletionChangeNotRemoved)
     {
     // Arrange
@@ -1764,6 +2122,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedObjectDeletedAndCommitedW
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_ExistingDeletedObject_ChangeNotRemoved)
     {
     // Arrange
@@ -1777,6 +2138,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_ExistingDeletedObject_ChangeNotR
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedDeletedRelationship_ChangeRemoved)
     {
     // Arrange
@@ -1790,6 +2154,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedDeletedRelationship_Chang
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedRelationshipDeletedAndCommitedWithCreationRevision_DeletionChangeNotRemoved)
     {
     // Arrange
@@ -1806,6 +2173,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedRelationshipDeletedAndCom
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_ExistingDeletedRelationship_ChangeNotRemoved)
     {
     // Arrange
@@ -1819,6 +2189,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_ExistingDeletedRelationship_Chan
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedObjectComitedAndDeleted_DoesNotTreatItAsLocal)
     {
     // Arrange
@@ -1834,6 +2207,9 @@ TEST_F(ChangeManagerTests, CommitLocalDeletions_CreatedObjectComitedAndDeleted_D
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_InvalidRevision_Error)
     {
     // Arrange
@@ -1847,6 +2223,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_InvalidRevision_Error)
     EXPECT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NonExistingObject_Error)
     {
     // Arrange
@@ -1861,6 +2240,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NonExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NotChangedObject_Error)
     {
     // Arrange
@@ -1875,6 +2257,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NotChangedObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectIdIsNotChanged_Error)
     {
     // Arrange
@@ -1889,6 +2274,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectIdIsNotChanged_Er
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectIdIsEmpty_Error)
     {
     // Arrange
@@ -1904,6 +2292,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectIdIsEmpty_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObject_RemovesChangeStatusAndChangesRemoteId)
     {
     // Arrange
@@ -1919,6 +2310,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObject_RemovesChangeSta
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetCachedObjectInfo(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectWithFile_DoesNotCommitFileRevision)
     {
     // Arrange
@@ -1934,6 +2328,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectWithFile_DoesNotC
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToResponses_RemovesItFromResponses)
     {
     // Arrange
@@ -1962,6 +2359,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToRes
     ASSERT_TRUE(cache->IsResponseCached(responseKey2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCache_RemovesOldInstanceAndMovesRootRelationships)
     {
     // Arrange
@@ -1979,6 +2379,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCache_Remov
     EXPECT_TRUE(cache->IsInstanceInRoot("TestRoot", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCacheAndInCachedResponse_InvalidatesCachedResponse)
     {
     // Arrange
@@ -2012,6 +2415,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCacheAndInC
     EXPECT_THAT(responseObjectIds, Contains(ObjectId {"TestSchema.TestClass", "Other"}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_CreatedRelationship_RemovesChangeStatusAndChangesRemoteId)
     {
     // Arrange
@@ -2030,6 +2436,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_CreatedRelationship_RemovesChan
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_NewRelationshipIdIsEmpty_RemovesRelationshipFromCache)
     {
     // Arrange
@@ -2048,6 +2457,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_NewRelationshipIdIsEmpty_Remove
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_NoInstance_ReturnError)
     {
     auto cache = GetTestCache();
@@ -2059,6 +2471,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_NoInstance_ReturnError)
     ASSERT_EQ(ERROR, cache->GetChangeManager().UpdateCreatedInstance({"TestSchema.TestClass", "NotExisting"}, instances.ToWSObjectsResponse(), changedKeys));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_MoreThanOneInstance_ReturnError)
     {
     auto cache = GetTestCache();
@@ -2072,6 +2487,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_MoreThanOneInstance_ReturnError
     ASSERT_EQ(ERROR, cache->GetChangeManager().UpdateCreatedInstance({"TestSchema.TestClass", "A"}, instances.ToWSObjectsResponse(), changedKeys));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithSameClassAndId_UpdatesPropertiesWithoutChangingInstanceKey)
     {
     auto cache = GetTestCache();
@@ -2093,6 +2511,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithSameClassAndId_Upda
     EXPECT_THAT(changedKeys, IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentId_Error)
     {
     auto cache = GetTestCache();
@@ -2104,6 +2525,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentId_Error)
     ASSERT_EQ(ERROR, cache->GetChangeManager().UpdateCreatedInstance({"TestSchema.TestClass", "OldId"}, instances.ToWSObjectsResponse(), changedKeys));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentClassAndSameId_UpdatesClassAndPropertiesAndChangesInstanceKey)
     {
     auto cache = GetTestCache();
@@ -2126,6 +2550,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentClassAndSa
     EXPECT_THAT(changedKeys, Contains(StubBPair(oldInstanceKey, cache->FindInstance({"TestSchema.TestClass2", "Foo"}))));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentClassAndId_Error)
     {
     auto cache = GetTestCache();
@@ -2137,6 +2564,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_InstanceWithDifferentClassAndId
     ASSERT_EQ(ERROR, cache->GetChangeManager().UpdateCreatedInstance({"TestSchema.TestClass", "OldId"}, instances.ToWSObjectsResponse(), changedKeys));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstancee_InstanceWithDifferentClass_RemovesOldInstanceAndMovesRootRelationships)
     {
     auto cache = GetTestCache();
@@ -2158,6 +2588,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstancee_InstanceWithDifferentClass_Rem
     EXPECT_THAT(changedKeys, Contains(StubBPair(oldInstanceKey, cache->FindInstance({"TestSchema.TestClass2", "Foo"}))));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedResponseWithSameClassAndId_InvalidatesCachedResponse)
     {
     auto cache = GetTestCache();
@@ -2187,6 +2620,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedRespon
     EXPECT_THAT(responseObjectIds, Contains(ObjectId {"TestSchema.TestClass", "Other"}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_ChangedClassAndOldInstanceHasCreatedSourceRelationship_PreservesRelationshipWithSameChangeNumber)
     {
     auto cache = GetTestCache();
@@ -2220,6 +2656,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_ChangedClassAndOldInstanceHasCr
     EXPECT_THAT(changedKeys, Contains(StubBPair(relChange.GetInstanceKey(), changes[0].GetInstanceKey())));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_ChangedClassAndOldInstanceHasCreatedTargetRelationship_PreservesRelationshipWithSameChangeNumber)
     {
     auto cache = GetTestCache();
@@ -2253,6 +2692,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_ChangedClassAndOldInstanceHasCr
     EXPECT_THAT(changedKeys, Contains(StubBPair(relChange.GetInstanceKey(), changes[0].GetInstanceKey())));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedResponseWhenClassChanges_InvalidatesCachedResponse)
     {
     auto cache = GetTestCache();
@@ -2281,6 +2723,9 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedRespon
     EXPECT_THAT(responseObjectIds, Contains(ObjectId {"TestSchema.TestClass", "Other"}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObject_RemovesChangeStatus)
     {
     // Arrange
@@ -2295,6 +2740,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObject_RemovesChangeSt
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_MultipleModifiedObjects_CommitsOnlySpecified)
     {
     // Arrange
@@ -2317,6 +2765,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_MultipleModifiedObjects_Commit
     EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["TestProperty"]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedObject_RemovesChangeStatus)
     {
     // Arrange
@@ -2331,6 +2782,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedObject_RemovesChangeSta
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedRelationship_RemovesChangeStatus)
     {
     // Arrange
@@ -2344,6 +2798,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedRelationship_RemovesCha
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitFileRevision_NotChanged_Error)
     {
     // Arrange
@@ -2358,6 +2815,9 @@ TEST_F(ChangeManagerTests, CommitFileRevision_NotChanged_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFile_RemovesChangeStatusAndLeavesFileInSameLocationAndUpdatesCacheTag)
     {
     // Arrange
@@ -2377,6 +2837,9 @@ TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFile_RemovesChangeStatusAn
     EXPECT_EQ("NewTag", cache->ReadFileCacheTag(cache->FindInstance(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileInExternalLocation_RemovesChangeStatusAndLeavesFileInSameLocation)
     {
     // Arrange
@@ -2396,6 +2859,9 @@ TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileInExternalLocation_Rem
     EXPECT_EQ(FileCache::External, cache->GetFileCacheLocation(cache->FindInstance(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasRead_PreservesNewChangesAndLeavesAsModified)
     {
     // Arrange
@@ -2414,6 +2880,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     EXPECT_EQ(ToJson(R"({"TestProperty3":"C2"})"), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasRead_PreservesNewChangesThatChangedSameProperties)
     {
     // Arrange
@@ -2431,6 +2900,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     EXPECT_EQ(ToJson(R"({"TestProperty":"A2", "TestProperty2":"B2"})"), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasReadAndCommittedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2452,6 +2924,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRev
     EXPECT_EQ("B", properties["TestProperty"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectDeletedAfterRevisionWasRead_LeavesAsDeleted)
     {
     // Arrange
@@ -2468,6 +2943,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectDeletedAfterRevi
     EXPECT_EQ(0, CountClassInstances(*cache, "TestSchema.TestClass"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectDeletedAfterRevisionWasReadAndCommittedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2486,6 +2964,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectDeletedAfterRevi
     EXPECT_EQ(0, CountClassInstances(*cache, "TestSchema.TestClass"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevisionWasRead_PreservesNewChangesAndLeavesAsModified)
     {
     // Arrange
@@ -2505,6 +2986,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     EXPECT_EQ(ToJson(R"({"TestProperty2":"B2"})"), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevisionWasReadAndCommitedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2529,6 +3013,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectModifiedAfterRevi
     EXPECT_EQ("B2", properties["TestProperty2"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectDeletedAfterRevisionWasRead_LeavesAsDeleted)
     {
     // Arrange
@@ -2545,6 +3032,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectDeletedAfterRevis
     EXPECT_EQ(0, CountClassInstances(*cache, "TestSchema.TestClass"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectDeletedAfterRevisionWasReadAndCommitedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2563,6 +3053,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectDeletedAfterRevis
     EXPECT_EQ(0, CountClassInstances(*cache, "TestSchema.TestClass"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipDeletedAfterRevisionWasRead_LeavesAsDeleted)
     {
     // Arrange
@@ -2583,6 +3076,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipDeletedAfte
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, source, target));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipDeletedAfterRevisionWasReadAndCommitedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2605,6 +3101,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipDeletedAfte
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, source, target));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileModifiedAfterRevisionWasRead_PreservesNewFileAndLeavesAsModified)
     {
     // Arrange
@@ -2625,6 +3124,9 @@ TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileModifiedAfterRevisionW
     EXPECT_EQ("B", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileModifiedAfterRevisionWasReadAndCommitedSecondTime_LeavesAsNoChange)
     {
     // Arrange
@@ -2644,6 +3146,9 @@ TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileModifiedAfterRevisionW
     EXPECT_EQ("B", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetCreatedRelationships_NoChangedRelationshipsForThatInstance_ReturnsNone)
     {
     // Arrange
@@ -2660,6 +3165,9 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_NoChangedRelationshipsForThat
     ASSERT_TRUE(changes.empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetCreatedRelationships_CreatedRelationships_ReturnsRelationships)
     {
     // Arrange
@@ -2687,6 +3195,9 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_CreatedRelationships_ReturnsR
         }));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, GetCreatedRelationships_DeletedRelationship_DoesNotReturnDeletedRelationship)
     {
     // Arrange
@@ -2702,6 +3213,9 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_DeletedRelationship_DoesNotRe
     ASSERT_EQ(0, changes.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedPropertyInstance_ReturnsChangedPropertiesOnly)
     {
     auto cache = GetTestCache();
@@ -2719,6 +3233,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedPropertyInstance_Retur
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_MultipleModifiedInstancesWithSameValues_ReturnsNoChanges)
     {
     // Arrange
@@ -2735,6 +3252,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_MultipleModifiedInstancesWithS
     EXPECT_EQ(Json::Value::GetNull(), cb["TestProperty"]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_ReturnsChangedPropertiesOnly)
     {
     auto cache = GetTestCache();
@@ -2752,6 +3272,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_Retu
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedTwiceToOriginalVersion_ReturnsNoModifiedProperties)
     {
     auto cache = GetTestCache();
@@ -2772,6 +3295,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedTwiceToOriginalVersion
     EXPECT_EQ(expected, properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedInstanceLabel_ReturnsChangedPropertiesWithoutECJsonProperties)
     {
     auto cache = GetTestCache();
@@ -2788,6 +3314,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedInstanceLabel_ReturnsC
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModification_ReturnsChangesBetweenLatestAndLocalVersions)
     {
     // Arrange
@@ -2807,6 +3336,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModifica
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_NotExistingInstance_ReturnsError)
     {
     auto cache = GetTestCache();
@@ -2817,6 +3349,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_NotExistingInstance_ReturnsErr
     EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_NotChangedInstance_ReturnsError)
     {
     auto cache = GetTestCache();
@@ -2827,6 +3362,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_NotChangedInstance_ReturnsErro
     EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_CreatedInstance_ReturnsError)
     {
     auto cache = GetTestCache();
@@ -2837,6 +3375,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_CreatedInstance_ReturnsError)
     EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedAfterInstanceWasCreated_ReturnsErrorForCreatedObject)
     {
     auto cache = GetTestCache();
@@ -2850,6 +3391,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedAfterInstanceWasCreate
     ASSERT_EQ(ERROR, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ReadModifiedProperties_DeletedInstance_ReturnsError)
     {
     auto cache = GetTestCache();
@@ -2862,6 +3406,9 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_DeletedInstance_ReturnsError)
     EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_InstanceIsRemoved_BackupInstanceIsRemoved)
     {
     auto cache = GetTestCache();
@@ -2876,6 +3423,9 @@ TEST_F(ChangeManagerTests, ModifyObject_InstanceIsRemoved_BackupInstanceIsRemove
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedInstance_BackupInstanceIsRemoved)
     {
     auto cache = GetTestCache();
@@ -2892,6 +3442,9 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedInstance_BackupInstanc
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_NonExistingInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2900,6 +3453,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_NonExistingInstance_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_NonModifiedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2909,6 +3465,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_NonModifiedInstance_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_CreatedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2918,6 +3477,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_CreatedInstance_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_DeletedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2928,6 +3490,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_DeletedInstance_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstance_RevertsToCachedState)
     {
     auto cache = GetTestCache();
@@ -2943,6 +3508,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstance_RevertsToCached
     EXPECT_EQ("B", properties["TestProperty2"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_MultipleModifiedObjects_RemovesChangeForSpecifiedObjectOnly)
     {
     // Arrange
@@ -2961,6 +3529,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_MultipleModifiedObjects_RemovesC
     EXPECT_EQ("NewC", ReadInstance(*cache, c)["TestProperty"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Error)
     {
     auto cache = GetTestCache();
@@ -2980,6 +3551,9 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Er
     EXPECT_EQ("B1", properties["TestProperty2"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotExistingInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2988,6 +3562,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotExistingInstance_Erro
     ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, nonExistingInstance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotChangedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -2996,6 +3573,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotChangedInstance_Error
     ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_DeletedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -3005,6 +3585,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_DeletedInstance_Error)
     ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_ModifiedInstance_Error)
     {
     auto cache = GetTestCache();
@@ -3014,6 +3597,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_ModifiedInstance_Error)
     ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedRelationship_Error)
     {
     auto cache = GetTestCache();
@@ -3022,6 +3608,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedRelationship_Erro
     ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, relationship));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndNotExistingResponse_CreatesResponseAndAddsObjectToIt)
     {
     auto cache = GetTestCache();
@@ -3042,6 +3631,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndNotExist
     EXPECT_CONTAINS(objectIds, cache->FindInstance(instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExistingResponse_AddsObjectToExistingInstanceList)
     {
     auto cache = GetTestCache();
@@ -3063,6 +3655,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExisting
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleCreatedObjects_AddsObjectsToResponse)
     {
     auto cache = GetTestCache();
@@ -3080,6 +3675,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleCreatedObjects_A
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleResponses_AddsObjectsToResponses)
     {
     auto cache = GetTestCache();
@@ -3101,6 +3699,9 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleResponses_AddsOb
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_NotExistingInstance_Error)
     {
     auto cache = GetTestCache();
@@ -3109,6 +3710,9 @@ TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_NotExistingInstance
     ASSERT_EQ(ERROR, cache->GetChangeManager().RemoveCreatedInstanceFromResponse(responseKey, nonExistingInstance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_CreatedInstanceWasNotAdded_Error)
     {
     auto cache = GetTestCache();
@@ -3117,6 +3721,9 @@ TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_CreatedInstanceWasN
     ASSERT_EQ(ERROR, cache->GetChangeManager().RemoveCreatedInstanceFromResponse(responseKey, instance));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_CreatedInstanceWasAdded_RemovesInstanceFromResponse)
     {
     auto cache = GetTestCache();
