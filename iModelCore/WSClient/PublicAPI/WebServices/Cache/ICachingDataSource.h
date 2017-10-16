@@ -145,7 +145,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR objectId,
             DataOrigin origin,
-            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 

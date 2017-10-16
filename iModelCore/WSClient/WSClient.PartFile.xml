@@ -265,6 +265,7 @@
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/IntegrationTests.json</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/PerformanceTests.json</Files>
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/DgnPlatformTest.ecschema.xml</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema.xml</Files>
         </Bindings>
     </Part>
 

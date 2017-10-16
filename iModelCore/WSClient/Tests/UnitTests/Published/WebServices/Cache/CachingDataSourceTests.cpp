@@ -1129,7 +1129,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithoutNameAndSizeAndFileHasInstanceLabel)
+TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithGeneratedFileNameAsLabelMightBeNotSuitable)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
@@ -1150,14 +1150,14 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         {
         EXPECT_EQ(0, bytesTransfered);
         EXPECT_EQ(0, bytesTotal);
-        EXPECT_EQ("TestLabel", label);
+        EXPECT_EQ("", label);
         onProgressCalled++;
         };
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        EXPECT_EQ(L"TestLabel", filePath.GetFileNameAndExtension());
+        EXPECT_EQ(L"TestLabeledClass_TestId", filePath.GetFileNameAndExtension());
         progress(0, 42);
         return CreateCompletedAsyncTask(WSFileResult());
         }));
@@ -1628,7 +1628,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObject)
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
 
-    ds->GetObject(ObjectId("TestSchema.TestClass", "Foo"), CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->Wait();
+    ds->GetObject(ObjectId("TestSchema.TestClass", "Foo"), CachingDataSource::DataOrigin::CachedOrRemoteData)->Wait();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2458,7 +2458,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndConnectionError_Re
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::Status::NetworkErrorsOccured, result.GetError().GetStatus());
@@ -2482,7 +2482,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
@@ -2511,7 +2511,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(newInstances.ToWSObjectsResult())));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteOrCachedData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
@@ -2538,7 +2538,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
