@@ -60,7 +60,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -98,7 +98,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // options
@@ -140,7 +140,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "Widget", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -179,7 +179,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "WrongSchemaName", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "WrongSchemaName", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -216,7 +216,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
     
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "ClassE", true));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "ClassE", true));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -258,7 +258,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -300,7 +300,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -342,7 +342,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -394,7 +394,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -436,7 +436,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -472,7 +472,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", m_sprocketClass->GetFullName(), false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", m_sprocketClass->GetFullName(), false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -526,7 +526,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -566,7 +566,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -596,7 +596,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -632,7 +632,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "this.IntProperty=2", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "this.IntProperty=2", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -671,7 +671,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -711,7 +711,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", ""));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -784,7 +784,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -826,7 +826,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -871,7 +871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassAHasBAndC", "RulesEngineTest:BaseOfBAndC"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassAHasBAndC", "RulesEngineTest:BaseOfBAndC"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -927,7 +927,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:DoesNotExist", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:DoesNotExist", ""));
     rules->AddPresentationRule(*rule);
 
     // note: query builder asserts when the class / relationships is not found - ignore that
@@ -967,7 +967,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", ""));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1009,7 +1009,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", ""));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1053,7 +1053,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "this.Description=\"Gadget2\"", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "this.Description=\"Gadget2\"", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1114,7 +1114,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Both, "", "RulesEngineTest:ClassN"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Both, "", "RulesEngineTest:ClassN"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1189,7 +1189,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward, 
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward, 
         "RulesEngineTest:ClassNGroupsClassN,ClassNOwnsClassO,ClassOHasClassP", "RulesEngineTest:ClassN,ClassO,ClassP"));
     rules->AddPresentationRule(*rule);
     
@@ -1229,10 +1229,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label3", 1200, "this.MyID"));
-    rule->GetSpecificationsR().push_back(specification);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.MyID"));
+    rule->AddSpecification(*specification);
     rules->AddPresentationRule(*rule);
 
     // options
@@ -1297,12 +1297,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1368,7 +1368,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
         
     // request for content
@@ -1466,7 +1466,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesCustomPropertyCategoryS
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
     
     // override the category supplier
@@ -1526,9 +1526,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     rules->AddPresentationRule(*rule);
 
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,MyID", 1000, true));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,MyID", 1000, true));
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1587,9 +1587,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID,IntProperty", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1657,7 +1657,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Sprocket", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1751,7 +1751,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1816,7 +1816,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Sprocket", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1903,9 +1903,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1976,9 +1976,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
         "RulesEngineTest:GadgetHasSprockets,WidgetHasGadget", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2039,9 +2039,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2129,9 +2129,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
         rel->GetFullName(), baseRelatedClass->GetFullName(), "RelatedProperty", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2181,9 +2181,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2252,9 +2252,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2325,7 +2325,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2371,7 +2371,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2418,7 +2418,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2462,7 +2462,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2506,7 +2506,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2549,7 +2549,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2589,8 +2589,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassH", false);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PointProperty", 1000, true));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2638,8 +2638,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
 
     ContentInstancesOfSpecificClassesSpecification *specWidget = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
     ContentInstancesOfSpecificClassesSpecification *specGadget = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(specWidget);
-    rule->GetSpecificationsR().push_back(specGadget);
+    rule->AddSpecification(*specWidget);
+    rule->AddSpecification(*specGadget);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2686,8 +2686,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // options
@@ -2747,7 +2747,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification *specInstance = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(specInstance);
+    rule->AddSpecification(*specInstance);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2827,7 +2827,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification *specInstance = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(specInstance);
+    rule->AddSpecification(*specInstance);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2863,7 +2863,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str(), false);
@@ -2891,13 +2891,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntCreateFieldsIfSpecifi
     rules->AddPresentationRule(*rule);
 
     SelectedNodeInstancesSpecification* spec1 = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    spec1->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec1->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec1);
+    rule->AddSpecification(*spec1);
     
     ContentRelatedInstancesSpecification* spec2 = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket");
-    rule->GetSpecificationsR().push_back(spec2);
+    rule->AddSpecification(*spec2);
 
     // options
     RulesDrivenECPresentationManager::ContentDescriptorOptions options(rules->GetRuleSetId().c_str());
@@ -2946,12 +2946,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,Widget", 1000, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,Widget", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2994,12 +2994,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
         "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -3046,12 +3046,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3098,12 +3098,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassB,ClassC", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassC");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3156,12 +3156,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:BaseOfBandC", true);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassC");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3211,12 +3211,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*rule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3273,12 +3273,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
     rules->AddPresentationRule(*rule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3349,13 +3349,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
     rules->AddPresentationRule(*rule);
 
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "NonExistingClass");//There is no such class in database
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3408,11 +3408,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3476,7 +3476,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3521,10 +3521,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3566,10 +3566,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3614,10 +3614,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentRelatedInstancesSpecification* spec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Widget");
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3657,11 +3657,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 900, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3701,11 +3701,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3745,11 +3745,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,LongProperty", 1000, false));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,IntProperty,LongProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,LongProperty", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,IntProperty,LongProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3792,11 +3792,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassF", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1500, true)); // base class specification
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty,PropertyF", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1500, true)); // base class specification
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty,PropertyF", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3842,12 +3842,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassF", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
     
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3888,12 +3888,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3933,13 +3933,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 900, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3979,13 +3979,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description", 1000, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4025,10 +4025,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "IntEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4063,10 +4063,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4101,13 +4101,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "GadgetEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "GadgetEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4148,12 +4148,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "IntEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4194,12 +4194,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "ClassFIntEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "ClassFIntEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4239,7 +4239,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4294,7 +4294,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4351,7 +4351,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4418,7 +4418,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4474,7 +4474,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4522,9 +4522,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
         "RulesEngineTest:Widget", "", RelationshipMeaning::RelatedInstance));
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4573,7 +4573,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentRelatedInstancesSpecificationP spec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadgets", "");
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4622,7 +4622,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "",
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "",
         "RulesEngineTest:ClassE,ClassG", false));
     rules->AddPresentationRule(*contentRule);
 
@@ -4683,7 +4683,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -4774,7 +4774,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -4851,7 +4851,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -4925,7 +4925,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -4987,7 +4987,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5058,7 +5058,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5121,7 +5121,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5182,7 +5182,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5250,7 +5250,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5355,7 +5355,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5463,7 +5463,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5546,7 +5546,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5623,7 +5623,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5688,7 +5688,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5763,7 +5763,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5827,7 +5827,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -5910,7 +5910,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6044,7 +6044,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6141,7 +6141,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -6229,7 +6229,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -6306,7 +6306,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6400,7 +6400,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6478,7 +6478,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6548,7 +6548,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -6614,7 +6614,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6707,7 +6707,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
@@ -6770,7 +6770,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -6896,9 +6896,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", parentClass->GetFullName(), false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), 
         childClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -7154,9 +7154,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -7283,9 +7283,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -7400,9 +7400,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -7466,10 +7466,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
-    spec->GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(
-        new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    spec->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -7559,10 +7559,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
-    spec->GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(
-        new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    spec->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -7625,7 +7625,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("SelectedNode.ECInstance.IsOfClass(\"ClassE\", \"RulesEngineTest\") ANDALSO SelectedNode.ClassName = \"ClassF\"", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -7650,7 +7650,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("SelectedNode.ECInstance.IntProperty = 123", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -7680,9 +7680,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
         "IntProperty", RelationshipMeaning::SameInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -7724,9 +7724,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
         "IntProperty", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -7769,7 +7769,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -7802,7 +7802,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -7865,7 +7865,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -7925,10 +7925,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     ruleSet->AddPresentationRule(*rule);
     ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
     ContentInstancesOfSpecificClassesSpecificationP sprocketSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Sprocket", true);
-    gadgetSpec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Widget", 1500, true));
-    sprocketSpec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Gadget", 1500, true));
-    rule->GetSpecificationsR().push_back(gadgetSpec);
-    rule->GetSpecificationsR().push_back(sprocketSpec);
+    gadgetSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Widget", 1500, true));
+    sprocketSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Gadget", 1500, true));
+    rule->AddSpecification(*gadgetSpec);
+    rule->AddSpecification(*sprocketSpec);
 
     // validate content descriptor
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());

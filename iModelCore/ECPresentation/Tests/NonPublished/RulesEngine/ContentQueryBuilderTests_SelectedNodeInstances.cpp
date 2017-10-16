@@ -148,7 +148,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesHiddenProperty)
     {
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PropertyC", 1000, false));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC", 1000, false));
     
     TestParsedSelectionInfo info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
@@ -171,7 +171,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     {
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PropertyC,PropertyD", 1000, false));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC,PropertyD", 1000, false));
     
     TestParsedSelectionInfo info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
@@ -195,8 +195,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     ECClassCP class2 = GetECClass("SchemaComplex", "Class2");
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "", false);
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PropertyB", 1000, false));
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PropertyC", 1000, false));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyB", 1000, false));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC", 1000, false));
     
     TestParsedSelectionInfo info({
         bpair<ECClassCP, ECInstanceId>(class2, {ECInstanceId((uint64_t)123)}), 
@@ -222,7 +222,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsSingleRelatedPropert
     {
     ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "IntProperty", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*gadgetClass, ECInstanceId((uint64_t)123));
@@ -246,7 +246,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsMultipleRelatedPrope
     {
     ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "IntProperty,LongProperty", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*gadgetClass, ECInstanceId((uint64_t)123));    
@@ -270,7 +270,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsAllRelatedProperties
     {
     ECClassCP sprocketClass = GetECClass("RulesEngineTest", "Sprocket");
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Sprocket", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*sprocketClass, ECInstanceId((uint64_t)123));
@@ -294,7 +294,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBackwardRelatedPrope
     {
     ECClassCP class2 = GetECClass("SchemaComplex", "Class2");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class2", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "SchemaComplex:Class1HasClass2And3", "SchemaComplex:Class1", "", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*class2, ECInstanceId((uint64_t)123));
@@ -323,7 +323,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsBothDirectionsRelate
     ECClassCP gadget = GetECClass("RulesEngineTest", "Gadget");
 
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Both,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both,
         "RulesEngineTest:WidgetHasGadget,GadgetHasSprocket", "", "IntProperty,Gadget", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*gadget, ECInstanceId((uint64_t)123));
@@ -347,7 +347,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsPropertiesOfTheSameC
     {
     ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget,WidgetHasGadgets", "", "Description", RelationshipMeaning::RelatedInstance));
     
     TestParsedSelectionInfo info(*gadgetClass, ECInstanceId((uint64_t)123));
@@ -373,9 +373,9 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedPropertiesOfTh
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Sprocket", false);
     RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "", "_none_", RelationshipMeaning::RelatedInstance);
-    relatedPropertiesSpec->GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget,WidgetHasGadgets", "", "IntProperty", RelationshipMeaning::RelatedInstance));
-    spec.GetRelatedPropertiesR().push_back(relatedPropertiesSpec);
+    spec.AddRelatedProperty(*relatedPropertiesSpec);
     
     TestParsedSelectionInfo info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
@@ -400,9 +400,9 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Sprocket", false);
     RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "", "_none_", RelationshipMeaning::RelatedInstance);
-    relatedPropertiesSpec->GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget", "", "Description", RelationshipMeaning::RelatedInstance));
-    spec.GetRelatedPropertiesR().push_back(relatedPropertiesSpec);
+    spec.AddRelatedProperty(*relatedPropertiesSpec);
     
     TestParsedSelectionInfo info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
@@ -427,9 +427,9 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_AddsNestedRelatedPropert
     SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Sprocket", false);
     RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "", "Description", RelationshipMeaning::RelatedInstance);
-    relatedPropertiesSpec->GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadget", "", "Description", RelationshipMeaning::RelatedInstance));
-    spec.GetRelatedPropertiesR().push_back(relatedPropertiesSpec);
+    spec.AddRelatedProperty(*relatedPropertiesSpec);
     
     TestParsedSelectionInfo info(*sprocketClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);

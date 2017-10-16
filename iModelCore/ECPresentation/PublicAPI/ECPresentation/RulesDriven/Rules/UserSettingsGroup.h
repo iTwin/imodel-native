@@ -35,6 +35,9 @@ struct UserSettingsGroup : public PresentationKey
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT UserSettingsGroup ();
@@ -51,14 +54,14 @@ struct UserSettingsGroup : public PresentationKey
         //! Label of category that is used to group all the settings. If it is null, no category will be created.
         ECPRESENTATION_EXPORT Utf8StringCR                GetCategoryLabel (void) const;
 
-        //! Returns a list of UserSettingsItems.
-        ECPRESENTATION_EXPORT UserSettingsItemList&       GetSettingsItemsR (void);
+        //! Add UserSettingsItem.
+        ECPRESENTATION_EXPORT void AddSettingsItem (UserSettingsItemR item);
         
         //! Returns a list of UserSettingsItems.
         ECPRESENTATION_EXPORT UserSettingsItemList const& GetSettingsItems (void) const;
 
-        //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
-        ECPRESENTATION_EXPORT UserSettingsGroupList&      GetNestedSettingsR (void);
+        //! Add nested UserSettingGroup.
+        ECPRESENTATION_EXPORT void AddNestedSettings (UserSettingsGroupR group);
         
         //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
         ECPRESENTATION_EXPORT UserSettingsGroupList const& GetNestedSettings (void) const;
@@ -69,13 +72,17 @@ Implementation of UserSettingsItem definition. It represents a single user setti
 UserSettingsGroup.
 * @bsiclass                                     Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UserSettingsItem
+struct UserSettingsItem : HashableBase
     {
     private:
         Utf8String  m_id;
         Utf8String  m_label;
         Utf8String  m_options;
         Utf8String  m_defaultValue;
+
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

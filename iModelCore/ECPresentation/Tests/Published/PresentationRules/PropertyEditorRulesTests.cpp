@@ -49,7 +49,7 @@ TEST_F(PropertyEditorRulesTests, WritesToXml)
     xml->AddNewElement("Root", nullptr, nullptr);
 
     PropertyEditorsSpecification spec("Property1", "Editor1");
-    spec.GetParametersR().push_back(new PropertyEditorJsonParameters());
+    spec.AddParameter(*new PropertyEditorJsonParameters());
     spec.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""

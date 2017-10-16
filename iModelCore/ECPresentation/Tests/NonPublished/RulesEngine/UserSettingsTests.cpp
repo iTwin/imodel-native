@@ -185,11 +185,11 @@ TEST_F(UserSettingsTests, InitializesFromRules)
     {
     UserSettingsGroupList rules;
     UserSettingsGroupP group1 = new UserSettingsGroup("Group1");
-    group1->GetSettingsItemsR().push_back(new UserSettingsItem("Item1_Id", "Item1_Label", "YesNo", "true"));
-    group1->GetSettingsItemsR().push_back(new UserSettingsItem("Item2_Id", "Item2_Label", "ShowHide", "false"));
+    group1->AddSettingsItem(*new UserSettingsItem("Item1_Id", "Item1_Label", "YesNo", "true"));
+    group1->AddSettingsItem(*new UserSettingsItem("Item2_Id", "Item2_Label", "ShowHide", "false"));
     UserSettingsGroupP group2 = new UserSettingsGroup("Group2");
-    group2->GetSettingsItemsR().push_back(new UserSettingsItem("Item3_Id", "Item3_Label", "StringValue", "DefaultStringValue"));
-    group2->GetSettingsItemsR().push_back(new UserSettingsItem("Item4_Id", "Item4_Label", "IntValue", "999"));
+    group2->AddSettingsItem(*new UserSettingsItem("Item3_Id", "Item3_Label", "StringValue", "DefaultStringValue"));
+    group2->AddSettingsItem(*new UserSettingsItem("Item4_Id", "Item4_Label", "IntValue", "999"));
     rules.push_back(group1);
     rules.push_back(group2);
 
@@ -249,9 +249,9 @@ TEST_F(UserSettingsTests, InitializesFromNestedRules)
     UserSettingsGroupList rules;
     UserSettingsGroupP group = new UserSettingsGroup("Group");
     UserSettingsGroupP nestedGroup = new UserSettingsGroup("NestedGroup");
-    group->GetNestedSettingsR().push_back(nestedGroup);
-    nestedGroup->GetSettingsItemsR().push_back(new UserSettingsItem("Item1_Id", "Item1_Label", "", ""));
-    nestedGroup->GetSettingsItemsR().push_back(new UserSettingsItem("Item2_Id", "Item2_Label", "", ""));
+    group->AddNestedSettings(*nestedGroup);
+    nestedGroup->AddSettingsItem(*new UserSettingsItem("Item1_Id", "Item1_Label", "", ""));
+    nestedGroup->AddSettingsItem(*new UserSettingsItem("Item2_Id", "Item2_Label", "", ""));
     rules.push_back(group);
 
     bset<Utf8String> expectedKeys;
@@ -299,11 +299,11 @@ TEST_F(UserSettingsTests, InitializesFromRulesWithDefaults)
     {
     UserSettingsGroupList rules;
     UserSettingsGroupP group = new UserSettingsGroup("Group");
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("Item1_Id", "Item1_Label", "YesNo", ""));
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("Item2_Id", "Item2_Label", "ShowHide", ""));
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("Item3_Id", "Item3_Label", "StringValue", ""));
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("Item4_Id", "Item4_Label", "IntValue", ""));
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("Item5_Id", "Item5_Label", "", ""));
+    group->AddSettingsItem(*new UserSettingsItem("Item1_Id", "Item1_Label", "YesNo", ""));
+    group->AddSettingsItem(*new UserSettingsItem("Item2_Id", "Item2_Label", "ShowHide", ""));
+    group->AddSettingsItem(*new UserSettingsItem("Item3_Id", "Item3_Label", "StringValue", ""));
+    group->AddSettingsItem(*new UserSettingsItem("Item4_Id", "Item4_Label", "IntValue", ""));
+    group->AddSettingsItem(*new UserSettingsItem("Item5_Id", "Item5_Label", "", ""));
     rules.push_back(group);
     
     Json::Value localStateValues;
@@ -345,7 +345,7 @@ TEST_F(UserSettingsTests, InitializingFromRulesDoesntOverwriteLocalStateValues)
     {
     UserSettingsGroupList rules;
     UserSettingsGroupP group = new UserSettingsGroup("Group");
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("SettingId", "ItemLabel", "StringValue", "DefaultValue"));
+    group->AddSettingsItem(*new UserSettingsItem("SettingId", "ItemLabel", "StringValue", "DefaultValue"));
     rules.push_back(group);
 
     Json::Value localStateValues;
@@ -385,7 +385,7 @@ TEST_F(UserSettingsTests, LocalizesLabels)
 
     UserSettingsGroupList rules;
     UserSettingsGroupP group = new UserSettingsGroup("@GroupLabelId@");
-    group->GetSettingsItemsR().push_back(new UserSettingsItem("ItemId", "@ItemLabelId@", "", ""));
+    group->AddSettingsItem(*new UserSettingsItem("ItemId", "@ItemLabelId@", "", ""));
     rules.push_back(group);
     
     GetSettings().InitFrom(rules);

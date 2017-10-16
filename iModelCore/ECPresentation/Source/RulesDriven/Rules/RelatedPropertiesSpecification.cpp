@@ -145,7 +145,12 @@ RelatedPropertiesSpecificationList const& RelatedPropertiesSpecification::GetNes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecificationList& RelatedPropertiesSpecification::GetNestedRelatedPropertiesR() { return m_nestedRelatedPropertiesSpecification; }
+void RelatedPropertiesSpecification::AddNestedRelatedProperty(RelatedPropertiesSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_nestedRelatedPropertiesSpecification.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
@@ -156,3 +161,26 @@ RelationshipMeaning RelatedPropertiesSpecification::GetRelationshipMeaning() con
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelatedPropertiesSpecification::SetRelationshipMeaning(RelationshipMeaning value) { m_relationshipMeaning = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 RelatedPropertiesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
+    md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
+    md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
+    md5.Add(m_propertyNames.c_str(), m_propertyNames.size());
+    md5.Add(&m_relationshipMeaning, sizeof(m_relationshipMeaning));
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RelatedPropertiesSpecificationP spec : m_nestedRelatedPropertiesSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }

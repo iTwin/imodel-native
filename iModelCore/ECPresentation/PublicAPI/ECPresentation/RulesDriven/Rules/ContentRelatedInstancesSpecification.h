@@ -44,6 +44,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
         //! Clones this content specification.
         virtual ContentSpecification* _Clone() const override {return new ContentRelatedInstancesSpecification(*this);}
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification ();

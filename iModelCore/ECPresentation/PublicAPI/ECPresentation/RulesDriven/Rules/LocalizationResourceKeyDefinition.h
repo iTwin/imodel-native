@@ -33,6 +33,9 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT LocalizationResourceKeyDefinition ();

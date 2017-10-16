@@ -87,14 +87,24 @@ void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode) const
 Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               01/2013
+* @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsItemList& UserSettingsGroup::GetSettingsItemsR (void) { return m_settingsItems; }
+void UserSettingsGroup::AddSettingsItem(UserSettingsItemR item) 
+    {
+    InvalidateHash();
+    item.SetParent(this);
+    m_settingsItems.push_back(&item);
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               01/2013
+* @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroupList& UserSettingsGroup::GetNestedSettingsR (void) { return m_nestedSettings; }
+void UserSettingsGroup::AddNestedSettings(UserSettingsGroupR group)
+    {
+    InvalidateHash();
+    group.SetParent(this);
+    m_nestedSettings.push_back(&group);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
@@ -105,6 +115,28 @@ UserSettingsItemList const& UserSettingsGroup::GetSettingsItems (void) const { r
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsGroupList const& UserSettingsGroup::GetNestedSettings (void) const { return m_nestedSettings; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 UserSettingsGroup::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    md5.Add(m_categoryLabel.c_str(), m_categoryLabel.size());
+    Utf8String currentHash = md5.GetHashString();
+
+    for (UserSettingsGroupP group : m_nestedSettings)
+        {
+        Utf8StringCR groupHash = group->GetHash(currentHash.c_str());
+        md5.Add(groupHash.c_str(), groupHash.size());
+        }
+    for (UserSettingsItemP item : m_settingsItems)
+        {
+        Utf8StringCR itemHash = item->GetHash(currentHash.c_str());
+        md5.Add(itemHash.c_str(), itemHash.size());
+        }
+    return md5;
+    }
 
 
 
@@ -184,3 +216,18 @@ Utf8StringCR UserSettingsItem::GetOptions (void) const          { return m_optio
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR UserSettingsItem::GetDefaultValue (void) const     { return m_defaultValue; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 UserSettingsItem::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_id.c_str(), m_id.size());
+    md5.Add(m_label.c_str(), m_label.size());
+    md5.Add(m_options.c_str(), m_options.size());
+    md5.Add(m_defaultValue.c_str(), m_defaultValue.size());
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    return md5;
+    }

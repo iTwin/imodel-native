@@ -80,8 +80,8 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
         });
 
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic2:Class2", true);
-    spec.GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("Label@LocalizationId@_1", 1200, "\"Value\" & 1"));
-    spec.GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("Label@LocalizationId@_2", 1500, "this.Name & \"Test\""));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_1", 1200, "\"Value\" & 1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_2", 1500, "this.Name & \"Test\""));
     
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());

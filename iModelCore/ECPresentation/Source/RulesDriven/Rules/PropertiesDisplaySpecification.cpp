@@ -46,3 +46,17 @@ void PropertiesDisplaySpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     relatedPropertiesNode->AddAttributeStringValue(PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES, m_propertyNames.c_str());
     relatedPropertiesNode->AddAttributeInt32Value(PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PRIORITY, m_priority);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertiesDisplaySpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_propertyNames.c_str(), m_propertyNames.size());
+    md5.Add(&m_priority, sizeof(m_priority));
+    md5.Add(&m_isDisplayed, sizeof(m_isDisplayed));
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    return md5;
+    }

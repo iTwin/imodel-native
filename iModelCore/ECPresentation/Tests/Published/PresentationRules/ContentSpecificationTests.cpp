@@ -74,13 +74,13 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
     TestContentSpecification spec;
     spec.SetPriority(123);
     spec.SetShowImages(true);
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("DisplayedProperty", 123, true));
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("HiddenProperty", 456, false));
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("DisplayedProperty", 123, true));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
-    spec.GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("Property1", "Editor1"));
-    spec.GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
-    spec.GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("Label2", 456, "Expression2"));
+    spec.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label2", 456, "Expression2"));
     spec.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""

@@ -32,7 +32,7 @@ Related properties specification. It allow to extend a content ECQuery to includ
 properties of related classes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelatedPropertiesSpecification
+struct RelatedPropertiesSpecification : HashableBase
     {
     private:
         RequiredRelationDirection          m_requiredDirection;
@@ -41,6 +41,10 @@ struct RelatedPropertiesSpecification
         Utf8String                         m_propertyNames;
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
         RelationshipMeaning                m_relationshipMeaning;
+
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const;
         
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -97,8 +101,8 @@ struct RelatedPropertiesSpecification
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
         ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;
         
-        //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
-        ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedPropertiesR();
+        //! Add nested related property.
+        ECPRESENTATION_EXPORT void AddNestedRelatedProperty(RelatedPropertiesSpecificationR specification);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

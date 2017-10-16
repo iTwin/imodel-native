@@ -37,6 +37,9 @@ struct ContentModifier : PresentationKey
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT ContentModifier();
@@ -59,26 +62,26 @@ struct ContentModifier : PresentationKey
         //! Returns related properties
         ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetRelatedProperties() const;
 
-        //! Returns related properties
-        ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList&  GetRelatedPropertiesR();
+        //! Adds related property
+        ECPRESENTATION_EXPORT void AddRelatedProperty(RelatedPropertiesSpecificationR specification);
 
         //! Returns displayed/hidden properties
         ECPRESENTATION_EXPORT PropertiesDisplaySpecificationList const& GetPropertiesDisplaySpecifications() const;
 
-        //! Returns displayed/hidden properties
-        ECPRESENTATION_EXPORT PropertiesDisplaySpecificationList&  GetPropertiesDisplaySpecificationsR() ;
+        //! Add displayed/hidden property
+        ECPRESENTATION_EXPORT void  AddPropertiesDisplaySpecification(PropertiesDisplaySpecificationR specification) ;
 
         //! Returns calculated properties
         ECPRESENTATION_EXPORT CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const;
 
-        //! Returns calculated properties
-        ECPRESENTATION_EXPORT CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR();
+        //! Adds calculated property
+        ECPRESENTATION_EXPORT void AddCalculatedProperty(CalculatedPropertiesSpecificationR specification);
 
         //! Returns property editors
         ECPRESENTATION_EXPORT PropertyEditorsSpecificationList const& GetPropertyEditors() const;
 
-        //! Returns property editors
-        ECPRESENTATION_EXPORT PropertyEditorsSpecificationList& GetPropertyEditorsR();
+        //! Adds property editor
+        ECPRESENTATION_EXPORT void AddPropertyEditor(PropertyEditorsSpecificationR specification);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

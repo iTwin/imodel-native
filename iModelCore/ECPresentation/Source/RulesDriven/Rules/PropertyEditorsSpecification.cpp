@@ -51,6 +51,49 @@ void PropertyEditorsSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyEditorsSpecification::AddParameter(PropertyEditorParametersSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_parameters.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorsSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_propertyName.c_str(), m_propertyName.size());
+    md5.Add(m_editorName.c_str(), m_editorName.size());
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (PropertyEditorParametersSpecificationP spec : m_parameters)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorParametersSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    Utf8CP name = _GetXmlElementName();
+    md5.Add(name, strlen(name));
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorJsonParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_JSON_PARAMETERS_XML_NODE_NAME;}
@@ -77,6 +120,17 @@ void PropertyEditorJsonParameters::_WriteXml(BeXmlNodeP parentXmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorJsonParameters::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    Utf8String jsonString = m_json.ToString();
+    md5.Add(jsonString.c_str(), jsonString.size());
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorMultilineParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_MULTILINE_PARAMETERS_XML_NODE_NAME;}
@@ -98,6 +152,16 @@ void PropertyEditorMultilineParameters::_WriteXml(BeXmlNodeP parentXmlNode) cons
     {
     BeXmlNodeP paramsNode = parentXmlNode->AddEmptyElement(_GetXmlElementName());
     paramsNode->AddAttributeUInt32Value(PROPERTY_EDITOR_MULTILINE_PARAMETERS_ATTRIBUTE_HEIGHT, m_height);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorMultilineParameters::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_height, sizeof(m_height));
+    return md5;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,6 +191,19 @@ void PropertyEditorRangeParameters::_WriteXml(BeXmlNodeP parentXmlNode) const
         paramsNode->AddAttributeDoubleValue(PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MINIMUM, m_min);
     if (m_isMaxSet)
         paramsNode->AddAttributeDoubleValue(PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MAXIMUM, m_max);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorRangeParameters::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_min, sizeof(m_min));
+    md5.Add(&m_max, sizeof(m_max));
+    md5.Add(&m_isMinSet, sizeof(m_isMinSet));
+    md5.Add(&m_isMaxSet, sizeof(m_isMaxSet));
+    return md5;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,4 +240,18 @@ void PropertyEditorSliderParameters::_WriteXml(BeXmlNodeP parentXmlNode) const
     paramsNode->AddAttributeUInt32Value(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_INTERVALS, m_intervalsCount);
     paramsNode->AddAttributeUInt32Value(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR, m_valueFactor);
     paramsNode->AddAttributeBooleanValue(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VERTICAL, m_isVertical);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyEditorSliderParameters::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_min, sizeof(m_min));
+    md5.Add(&m_max, sizeof(m_max));
+    md5.Add(&m_intervalsCount, sizeof(m_intervalsCount));
+    md5.Add(&m_valueFactor, sizeof(m_valueFactor));
+    md5.Add(&m_isVertical, sizeof(m_isVertical));
+    return md5;
     }

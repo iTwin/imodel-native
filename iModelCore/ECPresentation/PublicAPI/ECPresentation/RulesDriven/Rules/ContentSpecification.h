@@ -56,6 +56,9 @@ protected:
     //! Clones this content specification.
     virtual ContentSpecification*        _Clone() const = 0;
 
+    //! Computes specification hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
 public:
     //! Destructor.
     ECPRESENTATION_EXPORT virtual                              ~ContentSpecification (void);
@@ -84,32 +87,32 @@ public:
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
     ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const&   GetRelatedProperties(void) const;
     
-    //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
-    ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
+    //! Add related property of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
+    ECPRESENTATION_EXPORT void AddRelatedProperty(RelatedPropertiesSpecificationR specification);
 
     //! Properties that will be displayed or hidden.
     PropertiesDisplaySpecificationList const& GetPropertiesDisplaySpecifications() const {return m_propertiesDisplaySpecification;}
     
-    //! Properties that will be displayed or hidden.
-    PropertiesDisplaySpecificationList& GetPropertiesDisplaySpecificationsR() {return m_propertiesDisplaySpecification;}
+    //! Add property that will be displayed or hidden.
+    ECPRESENTATION_EXPORT void AddPropertiesDisplaySpecification(PropertiesDisplaySpecificationR specification);
 
     //! Additional calculated properties included in the content
     CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const {return m_calculatedPropertiesSpecification;}
 
-    //! Additional calculated properties included in the content
-    CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR() {return m_calculatedPropertiesSpecification;}
+    //! Add Additional calculated property included in the content
+    ECPRESENTATION_EXPORT void AddCalculatedProperty(CalculatedPropertiesSpecificationR specification);
 
     //! Custom editors for properties
     PropertyEditorsSpecificationList const& GetPropertyEditors() const { return m_propertyEditorsSpecification; }
 
-    //! Custom editors for properties
-    PropertyEditorsSpecificationList& GetPropertyEditorsR() { return m_propertyEditorsSpecification; }
+    //! Add custom editor for properties
+    ECPRESENTATION_EXPORT void AddPropertyEditor(PropertyEditorsSpecificationR specification);
 
     //! Include related items with current instances when display commands are executed.
     ECPRESENTATION_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
 
     //! Include related items with current instances when display commands are executed.
-    ECPRESENTATION_EXPORT DisplayRelatedItemsSpecificationList& GetDisplayRelatedItems (void);
+    ECPRESENTATION_EXPORT void AddDisplayRelatedItem(DisplayRelatedItemsSpecificationR specification);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

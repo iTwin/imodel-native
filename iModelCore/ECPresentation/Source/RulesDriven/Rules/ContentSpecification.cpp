@@ -116,9 +116,14 @@ int ContentSpecification::GetPriority (void) const { return m_priority; }
 void ContentSpecification::SetPriority (int value) { m_priority = value; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecificationList& ContentSpecification::GetRelatedPropertiesR() {return m_relatedPropertiesSpecification;}
+void ContentSpecification::AddRelatedProperty(RelatedPropertiesSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_relatedPropertiesSpecification.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -126,11 +131,86 @@ RelatedPropertiesSpecificationList& ContentSpecification::GetRelatedPropertiesR(
 RelatedPropertiesSpecificationList const& ContentSpecification::GetRelatedProperties() const {return m_relatedPropertiesSpecification;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayRelatedItemsSpecificationList& ContentSpecification::GetDisplayRelatedItems (void) { return m_displayRelatedItemsSpecification; }
+void ContentSpecification::AddDisplayRelatedItem(DisplayRelatedItemsSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_displayRelatedItemsSpecification.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrew.Menzies                          07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayRelatedItemsSpecificationList const& ContentSpecification::GetDisplayRelatedItems(void) const { return m_displayRelatedItemsSpecification; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::AddPropertiesDisplaySpecification(PropertiesDisplaySpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_propertiesDisplaySpecification.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::AddCalculatedProperty(CalculatedPropertiesSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_calculatedPropertiesSpecification.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::AddPropertyEditor(PropertyEditorsSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_propertyEditorsSpecification.push_back(&specification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_priority, sizeof(m_priority));
+    md5.Add(&m_showImages, sizeof(m_showImages));
+    CharCP name = _GetXmlElementName();
+    md5.Add(name, strlen(name));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RelatedPropertiesSpecificationP spec : m_relatedPropertiesSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (PropertiesDisplaySpecificationP spec : m_propertiesDisplaySpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (CalculatedPropertiesSpecificationP spec : m_calculatedPropertiesSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (DisplayRelatedItemsSpecificationP spec : m_displayRelatedItemsSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (PropertyEditorsSpecificationP spec : m_propertyEditorsSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }

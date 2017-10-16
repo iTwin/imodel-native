@@ -69,9 +69,9 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
 
     // create the spec
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    spec.GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // get the query
     ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
@@ -95,7 +95,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
     {
     // create the spec
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget,Sprocket", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
         "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
 
     // get the query
@@ -120,7 +120,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedPropertiesSpecificationFromConte
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Sprocket"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    m_ruleset->GetContentModifierRules().back()->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
@@ -146,10 +146,10 @@ TEST_F (ContentQueryBuilderTests, DoesntApplyRelatedPropertiesSpecificationFromC
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Gadget"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    m_ruleset->GetContentModifierRules().back()->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets",
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:GadgetHasSprockets",
         "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
         
     // get the query
@@ -174,7 +174,7 @@ TEST_F (ContentQueryBuilderTests, RelatedPropertiesAreAppendedCorrectlyWhenUsing
     {    
     // create the specs
     m_ruleset->AddPresentationRule(*new ContentModifier("RulesEngineTest", "Sprocket"));
-    m_ruleset->GetContentModifierRules().back()->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
+    m_ruleset->GetContentModifierRules().back()->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward,
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
@@ -200,7 +200,7 @@ TEST_F (ContentQueryBuilderTests, CreatesContentFieldsForXToManyRelatedInstanceP
     {    
     // create the specs
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Gadget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query
@@ -227,9 +227,9 @@ TEST_F (ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManyRelatedIns
     {    
     // create the specs
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget", false);
-    spec.GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
-    spec.GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+    spec.GetRelatedProperties().back()->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query

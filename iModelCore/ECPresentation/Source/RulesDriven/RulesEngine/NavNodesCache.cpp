@@ -290,7 +290,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[PhysicalParentNodeId] INTEGER REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[VirtualParentNodeId] INTEGER REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[ConnectionId] GUID NOT NULL REFERENCES " NODESCACHE_TABLENAME_Connections "([ConnectionId]) ON DELETE CASCADE ON UPDATE CASCADE, "
-                     "[RulesetId] TEXT NOT NULL, "
+                     "[RulesetId] TEXT NOT NULL REFERENCES " NODESCACHE_TABLENAME_Rulesets "([RulesetId]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[Filter] TEXT, "
                      "[RemovalId] GUID, "
                      "[IsUpdatesDisabled] BOOLEAN NOT NULL DEFAULT FALSE ";
@@ -351,6 +351,12 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         Utf8CP ddl = "[ConnectionId] GUID PRIMARY KEY NOT NULL, "
                      "[LastModTime] INTEGER NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_Connections, ddl);
+        }
+    if (!m_db.TableExists(NODESCACHE_TABLENAME_Rulesets))
+        {
+        Utf8CP ddl = "[RulesetId] TEXT PRIMARY KEY NOT NULL, "
+                     "[RulesetHash] TEXT NOT NULL";
+        m_db.CreateTable(NODESCACHE_TABLENAME_Rulesets, ddl);
         }
     m_db.SaveChanges();
     }
@@ -457,6 +463,47 @@ void NodesCache::_OnConnectionEvent(ConnectionEvent const& evt)
         const_cast<NodesCache*>(this)->OnFirstConnection(evt.GetConnection());
     else if (ConnectionEventType::Closed == evt.GetEventType())
         const_cast<NodesCache*>(this)->OnConnectionClosed(evt.GetConnection());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::OnRulesetCreated(PresentationRuleSetCR ruleset)
+    {
+    Utf8CP hashQuery = "SELECT [RulesetHash] FROM [" NODESCACHE_TABLENAME_Rulesets "] WHERE [RulesetId] = ?";
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), hashQuery))
+        {
+        BeAssert(false);
+        return;
+        }
+    stmt->BindText(1, ruleset.GetRuleSetId().c_str(), Statement::MakeCopy::No);
+
+    Utf8StringCR rulesetHash = ruleset.GetHash();
+    if (BE_SQLITE_ROW == stmt->Step() && !rulesetHash.Equals(stmt->GetValueText(0)))
+        {
+        Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Rulesets "] WHERE [RulesetId] = ?";
+        CachedStatementPtr deleteStmt;
+        if (BE_SQLITE_OK != m_statements.GetPreparedStatement(deleteStmt, *m_db.GetDbFile(), deleteQuery))
+            {
+            BeAssert(false);
+            return;
+            }
+        deleteStmt->BindText(1, ruleset.GetRuleSetId().c_str(), Statement::MakeCopy::No);
+        deleteStmt->Step();
+        }
+
+    Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_Rulesets "] ([RulesetId], [RulesetHash]) VALUES (?, ?)";
+    CachedStatementPtr insertStmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(insertStmt, *m_db.GetDbFile(), insertQuery))
+        {
+        BeAssert(false);
+        return;
+        }
+    insertStmt->BindText(1, ruleset.GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    insertStmt->BindText(2, rulesetHash.c_str(), Statement::MakeCopy::No);
+    insertStmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**

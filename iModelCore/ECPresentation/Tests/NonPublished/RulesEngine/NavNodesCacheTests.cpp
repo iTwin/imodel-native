@@ -39,6 +39,7 @@ struct NodesCacheTests : ::testing::Test
         BeTest::GetHost().GetTempDir(temporaryDirectory);
         m_cache = _CreateNodesCache(temporaryDirectory);
         m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+        m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
         }
 
     virtual void TearDown() override
@@ -153,6 +154,7 @@ void NodesCacheTests::Test_Clear_Full()
     m_cache->Cache(rootInfo2, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
     
     // cache root data source for a different ruleset
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo3(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo3, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -262,6 +264,7 @@ void NodesCacheTests::Test_Clear_ByRulesetId()
     uint64_t childNodeId = childNode->GetNodeId();
         
     // cache root data source for a different ruleset
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo3(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo3, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -952,10 +955,12 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
 TEST_F(NodesCacheTests, ReturnsDataSourcesWithValidRulesetIds)
     {    
     // cache root data source for the first ruleset
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id1", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo1(GetDb().GetDbGuid(), "ruleset_id1", nullptr, nullptr);
     m_cache->Cache(rootInfo1, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
     
     // cache root data source for the second ruleset
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo2(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -2117,6 +2122,38 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfHierarchyWasModified)
     m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
 
     // cache should be empty
+    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test situation when app is closed, ruleset is modified and app is turned on.
+* In this case OnRulesetDisposed isn't called and only OnRulesetCreated is called.
+* @bsitest                                      Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ClearCacheIfRulesetWasModified)
+    {
+    // create ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset", 1, 0, false, "", "", "", false);
+    ruleset->AddPresentationRule(*new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false));
+    m_cache->OnRulesetCreated(*ruleset);
+
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), ruleset->GetRuleSetId(), nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // cache some nodes
+    bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+
+    // mock new session: app is turned on with modified ruleset and OnRulesetCreated is called
+    ruleset->AddPresentationRule(*new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree));
+    m_cache->OnRulesetCreated(*ruleset);
+
+    // verify cache is cleared
     EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));

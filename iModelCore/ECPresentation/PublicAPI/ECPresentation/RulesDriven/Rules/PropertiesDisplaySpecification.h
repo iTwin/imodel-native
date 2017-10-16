@@ -17,12 +17,16 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 * Specification for specifying single property that should be displayed or hidden.
 * @bsiclass                                     Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertiesDisplaySpecification
+struct PropertiesDisplaySpecification : HashableBase
     {
     private:
         Utf8String m_propertyNames;
         int m_priority;
         bool m_isDisplayed;
+
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         PropertiesDisplaySpecification() {}

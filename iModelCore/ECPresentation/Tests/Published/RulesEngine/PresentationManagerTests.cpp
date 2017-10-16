@@ -201,7 +201,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, InitializesUserSettings)
 
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("MyRulesetId", 1, 0, false, "", "", "", false);
     UserSettingsGroupP settingsGroup = new UserSettingsGroup("Label");
-    settingsGroup->GetSettingsItemsR().push_back(new UserSettingsItem("TestSetting", "Label", "StringValue", "DefaultValue"));
+    settingsGroup->AddSettingsItem(*new UserSettingsItem("TestSetting", "Label", "StringValue", "DefaultValue"));
     ruleset->AddPresentationRule(*settingsGroup);
 
     TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
@@ -406,6 +406,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeExpanded_SetsTheFlagAndUpdat
     NodesCache& cache = m_manager->GetNodesCache();
 
     // cache root data source
+    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
     cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -435,6 +436,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeCollapsed_SetsTheFlagAndUpda
     NodesCache& cache = m_manager->GetNodesCache();
 
     // cache root data source
+    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
     cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 

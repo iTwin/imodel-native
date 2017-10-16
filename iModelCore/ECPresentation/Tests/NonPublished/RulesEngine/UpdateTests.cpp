@@ -5110,7 +5110,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceInsert)
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5151,7 +5151,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceUpdate)
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5191,7 +5191,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenMoreInstances
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5232,7 +5232,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenNoMoreInstanc
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5274,7 +5274,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // request content and expect none
@@ -5316,7 +5316,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5362,7 +5362,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     s_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // request content
@@ -5406,7 +5406,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInRuleConditio
     s_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("1 = GetSettingIntValue(\"test\")", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
@@ -5443,7 +5443,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInInstanceFilt
     s_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "1 = GetSettingIntValue(\"test\")", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "1 = GetSettingIntValue(\"test\")", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
@@ -5479,7 +5479,7 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
     s_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // request for root nodes

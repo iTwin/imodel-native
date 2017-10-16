@@ -393,6 +393,92 @@ SortingRuleList const& PresentationRuleSet::GetSortingRules (void) const      { 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifierList const& PresentationRuleSet::GetContentModifierRules (void) const { return m_contentModifiers; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
+    {
+    MD5 md5;
+    md5.Add(m_ruleSetId.c_str(), m_ruleSetId.size());
+    md5.Add(m_supportedSchemas.c_str(), m_supportedSchemas.size());
+    md5.Add(&m_isSupplemental, sizeof(m_isSupplemental));
+    md5.Add(m_supplementationPurpose.c_str(), m_supplementationPurpose.size());
+    md5.Add(&m_versionMajor, sizeof(m_versionMajor));
+    md5.Add(&m_versionMinor, sizeof(m_versionMinor));
+    md5.Add(m_preferredImage.c_str(), m_preferredImage.size());
+    md5.Add(&m_isSearchEnabled, sizeof(m_isSearchEnabled));
+    md5.Add(m_extendedData.c_str(), m_extendedData.size());
+    md5.Add(m_searchClasses.c_str(), m_searchClasses.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RootNodeRuleP rule : m_rootNodesRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (ChildNodeRuleP rule : m_childNodesRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (ContentRuleP rule : m_contentRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (ImageIdOverrideP rule : m_imageIdRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (LabelOverrideP rule : m_labelOverrides)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (StyleOverrideP rule : m_styleOverrides)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (GroupingRuleP rule : m_groupingRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (LocalizationResourceKeyDefinitionP rule : m_localizationResourceKeyDefinitions)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (CheckBoxRuleP rule : m_checkBoxRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (RenameNodeRuleP rule : m_renameNodeRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (SortingRuleP rule : m_sortingRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (UserSettingsGroupP rule : m_userSettings)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    for (ContentModifierP rule : m_contentModifiers)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    return md5;
+    }
+
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>() {return &m_rootNodesRules;}
 template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>() {return &m_childNodesRules;}

@@ -316,6 +316,7 @@ void RulesDrivenECPresentationManager::_OnRulesetCreated(PresentationRuleSetCR r
     {
     UserSettings& settings = m_userSettings.GetSettings(ruleset.GetRuleSetId().c_str());
     settings.InitFrom(ruleset.GetUserSettings());
+    m_nodesCache->OnRulesetCreated(ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**

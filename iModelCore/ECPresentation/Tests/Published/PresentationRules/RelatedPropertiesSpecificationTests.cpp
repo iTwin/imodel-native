@@ -57,7 +57,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
 
     RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "Relationship:Names",
         "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance);
-    spec.GetNestedRelatedPropertiesR().push_back(new RelatedPropertiesSpecification());
+    spec.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     spec.WriteXml(xml->GetRootElement());
     
     static Utf8CP expected = ""

@@ -17,12 +17,16 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 * Specification for specifying editor for a single property.
 * @bsiclass                                     Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyEditorsSpecification
+struct PropertyEditorsSpecification : HashableBase
     {
     private:
         Utf8String m_propertyName;
         Utf8String m_editorName;
         PropertyEditorParametersList m_parameters;
+
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         PropertyEditorsSpecification() {}
@@ -44,7 +48,9 @@ struct PropertyEditorsSpecification
         
         //! Get parameters.
         PropertyEditorParametersList const& GetParameters() const {return m_parameters;}
-        PropertyEditorParametersList& GetParametersR() {return m_parameters;}
+
+        //! Add parameter.
+        ECPRESENTATION_EXPORT void AddParameter(PropertyEditorParametersSpecificationR specification);
     };
 
 struct PropertyEditorJsonParameters;
@@ -56,7 +62,7 @@ struct PropertyEditorSliderParameters;
 * Base class for property editor parameters specification.
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyEditorParametersSpecification
+struct PropertyEditorParametersSpecification : HashableBase
 {
     struct Visitor
         {
@@ -72,6 +78,7 @@ protected:
     virtual bool _ReadXml(BeXmlNodeP xmlNode) = 0;
     virtual void _WriteXml(BeXmlNodeP parentXmlNode) const = 0;
     virtual void _Accept(Visitor&) const = 0;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     virtual ~PropertyEditorParametersSpecification() {}
@@ -99,6 +106,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
     PropertyEditorJsonParameters() {}
     PropertyEditorJsonParameters(Json::Value json) : m_json(json) {}
@@ -119,6 +127,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
     PropertyEditorMultilineParameters() : m_height(1) {}
     PropertyEditorMultilineParameters(uint32_t height) : m_height(height) {}
@@ -142,6 +151,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
     PropertyEditorRangeParameters() : m_min(0), m_isMinSet(false), m_max(0), m_isMaxSet(false) {}
     PropertyEditorRangeParameters(double min, double max) : m_min(min), m_isMinSet(true), m_max(max), m_isMaxSet(true) {}
@@ -167,6 +177,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
     PropertyEditorSliderParameters() : m_min(0), m_max(0), m_intervalsCount(1), m_valueFactor(1), m_isVertical(false) {}
     PropertyEditorSliderParameters(double min, double max, uint32_t intervalsCount = 1, uint32_t valueFactor = 1, bool isVertical = false) 

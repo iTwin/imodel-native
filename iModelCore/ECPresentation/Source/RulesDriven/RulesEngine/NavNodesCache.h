@@ -90,6 +90,7 @@ public:
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
 #define NODESCACHE_TABLENAME_AffectingInstances "AffectingECInstances"
 #define NODESCACHE_TABLENAME_Connections        "Connections"
+#define NODESCACHE_TABLENAME_Rulesets           "Rulesets"
 
 // Note: nodes cache uses a small in-memory structure of size NODESCACHE_QUICK_Size to store
 // the most recently used data sources whose size is at least NODESCACHE_QUICK_Boundary nodes.
@@ -187,6 +188,7 @@ public:
     ECPRESENTATION_EXPORT void Clear(BeSQLite::EC::ECDb const* connection = nullptr, Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();
 
+    ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
 };
 

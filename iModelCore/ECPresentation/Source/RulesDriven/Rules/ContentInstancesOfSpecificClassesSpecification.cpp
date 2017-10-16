@@ -103,3 +103,15 @@ Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (
 * @bsimethod                                    Kelly.Shiptoski                 06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ContentInstancesOfSpecificClassesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
+    md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
+    md5.Add(m_classNames.c_str(), m_classNames.size());
+    md5.Add(&m_arePolymorphic, sizeof(m_arePolymorphic));
+    return md5;
+    }

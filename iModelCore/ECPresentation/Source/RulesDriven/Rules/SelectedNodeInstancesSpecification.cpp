@@ -152,3 +152,16 @@ void SelectedNodeInstancesSpecification::SetAcceptablePolymorphically(bool value
     {
     m_acceptablePolymorphically = value;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SelectedNodeInstancesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
+    md5.Add(m_acceptableClassNames.c_str(), m_acceptableClassNames.size());
+    md5.Add(m_acceptableSchemaName.c_str(), m_acceptableSchemaName.size());
+    md5.Add(&m_acceptablePolymorphically, sizeof(m_acceptablePolymorphically));
+    md5.Add(&m_onlyIfNotHandled, sizeof(m_onlyIfNotHandled));
+    return md5;
+    }

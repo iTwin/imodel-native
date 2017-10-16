@@ -74,7 +74,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNo
     m_context->SetSelectionContext(selection);
 
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -106,7 +106,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     m_context->SetSelectionContext(selection);
     
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -143,7 +143,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     m_context->SetSelectionContext(selection);
     
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -176,7 +176,7 @@ TEST_F (ContentProviderTests, CreatesImageIdWhenSpecified)
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(spec);
+    rule.AddSpecification(*spec);
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -207,7 +207,7 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(spec);
+    rule.AddSpecification(*spec);
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -237,7 +237,7 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(spec);
+    rule.AddSpecification(*spec);
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
@@ -275,7 +275,7 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
     m_context->SetSelectionContext(selection);
     
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
     provider->SetPageOptions(PageOptions(1, 5));
 
@@ -315,7 +315,7 @@ TEST_F (ContentProviderTests, PagingSortedData)
     m_context->SetSelectionContext(selection);
     
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
     ASSERT_TRUE(nullptr != provider->GetContentDescriptor());
 
@@ -358,7 +358,7 @@ TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     m_context->SetSelectionContext(selection);
     
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
     
     provider->SetPageOptions(PageOptions(0, 2));
@@ -394,11 +394,11 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
         });
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", m_gadgetClass->GetFullName(), false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
         rel->GetFullName(), m_sprocketClass->GetFullName(), "Description", RelationshipMeaning::RelatedInstance));
 
     ContentRule rule;
-    rule.GetSpecificationsR().push_back(spec);
+    rule.AddSpecification(*spec);
 
     SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule));
 

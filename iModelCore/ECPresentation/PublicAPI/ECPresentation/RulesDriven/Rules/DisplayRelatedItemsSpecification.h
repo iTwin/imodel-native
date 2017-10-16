@@ -22,6 +22,10 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
         int                     m_nestingDepth;
         Utf8String                 m_relationshipClasses;
 
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);

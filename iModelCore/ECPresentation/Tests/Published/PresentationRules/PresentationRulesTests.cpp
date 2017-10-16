@@ -611,8 +611,8 @@ void ValidateDisplaySpecifications(DisplayRelatedItemsSpecificationCR displaySpe
 TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
     {
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class1", false);
-    spec.GetDisplayRelatedItems().push_back(new DisplayRelatedItemsSpecification(false, 0, ""));
-    spec.GetDisplayRelatedItems().push_back(new DisplayRelatedItemsSpecification());
+    spec.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(false, 0, ""));
+    spec.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification());
 
     int displayRelatedItemsCount = 0;
     for (DisplayRelatedItemsSpecificationList::const_iterator iter = spec.GetDisplayRelatedItems().begin(); iter != spec.GetDisplayRelatedItems().end(); ++iter)
@@ -756,10 +756,10 @@ TEST_F(GenericPresentationRulesTests, TestContentModifierWriteToXml)
     ContentModifierP modifier = new ContentModifier("SchemaName", "ClassName");
     ruleSet->AddPresentationRule(*modifier);
     ASSERT_TRUE(nullptr != modifier);
-    modifier->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::RelatedInstance));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Properties", 1000, false));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Properties", 1000, true));
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 0, "Value"));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::RelatedInstance));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Properties", 1000, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Properties", 1000, true));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, "Value"));
 
     //Serialize RuleSet to string and deserialize from the same string.
     Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
