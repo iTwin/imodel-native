@@ -238,11 +238,13 @@ TEST_F(SelectionTests, RemappingNodeIdsCallsSyncHandlersWithRemappedIds)
     ASSERT_EQ(3, m_manager->GetSelection(s_project->GetECDb())->size());
 
     // create remap info for one key
-    uint64_t keyBefore = keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId();
-    uint64_t keyAfter = s_keyIdCounter++;
+    uint64_t selectedKeyBefore = keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId();
+    uint64_t selectedKeyAfter = s_keyIdCounter++;
+    uint64_t unselectedKeyBefore = s_keyIdCounter++;
+    uint64_t unselectedKeyAfter = s_keyIdCounter++;
     bmap<uint64_t, uint64_t> remapInfo;
-    remapInfo[keyBefore] = keyAfter; // simulate remapping selected key
-    remapInfo[s_keyIdCounter++] = s_keyIdCounter++; // simulate remapping unselected key
+    remapInfo[selectedKeyBefore] = selectedKeyAfter; // simulate remapping selected key
+    remapInfo[unselectedKeyBefore] = unselectedKeyAfter; // simulate remapping unselected key
 
     // set up the selection handler
     bool handlerCalled = false;
@@ -250,8 +252,8 @@ TEST_F(SelectionTests, RemappingNodeIdsCallsSyncHandlersWithRemappedIds)
     syncHandler->SetOnSelectedNodesRemappedHandler([&](bmap<uint64_t, uint64_t> const& remapInfo)
         {
         ASSERT_EQ(1, remapInfo.size());
-        EXPECT_EQ(keyBefore, remapInfo.begin()->first);
-        EXPECT_EQ(keyAfter, remapInfo.begin()->second);
+        EXPECT_EQ(selectedKeyBefore, remapInfo.begin()->first);
+        EXPECT_EQ(selectedKeyAfter, remapInfo.begin()->second);
         handlerCalled = true;
         });
     m_manager->AddSyncHandler(*syncHandler);
@@ -260,7 +262,7 @@ TEST_F(SelectionTests, RemappingNodeIdsCallsSyncHandlersWithRemappedIds)
     BackDoor::SelectionManager::RemapNodeIds(*m_manager, remapInfo);
 
     // verify remap succeeded by making sure the keys[0] changed to the right value
-    EXPECT_EQ(keyAfter, keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId());
+    EXPECT_EQ(selectedKeyAfter, keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId());
 
     // verify sync handler was called
     EXPECT_TRUE(handlerCalled);
