@@ -1,0 +1,14 @@
+#----------------------------------------------------------------------
+#     $Source: TilePublisher/Assets/TilePublisherAssets.mke $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------------------
+# Configuration
+%include mdl.mki
+
+AppName = TilePublisher
+o = $(OutputRootDir)build/TilePublisher/Assets
+
+always:
+    ~linkdir "$(ContextDeliveryDir)Assets/PresentationRules=$(_MakeFilePath)PresentationRules"
