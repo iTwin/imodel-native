@@ -29,14 +29,14 @@ public:
         {
         DEFINE_T_SUPER(RadialGridPortion::T_Super::CreateParams);
 
-        Dgn::SpatialLocationModelCP m_model;
+        Dgn::SpatialLocationModelCP m_model;    //TODO: Remove, needs to be handled by the tools
         int m_planeCount;
         int m_circularCount;
         double m_planeIterationAngle;
         double m_circularInterval;
         double m_length;
         double m_height;
-        bool m_extendHeight;
+        bool m_extendHeight;    //TODO: Remove, needs to be handled by the tools
 
         //! Creates create parameters for radial grid
         //! @param[in] model                model to create the grid in

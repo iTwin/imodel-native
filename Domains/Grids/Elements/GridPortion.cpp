@@ -160,7 +160,7 @@ Dgn::ElementIterator GridPortion::MakeIterator () const
     Dgn::ElementIterator iterator;
     if (GetSubModelId ().IsValid ())
         {
-        iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Model.Id=?");
+        iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
         iterator.GetStatement ()->BindId (1, GetSubModelId ());
         }
     return iterator;
