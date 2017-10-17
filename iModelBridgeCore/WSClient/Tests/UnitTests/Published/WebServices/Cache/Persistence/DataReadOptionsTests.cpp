@@ -17,11 +17,18 @@ using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelected_NoChanges_ReturnsNull)
     {
     EXPECT_TRUE(DataReadOptions().AreAllClassesSelected());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectAllClasses_Called_GetSelectedReturnsNull)
     {
     DataReadOptions options;
@@ -31,6 +38,9 @@ TEST_F(DataReadOptionsTests, SelectAllClasses_Called_GetSelectedReturnsNull)
     EXPECT_TRUE(options.AreAllClassesSelected());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectAllClasses_SelectClassBefore_AllClassesSelected)
     {
     DataReadOptions options;
@@ -41,6 +51,9 @@ TEST_F(DataReadOptionsTests, SelectAllClasses_SelectClassBefore_AllClassesSelect
     EXPECT_TRUE(options.AreAllClassesSelected());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClass_CalledOnce_ClassAddedToSelected)
     {
     DataReadOptions options;
@@ -51,6 +64,9 @@ TEST_F(DataReadOptionsTests, SelectClass_CalledOnce_ClassAddedToSelected)
     EXPECT_EQ("Schema.Foo", options.GetSelected()[0].GetClassKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClass_CalledOnceWithECClass_ClassAddedToSelected)
     {
     DataReadOptions options;
@@ -62,6 +78,9 @@ TEST_F(DataReadOptionsTests, SelectClass_CalledOnceWithECClass_ClassAddedToSelec
     EXPECT_EQ("TestSchema.TestClass", options.GetSelected()[0].GetClassKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClass_CalledWithTwoClasses_BothClassesAddedToSelected)
     {
     DataReadOptions options;
@@ -74,6 +93,9 @@ TEST_F(DataReadOptionsTests, SelectClass_CalledWithTwoClasses_BothClassesAddedTo
     EXPECT_EQ("Schema.Boo", options.GetSelected()[1].GetClassKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClass_CalledOnce_AllPropertiesSelectedForClass)
     {
     DataReadOptions options;
@@ -83,6 +105,9 @@ TEST_F(DataReadOptionsTests, SelectClass_CalledOnce_AllPropertiesSelectedForClas
     EXPECT_TRUE(options.GetSelected()[0].AreAllPropertiesSelected());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClass_SelectAllClassesCalledBefore_OnlyOneClassIsSelected)
     {
     DataReadOptions options;
@@ -93,6 +118,9 @@ TEST_F(DataReadOptionsTests, SelectClass_SelectAllClassesCalledBefore_OnlyOneCla
     EXPECT_EQ(1, options.GetSelected().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledOnce_ClassAndPropertyAddedToSelected)
     {
     DataReadOptions options;
@@ -104,6 +132,9 @@ TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledOnce_ClassAndPropertyA
     EXPECT_EQ("Property", *options.GetSelected()[0].GetSelectedProperties().begin());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledOnceWithECProperty_ClassAndPropertyAddedToSelected)
     {
     DataReadOptions options;
@@ -116,6 +147,9 @@ TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledOnceWithECProperty_Cla
     EXPECT_EQ("TestProperty", *options.GetSelected()[0].GetSelectedProperties().begin());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledWithDifferentProperties_ClassAndPropertiesAddedToSelected)
     {
     DataReadOptions options;
@@ -130,6 +164,9 @@ TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledWithDifferentPropertie
     EXPECT_CONTAINS(selectedClass.GetSelectedProperties(), "PropertyB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_CalledOnEmptyOptios_AllPropertiesSelectedForClass)
     {
     DataReadOptions options;
@@ -141,6 +178,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_CalledOnEmptyOptios_Al
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_CalledWithECClass_AllPropertiesSelectedForClass)
     {
     DataReadOptions options;
@@ -154,6 +194,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_CalledWithECClass_AllP
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_PreviouslySelectedProperty_ClearsOldSelection)
     {
     DataReadOptions options;
@@ -166,6 +209,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_PreviouslySelectedProp
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_CalledOnEmptyOptios_NoPropertiesSelectedForClass)
     {
     DataReadOptions options;
@@ -178,6 +224,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_CalledOnEmptyOptios_NoP
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_CalledOnEmptyOptiosWithECClass_NoPropertiesSelectedForClass)
     {
     DataReadOptions options;
@@ -191,6 +240,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_CalledOnEmptyOptiosWith
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_PreviouslySelectedProperty_ClearsOldSelection)
     {
     DataReadOptions options;
@@ -203,6 +255,9 @@ TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_PreviouslySelectedPrope
     EXPECT_EQ(0, selectedClass.GetSelectedProperties().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, SelectClassAndProperty_SelectAllClassesCalledBefore_OnlyOneClassIsSelected)
     {
     DataReadOptions options;
@@ -213,11 +268,17 @@ TEST_F(DataReadOptionsTests, SelectClassAndProperty_SelectAllClassesCalledBefore
     EXPECT_EQ(1, options.GetSelected().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_NoOrdering_Empty)
     {
     EXPECT_TRUE(DataReadOptions().GetOrderBy().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_MultipleOrdering_AllAdded)
     {
     bvector<DataReadOptions::OrderedProperty> properties;
@@ -233,6 +294,9 @@ TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_MultipleOrdering_AllAd
     EXPECT_EQ("A", options.GetOrderBy()[0].GetProperties()[1].GetName());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_OrderingWithECClass_Added)
     {
     auto schema = StubSchema();
@@ -249,6 +313,9 @@ TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_OrderingWithECClass_Ad
     EXPECT_EQ("TestProperty", options.GetOrderBy()[0].GetProperties()[0].GetName());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_PropertiesAdded_CorrectDirection)
     {
     bvector<DataReadOptions::OrderedProperty> properties;
@@ -261,6 +328,9 @@ TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_PropertiesAdded_Correc
     EXPECT_EQ(true, options.GetOrderBy()[0].GetProperties()[1].IsOrderAscending());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectedClass_NoSelectedClassesAndECClassPassed_ReturnsNull)
     {
     DataReadOptions options;
@@ -270,6 +340,9 @@ TEST_F(DataReadOptionsTests, GetSelectedClass_NoSelectedClassesAndECClassPassed_
     ASSERT_EQ(nullptr, selectedClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectedClass_SelectedECClassPassed_ReturnsSelectedClass)
     {
     DataReadOptions options;
@@ -281,6 +354,9 @@ TEST_F(DataReadOptionsTests, GetSelectedClass_SelectedECClassPassed_ReturnsSelec
     EXPECT_EQ("TestSchema.TestClass", selectedClass->GetClassKey());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectProperties_ClassNotSelected_ReturnsNull)
     {
     DataReadOptions options;
@@ -292,6 +368,9 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_ClassNotSelected_ReturnsNull)
     EXPECT_EQ(nullptr, properties);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClasses_ReturnsSelectAllProperties)
     {
     DataReadOptions options;
@@ -307,6 +386,9 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClasses_ReturnsSele
     EXPECT_THAT(properties->GetExtendedProperties(), IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClassesAndSpecificPropertyForClass_ReturnsSelectSpecificProperty)
     {
     DataReadOptions options;
@@ -325,6 +407,9 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClassesAndSpecificP
     EXPECT_THAT(properties->GetExtendedProperties(), IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingPropertyThatDoesNotExistInClass_AddsPropertyToExtendedProperties)
     {
     DataReadOptions options;
@@ -341,6 +426,9 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingPropertyThatDoesNotExi
     EXPECT_EQ("SomeProperty", *properties->GetExtendedProperties().begin());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSortPriority_TwoClassesInOrdering_ReturnsCorrectPriorities)
     {
     DataReadOptions options;
@@ -356,6 +444,9 @@ TEST_F(DataReadOptionsTests, GetSortPriority_TwoClassesInOrdering_ReturnsCorrect
     EXPECT_LT(priority2, priority1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSortProperties_NoClassInOrdering_ReturnsEmpty)
     {
     DataReadOptions options;
@@ -365,6 +456,9 @@ TEST_F(DataReadOptionsTests, GetSortProperties_NoClassInOrdering_ReturnsEmpty)
     EXPECT_THAT(properties, IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataReadOptionsTests, GetSortProperties_ClassWithOrderProperties_ReturnsSortProperties)
     {
     DataReadOptions options;

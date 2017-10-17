@@ -56,6 +56,9 @@ Utf8StringCR ecExpression
     EXPECT_EQ(ECObjectsStatus::Success, ecClass->GetPropertyP(propertyName.c_str())->SetCustomAttribute(*caInstance.get()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_EmptyOptions_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
@@ -66,6 +69,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_EmptyOptions_ReturnsEmpt
     EXPECT_TRUE(ServerQueryHelper(options).GetAllSelectedProperties(schemas).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_AllClassesSelected_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
@@ -78,6 +84,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_AllClassesSelected_Retur
     EXPECT_TRUE(ServerQueryHelper(options).GetAllSelectedProperties(schemas).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultipleClassesSelected_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
@@ -91,6 +100,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultipleClassesSelected_
     EXPECT_TRUE(ServerQueryHelper(options).GetAllSelectedProperties(schemas).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultiplePropertiesSelectedFromClasses_ReturnsProperties)
     {
     auto schema = GetTestSchema();
@@ -109,6 +121,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultiplePropertiesSelect
     EXPECT_CONTAINS(properties, "Legs");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_DataSourceRemoteIdAndECInstanceIdPropertiesAdded_ExcludesCacheProperties)
     {
     auto schema = GetTestSchema();
@@ -130,6 +145,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_DataSourceRemoteIdAndECI
     EXPECT_NCONTAIN(properties, "ECInstanceId");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_ECExpressionHasInvalidProperty_ReturnsSelectedPropertyOnly)
     {
     auto schema = GetTestSchema();
@@ -147,6 +165,9 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_ECExpressionHasInvalidPr
     EXPECT_CONTAINS(properties, "Name");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_PropertyWithECExpression_IncludesRequiredProperties)
     {
     auto schema = GetTestSchema();
@@ -166,6 +187,10 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_PropertyWithECExpression
     }
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectAll_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
@@ -181,6 +206,10 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectAll_ReturnsE
 #endif
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsNull_ReturnsSelectId)
     {
     auto schema = GetTestSchema();
@@ -194,6 +223,10 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsNull_ReturnsSelect
 #endif
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectNoProperties_ReturnsSelectId)
     {
     auto schema = GetTestSchema();
@@ -211,6 +244,10 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectNoProperties
 #endif
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectSpecificProperties_ReturnsSelectProperties)
     {
     auto schema = GetTestSchema();
@@ -228,6 +265,10 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectSpecificProp
 #endif
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ServerQueryHelperTests, GetSelect_PropertyWithECExpression_IncludesRequiredProperties)
     {
     auto schema = GetTestSchema();
