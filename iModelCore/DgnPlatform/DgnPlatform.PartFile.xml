@@ -746,6 +746,7 @@
     <ProductDirectoryList ListName="DgnPlatformDirList" >
         <ProductDirectory Name="ApplicationRoot"            Path=""/>
         <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
