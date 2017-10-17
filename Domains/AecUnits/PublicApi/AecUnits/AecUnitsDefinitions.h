@@ -68,7 +68,10 @@
 #define AEC_KOQ_FORCE                         "FORCE"
 #define AEC_KOQ_POWER                         "POWER"
 #define AEC_KOQ_ELECTRIC_POTENTIAL            "ELECTRIC_POTENTIAL"
-
+#define AEC_KOQ_HEAT_TRANSFER                 "HEAT_TRANSFER"
+#define AEC_KOQ_LUMINOUS_FLUX                 "LUMINOUS_FLUX"
+#define AEC_KOQ_ILLUMINANCE                   "ILLUMINANCE"
+#define AEC_KOQ_LUMINOUS_INTENSITY            "LUMINOUS_INTENSITY"
 
 
 #define AEC_UNIT_DEG                           "ARC_DEG"
@@ -130,5 +133,13 @@
 #define AEC_UNIT_KILOVOLT                      "KILOVOLT"
 #define AEC_UNIT_MEGAVOLT                      "MEGAVOLT"
 
+#define AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN           "W/(SQ.M*K)"
+#define AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS           "W/(SQ.M*CELSIUS)"
+#define AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT    "BTU/(SQ.FT*HR*FAHRENHEIT)"
+
+#define AEC_UNIT_LUMEN                                  "LUMEN"
+#define AEC_UNIT_LUX                                    "LUX"
+#define AEC_UNIT_LUMEN_PER_SQUARE_FEET                  "LUMEN/SQ.FT"
+#define AEC_UNIT_CANDELA                                "CD"
 
 
