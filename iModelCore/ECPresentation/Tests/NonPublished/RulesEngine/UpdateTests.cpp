@@ -5523,7 +5523,7 @@ TEST_F (HierarchyUpdateTests, RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpda
     s_locater->AddRuleSet(*rules);
     
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -5565,7 +5565,7 @@ TEST_F (HierarchyUpdateTests, RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfte
     s_locater->AddRuleSet(*rules);
     
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -5609,10 +5609,10 @@ TEST_F (HierarchyUpdateTests, RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeA
     rules->AddPresentationRule(*new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", ""));
     PropertyGroupP groupSpec = new PropertyGroup("", "", true, "Description");
     groupSpec->SetCreateGroupForUnspecifiedValues(true);
-    rules->GetGroupingRules().back()->GetGroupsR().push_back(groupSpec);
+    rules->GetGroupingRules().back()->AddGroup(*groupSpec);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
@@ -5658,7 +5658,7 @@ TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChang
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
     
     // request for root nodes
