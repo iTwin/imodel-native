@@ -790,6 +790,7 @@
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets" Path="Assets"/>
         <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
