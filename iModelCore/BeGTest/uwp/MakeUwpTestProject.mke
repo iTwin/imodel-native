@@ -2,7 +2,7 @@
 #
 #     $Source: uwp/MakeUwpTestProject.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifndef TEST_NAME
@@ -214,10 +214,12 @@ MSBuildProperties = Platform=x86
 %else
     MSBuildProperties + Configuration=Release
 %endif
-    
-MSBUILD_COMMAND = $(MSBuildExe) \/target:Build $(MSBuildArgs) $(projectDir)BeTestTest1.sln
-MSBUILD_COMMAND_LOG = $(o)msbuild_output.txt
-%include $(SrcRoot)bsicommon/sharedmki/RunMsbuildAndStripUwpWarnings.mki
+
+# Suspend and resume error summary parsing because I cannot find a way to ignore or hide APPX warnings. Even trivial UWP apps seem to emit them.
+always:
+    |ERROR_PARSE_SUSPEND
+    $(MSBuildExe) \/target:Build $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+    |ERROR_PARSE_RESUME
 
 #--------------------------------------------------------------------------------------
 # Clean
