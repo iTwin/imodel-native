@@ -4580,8 +4580,45 @@ void ExpectedQueries::RegisterExpectedQueries()
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->GetAllFields().push_back(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
         
-        bvector<ECInstanceId> selectedIds;
-        selectedIds.push_back(ECInstanceId((uint64_t)123));
+        bvector<ECInstanceId> selectedIds = {ECInstanceId((uint64_t)123)};
+
+        bset<ECRelationshipClassCP> relationships;
+        relationships.insert(&class_ElementOwnsChildElements);
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
+        query->From(class_Element, true, "this");
+        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+
+        RegisterQuery(queryName, *query);
+        }
+
+    // ContentRelatedInstances_DoesntSplitRecursiveQueryClassesIntoDerivedClasses
+        {
+        Utf8CP queryName = "ContentRelatedInstances_DoesntSplitRecursiveQueryClassesIntoDerivedClasses";
+
+        ECClassCR class_Element = *GetECClass(queryName, "Element");
+        ECClassCR class_Sheet = *GetECClass(queryName, "Sheet");
+        ECRelationshipClassCR class_ElementOwnsChildElements = *GetECClass(queryName, "ElementOwnsChildElements")->GetRelationshipClassCP();
+
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+            });
+
+        field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
+        field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
+        descriptor->GetAllFields().push_back(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+        
+        bvector<ECInstanceId> selectedIds = {ECInstanceId((uint64_t)123)};
 
         bset<ECRelationshipClassCP> relationships;
         relationships.insert(&class_ElementOwnsChildElements);
