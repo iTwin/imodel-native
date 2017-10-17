@@ -40,10 +40,9 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettings().GetSchemaImportToken()))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {
-        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.",
-                   ecdb.GetDbFileName());
+        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.", ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
         }
 
@@ -59,21 +58,19 @@ BentleyStatus ProfileSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadContextR r
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
     const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString(ecdbSystemSchema, GetECDbSystemSchemaXml(), readContext);
-    if (SchemaReadStatus::Success != deserializeStat)
-        {
-        if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
-            LOG.errorv("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
-        else
-            {
-            //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
-            BeAssert(false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
-            }
+    if (SchemaReadStatus::Success == deserializeStat)
+        return SUCCESS;
 
-        return ERROR;
+    if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
+        LOG.errorv("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
+    else
+        {
+        //other error codes are considered programmer errors and therefore have an assertion, too
+        LOG.errorv("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
+        BeAssert(false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
         }
 
-    return SUCCESS;
+    return ERROR;
     }
 
 

@@ -26,7 +26,7 @@ struct RestrictedSchemaImportECDb : ECDb
 
         ~RestrictedSchemaImportECDb() {}
 
-        SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
+        SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
         bool AllowChangesetMergingIncompatibleSchemaImport() const { return GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport(); }
     };
 
