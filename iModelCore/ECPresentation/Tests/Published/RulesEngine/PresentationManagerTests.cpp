@@ -119,6 +119,14 @@ void RulesDrivenECPresentationManagerTests::ShutDownTestL10N()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP RulesDrivenECPresentationManagerTests::GetSchema()
+    {
+    return s_project->GetECDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP RulesDrivenECPresentationManagerTests::GetClass(Utf8CP schemaName, Utf8CP className)

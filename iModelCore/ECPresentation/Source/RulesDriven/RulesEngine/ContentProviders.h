@@ -54,8 +54,6 @@ public:
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     bool IsNestedContent() const {return m_isNestedContent;}
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
-    bool GetCreateFields() const {return m_createFields;}
-    void SetCreateFields(bool value) {m_createFields = value;}
     
     // Selected nodes context
     ECPRESENTATION_EXPORT void SetSelectionContext(SelectionInfo const& selectionInfo);

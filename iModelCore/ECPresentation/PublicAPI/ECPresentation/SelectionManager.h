@@ -187,6 +187,9 @@ protected:
     //! Called to determine synchronization direction of this handler.
     //! @note In case of SyncDirection::SelectionManager, none of the below virtual methods are called.
     virtual SyncDirection _GetSyncDirection() const = 0;
+    
+    //! Get the content display type used to query the content for.
+    virtual Utf8CP _GetContentDisplayType() const {return nullptr;}
 
     //! Create content request options object from the provided SelectionChangedEvent.
     //! The format of the JSON object depends on the @ref IECPresentationManager implementation.

@@ -2850,80 +2850,205 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenParametersEqual)
+    {
+    // set up selection
+    SelectionInfo selection("aaa", true, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsCachedWhenParametersEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_EQ(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_Connection)
+    {
+    // set up a different connection
+    ECDbTestProject project2;
+    project2.Create("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", "RulesEngineTest.01.00.ecschema.xml");
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType)
     {
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentProviderUseCache", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->AddSpecification(*spec);
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson());
 
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str(), false);
-
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-
+    // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2017
+* @bsitest                                      Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntCreateFieldsIfSpecifiedSo)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider)
     {
-    // set up selection
-    NavNodeKeyList keys = {ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId((uint64_t)123))};
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    // set up selection 1
+    SelectionInfo selection1("A", false, *NavNodeKeyListContainer::Create());
+    
+    // set up selection 2
+    SelectionInfo selection2("B", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesntCreateFieldsIfSpecifiedSo", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
-    SelectedNodeInstancesSpecification* spec1 = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    spec1->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
-        "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "", RelationshipMeaning::RelatedInstance));
-    rule->AddSpecification(*spec1);
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create());
     
-    ContentRelatedInstancesSpecification* spec2 = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, 
-        "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket");
-    rule->AddSpecification(*spec2);
+    // set up selection 2
+    SelectionInfo selection2("", true, *NavNodeKeyListContainer::Create());
 
-    // options
-    RulesDrivenECPresentationManager::ContentDescriptorOptions options(rules->GetRuleSetId().c_str());
-    options.SetCreateFields(false);
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
 
-    // get the descriptor and verify it has no fields, but has other data
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
 
-    EXPECT_TRUE(descriptor->GetAllFields().empty());
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
 
-    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
 
-    EXPECT_EQ(m_gadgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
-    ASSERT_EQ(2, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths().size());
-    ASSERT_EQ(1, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0].size()); // related instance based on RelatedPropertiesSpecification
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0][0].GetSourceClass());
-    EXPECT_EQ(m_widgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[0][0].GetTargetClass());
-    ASSERT_EQ(1, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1].size()); // related instance based on navigation property
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1][0].GetSourceClass());
-    EXPECT_EQ(m_widgetClass, descriptor->GetSelectClasses()[0].GetRelatedPropertyPaths()[1][0].GetTargetClass());
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+    
+    // set up selection 2
+    SelectionInfo selection2("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)3)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)4))
+        }));
 
-    EXPECT_EQ(m_sprocketClass, &descriptor->GetSelectClasses()[1].GetSelectClass());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetPrimaryClass());
-    ASSERT_EQ(1, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass().size());
-    EXPECT_EQ(m_sprocketClass, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass()[0].GetSourceClass());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass()[0].GetTargetClass());
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId)
+    {
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set 1
+    PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_1", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules1);
+    ContentRuleP rule1 = new ContentRule("", 1, false);
+    rule1->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules1->AddPresentationRule(*rule1);
+    
+    // create the rule set 2
+    PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_2", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules2);
+    ContentRuleP rule2 = new ContentRule("", 1, false);
+    rule2->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules2->AddPresentationRule(*rule2);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options1(rules1->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson());
+    RulesDrivenECPresentationManager::ContentOptions options2(rules2->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7832,10 +7957,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    RapidJsonValueCR values1 = contentSet.Get(0)->AsJson()["Values"];
+    RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     ASSERT_EQ(1, values1.MemberCount());
     EXPECT_STREQ("Test1", values1["Widget_MyID"].GetString());
-    RapidJsonValueCR values2 = contentSet.Get(1)->AsJson()["Values"];
+    RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     ASSERT_EQ(1, values2.MemberCount());
     EXPECT_STREQ("Test2", values2["Widget_MyID"].GetString());
     }
@@ -7895,9 +8020,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    RapidJsonValueCR jsonValues = contentSet.Get(0)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
     EXPECT_STREQ("GadgetID", jsonValues["Gadget_Widget_MyID"].GetString());
-    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_STREQ("WidgetID", jsonValues2["Gadget_Widget_MyID"].GetString());
     }
 
@@ -7948,10 +8073,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
     ECInstanceNodeKeyPtr gadgetKey = ECInstanceNodeKey::Create(*gadget);
 
-    RapidJsonValueCR jsonValues = contentSet.Get(0)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
     EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
     EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
-    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
-    EXPECT_TRUE(jsonValues["Gadget_Widget"].IsNull());
+    EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
     }

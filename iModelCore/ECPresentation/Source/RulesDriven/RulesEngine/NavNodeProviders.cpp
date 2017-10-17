@@ -869,7 +869,7 @@ void QueryBasedNodesProvider::Initialize()
     DataSourceRelatedSettingsUpdater updater(GetDataSourceInfo(), GetContext());
 
     // set up the custom functions context
-    CustomFunctionsContext fnContext(GetContext().GetDb(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData());
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -1330,6 +1330,7 @@ void SQLiteCacheNodesProvider::InitializeNodes()
             continue;
 
         node->SetNodeId(statement->GetValueUInt64(2));
+        node->SetIsExpanded(!statement->IsColumnNull(3));
 
         if (!statement->IsColumnNull(1))
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(1));
@@ -1451,9 +1452,10 @@ void CachedHierarchyLevelProvider::InitDatasourceIds(uint64_t const* physicalPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] ";
     query.append("AND [ds].[Id] IN (").append(m_datasourceIds).append(") ");
     query.append("ORDER BY [n].[ROWID]");
@@ -1502,9 +1504,10 @@ CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] "
                         "       AND [ds].[VirtualParentNodeId] ";
     if (0 == GetContext().GetPhysicalParentNodeId())

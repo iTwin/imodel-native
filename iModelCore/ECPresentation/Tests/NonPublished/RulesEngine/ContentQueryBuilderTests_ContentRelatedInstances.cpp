@@ -13,7 +13,7 @@
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsNullDescriptorWhenNoSelectedNodes)
     {
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, TestParsedSelectionInfo());
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, TestParsedSelectionInfo());
     ASSERT_TRUE(descriptor.IsNull());
     }
 
@@ -26,10 +26,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsForwardRelatedI
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Widget,Sprocket");
         
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_ReturnsForwardRelatedInstanceQueryWhenSelectedOneInstanceNode");
@@ -48,10 +48,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBackwardRelated
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget,Sprocket");
     
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_ReturnsBackwardRelatedInstanceQueryWhenSelectedOneInstanceNode");
@@ -70,10 +70,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBothDirectionsR
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Widget,Sprocket");
     
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_ReturnsBothDirectionsRelatedInstanceQueryWhenSelectedOneInstanceNode");
@@ -92,10 +92,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
     TestParsedSelectionInfo info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)});
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_ReturnsRelatedInstanceQueryWhenSelectedMultipleInstanceNodesOfTheSameClass");
@@ -119,10 +119,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
         bpair<ECClassCP, ECInstanceId>(ecClass1, {ECInstanceId((uint64_t)123)}), 
         bpair<ECClassCP, ECInstanceId>(ecClass2, {ECInstanceId((uint64_t)125)}), 
         });
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_ReturnsRelatedInstanceQueryWhenSelectedMultipleInstanceNodesOfDifferentClasses");
@@ -141,10 +141,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilter)
     ContentRelatedInstancesSpecification spec(1, 0, false, "this.MyID = \"Sprocket MyID\"", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_AppliesInstanceFilter");
@@ -163,10 +163,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevel)
     ContentRelatedInstancesSpecification spec(1, 1, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_SkipsRelatedLevel");
@@ -185,10 +185,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevelWithS
     ContentRelatedInstancesSpecification spec(1, 1, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget");
     
     TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_SkipsRelatedLevelWithSpecifiedRelationship");
@@ -225,10 +225,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
     ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), ecClass->GetFullName());
     
     TestParsedSelectionInfo info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)456)});
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = GetExpectedQuery();
@@ -276,10 +276,10 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryW
     ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), baseClass->GetFullName());
     
     TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = GetExpectedQuery();

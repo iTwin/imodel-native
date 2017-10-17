@@ -172,7 +172,13 @@ public:
 
 //! A stack of ECClass and ECRelationshipClass pairs representing a path of relationships.
 //! @ingroup GROUP_Presentation
-typedef bvector<RelatedClass> RelatedClassPath;
+struct RelatedClassPath : bvector<RelatedClass>
+    {
+    DEFINE_T_SUPER(bvector<RelatedClass>);
+    RelatedClassPath() : T_Super() {}
+    RelatedClassPath(std::initializer_list<RelatedClass> list) : T_Super(list) {}
+    void Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
+    };
 typedef RelatedClassPath& RelatedClassPathR;
 typedef RelatedClassPath const& RelatedClassPathCR;
 

@@ -52,8 +52,8 @@ private:
     ClassType const* m_class;
     int m_flags;
 public:
-    SupportedClassInfo() : m_class(nullptr) {}
-    SupportedClassInfo(ClassType const& ecClass) : m_class(&ecClass) {}
+    SupportedClassInfo() : m_class(nullptr), m_flags(0) {}
+    SupportedClassInfo(ClassType const& ecClass) : m_class(&ecClass), m_flags(0) {}
     SupportedClassInfo(ClassType const& ecClass, int flags) : m_class(&ecClass), m_flags(flags) {}
     bool operator<(SupportedClassInfo<ClassType> const& other) const
         {
@@ -93,6 +93,67 @@ typedef bmap<ECEntityClassCP, bool, ECClassNameComparer> ECClassSet;
 //! A set of ECClass & ECRelationshipClass pairs.
 typedef bset<RelatedClass> RelatedClassSet;
 
+struct RelatedPathsCache;
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct ECSchemaHelper : NonCopyableClass
+{
+    struct SupportedClassesResolver;
+
+    struct RelationshipClassPathOptions
+        {
+        ECClassCR m_sourceClass;
+        int m_relationshipDirection;
+        int m_depth;
+        Utf8CP m_supportedSchemas;
+        Utf8CP m_supportedRelationships;
+        Utf8CP m_supportedClasses;
+        ECEntityClassCP m_targetClass;
+        bmap<ECRelationshipClassCP, int>& m_relationshipsUseCounter;
+
+        ECPRESENTATION_EXPORT RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
+            Utf8CP supportedSchemas, Utf8CP supportedRelationships, Utf8CP supportedClasses,
+            bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr);
+        };
+
+private:
+    BeSQLite::EC::ECDbCR m_db;
+    RelatedPathsCache& m_relatedPathsCache;
+    BeSQLite::EC::ECSqlStatementCache const* m_statementCache;
+    bool m_ownsStatementCache;
+
+private:
+    void ParseECSchemaNames(bvector<Utf8String>& schemaNames, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
+    void ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
+    SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
+    ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
+    ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
+    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
+        bset<RelatedClass>&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, int relationshipDirection, 
+        int depth, ECEntityClassCP targetClass, bool include) const;
+    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
+        bset<RelatedClass>&, BeSQLite::EC::ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
+        int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
+                
+public:
+    ECPRESENTATION_EXPORT ECSchemaHelper(BeSQLite::EC::ECDbCR db, RelatedPathsCache&, BeSQLite::EC::ECSqlStatementCache const*);
+    ECPRESENTATION_EXPORT ~ECSchemaHelper();
+    BeSQLite::EC::ECDbCR GetDb() const {return m_db;}
+
+    ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
+    ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
+    ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP fullClassName) const;
+    ECPRESENTATION_EXPORT ECClassCP GetECClass(ECClassId) const;
+    ECPRESENTATION_EXPORT bvector<ECClassCP> GetECClassesByName(Utf8CP name) const;
+    ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
+    ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
+    ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
+    ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
+    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
+    ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
+};
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2017
 +===============+===============+===============+===============+===============+======*/
@@ -100,26 +161,17 @@ struct RelatedPathsCache
 {
     struct Key
         {
-        ECClassCP m_rootClass;
+        ECClassCP m_sourceClass;
+        int m_relationshipDirection;
+        int m_depth;
+        Utf8String m_supportedSchemas;
+        Utf8String m_supportedRelationships;
+        Utf8String m_supportedClasses;
         ECEntityClassCP m_targetClass;
-        Utf8String m_specificationHash;
 
-        Key() : m_rootClass(nullptr), m_targetClass(nullptr), m_specificationHash("") {}
-        Key(ECClassCR rootClass, ECEntityClassCP targetClass, Utf8CP specificationHash)
-            : m_rootClass(&rootClass), m_targetClass(targetClass), m_specificationHash(specificationHash)
-            {}
-        bool operator<(Key const& other) const
-            {
-            if (m_rootClass < other.m_rootClass)
-                return true;
-            if (m_rootClass > other.m_rootClass)
-                return false;
-            if (m_targetClass < other.m_targetClass)
-                return true;
-            if (m_targetClass > other.m_targetClass)
-                return false;
-            return m_specificationHash < other.m_specificationHash;
-            }
+        Key() : m_sourceClass(nullptr), m_targetClass(nullptr), m_relationshipDirection(0), m_depth(0) {}
+        Key(ECSchemaHelper::RelationshipClassPathOptions const& options);
+        bool operator<(Key const& other) const;
         };
 
     struct Result
@@ -154,69 +206,6 @@ public:
         {
         return &m_cache.Insert(key, result).first->second;
         }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                04/2015
-+===============+===============+===============+===============+===============+======*/
-struct ECSchemaHelper : NonCopyableClass
-{
-    struct SupportedClassesResolver;
-
-    struct RelationshipClassPathOptions
-        {
-        ECClassCR m_sourceClass;
-        int m_relationshipDirection;
-        int m_depth;
-        Utf8String m_supportedSchemas;
-        Utf8String m_supportedRelationships;
-        Utf8String m_supportedClasses;
-        ECEntityClassCP m_targetClass;
-        bmap<ECRelationshipClassCP, int>& m_relationshipsUseCounter;
-        Utf8CP m_specificationHash;
-
-        ECPRESENTATION_EXPORT RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
-            Utf8StringCR supportedSchemas, Utf8StringCR supportedRelationships, Utf8StringCR supportedClasses,
-            bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr);
-
-        void SetSpecificationHash(Utf8StringCR hash) {m_specificationHash = hash.c_str();}
-        Utf8CP GetSpecificationHash() const {return m_specificationHash;}
-        };
-
-private:
-    BeSQLite::EC::ECDbCR m_db;
-    RelatedPathsCache& m_relatedPathsCache;
-    BeSQLite::EC::ECSqlStatementCache const* m_statementCache;
-    bool m_ownsStatementCache;
-
-private:
-    void ParseECSchemaNames(bvector<Utf8String>& schemaNames, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
-    void ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
-    SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
-    ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
-    ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
-    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, int relationshipDirection, 
-        int depth, ECEntityClassCP targetClass, bool include) const;
-    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, BeSQLite::EC::ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
-        int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
-                
-public:
-    ECPRESENTATION_EXPORT ECSchemaHelper(BeSQLite::EC::ECDbCR db, RelatedPathsCache&, BeSQLite::EC::ECSqlStatementCache const*);
-    ECPRESENTATION_EXPORT ~ECSchemaHelper();
-    BeSQLite::EC::ECDbCR GetDb() const {return m_db;}
-
-    ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
-    ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
-    ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP fullClassName) const;
-    ECPRESENTATION_EXPORT ECClassCP GetECClass(ECClassId) const;
-    ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
-    ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
-    ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
-    ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
-    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
-    ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
 };
 
 /*=================================================================================**//**

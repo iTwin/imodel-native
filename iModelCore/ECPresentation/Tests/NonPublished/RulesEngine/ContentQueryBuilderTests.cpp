@@ -15,8 +15,10 @@ void ContentQueryBuilderTests::SetUp()
     Localization::Init();
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
     m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), m_relatedPathsCache, nullptr);
-    m_builder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, 
-        m_nodesLocater, *m_ruleset, ContentDisplayType::Undefined, m_settings, m_expressionsCache, 
+    m_descriptorBuilder = new ContentDescriptorBuilder(*new ContentDescriptorBuilder::Context(*m_schemaHelper, 
+        *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, nullptr, &m_localizationProvider));
+    m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, 
+        m_nodesLocater, *m_ruleset, m_settings, m_expressionsCache, 
         m_categorySupplier, nullptr, nullptr, &m_localizationProvider));
     }
 
@@ -25,7 +27,8 @@ void ContentQueryBuilderTests::SetUp()
 //---------------------------------------------------------------------------------------
 void ContentQueryBuilderTests::TearDown()
     {
-    delete m_builder;
+    DELETE_AND_CLEAR(m_descriptorBuilder);
+    DELETE_AND_CLEAR(m_queryBuilder);
     Localization::Terminate();
     }
 
@@ -74,10 +77,10 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
     spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec, info);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor, info);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -99,10 +102,10 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
         "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
 
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -125,10 +128,10 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedPropertiesSpecificationFromConte
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -153,10 +156,10 @@ TEST_F (ContentQueryBuilderTests, DoesntApplyRelatedPropertiesSpecificationFromC
         "RulesEngineTest:Gadget", "Description", RelationshipMeaning::RelatedInstance));
         
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -179,10 +182,10 @@ TEST_F (ContentQueryBuilderTests, RelatedPropertiesAreAppendedCorrectlyWhenUsing
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Sprocket", false);
     
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -204,10 +207,10 @@ TEST_F (ContentQueryBuilderTests, CreatesContentFieldsForXToManyRelatedInstanceP
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -233,10 +236,10 @@ TEST_F (ContentQueryBuilderTests, CreatesNestedContentFieldsForXToManyRelatedIns
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "Description", RelationshipMeaning::RelatedInstance));
     
     // get the query
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     // compare
@@ -256,11 +259,11 @@ TEST_F (ContentQueryBuilderTests, NestsFilterExpressionQuery)
     {
     ContentInstancesOfSpecificClassesSpecification spec(1,"", "RulesEngineTest:Widget", false);
 
-    ContentDescriptorPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("FilterExpressionQueryTest");
@@ -270,4 +273,99 @@ TEST_F (ContentQueryBuilderTests, NestsFilterExpressionQuery)
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
+    {
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.SetShowImages(true);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsShowImagesFlag");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Grid);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+        
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsShowLabelsFlagForGridContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Graphics);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentType)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::List);
+
+    ECClassCP ecClass = GetECClass("Basic1", "Class1A");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SetsNoFieldsAndShowLabelsFlagsForListContentType");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }

@@ -81,6 +81,14 @@ $(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressi
 
 $(o)ContentFieldEditors$(oext):          $(RulesEngineSourceDirectory)ContentFieldEditors.cpp $(RulesEngineDependencies)
 
+$(o)ContentClassesLocater$(oext):        $(RulesEngineSourceDirectory)ContentClassesLocater.cpp $(RulesEngineDependencies)
+
+$(o)ContentDescriptorBuilder$(oext):     $(RulesEngineSourceDirectory)ContentDescriptorBuilder.cpp $(RulesEngineDependencies)
+
+$(o)ContentSpecificationsHandler$(oext): $(RulesEngineSourceDirectory)ContentSpecificationsHandler.cpp $(RulesEngineDependencies)
+
+$(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyInfoStore.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =

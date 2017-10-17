@@ -23,7 +23,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
+void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
     bvector<Utf8String> usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
     for (Utf8StringCR usedClassName : usedClasses)
@@ -34,14 +34,22 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
             BeAssert(false);
             continue;
             }
-        ECClassCP usedClass = db.Schemas().GetClass(schemaName.c_str(), className.c_str());
-        if (nullptr == usedClass)
+        if (!schemaName.empty())
             {
-            BeAssert(false);
-            continue;
+            ECClassCP usedClass = schemaHelper.GetECClass(schemaName.c_str(), className.c_str());
+            if (nullptr == usedClass)
+                {
+                BeAssert(false);
+                continue;
+                }
+            listener._OnClassUsed(*usedClass, true);
             }
-
-        listener._OnClassUsed(*usedClass, true);
+        else
+            {
+            bvector<ECClassCP> usedClasses = schemaHelper.GetECClassesByName(className.c_str());
+            for (ECClassCP usedClass : usedClasses)
+                listener._OnClassUsed(*usedClass, true);
+            }
         }
     }
 
@@ -49,42 +57,42 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-static void NotifyListenerWithCustomizationRuleClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, bvector<T*> const& rules)
+static void NotifyListenerWithCustomizationRuleClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, bvector<T*> const& rules)
     {
     for (T const* rule : rules)
-        UsedClassesHelper::NotifyListenerWithUsedClasses(listener, db, ecexpressionsCache, rule->GetCondition());
+        UsedClassesHelper::NotifyListenerWithUsedClasses(listener, schemaHelper, ecexpressionsCache, rule->GetCondition());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
+void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
     {
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetGroupingRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetSortingRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetLabelOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetImageIdOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetStyleOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetCheckBoxRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetRenameNodeRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetGroupingRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetSortingRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetLabelOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetImageIdOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetStyleOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetCheckBoxRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetRenameNodeRules());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
+void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
-    ECDbUsedClassesListenerWrapper wrapper(db, listener);
-    NotifyListenerWithUsedClasses(wrapper, db, ecexpressionsCache, ecexpression);
+    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
+void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
     {
-    ECDbUsedClassesListenerWrapper wrapper(db, listener);
-    NotifyListenerWithRulesetClasses(wrapper, db, ecexpressionsCache, ruleset);
+    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2607,7 +2615,7 @@ static void ApplyInstanceFilter(ComplexNavigationQuery& query, SelectQueryInfo c
 
     if (nullptr != params.GetUsedClassesListener())
         {
-        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper().GetDb(),
+        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper(),
             params.GetECExpressionsCache(), instanceFilter);
         }
     }
@@ -2664,7 +2672,7 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
     RelatedClassPath const& path, SelectionPurpose purpose, ChildNodeSpecificationCR specification)
     {
     RelatedClassPath relatedClassPath = path;
-    QueryBuilderHelpers::Reverse(relatedClassPath, "related", path.back().IsPolymorphic());
+    relatedClassPath.Reverse("related", path.back().IsPolymorphic());
 
     SelectQueryInfo selectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), purpose);
     selectInfo.GetRelatedClassPath() = relatedClassPath;
@@ -2805,9 +2813,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         // find all applying relationship paths
         bmap<ECRelationshipClassCP, int> relationshipCounter;
         ECSchemaHelper::RelationshipClassPathOptions options(*rootClass, relationshipDirection, specification.GetSkipRelatedLevel(), 
-            supportedSchemas, specification.GetRelationshipClassNames(), specification.GetRelatedClassNames(), 
+            supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(), 
             relationshipCounter, groupingResolver.GetGroupingClass());
-        options.SetSpecificationHash(specificationHash);
         bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
 
         // create a select info for each path

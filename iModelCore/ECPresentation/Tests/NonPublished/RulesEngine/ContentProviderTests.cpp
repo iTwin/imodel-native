@@ -46,7 +46,7 @@ void ContentProviderTests::SetUp()
 
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
-    m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, m_nodesLocater, m_categorySupplier, 
+    m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, m_nodesLocater, m_categorySupplier,
         m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr);
     m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions);
     }

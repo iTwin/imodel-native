@@ -31,6 +31,7 @@ private:
     INavNodeKeysContainerCPtr m_keys;
     bool m_isSubSelection;
     bool m_isValid;
+    mutable Utf8String m_hash;
 
 public:
     //! Constructor. Creates an invalid selection info object.
@@ -64,16 +65,20 @@ public:
     ECPRESENTATION_EXPORT SelectionInfo(bvector<ECN::ECClassCP> const& classes);
 
     //! Compare this selection event info object with the supplied one.
-    ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
+    bool operator==(SelectionInfo const& other) const {return GetHash() == other.GetHash();}
     
     //! Compare this selection event info object with the supplied one.
-    ECPRESENTATION_EXPORT bool operator<(SelectionInfo const& other) const;
+    bool operator<(SelectionInfo const& other) const {return GetHash().CompareTo(other.GetHash()) < 0;}
     
     //! Assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo const& other);
 
     //! Move assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo&& other);
+    
+    //! Get hash string for this selection info.
+    //! @note Depending on the size of node keys container, this might be an expensive operation.
+    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
 
     //! Is this struct valid.
     bool IsValid() const {return m_isValid;}
@@ -100,6 +105,7 @@ enum class ContentFlags
     ShowLabels =     1 << 2, //!< Each content record additionally has a label
     MergeResults =   1 << 3, //!< All content records are merged into a single record
     DistinctValues = 1 << 4, //!< Content has only distinct values
+    NoFields =       1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
     };
 
 //=======================================================================================
@@ -118,6 +124,9 @@ struct ContentDisplayType
 
     //! Property pane content type. By default adds ContentFlags::MergeResults flag.
     ECPRESENTATION_EXPORT static const Utf8CP PropertyPane;
+    
+    //! List view content type. By default adds ContentFlags::NoFields and ContentFlags::ShowLabels flags.
+    ECPRESENTATION_EXPORT static const Utf8CP List;
 
     //! Content type for graphic content controls, e.g. the viewport. 
     //! By default adds ContentFlags::KeysOnly flag.
@@ -168,6 +177,8 @@ public:
 
     //! Is the select polymorphic.
     bool IsSelectPolymorphic() const {return m_isPolymorphic;}
+    //! Set whether select is polymorphic.
+    void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
 
     //! Get the primary ECClass. 
     ECN::ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}
@@ -1120,6 +1131,7 @@ private:
 public:
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Success(ECN::ECValue changedValue);
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Error(Utf8String message);
+    ECPRESENTATION_EXPORT static ECInstanceChangeResult Ignore(Utf8String reason = "");
 
     ECInstanceChangeResult(ECInstanceChangeResult const& other)
         : m_status(other.m_status), m_changedValue(other.m_changedValue), m_errorMessage(other.m_errorMessage)

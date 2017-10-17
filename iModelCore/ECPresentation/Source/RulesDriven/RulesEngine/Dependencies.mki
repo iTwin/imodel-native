@@ -48,6 +48,9 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ECInstanceChangesDirector.h            \
                                 $(RulesEngineSourceDirectory)DataSourceInfo.h                       \
                                 $(RulesEngineSourceDirectory)ContentFieldEditors.h                  \
+                                $(RulesEngineSourceDirectory)ContentClassesLocater.h                \
+                                $(RulesEngineSourceDirectory)ContentSpecificationsHandler.h         \
+                                $(RulesEngineSourceDirectory)PropertyInfoStore.h                    \
                                 $(RulesEngineSourceDirectory)ECExpressionOptimizer.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h

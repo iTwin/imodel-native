@@ -112,6 +112,26 @@ rapidjson::Document NavNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* alloca
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 NavNodeKey::_ComputeHash() const
+    {
+    MD5 h;
+    h.Add(m_type.c_str(), m_type.SizeInBytes());
+    return h;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR NavNodeKey::GetHash() const
+    {
+    if (m_hash.empty())
+        m_hash = _ComputeHash().GetHashString();
+    return m_hash;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 int GroupingNodeKey::_Compare(NavNodeKey const& other) const
@@ -138,6 +158,16 @@ rapidjson::Document GroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* a
     rapidjson::Document json = NavNodeKey::_AsJson(allocator);
     json.AddMember("NodeId", m_nodeId, json.GetAllocator());
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 GroupingNodeKey::_ComputeHash() const
+    {
+    MD5 h = NavNodeKey::_ComputeHash();
+    h.Add(&m_nodeId, sizeof(uint64_t));
+    return h;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -308,6 +338,16 @@ bool ECInstanceNodeKey::_IsSimilar(NavNodeKey const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ECInstanceNodeKey::_ComputeHash() const
+    {
+    MD5 h = NavNodeKey::_ComputeHash();
+    h.Add(&m_instanceKey, sizeof(ECInstanceKey));
+    return h;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<DisplayLabelGroupingNodeKey> DisplayLabelGroupingNodeKey::Create(JsonValueCR json)
@@ -384,25 +424,25 @@ rapidjson::Document NodesPathElement::AsJson(rapidjson::MemoryPoolAllocator<>* a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create() {return new NavNodeKeySetContainer(NavNodeKeySet(), true);}
+INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create() {return new NavNodeKeySetContainer(NavNodeKeySet());}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create(NavNodeKeySetCR set, bool makeCopy) {return new NavNodeKeySetContainer(set, makeCopy);}
+INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create(NavNodeKeySet set) {return new NavNodeKeySetContainer(set);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create(NavNodeKeySet&& set) {return new NavNodeKeySetContainer(std::move(set));}
+INavNodeKeysContainerCPtr NavNodeKeySetContainer::Create(NavNodeKeySet const* set) {return new NavNodeKeySetContainer(set);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create() {return new NavNodeKeyListContainer(NavNodeKeyList(), true);}
+INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create() {return new NavNodeKeyListContainer(NavNodeKeyList());}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyListCR list, bool makeCopy) {return new NavNodeKeyListContainer(list, makeCopy);}
+INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyList list) {return new NavNodeKeyListContainer(list);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyList&& list) {return new NavNodeKeyListContainer(std::move(list));}
+INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyList const* list) {return new NavNodeKeyListContainer(list);}

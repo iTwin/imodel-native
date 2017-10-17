@@ -32,6 +32,7 @@ void RulesEnginePerformanceTests::SetUp()
     BeTest::GetHost().GetTempDir(temporaryDirectory);
     m_manager = new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
 
+    // set up presentation manager
     PresentationRuleSetPtr ruleset = _SupplyRuleset();
     if (!ruleset.IsValid())
         {
@@ -42,6 +43,7 @@ void RulesEnginePerformanceTests::SetUp()
     m_manager->GetLocaters().RegisterLocater(*m_locater);
     m_locater->AddRuleSet(*ruleset);
 
+    // open the project
     BeFileName projectPath = _SupplyProjectPath();
     if (!projectPath.DoesPathExist())
         {
@@ -54,6 +56,9 @@ void RulesEnginePerformanceTests::SetUp()
         return;
         }
     m_manager->GetConnections().NotifyConnectionOpened(m_project);
+
+    // we want to make sure all schemas in the dataset are fully loaded so that's not included in our performance test results
+    m_project.Schemas().GetSchemas(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

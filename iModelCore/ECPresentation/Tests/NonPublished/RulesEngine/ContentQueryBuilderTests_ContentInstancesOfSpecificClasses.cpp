@@ -14,10 +14,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A", false);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClass");
@@ -34,10 +34,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A", true);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClassPolymorphically");
@@ -54,10 +54,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic2:Class2", true);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstacesOfSpecificClasses_ReturnsQueryWithNotIncludedHiddenProperty");
@@ -83,10 +83,10 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
     spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_1", 1200, "\"Value\" & 1"));
     spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_2", 1500, "this.Name & \"Test\""));
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstacesOfSpecificClasses_ReturnsQueryWithCalculatedProperties");
@@ -103,10 +103,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic2:Class2", true);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     int priority = query->GetContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
@@ -120,10 +120,10 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic3:Class3", true);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     int priority = query->GetContract()->GetDescriptor().GetVisibleFields()[0]->GetPriority();
@@ -137,10 +137,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A,Class1B", false);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleClasses");
@@ -157,10 +157,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A;Basic2:Class2", false);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses");
@@ -177,10 +177,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "this.DisplayLabel = 10", "Basic1:Class1A", false);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_AppliesInstanceFilter");
@@ -197,10 +197,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class2", false);
 
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
@@ -222,13 +222,14 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType1)
     {
-    m_builder->GetParameters().SetPreferredDisplayType(ContentDisplayType::PropertyPane);
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::PropertyPane);
+
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A", false);
     
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType1");
@@ -245,10 +246,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A,Class2", false);
 
-    ContentDescriptorCPtr descriptor = GetBuilder().CreateDescriptor(spec);
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentQueryPtr query = GetBuilder().CreateQuery(spec, *descriptor);
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
     ASSERT_TRUE(query.IsValid());
 
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
