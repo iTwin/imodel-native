@@ -279,7 +279,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
         "WHERE ch.BaseClassId=? AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow;
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql);;
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql);
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)

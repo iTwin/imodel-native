@@ -948,7 +948,7 @@ TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, ImportSchemas)
     {
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2_4001.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2.ecdb"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -956,7 +956,7 @@ TEST_F(FileFormatCompatibilityTests, ImportSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     {
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
@@ -1021,6 +1021,35 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
         }
 
     ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath.GetNameUtf8();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
+    {
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
+
+    BeFileName upgradedFilePath(artefactOutDir);
+    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT Name FROM " BEDB_TABLE_Local " ORDER BY Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "First row";
+    ASSERT_STRCASEEQ("be_repositoryid", stmt.GetValueText(0)) << "First row";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Second row";
+    ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1106,7 +1135,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     {
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb"));
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
