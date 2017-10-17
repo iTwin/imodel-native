@@ -68,6 +68,9 @@ struct BriefcaseTests: public IntegrationTestsBase
         }
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulAcquireBriefcase)
     {
     auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
@@ -78,6 +81,9 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcase)
     CheckProgressNotified();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     {
     //Attempt acquiring briefcase from a non-existing imodel
@@ -91,6 +97,9 @@ TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     CheckNoProgress();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, AcquireAfterQuerying)
     {
     auto imodelResult = m_client->GetiModelById(m_projectId, m_imodel->GetId())->GetResult();
@@ -110,6 +119,9 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
     CheckProgressNotified();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, AcquireBriefcaseId)
     {
     auto connectionResult = m_client->ConnectToiModel(*m_imodel)->GetResult();
@@ -125,6 +137,9 @@ TEST_F(BriefcaseTests, AcquireBriefcaseId)
     EXPECT_EQ(BeSQLite::BeBriefcaseId(3), briefcaseResult.GetValue()->GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulAbandonBriefcase)
     {
     //Acquire first briefcase
@@ -159,6 +174,9 @@ TEST_F(BriefcaseTests, SuccessfulAbandonBriefcase)
     EXPECT_SUCCESS(connection->QueryBriefcaseInfo(result2.GetValue()->GetId())->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulAbandonOtherUserBriefcase)
     {
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
@@ -199,6 +217,9 @@ TEST_F(BriefcaseTests, SuccessfulAbandonOtherUserBriefcase)
     EXPECT_SUCCESS(connection->QueryBriefcaseInfo(briefcaseA.GetValue()->GetId())->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     {
     DgnDbPtr db = OpenBriefcaseFile();
@@ -222,6 +243,9 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     // AsyncTasksManager::StopThreadingAndWait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
     {
     InitializeWithChangeSets();
@@ -245,6 +269,9 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
     // AsyncTasksManager::StopThreadingAndWait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulAcquireAndMergeBriefcase)
     {
     InitializeWithChangeSets();
@@ -268,6 +295,9 @@ TEST_F(BriefcaseTests, SuccessfulAcquireAndMergeBriefcase)
     // AsyncTasksManager::StopThreadingAndWait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulOpenAndMergeBriefcase)
     {
     InitializeWithChangeSets();
@@ -282,6 +312,9 @@ TEST_F(BriefcaseTests, SuccessfulOpenAndMergeBriefcase)
     }
 
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, OpenSeedFileAsBriefcase)
     {
     DgnDbPtr db = CreateTestDb("BriefcaseTest");
@@ -298,6 +331,9 @@ TEST_F(BriefcaseTests, OpenSeedFileAsBriefcase)
     CheckNoProgress();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PullAndMerge)
     {
     InitializeWithChangeSets();
@@ -339,6 +375,9 @@ TEST_F(BriefcaseTests, PullAndMerge)
     EXPECT_EQ(0, lastChangeSet->GetContainingChanges());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, Push)
     {
     auto briefcase = AcquireBriefcaseWithoutSync();
@@ -357,6 +396,9 @@ TEST_F(BriefcaseTests, Push)
     EXPECT_FALSE(lastChangeSetId.empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PullMergeAndPush)
     {
     InitializeWithChangeSets();
@@ -378,6 +420,9 @@ TEST_F(BriefcaseTests, PullMergeAndPush)
     EXPECT_FALSE(lastChangeSetId.empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, TwoPulls)
     {
     InitializeWithChangeSets();
@@ -421,6 +466,9 @@ bool IsDirEmpty(BeFileName dirToCheck)
     return 0 == GetDirSize(dirToCheck);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PreDownload)
     {
     BeFileName preDownloadPath;
@@ -449,6 +497,9 @@ TEST_F(BriefcaseTests, PreDownload)
 
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
     {
     BeFileName preDownloadPath;
@@ -476,6 +527,9 @@ TEST_F(BriefcaseTests, PreDownloadSmallCacheSize)
     EXPECT_EQ(1, GetDirSize(preDownloadPath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PreDownloadTurnedOff)
     {
     BeFileName preDownloadPath;
@@ -491,6 +545,9 @@ TEST_F(BriefcaseTests, PreDownloadTurnedOff)
     EXPECT_TRUE(IsDirEmpty(preDownloadPath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
     {
     // Acquire 5 briefcases
@@ -519,6 +576,9 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
         }
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToVersion)
     {
     //create changeSets
@@ -566,6 +626,9 @@ TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToVersion)
     EXPECT_FALSE(partition->Insert().IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToChangeSet)
     {
     //create changeSets
@@ -600,6 +663,9 @@ TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToChangeSet)
     EXPECT_FALSE(partition->Insert().IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, DownloadStandaloneBriefcase)
     {
     //create changeSets
@@ -633,6 +699,9 @@ TEST_F(BriefcaseTests, DownloadStandaloneBriefcase)
     EXPECT_FALSE(partition->Insert().IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     {
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
@@ -735,6 +804,9 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     {
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 8);
@@ -832,6 +904,9 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, SuccessfulRestoreBriefcase)
     {
     auto connectionResult = m_client->ConnectToiModel(*m_imodel)->GetResult();
@@ -849,6 +924,9 @@ TEST_F(BriefcaseTests, SuccessfulRestoreBriefcase)
     CheckProgressNotified();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, UnsuccessfulRestoreBriefcase)
     {
     //Restore briefcase that doesnt exists

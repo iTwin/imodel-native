@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ObjectIdTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,31 +12,49 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, LessThan_EmptyEqual_False)
     {
     EXPECT_FALSE(ObjectId() < ObjectId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, LessThan_Equal_False)
     {
     EXPECT_FALSE(ObjectId("Schema", "Foo", "Boo") < ObjectId("Schema", "Foo", "Boo"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, LessThan_SchemaNameLessThanOther_True)
     {
     EXPECT_TRUE(ObjectId("ASchemaName", "ClassName", "Foo") < ObjectId("BSchemaName", "ClassName", "Foo"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, LessThan_ClassNameLessThanOther_True)
     {
     EXPECT_TRUE(ObjectId("AClassName", "Foo") < ObjectId("BClassName", "Foo"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, LessThan_RemoteIdLessThanOther_True)
     {
     EXPECT_TRUE(ObjectId("Foo", "ARemoteId") < ObjectId("Foo", "BRemoteId"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, Ctor_ClassKeyContainsOnlyClass_OnlyClassIsSetAndSchemaIsEmpty)
     {
     ObjectId objectId("Class", "Id");
@@ -44,6 +62,9 @@ TEST_F(ObjectIdTests, Ctor_ClassKeyContainsOnlyClass_OnlyClassIsSetAndSchemaIsEm
     EXPECT_EQ("Class", objectId.className);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, Ctor_ClassKeyContainsSchemaAndClass_SchemaAndClassSet)
     {
     ObjectId objectId("Schema.Class", "Id");
@@ -51,6 +72,9 @@ TEST_F(ObjectIdTests, Ctor_ClassKeyContainsSchemaAndClass_SchemaAndClassSet)
     EXPECT_EQ("Class", objectId.className);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, Ctor_ECClassPassedWithRemoteId_SchemaAndClassSet)
     {
     Utf8String schemaXml =
@@ -69,6 +93,9 @@ TEST_F(ObjectIdTests, Ctor_ECClassPassedWithRemoteId_SchemaAndClassSet)
     EXPECT_EQ("Id", objectId.remoteId);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ObjectIdTests, Ctor_ECClassPassed_SchemaAndClassSetWithEmptyRemoteId)
     {
     Utf8String schemaXml =

@@ -13,6 +13,9 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap)
     {
     ECInstanceKey key1(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(2)));
@@ -29,6 +32,9 @@ TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap
     ASSERT_EQ(ECInstanceId(UINT64_C(3)), map.begin()->second);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToCommaSeperatedList)
     {
     ECInstanceKeyMultiMap map;
@@ -39,12 +45,18 @@ TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToC
     EXPECT_STREQ("4,5,6", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, ToECInstanceIdList_EmptyMap_EmptyString)
     {
     ECInstanceKeyMultiMap map;
     EXPECT_STREQ("", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_BothMapsEmpty_ReturnsEmpty)
     {
     ECInstanceKeyMultiMap map1;
@@ -55,6 +67,9 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_BothMapsEmpty_ReturnsEmpty)
     ASSERT_EQ(0, mergedMap.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_FirstMapEmpty_ReturnsSecondMap)
     {
     ECInstanceKeyMultiMap map1;
@@ -67,6 +82,9 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_FirstMapEmpty_ReturnsSecondMap)
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1))));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_SecondMapEmpty_ReturnsFirstMap)
     {
     ECInstanceKeyMultiMap map1;
@@ -80,6 +98,9 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_SecondMapEmpty_ReturnsFirstMap)
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1))));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_MultipleValues_ReturnsMerged)
     {
     ECInstanceKeyMultiMap map1;
