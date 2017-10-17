@@ -42,6 +42,11 @@
 #define DYNAMIC_CURRENT_NAME                                "CurrentProp"
 #define DYNAMIC_FORCE_NAME                                  "ForceProp"
 #define DYNAMIC_POWER_NAME                                  "PowerProp"
+#define DYNAMIC_HEAT_TRANSFER_NAME                          "HeatTransferProp"
+#define DYNAMIC_LUMINOUS_FLUX_NAME                          "LUMINOUS_FLUXProp"
+#define DYNAMIC_ILLUMINANCE_NAME                            "ILLUMINANCEProp"
+#define DYNAMIC_LUMINOUS_INTENSITY_NAME                     "LUMINOUS_INTENSITYProp"
+
 
 #define DYNAMIC_TEMPERATURE_NAME                            "TempProp"
 #define DYNAMIC_PRESSURE_NAME                               "PressureProp"
@@ -325,6 +330,21 @@ TEST_F(AecUnitsTestFixture, AddClassesToDynamicSchema)
     newClass->CreatePrimitiveProperty(myProp, DYNAMIC_ELECTRICAL_POTENIAL_NAME);
     myProp->SetType(ECN::PRIMITIVETYPE_Double);
     locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_ELECTRIC_POTENTIAL);
+    myProp->SetKindOfQuantity(locatedKOQ);
+
+    newClass->CreatePrimitiveProperty(myProp, DYNAMIC_HEAT_TRANSFER_NAME);
+    myProp->SetType(ECN::PRIMITIVETYPE_Double);
+    locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_HEAT_TRANSFER);
+    myProp->SetKindOfQuantity(locatedKOQ);
+
+    newClass->CreatePrimitiveProperty(myProp, DYNAMIC_LUMINOUS_FLUX_NAME);
+    myProp->SetType(ECN::PRIMITIVETYPE_Double);
+    locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_LUMINOUS_FLUX);
+    myProp->SetKindOfQuantity(locatedKOQ);
+
+    newClass->CreatePrimitiveProperty(myProp, DYNAMIC_ILLUMINANCE_NAME);
+    myProp->SetType(ECN::PRIMITIVETYPE_Double);
+    locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_ILLUMINANCE);
     myProp->SetKindOfQuantity(locatedKOQ);
 
 
@@ -4757,7 +4777,7 @@ TEST_F(AecUnitsTestFixture, FlowUnitsTest)
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_FLOW_NAME));
     testDouble = propVal.GetDouble();
-    ASSERT_NEAR(testDouble, 10.0, 0.00001);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
 
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FLOW_NAME, AEC_UNIT_CUB_M_PER_SEC, testDouble);
     ASSERT_NEAR(testDouble, 1.0, 0.00001);
@@ -4884,5 +4904,283 @@ TEST_F(AecUnitsTestFixture, VoltUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_ELECTRICAL_POTENIAL_NAME, AEC_UNIT_MEGAVOLT, testDouble);
     ASSERT_NEAR(testDouble, 0.000001, 0.0000001);
 
+
+}
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(AecUnitsTestFixture, HeatTransfertUnitsTest)
+{
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+    // Set using WATT_PER_SQUARE_METER_KELVIN
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN, 1.0));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_HEAT_TRANSFER_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, 0.1761102, 0.0000001);
+
+    // Set using WATT_PER_SQUARE_METER_CELIUS
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS, 1.0));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_HEAT_TRANSFER_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, 0.1761102, 0.0000001);
+
+    // Set using BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT, 0.1761102));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_HEAT_TRANSFER_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_HEAT_TRANSFER_NAME, AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, 0.1761102, 0.0000001);
+
+}
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(AecUnitsTestFixture, LuminousFluxUnitsTest)
+{
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+    // Set using WATT_PER_SQUARE_METER_KELVIN
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_LUMINOUS_FLUX_NAME, AEC_UNIT_LUMEN, 1.0));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_LUMINOUS_FLUX_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_LUMINOUS_FLUX_NAME, AEC_UNIT_LUMEN, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+
+}
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(AecUnitsTestFixture, ILLUMINANCEUnitsTest)
+{
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+    // Set using WATT_PER_SQUARE_METER_KELVIN
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_ILLUMINANCE_NAME, AEC_UNIT_LUX, 1.0));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_ILLUMINANCE_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_ILLUMINANCE_NAME, AEC_UNIT_LUX, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_ILLUMINANCE_NAME, AEC_UNIT_LUMEN_PER_SQUARE_FEET, testDouble);
+    ASSERT_NEAR(testDouble, 0.09290304, 0.00001);
+
+}
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(AecUnitsTestFixture, LUMINOUS_INTENSITYUnitsTest)
+{
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+    // Set using WATT_PER_SQUARE_METER_KELVIN
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_LUMINOUS_INTENSITY_NAME, AEC_UNIT_CANDELA, 1.0));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_LUMINOUS_INTENSITY_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_LUMINOUS_INTENSITY_NAME, AEC_UNIT_CANDELA, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
 
 }
