@@ -5500,3 +5500,189 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
     // expect 0 update records
     ASSERT_EQ(0, m_updateRecordsHandler->GetFullUpdateRecords().size());
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2017
++===============+===============+===============+===============+===============+======*/
+struct TempSelectionManager : SelectionManager
+    {
+    TempSelectionManager() {HierarchyUpdateTests::s_manager->SetSelectionManager(this);}
+    ~TempSelectionManager() {HierarchyUpdateTests::s_manager->SetSelectionManager(nullptr);}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpdate)
+    {
+    // insert some widget instances
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+    
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpdate", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    
+    // expect 1 node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add the node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+
+    // send update notification
+    s_eventsSource->NotifyECInstanceUpdated(s_project->GetECDbCR(), *widget1);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
+    {
+    // insert some widget instances
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+    
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    
+    // expect 1 node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add the node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+
+    // send update notification
+    s_eventsSource->NotifyECInstanceUpdated(s_project->GetECDbCR(), *widget1);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
+    {
+    // insert some widget instances
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+    
+    rules->AddPresentationRule(*new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", ""));
+    PropertyGroupP groupSpec = new PropertyGroup("", "", true, "Description");
+    groupSpec->SetCreateGroupForUnspecifiedValues(true);
+    rules->GetGroupingRules().back()->GetGroupsR().push_back(groupSpec);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    
+    // expect 1 node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add the node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+
+    // send update notification
+    s_eventsSource->NotifyECInstanceUpdated(s_project->GetECDbCR(), *widget1);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
+    {
+    // insert some widget instances
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Other Label"));});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+    
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "this.MyID", ""));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    
+    // expect 2 grouping nodes
+    ASSERT_EQ(2, rootNodes.GetSize());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add the node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+
+    // send update notification
+    s_eventsSource->NotifyECInstanceUpdated(s_project->GetECDbCR(), *widget1);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(2, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }

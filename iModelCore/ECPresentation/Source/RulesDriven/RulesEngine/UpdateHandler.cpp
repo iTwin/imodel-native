@@ -93,14 +93,16 @@ struct RemapNodeIdsTask : IUpdateTask
 {
 private:
     NodesCache& m_cache;
+    SelectionManagerP m_selectionManager;
     bmap<uint64_t, uint64_t> const& m_remapInfo;
 
 protected:
     uint32_t _GetPriority() const override {return TASK_PRIORITY_RemapNodeIds;}
     bvector<IUpdateTaskPtr> _Perform() override
         {
-        for (auto iter = m_remapInfo.begin(); iter != m_remapInfo.end(); ++iter)
-            m_cache.RemapNodeIds(iter->first, iter->second);
+        m_cache.RemapNodeIds(m_remapInfo);
+        if (nullptr != m_selectionManager)
+            m_selectionManager->RemapNodeIds(m_remapInfo);
         return bvector<IUpdateTaskPtr>();
         }
     Utf8String _GetPrintStr() const override
@@ -122,8 +124,8 @@ protected:
         return str;
         }
 public:
-    RemapNodeIdsTask(NodesCache& cache, bmap<uint64_t, uint64_t> const& remapInfo) 
-        : m_cache(cache), m_remapInfo(remapInfo)
+    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP selectionManager, bmap<uint64_t, uint64_t> const& remapInfo) 
+        : m_cache(cache), m_selectionManager(selectionManager), m_remapInfo(remapInfo)
         {}
 };
 
@@ -325,7 +327,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemapNodeIdsTask(bmap<uint64_t, uint64_
         return nullptr;
         }
 
-    return new RemapNodeIdsTask(*m_nodesCache, remapInfo);
+    return new RemapNodeIdsTask(*m_nodesCache, m_selectionManager, remapInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -387,7 +389,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) con
 UpdateHandler::UpdateHandler(NodesCache* nodesCache, ContentCache* contentCache, IConnectionCacheCR connections, INodesProviderContextFactoryCR contextFactory, 
     INodesProviderFactoryCR providerFactory, IECExpressionsCacheProvider& ecexpressionsCacheProvider) 
     : m_nodesCache(nodesCache), m_contentCache(contentCache), m_connections(connections), m_tasksFactory(nodesCache, contentCache, nullptr), 
-    m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr)
+    m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr), m_selectionManager(nullptr)
     {
     if (nullptr != nodesCache)
         m_hierarchyUpdater = new HierarchyUpdater(m_tasksFactory, *nodesCache, contextFactory, providerFactory);

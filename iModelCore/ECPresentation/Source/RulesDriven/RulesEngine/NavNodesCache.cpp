@@ -1255,34 +1255,43 @@ void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* fil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::RemapNodeIds(uint64_t from, uint64_t to)
+void NodesCache::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
     {
-    // remap physical data sources
-    Utf8String query = "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
-                       "   SET [PhysicalParentNodeId] = ? "
-                       " WHERE [PhysicalParentNodeId] = ?";
-    CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+    // statement to remap physical data sources
+    static Utf8CP s_pdsQuery = "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
+                               "   SET [PhysicalParentNodeId] = ? "
+                               " WHERE [PhysicalParentNodeId] = ?";
+    CachedStatementPtr pdsStatement;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(pdsStatement, *m_db.GetDbFile(), s_pdsQuery))
         {
         BeAssert(false);
         return;
         }
-    stmt->BindUInt64(1, to);
-    stmt->BindUInt64(2, from);
-    stmt->Step();
 
-    // remap virtual data sources
-    query = "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
-            "   SET [VirtualParentNodeId] = ? "
-            " WHERE [VirtualParentNodeId] = ?";
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+    // statement to remap virtual data sources
+    static Utf8CP s_vdsQuery = "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
+                               "   SET [VirtualParentNodeId] = ? "
+                               " WHERE [VirtualParentNodeId] = ?";
+    CachedStatementPtr vdsStatement;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(vdsStatement, *m_db.GetDbFile(), s_vdsQuery))
         {
         BeAssert(false);
         return;
         }
-    stmt->BindUInt64(1, to);
-    stmt->BindUInt64(2, from);
-    stmt->Step();
+
+    // do remap
+    for (auto pair : remapInfo)
+        {
+        pdsStatement->BindUInt64(1, pair.second);
+        pdsStatement->BindUInt64(2, pair.first);
+        pdsStatement->Step();
+        pdsStatement->Reset();
+
+        vdsStatement->BindUInt64(1, pair.second);
+        vdsStatement->BindUInt64(2, pair.first);
+        vdsStatement->Step();
+        vdsStatement->Reset();
+        }
 
 #ifdef NAVNODES_CACHE_PERSIST_ON_CHANGE
     Persist();

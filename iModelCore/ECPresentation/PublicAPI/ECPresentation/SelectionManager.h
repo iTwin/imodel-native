@@ -199,12 +199,19 @@ protected:
     //! @param[in] evt  The selection change event that resulted in this method being called.
     //! @param[in] keys The keys of ECInstances to select.
     virtual void _SelectInstances(SelectionChangedEventCR evt, bvector<BeSQLite::EC::ECInstanceKey> const& keys) {}
+
+    //! Called when selected node ids change.
+    //! @param[in] remapInfo A map of old/new node ids.
+    virtual void _OnSelectedNodesRemapped(bmap<uint64_t, uint64_t> const& remapInfo) {}
     
 //__PUBLISH_SECTION_END__
 protected:
     //! Handle the supplied selection change event.
     //! @param[in] evt The event to handle.
     ECPRESENTATION_EXPORT void HandleSelectionChangeEvent(SelectionChangedEventCR evt);
+
+public:
+    void NotifySelectedNodesRemapped(bmap<uint64_t, uint64_t> const& remapInfo) {_OnSelectedNodesRemapped(remapInfo);}
 
 //__PUBLISH_SECTION_START__
 protected:
@@ -263,6 +270,11 @@ private:
     void OnConnectionClosed(BeSQLite::EC::ECDbCR) const;
     void BroadcastSelectionChangedEvent(BeSQLite::EC::ECDbR, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR, RapidJsonValueCR) const;
     
+//__PUBLISH_SECTION_END__
+public:
+    ECPRESENTATION_EXPORT void RemapNodeIds(bmap<uint64_t, uint64_t> const&);
+//__PUBLISH_SECTION_START__
+
 protected:
     //! @see ISelectionProvider::GetSelection
     ECPRESENTATION_EXPORT INavNodeKeysContainerCPtr _GetSelection(BeSQLite::EC::ECDbR) const override;

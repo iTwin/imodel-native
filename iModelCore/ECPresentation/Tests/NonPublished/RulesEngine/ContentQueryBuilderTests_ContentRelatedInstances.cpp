@@ -215,9 +215,6 @@ DEFINE_SCHEMA(ContentRelatedInstances_CreatesRecursiveQuery, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
     {
     ECClassCP rel = GetECClass("ElementOwnsChildElements");
@@ -235,7 +232,9 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
     EXPECT_TRUE(expected->IsEqual(*query)) 
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
-    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,10 +263,6 @@ DEFINE_SCHEMA(ContentRelatedInstances_CreatesRecursiveQueryWhenRelationshipIsOnB
         </Target>
     </ECRelationshipClass>
 )*");
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryWhenRelationshipIsOnBaseClass)
     {
     ECClassCP baseClass = GetECClass("Element");
@@ -286,5 +281,58 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryW
     EXPECT_TRUE(expected->IsEqual(*query)) 
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
-    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentRelatedInstances_DoesntSplitRecursiveQueryClassesIntoDerivedClasses, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+        <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Sheet">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="SheetProperty" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_DoesntSplitRecursiveQueryClassesIntoDerivedClasses)
+    {
+    ECClassCP baseClass = GetECClass("Element");
+    ECClassCP derivedClass = GetECClass("Sheet");
+    ECClassCP rel = GetECClass("ElementOwnsChildElements");
+
+    ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), baseClass->GetFullName());
+    m_ruleset->AddPresentationRule(*new ContentModifier(GetECSchema()->GetName(), derivedClass->GetName()));
+    
+    TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = GetExpectedQuery();
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }

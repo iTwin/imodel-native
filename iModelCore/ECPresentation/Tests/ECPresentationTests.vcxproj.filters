@@ -75,6 +75,7 @@
     <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
     <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
+    <ClCompile Include="BackDoor\SelectionManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
@@ -104,6 +105,7 @@
     <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
     <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
     <ClInclude Include="Published\PresentationRules\PresentationRulesTests.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\SelectionManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

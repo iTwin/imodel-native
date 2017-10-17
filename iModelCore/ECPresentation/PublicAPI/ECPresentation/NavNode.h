@@ -47,6 +47,7 @@ protected:
     virtual DisplayLabelGroupingNodeKey const* _AsDisplayLabelGroupingNodeKey() const {return nullptr;}
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const;
+    virtual bmap<uint64_t, uint64_t>::const_iterator _RemapNodeId(bmap<uint64_t, uint64_t> const& remapInfo) {return remapInfo.end();}
 
 public:
     //! Try to get this key as a @ref ECClassGroupingNodeKey.
@@ -70,6 +71,9 @@ public:
     bool IsSimilar(NavNodeKey const& other) const {return _IsSimilar(other);}
     //! Get hash string of this node key.
     ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
+
+    //! Called when node ids change to update the id stored in node key.
+    bmap<uint64_t, uint64_t>::const_iterator RemapNodeId(bmap<uint64_t, uint64_t> const& remapInfo) {return _RemapNodeId(remapInfo);}
 
     //! Get the type of the @ref NavNode.
     Utf8StringCR GetType() const {return m_type;}
@@ -129,6 +133,7 @@ protected:
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT bmap<uint64_t, uint64_t>::const_iterator _RemapNodeId(bmap<uint64_t, uint64_t> const&) override;
 public:
     //! Get the node id.
     uint64_t GetNodeId() const {return m_nodeId;}

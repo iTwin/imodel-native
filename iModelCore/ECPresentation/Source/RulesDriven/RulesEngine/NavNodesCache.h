@@ -181,7 +181,7 @@ public:
     ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(HierarchyLevelInfo const&);
     ECPRESENTATION_EXPORT void RemoveDataSource(BeSQLite::BeGuidCR removalId);
 
-    ECPRESENTATION_EXPORT void RemapNodeIds(uint64_t from, uint64_t to);
+    ECPRESENTATION_EXPORT void RemapNodeIds(bmap<uint64_t, uint64_t> const&);
     ECPRESENTATION_EXPORT bool HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNodeIds) const;
 
     ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(BeSQLite::BeGuidCR, bset<BeSQLite::EC::ECInstanceKey> const&) const;

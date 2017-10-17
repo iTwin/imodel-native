@@ -585,7 +585,9 @@ void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical()
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodes[1]->GetNodeId()));
     
     // remap
-    m_cache->RemapNodeIds(rootNodes[0]->GetNodeId(), rootNodes[1]->GetNodeId());
+    bmap<uint64_t, uint64_t> remapInfo;
+    remapInfo.Insert(rootNodes[0]->GetNodeId(), rootNodes[1]->GetNodeId());
+    m_cache->RemapNodeIds(remapInfo);
     
     // verify rootNodes[1] has a datasource and rootNodes[0] doesnt
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodes[0]->GetNodeId()));
@@ -615,7 +617,9 @@ void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual()
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodes[1]->GetNodeId()));
     
     // remap
-    m_cache->RemapNodeIds(rootNodes[0]->GetNodeId(), rootNodes[1]->GetNodeId());
+    bmap<uint64_t, uint64_t> remapInfo;
+    remapInfo.Insert(rootNodes[0]->GetNodeId(), rootNodes[1]->GetNodeId());
+    m_cache->RemapNodeIds(remapInfo);
     
     // verify rootNodes[1] has a datasource and rootNodes[0] doesnt
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodes[0]->GetNodeId()));

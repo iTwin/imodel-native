@@ -120,6 +120,27 @@ public:
         m_lastSource = source;
         return true;
         }
+
+    /*-----------------------------------------------------------------------------**//**
+    // @bsimethod                                   Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    bmap<uint64_t, uint64_t> RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
+        {
+        bmap<uint64_t, uint64_t> remapped;
+        for (NavNodeKeyCPtr key : m_keys)
+            {
+            auto remappedIter = const_cast<NavNodeKeyP>(key.get())->RemapNodeId(remapInfo);
+            if (remapInfo.end() != remappedIter)
+                remapped[remappedIter->first] = remappedIter->second;
+            }
+        if (!remapped.empty())
+            {
+            // if any of the keys was remapped, need to make sure the set is reindexed
+            NavNodeKeySet keys(m_keys.begin(), m_keys.end());
+            m_keys.swap(keys);
+            }
+        return remapped;
+        }
 };
 
 //=======================================================================================
@@ -182,6 +203,34 @@ void SelectionManager::OnConnectionClosed(ECDbCR connection) const
         m_selections.erase(iter);
         GetLogger().infov("Selection cleared due to connection close: '%s'", guid.ToString().c_str());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void MergeRemapInfo(bmap<uint64_t, uint64_t>& merged, bmap<uint64_t, uint64_t> const& input)
+    {
+    for (auto pair : input)
+        {
+        BeAssert(merged.end() == merged.find(pair.first) || merged.find(pair.first)->second == pair.second);
+        merged[pair.first] = pair.second;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectionManager::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
+    {
+    bmap<uint64_t, uint64_t> affected;
+    for (auto selectionsPair : m_selections)
+        {
+        ECDbSelection& selections = *selectionsPair.second;
+        MergeRemapInfo(affected, selections.GetSelection().RemapNodeIds(remapInfo));
+        MergeRemapInfo(affected, selections.GetSubSelection().RemapNodeIds(remapInfo));
+        }
+    for (SelectionSyncHandlerPtr const& syncHandler : m_syncHandlers)
+        syncHandler->_OnSelectedNodesRemapped(affected);
     }
 
 /*---------------------------------------------------------------------------------**//**

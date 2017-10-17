@@ -723,10 +723,16 @@ void RulesDrivenECPresentationManager::RegisterUpdateRecordsHandler(IUpdateRecor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetSelectionManager(SelectionManagerR manager)
+void RulesDrivenECPresentationManager::SetSelectionManager(SelectionManagerP manager)
     {
-    m_selectionManager = &manager;
-    manager.AddListener(*this);
+    if (nullptr != m_selectionManager)
+        m_selectionManager->RemoveListener(*this);
+    
+    if (nullptr != manager)
+        manager->AddListener(*this);
+    
+    m_updateHandler->SetSelectionManager(manager);
+    m_selectionManager = manager;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -84,7 +84,7 @@ void setup()
     //__PUBLISH_EXTRACT_END__
     
     //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp_SelectionRelated.sampleCode
-    m_manager->SetSelectionManager(*GetUnifiedSelectionManager());
+    m_manager->SetSelectionManager(GetUnifiedSelectionManager());
     //__PUBLISH_EXTRACT_END__
     
     //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp_UpdateRelated.sampleCode

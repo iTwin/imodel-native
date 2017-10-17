@@ -247,7 +247,7 @@ public:
     //! Set the selection manager. 
     //! @details Selection manager is used to listen for selection events and invalidate caches 
     //! that depend on selection.
-    ECPRESENTATION_EXPORT void SetSelectionManager(SelectionManagerR);
+    ECPRESENTATION_EXPORT void SetSelectionManager(SelectionManagerP);
     
     //! Set custom localization provider. By default BeSQLite::L10N is used.
     ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const*);
