@@ -91,7 +91,7 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)bentleylog4cxx$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeZlib$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)liblog4cxx010$(libext)
+GUNITTEST_LIBS + $(BuildContext)SubParts/StaticLibs/$(libprefix)liblog4cxx010$(libext)
 
 # Don't run tests after build
 GUNITTEST_NOEXEC = 1
