@@ -134,6 +134,7 @@
         <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
         <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
