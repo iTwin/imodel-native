@@ -36,7 +36,7 @@
         <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="CloudDataSource_Vancouver" PartFile="CloudDataSource"                      Repository="ScalableMesh"/>
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
-       <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
+        <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <!-- For Importer-->
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
