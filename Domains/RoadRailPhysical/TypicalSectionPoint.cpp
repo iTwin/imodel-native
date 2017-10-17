@@ -191,10 +191,10 @@ void TypicalSectionPoint::_GenerateElementGeom()
     {
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
 
-    auto horizLinePtr = CurveVector::CreateLinear({ { -0.2, 0.0 }, { 0.2, 0.0 } });
+    auto horizLinePtr = CurveVector::CreateLinear({ { -0.1, 0.0 }, { 0.1, 0.0 } });
     geomBuilderPtr->Append(*horizLinePtr);
 
-    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.2 },{ 0.0, 0.2 } });
+    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.1 },{ 0.0, 0.1 } });
     geomBuilderPtr->Append(*vertLinePtr);
 
     geomBuilderPtr->Finish(*this);
@@ -341,10 +341,10 @@ void TypicalSectionProxyPoint::_GenerateElementGeom()
     {
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
 
-    auto horizLinePtr = CurveVector::CreateLinear({ { -0.2, 0.0 },{ 0.2, 0.0 } });
+    auto horizLinePtr = CurveVector::CreateLinear({ { -0.1, 0.0 },{ 0.1, 0.0 } });
     geomBuilderPtr->Append(*horizLinePtr);
 
-    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.2 },{ 0.0, 0.2 } });
+    auto vertLinePtr = CurveVector::CreateLinear({ { 0.0, -0.1 },{ 0.0, 0.1 } });
     geomBuilderPtr->Append(*vertLinePtr);
 
     geomBuilderPtr->Finish(*this);

@@ -173,18 +173,8 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
     auto rightSideSlopeDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *sideSlopeRightSideDefPtr, *alignmentPlaceHolderCPtr);
     ASSERT_TRUE(rightSideSlopeDefPortionPtr->Insert().IsValid());
 
-    Utf8String selectorName = "Typical-Section Categories";
-    CategorySelectorPtr selectorPtr = new CategorySelector(projectPtr->GetDictionaryModel(), selectorName);
-    selectorPtr->AddCategory(RoadRailCategory::GetTypicalSectionPoint(*projectPtr));
-    selectorPtr->AddCategory(RoadRailCategory::GetTravelwayDefComponent(*projectPtr));
-    selectorPtr->AddCategory(RoadRailCategory::GetTravelwaySideDefComponent(*projectPtr));
-    selectorPtr->AddCategory(RoadRailCategory::GetTravelwayStructureDefComponent(*projectPtr));
-
-    DisplayStyle2dPtr stylePtr = new DisplayStyle2d(projectPtr->GetDictionaryModel(), "Typical-Section Styles");
-    stylePtr->SetBackgroundColor(ColorDef::White());
-
-    Create2dView(projectPtr->GetDictionaryModel(), "TravelwayDef - 4 lanes", *selectorPtr, twBreakDownModelPtr->GetModelId(), *stylePtr);
-    Create2dView(projectPtr->GetDictionaryModel(), "TravelwaySideDef - Shoulder Right side", *selectorPtr, shoulderRBreakDownModelPtr->GetModelId(), *stylePtr);
-    Create2dView(projectPtr->GetDictionaryModel(), "TravelwaySideDef - SideSlope Right side", *selectorPtr, sideSlopeRBreakDownModelPtr->GetModelId(), *stylePtr);
-    Create2dView(projectPtr->GetDictionaryModel(), "Overall Typical Section", *selectorPtr, overallTypicalSectionModelPtr->GetModelId(), *stylePtr);
+    twBreakDownModelPtr->Create2dView();
+    shoulderRBreakDownModelPtr->Create2dView();
+    sideSlopeRBreakDownModelPtr->Create2dView();
+    overallTypicalSectionModelPtr->Create2dView();
     }

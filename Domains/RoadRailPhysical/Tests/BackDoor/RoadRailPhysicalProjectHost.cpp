@@ -439,29 +439,29 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSect
 
     auto eotwRProxyCPtr = TypicalSectionProxyPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOTW_R"), { 0, 0});
 
-    DPoint2d position = { 1, -0.01 };
+    DPoint2d position = { 1, -0.1 };
     auto rightPointCPtr = TypicalSectionPoint::CreateAndInsert(model, &position);
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*rightPointCPtr, *eotwRProxyCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 1.0), 1);
     TypicalSectionVerticalConstraint::CreateAndInsert(*rightPointCPtr, *eotwRProxyCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -0.01), 2);
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.1), 2);
 
-    position = { 1, -0.04 };
+    position = { 1, -0.4 };
     auto bottomRightPointCPtr = TypicalSectionPoint::CreateAndInsert(model, &position);
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomRightPointCPtr, *rightPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
     TypicalSectionVerticalConstraint::CreateAndInsert(*bottomRightPointCPtr, *rightPointCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.3), 2);
 
-    position = { 0, -0.03 };
+    position = { 0, -0.3 };
     auto bottomLeftPointCPtr = TypicalSectionPoint::CreateAndInsert(model, &position);
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomLeftPointCPtr, *eotwRProxyCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
     TypicalSectionVerticalConstraint::CreateAndInsert(*bottomLeftPointCPtr, *eotwRProxyCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.3), 2);
 
     bvector<ITypicalSectionConstraintPointCP> points;
     points.push_back(eotwRProxyCPtr.get());
@@ -471,7 +471,7 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSect
 
     RoadShoulderComponent::CreateAndInsert(model, points); // Paved shoulder
 
-    position = { 2, -0.02 };
+    position = { 2, -0.2 };
     auto eosRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, *SignificantPointDefinition::QueryByCode(*standardsModelCP, "EOS_R"), &position);
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*eosRPointCPtr, *rightPointCPtr,
@@ -479,13 +479,13 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertShouldersRightSide(TypicalSect
     TypicalSectionVerticalConstraint::CreateAndInsert(*eosRPointCPtr, *rightPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, -0.01), 2);
 
-    position = { 1, -0.04 };
+    position = { 2, -0.5 };
     auto bottomEOSRPointCPtr = TypicalSectionPoint::CreateAndInsert(model, &position);
 
     TypicalSectionHorizontalConstraint::CreateAndInsert(*bottomEOSRPointCPtr, *eosRPointCPtr,
         *TypicalSectionConstraintConstantOffset::Create(model, 0.0), 1);
     TypicalSectionVerticalConstraint::CreateAndInsert(*bottomEOSRPointCPtr, *eosRPointCPtr,
-        *TypicalSectionConstraintConstantOffset::Create(model, -0.03), 2);
+        *TypicalSectionConstraintConstantOffset::Create(model, -0.3), 2);
 
     points.clear();
     points.push_back(rightPointCPtr.get());
@@ -548,37 +548,6 @@ BentleyStatus RoadRailPhysicalTestsFixture::InsertSideSlopeRightSide(TypicalSect
     points.push_back(ecCutPointCPtr.get());
 
     SideSlopeConditionComponent::CreateAndInsert(model, 20, points); // Cut condition
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-BentleyStatus RoadRailPhysicalTestsFixture::Create2dView(DefinitionModelR model, Utf8CP viewName,
-    CategorySelectorR categorySelector, DgnModelId modelToDisplay, DisplayStyle2dR displayStyle)
-    {
-    DgnDbR db = model.GetDgnDb();
-
-    DrawingViewDefinition view(model, viewName, modelToDisplay, categorySelector, displayStyle);
-
-    DgnViewId viewId;
-    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
-    if (existingViewId.IsValid())
-        viewId = existingViewId;
-    else
-        {
-        view.SetStandardViewRotation(StandardView::Top);
-        view.LookAtVolume(db.GeoLocation().GetProjectExtents());
-
-        if (!view.Insert().IsValid())
-            return BentleyStatus::ERROR;
-
-        viewId = view.GetViewId();
-        }
-
-    if (!viewId.IsValid())
-        return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
     }

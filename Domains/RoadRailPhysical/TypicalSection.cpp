@@ -355,6 +355,8 @@ OverallTypicalSectionAlignmentCPtr OverallTypicalSectionAlignment::CreateAndInse
     if (ptr.IsNull())
         return nullptr;
 
+    ptr->GenerateElementGeom();
+
     return ptr->Insert();
     }
 
@@ -410,8 +412,16 @@ void TypicalSectionComponentElement::_GenerateElementGeom()
         points.push_back(pointCP->GetPosition());
         }
 
-    auto curvePtr = CurveVector::CreateLinear(points.begin(), points.size(), 
-        _IsClosed() ? CurveVector::BoundaryType::BOUNDARY_TYPE_Outer : CurveVector::BoundaryType::BOUNDARY_TYPE_Open);
+    CurveVectorPtr curvePtr; 
+    if (!_IsClosed() || points.size() < 3)
+        curvePtr = CurveVector::CreateLinear(points.begin(), points.size(),
+            CurveVector::BoundaryType::BOUNDARY_TYPE_Open);
+    else
+        {
+        curvePtr = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_ParityRegion);
+        curvePtr->Add(CurveVector::CreateLinear(points.begin(), points.size(),
+            CurveVector::BoundaryType::BOUNDARY_TYPE_Outer));
+        }
 
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), DPoint2d());
     geomBuilderPtr->Append(*curvePtr);
@@ -580,8 +590,8 @@ RoadShoulderComponentPtr RoadShoulderComponent::Create(TypicalSectionPortionBrea
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    // ModeledElement must be a RoadTravelwayDefinition
-    if (!dynamic_cast<RoadTravelwayDefinitionCP>(model.GetModeledElement().get()))
+    // ModeledElement must be a TravelwaySideDefinition
+    if (!dynamic_cast<TravelwaySideDefinitionCP>(model.GetModeledElement().get()))
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
@@ -825,4 +835,60 @@ PavementComponentCPtr PavementComponent::CreateAndInsert(TypicalSectionPortionBr
         }
 
     return cPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void create2dView(DgnModelCR model)
+    {
+    Utf8String selectorName = "Typical-Section Categories";
+    auto selectorId = model.GetDgnDb().Elements().QueryElementIdByCode(CategorySelector::CreateCode(model.GetDgnDb().GetDictionaryModel(), selectorName));
+    auto selectorPtr = model.GetDgnDb().Elements().GetForEdit<CategorySelector>(selectorId);
+    if (!selectorPtr.IsValid())
+        {
+        selectorPtr = new CategorySelector(model.GetDgnDb().GetDictionaryModel(), selectorName);
+        selectorPtr->AddCategory(RoadRailCategory::GetTypicalSectionPoint(model.GetDgnDb()));
+        selectorPtr->AddCategory(RoadRailCategory::GetTravelwayDefComponent(model.GetDgnDb()));
+        selectorPtr->AddCategory(RoadRailCategory::GetTravelwaySideDefComponent(model.GetDgnDb()));
+        selectorPtr->AddCategory(RoadRailCategory::GetTravelwayStructureDefComponent(model.GetDgnDb()));
+        }
+
+    Utf8String styleName = "Typical-Section Style";
+    auto styleId = model.GetDgnDb().Elements().QueryElementIdByCode(DisplayStyle2d::CreateCode(model.GetDgnDb().GetDictionaryModel(), styleName));
+    auto stylePtr = model.GetDgnDb().Elements().GetForEdit<DisplayStyle2d>(styleId);
+    if (!stylePtr.IsValid())
+        {
+        stylePtr = new DisplayStyle2d(model.GetDgnDb().GetDictionaryModel(), styleName);
+        stylePtr->SetBackgroundColor(ColorDef::White());
+        }
+
+    auto defCode = Utf8PrintfString("%s - %s", model.GetModeledElement()->GetElementClass()->GetName(), model.GetModeledElement()->GetCode().GetValueUtf8());
+    DrawingViewDefinition view(model.GetDgnDb().GetDictionaryModel(), defCode, model.GetModelId(), *selectorPtr, *stylePtr);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(model.GetDgnDb(), view.GetCode());
+    if (!existingViewId.IsValid())
+        {
+        view.SetStandardViewRotation(StandardView::Top);
+        view.LookAtVolume(model.GetDgnDb().GeoLocation().GetProjectExtents());
+
+        view.Insert();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TypicalSectionPortionBreakDownModel::Create2dView() const
+    {
+    create2dView(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void OverallTypicalSectionBreakDownModel::Create2dView() const
+    {
+    create2dView(*this);
     }

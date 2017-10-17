@@ -67,6 +67,8 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionBreakDownModel)
 
+    ROADRAILPHYSICAL_EXPORT void Create2dView() const;
+
     static TypicalSectionPortionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< TypicalSectionPortionBreakDownModel >(id); }
     static TypicalSectionPortionBreakDownModelPtr Create(CreateParams const& params) { return new TypicalSectionPortionBreakDownModel(params); }
 }; // TypicalSectionPortionBreakDownModel
@@ -223,6 +225,8 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionPortionBreakDownModel)
+
+    ROADRAILPHYSICAL_EXPORT void Create2dView() const;
 
     static OverallTypicalSectionBreakDownModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< OverallTypicalSectionBreakDownModel >(id); }
     static OverallTypicalSectionBreakDownModelPtr Create(CreateParams const& params) { return new OverallTypicalSectionBreakDownModel(params); }
