@@ -328,6 +328,7 @@
 
     <ProductDirectoryList ListName="ECObjects">
         <ProductDirectory Name="Assemblies"                                 Path=""/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                Path=""/>
         <ProductDirectory Name="Assets"         RelativeTo="Assemblies"     Path="Assets"/>
         <ProductDirectory Name="Assets"         RelativeTo="Assemblies"     Path="Assets" LibType="static"/>
         <ProductDirectory Name="Libs"                                       Path="libs"/>
