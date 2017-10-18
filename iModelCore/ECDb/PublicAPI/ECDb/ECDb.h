@@ -41,23 +41,42 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct Settings final
         {
+        private:
+            bool m_requiresECCrudWriteToken = false;
+            bool m_requiresECSchemaImportToken = false;
+            bool m_allowChangesetMergingIncompatibleSchemaImport = true;
+
+        public:
+#if !defined (DOCUMENTATION_GENERATOR)
+            //not inlined as ctors are only needed internally
+            Settings();
+            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken, bool allowChangesetMergingIncompatibleSchemaImport);
+#endif
+            bool RequiresECCrudWriteToken() const { return m_requiresECCrudWriteToken; }
+            bool RequiresECSchemaImportToken() const { return m_requiresECSchemaImportToken; }
+            bool AllowChangesetMergingIncompatibleSchemaImport() const { return m_allowChangesetMergingIncompatibleSchemaImport; }
+        };
+
+    struct SettingsManager final
+        {
     private:
+        Settings m_settings;
         ECCrudWriteToken const* m_crudWriteToken = nullptr;
         SchemaImportToken const* m_schemaImportToken = nullptr;
-        bool m_allowChangesetMergingIncompatibleSchemaImport = true;
-
+        
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //not inlined as ctors are only needed internally
-        Settings();
-        Settings(ECCrudWriteToken const*, SchemaImportToken const*, bool allowChangesetMergingIncompatibleSchemaImport);
+        SettingsManager();
+        void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
 #endif
+        ECDB_EXPORT ~SettingsManager();
+
+        Settings const& GetSettings() const { return m_settings; }
         //! Consumers can only execute EC CRUD operations like ECSQL INSERT, UPDATE or DELETE statements
         ECCrudWriteToken const* GetCrudWriteToken() const { return m_crudWriteToken; }
         //! Consumers can only import ECSchemas with the token
         SchemaImportToken const* GetSchemaImportToken() const { return m_schemaImportToken; }
-
-        bool AllowChangesetMergingIncompatibleSchemaImport() const { return m_allowChangesetMergingIncompatibleSchemaImport; }
         };
 
     //=======================================================================================
@@ -124,7 +143,8 @@ protected:
     //! SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
-    ECDB_EXPORT Settings const& GetECDbSettings() const;
+    //! Returns the settings manager to subclasses which gives access to the various access tokens
+    ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
 #endif
 
     virtual void _OnAfterSchemaImport() const {}
@@ -150,6 +170,9 @@ public:
     //! Initializes a new instance of the ECDb class.
     ECDB_EXPORT ECDb();
     ECDB_EXPORT virtual ~ECDb();
+
+    //! Gets the settings with which the ECDb object was constructed.
+    Settings const& GetECDbSettings() const { return GetECDbSettingsManager().GetSettings(); }
 
     //! Checks the file's ECDb profile compatibility to be opened with the current version of the ECDb API.
     //!

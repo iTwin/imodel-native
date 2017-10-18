@@ -11,6 +11,40 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, Settings)
+    {
+    EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECCrudWriteToken());
+    EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECSchemaImportToken());
+    EXPECT_TRUE(ECDb().GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
+
+    struct RestrictableECDb final : ECDb
+        {
+        RestrictableECDb(bool requireCrudToken, bool requireSchemaImportToken, bool allowChangeSetMergeIncompatibleSchemaImport) : ECDb()
+            {
+            ApplyECDbSettings(requireCrudToken, requireSchemaImportToken, allowChangeSetMergeIncompatibleSchemaImport);
+            }
+
+        ~RestrictableECDb() {}
+        };
+
+    for (bool requiresECCrudWriteToken : {false, true})
+        {
+        for (bool requiresSchemaImportToken : {false, true})
+            {
+            for (bool allowChangesetMergingIncompatibleSchemaImport : {false, true})
+                {
+                RestrictableECDb ecdb(requiresECCrudWriteToken, requiresSchemaImportToken, allowChangesetMergingIncompatibleSchemaImport);
+                EXPECT_EQ(requiresECCrudWriteToken, ecdb.GetECDbSettings().RequiresECCrudWriteToken());
+                EXPECT_EQ(requiresSchemaImportToken, ecdb.GetECDbSettings().RequiresECSchemaImportToken());
+                EXPECT_EQ(allowChangesetMergingIncompatibleSchemaImport, ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
+                }
+            }
+        }
+    }
+
 //=======================================================================================
 // @bsiclass                                     Krischan.Eberle                  01/15
 //=======================================================================================

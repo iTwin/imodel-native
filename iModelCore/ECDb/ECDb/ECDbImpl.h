@@ -14,32 +14,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECCrudWriteToken final
-    {};
-
-struct SchemaImportToken final
-    {};
-
-//=======================================================================================
-// Holds and issues the tokens used to restrict certain ECDb APIs
-// @bsiclass                                                Krischan.Eberle      12/2016
-//+===============+===============+===============+===============+===============+======
-struct SettingsHolder final : NonCopyableClass
-    {
-private:
-    ECDb::Settings m_settings;
-
-    std::unique_ptr<ECCrudWriteToken> m_eccrudWriteToken;
-    std::unique_ptr<SchemaImportToken> m_ecSchemaImportToken;
-
-public:
-    SettingsHolder() : m_eccrudWriteToken(nullptr), m_ecSchemaImportToken(nullptr) {}
-
-    void ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport);
-
-    ECDb::Settings const& GetSettings() const { return m_settings; }
-    };
-
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
@@ -97,7 +71,7 @@ private:
     ECDbR m_ecdb;
     std::unique_ptr<SchemaManager> m_schemaManager;
 
-    SettingsHolder m_settings;
+    SettingsManager m_settingsManager;
 
     StatementCache m_sqliteStatementCache;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
@@ -154,7 +128,7 @@ public:
     ~Impl() { m_sqliteStatementCache.Empty(); }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
-    ECDb::Settings const& GetSettings() const { return m_settings.GetSettings(); }
+    ECDb::SettingsManager const& GetSettingsManager() const { return m_settingsManager; }
 
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }

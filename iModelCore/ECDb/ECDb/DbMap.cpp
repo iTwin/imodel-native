@@ -649,7 +649,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     if (tablesToDrop.empty())
         return SUCCESS;
 
-    if (!m_ecdb.GetImpl().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
+    if (!m_ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport())
         {
         Utf8String tableNames;
         bool isFirstTable = true;

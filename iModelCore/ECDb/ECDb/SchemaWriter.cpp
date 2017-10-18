@@ -2242,7 +2242,7 @@ BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
     Utf8String ecsql("DELETE FROM ");
     ecsql.append(deletedClass.GetECSqlName());
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken()))
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -2379,7 +2379,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
         Utf8String ecsql;
         ecsql.Sprintf("UPDATE %s SET [%s]=NULL", ecClass.GetECSqlName().c_str(), deletedProperty.GetName().c_str());
         ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettings().GetCrudWriteToken()) ||
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken()) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             Issues().Report("ECSchema Upgrade failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null", ecClass.GetFullName(), deletedProperty.GetName().c_str());

@@ -159,8 +159,8 @@ struct Exp : NonCopyableClass
             Assignment,
             AssignmentList,
             BetweenRangeValue,
-            BinaryValue,
             BinaryBoolean,
+            BinaryValue,
             BooleanFactor,
             Cast,
             ClassName,
@@ -168,9 +168,9 @@ struct Exp : NonCopyableClass
             DateTimeConstantValue,
             Delete,
             DerivedProperty,
+            ECRelationshipJoin,
             FromClause,
             FunctionCall,
-            ECRelationshipJoin,
             GroupBy,
             Having,
             Insert,
@@ -193,6 +193,7 @@ struct Exp : NonCopyableClass
             RowValueConstructorList,
             Select,
             Selection,
+            SingleSelect,
             Subquery,
             SubqueryRef,
             SubqueryTest,
@@ -203,7 +204,6 @@ struct Exp : NonCopyableClass
             ValueBinary,
             ValueExpList,
             Where,
-            SingleSelect,
             };
 
         struct Collection final : NonCopyableClass
@@ -409,6 +409,8 @@ struct Exp : NonCopyableClass
         Utf8String ToString() const { return _ToString(); }
 
         static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
+
+        bool IsPartOfWhereExp() const;
         Exp const* FindParent(Exp::Type) const;
         bool Contains(Type candidateType) const;
         std::vector<Exp const*> Find(Type candidateType, bool recursive) const;

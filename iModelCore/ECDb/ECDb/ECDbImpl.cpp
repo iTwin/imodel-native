@@ -375,7 +375,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         }
 
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str(), GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str(), m_settingsManager.GetCrudWriteToken()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt.Step())
@@ -384,7 +384,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)", GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)", m_settingsManager.GetCrudWriteToken()))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
@@ -488,18 +488,5 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     return BE_SQLITE_OK;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                02/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void SettingsHolder::ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
-    {
-    if (requireECCrudTokenValidation)
-        m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken());
-
-    if (requireECSchemaImportTokenValidation)
-        m_ecSchemaImportToken = std::unique_ptr<SchemaImportToken>(new SchemaImportToken());
-
-    m_settings = ECDb::Settings(m_eccrudWriteToken.get(), m_ecSchemaImportToken.get(), allowChangesetMergingIncompatibleECSchemaImport);
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
