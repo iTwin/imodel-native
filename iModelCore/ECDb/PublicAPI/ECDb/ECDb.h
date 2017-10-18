@@ -135,13 +135,13 @@ protected:
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
-    //! Resets ECDb's id sequences to the current maximum id for the specified BriefcaseId.
-    //! @param[in] briefcaseId BriefcaseId to which the sequences will be reset
+    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
+    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
     //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
     //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
     //!            If nullptr, no ECClass will be ignored.
     //! SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
+    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;

@@ -72,14 +72,14 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
+BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
     {
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;
-    if (SUCCESS != DetermineMaxECInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
+    if (SUCCESS != DetermineMaxInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
         {
         LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The maximum for the ECInstanceId sequence for the new BriefcaseId could not be determined.",
                    briefcaseId.GetValue());
@@ -99,7 +99,7 @@ BentleyStatus ECDb::Impl::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN:
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::DetermineMaxECInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const
+BentleyStatus ECDb::Impl::DetermineMaxInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const
     {
     if (!briefcaseId.IsValid())
         return ERROR;

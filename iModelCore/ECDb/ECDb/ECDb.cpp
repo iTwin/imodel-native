@@ -133,7 +133,7 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetIdSequences(briefcaseId, ecClassIgnoreList);}
+BentleyStatus ECDb::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetInstanceIdSequence(briefcaseId, ecClassIgnoreList);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013

@@ -114,9 +114,9 @@ private:
     DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }
-    BentleyStatus ResetIdSequences(BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList);
+    BentleyStatus ResetInstanceIdSequence(BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList);
 
-    BentleyStatus DetermineMaxECInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const;
+    BentleyStatus DetermineMaxInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const;
     BentleyStatus DetermineMaxIdForBriefcase(BeBriefcaseBasedId& maxId, BeBriefcaseId, Utf8CP tableName, Utf8CP idColName) const;
 
     void RegisterBuiltinFunctions() const;

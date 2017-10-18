@@ -294,16 +294,16 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                10/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ResetIdSequences)
+TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     {
     struct TestECDb final : ECDb
         {
         TestECDb() : ECDb() {}
         ~TestECDb() {}
 
-        BentleyStatus CallResetIdSequences(BeBriefcaseId newBriefcaseId, IdSet<ECClassId> const* ecClassIgnoreList) { return ResetIdSequences(newBriefcaseId, ecClassIgnoreList); }
+        BentleyStatus CallResetInstanceIdSequence(BeBriefcaseId newBriefcaseId, IdSet<ECClassId> const* ecClassIgnoreList) { return ResetInstanceIdSequence(newBriefcaseId, ecClassIgnoreList); }
 
-        BeBriefcaseBasedId GetECInstanceIdSequenceValue()
+        BeBriefcaseBasedId GetInstanceIdSequenceValue()
             {
             BriefcaseLocalValueCache& cache = GetBLVCache();
             size_t ix = 0;
@@ -318,7 +318,7 @@ TEST_F(ECDbTestFixture, ResetIdSequences)
             }
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ResetIdSequences.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                                                             <ECEntityClass typeName="A" >
@@ -388,15 +388,15 @@ TEST_F(ECDbTestFixture, ResetIdSequences)
     TestECDb testDb;
     ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
-    ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetECInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
+    ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
 
     for (std::pair<uint32_t, uint64_t> const& kvPair : sequenceValuesPerBriefcase)
         {
         BeBriefcaseId briefcaseId(kvPair.first);
         uint64_t expectedMaxId = kvPair.second;
         BeBriefcaseBasedId expectedId(briefcaseId, expectedMaxId);
-        ASSERT_EQ(SUCCESS, testDb.CallResetIdSequences(briefcaseId, nullptr)) << briefcaseId.GetValue();
-        ASSERT_EQ(expectedId, testDb.GetECInstanceIdSequenceValue()) << "Briefcase Id: " << briefcaseId.GetValue() << " Expected sequence value (lower 40 bits): " << expectedMaxId;
+        ASSERT_EQ(SUCCESS, testDb.CallResetInstanceIdSequence(briefcaseId, nullptr)) << briefcaseId.GetValue();
+        ASSERT_EQ(expectedId, testDb.GetInstanceIdSequenceValue()) << "Briefcase Id: " << briefcaseId.GetValue() << " Expected sequence value (lower 40 bits): " << expectedMaxId;
         }
     }
 
