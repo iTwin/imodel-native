@@ -1921,25 +1921,20 @@ double Tile::_GetMaximumSize() const
 struct MeshGenerator : ViewContext
 {
 private:
-    typedef bmap<MeshMergeKey, MeshBuilderPtr> BuilderMap;
-
     TileCR              m_tile;
     GeometryOptions     m_options;
     double              m_tolerance;
-    double              m_vertexTolerance;
-    double              m_facetAreaTolerance;
-    BuilderMap          m_builderMap;
-    DRange3d            m_tileRange;
     LoadContext         m_loadContext;
     size_t              m_geometryCount = 0;
     FeatureTable        m_featureTable;
+    MeshBuilderMap      m_builderMap;
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
-    MeshBuilderR GetMeshBuilder(MeshMergeKey& key);
+    MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
     DgnElementId GetElementId(GeometryR geom) const { return m_maxGeometryCountExceeded ? DgnElementId() : geom.GetEntityId(); }
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
@@ -1970,6 +1965,7 @@ public:
     MeshList GetMeshes();
     // Return a tight bounding volume
     DRange3dCR GetContentRange() const { return m_contentRange; }
+    DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
     TileCR GetTile() const { return m_tile; }
     void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
 };
@@ -1978,9 +1974,9 @@ public:
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
-  : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_vertexTolerance(m_tolerance*ToleranceRatio::Vertex()),
-    m_facetAreaTolerance(m_tolerance*ToleranceRatio::FacetArea()), m_tileRange(tile.GetTileRange()), m_loadContext(loadContext),
-    m_featureTable(nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile)
+  : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_loadContext(loadContext),
+    m_featureTable(nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
+    m_builderMap(m_tolerance, &m_featureTable, tile.GetTileRange(), m_tile.GetElementRoot().Is2d())
     {
     SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
     m_is3dView = m_tile.GetElementRoot().Is3d();
@@ -1990,16 +1986,9 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
+MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
     {
-    auto found = m_builderMap.find(key);
-    if (m_builderMap.end() != found)
-        return *found->second;
-
-    bool is2d = m_tile.GetElementRoot().Is2d();
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d, key.m_isPlanar);
-    m_builderMap[key] = builder;
-    return *builder;
+    return m_builderMap[key];
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2026,7 +2015,7 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
-    bool isContained = !doRangeTest || geomRange.IsContained(m_tileRange);
+    bool isContained = !doRangeTest || geomRange.IsContained(GetTileRange());
     if (!m_maxGeometryCountExceeded)
         m_maxGeometryCountExceeded = (++m_geometryCount > m_featureTable.GetMaxFeatures());
 
@@ -2060,7 +2049,7 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     Transform invTransform = Transform::FromIdentity();
     for (GeometryCP instance : instances)
         {
-        bool isContained = instance->GetTileRange().IsContained(m_tileRange);
+        bool isContained = instance->GetTileRange().IsContained(GetTileRange());
         Transform instanceTransform = Transform::FromProduct(instance->GetTransform(), invTransform);
         invTransform.InverseOf(instance->GetTransform());
         for (auto& polyface : polyfaces)
@@ -2125,7 +2114,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.IsTextured();
 
-    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
@@ -2141,7 +2130,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
-        if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+        if (isContained || GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
@@ -2197,7 +2186,7 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
             continue;
 
         DPoint3d prevPt = points.front();
-        State   prevState = m_tileRange.IsContained(prevPt) ? kInside : kOutside;
+        State   prevState = GetTileRange().IsContained(prevPt) ? kInside : kOutside;
         if (kInside == prevState)
             {
             output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, rangeCenter));
@@ -2208,7 +2197,7 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
         for (size_t i = 1; i < points.size(); i++)
             {
             auto nextPt = points[i];
-            bool contained = m_tileRange.IsContained(nextPt);
+            bool contained = GetTileRange().IsContained(nextPt);
             State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
             if (kOutside == nextState && kOutside == prevState)
                 {
@@ -2216,7 +2205,7 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
                 double unused1, unused2;
                 DSegment3d unused3;
                 DSegment3d segment = DSegment3d::From(prevPt, nextPt);
-                if (m_tileRange.IntersectBounded(unused1, unused2, unused3, segment))
+                if (GetTileRange().IntersectBounded(unused1, unused2, unused3, segment))
                     nextState = kCrossedOutside;
                 }
 
@@ -2252,7 +2241,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 
     for (auto& stroke : strokes.m_strokes)
         {
-        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !m_tileRange.IsContained(pt); });
+        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !GetTileRange().IsContained(pt); });
         if (stroke.m_points.end() != eraseAt)
             stroke.m_points.erase(eraseAt);
         }
@@ -2290,7 +2279,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
+    MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetLineColor();
@@ -2322,7 +2311,7 @@ MeshList MeshGenerator::GetMeshes()
         }
 
     // Do not allow vertices outside of this tile's range to expand its content range
-    clipContentRangeToTileRange(m_contentRange, m_tileRange);
+    clipContentRangeToTileRange(m_contentRange, GetTileRange());
 
     meshes.m_features = std::move(m_featureTable);
     return meshes;

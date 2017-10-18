@@ -22,8 +22,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderMap);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
@@ -495,35 +495,74 @@ public:
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct MeshMergeKey
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ToleranceRatio
 {
-    DisplayParamsCP     m_params;                                                                                                                                                     
-    Mesh::PrimitiveType m_primitiveType;
-    bool                m_hasNormals;
-    bool                m_isPlanar;
+    static constexpr double Vertex() { return .1; }
+    static constexpr double FacetArea() { return .1; }
+};
 
-    MeshMergeKey() : m_params(nullptr), m_primitiveType(Mesh::PrimitiveType::Mesh), m_hasNormals(false), m_isPlanar(false) { }
-    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-    MeshMergeKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar)
-        : m_params(&params), m_primitiveType(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct MeshBuilderMap
+{
+    struct Key
+    {
+        friend struct MeshBuilderMap;
+    private:
+        DisplayParamsCP     m_params;
+        Mesh::PrimitiveType m_type;
+        bool                m_hasNormals;
+        bool                m_isPlanar;
 
-    bool operator<(MeshMergeKey const& rhs) const
-        {
-        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
-        if (m_primitiveType != rhs.m_primitiveType)
-            return m_primitiveType < rhs.m_primitiveType;
+        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+    public:
+        Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
+        explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
+        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
 
-        if (m_isPlanar != rhs.m_isPlanar)
-            return !m_isPlanar;
+        bool operator<(Key const& rhs) const
+            {
+            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+            if (m_type != rhs.m_type)
+                return m_type < rhs.m_type;
 
-        if (m_hasNormals != rhs.m_hasNormals)
-            return !m_hasNormals;
+            if (m_isPlanar != rhs.m_isPlanar)
+                return !m_isPlanar;
 
-        return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
-        }
+            if (m_hasNormals != rhs.m_hasNormals)
+                return !m_hasNormals;
+
+            return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
+            }
+    };
+private:
+    typedef bmap<Key, MeshBuilderPtr> Map;
+
+    Map             m_map;
+    double          m_vertexTolerance;
+    double          m_facetAreaTolerance;
+    DRange3d        m_range;
+    FeatureTableP   m_featureTable;
+    bool            m_is2d;
+public:
+    MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) : m_vertexTolerance(tolerance*ToleranceRatio::Vertex()),
+        m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()), m_featureTable(features), m_range(range), m_is2d(is2d) { }
+
+    DGNPLATFORM_EXPORT MeshBuilderR operator[](Key const& key);
+
+    using const_iterator = Map::const_iterator;
+
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+    void clear() { m_map.clear(); }
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+
+    DRange3dCR GetRange() const { return m_range; }
 };
 
 //=======================================================================================
@@ -873,15 +912,6 @@ public:
     //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
     //! By default, it is always stroked.
     void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct ToleranceRatio
-{
-    static constexpr double Vertex() { return .1; }
-    static constexpr double FacetArea() { return .1; }
 };
 
 //=======================================================================================

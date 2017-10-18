@@ -1507,12 +1507,9 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     if (m_geometries.empty())
         return meshes;
 
-    double vertexTolerance = tolerance * ToleranceRatio::Vertex();
-    double facetAreaTolerance = tolerance * tolerance * ToleranceRatio::FacetArea();
-
     DRange3d range = m_geometries.ComputeRange();
     bool is2d = range.IsAlmostZeroZ();
-    bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
+    MeshBuilderMap builderMap(tolerance, nullptr, range, is2d);
     for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
@@ -1525,22 +1522,16 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderR meshBuilder = builderMap[key];
 
-            MeshBuilderPtr meshBuilder;
-            auto found = builderMap.find(key);
-            if (builderMap.end() != found)
-                meshBuilder = found->second;
-            else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range, is2d, tilePolyface.m_isPlanar);
+            meshBuilder.BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
 
             uint32_t fillColor = displayParams->GetFillColor();
-
-            meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
 
-            meshBuilder->EndPolyface();
+            meshBuilder.EndPolyface();
             }
 
         if (!options.WantSurfacesOnly())
@@ -1549,18 +1540,12 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
-                MeshMergeKey key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
+                MeshBuilderMap::Key key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
 
-                MeshBuilderPtr meshBuilder;
-                auto found = builderMap.find(key);
-                if (builderMap.end() != found)
-                    meshBuilder = found->second;
-                else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range, is2d, tileStrokes.m_isPlanar);
-
+                MeshBuilderR builder = builderMap[key];
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                    builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                 }
             }
         }
@@ -2773,3 +2758,20 @@ DisplayParams::DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId su
 
     Resolve (dgnDb, renderSys); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderR MeshBuilderMap::operator[](Key const& key)
+    {
+    auto found = m_map.find(key);
+    if (m_map.end() == found)
+        {
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
+        found = m_map.Insert(key, builder).first;
+        }
+
+    return *found->second;
+    }
+
+
