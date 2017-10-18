@@ -273,7 +273,7 @@ bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
     {
     return
         m_options.GetUseChangesets() &&
-        m_serverInfo.GetWebApiVersion() >= BeVersion(2, 1) &&
+        m_serverInfo.GetWebApiVersion() >= BeVersion(2, 3) &&
         changeGroup.GetFileChange().GetChangeStatus() == IChangeManager::ChangeStatus::NoChange;
     }
 
