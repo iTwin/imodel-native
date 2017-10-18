@@ -1728,3 +1728,65 @@ TEST_F(NodesCacheTests, Updates_IsExpandedFlag)
     ASSERT_TRUE(cachedNode.IsValid());
     EXPECT_FALSE(cachedNode->IsExpanded());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, GetFilteredNodes)
+    {
+    // create the root node
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData1(*node1);
+    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetRulesetId("ruleset_id");
+
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    NavNodeExtendedData extendedData2(*node2);
+    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetRulesetId("ruleset_id");
+
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // cache nodes
+    m_cache->Cache(*node1, false);
+    m_cache->Cache(*node2, false);
+    
+    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(GetDb(), info.GetRulesetId().c_str(), "test");
+    // verify filtered node
+    ASSERT_EQ(1, filteredNodes.size());
+    EXPECT_TRUE(node1->Equals(*filteredNodes[0]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, ResetIsExpandedFlag)
+    {
+    // create the root node
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData1(*node1);
+    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetRulesetId("ruleset_id");
+    node1->SetIsExpanded(true);
+
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    NavNodeExtendedData extendedData2(*node2);
+    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetRulesetId("ruleset_id");
+    node2->SetIsExpanded(true);
+
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // cache nodes
+    m_cache->Cache(*node1, false);
+    m_cache->Cache(*node2, false);
+
+    m_cache->ResetExpandedNodes(GetDb().GetDbGuid(), "ruleset_id");
+
+    EXPECT_FALSE(m_cache->GetNode(node1->GetNodeId())->IsExpanded());
+    EXPECT_FALSE(m_cache->GetNode(node2->GetNodeId())->IsExpanded());
+    }

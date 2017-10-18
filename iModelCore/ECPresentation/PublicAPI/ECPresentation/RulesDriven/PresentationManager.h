@@ -180,6 +180,7 @@ private:
     IPropertyCategorySupplier* m_categorySupplier;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     ILocalizationProvider const* m_localizationProvider;
+    bool m_isTreeTraversed = false;
     
 //__PUBLISH_SECTION_END__
 private:
@@ -191,6 +192,7 @@ private:
     IPropertyCategorySupplier& GetCategorySupplier() const;
     ILocalizationProvider const& GetLocalizationProvider() const;
     void OnConnection(ECDbCR) const;
+    void TraverseNodes(ECDbR, JsonValueCR, DataContainer<NavNodeCPtr>);
     
 public:
     NodesCache const& GetNodesCache() const {return GetNodesCacheR();}
@@ -217,10 +219,12 @@ protected:
     ECPRESENTATION_EXPORT bool _HasChild(ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(ECDbR, NavNodeCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions) override;
     ECPRESENTATION_EXPORT void _OnNodeChecked(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeUnchecked(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeExpanded(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeCollapsed(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnAllNodesCollapsed(ECDbR, JsonValueCR options) override;
     
     // IECPresentationManager: Content
     ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(ECDbR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;

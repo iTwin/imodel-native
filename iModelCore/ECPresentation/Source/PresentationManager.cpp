@@ -110,6 +110,11 @@ void IECPresentationManager::NotifyNodeExpanded(ECDbR connection, uint64_t nodeI
 void IECPresentationManager::NotifyNodeCollapsed(ECDbR connection, uint64_t nodeId) {return _OnNodeCollapsed(connection, nodeId);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECPresentationManager::NotifyAllNodesCollapsed(ECDbR connection, JsonValueCR options) {return _OnAllNodesCollapsed(connection, options);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECPresentationManager::HasChild(ECDbR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) {return _HasChild(connection, parentNode, childNodeKey, extendedOptions);}
@@ -296,6 +301,62 @@ bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR co
         }
     ECValue ecValue = ValueHelpers::GetECValueFromJson(*prop, value);
     return SaveValueChange(connection, instanceInfos, propertyAccessor, ecValue, extendedOptions);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<uint64_t, bvector<NavNodeCPtr>>::iterator IECPresentationManager::InsertNodeToMap(ECDbR connection, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, NavNodeCPtr node)
+    {
+    auto parentIter = hierarchy.find(node->GetParentNodeId());
+    if (parentIter == hierarchy.end())
+        {
+        NavNodeCPtr parent = GetNode(connection, node->GetParentNodeId());
+        if (parent.IsValid())
+            parentIter = InsertNodeToMap(connection, hierarchy, parent);
+        }
+    auto iter = hierarchy.find(node->GetNodeId());
+    if (iter == hierarchy.end())
+        {
+        if (parentIter != hierarchy.end())
+            parentIter->second.push_back(node);
+        return hierarchy.Insert(node->GetNodeId(), bvector<NavNodeCPtr>()).first;
+        }
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static NodesPathElement GetPath(NavNodeCPtr root, bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy, size_t index)
+    {
+    NodesPathElement node(*root, index);
+    auto iter = hierarchy.find(root->GetNodeId());
+    for (size_t i = 0; i < iter->second.size(); i++)
+        node.GetChildren().push_back(GetPath(iter->second[i], hierarchy, i));
+    return node;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodesPathElement> IECPresentationManager::GetFilteredNodesPaths(ECDbR connection, Utf8CP filterText, JsonValueCR options)
+    {
+    bvector<NavNodeCPtr> filteredNodes = _GetFilteredNodes(connection, filterText, options);
+
+    bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;
+    for (NavNodeCPtr node : filteredNodes)
+        InsertNodeToMap(connection, hierarchy, node);
+
+    bvector<NodesPathElement> rootNodes;
+    size_t index = 0;
+    for (auto iter = hierarchy.begin(); iter != hierarchy.end(); iter++)
+        {
+        NavNodeCPtr node = GetNode(connection, iter->first);
+        if (node.IsValid() && 0 == node->GetParentNodeId())
+            rootNodes.push_back(GetPath(node, hierarchy, index++));
+        }
+    return rootNodes;
     }
 
 /*---------------------------------------------------------------------------------**//**

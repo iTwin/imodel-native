@@ -88,6 +88,17 @@ struct IECPresentationManagerTests : ::testing::Test
         }
     
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Aidas.Vaisknoras                10/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static TestNavNodePtr CreateTreeNode(uint64_t nodeId, uint64_t parentId)
+        {
+        TestNavNodePtr node = TestNavNode::Create();
+        node->SetNodeId(nodeId);
+        node->SetParentNodeId(parentId);
+        return node;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     static TestNavNodePtr CreateInstanceNode(ECClassId classId, ECInstanceId instanceId, Utf8CP label)
@@ -529,4 +540,81 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPath)
     EXPECT_STREQ("B_3_2", curr->GetNode()->GetLabel().c_str());
     EXPECT_TRUE(curr->IsMarked());
     ASSERT_EQ(0, curr->GetChildren().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Aidas.Vaiksnoras                10/2017
+//---------------------------------------------------------------------------------------
+TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths)
+    {
+    /* create the hierarchy
+       assume underscored nodes are filtered nodes
+
+             1
+           / | \
+         /   |  \
+      _2     3   4
+           /   \
+          /     \
+        _5       6
+                / \
+               /   \
+             _7     8
+
+    */
+    Hierarchy hierarchy;
+    hierarchy[nullptr].push_back(CreateTreeNode(1, 0));
+    NavNodeCPtr node1 = hierarchy[nullptr].back();
+    hierarchy[node1].push_back(CreateTreeNode(2, 1));
+    hierarchy[node1].push_back(CreateTreeNode(3, 1));
+    hierarchy[node1].push_back(CreateTreeNode(4, 1));
+    NavNodeCPtr node3 = *(hierarchy[node1].begin() + 1);
+    hierarchy[node3].push_back(CreateTreeNode(5, 3));
+    hierarchy[node3].push_back(CreateTreeNode(6, 3));
+    NavNodeCPtr node6 = *(hierarchy[node3].begin() + 1);
+    hierarchy[node6].push_back(CreateTreeNode(7, 6));
+    hierarchy[node6].push_back(CreateTreeNode(8, 6));
+    m_manager->SetHierarchy(hierarchy);
+
+
+    m_manager->SetGetFilteredNodesPathsHandler([&](ECDbR db, Utf8CP filterText, JsonValueCR options) -> bvector<NavNodeCPtr>
+        {
+        bvector<NavNodeCPtr> nodelist;
+        nodelist.push_back(*(hierarchy[node1].begin()));   //2
+        nodelist.push_back(*(hierarchy[node3].begin()));   //5
+        nodelist.push_back(*(hierarchy[node6].begin()));   //7
+        return nodelist;
+        });
+
+    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "T", Json::Value());
+
+    /* Validate path hierarchy
+
+             1
+           / |
+         /   |
+       2     3
+           /   \
+          /     \
+         5       6
+                /
+               /
+              7
+
+    */
+
+    ASSERT_EQ(1, paths.size());
+
+    EXPECT_EQ(1, paths[0].GetNode()->GetNodeId());
+    ASSERT_EQ(2, paths[0].GetChildren().size());
+
+    EXPECT_EQ(2, paths[0].GetChildren()[0].GetNode()->GetNodeId());
+    EXPECT_EQ(3, paths[0].GetChildren()[1].GetNode()->GetNodeId());
+
+    ASSERT_EQ(2, paths[0].GetChildren()[1].GetChildren().size());
+    EXPECT_EQ(5, paths[0].GetChildren()[1].GetChildren()[0].GetNode()->GetNodeId());
+    EXPECT_EQ(6, paths[0].GetChildren()[1].GetChildren()[1].GetNode()->GetNodeId());
+
+    ASSERT_EQ(1, paths[0].GetChildren()[1].GetChildren()[1].GetChildren().size());
+    EXPECT_EQ(7, paths[0].GetChildren()[1].GetChildren()[1].GetChildren()[0].GetNode()->GetNodeId());
     }

@@ -469,6 +469,34 @@ NavNodeCPtr RulesDrivenECPresentationManager::_GetNode(ECDbR connection, uint64_
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::TraverseNodes(ECDbR connection, JsonValueCR options, DataContainer<NavNodeCPtr> nodes)
+    {
+    for (int i = 0; i < nodes.GetSize(); i++) //WIP Won't traverse nodes which are already in cache
+        {
+        NavNodeCPtr node = nodes.Get(i);
+        if (node->HasChildren())
+            TraverseNodes(connection, options, GetChildren(connection, *node, PageOptions(), options));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NavNodeCPtr> RulesDrivenECPresentationManager::_GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions)
+    {
+    DataContainer<NavNodeCPtr> rootNodes = GetRootNodes(connection, PageOptions(), jsonOptions);
+    // Add all tree nodes to NodesCache
+    if (!m_isTreeTraversed)
+        {
+        TraverseNodes(connection, jsonOptions, rootNodes);
+        m_isTreeTraversed = true;
+        }
+    return GetNodesCache().GetFilteredNodes(connection, NavigationOptions(jsonOptions).GetRulesetId(), filterText);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RulesDrivenECPresentationManager::_HasChild(ECDbR, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR)
@@ -811,4 +839,12 @@ void RulesDrivenECPresentationManager::_OnNodeCollapsed(ECDbR connection, uint64
         node->SetIsExpanded(false);
         GetNodesCache().Update(nodeId, *node);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnAllNodesCollapsed(ECDbR connection, JsonValueCR options)
+    {
+    GetNodesCache().ResetExpandedNodes(connection.GetDbGuid(), options["RulesetId"].asCString());
     }

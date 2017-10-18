@@ -170,6 +170,9 @@ public:
 
     ECPRESENTATION_EXPORT void Clear(BeSQLite::EC::ECDb const* connection = nullptr, Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();
+
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
+    ECPRESENTATION_EXPORT void ResetExpandedNodes(BeSQLite::BeGuid connectionId, Utf8CP rulesetId);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

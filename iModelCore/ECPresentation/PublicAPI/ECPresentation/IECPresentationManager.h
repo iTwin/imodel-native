@@ -29,6 +29,7 @@ private:
     
 private:
     NodesPathElement FindNode(BeSQLite::EC::ECDbR, NavNodeCP, NavNodeKeyCR, JsonValueCR);
+    bmap<uint64_t, bvector<NavNodeCPtr>>::iterator InsertNodeToMap(BeSQLite::EC::ECDbR connection, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, NavNodeCPtr node);
 
 //__PUBLISH_SECTION_START__
 private:
@@ -67,6 +68,10 @@ protected:
     //! @see GetNode
     virtual NavNodeCPtr _GetNode(BeSQLite::EC::ECDbR, uint64_t) = 0;
 
+    //! Retrieves filtered Node paths.
+    //! @see GetFilteredNodes
+    virtual bvector<NavNodeCPtr> _GetFilteredNodes(BeSQLite::EC::ECDbR, Utf8CP, JsonValueCR) = 0;
+
     //! @copydoc NotifyNodeChecked
     virtual void _OnNodeChecked(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
     //! @copydoc NotifyNodeUnchecked
@@ -76,6 +81,8 @@ protected:
     virtual void _OnNodeExpanded(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
     //! @copydoc NotifyNodeCollapsed
     virtual void _OnNodeCollapsed(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
+    //! @copydoc NotifyAllNodesCollapsed
+    virtual void _OnAllNodesCollapsed(BeSQLite::EC::ECDbR, JsonValueCR options) = 0;
 /** @} */
 
 /** @name Content  
@@ -177,6 +184,12 @@ public:
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT bvector<NodesPathElement> GetNodesPath(BeSQLite::EC::ECDbR connection, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value());
     
+    //! Returns filtered nodes paths
+    //! @param[in] connection The connection to use for getting the nodes path.
+    //! @param[in] filterText The Text to filter nodes by.
+    //! @param[in] options Additional options which depend on the implementation of @ref IECPresentationManager.
+    ECPRESENTATION_EXPORT bvector<NodesPathElement> GetFilteredNodesPaths(BeSQLite::EC::ECDbR connection, Utf8CP filterText, JsonValueCR options);
+    
     //! Mark node with the specified ID as checked.
     ECPRESENTATION_EXPORT void NotifyNodeChecked(BeSQLite::EC::ECDbR, uint64_t nodeId);
     //! Mark node with the specified ID as not checked.
@@ -186,6 +199,8 @@ public:
     ECPRESENTATION_EXPORT void NotifyNodeExpanded(BeSQLite::EC::ECDbR, uint64_t nodeId);
     //! Mark node with the specified ID as collapsed.
     ECPRESENTATION_EXPORT void NotifyNodeCollapsed(BeSQLite::EC::ECDbR, uint64_t nodeId);
+    //! Collapse all expanded nodes
+    ECPRESENTATION_EXPORT void NotifyAllNodesCollapsed(BeSQLite::EC::ECDbR, JsonValueCR options);
 /** @} */
 
 /** @name Content  
