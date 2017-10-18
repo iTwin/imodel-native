@@ -28,6 +28,7 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
         std::shared_ptr<WorkerThread> m_thread;
+        bool m_legacyMode;
 
     private:
         bool ShouldStopSendingToken(AttemptCR previousAttempt) const;
@@ -38,15 +39,17 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
             (
             Utf8String urlBaseToAuth,
             std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
-            IHttpHandlerPtr customHttpHandler = nullptr
+            IHttpHandlerPtr customHttpHandler = nullptr,
+            bool legacyMode = true
             );
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();
 
         WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication(HttpResponseCR response) override;
         WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) override;
-        WSCLIENT_EXPORT static void SetRetryOnExpiredToken(bool value);
-        static unsigned s_expiredTokenRetryCount;
+        
+        //! DEPRECATED, no longer needed and does nothing
+        static void SetRetryOnExpiredToken(bool value) {};
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
