@@ -144,6 +144,9 @@ TEST_F(PerformanceSharedTableTests, CreateSeedFile)
     ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan.Khan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSharedTableTests, Insert)
     {
     ECDb ecdb;

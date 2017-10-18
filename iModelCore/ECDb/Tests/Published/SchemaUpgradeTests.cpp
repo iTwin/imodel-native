@@ -8635,7 +8635,9 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerato
         "</ECSchema>");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot change Strict Enum (Only Adding new properties allowed";
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     04/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>

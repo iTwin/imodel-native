@@ -305,9 +305,9 @@ TEST_F(ECInstanceInserterTests, InsertIntoNestedStructArray)
     ASSERT_TRUE(inXml == outXml);
     }
 
-
-
-
+//---------------------------------------------------------------------------------------
+// @bsitest                                     Krischan.Eberle            06/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
     {
     InsertInstances("TestClass", "KitchenSink", 1, true);

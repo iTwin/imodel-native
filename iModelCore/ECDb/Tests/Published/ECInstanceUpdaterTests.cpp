@@ -84,11 +84,17 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
             }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Carole.MacDonald                     06/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClass)
     {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Carole.MacDonald                     06/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClassWithIncompleteInstance)
     {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, false);

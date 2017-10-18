@@ -2490,9 +2490,9 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.AAA]")) != stcoViews.end());
     }
 
-//---------------------------------------------------------------------------------------
-//                                               Krischan.Eberle                  10/14
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                       Krischan.Eberle                  10/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
     auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb)
@@ -2719,9 +2719,9 @@ TEST_F(SchemaManagerTests, EnforceECEnumeration)
     statement.Finalize();
     }
 
-//---------------------------------------------------------------------------------------
-//                                               Krischan.Eberle                  10/14
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                       Krischan.Eberle                  10/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaManagerTests, DuplicateInMemorySchemaTest)
     {
     Utf8CP stdXml = 
