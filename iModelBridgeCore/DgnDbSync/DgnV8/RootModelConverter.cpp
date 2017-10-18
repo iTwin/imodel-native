@@ -976,8 +976,11 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         }
 
     // Use the document GUID, if available, to ensure a unique Job subject name.
-    Utf8String docGuidStr = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName()).ToString();
-    if (docGuidStr.empty())
+    Utf8String docGuidStr;
+    auto docGuid = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName());
+    if (docGuid.IsValid())
+        docGuidStr = docGuid.ToString();
+    else
         docGuidStr = Utf8String(_GetParams().GetInputFileName());
 
     Utf8String jobName(iModelBridge::str_BridgeType_DgnV8());
