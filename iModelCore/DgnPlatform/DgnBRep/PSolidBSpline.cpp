@@ -528,7 +528,7 @@ BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve
 
         default:
             {
-            BeAssert (false);
+//          BeAssert (false);
 
             return ERROR;
             }
