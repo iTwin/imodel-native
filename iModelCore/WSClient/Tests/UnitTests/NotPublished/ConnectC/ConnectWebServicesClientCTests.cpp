@@ -42,6 +42,9 @@ void ConnectWebServicesClientCTests::SetUpTestCase()
 //////////////////////////////////////////
 // -------- Constructor  Tests -------- //
 //////////////////////////////////////////
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_ValidParameters_InitializedApiProperly)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -70,6 +73,9 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_ValidParamete
     ASSERT_STREQ("Login using credentials performed successfully.", ConnectWebServicesClientC_GetLastStatusDescription(api));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_UnsuccessfulLogin_InvalidApiInitialization)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -95,6 +101,9 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_UnsuccessfulL
     ASSERT_TRUE(api == nullptr);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_ValidParameters_InitializedApiProperly)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -125,6 +134,9 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_ValidParameters_Ini
     ASSERT_STREQ("Login using credentials performed successfully.", ConnectWebServicesClientC_GetLastStatusDescription(api));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFromInvalidToken_InvalidApiInitialization)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -147,6 +159,9 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFr
     ASSERT_TRUE(api == nullptr);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFromInvalidResponse_InitializedApiProperly)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -177,6 +192,9 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFr
 //////////////////////////////////////////
 // ------ Organization Tests ---------- //
 //////////////////////////////////////////
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadOrganization_V2List_ThreeOrganizationsReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -239,6 +257,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadOrganization_V2List_ThreeOrganization
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateOrganization_ValidOrganizationParameters_OrganizationSuccessfullyCreated)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -288,6 +309,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateOrganization_ValidOrganizationParam
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadOrganization_OneOrganizationReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -351,6 +375,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadOrganization_OneOrganizationReturned_
 //////////////////////////////////////////
 // --------- PROJECT_V4 Tests --------- //
 //////////////////////////////////////////
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProjectV4List_FiveProjectsReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -466,6 +493,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectV4List_FiveProjectsReturned_Va
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProjectV4_ValidProjectParameters_ProjectSuccessfullyCreated)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -522,6 +552,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectV4_ValidProjectParameters_Pr
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProjectV4_OneProjectReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -636,6 +669,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectV4_OneProjectReturned_ValidBuf
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProjectV4_OneProjectReturned_ProjectSuccessfullyUpdated)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -688,6 +724,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProjectV4_OneProjectReturned_Projec
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProjectV4_ValidDeletionParameters_ProjectSuccessfullyDeleted)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -735,6 +774,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProjectV4_ValidDeletionParameters_P
 //////////////////////////////////////////
 // ------ PROJECTFAVORITE_V4 Tests ------- //
 //////////////////////////////////////////
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4List_ThreeProjectsReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -850,6 +892,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4List_ThreeProjectsR
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProjectFavorite_V4_ValidProjectParameters_ProjectSuccessfullyCreated)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -897,6 +942,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectFavorite_V4_ValidProjectPara
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4_OneProjectReturned_ValidBufferPropertiesSetAndParsed)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1011,6 +1059,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4_OneProjectReturned
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProjectFavorite_V4_ValidDeletionParameters_ProjectSuccessfullyDeleted)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1061,6 +1112,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProjectFavorite_V4_ValidDeletionPar
 //   ECClass CRUD function, so testing  //
 //   just for Project is sufficient     //
 //////////////////////////////////////////
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsClassNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1112,6 +1166,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsClassNotF
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSchemaNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1165,6 +1222,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSchemaNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsRepositoryNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1218,6 +1278,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsRepositor
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsPropertyNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1271,6 +1334,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsPropertyN
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsInstanceNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1324,6 +1390,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsInstanceN
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsNotEnoughRights_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1377,6 +1446,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsNotEnough
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSslRequired_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1430,6 +1502,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSslRequir
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsServerError_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1477,6 +1552,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsServerErr
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsConflict_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1525,6 +1603,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsConflict_
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsBadRequest_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1572,6 +1653,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsBadReques
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsClassNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1634,6 +1718,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsClassNotFou
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSchemaNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1698,6 +1785,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSchemaNotFo
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsRepositoryNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1762,6 +1852,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsRepositoryN
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsPropertyNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1826,6 +1919,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsPropertyNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsNotEnoughRights_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1890,6 +1986,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsNotEnoughRi
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSslRequired_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -1954,6 +2053,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSslRequired
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsServerError_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2009,6 +2111,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsServerError
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsConflict_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2069,6 +2174,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsConflict_AP
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsBadRequest_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2124,6 +2232,9 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsBadRequest_
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsClassNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2175,6 +2286,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsClassNotFound
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSchemaNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2228,6 +2342,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSchemaNotFoun
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsRepositoryNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2281,6 +2398,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsRepositoryNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsPropertyNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2334,6 +2454,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsPropertyNotFo
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsInstanceNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2387,6 +2510,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsInstanceNotFo
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsNotEnoughRights_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2440,6 +2566,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsNotEnoughRigh
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSslRequired_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2493,6 +2622,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSslRequired_A
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsServerError_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2540,6 +2672,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsServerError_A
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsConflict_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2588,6 +2723,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsConflict_APIR
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsBadRequest_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2635,6 +2773,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsBadRequest_AP
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsClassNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2698,6 +2839,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsClassNotFou
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSchemaNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2760,6 +2904,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSchemaNotFo
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsRepositoryNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2822,6 +2969,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsRepositoryN
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsPropertyNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2884,6 +3034,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsPropertyNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -2949,6 +3102,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsNotEnoughRights_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3012,6 +3168,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsNotEnoughRi
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSslRequired_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3077,6 +3236,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSslRequired
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsServerError_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3134,6 +3296,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsServerError
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsConflict_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3191,6 +3356,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsConflict_AP
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsBadRequest_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3247,6 +3415,9 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsBadRequest_
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsClassNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3297,6 +3468,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsClassNotFou
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSchemaNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3349,6 +3523,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSchemaNotFo
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsRepositoryNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3401,6 +3578,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsRepositoryN
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsPropertyNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3453,6 +3633,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsPropertyNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsInstanceNotFound_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3505,6 +3688,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsInstanceNot
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsNotEnoughRights_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3557,6 +3743,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsNotEnoughRi
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSslRequired_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3609,6 +3798,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSslRequired
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsServerError_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3655,6 +3847,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsServerError
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsConflict_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();
@@ -3702,6 +3897,9 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsConflict_AP
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsBadRequest_APIReturnsProperStatus)
     {
     shared_ptr<MockHttpHandler> mockHttpHandler = GetHandlerPtr();

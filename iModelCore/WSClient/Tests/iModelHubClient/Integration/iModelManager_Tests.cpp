@@ -2832,6 +2832,9 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           08/2017
+//---------------------------------------------------------------------------------------
 TEST_F(iModelManagerTests, GetChangeSetsRelatedToVersions)
     {
     auto briefcase = AcquireBriefcase();

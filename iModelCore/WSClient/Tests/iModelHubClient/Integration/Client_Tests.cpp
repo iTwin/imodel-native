@@ -53,6 +53,9 @@ struct ClientTests : public IntegrationTestsBase
         }
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, SuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
@@ -69,6 +72,9 @@ TEST_F(ClientTests, SuccessfulCreateiModel)
     DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, UnauthorizedCreateiModel)
     {
     auto db = CreateTestDb();
@@ -81,6 +87,9 @@ TEST_F(ClientTests, UnauthorizedCreateiModel)
     CheckNoProgress();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, RepeatedCreateiModel)
     {
     auto db = CreateTestDb();
@@ -134,6 +143,9 @@ TEST_F(ClientTests, CancelCreateiModel)
         }
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, UnsuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
@@ -147,6 +159,9 @@ TEST_F(ClientTests, UnsuccessfulCreateiModel)
     CheckNoProgress();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, SuccessfulGetiModels)
     {
     DeleteiModels();
@@ -174,6 +189,9 @@ TEST_F(ClientTests, SuccessfulGetiModels)
     DeleteiModel(m_projectId, *m_client, *imodel2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, SuccessfulGetiModelByName)
     {
     DeleteiModels();
@@ -198,6 +216,9 @@ TEST_F(ClientTests, SuccessfulGetiModelByName)
     DeleteiModel(m_projectId, *m_client, *imodel);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, UnsuccessfulGetiModels)
     {
     auto imodel = CreateNewiModel();
@@ -211,6 +232,9 @@ TEST_F(ClientTests, UnsuccessfulGetiModels)
     DeleteiModel(m_projectId, *m_client, *imodel);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, EmptyGetiModels)
     {
     DeleteiModels();
@@ -221,6 +245,9 @@ TEST_F(ClientTests, EmptyGetiModels)
     EXPECT_TRUE(result.GetValue().empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
     {
     auto db = IntegrationTestsBase::CreateTestDb("Client Test");
@@ -236,6 +263,9 @@ TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
     DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, ReplaceSeedFile)
     {
     // Create imodel and get a connection to it
@@ -311,6 +341,9 @@ TEST_F(ClientTests, ReplaceSeedFile)
     DeleteiModel(m_projectId, *m_client, *createResult.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, DownloadArchivedFiles)
     {
     // Create imodel and get a connection to it
@@ -392,6 +425,9 @@ TEST_F(ClientTests, CancelDownloadChangeSets)
     }
 
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, UnauthorizedSignIn)
     {
     auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetWrongPassword());

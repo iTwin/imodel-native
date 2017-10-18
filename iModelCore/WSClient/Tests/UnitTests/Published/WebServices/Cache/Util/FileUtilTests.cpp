@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/FileUtilTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,6 +22,9 @@ WString FixSlashes(WString path)
     return path;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileName_VeryLongName_TruncatesNameThatFitsIntoBeFileNamePreservingExtension)
     {
     Utf8String fileName = Utf8String(10000, 'x') + ".test";
@@ -35,6 +38,9 @@ TEST_F(FileUtilTests, TruncateFileName_VeryLongName_TruncatesNameThatFitsIntoBeF
     EXPECT_STREQ(L"test", path.GetExtension().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileName_VeryLongNameWithoutExtension_TruncatesNameThatFitsIntoBeFileName)
     {
     Utf8String fileName(10000, 'x');
@@ -46,6 +52,9 @@ TEST_F(FileUtilTests, TruncateFileName_VeryLongNameWithoutExtension_TruncatesNam
     EXPECT_NE(0, BeFileName(truncatedFileName).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf8_NameLengthEqualToMax_LeavesSameLength)
     {
     Utf8String a = "a.b";
@@ -53,6 +62,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf8_NameLengthEqualToMax_LeavesSameLength
     EXPECT_STREQ(a.c_str(), b.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf16_NameLengthEqualToMax_LeavesSameLength)
     {
     Utf8String a = "a.b";
@@ -60,6 +72,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf16_NameLengthEqualToMax_LeavesSameLengt
     EXPECT_STREQ(a.c_str(), b.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileName_NameLengthSmallerThanMax_LeavesSameLength)
     {
     Utf8String a = "a.b";
@@ -67,16 +82,25 @@ TEST_F(FileUtilTests, TruncateFileName_NameLengthSmallerThanMax_LeavesSameLength
     EXPECT_STREQ(a.c_str(), b.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf8_Empty_ReturnsEmpty)
     {
     EXPECT_TRUE(FileUtil::TruncateFileNameUtf8("", 10).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf16_Empty_ReturnsEmpty)
     {
     EXPECT_TRUE(FileUtil::TruncateFileNameUtf16("", 10).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf8_VariousLongNames_TruncatesNameToSameLength)
     {
     EXPECT_STREQ("xxxxxxxxxx", FileUtil::TruncateFileNameUtf8(Utf8String(10000, 'x'), 10).c_str());
@@ -85,6 +109,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf8_VariousLongNames_TruncatesNameToSameL
     EXPECT_STREQ(".eeeeeeeee", FileUtil::TruncateFileNameUtf8("." + Utf8String(10000, 'e'), 10).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf16_VariousLongNames_TruncatesNameToSameLength)
     {
     EXPECT_STREQ("xxxxxxxxxx", FileUtil::TruncateFileNameUtf16(Utf8String(10000, 'x'), 10).c_str());
@@ -93,6 +120,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf16_VariousLongNames_TruncatesNameToSame
     EXPECT_STREQ(".eeeeeeeee", FileUtil::TruncateFileNameUtf16("." + Utf8String(10000, 'e'), 10).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf8_UnicodeCharacterInName_TruncatesToBytes)
     {
     Utf8String a(L"\u0105bc.txt"); // Unicode character of 2 bytes, total 7 characters or 8 bytes
@@ -102,6 +132,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf8_UnicodeCharacterInName_TruncatesToByt
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf16_UnicodeCharacterInName_TruncatesToCharacters)
     {
     Utf8String a(L"\u0105bc.txt"); // Unicode character of 2 bytes, total 7 characters or 8 bytes
@@ -110,6 +143,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf16_UnicodeCharacterInName_TruncatesToCh
     EXPECT_STREQ(b.c_str(), c.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileNameUtf8_UnicodeCharacterInNameAndTrimToHalfUnicodeCharacter_TruncatesToBytesPreservingValidCharacters)
     {
     Utf8String a(L"a\u0105b.txt"); // Unicode character of 2 bytes, total 7 characters or 8 bytes
@@ -118,6 +154,9 @@ TEST_F(FileUtilTests, TruncateFileNameUtf8_UnicodeCharacterInNameAndTrimToHalfUn
     EXPECT_STREQ(b.c_str(), c.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFileName_VariousLongNames_TruncatesNameToSameLength)
     {
     Utf8String a = FileUtil::TruncateFileName(Utf8String(10000, 'x'));
@@ -130,6 +169,9 @@ TEST_F(FileUtilTests, TruncateFileName_VariousLongNames_TruncatesNameToSameLengt
     EXPECT_EQ(a.length(), d.length());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathMoreThanPath_DoesNothing)
     {
     BeFileName path(L"\\Foo\\Bar.txt");
@@ -139,6 +181,9 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathMoreThanPath_DoesNothing)
     EXPECT_STREQ(L"\\Foo\\Bar.txt", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathLessThanPath_TruncatesFileName)
     {
     BeFileName path(L"\\A\\Bar.txt");
@@ -148,6 +193,9 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathLessThanPath_TruncatesFileName)
     EXPECT_STREQ(L"\\A\\Ba.txt", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_NoFolders_TruncatesFileName)
     {
     BeFileName path(L"Bar.txt");
@@ -157,6 +205,9 @@ TEST_F(FileUtilTests, TruncateFilePath_NoFolders_TruncatesFileName)
     EXPECT_STREQ(L"Ba.txt", path.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_PathIsFolder_Error)
     {
     BeFileName path(L"\\Foo\\Bar\\");
@@ -166,6 +217,9 @@ TEST_F(FileUtilTests, TruncateFilePath_PathIsFolder_Error)
     EXPECT_STREQ(L"\\Foo\\Bar\\", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_FileWithNoExtension_TruncatesFileName)
     {
     BeFileName path(L"\\Foo\\Bar");
@@ -175,6 +229,9 @@ TEST_F(FileUtilTests, TruncateFilePath_FileWithNoExtension_TruncatesFileName)
     EXPECT_STREQ(L"\\Foo\\Ba", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error)
     {
     BeFileName path(L"\\A\\B.txt");
@@ -184,6 +241,9 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Er
     EXPECT_STREQ(L"\\A\\B.txt", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error)
     {
     BeFileName path(L"\\A\\B.txt");
@@ -193,6 +253,9 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged
     EXPECT_STREQ(L"\\A\\B.txt", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
     {
     BeFileName path(L"\\Folder\\Bar.txt");
@@ -202,22 +265,34 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
     EXPECT_STREQ(L"\\Folder\\Bar.txt", FixSlashes(path).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, SanitizeFileName_ValidFileName_SameReturned)
     {
     EXPECT_STREQ("Bar.txt", FileUtil::SanitizeFileName("Bar.txt").c_str());
     EXPECT_STREQ(Utf8String(L"\u0444.txt").c_str(), FileUtil::SanitizeFileName(Utf8String(L"\u0444.txt")).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, SanitizeFileName_FileNameIncludesInvalidCharacters_InvalidCharactersRemoved)
     {
     EXPECT_STREQ("BarFoo.txt", FileUtil::SanitizeFileName(R"name(Bar<>:"/\\|?*Foo.tx<>:"/\\|?*t)name").c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, SanitizeFileName_FileNameHasTrailingWhitespace_WhiteSpaceTrimmed)
     {
     EXPECT_STREQ("B\ta r.t xt", FileUtil::SanitizeFileName(" \t B\ta r.t xt  \t\n\r").c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_FilesExist_CopiesContent)
     {
     auto source = StubFile("A");
@@ -229,6 +304,9 @@ TEST_F(FileUtilTests, CopyFileContent_FilesExist_CopiesContent)
     EXPECT_EQ("A", SimpleReadFile(target));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Julius.Cepukenas                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAndFileExists_RecordsProgress)
     {
     auto size = 100;
@@ -257,6 +335,9 @@ TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAndFileExists_Records
     EXPECT_EQ(2, i);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Julius.Cepukenas                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAnFilesDoNotExists_DoNotRecordProgress)
     {
     auto source = StubFilePath();
@@ -271,6 +352,9 @@ TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAnFilesDoNotExists_Do
     EXPECT_EQ(0, i);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Julius.Cepukenas                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_CancelationTokenExists_CopiesContent)
     {
     ICancellationTokenPtr ct = SimpleCancellationToken::Create();
@@ -280,6 +364,9 @@ TEST_F(FileUtilTests, CopyFileContent_CancelationTokenExists_CopiesContent)
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target, nullptr, ct));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Julius.Cepukenas                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_CanceledCancelationTokenExists_Error)
     {
     ICancellationTokenPtr ct = SimpleCancellationToken::Create(true);
@@ -289,6 +376,9 @@ TEST_F(FileUtilTests, CopyFileContent_CanceledCancelationTokenExists_Error)
     ASSERT_EQ(ERROR, FileUtil::CopyFileContent(source, target, nullptr, (ICancellationTokenPtr) ct));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_TargetDoesNotExist_CopiesContent)
     {
     auto source = StubFile("A");
@@ -302,6 +392,9 @@ TEST_F(FileUtilTests, CopyFileContent_TargetDoesNotExist_CopiesContent)
     EXPECT_EQ("A", SimpleReadFile(target));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_SourceDoesNotExist_Error)
     {
     auto source = StubFilePath();
@@ -314,6 +407,9 @@ TEST_F(FileUtilTests, CopyFileContent_SourceDoesNotExist_Error)
     ASSERT_FALSE(target.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FileUtilTests, CopyFileContent_SourceIsLargeFile_CopiesContents)
     {
     auto size = 1024 * 100;
