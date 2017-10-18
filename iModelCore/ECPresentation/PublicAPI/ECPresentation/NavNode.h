@@ -501,6 +501,9 @@ struct INavNodeKeysContainer : RefCountedBase
         bool operator!=(Iterator const& rhs) const {return !m_container._Equals(m_impl, rhs.m_impl);}
     };
 
+private:
+    mutable Utf8String m_hash;
+
 protected:
     virtual void* _CreateBegin() const = 0;
     virtual void* _CreateEnd() const = 0;
@@ -524,6 +527,8 @@ public:
     size_t size() const {return _GetSize();}
     //! Is this container empty.
     bool empty() const {return 0 == size();}
+    //! Get hash string of all the keys in this container.
+    Utf8StringCR GetHash() const;
 };
 typedef INavNodeKeysContainer const& INavNodeKeysContainerCR;
 typedef INavNodeKeysContainer const* INavNodeKeysContainerCP;

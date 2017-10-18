@@ -1206,18 +1206,38 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR SelectionInfo::GetHash() const
+bool SelectionInfo::operator==(SelectionInfo const& other) const
     {
-    if (m_isValid && m_hash.empty())
-        {
-        MD5 h;
-        h.Add(m_selectionProviderName.c_str(), m_selectionProviderName.SizeInBytes());
-        h.Add(&m_isSubSelection, sizeof(bool));
-        for (NavNodeKeyCPtr const& key : *m_keys)
-            h.Add(key->GetHash().c_str(), key->GetHash().SizeInBytes());
-        m_hash = h.GetHashString();
-        }
-    return m_hash;
+    return (!m_isValid && !other.m_isValid)
+        || (m_isSubSelection == other.m_isSubSelection
+            && m_selectionProviderName == other.m_selectionProviderName
+            && m_keys->GetHash() == other.m_keys->GetHash());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectionInfo::operator<(SelectionInfo const& other) const
+    {
+    if (!m_isValid && other.m_isValid)
+        return true;
+    if (m_isValid && !other.m_isValid)
+        return false;
+
+    if (!m_isSubSelection && other.m_isSubSelection)
+        return true;
+    if (m_isSubSelection && !other.m_isSubSelection)
+        return false;
+
+    int selectionProviderNameCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
+    if (selectionProviderNameCmp < 0)
+        return true;
+    if (selectionProviderNameCmp > 0)
+        return false;
+
+    if (m_keys.IsValid() && other.m_keys.IsValid())
+        return m_keys->GetHash().CompareTo(other.m_keys->GetHash()) < 0;
+    return false;    
     }
 
 /*---------------------------------------------------------------------------------**//**
