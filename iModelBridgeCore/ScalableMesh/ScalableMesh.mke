@@ -484,7 +484,10 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
-    $(ContextSubpartsLibs)BeCurl.lib
+    $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
@@ -514,9 +517,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
-    $(ContextSubpartsLibs)ThreeMxReader.lib \
-    $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+    $(ContextSubpartsLibs)ThreeMxReader.lib
 
 %include $(sharedMki)LinkLibrary.mki
 
