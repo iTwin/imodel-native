@@ -482,9 +482,9 @@ bool compareJSON(bvector<JsonData> const &allData, int verbose, int &dif) // ini
 	if (verbose == 3)
 	{
 		// Print out counts of each type
-		messagePrefix("--------------------Type Counts (up to failure/completion) --------------------\n");
+		messagePrefix("-------------------- Type Counts (up to failure/completion) --------------------\n");
 		messagePrefix(); printf("Numbers: %d\n", typeCounts.numbers);
-		messagePrefix(); printf("Arrays:	%d\n", typeCounts.arrays);
+		messagePrefix(); printf("Arrays: %d\n", typeCounts.arrays);
 		messagePrefix(); printf("Objects: %d\n", typeCounts.objects);
 		messagePrefix(); printf("Strings: %d\n", typeCounts.strings);
 		messagePrefix(); printf("Booleans: %d\n", typeCounts.booleans);
@@ -612,33 +612,20 @@ int main(int argc, char **argv)
 		if (onlyFolder1.size() > 0)
 		{
 			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[0].m_filename.c_str(), allData[1].m_filename.c_str());
-			if (onlyFolder1.size() <= 0)
+			for (size_t i = 0; i < onlyFolder1.size(); i++)
 			{
-				messagePrefix(); printf("(none)\n\n");
+				messagePrefix(); printf("%s\n", Utf8String(onlyFolder1[i]).c_str());
 			}
-			else
-			{
-				for (size_t i = 0; i < onlyFolder1.size(); i++)
-				{
-					messagePrefix(); printf("%s\n", Utf8String(onlyFolder1[i]).c_str());
-				}
-				printf("\n");
-			}
+			printf("\n");
 		}
 		if (onlyFolder2.size() > 0)
 		{
 			messagePrefix(); printf("-------------------- Files in (%s) not in (%s) --------------------\n", allData[1].m_filename.c_str(), allData[0].m_filename.c_str());
-			if (onlyFolder2.size() <= 0)
+			for (size_t i = 0; i < onlyFolder2.size(); i++)
 			{
-				messagePrefix(); printf("(none)\n\n");
+				messagePrefix(); printf("%s\n", Utf8String(onlyFolder2[i]).c_str());
 			}
-			else {
-				for (size_t i = 0; i < onlyFolder2.size(); i++)
-				{
-					messagePrefix(); printf("%s\n", Utf8String(onlyFolder2[i]).c_str());
-				}
-				printf("\n");
-			}
+			printf("\n");
 		}
 
 
