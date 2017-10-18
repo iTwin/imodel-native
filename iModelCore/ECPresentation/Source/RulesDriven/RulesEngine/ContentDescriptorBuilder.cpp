@@ -367,6 +367,7 @@ private:
     ContentDescriptorPtr m_descriptor;
     ContentSpecificationCP m_specification;
     PropertyInfoStore m_propertyInfos;
+    bool m_isRecursiveSpecification;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -383,8 +384,7 @@ private:
             return false;
 
         RelatedClassCR relationshipInfo = classInfo.GetPathToPrimaryClass().front();
-        return relationshipInfo.GetSourceClass()->Is(relationshipInfo.GetTargetClass())
-            || relationshipInfo.GetTargetClass()->Is(relationshipInfo.GetSourceClass());
+        return relationshipInfo.GetSourceClass() == relationshipInfo.GetTargetClass();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -439,6 +439,21 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _OnBeforeAppendClassPaths(bvector<RelatedClassPath>& paths) override
+        {
+        if (m_isRecursiveSpecification)
+            {
+            // ContentSpecificationsHandler::_OnBeforeAppendClassPaths splits paths into
+            // derived paths based on content modifiers. Don't do that for recursive selects.
+            return;
+            }
+
+        ContentSpecificationsHandler::_OnBeforeAppendClassPaths(paths);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                10/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
     void _AppendClass(SelectClassInfo const& classInfo) override
         {
         if (IsRecursiveSelect(classInfo))
@@ -461,7 +476,7 @@ public:
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptorBuilderImpl(ContentDescriptorBuilder::Context& context, ContentSpecificationCP specification)
-        : ContentSpecificationsHandler(context), m_specification(specification),
+        : ContentSpecificationsHandler(context), m_specification(specification), m_isRecursiveSpecification(false),
         m_propertyInfos(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), specification)
         {
         m_descriptor = ContentDescriptor::Create(GetContext().GetPreferredDisplayType());
@@ -472,18 +487,28 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedSelectionInfo const& selection) {ContentSpecificationsHandler::HandleSpecification(spec, selection);}
+    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+        {
+        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection) {ContentSpecificationsHandler::HandleSpecification(spec, selection);}
+    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+        {
+        m_isRecursiveSpecification = spec.IsRecursive();
+        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(ContentInstancesOfSpecificClassesSpecificationCR spec) {ContentSpecificationsHandler::HandleSpecification(spec);}
-    
+    void HandleSpecification(ContentInstancesOfSpecificClassesSpecificationCR spec)
+        {
+        ContentSpecificationsHandler::HandleSpecification(spec);
+        }
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/

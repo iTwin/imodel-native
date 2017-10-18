@@ -41,6 +41,14 @@ ContentQueryCPtr ContentQueryBuilderTests::GetExpectedQuery()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ContentQueryBuilderTests::GetECSchema()
+    {
+    return ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ContentQueryBuilderTests::GetECClass(Utf8CP schemaName, Utf8CP className)
