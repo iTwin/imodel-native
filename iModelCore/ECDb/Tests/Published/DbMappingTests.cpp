@@ -603,6 +603,71 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SharedColumnCasting)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='TestClass'  modifier='none'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.02.00'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "          <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
+        "          </ShareColumns>"
+        "      </ECCustomAttributes>"
+        "      <ECProperty propertyName='F1' typeName='double' />"
+        "      <ECProperty propertyName='F2' typeName='double' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    //    printf("ECSQL: %s\n  SQL:%s\n",stmt.GetECSql(), stmt.GetNativeSql());
+
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(F1) VALUES (10.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(F1) VALUES ('10.0')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE F1=10"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));
+    stmt.Finalize();
+        
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE F1='10'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));
+    stmt.Finalize();
+    
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestClass SET F2=20.0 WHERE F1=10"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestClass SET F2=20.0 WHERE F1='10'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.TestClass WHERE F1='10'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.TestClass WHERE F1=10"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 0);
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
