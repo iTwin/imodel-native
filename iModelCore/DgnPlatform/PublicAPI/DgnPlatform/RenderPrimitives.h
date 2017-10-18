@@ -20,8 +20,6 @@ BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
@@ -41,14 +39,11 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
-DEFINE_REF_COUNTED_PTR(MeshPart);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
 
-typedef bvector<MeshInstance>           MeshInstanceList;
-typedef bvector<MeshPartPtr>            MeshPartList;
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
 typedef bvector<Render::MeshPolyline>   PolylineList;
@@ -249,21 +244,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MeshInstance
-{
-private:
-    Feature     m_feature;
-    Transform   m_transform;
-public:
-    MeshInstance(FeatureCR feature, TransformCR transform) : m_feature(feature), m_transform(transform) { }
-
-    FeatureCR GetFeature() const { return m_feature; }
-    TransformCR GetTransform() const { return m_transform; }
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct MeshList : bvector<MeshPtr>
@@ -275,28 +255,6 @@ struct MeshList : bvector<MeshPtr>
     FeatureTableCR  FeatureTable() const { return m_features; }
     FeatureTableR  FeatureTable()  { return m_features; }
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct MeshPart : RefCountedBase
-{
-private:
-    MeshList            m_meshes;
-    MeshInstanceList    m_instances;
-
-    MeshPart(MeshList&& meshes) : m_meshes(std::move(meshes)) { }
-
-    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
-public:
-    static MeshPartPtr Create(MeshList&& meshes) { return new MeshPart(std::move(meshes)); }
-
-    MeshList const& Meshes() const { return m_meshes; }
-    MeshList& Meshes() { return m_meshes; }
-    MeshInstanceList const& Instances() const { return m_instances; }
-    void AddInstance(MeshInstanceCR instance) { m_instances.push_back(instance); }
-};
-
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -835,14 +793,12 @@ struct GeometryCollection
 {
 private:
     MeshList            m_meshes;
-    MeshPartList        m_parts;
     bool                m_isComplete = true;
     bool                m_curved = false;
 public:
     MeshList& Meshes()              { return m_meshes; }
     MeshList const& Meshes() const  { return m_meshes; }
-    MeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+    bool IsEmpty() const            { return m_meshes.empty(); }
     bool IsComplete() const         { return m_isComplete; }
     bool ContainsCurves() const     { return m_curved; }
     void MarkIncomplete()           { m_isComplete = false; }
