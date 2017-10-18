@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmUtility.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -481,7 +481,8 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getStatisticsDtmObject
        else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole )         ++numHoles  ; 
        else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::GroupSpots )   ++numGroupSpots  ; 
        else if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Hull)          hasHull = true;
-      }
+       else if (dtmFeatureP->dtmFeatureType == DTMFeatureType::DrapeHull)     hasHull = true;
+        }
    }
 /*
 ** Clean Up
