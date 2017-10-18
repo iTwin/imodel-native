@@ -914,7 +914,6 @@
         <RequiredRepository>Bsitools-Doclava</RequiredRepository>
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <RequiredRepository>Libsrc-duktapejs</RequiredRepository>
-        <RequiredRepository>Libsrc-OpenSSL-UWP</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         <RequiredRepository>BeGTest</RequiredRepository>
         <RequiredRepository>BeTestAndroid</RequiredRepository>
