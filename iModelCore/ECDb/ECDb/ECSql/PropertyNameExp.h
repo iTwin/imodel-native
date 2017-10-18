@@ -70,6 +70,8 @@ struct PropertyNameExp final : ValueExp
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { BeAssert(m_sysPropInfo != nullptr); return *m_sysPropInfo; }
         bool IsLhsAssignmentOperandExpression() const;
+        bool IsInWhereExp() const;
+
     };
 
 

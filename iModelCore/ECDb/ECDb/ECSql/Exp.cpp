@@ -33,23 +33,7 @@ Exp const* Exp::FindParent(Exp::Type type) const
     return p;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    09/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::IsPartOfWhereExp() const
-    {
-    Exp const* p = this;
-    while (p = p->GetParent())
-        {
-        if (p->GetType() == Exp::Type::Where)
-            return true;
 
-        if (p->GetType() == Exp::Type::SingleSelect || p->GetType() == Exp::Type::Select || p->GetType() == Exp::Type::Update || p->GetType() == Exp::Type::Delete)
-            return false;
-        }
-
-    return false;
-    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2017
 //+---------------+---------------+---------------+---------------+---------------+--------

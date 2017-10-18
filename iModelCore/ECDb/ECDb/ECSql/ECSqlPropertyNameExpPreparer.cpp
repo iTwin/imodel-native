@@ -114,7 +114,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
-    const bool isPartOfWhereExp = exp.IsPartOfWhereExp();
     ToSqlPropertyMapVisitor::ECSqlScope scope;
     if (ecsqlType == ECSqlType::Select)
         scope = ToSqlPropertyMapVisitor::ECSqlScope::Select;
@@ -129,6 +128,8 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
 
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, scope, classIdentifier, exp.HasParentheses());
 
+    const bool isInWhereExp = exp.IsInWhereExp();
+
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
         {
@@ -139,7 +140,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             continue;
         
-        if (isPartOfWhereExp && r.GetColumn().IsShared())
+        if (isInWhereExp && r.GetColumn().IsShared())
             {
             Utf8String castExp;
             castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
