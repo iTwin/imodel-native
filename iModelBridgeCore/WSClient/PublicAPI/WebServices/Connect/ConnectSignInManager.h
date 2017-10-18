@@ -40,6 +40,11 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             Utf8String firstName;
             Utf8String lastName;
             Utf8String userId;
+            Utf8String organizationId;
+            bool IsComplete() const
+                {
+                return !(username.Equals("") || firstName.Equals("") || lastName.Equals("") || userId.Equals("") || organizationId.Equals(""));
+                };
             };
 
         struct Configuration
