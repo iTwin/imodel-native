@@ -4736,6 +4736,9 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithTwoInstance_ReturnsBo
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "B"), cache->ObjectIdFromJsonInstance(results[1]));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
     {
     auto cache = GetTestCache();
@@ -5241,7 +5244,9 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTime_ReturnsLate
     EXPECT_NE(dateTime1, dateTime2);
     EXPECT_BETWEEN(before, dateTime2, after);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTimeAsNonModified_ReturnsLatestCachedDate)
     {
     auto cache = GetTestCache();
