@@ -23,6 +23,8 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
     if (!conversionResults.m_element.IsValid())
         return DgnDbStatus::Success;
 
+    GetLocksAndCodes(*conversionResults.m_element);
+
     DgnDbStatus stat;
 
     auto result = GetDgnDb().Elements().Insert(*conversionResults.m_element, &stat);
@@ -82,6 +84,25 @@ DgnElementPtr iModelBridgeSyncInfoFile::ChangeDetector::MakeCopyForUpdate(DgnEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::GetLocksAndCodes(DgnElementR el)
+    {
+    if (GetDgnDb().BriefcaseManager().IsBulkOperation())
+        return DgnDbStatus::Success;
+
+    // Request locks and codes explicity this is happening in a phase such as _OpenSource that is called before we go into bulk insert mode.
+    IBriefcaseManager::Request req;
+    el.PopulateRequest(req, (el.GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().Acquire(req).Result())
+        {
+        BeAssert(false);
+        return DgnDbStatus::LockNotHeld;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId)
     {
     if (!conversionResults.m_element.IsValid() || !existingElementId.IsValid())
@@ -108,7 +129,9 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneEl
 
     DgnElementPtr writeEl = MakeCopyForUpdate(*conversionResults.m_element, *el);
 
-    DgnDbStatus stat;
+    GetLocksAndCodes(*writeEl);
+
+    DgnDbStatus stat; 
     DgnElementCPtr result = GetDgnDb().Elements().Update(*writeEl, &stat); 
     if (!result.IsValid())
         return stat;
@@ -301,7 +324,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Init
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeen()
+void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in the source repository if we did not see it during the conversion.
     //          This inference is valid only if we know that we saw all items in the source and that they were all added to m_elementsSeen or m_scopesSkipped.
@@ -310,6 +333,9 @@ void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeen()
     auto iter = m_si.MakeIterator();
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
+        if (std::find(onlyInScopes.begin(), onlyInScopes.end(), elementInSyncInfo.GetSourceIdentity().GetScopeROWID()) == onlyInScopes.end())
+            continue;   // consider only items in the specified scopes
+
         auto previousConversion = elementInSyncInfo.GetRecord();
         if (!previousConversion.GetDgnElementId().IsValid())
             continue;   // ignore discards and records created for organization purposes

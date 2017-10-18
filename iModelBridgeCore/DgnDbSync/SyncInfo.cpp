@@ -308,11 +308,10 @@ Utf8String SyncInfo::GetUniqueName(WStringCR fullFileName)
     //  the unique names of the files must be unaffected.
 
     // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
-    iModelBridgeDocumentProperties docProps;
-    GetConverter().GetDocumentProperties(docProps, BeFileName(fullFileName));
-    if (!docProps.m_docGUID.empty())
+    BeGuid docGuid = GetConverter().GetParams().QueryDocumentGuid(BeFileName(fullFileName));
+    if (docGuid.IsValid())
         {
-        Utf8String lguid(docProps.m_docGUID);
+        Utf8String lguid = docGuid.ToString();
         lguid.ToLower();
         return lguid;
         }

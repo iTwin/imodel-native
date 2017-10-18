@@ -763,21 +763,44 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     if (!m_stateDb.TableExists("DocumentProperties"))
-        return;
+        return BSIERROR;
 
     //                                               0         1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DocGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
-        return;
+        return BSIERROR;
 
-    props.m_docGUID             = stmt->GetValueText(0);
+    props.m_docGuid             = stmt->GetValueText(0);
     props.m_desktopURN          = stmt->GetValueText(1);
     props.m_webURN              = stmt->GetValueText(2);
     props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFileName, BeGuid const& docGuid)
+    {
+    if (!m_stateDb.TableExists("DocumentProperties"))
+        return BSIERROR;
+
+    //                                               0               1           2       3
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (docGuid=?)");
+    stmt->BindGuid(1, docGuid);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return BSIERROR;
+
+    props.m_docGuid             = docGuid.ToString();
+    localFileName    = BeFileName(stmt->GetValueText(0), true);
+    props.m_desktopURN          = stmt->GetValueText(1);
+    props.m_webURN              = stmt->GetValueText(2);
+    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    return BSISUCCESS;
     }
 
 /*

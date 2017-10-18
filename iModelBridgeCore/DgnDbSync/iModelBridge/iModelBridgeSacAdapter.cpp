@@ -187,7 +187,13 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             return BSIERROR;
             }
 
-        if (BSISUCCESS != bridge.DoConvertToExistingBim(*db))
+        BentleyStatus bstatus;
+        if (!saparams.IsPostProcessing())
+            bstatus = bridge.DoConvertToExistingBim(*db);
+        else
+            bstatus = bridge.DoPostProcessing(*db);
+            
+        if (BSISUCCESS != bstatus)
             {
             fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
                      bridge._GetParams().GetReportFileName().GetName());
@@ -210,12 +216,22 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     return BentleyStatus::SUCCESS;
     }
 
+struct ClearDocumentPropertiesAccessor
+    {
+    iModelBridge& m_bridge;
+    ClearDocumentPropertiesAccessor(iModelBridge& b) : m_bridge(b) {}
+    ~ClearDocumentPropertiesAccessor() {m_bridge._GetParams().ClearDocumentPropertiesAccessor();}
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const& saparams)
     {
     saparams.Initialize();
+
+    bridge._GetParams().SetDocumentPropertiesAccessor(const_cast<Params&>(saparams));
+    ClearDocumentPropertiesAccessor clearDocumentPropertiesAccessorOnReturn(bridge);
 
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
@@ -348,6 +364,18 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
+    if (0 == wcscmp(argv[iArg], L"--post-process"))
+        {
+        SetPostProcessing(true);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--doc-props="))
+        {
+        SetOtherDocPropsJson(iModelBridge::GetArgValue(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
     if (argv[iArg] == wcsstr(argv[iArg], L"--description="))
         {
         SetDescription(iModelBridge::GetArgValue(argv[iArg]).c_str());
@@ -387,7 +415,64 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
+    if (argv[iArg] == wcsstr(argv[iArg], L"--input-guid"))
+        {
+        BeSQLite::BeGuid docGuid;
+        if (docGuid.FromString(iModelBridge::GetArgValue(argv[iArg]).c_str()) != BSISUCCESS)
+            {
+            fprintf(stderr, "%s - invalid GUID\n", iModelBridge::GetArgValue(argv[iArg]).c_str());
+            return iModelBridge::CmdLineArgStatus::Error;
+            }
+        SetDocumentGuid(docGuid);
+        }
+
     return iModelBridge::CmdLineArgStatus::NotRecognized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::Params::GetDocumentProperties(iModelBridgeDocumentProperties& props)
+    {
+    if (m_docGuid.IsValid())
+        props.m_docGuid = m_docGuid.ToString();
+    if (!m_otherDocPropsJson.empty())
+        props.m_otherPropertiesJSON = m_otherDocPropsJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridgeSacAdapter::Params::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) 
+    {
+    return m_isFileAssignedToBridge;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) 
+    {
+    if (!m_dupInputFileName.EqualsI(fn))
+        return BSIERROR;
+        
+    GetDocumentProperties(props);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid)
+    {
+    if (!docGuid.IsValid() && !m_docGuid.IsValid())
+        return _GetDocumentProperties(props, localFilePath);
+        
+    if (docGuid != m_docGuid)
+        return BSIERROR;
+    
+    GetDocumentProperties(props);
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,6 +741,8 @@ BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(iModelBridge& bridge, Par
 
     bridge._GetParams().SetReportFileName();
     bridge._GetParams().GetReportFileName().BeDeleteFile();
+
+    saparams.SetDupInputFileName(bridge._GetParams().GetInputFileName());
 
     if (unrecognizedArgs.empty())
         return BSISUCCESS;

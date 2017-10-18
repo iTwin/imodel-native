@@ -1030,9 +1030,6 @@ public:
     //! Open the specified V8File
     DGNDBSYNC_EXPORT DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR);
 
-    //! Called to clean up when the caller detects that the inputFileName was deleted.
-    DGNDBSYNC_EXPORT virtual void _OnSourceFileDeleted();
-
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
     DGNDBSYNC_EXPORT static BentleyStatus CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
@@ -1963,6 +1960,14 @@ public:
     //! Modify the data of a DgnV8 element in preparation for computing its digest or comparing it to a saved state
     //! \a eeh is a temporary copy of the real DgnV8 element. It is not used to convert the element to DGNDB format.
     DGNDBSYNC_EXPORT virtual void _TweakElementForComparisonAndHashPurposes(DgnV8EehR eeh, DgnV8Api::MSElement const& elementData);
+
+    //! Detect if the specified document still exists.
+    //! If docGuidStr is a valid BeGuid, then the DMS is checked.
+    //! Otherwise, localFileName is used to check the local file system.
+    DGNDBSYNC_EXPORT bool DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileName);
+
+    //! Delete all content derived from files that were recorded in syncinfo but not longer exist
+    DGNDBSYNC_EXPORT void DetectDeletedFiles();
 
     //! @}
 };

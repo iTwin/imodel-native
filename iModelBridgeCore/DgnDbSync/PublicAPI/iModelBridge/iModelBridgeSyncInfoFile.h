@@ -160,14 +160,14 @@ method and not in its _ConvertToBim method.
 *       auto changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);    // Ask iModelSyncInfoFile for the appropriate change detector to use.
 *       for each "native item" in the source                                // Navigate through the data source files
 *           {
-*           iModelBridgeSyncInfoFile::ROWID scopeItem = ...;                // @see iModelBridgeSyncInfo::SourceIdentity
-*           Utf8CP sourceKind = "abc";                                      // @see iModelBridgeSyncInfo::SourceIdentity
+*           iModelBridgeSyncInfoFile::ROWID scopeItem = ...;                // @see iModelBridgeSyncInfoFile::SourceIdentity
+*           Utf8CP sourceKind = "abc";                                      // @see iModelBridgeSyncInfoFile::SourceIdentity
 *           DgnModelPtr model = DetermineModelForMyItem(jobSubject, nativeitem);  // organize your models under your jobSubject
 *           ConvertMyItem(nativeItem, scopeItem, sourceKind, *model, *changeDetector); // Convert the item to one or more elements in the BIM
 *           // Note that the bridge does not stop if conversion of a single item fails. Instead, it logs the details and keeps on going! 
 *           // A bridge should always succeed!
 *           }
-*       changeDetector->_DeleteElementsNotSeen();                           // Infer deletions
+*       changeDetector->_DeleteElementsNotSeenInScopes(scopes);                     // Infer deletions
 *       return BentleyStatus::SUCCESS;  // a bridge should always succeed, even in the face of data errors.
 *       }
 *  @endcode
@@ -215,7 +215,7 @@ method and not in its _ConvertToBim method.
 * As noted above, if the bridge skips an unchanged item (not forgetting to call _OnElementSeen), then the ChangeDetector
 * infers that the children of the item were also unchanged.
 *
-* Later, after it has visited all of the source data, the bridge calls ChangeDetector::_DeleteElementsNotSeen to 
+* Later, after it has visited all of the source data, the bridge calls ChangeDetector::_DeleteElementsNotSeenInScopes to 
 * delete the elements in the BIM that correspond to items that were not processed by the conversion logic. 
 * The change detector is making the inference that the only reason why an item was not seen is because it is not there.
 *
@@ -411,7 +411,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //=======================================================================================
     struct ConversionResults
         {
-        DgnElementPtr m_element;  //!< The DgnDb element created to represent the V8 element -- optional
+        DgnElementPtr m_element;  //!< The DgnDb element created to represent the source item -- optional
         bvector<ConversionResults> m_childElements; //!< Child elements - optional
         Record m_syncInfoRecord; //!< Output from _ProcessConversionResults
         };
@@ -493,6 +493,9 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! @note If you decide not to call this function to process unchanged items, then you must call _OnElementSeen or _OnScopeSkipped directly.
         IMODEL_BRIDGE_EXPORT virtual BentleyStatus _UpdateBimAndSyncInfo(ConversionResults& conversionResults, ChangeDetector::Results const& changeDetectorResults);
 
+        //! @private
+        IMODEL_BRIDGE_EXPORT DgnDbStatus GetLocksAndCodes(DgnElementR);
+
         //! Get the number of elements converted.
         uint32_t GetElementsConverted() const {return m_elementsConverted;}
 
@@ -508,7 +511,13 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         //! Delete all elements in the BIM that are recorded in syncinfo but are not in the set of elements seen and are not the targets of mappings
         //! in scopes that were skipped as unchanged.
-        IMODEL_BRIDGE_EXPORT virtual void _DeleteElementsNotSeen();
+        //! @param onlyInScopes The scopes to consider. Items in all other scopes are left intact.
+        IMODEL_BRIDGE_EXPORT virtual void _DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes);
+
+        //! Delete all elements in the BIM that are recorded in syncinfo but are not in the set of elements seen and are not the targets of mappings
+        //! in scopes that were skipped as unchanged.
+        //! @param onlyInScope The scope to consider. Items in all other scopes are left intact.
+        void DeleteElementsNotSeenInScope(ROWID onlyInScope) {bvector<ROWID> scopes; scopes.push_back(onlyInScope); _DeleteElementsNotSeenInScopes(scopes);}
         };
 
     //! A ChangeDetector that can be used in the initial conversion, where all source items are new.
@@ -517,7 +526,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr) override;
         void _OnScopeSkipped(ROWID srid) override {BeAssert(false);}//! Nothing should be skipped -- all content goes into the intial conversion. 
         void _OnElementSeen(DgnElementId) override {}               //! No need to keep a list of elements 
-        void _DeleteElementsNotSeen() override {}                   //! There will be no deletions
+        void _DeleteElementsNotSeenInScopes(bvector<iModelBridgeSyncInfoFile::ROWID> const&) override {}                   //! There will be no deletions
 
         //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
@@ -591,11 +600,25 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //! Iterate all records in syncinfo that pertain to the the source item that is identified by the specified hash value.
     IMODEL_BRIDGE_EXPORT Iterator MakeIteratorByHash(ROWID scopeRowId, Utf8StringCR kind, Utf8StringCR hash);
     
+    //! Iterate all records in syncinfo that have the specified scope ROWID
+    IMODEL_BRIDGE_EXPORT Iterator MakeIteratorByScope(ROWID scopeRowId);
+
+    //! Look up the ROWID of an item by its SourceId
+    IMODEL_BRIDGE_EXPORT ROWID FindRowidBySourceId(SourceIdentity const&);
+
     //! Write item records to syncinfo
     IMODEL_BRIDGE_EXPORT BentleyStatus WriteResults(ROWID rid, ConversionResults&, SourceIdentity const& sid, SourceState const& sstate, ChangeDetector&);
 
-    //! Remove item records from syncinfo
+    //! Remove item records from syncinfo that are mapped to the specified element
     IMODEL_BRIDGE_EXPORT BentleyStatus DeleteAllItemsMappedToElement(DgnElementId);
+
+    //! Remove item records from syncinfo that are in the specified scope
+    //! @param srid The ROWID of a scope item
+    IMODEL_BRIDGE_EXPORT BentleyStatus DeleteAllItemsInScope(ROWID srid);
+
+    //! Remove the specific record.
+    //! @param itemrid  The ROWID of the item to delete
+    IMODEL_BRIDGE_EXPORT BentleyStatus DeleteItem(ROWID itemrid);
 
     //! Return the ChangeDetector that this bridge should use.
     ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge) 
@@ -627,6 +650,41 @@ public:
     IMODEL_BRIDGE_EXPORT void _OnConvertedToBim(BentleyStatus status) override;
     //! Deletes the syncinfo file
     IMODEL_BRIDGE_EXPORT void _DeleteSyncInfo() override;
+    //! Detects and cleans up after deleted documents
+    IMODEL_BRIDGE_EXPORT BentleyStatus _OnRootFilesConverted() override {return DetectDeletedDocuments();}
+
+    //! Called when the framework detects that a document has been deleted from the source DMS or at least removed from the job. The subclass should
+    //! override this method to delete from the BIM all models and elements that it previously created from data that came from this document.
+    //! @param docId Identifies the document in the source DMS. May be a GUID or a local file name.
+    //! @param docSyncInfoid Identifies the document in the syncinfo file
+    virtual void _OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docSyncInfoid) = 0;
+
+    //! @name Document-tracking Methods
+    //! @{
+
+    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it. 
+    //! Calls GetSourceItemForDocument and then uses the supplied ChangeDetector to write the item to syncinfo.
+    //! @param changeDetector The change detector
+    //! @param fileName Optional. The local filename of the document. If not supplied, this defaults to the input filename.
+    //! @param sstate Optional. If specified, the state of the document. If not specified, the state defaults to an empty hash and the last modified time of the file.
+    //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"
+    //! @param srid Optional. The document scope. Defaults to 0
+    //! @return the resulting RepositoryLink Element and corresponding SyncInfo record
+    //! @see GetAllDocumentGuidsInSyncInfo, DeleteAllItemsFromDocumentInSyncInfo
+    IMODEL_BRIDGE_EXPORT iModelBridgeSyncInfoFile::ConversionResults RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
+                                                                BeFileNameCR fileName = BeFileName(), iModelBridgeSyncInfoFile::SourceState const* sstate = nullptr,
+                                                                Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID());
+
+    //! Convenience method to detect deleted documents and delete everything that was created from them.
+    //! This method takes care of detecting which documents were deleted (in cooperation with iModelBridge::IDocumentPropertiesAccessor).
+    //! And, this method takes care of deleting the corresponding records from syncinfo.
+    //! This method delegates the task of deleting corresponding models and elements from the BIM to the bridge by invoking the _OnDocumentDeleted method.
+    //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"
+    //! @param srid Optional. The document scope. Defaults to 0
+    //! @see RecordDocumentInSyncInfo, _OnDocumentDeleted
+    IMODEL_BRIDGE_EXPORT BentleyStatus DetectDeletedDocuments(Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID());
+
+    //! @}
 };
 
 END_BENTLEY_DGN_NAMESPACE

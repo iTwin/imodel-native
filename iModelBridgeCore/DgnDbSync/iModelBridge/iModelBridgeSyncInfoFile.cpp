@@ -370,6 +370,17 @@ iModelBridgeSyncInfoFile::Iterator iModelBridgeSyncInfoFile::MakeIteratorBySourc
     return it;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeSyncInfoFile::ROWID iModelBridgeSyncInfoFile::FindRowidBySourceId(SourceIdentity const& sourceId)
+    {
+    auto iterator = MakeIteratorBySourceId(sourceId);
+    auto i0 = iterator.begin();
+    return (i0 == iterator.end())? 0: i0.GetROWID();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -381,6 +392,18 @@ iModelBridgeSyncInfoFile::Iterator iModelBridgeSyncInfoFile::MakeIteratorByHash(
     it.GetStatement()->BindText(2, kind, Statement::MakeCopy::No);
     BeAssert(BE_SQLITE_OK == rc);
     it.GetStatement()->BindText(3, hash, Statement::MakeCopy::No);
+    BeAssert(BE_SQLITE_OK == rc);
+    UNUSED_VARIABLE(rc);
+    return it;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeSyncInfoFile::Iterator iModelBridgeSyncInfoFile::MakeIteratorByScope(ROWID scopeRowId)
+    {
+    auto it = Iterator(GetDgnDb(), "ScopeROWID=?");
+    auto rc = it.GetStatement()->BindInt64(1, scopeRowId);
     BeAssert(BE_SQLITE_OK == rc);
     UNUSED_VARIABLE(rc);
     return it;
@@ -553,6 +576,28 @@ BentleyStatus iModelBridgeSyncInfoFile::DeleteAllItemsMappedToElement(DgnElement
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSyncInfoFile::DeleteAllItemsInScope(ROWID srid)
+    {
+    CachedStatementPtr stmt;
+    GetDgnDb().GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Item) " WHERE ScopeROWID=?");
+    stmt->BindInt64(1, srid);
+    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeSyncInfoFile::DeleteItem(ROWID irid)
+    {
+    CachedStatementPtr stmt;
+    GetDgnDb().GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Item) " WHERE ROWID=?");
+    stmt->BindInt64(1, irid);
+    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeWithSyncInfoBase::_OnConvertToBim(DgnDbR db)
@@ -581,4 +626,113 @@ void iModelBridgeWithSyncInfoBase::_DeleteSyncInfo()
     iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());
     }
 
+//=======================================================================================
+// @bsiclass                                    BentleySystems 
+//=======================================================================================
+struct DocSourceItem : iModelBridgeSyncInfoFile::ISourceItem
+    {
+    DgnCode m_linkCode;
+    iModelBridgeSyncInfoFile::SourceState m_sstate;
 
+    DocSourceItem(DgnCode const& linkCode, iModelBridgeSyncInfoFile::SourceState const& sstate) : m_linkCode(linkCode), m_sstate(sstate) {;}
+
+    Utf8String _GetId() override {return m_linkCode.GetValue().GetUtf8CP();}
+    double _GetLastModifiedTime() override {return m_sstate.GetLastModifiedTime();}
+    Utf8String _GetHash() override {return m_sstate.GetHash();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
+                                                                     BeFileNameCR fileNameIn, iModelBridgeSyncInfoFile::SourceState const* sstateIn,
+                                                                     Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid)
+    {
+    // Get the identity of the document
+    BeFileName fileName(fileNameIn);
+    if (fileName.empty())
+        fileName = _GetParams().GetInputFileName();
+
+    // Make a RepositoryLink to represent the document
+    iModelBridgeSyncInfoFile::ConversionResults results;
+    results.m_element = MakeRepositoryLink(GetDgnDbR(), _GetParams(), fileName, "", "");
+    if (!results.m_element.IsValid())
+        {
+        BeAssert(false);
+        return results; 
+        }
+
+    //  Compute the state of the document
+    time_t lmt = 0;
+    if (sstateIn)
+        lmt = sstateIn->GetLastModifiedTime();
+    else
+        {
+        if (BeFileNameStatus::Success == BeFileName::GetFileTime(nullptr, nullptr, &lmt, fileName)) // (may not really be a disk file)
+            iModelBridgeSyncInfoFile::SourceState sstate((double)lmt, "");
+        }
+
+    auto sha1 = ComputeRepositoryLinkHash(*(RepositoryLink*)results.m_element.get());   // The source state is based on the properties of the RepositoryLink
+    if (sstateIn)
+        sha1(sstateIn->GetHash());   // if the caller passed in a hash of the file's contents, then include that in the source state hash
+    else
+        sha1(&lmt, sizeof(lmt)); // otherwise, make the hash depend on the last modified time, as a proxy for the file's contents.
+
+    iModelBridgeSyncInfoFile::SourceState sstate(lmt, sha1.GetHashString());
+
+    //  Write the item to syncinfo, and write the RepositoryLink Element to the BIM
+    DocSourceItem docItem(results.m_element->GetCode(), sstate);
+
+    if (results.m_element->GetElementId().IsValid() && !_GetParams().IsUpdating())
+        {
+        // If this is the initial conversion and if the item that is already there, just return it.
+        iModelBridgeSyncInfoFile::SourceIdentity sid(srid, kind, docItem._GetId());
+        auto byid = m_syncInfo.MakeIteratorBySourceId(sid);
+        auto i = byid.begin();
+        if (i != byid.end())
+            {
+            results.m_syncInfoRecord = iModelBridgeSyncInfoFile::Record(i.GetROWID(), i.GetDgnElementId(), i.GetSourceIdentity(), i.GetSourceState());
+            return results;
+            }
+        }
+
+    auto change = changeDetector._DetectChange(srid, kind, docItem);
+    changeDetector._UpdateBimAndSyncInfo(results, change);
+
+    return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid)
+    {
+    auto iterator = m_syncInfo.MakeIterator("Kind=? AND ScopeROWID=?");
+    iterator.GetStatement()->BindText(1, kind, Statement::MakeCopy::No);
+    iterator.GetStatement()->BindInt64(2, srid);
+    
+    bvector<BeGuid> guids;
+    for (auto it : iterator)
+        {
+        Utf8String docId = it.GetSourceIdentity().GetId();
+
+        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
+            continue;                         //  If it does, do nothing.
+
+        auto docrid = m_syncInfo.FindRowidBySourceId(iModelBridgeSyncInfoFile::SourceIdentity(srid, kind, docId.c_str()));
+
+        // Tell the bridge to delete related elements and models in the briefcase
+        _OnDocumentDeleted(docId, docrid);
+
+        // Delete corresponding items from syncinfo
+        if (0 == docrid)
+            {
+            BeAssert(false && "bridge did not use RecordDocument to record source documents in syncinfo");
+            continue;
+            }
+        if (BSISUCCESS != m_syncInfo.DeleteAllItemsInScope(docrid)  ||  BSISUCCESS != m_syncInfo.DeleteItem(docrid) )
+            return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }

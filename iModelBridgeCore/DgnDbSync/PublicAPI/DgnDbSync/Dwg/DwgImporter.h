@@ -971,9 +971,7 @@ protected:
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
-    //! Called when the framework detects that a input file has been removed from the job and is presumably deleted in the ProjectWise source.
-    //! The bridge should delete all models and elements in the briefcase that came from this file.
-    DGNDBSYNC_EXPORT virtual void       _OnSourceFileDeleted ();
+    DGNDBSYNC_EXPORT virtual BentleyStatus _OnRootFilesConverted();
 
     //! @name  Creating DgnModels for DWG
     //! @{

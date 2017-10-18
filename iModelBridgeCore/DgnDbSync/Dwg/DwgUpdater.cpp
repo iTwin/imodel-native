@@ -603,10 +603,16 @@ void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DwgImporter::_OnSourceFileDeleted ()
+BentleyStatus DwgImporter::_OnRootFilesConverted ()
     {
-    // called up from iModelBridge
-    this->_GetChangeDetector()._DetectDeletedModelsInFile (*this, this->GetDwgDb());
+#ifdef WIP__OnRootFilesConverted
+    For each file in your syncinfo, call IsDocumentAssignedToJob to detect if the file is still assigned to the job.
+    For each file that is no longer assigned to your job, delete the models and elements that came from that file, and
+    then remove the record of that file from your syncinfo.
+
+    // this->_GetChangeDetector()._DetectDeletedModelsInFile (*this, this->GetDwgDb());
+#endif
+    return BSISUCCESS;
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE

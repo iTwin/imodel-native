@@ -51,6 +51,7 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 static iModelBridge* s_bridgeForTesting;
+static IModelBridgeRegistry* s_registryForTesting;
 
 #ifdef _WIN32
 static int s_maxWaitForMutex = 60000;
@@ -180,6 +181,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
+        L"--fwk-post-process          (optional)  Specify this on the final call, after all root input files have been processed.\n"
 #ifdef COMMENT_OUT // *** we don't plan to support these as direct inputs in the framework BAS GUI
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
         L"--fwk-input-gcs=gcsspec     (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
@@ -303,6 +305,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
 
             m_bridgeRegSubKey = getArgValueW(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-post-process"))
+            {
+            m_isPostProcessingCall = true;
             continue;
             }
 
@@ -1240,8 +1248,14 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 #endif
 
-    //  Tell the bridge to update the BIM
-    if (BSISUCCESS != m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb))
+    //  Now, finally, we can convert data
+    BentleyStatus bridgeCvtStatus;
+    if (!m_jobEnvArgs.m_isPostProcessingCall)
+        bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb);
+    else
+        bridgeCvtStatus = m_bridge->DoPostProcessing(*m_briefcaseDgnDb);
+
+    if (BSISUCCESS != bridgeCvtStatus)
         {
         m_briefcaseDgnDb->AbandonChanges();
         m_briefcaseDgnDb = nullptr;
@@ -1429,9 +1443,25 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+BentleyStatus iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     return GetRegistry()._GetDocumentProperties(props, fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeGuid const& guid)
+    {
+    return GetRegistry()._GetDocumentPropertiesByGuid(props, localFilePath, guid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetRegistryForTesting(IModelBridgeRegistry& reg)
+    {
+    s_registryForTesting = &reg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1441,7 +1471,11 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
     if (!m_registry.IsValid())
         {
-        m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+        if (s_registryForTesting)
+            m_registry = s_registryForTesting;
+        else
+            m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+
         if (!m_registry.IsValid())
             throw "iModelBridgeRegistry statedb open error";
         }

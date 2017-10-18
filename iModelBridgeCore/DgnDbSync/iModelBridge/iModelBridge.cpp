@@ -25,23 +25,25 @@ struct CallBookmarkFunctions
     BentleyStatus m_sstatus = BSIERROR;
     iModelBridge& m_bridge;
     BentleyStatus m_updateStatus = BSIERROR;
-    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge)
+    bool m_doOpenSource;
+
+    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db, bool doOpenSource) : m_bridge(bridge), m_doOpenSource(doOpenSource)
         {
         m_bstatus = m_bridge._OnConvertToBim(db);
-        if (BSISUCCESS == m_bstatus)
+        if (m_doOpenSource && (BSISUCCESS == m_bstatus))
             m_sstatus = m_bridge._OpenSource();
         }
     ~CallBookmarkFunctions()
         {
         if (BSISUCCESS == m_bstatus)
             {
-            if (BSISUCCESS == m_sstatus)
+            if (m_doOpenSource && (BSISUCCESS == m_sstatus))
                 m_bridge._CloseSource(m_updateStatus);
             m_bridge._OnConvertedToBim(m_updateStatus);
             }
         }
 
-    bool IsBridgeReady() const {return (BSISUCCESS==m_bstatus) && (BSISUCCESS==m_sstatus);}
+    bool IsBridgeReady() const {return (BSISUCCESS==m_bstatus) && (!m_doOpenSource || (BSISUCCESS==m_sstatus));}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,7 +98,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     _DeleteSyncInfo(); // Make sure that there is no old syncinfo file hanging around
 
     // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, *db);
+    CallBookmarkFunctions bookMarkFunctions(*this, *db, true);
     if (!bookMarkFunctions.IsBridgeReady())
         {
         LOG.fatalv("Bridge not ready to populate new repository");
@@ -200,7 +202,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
     //		which need to commit the txn. We cannot commit while in bulk insert mode.
 
     // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, db);
+    CallBookmarkFunctions bookMarkFunctions(*this, db, true);
     if (!bookMarkFunctions.IsBridgeReady())
         {
         LOG.fatalv("Bridge not ready to update briefcase");
@@ -240,6 +242,44 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
 
     return BSISUCCESS;
     // Call bridge's _CloseSource and _OnConvertedToBim
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::DoPostProcessing(DgnDbR db)
+    {
+    _GetParams().SetIsCreatingNewDgnDb(false);
+    _GetParams().SetIsUpdating(true);
+
+    CallBookmarkFunctions bookMarkFunctions(*this, db, false); // do not call _OpenSource
+    if (!bookMarkFunctions.IsBridgeReady())
+        {
+        LOG.fatalv("Bridge not ready to post-process briefcase");
+        return BSIERROR;
+        }
+
+    //  go into bulk import mode. (Note that any locks and codes required by _OnBimOpen would have to have been acquired immediately, the normal way.)
+    db.BriefcaseManager().StartBulkOperation();
+
+    if (BSISUCCESS != _OnRootFilesConverted())
+        {
+        LOG.fatalv("_OnRootFilesConverted failed");
+        return BSIERROR;
+        }
+
+    // Must either succeed in getting all required locks and codes ... or abort the whole txn.
+    auto response = db.BriefcaseManager().EndBulkOperation();
+    if (RepositoryStatus::Success != response.Result())
+        {
+        LOG.fatalv("Failed to acquire locks and/or codes with error %x", response.Result());
+        return BSIERROR;
+        }
+
+    bookMarkFunctions.m_updateStatus = BSISUCCESS;
+
+    return BSISUCCESS;
+    // Call bridge's _OnConvertedToBim function
     }
 
 // *******************
@@ -489,6 +529,47 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
     return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              08/17
+//---------------------------------------------------------------------------------------
+bool iModelBridge::Params::IsDocumentAssignedToJob(Utf8StringCR docId) const
+    {
+    if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
+        {
+        BeAssert(false);
+        return true;
+        }
+
+    iModelBridgeDocumentProperties docpropsdontcare;
+
+    BeGuid docGuid;
+    docGuid.FromString(docId.c_str());
+    if (docGuid.IsValid())
+        {
+        // always prefer to check documents by GUID, if available.
+        BeFileName localfilepathdontcare;
+        return BSISUCCESS == m_documentPropertiesAccessor->_GetDocumentPropertiesByGuid(docpropsdontcare, localfilepathdontcare, docGuid);
+        }
+
+    // Assume docId is a localFilePath
+    return BSISUCCESS == m_documentPropertiesAccessor->_GetDocumentProperties(docpropsdontcare, BeFileName(docId.c_str(), true));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::BeGuid iModelBridge::Params::QueryDocumentGuid(BeFileNameCR localFileName) const
+    {
+    if (nullptr == m_documentPropertiesAccessor)
+        return BeGuid();
+
+    iModelBridgeDocumentProperties docProps;
+    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName); 
+    BeGuid docGuid;
+    docGuid.FromString(docProps.m_docGuid.c_str());
+    return docGuid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,70 +605,68 @@ LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isRepositoryLinkChanged(RepositoryLinkCR e1, RepositoryLinkCR e2)
+SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
     {
-    if (e1.GetDocumentProperties() != e2.GetDocumentProperties())
-        return true;
-
-    if (e1.GetRepositoryGuid() != e2.GetRepositoryGuid())
-        return true;
-
-    if (0 != BeStringUtilities::StricmpAscii(e1.GetUrl(), e2.GetUrl()))
-        return true;
-
-    return false;
+    SHA1 sha1;
+    sha1(el.GetDocumentProperties().ToString());
+    BeGuid guid = el.GetRepositoryGuid();
+    sha1(&guid, sizeof(guid));
+    sha1(el.GetUrl());
+    return sha1;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly)
+void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, LinkModelR lmodel)
     {
-    auto lmodel = GetRepositoryLinkModel(db, !queryOnly);
-    if (!lmodel.IsValid())
-        return DgnElementId();
-
-    // Get the document's properties 
-    iModelBridgeDocumentProperties docProps;
-    Utf8String code(defaultCode);
-    Utf8String urn(defaultURN);
+    Utf8String codeStr(defaultCode);
+    docProps.m_desktopURN = defaultURN;
 
     // Prefer to get the properties assigned by ProjectWise, if possible.
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
 
-    if (!docProps.m_docGUID.empty())
-        {
-        // Use the GUID as the code, if we have it.
-        code = docProps.m_docGUID;
-        urn = docProps.m_webURN;
-        }
+    if (!docProps.m_docGuid.empty())
+        codeStr = docProps.m_docGuid; // Use the GUID as the code, if we have it.
 
-    if (urn.empty())
-        urn = Utf8String(localFileName);
+    if (codeStr.empty())
+        codeStr = Utf8String(localFileName);
 
-    // Check to see if we already have a RepositoryLink for this code
-    auto rlinkElementId = db.Elements().QueryElementIdByCode(RepositoryLink::CreateCode(*lmodel, code.c_str()));
+    if (docProps.m_desktopURN.empty())
+        docProps.m_desktopURN = Utf8String(localFileName);
 
-    if (queryOnly)
-        return rlinkElementId;
+    code = RepositoryLink::CreateCode(lmodel, codeStr.c_str());
+    }
 
-    // We will be creating or updating the RepositoryLink element.
-    // Get a writable element to work with.
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN)
+    {
+    auto lmodel = GetRepositoryLinkModel(db, true);
+    if (!lmodel.IsValid())
+        return nullptr;
+
+    DgnCode code;
+    iModelBridgeDocumentProperties docProps;
+    GetRepositoryLinkInfo(code, docProps, db, params, localFileName, defaultCode, defaultURN, *lmodel);
+
+    RepositoryLinkCPtr rlinkPersist = db.Elements().Get<RepositoryLink>(db.Elements().QueryElementIdByCode(code));
+    
     RepositoryLinkPtr rlink;
-    RepositoryLinkCPtr rlinkPersist = db.Elements().Get<RepositoryLink>(rlinkElementId);
     if (rlinkPersist.IsValid())
         rlink = rlinkPersist->MakeCopy<RepositoryLink>();
     else
-        rlink = RepositoryLink::Create(*lmodel, urn.c_str(), code.c_str());
+        rlink = RepositoryLink::Create(*lmodel, "", code.GetValue().GetUtf8CP());
 
-    // Set the element's properties.
-    rlink->SetUrl(urn.c_str());
+    rlink->SetUrl(docProps.m_desktopURN.c_str());
 
-    if (!docProps.m_docGUID.empty())
+    if (!docProps.m_docGuid.empty())
         {
         BeGuid beguid;
-        if (SUCCESS == beguid.FromString(docProps.m_docGUID.c_str()))
+        if (SUCCESS == beguid.FromString(docProps.m_docGuid.c_str()))
             rlink->SetRepositoryGuid(beguid);
         }
 
@@ -600,30 +679,7 @@ DgnElementId iModelBridge::WriteRepositoryLink(DgnDbR db, Params const& params, 
         rlink->SetDocumentProperties(jsonValue);
         }
 
-    // Don't request locks or write anything unless we know that there is a change.
-    if (rlinkPersist.IsValid() && !isRepositoryLinkChanged(*rlinkPersist, *rlink))
-        return rlinkPersist->GetElementId();
-
-    // Request locks and codes explicity. That is because a bridge can possibly create a RepositoryLink in one of its callbacks
-    // such as _OpenSource that is called before we go into bulk insert mode.
-    IBriefcaseManager::Request req;
-    rlink->PopulateRequest(req, (rlink->GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
-    if (RepositoryStatus::Success != db.BriefcaseManager().Acquire(req).Result())
-        {
-        BeAssert(false);
-        return DgnElementId();
-        }
-
-    // Write the element
-    auto rlinkPost = (rlink->GetElementId().IsValid())? rlink->Update(): rlink->Insert();
-
-    if (!rlinkPost.IsValid())
-        {
-        BeAssert(false);
-        return DgnElementId();
-        }
-
-    return rlinkPost->GetElementId();
+    return rlink;
     }
 
 //---------------------------------------------------------------------------------------

@@ -283,9 +283,9 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DwgBridge::_OnSourceFileDeleted ()
+BentleyStatus DwgBridge::_OnRootFilesConverted()
     {
-    m_importer->_OnSourceFileDeleted ();
+    return m_importer->_OnRootFilesConverted();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -64,16 +64,21 @@ struct iModelBridgeSacAdapter
     static WCharCP std_CompressedDgnDbExt() {return L"imodel";}
 
     //! Parameters that are specific to standalone converters that use iModelBridges.
-    struct Params
+    struct Params : iModelBridge::IDocumentPropertiesAccessor
         {
       protected:
         bool m_tryUpdate = false;               
         bool m_quietAsserts = false;            
         bool m_createStandalone = false;            
         bool m_shouldCompress = false;
+        bool m_isPostProcessingCall = false;
+        bool m_isFileAssignedToBridge = true;
         uint32_t m_compressChunkSize = 0;
         BeFileName m_loggingConfigFile;         
+        BeFileName m_dupInputFileName;         
         Utf8String m_description;
+        Utf8String m_otherDocPropsJson;
+        BeSQLite::BeGuid m_docGuid;
         DateTime m_expirationDate;
 
       public:
@@ -91,14 +96,27 @@ struct iModelBridgeSacAdapter
         bool GetQuietAsserts() const {return m_quietAsserts;} //!< Write assertion failures to stderr and do not interrupt the converter?
         void SetLoggingConfigFile(BeFileNameCR f) {m_loggingConfigFile=f;} //!< Location of the logging configuration xml file
         BeFileNameCR GetLoggingConfigFile() const {return m_loggingConfigFile;} //!< Location of the logging configuration xml file
+        void SetDupInputFileName(BeFileNameCR f) {m_dupInputFileName=f;}
+        BeFileNameCR GetDupInputFileName() const {return m_dupInputFileName;}
         void SetCreateStandalone(bool standalone) {m_createStandalone = standalone;}
         bool GetCreateStandalone() const {return m_createStandalone;}
         void SetDescription(BentleyApi::Utf8CP descr) {m_description=descr;}
         Utf8String GetDescription() const {return m_description;}
+        void SetOtherDocPropsJson(BentleyApi::Utf8CP descr) {m_otherDocPropsJson=descr;}
+        Utf8String GetOtherDocPropsJson() const {return m_otherDocPropsJson;}
         void SetExpirationDate(DateTime const& d) {m_expirationDate=d;}
         DateTime GetExpirationDate() const {return m_expirationDate;}
         bool ShouldCompress() const {return m_shouldCompress;}
         uint32_t GetCompressChunkSize() const {return m_compressChunkSize;}
+        void SetPostProcessing(bool b) {m_isPostProcessingCall = b;}
+        bool IsPostProcessing() const {return m_isPostProcessingCall;}
+        void SetDocumentGuid(BeSQLite::BeGuid const& g) {m_docGuid=g;}
+        BeSQLite::BeGuid GetDocumentGuid() const {return m_docGuid;}
+
+        IMODEL_BRIDGE_EXPORT void GetDocumentProperties(iModelBridgeDocumentProperties&);
+        IMODEL_BRIDGE_EXPORT bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+        IMODEL_BRIDGE_EXPORT BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) override;
+        IMODEL_BRIDGE_EXPORT BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
         };
 
     //! @private

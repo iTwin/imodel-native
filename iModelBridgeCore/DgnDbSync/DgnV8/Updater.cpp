@@ -397,14 +397,24 @@ void ChangeDetector::_DetectDeletedModelsInFile(Converter& converter, DgnV8FileR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_OnSourceFileDeleted()
+bool Converter::DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileName)
     {
-    Utf8String uniqueName = GetSyncInfo().GetUniqueName(_GetParams().GetInputFileName());
+    BeGuid docGuid;
+    if (BSISUCCESS == docGuid.FromString(docGuidStr.c_str()))
+        return _GetParams().IsDocumentAssignedToJob(docGuidStr);
+    
+    return BeFileName(localFileName.c_str(), true).DoesPathExist();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DetectDeletedFiles()
+    {
     SyncInfo::FileIterator files(GetDgnDb(), nullptr);
     for (auto file = files.begin(); file != files.end(); ++file)
         {
-        if (file.GetUniqueName() == uniqueName)
+        if (!DoesDocumentExist(file.GetUniqueName(), file.GetV8Name()))
             {
             SyncInfo::ModelIterator modelsInFile(GetDgnDb(), "V8FileSyncInfoId=?");
             modelsInFile.GetStatement()->BindInt(1, file.GetV8FileSyncInfoId().GetValue());
