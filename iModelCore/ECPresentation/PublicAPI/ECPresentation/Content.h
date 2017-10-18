@@ -31,7 +31,6 @@ private:
     INavNodeKeysContainerCPtr m_keys;
     bool m_isSubSelection;
     bool m_isValid;
-    mutable Utf8String m_hash;
 
 public:
     //! Constructor. Creates an invalid selection info object.
@@ -39,12 +38,14 @@ public:
 
     //! Move constructor.
     SelectionInfo(SelectionInfo&& other)
-        : m_isValid(other.m_isValid), m_selectionProviderName(std::move(other.m_selectionProviderName)), m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
+        : m_isValid(other.m_isValid), m_selectionProviderName(std::move(other.m_selectionProviderName)), 
+        m_isSubSelection(other.m_isSubSelection), m_keys(std::move(other.m_keys))
         {}
 
     //! Copy constructor.
     SelectionInfo(SelectionInfo const& other)
-        : m_isValid(other.m_isValid), m_selectionProviderName(other.m_selectionProviderName), m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
+        : m_isValid(other.m_isValid), m_selectionProviderName(other.m_selectionProviderName), 
+        m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
         {}
 
     //! Constructor.
@@ -65,20 +66,16 @@ public:
     ECPRESENTATION_EXPORT SelectionInfo(bvector<ECN::ECClassCP> const& classes);
 
     //! Compare this selection event info object with the supplied one.
-    bool operator==(SelectionInfo const& other) const {return GetHash() == other.GetHash();}
+    ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
     
     //! Compare this selection event info object with the supplied one.
-    bool operator<(SelectionInfo const& other) const {return GetHash().CompareTo(other.GetHash()) < 0;}
+    ECPRESENTATION_EXPORT bool operator<(SelectionInfo const& other) const;
     
     //! Assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo const& other);
 
     //! Move assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo&& other);
-    
-    //! Get hash string for this selection info.
-    //! @note Depending on the size of node keys container, this might be an expensive operation.
-    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
 
     //! Is this struct valid.
     bool IsValid() const {return m_isValid;}

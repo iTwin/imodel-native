@@ -457,3 +457,17 @@ INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyList list) {
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 INavNodeKeysContainerCPtr NavNodeKeyListContainer::Create(NavNodeKeyList const* list) {return new NavNodeKeyListContainer(list);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR INavNodeKeysContainer::GetHash() const
+    {
+    if (m_hash.empty())
+        {
+        MD5 h;
+        for (NavNodeKeyCPtr const& key : *this)
+            h.Add(key->GetHash().c_str(), key->GetHash().SizeInBytes());
+        m_hash = h.GetHashString();
+        }
+    return m_hash;
+    }
