@@ -165,6 +165,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
     EXPECT_EQ("", info.lastName);
     EXPECT_EQ("", info.userId);
     EXPECT_EQ("", info.username);
+    EXPECT_EQ("", info.organizationId);
     }
 
 TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFromToken)
@@ -195,6 +196,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFro
                 <saml:Attribute AttributeName="name">
                     <saml:AttributeValue>ValueD</saml:AttributeValue>
                 </saml:Attribute>
+                <saml:Attribute AttributeName="organizationid">
+                    <saml:AttributeValue>ValueE</saml:AttributeValue>
+                </saml:Attribute>
             </saml:AttributeStatement>
         </saml:Assertion>)";
 
@@ -208,6 +212,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFro
     EXPECT_EQ("ValueB", info.lastName);
     EXPECT_EQ("ValueC", info.userId);
     EXPECT_EQ("ValueD", info.username);
+    EXPECT_EQ("ValueE", info.organizationId);
     }
 
 TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_ReturnsEmpty)
@@ -224,6 +229,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_Retu
     EXPECT_EQ("", info.lastName);
     EXPECT_EQ("", info.userId);
     EXPECT_EQ("", info.username);
+    EXPECT_EQ("", info.organizationId);
     }
 
 TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
@@ -237,6 +243,55 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     EXPECT_EQ("", info.lastName);
     EXPECT_EQ("", info.userId);
     EXPECT_EQ("", info.username);
+    EXPECT_EQ("", info.organizationId);
+    }
+
+TEST_F(ConnectSignInManagerTests, UserInfo_NoOrganizationId_IsNotComplete)
+    {
+    ConnectSignInManager::UserInfo info;
+    info.firstName = "FirstName";
+    info.lastName = "LastName";
+    info.userId = "userId";
+    info.username = "username";
+    info.organizationId = "";
+
+    EXPECT_FALSE(info.IsComplete());
+    }
+
+TEST_F(ConnectSignInManagerTests, UserInfo_NoUserId_IsNotComplete)
+    {
+    ConnectSignInManager::UserInfo info;
+    info.firstName = "FirstName";
+    info.lastName = "LastName";
+    info.userId = "";
+    info.username = "username";
+    info.organizationId = "OrganizationId";
+
+    EXPECT_FALSE(info.IsComplete());
+    }
+
+TEST_F(ConnectSignInManagerTests, UserInfo_AllDataSet_IsComplete)
+    {
+    ConnectSignInManager::UserInfo info;
+    info.firstName = "FirstName";
+    info.lastName = "LastName";
+    info.userId = "userId";
+    info.username = "username";
+    info.organizationId = "OrganizationId";
+
+    EXPECT_TRUE(info.IsComplete());
+    }
+
+TEST_F(ConnectSignInManagerTests, UserInfo_NoDataSet_IsNotComplete)
+    {
+    ConnectSignInManager::UserInfo info;
+    info.firstName = "";
+    info.lastName = "";
+    info.userId = "";
+    info.username = "";
+    info.organizationId = "";
+
+    EXPECT_FALSE(info.IsComplete());
     }
 
 TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
@@ -267,6 +322,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
                 <saml:Attribute AttributeName="name">
                     <saml:AttributeValue>ValueD</saml:AttributeValue>
                 </saml:Attribute>
+                <saml:Attribute AttributeName="organizationid">
+                    <saml:AttributeValue>ValueE</saml:AttributeValue>
+                </saml:Attribute>
             </saml:AttributeStatement>
         </saml:Assertion>)";
 
@@ -279,6 +337,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
     EXPECT_EQ("ValueB", info.lastName);
     EXPECT_EQ("ValueC", info.userId);
     EXPECT_EQ("ValueD", info.username);
+    EXPECT_EQ("ValueE", info.organizationId);
     }
 
 TEST_F(ConnectSignInManagerTests, GetLastUsername_NoPreviousUsers_ReturnEmpty)

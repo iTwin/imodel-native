@@ -296,6 +296,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR tok
     info.firstName = attributes["givenname"];
     info.lastName = attributes["surname"];
     info.userId = attributes["userid"];
+    info.organizationId = attributes["organizationid"];
 
     return info;
     }
