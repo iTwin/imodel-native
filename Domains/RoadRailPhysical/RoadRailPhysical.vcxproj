@@ -112,7 +112,7 @@
     <NMakeReBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -N0 r RoadRailPhysical</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILPHYSICAL_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailPhysical\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailPhysical\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

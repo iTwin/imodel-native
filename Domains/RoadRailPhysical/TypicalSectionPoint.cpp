@@ -191,6 +191,9 @@ void TypicalSectionPoint::_GenerateElementGeom()
     {
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
 
+    if (GetSignificantPointDef())
+        geomBuilderPtr->Append(RoadRailCategory::GetTypicalSection_SignificantPoint(GetDgnDb()));
+
     auto horizLinePtr = CurveVector::CreateLinear({ { -0.1, 0.0 }, { 0.1, 0.0 } });
     geomBuilderPtr->Append(*horizLinePtr);
 
@@ -340,6 +343,8 @@ DgnDbStatus TypicalSectionProxyPoint::SetSignificantPointDef(SignificantPointDef
 void TypicalSectionProxyPoint::_GenerateElementGeom()
     {
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin());
+
+    geomBuilderPtr->Append(RoadRailCategory::GetTypicalSection_ProxyPoint(GetDgnDb()));
 
     auto horizLinePtr = CurveVector::CreateLinear({ { -0.1, 0.0 },{ 0.1, 0.0 } });
     geomBuilderPtr->Append(*horizLinePtr);

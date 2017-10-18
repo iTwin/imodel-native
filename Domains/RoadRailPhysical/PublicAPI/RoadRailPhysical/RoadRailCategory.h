@@ -20,10 +20,12 @@ struct RoadRailCategory : NonCopyableClass
 {
 //__PUBLISH_SECTION_END__
 private:
-    static void InsertSpatialCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
-    static void InsertDrawingCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
+    static Dgn::SpatialCategoryCPtr InsertSpatialCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
+    static Dgn::DrawingCategoryCPtr InsertDrawingCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
+    static void InsertSubCategory(Dgn::DgnCategoryCR category, Utf8CP codeValue, Dgn::ColorDef const& color);
     static Dgn::DgnCategoryId QuerySpatialCategoryId(Dgn::DgnDbR, Utf8CP);
     static Dgn::DgnCategoryId QueryDrawingCategoryId(Dgn::DgnDbR, Utf8CP);
+    static Dgn::DgnSubCategoryId QuerySubCategoryId(Dgn::DgnDbR, Dgn::DgnCategoryId, Utf8CP);
 
 public:
     static void InsertDomainCategories(Dgn::DgnDbR);
@@ -33,6 +35,8 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRoad(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTrack(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTypicalSectionPoint(Dgn::DgnDbR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnSubCategoryId GetTypicalSection_SignificantPoint(Dgn::DgnDbR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnSubCategoryId GetTypicalSection_ProxyPoint(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTravelwayDefComponent(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTravelwayStructureDefComponent(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetTravelwaySideDefComponent(Dgn::DgnDbR);

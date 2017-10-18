@@ -153,6 +153,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CATEGORY_TravelwayStructureDefComponent                "TravelwayStructureDefComponent"
 #define BRRP_CATEGORY_TypicalSectionPoint                           "TypicalSectionPoint"
 
+#define BRRP_SUBCATEGORY_TypicalSectionPoint_SignificantPoint       "SignificantPoint"
+#define BRRP_SUBCATEGORY_TypicalSectionPoint_ProxyPoint             "ProxyPoint"
+
 
 //-----------------------------------------------------------------------------------------
 // CodeSpec names
