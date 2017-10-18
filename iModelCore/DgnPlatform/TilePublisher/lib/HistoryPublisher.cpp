@@ -262,24 +262,25 @@ DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbN
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void fabricateFakeRevisionData(Json::Value& revisionJson)
     {
-    static          double s_time = 0.0;
-    static          double s_fakeTimeInterval = 2.0;     
+    static double   s_time = 0.0;
+    static double   s_fakeTimeIntervals[] = { 2.15, 3.41, 1.8, 0.5123};     
+    static int      s_fakeIndex;
     static char*    s_fakeUsers[] = {"John Braun", "Charles Johnson", "Sharon Kowalski" };
     static char*    s_fakeDescriptions[] = {"Add HVAC", "Modify roof", "Add plumbing", "Rework HVAC" };
-    static int      s_fakeUserIndex, s_fakeDescriptionIndex;
     DateTime::Info  info;
 
     if (0.0 == s_time)
         DateTime::GetCurrentTime().ToJulianDay(s_time);
 
-
     if (!revisionJson.isMember("Date"))
         revisionJson["Date"] = s_time;
 
     if (0 == revisionJson["User"].asString().size())
-        revisionJson["User"] = s_fakeUsers[s_fakeUserIndex++ % 3];
+        revisionJson["User"] = s_fakeUsers[s_fakeIndex % (sizeof(s_fakeUsers) / sizeof(s_fakeUsers[0]))];
 
-    s_time -= s_fakeTimeInterval;
+    s_time -= s_fakeTimeIntervals[s_fakeIndex % (sizeof(s_fakeTimeIntervals) / sizeof(s_fakeTimeIntervals[0]))];
+
+    s_fakeIndex++;
     }
 #endif
 
@@ -449,7 +450,6 @@ PublisherContext::Status Publish(PublisherParamsR params, Json::Value&& revision
 
 };  // Baseline Publisher
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -501,11 +501,11 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         return Status::CantFindDefaultView;
 
     bvector<DgnRevisionPtr> changeSets;
-    std::list<Json::Value>  revisionJsons;
+    Json::Value             revisionsJson = Json::objectValue;
 
     getAllChangeSets(changeSets, *tempDb, client);
 
-    printf ("Publishing History with %d Revisions", (int) changeSets.size());
+    printf ("Publishing History with %d Revisions\n", (int) changeSets.size());
     BaselinePublisher  baselinePublisher(*tempDb, params, viewsToPublish, defaultView);
 
     PublisherContext::Status    status;
@@ -516,6 +516,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
     for (int i = 0; i<changeSets.size(); i++)
         {
         bvector<DgnRevisionPtr>             thisRevisions(1, changeSets.at(i));
+        int                                 revisionIndex = changeSets.size() - i - 1;
         VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*tempDb, thisRevisions, true);
 
         bvector<BentleyApi::ECN::ECClassId> ecClassIds;
@@ -530,9 +531,10 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         for (size_t j=0; j<elementIds.size(); j++)
             {
-            auto            elementId = elementIds.at(j);
-            Json::Value     elementJson = Json::objectValue;
-            
+            auto                elementId = elementIds.at(j);
+            Json::Value         elementJson = Json::objectValue;
+            auto const&         element = tempDb->Elements().Get<DgnElement>(elementId);
+
             elementJson["op"] = (int) opCodes.at(j);
 
             switch(opCodes.at(j))
@@ -551,7 +553,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                     addedOrModifiedIds.insert(elementId);
 
                     Json::Value propertyData;
-                    changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), false, propertyData);
+                    changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), true, propertyData);
 
                     Json::Value displayValues = propertyData["ContentSet"][0]["DisplayValues"];
                     bvector<Utf8String> propertyNames = displayValues.getMemberNames();
@@ -559,16 +561,15 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
                     for (auto const& propertyName : propertyNames)
                         {
-                        Utf8String propertyValueCurrent = displayValues[propertyName]["Current"].asString();
-                        Utf8String propertyValueTarget = displayValues[propertyName]["Target"].asString();
-
-                        if (propertyName != s_opCodeCompare && propertyValueCurrent != propertyValueTarget)
+                        if (propertyName != s_opCodeCompare)
                             {
                             Json::Value     propertyChangeJson;
 
                             propertyChangeJson["name"] = propertyName;
-                            propertyChangeJson["pre"] = propertyValueTarget;
-                            propertyChangeJson["post"] = propertyValueCurrent;
+#ifdef PROPERTY_CHANGE_VALUES
+                            propertyChangeJson["pre"]  =  displayValues[propertyName]["Target"].asString();
+                            propertyChangeJson["post"] =  displayValues[propertyName]["Current"].asString();
+#endif
 
                             elementJson["prop"] = propertyChangeJson;
                             }
@@ -579,7 +580,19 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
             revisionElementsJson[elementId.ToString()] = std::move(elementJson);
             }
 
-        Json::Value     revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+        Json::Value         revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+        DgnModelIdSet       prevModelIds, postModelIds;
+        auto                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+        auto                postModelIterator = tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+
+        for (auto& model : prevModelIterator)
+            prevModelIds.insert(model.GetModelId());
+
+        for (auto& model :postModelIterator)
+            postModelIds.insert(model.GetModelId());
+
+        if (elementIds.empty() && prevModelIds == postModelIds)
+            continue;           // Skip empty revisions.
 
 #ifdef FABRICATE_FAKE_REVISION_DATA
         fabricateFakeRevisionData(revisionJson);
@@ -587,12 +600,16 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         if (!addedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, false);
+            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, revisionIndex, false);
             DgnModelIdSet               modelIds = getElementModelIds(addedOrModifiedIds, *tempDb);
+
+            for (auto& modelId : postModelIds)
+                if (prevModelIds.find(modelId) == prevModelIds.end())
+                    modelIds.insert(modelId);
 
             if (!modelIds.empty())
                 revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
-
+                    
             revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
@@ -602,7 +619,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
 
         if (!deletedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, changeSets.size() - i - 1, true);
+            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, revisionIndex, true);
             DgnModelIdSet               modelIds = getElementModelIds(deletedOrModifiedIds, *tempDb);
 
             if (!modelIds.empty())
@@ -611,16 +628,12 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
             
-        Utf8String  revisionName = Utf8PrintfString("Revision: %d", changeSets.size() - i);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
+        Utf8String  revisionName = Utf8PrintfString("1.%d", revisionIndex + 1);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
 
         revisionJson["name"] = revisionName;
         revisionJson["elements"] = std::move(revisionElementsJson);
-        revisionJsons.push_front(revisionJson);
+        revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
         }
-    Json::Value     revisionsJson;
-    for (auto& revisionJson : revisionJsons)
-        revisionsJson.append(revisionJson);
-
     return baselinePublisher.Publish(params, std::move(revisionsJson));
     }
 
