@@ -486,6 +486,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
+    $(ContextSubpartsLibs)BeCurl.lib
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
@@ -519,3 +520,12 @@ LINKER_LIBRARIES            = \
 
 %include $(sharedMki)LinkLibrary.mki
 
+#----------------------------------------------------------------------------------------
+# Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 
+# usgs datas
+#----------------------------------------------------------------------------------------
+$(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
+    $(CopyFirstDepToFirstTarget)
+
+$(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
+        $(LinkFirstDepToFirstTarget)
