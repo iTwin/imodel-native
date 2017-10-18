@@ -4,21 +4,12 @@
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="BeOpenSSLPublicAPI-UWP"/>
-        <SubPart PartName="BeOpenSSLPublicAPI-NonUWP"/>
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <Bindings>
             <PublicAPI Domain="BeHttp" />
         </Bindings>
-    </Part>
-
-    <Part Name="BeOpenSSLPublicAPI-UWP" OnlyPlatforms="WinRT*">
-        <SubPart PartName="PublicAPI" PartFile="BeOpenSSLUWP" Repository="Libsrc-OpenSSL-UWP"/>
-    </Part>
-
-    <Part Name="BeOpenSSLPublicAPI-NonUWP" ExcludePlatforms="WinRT*">
-        <SubPart PartName="PublicAPI" PartFile="BeOpenSSL" Repository="Libsrc-OpenSSL"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for Android, and thus Android builds cannot get a partfile from the LKG to see that the part excludes Android. -->
