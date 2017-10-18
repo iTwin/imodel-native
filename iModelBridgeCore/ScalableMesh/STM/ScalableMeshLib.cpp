@@ -22,6 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
 
+#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+
 
 
 
@@ -86,43 +88,156 @@ public:
     bool IsExpired() const { return m_expiration.IsValid() && DateTime::Compare(m_expiration, DateTime::GetCurrentTimeUtc()) != DateTime::CompareResult::LaterThan; }
     };
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Mathieu.St-Pierre               10/2017
+//+---------------+---------------+---------------+---------------+---------------+------*/
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+    {
+    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+    }
+
+//#if 0 
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Mathieu.St-Pierre                 10/2017
+//+---------------+---------------+---------------+---------------+---------------+------*/
+CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8StringCR postFields)
+    {
+    BeAssert(nullptr != writeString || nullptr != fp);
+    auto curl = curl_easy_init();
+    if (nullptr == curl)
+        {
+        //m_error = CONCEPTSTATIONL10N_GETSTRING(STATUS_ERR_CurlNotAvailable);
+        return CURLcode::CURLE_FAILED_INIT;
+        }
+
+    //Adjusting headers for the POST method
+    struct curl_slist *headers = NULL;
+    if (!postFields.empty())
+        {
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "charsets: utf-8");
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
+        }
+    
+    //TODO MST    
+    //RealityDataServiceTransfer rdsTransfer;
+    CurlConstructor rdsTransfer;
+    //Utf8String token(rdsTransfer.GetToken());
+
+    headers = curl_slist_append(headers, rdsTransfer.GetToken().c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+
+
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+    //TODO MST
+    //curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+    
+    //curl_easy_setopt(curl, CURLOPT_CAINFO, "D:\\BSI\\DgnDb06\\out\\Debug\\Winx64\\Product\\ConceptStation\\Bin\\cacert.pem"/*RealityDataService::GetCertificatePath().c_str()*/);
+
+    /*
+    LPWSTR dllDirectory[100000];
+    GetDllDirectoryW(100000, dllDirectory);
+    */
+
+
+    HMODULE inst = GetModuleHandle(NULL);
+    WCHAR wccwd[FILENAME_MAX];
+    GetModuleFileNameW(inst, &wccwd[0], (DWORD)FILENAME_MAX);
+    BeFileName cwdfn(wccwd);
+    //cwdfn = cwdfn.GetDirectoryName();
+    Utf8String pemFileName(cwdfn.GetDirectoryName().c_str());
+    pemFileName.append("\\ScalableMeshCacert.pem");
+
+    
+    curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str()/*"\\ScalableMeshCacert.pem"*//*RealityDataService::GetCertificatePath().c_str()*/);
+
+    
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
+
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
+
+//#if 0 
+
+
+    
+    if (!proxyInfo.m_serverUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyInfo.m_serverUrl);
+        curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+        if (!proxyInfo.m_user.empty() && !proxyInfo.m_password.empty())
+            {
+            Utf8String proxyCreds = proxyInfo.m_user;
+            proxyCreds.append(":");
+            proxyCreds.append(proxyInfo.m_password);
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
+            }
+        }
+//#endif
+
+    if (nullptr != fp)
+        {
+        /*
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        */
+        }
+    else
+        {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, writeString);
+        }
+
+    CURLcode result = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    return result;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Mathieu.St-Pierre                 10/2017
+//+---------------+---------------+---------------+---------------+---------------+------*/
+CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8StringCR postFields)
+    {
+    CURLcode code = RequestHttp(url, writeString, fp, postFields);    
+    return code;
+    }
+//#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServiceKey GetBingKey()
-    {
-    //CONCEPTSTATION_LOGD("KeyServer: Retreiving bing key from server");
-    Utf8String readBuffer;
-    
-#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
-/*
-    Utf8String serviceUrl = _getUrl();
-    Utf8String bingKeyUrl = serviceUrl.append("/ContextKeyServiceSchema/BingApiKey");
-*/
+    {    
+    Utf8String readBuffer;    
+            
+    Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
+    std::wstring buddiUrl;
+    connectClient.GetBuddiUrl(L"ContextServices", buddiUrl);    
 
-    Utf8String rdsURL(ScalableMeshRDSProvider::GetBuddiUrl());
-    
-    if (rdsURL.StartsWithI("https://connect-realitydataservices.bentley.com") && true) //Production server do not know this API yet, return the local key if Connected for the moment.
+    Utf8String contextServiceURL;
+    contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());        
+
+#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
+    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
         {
         bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
         return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
         }
 #endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
-#if 0 //TODO
-    CURLcode result = performCurl(bingKeyUrl, &readBuffer);
+    
+    Utf8String bingKeyUrl(contextServiceURL);    
+    bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey");
+
+    Utf8String postFields;
+    CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
     if (CURLE_OK != result)
-        {
-        if (result == CURLE_RECV_ERROR)
-            {
-            error() = CONCEPTSTATIONL10N_GETSTRING(STATUS_ERR_InvalidProxyCredentials);
-            }
-        else
-            {
-            error() = Utf8PrintfString(CONCEPTSTATIONL10N_GETSTRING(STATUS_ERR_ContextServerError_d).c_str(), 7);
-            }
-        CONCEPTSTATION_LOGW(error().c_str());
+        {        
         return WebServiceKey();
         }
 
@@ -131,16 +246,9 @@ WebServiceKey GetBingKey()
 
     if (!packageInfos.isMember("instances"))
         {
-        if (packageInfos.isMember("errorMessage"))
-            {
-            error() = packageInfos["errorMessage"].asCString();
-            }
-        else
-            error() = Utf8PrintfString(CONCEPTSTATIONL10N_GETSTRING(STATUS_ERR_ContextServerError_d).c_str(), 8);
-        CONCEPTSTATION_LOGW(error().c_str());
         return WebServiceKey();
         }
-    error() = "";
+
     if (packageInfos["instances"].isArray() &&
         packageInfos["instances"].isValidIndex(0) &&
         packageInfos["instances"][0].isMember("properties") &&
@@ -150,12 +258,8 @@ WebServiceKey GetBingKey()
         DateTime expiration;
         DateTime::FromString(expiration, packageInfos["instances"][0]["properties"]["expirationDate"].asCString());
         return WebServiceKey(packageInfos["instances"][0]["properties"]["key"].asString(), expiration);
-
         }
-    error() = Utf8PrintfString(CONCEPTSTATIONL10N_GETSTRING(STATUS_ERR_ContextServerError_d).c_str(), 9);
-    CONCEPTSTATION_LOGW(error().c_str());
-#endif
-
+    
     return WebServiceKey();
     }
 
@@ -196,15 +300,6 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
         WString key = L"";
         if (!m_bingKey.IsValid() || m_bingKey.IsExpired())
             {
-/*
-            Json::Value error;
-            KeyServicePtr service = KeyService::Create(error);
-   
-            if (service.IsValid())
-                {
-                m_bingKey = service->GetKey(Bing);
-                }
-*/
             m_bingKey = GetBingKey();
             }
 
@@ -260,7 +355,7 @@ void ScalableMeshLib::Host::Initialize()
 
     s_bingAuthCallback = new BingAuthenticationCallback();
 
-    //HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());    
+    HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());    
     }
 
 /*---------------------------------------------------------------------------------**//**

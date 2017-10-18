@@ -49,9 +49,11 @@
         <Bindings>
           <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
           <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies> 
-            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies> 
-            <PublicAPI Domain="ScalableMesh" />
+          <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies> 
+          <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>
+          <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/ScalableMeshCacert.pem</Files>
+          <Files ProductDirectoryName="PPNativeAssemblies">delivery/ScalableMeshCacert.pem</Files>
+          <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
     
@@ -329,7 +331,16 @@
         <ProductDirectory Name="ScalableMeshV8SDK"  Deliver="false" Path="Dlls\ScalableMeshV8SDK" />
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false"/>
         <ProductDirectory Name="BentleyDesktopClientApi"  Deliver="false"/>
-        <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="false"/>   
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"  Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="RealityAssemblies"  Path="Dlls" Deliver="true"/>
+<!--
+    <ProductDirectory   Name="RealityAssemblies"                        Path="Dlls"                      />
+    <ProductDirectory   Name="RealityPlatformLibs"                      Path="Libs"                      />
+    <ProductDirectory   Name="ZlibNativeAssemblies"                     Path="Dlls" />
+    <ProductDirectory   Name="BentleyDesktopClientApi"                  Path="Dlls" />
+    -->
+
+    
 </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
