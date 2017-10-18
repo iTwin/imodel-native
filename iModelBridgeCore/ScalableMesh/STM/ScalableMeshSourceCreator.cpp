@@ -73,13 +73,32 @@ size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
+bool canCreateFile(const char* fileName)
+{
+	std::ofstream of;
+	of.open(fileName);
+	if (of.fail()) return false;
+	else
+	{
+		of.close();
+		std::remove(fileName);
+	}
+	return true;
+}
+
 //static HPMPool* s_rasterMemPool = nullptr;
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  filePath,
-StatusInt&      status)
-    {
-    RegisterDelayedImporters();
+	StatusInt&      status)
+{
+	RegisterDelayedImporters();
 
-    using namespace ISMStore;
+	using namespace ISMStore;
+	BeFileName fileName = BeFileName(filePath);
+	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(fileName.GetNameUtf8().c_str())))
+	{
+		status = BSIERROR;
+		return 0;
+	}
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
