@@ -597,7 +597,13 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, Shallow_Small_1K) { DoPerformanceShallow(1000); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, Shallow_Small) { DoPerformanceShallow(10000); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, Shallow_Medium) { DoPerformanceShallow(100000); }
 
 /*---------------------------------------------------------------------------------**//**

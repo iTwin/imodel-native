@@ -5,9 +5,9 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 #ifdef _WIP_
-
-
-
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Farhad.Kabir                      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
 class FakeServerFixture : public DgnDbTestFixture
     {
     public:
@@ -59,6 +59,10 @@ class FakeServerFixture : public DgnDbTestFixture
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));
             }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                   Farhad.Kabir                      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FakeServerFixture, CreateFakeServer) 
     {
     WCharCP serverPath = outPath.GetWCharCP();
@@ -71,6 +75,10 @@ TEST_F(FakeServerFixture, CreateFakeServer)
     EXPECT_TRUE(m_db.IsValid());
     
     }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                   Farhad.Kabir                      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FakeServerFixture, CreateFakeServer2)
     {
     FakeServer::CreateiModel(outPath, L"Briefcase0295.bim");

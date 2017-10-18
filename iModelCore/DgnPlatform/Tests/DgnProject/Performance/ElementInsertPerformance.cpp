@@ -390,13 +390,29 @@ TEST_F(PerformanceElementsTests, ElementsInsertStrategies)
 //Pragma("cache_size=200000");
 //Pragma("temp_store=MEMORY");
 
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ClientElementsInsert) { Execute(Op::Insert); }
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ClientElementsRead)   { Execute(Op::Select); }
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ClientElementsUpdate) { Execute(Op::Update); }
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ClientElementsDelete) { Execute(Op::Delete); }
 
 #define CACHE_SPILL Pragma ("cache_spill = off")
 #define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 300000));
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ServerElementsInsert) 
     { 
     CACHE_SPILL;
@@ -404,6 +420,9 @@ TEST_F(PerformanceElementsTests, ServerElementsInsert)
     Execute(Op::Insert); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ServerElementsRead)   
     { 
     CACHE_SPILL;
@@ -411,6 +430,9 @@ TEST_F(PerformanceElementsTests, ServerElementsRead)
     Execute(Op::Select);
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ServerElementsUpdate) 
     { 
     CACHE_SPILL;
@@ -418,6 +440,9 @@ TEST_F(PerformanceElementsTests, ServerElementsUpdate)
     Execute(Op::Update);
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Affan.Khan                       10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementsTests, ServerElementsDelete) 
     { 
     CACHE_SPILL;

@@ -253,6 +253,9 @@ void PerformanceDgnECTests::RunQueryTests(ECSchemaR schema, DgnDbR project, Utf8
     LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), count, Utf8PrintfString("Found Instance of class: %s ", TEST_CLASS_NAME).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Carole.MacDonald                     07/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
     {
     SetupSeedProject();
@@ -263,6 +266,9 @@ TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
     RunQueryTests(*schema, *m_db, TEST_DETAILS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                  Carole.MacDonald                     07/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
     {
     SetupSeedProject();
