@@ -415,16 +415,16 @@ GEOMDLLIMPEXP DRange1d CurveVector::ProjectedParameterRange (DRay3dCR ray) const
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                 {
                 DEllipse3dCP ellipse = at(i)->GetArcCP ();
+                DPoint3d arcPts[2];
+                ellipse->EvaluateEndPoints(arcPts[0], arcPts[1]);
                 double a = ray.DirectionDotVectorToTarget (ellipse->center);
                 double u = ray.DirectionDotVector (ellipse->vector0);
                 double v = ray.DirectionDotVector (ellipse->vector90);
-                double s0 = 1.0E20, s1 = -1.0E20;
+                double s0 = ray.DirectionDotVectorToTarget(arcPts[0]);
+                double s1 = s0;
                 bsiEllipse_componentRange (&s0, &s1, a, u, v, ellipse->start, ellipse->sweep);
                 dotRange.Extend (s0);
                 dotRange.Extend (s1);
-                DPoint3d arcPts[2];
-                ellipse->EvaluateEndPoints(arcPts[0], arcPts[1]);
-                dotRange.Extend(ray.DirectionDotVectorToTarget(arcPts[0]));
                 dotRange.Extend(ray.DirectionDotVectorToTarget(arcPts[1]));
                 break;
                 }
