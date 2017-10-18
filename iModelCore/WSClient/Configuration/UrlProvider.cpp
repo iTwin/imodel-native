@@ -45,6 +45,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectTermsOfServiceUrl(
+	"Mobile.ConnectTermsOfServiceUrl",
+	"https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+	"https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+	"https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+	&s_urlRegistry
+	 );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     "Mobile.ConnectProjectUrl",
     "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
