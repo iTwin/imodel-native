@@ -43,6 +43,9 @@ Json::Value StubWSObjectCreationJson()
             })");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredentials)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -59,6 +62,9 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredenti
     client->VerifyAccess()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithClassNotFound_ReturnsSuccess)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -71,6 +77,9 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithClassNotFound_ReturnsSu
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsSuccess)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -83,6 +92,9 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsS
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11_SendsUrlWithoutWebApiVersion)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -98,6 +110,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11_SendsUrlWithout
     client->SendGetChildrenRequest(ObjectId())->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndPropertiesToSelect_SendsGetRequestWithPropertyList)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -117,6 +132,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndPropertiesToSe
     client->SendGetChildrenRequest(ObjectId(), propertiesToSelect)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV12AndPropertiesToSelect_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -132,6 +150,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV12AndPropertiesToS
     EXPECT_EQ(WSError::Id::NotSupported, response.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutSchemaProviderAndQueryNavigationRoot_ReturnsNotSupported)
     {
     IWSSchemaProviderPtr schemaProvider = nullptr;
@@ -149,6 +170,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutSchemaPro
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProviderButNoSchemaReturnedAndQueryNavigationRoot_ReturnsNotSupported)
     {
     auto schemaProvider = std::make_shared<MockWSSchemaProvider>();
@@ -169,6 +193,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProvid
 #endif
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProviderAndQueryNavigationRoot_UsesProviderSchemaAndReturnsCorrectResults)
     {
     Utf8String schemaXml =
@@ -192,6 +219,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProvid
 #endif
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithSchemaProviderAndQueryNavigationRoot_DoesNotCallSchemaProvider)
     {
     auto schemaProvider = std::make_shared<MockWSSchemaProvider>();
@@ -213,6 +243,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithSchemaProvide
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoot_RetrievesSchemaAndReturnsCorrectResults)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -241,6 +274,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoot
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "TestId"), (*response.GetValue().GetInstances().begin()).GetObjectId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRootRequestedTwice_SendsGetSchemaRequestOnce)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -268,6 +304,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoot
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "TestId"), (*response.GetValue().GetInstances().begin()).GetObjectId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndNavigationRoot_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -283,6 +322,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndNavigationRoot
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndPropertiesSpecifiedToSelect_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -302,6 +344,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndPropertiesSpec
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndSpecificNavNode_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -317,6 +362,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndSpecificNavNod
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContainsInstance_SucceedsAndParsesInstance)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -334,6 +382,9 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContai
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), (*result.GetValue().GetInstances().begin()).GetObjectId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithEmptyNavigationParentIdCustomParameter_MappedToNavigationRootQuery)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -350,6 +401,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithEmptyNaviga
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationParentIdCustomParameter_MappedToNavigationQuery)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -366,6 +420,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationP
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationParentIdAndSelectProperties_MappedToNavigationQueryWithProperties)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -383,6 +440,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationP
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithFollowRedirects)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -401,6 +461,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithF
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetRequestForRedirect)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -421,6 +484,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetReque
     EXPECT_FALSE(filePath.DoesPathExist());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFound_SendsGetRequestToLocation)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -441,6 +507,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFou
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseOK_ReturnsServerNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -453,6 +522,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseOK_
     EXPECT_EQ(WSError::Status::ServerNotSupported, result.GetError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -474,6 +546,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndAllowRedirectHeader)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -495,6 +570,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndA
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectReceived_DownloadsFileFromExternalLocation)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -521,6 +599,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectRece
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectReceived_DownloadsAnyway)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -547,6 +628,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectRe
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectStatusReceived_Error)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -565,6 +649,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectSt
     EXPECT_FALSE(response.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2ETagSet_SendsAndReceivesETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -582,6 +669,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2ETagSet_SendsAndRecei
     EXPECT_EQ("ResponseETag", result.GetValue().GetETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAzureRedirect_SendsAndReceivesETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -607,6 +697,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAz
     EXPECT_STREQ("ResponseETag", result.GetValue().GetETag().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV2ButNoSchemaInObjectId_ReturnsError)
 //   {
 //    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo(), GetHandlerPtr ());
@@ -618,6 +711,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAz
 //    EXPECT_FALSE (response.IsSuccess ());
 //    }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -633,6 +729,9 @@ TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2_SendsCorrectUrl)
     client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -651,6 +750,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1_SendsCorrectUrl)
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV12_SendsCorrectUrlWithMaxWebApi)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -669,6 +771,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV12_SendsCorrectUrlWithMa
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV11_SendsCorrectUrlWithoutWebApi)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -687,6 +792,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV11_SendsCorrectUrlWithou
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -705,6 +813,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2_SendsCorrectUrl)
     client->SendQueryRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV21_ParsesInstanceETagAndAddsQuotes)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -747,6 +858,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV21_ParsesInstanceETagAnd
     EXPECT_EQ("\"TestEtagB\"", (*(*instances.begin()).GetRelationshipInstances().begin()).GetETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV22_ParsesInstanceETagDirectly)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -789,6 +903,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV22_ParsesInstanceETagDir
     EXPECT_EQ("TestEtagB", (*(*instances.begin()).GetRelationshipInstances().begin()).GetETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSentBack_IgnoresSkipTokens)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -808,6 +925,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
     EXPECT_EQ("", result.GetValue().GetSkipToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSendSkipToken)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -823,6 +943,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSe
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2SkipTokenSupplied_SendsSkipToken)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -838,6 +961,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2SkipTokenSupplied_Sends
     client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipToken_AddsSkipTokenToResponse)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -855,6 +981,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipT
     EXPECT_EQ("ServerSkipToken", result.GetValue().GetSkipToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23_CapsWebApiToV23)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -870,6 +999,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23_CapsWebApiToV23)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -885,6 +1017,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -900,6 +1035,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtNotExceeded_CorrectRequestCreated)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -926,6 +1064,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtNotExceede
     client->SendQueryRequest(query, nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtExceeded_CorrectRequestCreated)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -954,6 +1095,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23MaxUrlLenghtExceeded_C
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtNotExceeded_CorrectRequestCreated)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -980,6 +1124,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtNotExceede
     client->SendQueryRequest(query, nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_CorrectRequestCreated)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1006,6 +1153,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_C
     client->SendQueryRequest(query, nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1026,6 +1176,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSuppor
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11WithObjectId_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1047,6 +1200,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11WithObjectId_Er
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithInvalidObjectIdAndCorrectJson_EmptyError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1071,6 +1227,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithInvalidObjec
     }
 
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson_TakesClassInfoFromJsonAndSendsPropertiesWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1097,6 +1256,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson_
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndCorrectJson_TakesClassInfoFromJsonAndSendsPropertiesWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1124,6 +1286,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndC
     client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithOneRelationship_RelatedInstanceTreatedAsParentInRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1157,6 +1322,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithOneRelations
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndOneRelationship_RelatedInstanceTreatedAsParentInRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1191,6 +1359,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndO
     client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithNestedRelationship_DoesNotSendCreateRequestAndReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1229,6 +1400,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithNestedRelati
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndNestedRelationship_DoesNotSendCreateRequestAndReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1268,6 +1442,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndN
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOneRelationship_DoesNotSendCreateRequestAndReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1291,6 +1468,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOneR
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndMoreThanOneRelationship_DoesNotSendCreateRequestAndReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1315,6 +1495,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndM
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithInvalidObjectIdAndCorrectJson_EmptyError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1339,6 +1522,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithInvalidObjec
     EXPECT_EQ(WSError::Id::Unknown, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1366,6 +1552,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1394,6 +1583,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndC
     client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
     {
     // TODO: unify WebApi 1 and 2 to have SendChangeRequest that would accept changeset. WebApi 1 would be limited to single instance changes.
@@ -1423,6 +1615,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceC
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThatDoesNotHaveRemoteIdAndRootInstanceContainsId_IdNotAddedToUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1452,6 +1647,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThat
     client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThatDoesHaveRemoteIdAndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1481,6 +1679,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThat
     client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2FormatResponseFromResponseId)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1519,6 +1720,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2F
     EXPECT_EQ(expectedObject, jsonBody);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_ConstructsWSG2FormatResponseFromResponseId)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1558,6 +1762,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_Con
     EXPECT_EQ(expectedObject, json);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
     {
     // Arrange
@@ -1598,6 +1805,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     EXPECT_EQ(ObjectId("TestRelSchema", "TestRelClass", ""), it->second);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
     {
     // Arrange
@@ -1639,6 +1849,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndR
     EXPECT_EQ(ObjectId("TestRelSchema", "TestRelClass", ""), it->second);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJsonAsObject)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1665,6 +1878,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJ
     EXPECT_EQ(responseObject, jsonBody);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1679,6 +1895,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndFileETagSentB
     EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_PassesResponseJsonAsObject)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1708,6 +1927,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_Pas
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1726,6 +1948,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_Add
     client->SendCreateObjectRequest(StubWSObjectCreationJson(), filePath)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1745,6 +1970,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndF
     client->SendCreateObjectRequest(objectId, StubWSObjectCreationJson(), filePath)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1763,6 +1991,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Add
     client->SendCreateObjectRequest(StubWSObjectCreationJson(), filePath)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1783,6 +2014,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndF
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV13_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1794,6 +2028,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV13_ErrorNotSupported
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV20_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1805,6 +2042,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV20_ErrorNotSupported
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21_SendsRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1822,6 +2062,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21_SendsRequest)
     client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_CompressionIsNotEnabled_RequestCompressionDisabled)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1838,6 +2081,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_CompressionIsNotEnabled_Req
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableCompression_RequestCompressionEnabled)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1858,6 +2104,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableCompression_RequestCo
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_RequestTimeOutsAreDefaults)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1874,6 +2123,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_R
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaRequestOptions_RequestTrasferTimeOutIsSet)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1892,6 +2144,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaReques
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr, options)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaDefaultRequestOptions_RequestTrasferTimeOutIsSet)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1910,6 +2165,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaDefaul
     client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr, options)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives201_Error)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1922,6 +2180,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives201_Err
     EXPECT_FALSE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_SuccessAndReturnsBody)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1935,6 +2196,9 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     EXPECT_EQ("TestChangesetResponse", result.GetValue()->AsString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1954,6 +2218,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostReques
     client->SendUpdateObjectRequest({"TestSchema.TestClass", "TestId"}, propertiesJson)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1AndETagPassed_SendsRequestWithIfMatch)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1969,6 +2236,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1AndETagPassed_Se
     client->SendUpdateObjectRequest({"A.B", "C"}, Json::objectValue, "TestETag")->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1ResponseIsOK_Success)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1981,6 +2251,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1ResponseIsOK_Suc
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2_SendsPostRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2011,6 +2284,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2_SendsPostReques
     client->SendUpdateObjectRequest({"TestSchema.TestClass", "TestId"}, ToJson(R"({"TestProperty" : "TestValue" })"))->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndETagPassed_SendsRequestWithoutIfMatch)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2026,6 +2302,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndETagPassed_Se
     client->SendUpdateObjectRequest({"A.B", "C"}, Json::objectValue, "TestETag")->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2ResponseIsOK_Success)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2038,6 +2317,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2ResponseIsOK_Suc
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1WithFile_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2053,6 +2335,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1WithFile_ErrorNo
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV23WithFile_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2069,6 +2354,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV23WithFile_ErrorN
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2088,6 +2376,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_Ad
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2102,6 +2393,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndFileETagSentB
     EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2118,6 +2412,9 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequ
     client->SendDeleteObjectRequest({"TestSchema.TestClass", "TestId"})->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1ResponseIsOK_Success)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2130,6 +2427,9 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1ResponseIsOK_Suc
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2_SendsDeleteRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2146,6 +2446,9 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2_SendsDeleteRequ
     client->SendDeleteObjectRequest({"TestSchema.TestClass", "TestId"})->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2ResponseIsOK_Success)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2158,6 +2461,9 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2ResponseIsOK_Suc
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1_SendsPutRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2179,6 +2485,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1_SendsPutRequest)
     client->SendUpdateFileRequest({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"))->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2200,6 +2509,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     client->SendUpdateFileRequest({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"))->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2214,6 +2526,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndFileETagSentBac
     EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24_SendsPutRequestWithAllowRedirect)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2232,6 +2547,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24_SendsPutRequestW
     EXPECT_TRUE(response.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadSuccessful_SendsConfirmationToServer)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2271,6 +2589,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     EXPECT_TRUE(response.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_DoesNotSendConfirmationToServer)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2301,6 +2622,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     EXPECT_TRUE(response.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndUploadReturnsETag_ReturnsNewFileETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2320,6 +2644,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     EXPECT_EQ("NewTag", response.GetValue().GetFileETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_ReturnsNewFileETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2337,6 +2664,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     EXPECT_EQ("NewTag", response.GetValue().GetFileETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndUnknownUrlType_ReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2357,6 +2687,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSchema_Fails)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2368,6 +2701,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSchem
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvider_ReturnsObjectForProviderSchema)
     {
     Utf8String schemaXml =
@@ -2394,6 +2730,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvider
 #endif
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProviderSchema_ETagIsSchemaId)
     {
     Utf8String schemaXml =
@@ -2416,6 +2755,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvider
 #endif
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchemaAndSendingETag_ResponseNotModified)
     {
     Utf8String schemaXml =
@@ -2436,6 +2778,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchemaA
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1_SendsGetSchemaRequestWithSuppliedETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2452,6 +2797,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1_SendsGetSchemaReq
     client->SendGetSchemasRequest("TestETag")->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11Connect_SendsGetSchemaRequestWithSuppliedETag)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2468,6 +2816,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11Connect_SendsGetS
     client->SendGetSchemasRequest("TestETag")->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseNotModified_ReturnsNotModified)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2482,6 +2833,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseNotModifie
     EXPECT_FALSE(result.GetValue().IsModified());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchema_ReturnsSchemaObject)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2509,6 +2863,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchema
     EXPECT_EQ(2, schemaInstance.GetProperties()["VersionMinor"].GetInt());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchema_ETagIsFromResponse)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2532,6 +2889,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchema
     EXPECT_EQ("TestETag", result.GetValue().GetETag());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectId_SendsGetSchemaRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2548,6 +2908,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectI
     client->SendGetFileRequest({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, StubFilePath(), "TestETag")->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDummySchemaObjectId_SendsGetSchemaRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2565,6 +2928,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDumm
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasProvidedSchema_ReturnsProvidedSchema)
     {
     Utf8String schemaXml =
@@ -2588,6 +2954,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectI
 #endif
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasProvidedSchemaWithETag_ReturnsNotModified)
     {
     Utf8String schemaXml =
@@ -2610,6 +2979,9 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectI
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2_SendsGetSchemasRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2625,6 +2997,9 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2_SendsGetSchemasRe
     client->SendGetSchemasRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsObjects_ReturnsObjects)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());

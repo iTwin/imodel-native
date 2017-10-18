@@ -12,6 +12,9 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_MethodSpecified_HandShakeWithSameMethod)
     {
     ChunkedUploadRequest request("BOO", "http://foo.com", GetClient());
@@ -25,6 +28,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_MethodSpecified_HandShakeWithSame
     request.PerformAsync()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequiredHandshakeHeaders)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -44,6 +50,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequire
     EXPECT_EQ(ConnectionStatus::Canceled, request.PerformAsync()->GetResult().GetConnectionStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_EncodesFileName)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -59,6 +68,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_
     request.PerformAsync()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequiredHandshakeHeaders)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -73,6 +85,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequi
     EXPECT_EQ(ConnectionStatus::Canceled, request.PerformAsync()->GetResult().GetConnectionStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -83,6 +98,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_FirtResponseNotResumeIncomplete_S
     EXPECT_EQ(HttpStatus::NotFound, request.PerformAsync()->GetResult().GetHttpStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncomplete_SendsSecondRequestWithCorrectContent)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -103,6 +121,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncomplete_Sen
     EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncompleteWithRange_SendsSecondRequestWithCorrectContent)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -123,6 +144,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncompleteWith
     EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_ResponseToChunkedUploadIsResumeIncomplete_SendsChunkAgain)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -144,6 +168,9 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_ResponseToChunkedUploadIsResumeIn
     EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_SecondResponseWithPreconditionFailed_SendsHandshakeAgain)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());

@@ -68,7 +68,9 @@ std::shared_ptr<ObservableECDb> ExtendedDataAdapterTests::GetTestECDb()
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db->OpenBeSQLiteDb(s_seedECDb.GetTestFile(), Db::OpenParams(Db::OpenMode::ReadWrite)));
     return db;
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedDataAdapterTests, UpdateData_DelegateReturnsNullClasses_Error)
     {
     auto db = GetTestECDb();
@@ -85,7 +87,9 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_DelegateReturnsNullClasses_Error)
     auto data = adapter.GetData(owner);
     EXPECT_EQ(ERROR, adapter.UpdateData(data));
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedDataAdapterTests, UpdateData_InstanceExistsAndFirstTime_DataIsReadable)
     {
     auto db = GetTestECDb();
@@ -107,7 +111,9 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_InstanceExistsAndFirstTime_DataIsRea
     EXPECT_FALSE(data.GetData().empty());
     EXPECT_EQ(Json::Value("Value"), data.GetValue("Test"));
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     {
     auto db = GetTestECDb();
@@ -136,7 +142,9 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     EXPECT_TRUE(data.GetData().empty());
     EXPECT_TRUE(data.GetValue("Test").isNull());
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedDataAdapterTests, UpdateData_OwnerAndDelegatePointsToOtherHolder_DataReadable)
     {
     auto db = GetTestECDb();
@@ -160,7 +168,9 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_OwnerAndDelegatePointsToOtherHolder_
     EXPECT_FALSE(data.GetData().empty());
     EXPECT_EQ(Json::Value("Value"), data.GetValue("Test"));
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmpty)
     {
     auto db = GetTestECDb();

@@ -71,7 +71,10 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
     return db;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/    
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_PerformanceIsAcceptable)
     {
     // Prepare seed file
@@ -159,6 +162,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
     BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAcceptable)
     {
     // Prepare seed file
