@@ -122,6 +122,11 @@ protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct OrthogonalGridPortionHandler;
 
+    //! Creates orthogonal grid and returns it as a map where HORIZONTAL_AXIS maps to horizontal grid planes and VERTICAL_AXIS maps to vertical grid planes
+    //! @param[in] params    grid parameters containing information about the grid. For more info look up CreateParams
+    //! @return              GridAxisMap containing the grid planes
+    GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview (StandardCreateParams const& params);
+
     //! Creates horizontal or vertical orthogonal grid portion
     //! @param[in] params       parameters for creating the grid portion
     //! @param[in] isHorizontal true if horizontal elements should be created, false if vertical
@@ -153,11 +158,6 @@ protected:
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
-
-    //! Creates orthogonal grid and returns it as a map where HORIZONTAL_AXIS maps to horizontal grid planes and VERTICAL_AXIS maps to vertical grid planes
-    //! @param[in] params    grid parameters containing information about the grid. For more info look up CreateParams
-    //! @return              GridAxisMap containing the grid planes
-    GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(StandardCreateParams const& params);
 
     //! gets the surfaces model
     //! @return                 the surfaces model
