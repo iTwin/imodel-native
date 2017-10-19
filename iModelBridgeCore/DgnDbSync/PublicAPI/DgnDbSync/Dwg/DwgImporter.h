@@ -712,7 +712,7 @@ public:
         };
 
     //! Categories for issues
-    BENTLEY_TRANSLATABLE_STRINGS_START(IssueCategory, dwg_issueCategory)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(IssueCategory, dwg_issueCategory)
         L10N_STRING(Compatibility)      // =="Compatibility"==
         L10N_STRING(ConfigXml)          // =="Config"==
         L10N_STRING(CorruptData)        // =="Corrupt Data"==
@@ -729,10 +729,10 @@ public:
         L10N_STRING(Unsupported)        // =="Unsupported"==
         L10N_STRING(VisualFidelity)     // =="Visual Fidelity"==
         L10N_STRING(Briefcase)          // =="Briefcase"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! A problem in the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
         L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
         L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will used for display."==
         L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
@@ -788,10 +788,10 @@ public:
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
         L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
         L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls"==
         L10N_STRING(STEP_COMPACTING)                   // =="Compacting File"==
@@ -813,13 +813,13 @@ public:
         L10N_STRING(TASK_CREATING_THUMBNAIL)           // =="Creating thumbnail for: %s"==
         L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
         L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Miscellaneous strings needed for DwgImporter
-    BENTLEY_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
         L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
         L10N_STRING(BlockAttrdefDescription)           // =="Attribute definitions created from block %ls"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
         {

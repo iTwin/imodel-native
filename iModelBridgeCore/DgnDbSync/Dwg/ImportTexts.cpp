@@ -239,21 +239,21 @@ size_t          DwgImporter::WorkingFonts::LoadFonts ()
 
     m_dwgImporter.SetTaskName (ProgressMessage::TASK_LOADING_FONTS(), "Workspace");
 
-    BeFileName  cwd;
-    if (BeFileNameStatus::Success != Desktop::FileSystem::GetCwd(cwd))
+    static BeFileName   s_cwd;
+    if (s_cwd.empty())
         {
 #ifdef BENTLEY_WIN32
         WChar    moduleDir[MAX_PATH] = { 0 };
-        ::GetModuleFileNameW (nullptr, moduleDir, _countof(moduleDir));
-        cwd = BeFileName(BeFileName::DevAndDir, moduleDir);
-#else
-        BeAssert (false && L"Cannot find product path!");
+        if (::GetModuleFileNameW(nullptr, moduleDir, _countof(moduleDir)) > 0)
+            {
+            s_cwd = BeFileName (BeFileName::DevAndDir, moduleDir);
+            s_cwd.AppendSeparator ();
+            }
 #endif
         }
-    cwd.AppendSeparator ();
 
     BeFileName  searchPaths (m_dwgImporter._GetFontSearchPaths().c_str(), BentleyCharEncoding::Utf8);
-    searchPaths.ReplaceAll (L"$(AppRoot)", cwd.c_str());
+    searchPaths.ReplaceAll (L"$(AppRoot)", s_cwd.c_str());
 
     bvector<WString>    pathList;
     BeStringUtilities::Split(searchPaths.c_str(), L";", nullptr, pathList);
