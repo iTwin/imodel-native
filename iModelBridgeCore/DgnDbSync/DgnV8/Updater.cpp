@@ -420,6 +420,9 @@ bool Converter::DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileN
     if (BSISUCCESS == docGuid.FromString(docGuidStr.c_str()))
         return _GetParams().IsDocumentAssignedToJob(docGuidStr);
     
+    if (BSISUCCESS == DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, nullptr, WString(localFileName.c_str()).c_str()))
+        return true;
+
     return BeFileName(localFileName.c_str(), true).DoesPathExist();
     }
 
