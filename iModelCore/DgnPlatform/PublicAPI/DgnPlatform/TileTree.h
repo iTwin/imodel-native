@@ -124,6 +124,16 @@ struct StreamBuffer : ByteStream
     DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
     template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
 
+    bool Skip(uint32_t numBytes)
+        {
+        auto newPos = m_currPos + numBytes;
+        if (newPos > GetSize())
+            return false;
+
+        SetPos(newPos);
+        return true;
+        }
+
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
     };
