@@ -307,6 +307,10 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene, Dgn::Render::System
         return ERROR;
         }
 
+    // Because the parent and children are loaded as a unit, unloading a parent's children cause the parent itself to become 'unloaded' too.
+    // That will happen immediately if we don't initialize the 'children last used' timepoint.
+    m_childrenLastUsed = BeTimePoint::Now();
+
     // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
     SetIsReady();
     return SUCCESS;
