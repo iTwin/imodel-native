@@ -21,7 +21,8 @@ RulesEnginePublicHeaders      = $(RulesEnginePublicApiDirectory)PresentationMana
                                 $(RulesEnginePublicApiDirectory)UserSettings.h                      \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeEvents.h            \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeHandlers.h          \
-                                $(RulesEnginePublicApiDirectory)Update.h                          
+                                $(RulesEnginePublicApiDirectory)Update.h                            \
+                                $(RulesEnginePublicApiDirectory)RuleSetEmbedder.h                  
 
 RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h                     \
                                 $(RulesEngineSourceDirectory)RulesPreprocessor.h                    \

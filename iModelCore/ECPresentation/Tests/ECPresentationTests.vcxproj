@@ -77,6 +77,7 @@
     <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\RuleSetEmbedderTests.cpp" />
     <ClCompile Include="Published\SelectionTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PresentationRulesHashingTests.cpp" />
     <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />

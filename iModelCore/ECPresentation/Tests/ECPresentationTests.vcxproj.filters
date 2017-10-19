@@ -76,6 +76,7 @@
     <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
     <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
     <ClCompile Include="BackDoor\SelectionManager.cpp" />
+    <ClCompile Include="Published\RulesEngine\RuleSetEmbedderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
