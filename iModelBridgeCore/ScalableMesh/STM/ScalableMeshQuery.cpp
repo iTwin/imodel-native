@@ -1669,7 +1669,7 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
             }
 
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
-            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param < minParam;
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param >= -1e-6 &&param < minParam;
         if (intersectTri)
             {
             pt = projectedPt;
