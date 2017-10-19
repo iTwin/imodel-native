@@ -198,11 +198,21 @@ HttpRequestStatus HttpSession::InternalRequest(HttpResponsePtr& response, HttpRe
     //&&MM todo we need to provide certificate authorities. For now ignore in debug build.
     //From http://curl.haxx.se/docs/caextract.html
     //curl_easy_setopt(m_curl, CURLOPT_CAINFO, "C:\\down\\!Ca_certificate\\cacert.perm");
+
+    if (!request.GetCertificateAuthoritiesFileUrl().empty())
+        {        
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        curl_easy_setopt(m_curl, CURLOPT_CAINFO, request.GetCertificateAuthoritiesFileUrl().c_str());
+        }       
+    else
+        {        
 #ifndef NDEBUG
-    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
 #endif
+        }
     
     if(request.GetConnectOnly())
         curl_easy_setopt(m_curl, CURLOPT_CONNECT_ONLY, 1L);
@@ -272,5 +282,20 @@ void SetProxyInfo(HttpRequest& request)
         request.SetProxyUrl(proxyUrlStr.c_str());
         }
     }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.St-Pierre  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetCertificateAuthoritiesInfo(HttpRequest& request)
+{
+    HFCAuthenticationCallback* pCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->GetCallback(HFCAuthenticationCallback::CLASS_ID);
+    HFCCertificateAutoritiesAuthentication certificateAuthentication;
+
+    if (pCallback != nullptr && pCallback->GetAuthentication(&certificateAuthentication))
+    {        
+        Utf8String fileUrlStr(certificateAuthentication.GetCertificateAuthFileUrl().c_str());
+        request.SetCertificateAuthoritiesFileUrl(fileUrlStr.c_str());
+    }
+}
 
 END_IMAGEPP_NAMESPACE

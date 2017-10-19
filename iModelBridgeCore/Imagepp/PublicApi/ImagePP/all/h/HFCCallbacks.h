@@ -176,6 +176,23 @@ private:
     WString         m_Server;
     };
 
+struct HFCCertificateAutoritiesAuthentication : HFCAuthentication
+{
+    HDECLARE_CLASS_ID(HFCAuthenticationId_CertificateAutorities, HFCAuthentication)
+
+public:
+    IMAGEPP_EXPORT                  HFCCertificateAutoritiesAuthentication();
+    IMAGEPP_EXPORT virtual          ~HFCCertificateAutoritiesAuthentication();    
+    
+    IMAGEPP_EXPORT void             SetCertificateAuthFileUrl(const WString& pi_CertificateAuthFileUrl);
+    IMAGEPP_EXPORT const WString&   GetCertificateAuthFileUrl() const;
+
+    IMAGEPP_EXPORT virtual void     SetByString(const WString& pi_rAuthenticationString) override { SetCertificateAuthFileUrl(pi_rAuthenticationString); }
+    
+private:
+    // authentication's members
+    WString         m_CertificateAuthFileUrl;    
+};
 
 struct HFCPDFAuthentication : public HFCAuthentication
     {

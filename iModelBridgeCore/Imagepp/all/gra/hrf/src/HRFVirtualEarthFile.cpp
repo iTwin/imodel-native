@@ -188,9 +188,9 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     HttpSession session;
     HttpRequest request(Utf8String(urlRequest).c_str());
 
+    SetCertificateAuthoritiesInfo(request);
     SetProxyInfo(request);
    
-
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         throw HFCCannotOpenFileException(GetURL()->GetURL());

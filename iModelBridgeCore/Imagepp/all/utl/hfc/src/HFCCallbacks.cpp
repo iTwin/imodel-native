@@ -457,6 +457,40 @@ void HFCProxyAuthentication::SetByString(const WString& pi_rAuthenticationString
     }
 
 //-----------------------------------------------------------------------------
+// class HFCCertificateAutoritiesAuthentication
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Public
+// constructor
+//-----------------------------------------------------------------------------
+HFCCertificateAutoritiesAuthentication::HFCCertificateAutoritiesAuthentication()
+: HFCAuthentication(0)
+    {
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// destructor
+//-----------------------------------------------------------------------------
+HFCCertificateAutoritiesAuthentication::~HFCCertificateAutoritiesAuthentication()
+    {
+    }
+
+//-----------------------------------------------------------------------------
+// Accessors
+//-----------------------------------------------------------------------------
+void HFCCertificateAutoritiesAuthentication::SetCertificateAuthFileUrl(const WString& pi_CertificateAuthFileUrl)
+    {
+    m_CertificateAuthFileUrl = pi_CertificateAuthFileUrl;
+    }
+
+const WString&   HFCCertificateAutoritiesAuthentication::GetCertificateAuthFileUrl() const
+    {
+    return m_CertificateAuthFileUrl;
+    }
+
+//-----------------------------------------------------------------------------
 // class HRFPDFAuthentication
 //-----------------------------------------------------------------------------
 

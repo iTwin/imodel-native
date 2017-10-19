@@ -123,6 +123,7 @@ private:
     Utf8String m_url;
     Utf8String m_proxyUrl;
     bmap<Utf8String, Utf8String> m_header;
+    Utf8String m_certificateAuthoritiesFileUrl;
 
     Credentials m_credentials;
     Credentials m_proxyCredentials;
@@ -148,6 +149,9 @@ public:
     Utf8StringCR        GetProxyUrl() const { return m_proxyUrl; }
     void                SetProxyUrl(Utf8StringCR proxyUrl) { m_proxyUrl = proxyUrl; }
 
+    Utf8StringCR        GetCertificateAuthoritiesFileUrl() const { return m_certificateAuthoritiesFileUrl; }
+    void                SetCertificateAuthoritiesFileUrl(Utf8StringCR certificateAuthoritiesFileUrl) { m_certificateAuthoritiesFileUrl = certificateAuthoritiesFileUrl; }
+    
     uint32_t            GetTimeoutMs() const {return m_timeOutMs;}
     void                SetTimeoutMs(uint32_t timeOutInMs) {m_timeOutMs = timeOutInMs;}
 
@@ -155,7 +159,15 @@ public:
     void                SetConnectOnly(bool connect) {m_connectOnly= connect;}
 };
 
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.St-Pierre   10/2017
+//----------------------------------------------------------------------------------------
 void SetProxyInfo(HttpRequest& request);
+
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.St-Pierre   10/2017
+//----------------------------------------------------------------------------------------
+void SetCertificateAuthoritiesInfo(HttpRequest& request);
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                   Mathieu.Marchand  12/2015

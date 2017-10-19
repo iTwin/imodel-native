@@ -27,7 +27,7 @@ void VirtualEarthTileQuery::_Run()
     {
     HttpSession& session = m_rasterFile.GetThreadLocalHttpSession();
     HttpRequest request(m_tileUri.c_str());
-
+    
     SetProxyInfo(request);
 
     HttpResponsePtr response;
