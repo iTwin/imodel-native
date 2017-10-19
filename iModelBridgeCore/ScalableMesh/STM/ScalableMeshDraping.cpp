@@ -1377,7 +1377,7 @@ struct Location
     Location(size_t first, size_t last, int seg) : idxFirst(first), idxLast(last), segment(seg) {}
     };
 
-#define DEACTIVATE_PARALLEL_DRAPE
+//#define DEACTIVATE_PARALLEL_DRAPE
 
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
