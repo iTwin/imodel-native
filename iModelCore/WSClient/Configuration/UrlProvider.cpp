@@ -9,6 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
+#include "../Client/Logging.h"
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
@@ -46,12 +47,12 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectTermsOfServiceUrl(
-	"Mobile.ConnectTermsOfServiceUrl",
-	"https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
-	"https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
-	"https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
-	&s_urlRegistry
-	 );
+    "ConnectTermsOfServiceUrl",
+    "https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+    &s_urlRegistry
+     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     "Mobile.ConnectProjectUrl",
@@ -265,8 +266,10 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         {
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
+        {
+            LOG.errorv("URL '%s' is not configured", urlName.c_str());
             return url;
-
+        }
         Json::Value record;
         record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         record[RECORD_Url] = url;
