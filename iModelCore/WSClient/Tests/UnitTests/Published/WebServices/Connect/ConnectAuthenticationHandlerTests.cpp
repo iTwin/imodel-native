@@ -114,6 +114,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAttemptedOnceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
+    bool legacyMode = false;
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // legacyMode = false
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);

@@ -478,6 +478,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     std::vector<ECSchemaPtr> changedSchemas;
                     if (SUCCESS != LoadSchemas(changedSchemaPaths, changedSchemas))
                         {
+                        LOG.errorv("UpdateSchemas(): Failed to load server schemas into memory.");
                         result->SetError(Status::SchemaError);
                         return;
                         }
@@ -486,6 +487,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     auto txn = StartCacheTransaction();
                     if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemas))
                         {
+                        LOG.errorv("UpdateSchemas(): Failed to import/update server schemas into ECDb.");
                         result->SetError(Status::SchemaError);
                         return;
                         }
