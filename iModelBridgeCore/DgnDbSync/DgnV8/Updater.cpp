@@ -472,20 +472,16 @@ void SpatialConverterBase::_DetectDeletedDocuments()
     if (!IsUpdating())
         return;
 
-    bool isDeleteOnly = false;
+    // note that _DetectDeletedDocuments is called after Process finishes. So, the converter must be re-initialized
+
     if (!_HaveChangeDetector())
-        {
-        isDeleteOnly = true;                // handle edge case where the converter is called *only* to detect deleted documents.
-        _SetChangeDetector(true);           // treat this like a normal conversion, except that there is no input document, and no job subject.
-        _OnConversionStart();
-        }
+        _SetChangeDetector(true);
+    
+    _OnConversionStart();       
 
     T_Super::_DetectDeletedDocuments();
 
-    if (isDeleteOnly)
-        {
-        _OnConversionComplete();
-        }
+    _OnConversionComplete();    // free resources, recompute project extents, etc.
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -976,16 +976,16 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         }
 
     // Use the document GUID, if available, to ensure a unique Job subject name.
-    Utf8String docGuidStr;
+    Utf8String docIdStr;
     auto docGuid = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName());
     if (docGuid.IsValid())
-        docGuidStr = docGuid.ToString();
+        docIdStr = docGuid.ToString();
     else
-        docGuidStr = Utf8String(_GetParams().GetInputFileName());
+        docIdStr = Utf8String(_GetParams().GetInputFileName());
 
     Utf8String jobName(iModelBridge::str_BridgeType_DgnV8());
     jobName.append(":");
-    jobName.append(docGuidStr.c_str());
+    jobName.append(docIdStr.c_str());
     jobName.append(", ");
     jobName.append(Utf8String(GetRootModelP()->GetModelName()));
 
@@ -1060,7 +1060,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     Json::Value v8JobProps(Json::objectValue);
     v8JobProps["ConverterType"] = (int)jtype;
     // v8JobProps["NamePrefix"] = _GetNamePrefix();
-    v8JobProps["RootFile"] = syncInfoFile.GetUniqueName();
+    v8JobProps["RootFile"] = GetFileBaseName(*m_rootModelRef->GetDgnModelP()->GetDgnFileP());
     v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
 
     Json::Value jobProps(Json::objectValue);

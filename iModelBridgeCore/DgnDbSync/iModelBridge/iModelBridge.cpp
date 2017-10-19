@@ -646,6 +646,10 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
         rlink = RepositoryLink::Create(*lmodel, "", code.GetValue().GetUtf8CP());
 
     rlink->SetUrl(docProps.m_desktopURN.c_str());
+    rlink->SetDescription("");
+    WString relFileName;
+    BeFileName::FindRelativePath(relFileName, localFileName.c_str(), params.GetInputFileName().GetDirectoryName().c_str());
+    rlink->SetUserLabel(Utf8String(relFileName).c_str());
 
     if (!docProps.m_docGuid.empty())
         {

@@ -82,6 +82,13 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
         MUSTBEOK(m_stateDb.CreateTable("fwk_BridgeAssignments", "SourceFile TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY, \
                                                                  Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
 
+        // WARNING: Do not change the name or layout of the DocumentProperties - Bentley Automation Services assumes the following definition:
+        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase, \
+                                                                DocGuid TEXT UNIQUE COLLATE NoCase,\
+                                                                DesktopURN TEXT COLLATE NoCase,\
+                                                                WebURN TEXT COLLATE NoCase, \
+                                                                OtherPropertiesJSON TEXT"));
+
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
         MUSTBEOK(m_stateDb.SaveChanges());
@@ -284,6 +291,9 @@ BentleyStatus iModelBridgeRegistry::SearchForBridgeToAssignToDocument(BeFileName
     BeAssert(BE_SQLITE_DONE == rc);
 
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
+
+    EnsureDocumentPropertiesFor(sourceFilePath);
+
     return BSISUCCESS;
     }
 
@@ -758,6 +768,29 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
     if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
         return nullptr;
     return reg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistry::EnsureDocumentPropertiesFor(BeFileNameCR fn)
+    {
+    iModelBridgeDocumentProperties _props;
+    if (BSISUCCESS == _GetDocumentProperties(_props, fn))
+        return;
+
+#define TEST_REGISTRY_FAKE_GUIDS
+#ifdef TEST_REGISTRY_FAKE_GUIDS
+    BeGuid testGuid;
+    testGuid.Create();
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,OtherPropertiesJSON) VALUES(?,?,'', '', '')");
+    stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
+    stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
+#else
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath) VALUES(?)");
+    stmt->BindText(1, Utf8String(fn).c_str(), Statement::MakeCopy::Yes);
+#endif
+    stmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
