@@ -320,7 +320,7 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
                 for (int i = 0; i < numberOfInstancesPerClass; i++)
                     {
                     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-                    ECDbTestUtility::PopulateECInstance(*instance);
+                    ECInstancePopulator::Populate(*instance);
                     testDataset.push_back(instance);
                     }
                 }

@@ -22,7 +22,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     BeTest::GetHost().GetDocumentsRoot(inputFile);
     inputFile.AppendToPath(L"StartupCompany.json");
     Json::Value seedObj(Json::objectValue);
-    ECDbTestUtility::ReadJsonInputFromFile(seedObj, inputFile);
+    TestUtilities::ReadFile(seedObj, inputFile);
 
     Json::Value rowObj(Json::objectValue);
     Json::Value rowsArray(Json::arrayValue);
