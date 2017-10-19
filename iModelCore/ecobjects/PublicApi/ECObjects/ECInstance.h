@@ -11,6 +11,7 @@
 #include <Bentley/DateTime.h>
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
+#include <Units/Quantity.h>
 
 BENTLEY_NAMESPACE_TYPEDEFS (BeXmlDom)
 BENTLEY_NAMESPACE_TYPEDEFS (BeXmlNode)
@@ -164,6 +165,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
 private:
     ECObjectsStatus ChangeValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
     ECObjectsStatus GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
+    ECObjectsStatus SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q, bool useArrayIndex, uint32_t arrayIndex);
+    ECObjectsStatus GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString, bool useArrayIndex, uint32_t arrayIndex) const;
 
     bool                        GetInstanceLabelPropertyName (Utf8String& propertyName) const;
 
@@ -322,6 +325,17 @@ public:
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     //! Returns the ECClass that defines this ECInstance
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
+    //! Gets the Quantity for the value stored in the specified ECProperty.  Property must be of type double and specify a KindOfQuantity for this to succeed.
+    //! @param[out] q   If successful, will contain the Quantity of the property
+    //! @param[in]  propertyAccessString Name of the property to retrieve
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure.
+    ECOBJECTS_EXPORT ECObjectsStatus    GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString) const;
+    //! Gets the Quantity for the value stored in the specified ECProperty.  Property must be of type double and specify a KindOfQuantity for this to succeed.
+    //! @param[out] q                       If successful, will contain the Quantity of the property
+    //! @param[in]  propertyAccessString    Name of the property to retrieve
+    //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString, uint32_t arrayIndex) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
@@ -382,6 +396,17 @@ public:
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex);
+    //! Sets the quantity for the specified property.  Property must be a double, have a KindOfQuantity defined and input quantity must be compatible.
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  q                    The Quantity to set onto the property
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q);
+    //! Sets the quantity for the specified property.  Property must be a double, have a KindOfQuantity defined and input quantity must be compatible.
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  q                    The Quantity to set onto the property
+    //! @param[in]  arrayIndex           The array index, if this is an ArrayProperty (0-based)
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q, uint32_t arrayIndex);
 
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of

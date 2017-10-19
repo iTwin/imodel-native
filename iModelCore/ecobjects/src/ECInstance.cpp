@@ -263,6 +263,58 @@ ECDBuffer*                  IECInstance::GetECDBufferP() { return _GetECDBuffer(
 MemoryECInstanceBase const* IECInstance::GetAsMemoryECInstance() const { return _GetAsMemoryECInstance(); }
 MemoryECInstanceBase*       IECInstance::GetAsMemoryECInstanceP() { return _GetAsMemoryECInstance(); }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString, bool useArrayIndex, uint32_t arrayIndex) const
+    {
+    ECPropertyCP prop = GetEnabler().LookupECProperty(propertyAccessString);
+    if (nullptr == prop)
+        return ECObjectsStatus::PropertyNotFound;
+
+    KindOfQuantityCP koq = prop->GetKindOfQuantity();
+    if (nullptr == koq)
+        return ECObjectsStatus::PropertyHasNoKindOfQuantity;
+
+    uint32_t propertyIndex = 0;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+    
+    ECValue v;
+    if (ECObjectsStatus::Success != (status = GetValue(v, propertyIndex, useArrayIndex, arrayIndex)))
+        return status;
+
+    if (v.IsNull())
+        return ECObjectsStatus::PropertyValueNull;
+
+    if (!v.IsDouble())
+        {
+        LOG.errorv("Could not get the quantity for property '%s' because it is not a double", prop->GetName().c_str());
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    q = Units::Quantity(v.GetDouble(), *koq->GetPersistenceUnit().GetUnit());
+    return ECObjectsStatus::Success;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString, uint32_t arrayIndex) const
+    {
+    return GetQuantity(q, propertyAccessString, true, arrayIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString) const
+    {
+    return GetQuantity(q, propertyAccessString, false, 42);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -409,6 +461,52 @@ ECObjectsStatus IECInstance::ChangeValueOrAdHoc(Utf8CP propertyAccessString, ECV
         }
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q, bool useArrayIndex, uint32_t arrayIndex)
+    {
+    ECPropertyCP prop = GetEnabler().LookupECProperty(propertyAccessString);
+    if (nullptr == prop)
+        return ECObjectsStatus::PropertyNotFound;
+
+    KindOfQuantityCP koq = prop->GetKindOfQuantity();
+    if (nullptr == koq)
+        return ECObjectsStatus::PropertyHasNoKindOfQuantity;
+
+    Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit().GetUnit());
+    if (!converted.ISValid())
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    uint32_t propertyIndex = 0;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    ECValue v(converted.GetMagnitude());
+    status = ChangeValue(propertyIndex, v, useArrayIndex, arrayIndex);
+    if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
+        return ECObjectsStatus::Success;
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q, uint32_t arrayIndex)
+    {
+    return SetQuantity(propertyAccessString, q, true, arrayIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Colin.Kerr         10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::QuantityCR q)
+    {
+    return SetQuantity(propertyAccessString, q, false, 42);
     }
 
 /*---------------------------------------------------------------------------------**//**
