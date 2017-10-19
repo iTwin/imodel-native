@@ -73,7 +73,7 @@ size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-bool canCreateFile(const char* fileName)
+bool canCreateFile(const WChar* fileName)
 {
 	std::ofstream of;
 	of.open(fileName);
@@ -81,7 +81,7 @@ bool canCreateFile(const char* fileName)
 	else
 	{
 		of.close();
-		std::remove(fileName);
+		_wremove(fileName);
 	}
 	return true;
 }
@@ -94,7 +94,7 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
 
 	using namespace ISMStore;
 	BeFileName fileName = BeFileName(filePath);
-	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(fileName.GetNameUtf8().c_str())))
+	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
 	{
 		status = BSIERROR;
 		return 0;
