@@ -25,15 +25,15 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
             ECInstanceUpdater* updater = nullptr;
             for (int i = 0; i < numberOfInstances; i++)
                 {
-                IECInstancePtr instance = ECDbTestUtility::CreateArbitraryECInstance(*testClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-
+                IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+                ECInstancePopulator::Populate(*instance);
                 ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
+                
                 IECInstancePtr updatedInstance;
-
                 if (populateAllProperties)
                     {
                     updatedInstance = instance->CreateCopyThroughSerialization();
-                    ECDbTestUtility::PopulateECInstance(updatedInstance, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+                    ECInstancePopulator::Populate(*updatedInstance);
                     }
                 else
                     {
@@ -73,11 +73,15 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                 DbResult result;
 
                 instance->GetAsMemoryECInstanceP()->MergePropertiesFromInstance(*updatedInstance);
+
                 while ((result = statement.Step()) == BE_SQLITE_ROW)
                     {
                     IECInstancePtr selectedInstance = dataAdapter.GetInstance();
-                    bool equal = ECDbTestUtility::CompareECInstances(*instance, *selectedInstance);
-                    ASSERT_TRUE(equal) << "Updated instance from ecdb not as expected.";
+
+                    Json::Value expectedInstanceJson, selectedInstanceJson;
+                    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedInstanceJson, *instance, nullptr, true));
+                    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(selectedInstanceJson, *selectedInstance, nullptr, true));
+                    ASSERT_EQ(ComparableJsonCppValue(expectedInstanceJson), ComparableJsonCppValue(selectedInstanceJson)) << "Updated instance from ecdb not as expected.";
                     }
                 }
             delete updater;

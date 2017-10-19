@@ -103,9 +103,6 @@
     <ClCompile Include="Published\ECSqlStatementFunctionTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementTestFixture.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlStatementTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -211,9 +208,6 @@
       <Filter>Performance</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECDbPublishedTests.h">
-      <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementTestFixture.h">
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h">

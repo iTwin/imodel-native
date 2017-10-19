@@ -282,8 +282,9 @@ BentleyStatus ECDbTestFixture::PopulateECDb(ECSchemaCR schema, int instanceCount
 
         for (int i = 0; i < instanceCountPerClass; i++)
             {
-            IECInstancePtr ecInstance = ECDbTestUtility::CreateArbitraryECInstance(*ecClass);
-            if (BE_SQLITE_OK != inserter.Insert(*ecInstance))
+            IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstancePopulator::Populate(*instance);
+            if (BE_SQLITE_OK != inserter.Insert(*instance))
                 return ERROR;
             }
         }
