@@ -97,7 +97,6 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
     }
 
-//#if 0 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Mathieu.St-Pierre                 10/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
@@ -122,49 +121,36 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
+        
+    CurlConstructor curlConstructor;
     
-    //TODO MST    
-    //RealityDataServiceTransfer rdsTransfer;
-    CurlConstructor rdsTransfer;
-    //Utf8String token(rdsTransfer.GetToken());
-
-    headers = curl_slist_append(headers, rdsTransfer.GetToken().c_str());
+    headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-
-
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-    //TODO MST
-    //curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
-    
-    //curl_easy_setopt(curl, CURLOPT_CAINFO, "D:\\BSI\\DgnDb06\\out\\Debug\\Winx64\\Product\\ConceptStation\\Bin\\cacert.pem"/*RealityDataService::GetCertificatePath().c_str()*/);
+        
+    HMODULE hm = NULL;
 
-    /*
-    LPWSTR dllDirectory[100000];
-    GetDllDirectoryW(100000, dllDirectory);
-    */
+    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)&WriteCallback,
+        &hm))
+        {
+        assert(!"Cannot get ScalableMesh DLL path");
+        }
 
-
-    HMODULE inst = GetModuleHandle(NULL);
     WCHAR wccwd[FILENAME_MAX];
-    GetModuleFileNameW(inst, &wccwd[0], (DWORD)FILENAME_MAX);
-    BeFileName cwdfn(wccwd);
-    //cwdfn = cwdfn.GetDirectoryName();
+    GetModuleFileNameW(hm, &wccwd[0], (DWORD)FILENAME_MAX);
+    BeFileName cwdfn(wccwd);    
     Utf8String pemFileName(cwdfn.GetDirectoryName().c_str());
     pemFileName.append("\\ScalableMeshCacert.pem");
-
     
-    curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str()/*"\\ScalableMeshCacert.pem"*//*RealityDataService::GetCertificatePath().c_str()*/);
-
+    curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
 
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
-
-//#if 0 
-
-
     
     if (!proxyInfo.m_serverUrl.empty())
         {
@@ -178,7 +164,6 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
             curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
             }
         }
-//#endif
 
     if (nullptr != fp)
         {

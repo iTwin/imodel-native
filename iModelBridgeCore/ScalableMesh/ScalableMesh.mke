@@ -484,9 +484,10 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
-    $(ContextSubpartsLibs)BeCurl.lib
+    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
