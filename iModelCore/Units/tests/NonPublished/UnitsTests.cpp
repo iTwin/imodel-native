@@ -218,7 +218,7 @@ TEST_F (UnitsTests, UnitsMapping)
         guess += i + ", ";
         }
 
-    EXPECT_EQ (101, notMapped.size() ) << guess;
+    EXPECT_EQ (97, notMapped.size() ) << guess;
 
     //Test that all mappings do not use synonmyms
     for(const auto& i : unitNameMap)
@@ -979,7 +979,9 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outpu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 107); // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 103);
+    // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
+    // Down to 103 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -987,7 +989,9 @@ TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 94);// went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 90);
+    // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
+    // Down to 90 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
@@ -1055,6 +1059,25 @@ TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
             }
         ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon: " << unitPhenomenon->GetName() << "Registered units are: " << BeStringUtilities::Join(unitNames, ", ");
         }
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, ApparentPower_Conversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+    TestUnitConversion(1.0, "VA", 1.0e-3, "KVA", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "VA", 1.0e-6, "MVA", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "MVA", 1.0e6, "VA", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "VA", 0.0, "MVA", 1, loadErrors, conversionErrors, handledUnits);
+
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
     }
 
 //---------------------------------------------------------------------------------------//

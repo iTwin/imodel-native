@@ -30,6 +30,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddBasePhenomenon(BasePhenomena::Capita);
     AddBasePhenomenon(BasePhenomena::Ratio);
 
+    AddPhenomenon(APPARENT_POWER, "ELECTRIC_POTENTIAL*CURRENT");
     AddPhenomenon(AREA, "LENGTH(2)");
     AddPhenomenon(VOLUME, "LENGTH(3)");
     AddPhenomenon(VELOCITY, "LENGTH*TIME(-1)");
@@ -53,6 +54,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(POWER, "WORK*TIME(-1)");
     AddPhenomenon(FLOW, "VOLUME*TIME(-1)");
     AddPhenomenon(SURFACE_FLOW_RATE, "FLOW*AREA(-1)");
+    AddPhenomenon(SURFACE_POWER_DENSITY, "POWER*AREA(-1)");
     AddPhenomenon(MASS_FLOW, "MASS*TIME(-1)");
     AddPhenomenon(PARTICLE_FLOW, "MOLE*TIME(-1)");
     AddPhenomenon(DYNAMIC_VISCOSITY, "PRESSURE*TIME"); // TODO: Check

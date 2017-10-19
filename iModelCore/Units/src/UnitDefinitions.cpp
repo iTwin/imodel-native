@@ -433,6 +433,7 @@ void AddSurfaceFlowRate(UnitRegistry& reg)
     reg.AddUnit(SURFACE_FLOW_RATE, METRIC, "CUB.M/(SQ.M*DAY)", "M*DAY(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, METRIC, "CUB.M/(HECTARE*DAY)", "CUB.M*HECTARE(-1)*DAY(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, METRIC, "CUB.M/(SQ.KM*DAY)", "CUB.M*KM(-2)*DAY(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, METRIC, "LITRE/(SQ.M*SEC)", "LITRE*M(-2)*S(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.FT*MIN)", "FT*MIN(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.FT*SEC)", "FT*S(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.MILE*SEC)", "FT(3)*MILE(-2)*S(-1)");
@@ -443,6 +444,11 @@ void AddSurfaceFlowRate(UnitRegistry& reg)
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.FT*DAY)", "GALLON*DAY(-1)*FT(-2)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.MILE*MIN)", "GALLON*MIN(-1)*MILE(-2)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.MILE*DAY)", "GALLON*DAY(-1)*MILE(-2)");
+    }
+
+void AddSurfacePowerDensity(UnitRegistry& reg)
+    {
+    reg.AddUnit(SURFACE_POWER_DENSITY, SI, "WATT/SQ.M", "W*M(2)");
     }
 
 void AddMassRatio(UnitRegistry& reg)
@@ -852,6 +858,12 @@ void AddWarpingConstant(UnitRegistry& reg)
     reg.AddUnit(TORSIONAL_WARPING_CONSTANT, USCUSTOM, "FT^6", "FT(6)");
     }
 
+void AddApparentPower(UnitRegistry& reg)
+    {
+    reg.AddUnit(APPARENT_POWER, SI, "VA", "VOLT*A");
+    reg.AddUnit(APPARENT_POWER, METRIC, "KVA", "[KILO]*VA");
+    reg.AddUnit(APPARENT_POWER, METRIC, "MVA", "[MEGA]*VA");
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -863,19 +875,14 @@ void UnitRegistry::AddDefaultUnits()
     reg.AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
     reg.AddUnitForBasePhenomenon("S", BasePhenomena::Time);
     reg.AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
-    //reg.AddSynonym("K", "KELVIN");
 
     reg.AddUnitForBasePhenomenon("DELTA_KELVIN", BasePhenomena::TemperatureChange);
 
     reg.AddUnitForBasePhenomenon("A", BasePhenomena::ElectricCurrent);
     reg.AddUnitForBasePhenomenon("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
-    //reg.AddSynonym("MOL", "MOLE");
     reg.AddUnitForBasePhenomenon("CD", BasePhenomena::Luminosity);
-    //reg.AddSynonym("CD", "CANDELA");
     reg.AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle);
-    //reg.AddSynonym("RAD", "RADIAN");
     reg.AddUnitForBasePhenomenon("STERAD", BasePhenomena::SolidAngle);
-    //reg.AddSynonym("STERAD", "STERADIAN");
     reg.AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
     reg.AddUnitForBasePhenomenon("PERSON", BasePhenomena::Capita);
     reg.AddUnitForBasePhenomenon("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
@@ -949,6 +956,7 @@ void UnitRegistry::AddDefaultUnits()
     AddSpecificVolume(reg);
     AddWarpingConstant(reg);
     AddVolumeRatio(reg);
+    AddApparentPower(reg);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1069,6 +1077,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("METRE_CUBED_PER_METRE_SQUARED_PER_DAY", "CUB.M/(SQ.M*DAY)");
     AddMapping("METRE_CUBED_PER_HECTARE_PER_DAY", "CUB.M/(HECTARE*DAY)");
     AddMapping("METRE_CUBED_PER_KILOMETRE_SQUARED_PER_DAY", "CUB.M/(SQ.KM*DAY)");
+    AddMapping("LITRE_PER_METRE_SQUARED_PER_SECOND", "LITRE/(SQ.M*SEC)");
     AddMapping("FOOT_CUBED_PER_FOOT_SQUARED_PER_MINUTE", "CUB.FT/(SQ.FT*MIN)");
     AddMapping("FOOT_CUBED_PER_FOOT_SQUARED_PER_SECOND", "CUB.FT/(SQ.FT*SEC)");
     AddMapping("FOOT_CUBED_PER_MILE_SQUARED_PER_SECOND", "CUB.FT/(SQ.MILE*SEC)");
@@ -1335,5 +1344,8 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("HERTZ", "HZ");
     AddMapping("KILOGRAM_PER_KILOGRAM", "KG/KG");
     AddMapping("GRAIN_MASS_PER_POUND_MASS", "GRM/LBM");
+    AddMapping("VOLT_AMPERE", "VA");
+    AddMapping("KILOVOLT_AMPERE", "KVA");
+    AddMapping("MEGAVOLT_AMPERE", "MVA");
 
     }

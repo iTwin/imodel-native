@@ -54,6 +54,7 @@ static Utf8CP const ONE = "ONE";
 static Utf8CP const ANGLE = "ANGLE";
 static Utf8CP const SOLIDANGLE = "SOLIDANGLE";
 
+static Utf8CP const APPARENT_POWER = "APPARENT_POWER";
 static Utf8CP const AREA = "AREA";
 static Utf8CP const VOLUME = "VOLUME";
 static Utf8CP const VELOCITY = "VELOCITY";
@@ -77,6 +78,7 @@ static Utf8CP const WORK = "WORK";
 static Utf8CP const POWER = "POWER";
 static Utf8CP const FLOW = "FLOW";
 static Utf8CP const SURFACE_FLOW_RATE = "SURFACE_FLOW_RATE";
+static Utf8CP const SURFACE_POWER_DENSITY = "SURFACE_POWER_DENSITY";
 static Utf8CP const MASS_FLOW = "MASS_FLOW";
 static Utf8CP const PARTICLE_FLOW = "PARTICLE_FLOW";
 static Utf8CP const DYNAMIC_VISCOSITY = "DYNAMIC_VISCOSITY";
