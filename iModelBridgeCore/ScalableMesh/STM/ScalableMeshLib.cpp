@@ -98,6 +98,28 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     }
 
 ///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Mathieu.St-Pierre               10/2017
+//+---------------+---------------+---------------+---------------+---------------+------*/
+void GetCertificateAutoritiesFileUrl(Utf8String& pemFileName)
+    {
+    HMODULE hm = NULL;
+
+    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)&WriteCallback,
+        &hm))
+        {
+        assert(!"Cannot get ScalableMesh DLL path");
+        }
+
+    WCHAR wccwd[FILENAME_MAX];
+    GetModuleFileNameW(hm, &wccwd[0], (DWORD)FILENAME_MAX);
+    BeFileName cwdfn(wccwd);
+    pemFileName.append(Utf8String(cwdfn.GetDirectoryName().c_str()).c_str());
+    pemFileName.append("\\ScalableMeshCacert.pem");
+    }
+
+///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Mathieu.St-Pierre                 10/2017
 //+---------------+---------------+---------------+---------------+---------------+------*/
 CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8StringCR postFields)
@@ -127,25 +149,15 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-        
-    HMODULE hm = NULL;
+   
+    
+    Utf8String pemFileName;
 
-    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        (LPCSTR)&WriteCallback,
-        &hm))
-        {
-        assert(!"Cannot get ScalableMesh DLL path");
-        }
-
-    WCHAR wccwd[FILENAME_MAX];
-    GetModuleFileNameW(hm, &wccwd[0], (DWORD)FILENAME_MAX);
-    BeFileName cwdfn(wccwd);    
-    Utf8String pemFileName(cwdfn.GetDirectoryName().c_str());
-    pemFileName.append("\\ScalableMeshCacert.pem");
+    GetCertificateAutoritiesFileUrl(pemFileName);
+    
     
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
     
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
@@ -314,6 +326,25 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
         return false;
         }
 
+    ImagePP::HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<ImagePP::HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
+
+    if (pCertAutorityAuth != nullptr)
+        {
+        //std::shared_ptr<ProxyHttpHandler> pProxyConfig(AppSettings::GetSharedPointer()->GetProxyConfig());
+
+        Utf8String pemFileName;
+
+        GetCertificateAutoritiesFileUrl(pemFileName);        
+
+        if (!pemFileName.empty())
+            {
+            pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+            return true;
+            }
+
+        return false;
+        }
+        
     assert(!"Unknown/unsupported HFCAuthentication type");
 
     return false;
