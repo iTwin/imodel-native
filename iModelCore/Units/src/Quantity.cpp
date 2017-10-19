@@ -119,6 +119,10 @@ UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) con
         value = m_magnitude;
         return UnitsProblemCode::NoProblem;
         }
+
+    if (nullptr == m_unit)
+        return UnitsProblemCode::InvalidUnitName;
+
     return m_unit->Convert(value, m_magnitude, unit);
     }
 
