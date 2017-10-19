@@ -117,7 +117,7 @@ Here is a diagram of how the framework and bridges are run by Bentley Automation
 @anchor ANCHOR_BridgeIssuesAndLogging
 <h2>Reporting Issues and Logging Diagnostic Data</h2>
 The bridge can write messages to a specially named "issues" file in the staging directory. See BentleyApi::Dgn::iModelBridge::Params::GetReportFileName.
-The content of the issues file are displayed to the user at the end of the job run. 
+The content of the issues file are displayed to the user at the end of the job run. See BentleyApi::Dgn::iModelBridge::ReportIssue for a convenience function to write to the issues file.
 
 The bridge should use Bentley logging to log detailed information in order to help with the diagnosis of failures. 
 Logging is different from issue reporting. Logging messages are for specialists to read when looking for clues in order to diagnose obscure problems.

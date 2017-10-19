@@ -181,7 +181,6 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
-        L"--fwk-post-process          (optional)  Specify this on the final call, after all root input files have been processed.\n"
 #ifdef COMMENT_OUT // *** we don't plan to support these as direct inputs in the framework BAS GUI
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
         L"--fwk-input-gcs=gcsspec     (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
@@ -305,12 +304,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
 
             m_bridgeRegSubKey = getArgValueW(argv[iArg]);
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-post-process"))
-            {
-            m_isPostProcessingCall = true;
             continue;
             }
 
@@ -1249,12 +1242,8 @@ int iModelBridgeFwk::UpdateExistingBim()
 #endif
 
     //  Now, finally, we can convert data
-    BentleyStatus bridgeCvtStatus;
-    if (!m_jobEnvArgs.m_isPostProcessingCall)
-        bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb);
-    else
-        bridgeCvtStatus = m_bridge->DoPostProcessing(*m_briefcaseDgnDb);
-
+    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
+    
     if (BSISUCCESS != bridgeCvtStatus)
         {
         m_briefcaseDgnDb->AbandonChanges();

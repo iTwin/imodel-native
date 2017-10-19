@@ -603,7 +603,7 @@ void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DwgImporter::_OnRootFilesConverted ()
+BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     {
 #ifdef WIP__OnRootFilesConverted
     For each file in your syncinfo, call IsDocumentAssignedToJob to detect if the file is still assigned to the job.

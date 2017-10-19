@@ -34,7 +34,7 @@ private:
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
-    BentleyStatus _OnRootFilesConverted() override;
+    BentleyStatus _DetectDeletedDocuments() override;
 
 public:
     TiledConverterApp() {}
@@ -136,9 +136,9 @@ SubjectCPtr TiledConverterApp::_InitializeJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledConverterApp::_OnRootFilesConverted()
+BentleyStatus TiledConverterApp::_DetectDeletedDocuments()
     {
-    m_converter->DetectDeletedFiles();
+    m_converter->_DetectDeletedDocuments();
     return BSISUCCESS;
     }
 

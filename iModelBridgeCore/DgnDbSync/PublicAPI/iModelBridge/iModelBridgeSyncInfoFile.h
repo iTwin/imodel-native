@@ -651,7 +651,7 @@ public:
     //! Deletes the syncinfo file
     IMODEL_BRIDGE_EXPORT void _DeleteSyncInfo() override;
     //! Detects and cleans up after deleted documents
-    IMODEL_BRIDGE_EXPORT BentleyStatus _OnRootFilesConverted() override {return DetectDeletedDocuments();}
+    IMODEL_BRIDGE_EXPORT BentleyStatus _DetectDeletedDocuments() override {return DetectDeletedDocuments();}
 
     //! Called when the framework detects that a document has been deleted from the source DMS or at least removed from the job. The subclass should
     //! override this method to delete from the BIM all models and elements that it previously created from data that came from this document.
@@ -682,6 +682,7 @@ public:
     //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"
     //! @param srid Optional. The document scope. Defaults to 0
     //! @see RecordDocumentInSyncInfo, _OnDocumentDeleted
+    //! @note _DetectDeletedDocuments automatically calls this function. You only need to call this function directly if you override _DetectDeletedDocuments and do not call super.
     IMODEL_BRIDGE_EXPORT BentleyStatus DetectDeletedDocuments(Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID());
 
     //! @}

@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define SYNC_TABLE_Item     "item"
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {SetLastError(rc); return BSIERROR;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
@@ -699,6 +699,11 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     auto change = changeDetector._DetectChange(srid, kind, docItem);
     changeDetector._UpdateBimAndSyncInfo(results, change);
 
+    if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged != change.GetChangeType())
+        {
+        LOG.infov(L"[%ls] - document recorded in syncinfo with id=[%ls], rowid=%ld", fileName.c_str(), WString(docItem._GetId().c_str(), true).c_str(), results.m_syncInfoRecord.GetROWID());
+        }
+
     return results;
     }
 
@@ -711,7 +716,6 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
     iterator.GetStatement()->BindText(1, kind, Statement::MakeCopy::No);
     iterator.GetStatement()->BindInt64(2, srid);
     
-    bvector<BeGuid> guids;
     for (auto it : iterator)
         {
         Utf8String docId = it.GetSourceIdentity().GetId();
@@ -720,6 +724,8 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
             continue;                         //  If it does, do nothing.
 
         auto docrid = m_syncInfo.FindRowidBySourceId(iModelBridgeSyncInfoFile::SourceIdentity(srid, kind, docId.c_str()));
+
+        LOG.infov("[%s] - document was deleted. Deleting content converted from it.", docId.c_str());
 
         // Tell the bridge to delete related elements and models in the briefcase
         _OnDocumentDeleted(docId, docrid);
@@ -730,8 +736,8 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
             BeAssert(false && "bridge did not use RecordDocument to record source documents in syncinfo");
             continue;
             }
-        if (BSISUCCESS != m_syncInfo.DeleteAllItemsInScope(docrid)  ||  BSISUCCESS != m_syncInfo.DeleteItem(docrid) )
-            return BSIERROR;
+        m_syncInfo.DeleteAllItemsInScope(docrid);
+        m_syncInfo.DeleteItem(docrid);
         }
 
     return BSISUCCESS;

@@ -114,7 +114,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         {
         bool m_skipAssignmentCheck = false;
         bool m_createRepositoryIfNecessary = false;
-        bool m_isPostProcessingCall = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
         WString m_bridgeRegSubKey;

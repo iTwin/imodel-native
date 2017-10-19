@@ -1479,8 +1479,6 @@ void Converter::_OnConversionComplete()
     else
         OnUpdateComplete();
 
-    ValidateJob();
-
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
 #endif

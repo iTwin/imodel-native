@@ -26,6 +26,9 @@ for (auto& arg: args)\
 int argc = (int)argptrs.size();\
 wchar_t const** argv = argptrs.data();\
 
+static Utf8CP s_fooGuid = "6640b375-a539-4e73-b3e1-2c0ceb912551";
+static Utf8CP s_barGuid = "6640b375-a539-4e73-b3e1-2c0ceb912552";
+
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   04/17
 //=======================================================================================
@@ -112,7 +115,7 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
     SubjectCPtr _FindJob() override {return nullptr;}
     SubjectCPtr _InitializeJob() override {return nullptr;}
     void _DeleteSyncInfo() override {iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());}
-    BentleyStatus _OnRootFilesConverted() override { return BSISUCCESS;}
+    BentleyStatus _DetectDeletedDocuments() override { return BSISUCCESS;}
 
     void DoTests(SubjectCR jobSubject);
 
@@ -696,6 +699,8 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
     {
     WString m_bridgeRegSubKey;
     bmap<BeFileName, iModelBridgeDocumentProperties> m_docPropsByFilename;
+#ifdef WIP_GUID_BINARY
+#endif
     bmap<Utf8String, iModelBridgeDocumentProperties> m_docPropsByGuid;
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override
@@ -731,6 +736,20 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
         return BSISUCCESS;
         }
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void populateRegistryWithFooBar(TestRegistry& testRegistry, WCharCP bridgeRegSubKey)
+    {
+    testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
+    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1");
+    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2");
+    testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
+    testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
+    testRegistry.m_docPropsByGuid[s_fooGuid] = fooDocProps;
+    testRegistry.m_docPropsByGuid[s_barGuid] = barDocProps;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -835,6 +854,8 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelBridgeTests, Test1)
     {
+    auto bridgeRegSubKey = L"iModelBridgeTests_Test1_Bridge";
+
     auto testDir = getiModelBridgeTestsOutputDir(L"Test1");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
@@ -858,6 +879,7 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -870,6 +892,11 @@ TEST_F(iModelBridgeTests, Test1)
     // Register the test bridge that fwk should run
     iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    TestRegistry testRegistry;
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
     if (true)
         {
@@ -946,7 +973,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(L"--fwk-create-repository-if-necessary");        
     args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey below
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
@@ -961,15 +988,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
     TestRegistry testRegistry;
-    testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
-    Utf8CP fooGuid = "6640b375-a539-4e73-b3e1-2c0ceb912551";
-    iModelBridgeDocumentProperties fooDocProps(fooGuid, "wurn1", "durn1", "other1");
-    Utf8CP barGuid = "6640b375-a539-4e73-b3e1-2c0ceb912552";
-    iModelBridgeDocumentProperties barDocProps(barGuid, "wurn2", "durn2", "other2");
-    testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
-    testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
-    testRegistry.m_docPropsByGuid[fooGuid] = fooDocProps;
-    testRegistry.m_docPropsByGuid[barGuid] = barDocProps;
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
@@ -1027,19 +1046,36 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         {
         // now pretend that the document called "bar" was deleted.
         testRegistry.m_docPropsByFilename.erase(BeFileName(L"Bar"));
-        testRegistry.m_docPropsByGuid.erase(barGuid);
+        testRegistry.m_docPropsByGuid.erase(s_barGuid);
 
         testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = true;
-        testBridge.m_expect.docsDeleted.push_back(barGuid);
+        testBridge.m_expect.docsDeleted.push_back(s_barGuid);
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
-        args.push_back(L"--fwk-post-process");
+        // args.push_back(L"--fwk-input=Foo");      specify no input to simulate the edge case
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        // args.pop_back();
+        }
+
+    if (true)
+        {
+        // Run an update with no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
         }
+
     }

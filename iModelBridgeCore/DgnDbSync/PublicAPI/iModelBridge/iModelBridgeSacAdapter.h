@@ -71,8 +71,8 @@ struct iModelBridgeSacAdapter
         bool m_quietAsserts = false;            
         bool m_createStandalone = false;            
         bool m_shouldCompress = false;
-        bool m_isPostProcessingCall = false;
         bool m_isFileAssignedToBridge = true;
+        bool m_detectDeletedFiles = false;
         uint32_t m_compressChunkSize = 0;
         BeFileName m_loggingConfigFile;         
         BeFileName m_dupInputFileName;         
@@ -94,6 +94,8 @@ struct iModelBridgeSacAdapter
         bool ShouldTryUpdate() const {return m_tryUpdate;} //!< Attempt to update existing dgndb, if possible.
         void SetQuietAsserts(bool b) {m_quietAsserts=b;}
         bool GetQuietAsserts() const {return m_quietAsserts;} //!< Write assertion failures to stderr and do not interrupt the converter?
+        void SetDetectDeletedFiles(bool b) {m_detectDeletedFiles=b;}
+        bool GetDetectDeletedFiles() const {return m_detectDeletedFiles;} //!< Invoke the bridge's logic to detect deleted files?
         void SetLoggingConfigFile(BeFileNameCR f) {m_loggingConfigFile=f;} //!< Location of the logging configuration xml file
         BeFileNameCR GetLoggingConfigFile() const {return m_loggingConfigFile;} //!< Location of the logging configuration xml file
         void SetDupInputFileName(BeFileNameCR f) {m_dupInputFileName=f;}
@@ -108,8 +110,6 @@ struct iModelBridgeSacAdapter
         DateTime GetExpirationDate() const {return m_expirationDate;}
         bool ShouldCompress() const {return m_shouldCompress;}
         uint32_t GetCompressChunkSize() const {return m_compressChunkSize;}
-        void SetPostProcessing(bool b) {m_isPostProcessingCall = b;}
-        bool IsPostProcessing() const {return m_isPostProcessingCall;}
         void SetDocumentGuid(BeSQLite::BeGuid const& g) {m_docGuid=g;}
         BeSQLite::BeGuid GetDocumentGuid() const {return m_docGuid;}
 

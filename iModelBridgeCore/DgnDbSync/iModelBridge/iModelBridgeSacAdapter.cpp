@@ -162,7 +162,7 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
 BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Params const& saparams)
     {
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
-    BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
+    BeFileName inputFileName  = bridge._GetParams().GetInputFileName();     // may be empty (in edge case, where only deleted file detection is needed)
 
     DgnDbPtr db;
     if (!outputFileName.DoesPathExist())
@@ -187,12 +187,9 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             return BSIERROR;
             }
 
-        BentleyStatus bstatus;
-        if (!saparams.IsPostProcessing())
-            bstatus = bridge.DoConvertToExistingBim(*db);
-        else
-            bstatus = bridge.DoPostProcessing(*db);
-            
+        BentleyStatus bstatus(BSISUCCESS);
+        bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
+        
         if (BSISUCCESS != bstatus)
             {
             fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
@@ -327,11 +324,15 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "STAND-ALONE-SPECIFIC CONVERTER OPTIONS:\n"
 "--no-assert-dialogs            (optional) Prevents modal assert dialogs\n"
 "--update[=description]         (optional) Causes the converter to update the output file, rather than re-create it.\n"
+"--detect-deleted-files         (optional) Detect deleted files -- specify only if the absence of a file implies that it was deleted.\n"
 "--logging-config-file=         (optional) The name of the logging configuration file.\n"
 "--standalone                   (optional) Create a standalone (user-editable) DgnDb rather than a master DgnDb\n"
 "--compress                     (optional) Additionally compresses the output into an .imodel\n"
 "--description=                 (optional) A string saved as the 'description' property in the DgnDb.\n"
+"--expiration=                  (optional) The expiration date of the file.\n"
 "--job-name=                    (optional) The code for the new job subject when creating a dgndb.\n"
+"--input-guid=                  (optional) The document GUID of the input file.\n"
+"--doc-props=                   (optional) Document properties for the input file (in JSON format).\n"
     );
     }
 
@@ -364,9 +365,9 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (0 == wcscmp(argv[iArg], L"--post-process"))
+    if (0 == wcscmp(argv[iArg], L"--detect-deleted-files"))
         {
-        SetPostProcessing(true);
+        SetDetectDeletedFiles(true);
         return iModelBridge::CmdLineArgStatus::Success;
         }
 

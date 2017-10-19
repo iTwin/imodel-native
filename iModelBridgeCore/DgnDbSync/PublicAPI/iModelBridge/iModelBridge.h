@@ -117,18 +117,35 @@ If the target iModel has a Geographic Coordinate System (GCS), the bridge must t
 Similarly, if the iModel has a global origin, the bridge must subtract off that global origin from the source data as part of the conversion.
 Call DgnDb::GeoLocation::GetDgnGCS to get the details of the iModel's GCS and global origin.
 
-<h2>Post-Processing</h2>
+<h2>Detecting Deleted Documents</h2>
 
-After being called on all spatial root files, a bridge one last time to do any post-processing that may be necessary. This is the time for the bridge to 
-delete deleted files and clean up as appropriate. The sequence of calls for post-processing is:
+A bridge must be able to detect deleted files and clean up the iModel as appropriate. See _DetectDeletedDocuments. The algorithm must be along these lines
+@verbatim
+BentleyStatus SampleBridge::_DetectDeletedDocuments()
+    {
+    auto documentsInSyncInfo = GetSyncInfo().MakeIterator( ... document records ... );
+    
+    for (auto documentInSyncInfo : documentsInSyncInfo)
+        {
+        Utf8String docId = documentInSyncInfo.GetSourceIdentity().GetId();
 
-The framework then makes the following calls on the bridge object:
--# iModelBridge::_Initialize
--# The framework opens the BIM.
--# iModelBridge::_OnConvertToBim
--# iModelBridge::_OnRootFilesConverted
--# DgnDb::SaveChanges
--# The framework attempts to pull, merge, and push.
+        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
+            continue;                         //  If it does, do nothing.
+
+        // Infer that that document was deleted. 
+
+        // Delete related elements and models in the briefcase
+        ...
+
+        // Delete corresponding items from syncinfo
+        GetSyncInfo().DeleteAllItemsInScope(documentInSyncInfo.GetSyncInfoID());
+        GetSyncInfo().DeleteItem(documentInSyncInfo.GetSyncInfoID());
+        }
+
+    return BSISUCCESS;
+    }
+
+@endverbatim
 
 
 <h2>Bridge Assets</h2>
@@ -331,15 +348,11 @@ struct iModelBridge
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
+    //! @param[in] detectDeletedFiles If true, the bridge will also detect deleted files and delete content that was extracted from them.
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBim
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db);
-
-    //! @private
-    //! Do post-processing. This is called after all calls to DoConvertToExistingBim on all spatial roots have been made and have succeeded.
-    //! @return non-zero error status if the bridge cannot post-processing the results. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoPostProcessing(DgnDbR db);
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
 
     //! @}
 
@@ -554,17 +567,20 @@ public:
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
 
+    //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    IMODEL_BRIDGE_EXPORT void ReportIssue(WStringCR);
+
+    //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    IMODEL_BRIDGE_EXPORT void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+
     //! @}
 
     //! @name Post-processing Callbacks
     //! @{
 
-    //! Called after all root files/models have been converted. This function is called in the post-processing scenario.
-    //! This function is called after _Intialize and _OnConvertToBim. Note that _OpenSource is @em not called.
-    //! The bridge should do any post-processing work, including:
-    //! * Detect deleted files and delete all all models and elements in the briefcase that came from deleted files.
+    //! The bridge should detect deleted documents and delete all all models and elements in the briefcase that came from deleted documents.
     //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    virtual BentleyStatus _OnRootFilesConverted() = 0;
+    virtual BentleyStatus _DetectDeletedDocuments() = 0;
 
     //! @}
 

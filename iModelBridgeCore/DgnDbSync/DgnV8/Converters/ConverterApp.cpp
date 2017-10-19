@@ -529,10 +529,10 @@ BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnRootFilesConverted()
+BentleyStatus RootModelConverterApp::_DetectDeletedDocuments()
     {
-    m_converter->DetectDeletedFiles();
-    return BSISUCCESS;
+    m_converter->_DetectDeletedDocuments();
+    return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

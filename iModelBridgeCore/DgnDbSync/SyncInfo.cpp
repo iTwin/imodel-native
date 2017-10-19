@@ -697,6 +697,17 @@ Transform SyncInfo::ModelIterator::Entry::GetTransform()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::DeleteFile(V8FileSyncInfoId filesiid)
+    {
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE ROWID=?");
+    stmt.BindInt64(1, filesiid.GetValue());
+    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::ModelIterator::ModelIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)

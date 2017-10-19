@@ -283,9 +283,9 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DwgBridge::_OnRootFilesConverted()
+BentleyStatus DwgBridge::_DetectDeletedDocuments()
     {
-    return m_importer->_OnRootFilesConverted();
+    return m_importer->_DetectDeletedDocuments();
     }
 
 /*---------------------------------------------------------------------------------**//**

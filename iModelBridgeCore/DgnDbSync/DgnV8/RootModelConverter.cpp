@@ -2226,6 +2226,8 @@ void RootModelConverter::_FinishConversion()
         }
 
     CopyExpirationDate(*m_rootFile);
+
+    ValidateJob();
     }
 
 /*=================================================================================**//**

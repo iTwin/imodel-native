@@ -791,7 +791,13 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
 
     //                                               0               1           2       3
     auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (docGuid=?)");
+#ifdef WIP_GUID_BINARY
     stmt->BindGuid(1, docGuid);
+#else
+    auto guidstr = docGuid.ToString();
+    guidstr.ToLower();
+    stmt->BindText(1, guidstr.c_str(), Statement::MakeCopy::No);
+#endif
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
 

@@ -1967,7 +1967,14 @@ public:
     DGNDBSYNC_EXPORT bool DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileName);
 
     //! Delete all content derived from files that were recorded in syncinfo but not longer exist
-    DGNDBSYNC_EXPORT void DetectDeletedFiles();
+    DGNDBSYNC_EXPORT virtual void _DetectDeletedDocuments();
+
+    //! @private
+    DGNDBSYNC_EXPORT virtual void _DeleteFileAndContents(SyncInfo::V8FileSyncInfoId filesid);
+    //! @private
+    DGNDBSYNC_EXPORT virtual void _DeleteModel(SyncInfo::V8ModelMapping const&);
+    //! @private
+    DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
     //! @}
 };
@@ -2177,6 +2184,9 @@ public:
 
     //! Sets the Params BridgeJobName property
     DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();
+
+    //! Delete all content derived from files that were recorded in syncinfo but not longer exist
+    DGNDBSYNC_EXPORT void _DetectDeletedDocuments() override;
 
     //! @name  Root Model
     //! @{

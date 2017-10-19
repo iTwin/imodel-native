@@ -8,6 +8,7 @@
 #include <iModelBridge/iModelBridge.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
+#include <Bentley/BeTextFile.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -53,6 +54,21 @@ void iModelBridge::Params::SetReportFileName()
     {
     m_reportFileName = GetBriefcaseName();
     m_reportFileName.append(L"-issues");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge::ReportIssue(WStringCR msg)
+    {
+    BeFileStatus status;
+    auto tf = BeTextFile::Open(status, _GetParams().GetReportFileName().c_str(), TextFileOpenType::Append, TextFileOptions::None);
+    if (!tf.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    tf->PutLine(msg.c_str(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,9 +199,9 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
+BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles)
     {
-    BeAssert(!_GetParams().GetInputFileName().empty());
+    bool haveInputFile = !_GetParams().GetInputFileName().empty();
 
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
@@ -202,33 +218,39 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
     //		which need to commit the txn. We cannot commit while in bulk insert mode.
 
     // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, db, true);
+    CallBookmarkFunctions bookMarkFunctions(*this, db, haveInputFile);
     if (!bookMarkFunctions.IsBridgeReady())
         {
         LOG.fatalv("Bridge not ready to update briefcase");
         return BSIERROR;
         }
 
-    //  go into bulk import mode. (Note that any locks and codes required by _OnBimOpen would have to have been acquired immediately, the normal way.)
+    //  go into bulk import mode. (Note that any locks and codes required by _OnConvertToBim would have to have been acquired immediately, the normal way.)
     db.BriefcaseManager().StartBulkOperation();
 
-    SubjectCPtr jobsubj = _FindJob();
-    if (!jobsubj.IsValid())
+    if (haveInputFile)
         {
-        _GetParams().SetIsUpdating(false);
-        jobsubj = _InitializeJob();    // this is probably the first time that this bridge has tried to convert this input file into this iModel
+        SubjectCPtr jobsubj = _FindJob();
         if (!jobsubj.IsValid())
             {
-            LOG.fatalv("Failed to create job structure");
+            _GetParams().SetIsUpdating(false);
+            jobsubj = _InitializeJob();    // this is probably the first time that this bridge has tried to convert this input file into this iModel
+            if (!jobsubj.IsValid())
+                {
+                LOG.fatalv("Failed to create job structure");
+                return BSIERROR;
+                }
+            }
+
+        if (BSISUCCESS != _ConvertToBim(*jobsubj))
+            {
+            LOG.fatalv("_ConvertToBim failed");
             return BSIERROR;
             }
         }
 
-    if (BSISUCCESS != _ConvertToBim(*jobsubj))
-        {
-        LOG.fatalv("_ConvertToBim failed");
-        return BSIERROR;
-        }
+    if (detectDeletedFiles)
+        _DetectDeletedDocuments();
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
     auto response = db.BriefcaseManager().EndBulkOperation();
@@ -242,44 +264,6 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
 
     return BSISUCCESS;
     // Call bridge's _CloseSource and _OnConvertedToBim
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::DoPostProcessing(DgnDbR db)
-    {
-    _GetParams().SetIsCreatingNewDgnDb(false);
-    _GetParams().SetIsUpdating(true);
-
-    CallBookmarkFunctions bookMarkFunctions(*this, db, false); // do not call _OpenSource
-    if (!bookMarkFunctions.IsBridgeReady())
-        {
-        LOG.fatalv("Bridge not ready to post-process briefcase");
-        return BSIERROR;
-        }
-
-    //  go into bulk import mode. (Note that any locks and codes required by _OnBimOpen would have to have been acquired immediately, the normal way.)
-    db.BriefcaseManager().StartBulkOperation();
-
-    if (BSISUCCESS != _OnRootFilesConverted())
-        {
-        LOG.fatalv("_OnRootFilesConverted failed");
-        return BSIERROR;
-        }
-
-    // Must either succeed in getting all required locks and codes ... or abort the whole txn.
-    auto response = db.BriefcaseManager().EndBulkOperation();
-    if (RepositoryStatus::Success != response.Result())
-        {
-        LOG.fatalv("Failed to acquire locks and/or codes with error %x", response.Result());
-        return BSIERROR;
-        }
-
-    bookMarkFunctions.m_updateStatus = BSISUCCESS;
-
-    return BSISUCCESS;
-    // Call bridge's _OnConvertedToBim function
     }
 
 // *******************

@@ -971,7 +971,7 @@ protected:
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
-    DGNDBSYNC_EXPORT virtual BentleyStatus _OnRootFilesConverted();
+    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
 
     //! @name  Creating DgnModels for DWG
     //! @{

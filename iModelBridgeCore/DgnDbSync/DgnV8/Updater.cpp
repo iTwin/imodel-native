@@ -299,6 +299,23 @@ void ChangeDetector::_OnModelSeen(Converter& converter, ResolvedModelMapping con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::_DeleteModel(SyncInfo::V8ModelMapping const& mm)
+    {
+    auto mid = mm.GetModelId();
+    auto msid = mm.GetV8ModelSyncInfoId();
+    LOG.tracev("Delete model %lld", mid.GetValue());
+    auto model = GetDgnDb().Models().GetModel(mid);
+    GetMonitor()._OnModelDelete(*model, mm);
+    model->Delete();
+    GetSyncInfo().DeleteModel(mm.GetV8ModelSyncInfoId());
+
+    if (_WantProvenanceInBim())
+        DgnV8ModelProvenance::Delete(mid, GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelIterator& iter)
@@ -316,19 +333,28 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelI
                 continue;   // we skipped this V8 model, so we don't expect to see it in m_v8ModelsSeen
 
             // not found, delete this model
-            DgnModelId deleteModelId = wasModel.GetModelId();
-            LOG.tracev("Delete model %lld", deleteModelId.GetValue());
-            auto model = converter.GetDgnDb().Models().GetModel(deleteModelId);
-            converter.GetMonitor()._OnModelDelete(*model, wasModel.GetMapping());
-            model->Delete();
-            converter.GetSyncInfo().DeleteModel(wasModel.GetV8ModelSyncInfoId());
-
-            if (converter._WantProvenanceInBim())
-                DgnV8ModelProvenance::Delete(deleteModelId, converter.GetDgnDb());
+            converter._DeleteModel(wasModel.GetMapping());
 
             // Note that DetectDeletedElements will take care of detecting and deleting the elements that were in the V8 model.
             }
         }    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::_DeleteElement(DgnElementId eid)
+    {
+    LOG.tracev("Delete element %lld", eid.GetValue());
+
+    _OnElementBeforeDelete(eid);
+    GetDgnDb().Elements().Delete(eid);
+    GetSyncInfo().DeleteElement(eid);
+
+    if (_WantProvenanceInBim())
+        DgnV8ElementProvenance::Delete(eid, GetDgnDb());
+
+    _OnElementConverted(eid, nullptr, Converter::ChangeOperation::Delete);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,16 +380,7 @@ void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::Elem
 
         // We did not encounter the V8 element that was mapped to this BIM element. We infer that the V8 element 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
-        LOG.tracev("Delete element %lld", previouslyConvertedElementId.GetValue());
-
-        converter._OnElementBeforeDelete(previouslyConvertedElementId);
-        converter.GetDgnDb().Elements().Delete(previouslyConvertedElementId);
-        converter.GetSyncInfo().DeleteElement(previouslyConvertedElementId);
-
-        if (converter._WantProvenanceInBim())
-            DgnV8ElementProvenance::Delete(previouslyConvertedElementId, converter.GetDgnDb());
-
-        converter._OnElementConverted(elementInSyncInfo.GetElementId(), nullptr, Converter::ChangeOperation::Delete);
+        converter._DeleteElement(previouslyConvertedElementId);
         }
     }
 
@@ -407,19 +424,67 @@ bool Converter::DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileN
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/16
+* @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::DetectDeletedFiles()
+void Converter::_DeleteFileAndContents(SyncInfo::V8FileSyncInfoId filesid)
     {
+    SyncInfo::ModelIterator modelsInFile(GetDgnDb(), "V8FileSyncInfoId=?");
+    modelsInFile.GetStatement()->BindInt(1, filesid.GetValue());
+    for (auto wasModel : modelsInFile)
+        {
+        SyncInfo::ElementIterator elementsInModel(GetDgnDb(), "v8ModelSyncInfoId=?");
+        elementsInModel.GetStatement()->BindUInt64(1, wasModel.GetV8ModelSyncInfoId().GetValue());
+
+        for (auto wasElement : elementsInModel)
+            {
+            _DeleteElement(wasElement.GetElementId());
+            }
+
+        _DeleteModel(wasModel.GetMapping());
+        }
+
+    GetSyncInfo().DeleteFile(filesid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::_DetectDeletedDocuments()
+    {
+    if (!IsUpdating())
+        return;
+
     SyncInfo::FileIterator files(GetDgnDb(), nullptr);
     for (auto file = files.begin(); file != files.end(); ++file)
         {
         if (!DoesDocumentExist(file.GetUniqueName(), file.GetV8Name()))
             {
-            SyncInfo::ModelIterator modelsInFile(GetDgnDb(), "V8FileSyncInfoId=?");
-            modelsInFile.GetStatement()->BindInt(1, file.GetV8FileSyncInfoId().GetValue());
-            GetChangeDetector()._DetectDeletedModels(*this, modelsInFile);
+            _DeleteFileAndContents(file.GetV8FileSyncInfoId());
             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::_DetectDeletedDocuments()
+    {
+    if (!IsUpdating())
+        return;
+
+    bool isDeleteOnly = false;
+    if (!_HaveChangeDetector())
+        {
+        isDeleteOnly = true;                // handle edge case where the converter is called *only* to detect deleted documents.
+        _SetChangeDetector(true);           // treat this like a normal conversion, except that there is no input document, and no job subject.
+        _OnConversionStart();
+        }
+
+    T_Super::_DetectDeletedDocuments();
+
+    if (isDeleteOnly)
+        {
+        _OnConversionComplete();
         }
     }
 

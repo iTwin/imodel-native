@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
