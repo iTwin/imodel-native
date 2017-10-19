@@ -115,7 +115,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAt
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     bool legacyMode = false;
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // legacyMode = false
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), legacyMode);
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
