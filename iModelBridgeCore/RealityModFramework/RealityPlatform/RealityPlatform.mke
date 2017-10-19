@@ -67,7 +67,7 @@ $(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)
 
 $(o)GeoCoordinationService$(oext) : $(baseDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
 
-#$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp $(PublicApiDir)RealityDataServiceConsole.h ${MultiCompileDepends}
+$(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

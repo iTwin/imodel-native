@@ -79,7 +79,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelationType() const;
     REALITYDATAPLATFORM_EXPORT void SetRelationType(Utf8StringCR relationType);
     
-private:
+protected:
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship(Json::Value jsonInstance);
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship();
     Utf8String m_realityDataId;
@@ -131,7 +131,7 @@ public:
     //! Cannot be set. Computed based on the file content in the service
     REALITYDATAPLATFORM_EXPORT uint64_t GetSize() const;
 
-private:
+protected:
     REALITYDATAPLATFORM_EXPORT RealityDataDocument(Json::Value jsonInstance);
     REALITYDATAPLATFORM_EXPORT RealityDataDocument();
     Utf8String m_containerName;
@@ -172,7 +172,7 @@ public:
     //! The parent id. The parent id is implied in the id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetParentId() const;
 
-private:
+protected:
     REALITYDATAPLATFORM_EXPORT RealityDataFolder(Json::Value jsonInstance);
     REALITYDATAPLATFORM_EXPORT RealityDataFolder();
     Utf8String m_id;

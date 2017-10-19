@@ -197,6 +197,13 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
             m_parentId = jsonInstance["properties"]["ParentFolderId"].asCString();
         }
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2017
+//-------------------------------------------------------------------------------------
+RealityDataFolder::RealityDataFolder()
+    {}
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
