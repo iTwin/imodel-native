@@ -1210,12 +1210,12 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-bool FormatUnitSet::IsComparable(BEU::QuantityCR qty)
+bool FormatUnitSet::IsComparable(BEU::QuantityCR qty) const
     {
     return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
     }
 
-bool FormatUnitSet::IsUnitComparable(Utf8CP unitName)
+bool FormatUnitSet::IsUnitComparable(Utf8CP unitName) const
     {
      BEU::UnitCP unit =  BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
      return Utils::AreUnitsComparable(unit, m_unit);
