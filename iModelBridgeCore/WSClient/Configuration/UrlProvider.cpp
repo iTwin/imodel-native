@@ -266,10 +266,10 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         {
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
-        {
+            {
             LOG.errorv("URL '%s' is not configured", urlName.c_str());
             return url;
-        }
+            }
         Json::Value record;
         record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         record[RECORD_Url] = url;
