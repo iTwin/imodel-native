@@ -153,7 +153,8 @@ private:
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
     BentleyStatus UpdateBimVerticalAlignment(ProfileCR,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
-    BentleyStatus ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
+    BentleyStatus ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
+        iModelBridgeSyncInfoFile::ROWID fileScopeId);
 
 public:
     static ORDAlignmentsConverterPtr Create(DgnDbSync::DgnV8::ConverterLibrary& converterLib)
@@ -162,7 +163,7 @@ public:
         }
 
     AlignmentBim::AlignmentModelR GetAlignmentModel() const { return *m_bimAlignmentModelPtr; }
-    BentleyStatus ConvertAlignment(AlignmentCR cifAlignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
+    BentleyStatus ConvertAlignment(AlignmentCR cifAlignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId);
 }; // ORDAlignmentsConverter
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,7 +409,7 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {
     Bentley::WString activeProfileId;
     auto activeProfilePtr = cifAlignment.GetActiveProfile();
@@ -423,7 +424,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
             continue;
 
         CifProfileSourceItem profileItem(*cifProfilePtr);
-        auto profileChange = changeDetector._DetectChange(iModelBridgeSyncInfoFile::ROWID(), profileItem.Kind(), profileItem);
+        auto profileChange = changeDetector._DetectChange(fileScopeId, profileItem.Kind(), profileItem);
 
         AlignmentBim::VerticalAlignmentCPtr verticalAlignmCPtr;
         if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == profileChange.GetChangeType())
@@ -456,12 +457,12 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {
     CifAlignmentSourceItem sourceItem(cifAlignment);
 
     // only convert an Alignment if it is new or has changed in the source
-    auto change = changeDetector._DetectChange(iModelBridgeSyncInfoFile::ROWID(), sourceItem.Kind(), sourceItem);
+    auto change = changeDetector._DetectChange(fileScopeId, sourceItem.Kind(), sourceItem);
 
     AlignmentBim::AlignmentCPtr alignmentCPtr;
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
@@ -482,7 +483,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment,
     if (alignmentCPtr.IsNull())
         alignmentCPtr = AlignmentBim::Alignment::Get(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
 
-    return ConvertProfiles(cifAlignment, *alignmentCPtr, changeDetector);
+    return ConvertProfiles(cifAlignment, *alignmentCPtr, changeDetector, fileScopeId);
     }
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ORDCorridorsConverter)
@@ -521,7 +522,7 @@ private:
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewRoadway(CorridorCR cifCorridor,
-        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
+        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
     BentleyStatus UpdateRoadway(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
     BentleyStatus AssignRoadwayGeomStream(CorridorCR cifCorridor, RoadRailBim::RoadwayR roadway);
@@ -533,7 +534,7 @@ public:
         }
 
     Dgn::PhysicalModelR GetPhysicalModel() const { return *m_bimPhysicalModelPtr; }
-    BentleyStatus ConvertCorridor(CorridorCR cifCorridor, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector);
+    BentleyStatus ConvertCorridor(CorridorCR cifCorridor, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId);
 }; // ORDCorridorsConverter
 
 /*---------------------------------------------------------------------------------**//**
@@ -609,6 +610,7 @@ BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorri
 BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     CorridorCR cifCorridor, 
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
+    iModelBridgeSyncInfoFile::ROWID fileScopeId,
     iModelBridgeSyncInfoFile::ChangeDetector::Results const& change)
     {
     auto roadwayPtr = RoadRailBim::Roadway::Create(*m_bimPhysicalModelPtr);
@@ -623,7 +625,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     if (cifAlignmentPtr.IsValid () && cifAlignmentPtr->IsFinalElement())
         {
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
-        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(iModelBridgeSyncInfoFile::ROWID(), alignmentItem.Kind(), alignmentItem._GetId());
+        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
         auto iterator = changeDetector.GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
@@ -667,12 +669,12 @@ BentleyStatus ORDCorridorsConverter::UpdateRoadway(CorridorCR cifCorridor,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {
     CifCorridorSourceItem sourceItem(cifCorridor);
 
     // only convert a Corridor if it is new or has changed in the source
-    auto change = changeDetector._DetectChange(iModelBridgeSyncInfoFile::ROWID(), sourceItem.Kind(), sourceItem);
+    auto change = changeDetector._DetectChange(fileScopeId, sourceItem.Kind(), sourceItem);
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
         {
         changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
@@ -680,7 +682,7 @@ BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, iMo
         }
 
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
-        return CreateNewRoadway(cifCorridor, changeDetector, change);
+        return CreateNewRoadway(cifCorridor, changeDetector, fileScopeId, change);
 
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
         return UpdateRoadway(cifCorridor, changeDetector, change);
@@ -692,7 +694,7 @@ BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, iMo
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& geomModel, DgnDbSync::DgnV8::ConverterLibrary& converterLib,
-    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {    
     ORDAlignmentsConverterPtr alignmentsConvPtr;
 
@@ -706,7 +708,7 @@ void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& g
         if (alignmentsConvPtr.IsNull())
             alignmentsConvPtr = ORDAlignmentsConverter::Create(converterLib);
 
-        alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, changeDetector);
+        alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, changeDetector, fileScopeId);
         }
     }
 
@@ -714,7 +716,7 @@ void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& g
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::ConvertCorridors(GeometryModel::SDK::GeometricModel const& geomModel, DgnDbSync::DgnV8::ConverterLibrary& converterLib,
-    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {
     ORDCorridorsConverterPtr corridorsConvPtr;
 
@@ -731,7 +733,7 @@ void ORDConverter::ConvertCorridors(GeometryModel::SDK::GeometricModel const& ge
             corridorsConvPtr = ORDCorridorsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*dgnModelP));
             }
 
-        corridorsConvPtr->ConvertCorridor(*corridorPtr, changeDetector);
+        corridorsConvPtr->ConvertCorridor(*corridorPtr, changeDetector, fileScopeId);
         }
     }
 
@@ -758,7 +760,7 @@ Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, ModelId rootModelId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId)
     {
     DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;    
     DgnDbSync::DgnV8::ConverterLibrary converterLib(subject.GetDgnDb(), converterLibraryParams);
@@ -808,8 +810,8 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
                     dgnFileSet.insert(currentDgnFileP);
                     }
 
-                ConvertAlignments(*geomModelPtr, converterLib, changeDetector);
-                ConvertCorridors(*geomModelPtr, converterLib, changeDetector);
+                ConvertAlignments(*geomModelPtr, converterLib, changeDetector, fileScopeId);
+                ConvertCorridors(*geomModelPtr, converterLib, changeDetector, fileScopeId);
                 }
             }
 

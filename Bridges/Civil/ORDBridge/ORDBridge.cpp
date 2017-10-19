@@ -113,8 +113,14 @@ SubjectCPtr ORDBridge::_InitializeJob()
     if (!jobSubject.IsValid())
         return nullptr;
 
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
+    auto repositoryLinkId = docLink.m_element->GetElementId();
+
     AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_AlignmentModelName);
     RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_PhysicalModelName);
+
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, ORDBRIDGE_PhysicalModelName);
+    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
 
     return jobSubject;
     }
@@ -154,8 +160,11 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
+    auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
+
     ORDConverter converter;
-    converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
+    converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr, fileScopeId);
 
     auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
@@ -167,7 +176,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
 
     // Infer deletions
-    changeDetectorPtr->_DeleteElementsNotSeen();
+    changeDetectorPtr->DeleteElementsNotSeenInScope(fileScopeId);
 
     return BentleyStatus::SUCCESS;
     }
@@ -190,7 +199,7 @@ void ORDBridge::AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    diego.diaz                      07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDBridge::_OnSourceFileDeleted()
+void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId)
     {
     // TODO
     }

@@ -45,7 +45,7 @@ public:
     virtual BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     virtual Dgn::SubjectCPtr _InitializeJob() override;
     virtual Dgn::SubjectCPtr _FindJob() override;
-    virtual void _OnSourceFileDeleted() override;
+    virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
 
     ORDBridge() {}
 };
