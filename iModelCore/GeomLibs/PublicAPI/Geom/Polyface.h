@@ -1140,7 +1140,7 @@ PolyfaceHeaderCR polyfaceB,             //!< [in] lower surface of upper geometr
 IPolyfaceVisitorFilter *filterB,        //!< [in] optional filter object
 PolyfaceHeaderPtr &polyfaceAOverB,      //!< [out] parts of polyfaceA that are over polyfaceB
 PolyfaceHeaderPtr &polyfaceBUnderA,      //!< [out] parts of polyfaceB that are over polyfaceA
-bool computeAndApplyTransform = false       //!< [in] if true, compute a transform to move data to the origin.
+bool computeAndApplyTransform = true     //!< [in] if true, compute a transform to move data to the origin.
 );
 template <typename T>
 struct AnnotatedMesh
@@ -1209,7 +1209,7 @@ PolyfaceQueryCR target, //!< [in] facets to be split by the punch.
 PolyfaceHeaderPtr *inside,  //!< [out] (target intersect punch)
 PolyfaceHeaderPtr *outside,  //!< [out] (target outsideOf punch)
 PolyfaceHeaderPtr *debugMesh = nullptr,  //!< [inout] debug output
-bool computeAndApplyTransform = false       //!< [in] if true, compute a transform to move data to the origin.
+bool computeAndApplyTransform = true     //!< [in] if true, compute a transform to move data to the origin.
 );
 
 
@@ -2044,7 +2044,7 @@ PolyfaceHeaderPtr &hider,   //!< [in] mesh that might hid part of hidable.
 PolyfaceHeaderPtr &hidable, //!< [in] mesh that might be partially hidden
 PolyfaceHeaderPtr &meshBVisible,    //!< [out] visible parts of the hidable mesh
 PolyfaceHeaderPtr &meshBHidden,      //!< [out] hidden parts of the hidable mesh
-bool computeAndApplyTransform = false       //!< [in] if true, compute a transform to move data to the origin.
+bool computeAndApplyTransform = true //!< [in] if true, compute a transform to move data to the origin.
 );
 
 //< Compute pairwise hidden-visible splits, and replace each input mesh by its visible parts.
