@@ -179,22 +179,30 @@ struct Context
 using namespace TileTreePublish;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static folly::Future<BentleyStatus> requestTile(Context context)
+{
+    if (context.m_inputTile->_HasChildren() && context.m_inputTile->IsNotLoaded())
+    {
+        std::shared_ptr<RenderSystem> renderSystem = std::make_shared<RenderSystem>(*context.m_outputTile, context.m_clip);
+        TileTree::TileLoadStatePtr loadState;
+        return context.m_requestTileQueue->Push([=]()
+        {
+            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get());
+        });
+    }
+        
+    return SUCCESS;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static TileGenerator::FutureGenerateTileResult generateParentTile (Context context)
     {
-    RenderSystem*   renderSystem = new RenderSystem(*context.m_outputTile, context.m_clip);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
-    {
-        TileTree::TileLoadStatePtr loadState;
-        return (context.m_inputTile->_HasChildren() && context.m_inputTile->IsNotLoaded()) ? 
-            context.m_requestTileQueue->Push([=]()context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem)) : SUCCESS;
-        })
-    .then([=](BentleyStatus status)
+    return requestTile(context).then([=](BentleyStatus status)
         {
-        delete renderSystem;
-
         if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 
