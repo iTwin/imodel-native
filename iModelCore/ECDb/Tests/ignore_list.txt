@@ -9,6 +9,5 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
-# @affan
+# @krischan
 ECSqlStatementTestFixture.InsertWithStructBinding
-ECSqlStatementTestFixture.RowConstructor

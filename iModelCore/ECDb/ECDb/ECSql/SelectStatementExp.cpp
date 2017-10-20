@@ -752,10 +752,14 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         }
     else
         {
-        ctx.PopArg();
-        m_finalizeParsingArgCache.clear();
-        return FinalizeParseStatus::Completed;
+        if (!IsRowConstructor())
+            {
+            ctx.PopArg();
+            m_finalizeParsingArgCache.clear();
+            }
         }
+
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
