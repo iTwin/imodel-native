@@ -2259,16 +2259,15 @@ public:
     MeshPolyline () : m_startDistance(0.0) { }
     MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
     MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     float GetStartDistance() const { return m_startDistance; }
     FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
-
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
 };
-
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017

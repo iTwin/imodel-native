@@ -1050,6 +1050,12 @@ private:
     {
         using Type = Render::Primitives::Mesh::PrimitiveType;
 
+        // For mapping indices in mesh edges to indices in new mesh.
+        // Key = old index (from cache)
+        // Value = new index (if changed) or -1 (if vertex no longer exists)
+        // Index values which did not change are not included in map
+        using IndexMap = bmap<uint32_t, uint32_t>;
+
         uint32_t            m_numIndices;
         uint32_t            m_numVertices;
         DisplayParamsCPtr   m_displayParams;
@@ -1060,11 +1066,17 @@ private:
         FPoint2d const*     m_params;
         bvector<uint32_t>   m_colorsByIndex;
         BufferView16        m_colorIndices;
+        IndexMap            m_indexMap;
         Type                m_type;
         bool                m_isPlanar;
 
         OctEncodedNormalCP GetNormal(size_t index) const { return nullptr != m_normals ? reinterpret_cast<OctEncodedNormalCP>(m_normals+index) : nullptr; }
         FPoint2d const* GetParam(size_t index) const { return nullptr != m_params ? m_params+index : nullptr; }
+        uint32_t RemapIndex(uint32_t oldIndex) const
+            {
+            auto iter = m_indexMap.find(oldIndex);
+            return m_indexMap.end() != iter ? iter->second : oldIndex;
+            }
     };
 
     Render::Primitives::MeshBuilderMapR m_builders;
@@ -1091,11 +1103,15 @@ private:
     BufferView32 ReadMeshIndices(uint32_t& numIndices, Json::Value const& json) { return ReadBufferView32(json, "indices", &numIndices); }
     FPoint2d const* ReadParams(Json::Value const&);
     uint16_t const* ReadNormals(Json::Value const&);
-    void AddMesh(MeshPrimitive const& mesh);
+    void AddMesh(MeshPrimitive& mesh, Json::Value const&);
     uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
 
     void AddPolylines(MeshPrimitive const&, Json::Value const& json);
     Polyline ReadPolyline(void const*& pData, bool useShortIndices); // increments pData past the end of the polyline
+
+    void AddMeshEdges(MeshPrimitive const& mesh, Json::Value const& json);
+    void AddPolylineEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
+    void AddSilhouetteEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
 public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
@@ -1199,9 +1215,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Js
                 }
 
             mesh.m_params = ReadParams(json);
-            // ###TODO: Edges...
-
-            AddMesh(mesh);
+            AddMesh(mesh, json); // also adds edges...
             break;
             }
         case MeshPrimitive::Type::Point:
@@ -1267,8 +1281,10 @@ FPoint2d const* DgnCacheTileRebuilder::ReadParams(Json::Value const& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitive const& mesh, uint32_t index, FeatureCR feature)
+uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitive const& mesh, uint32_t indexIndex, FeatureCR feature)
     {
+    uint32_t index = mesh.m_indices[indexIndex];
+
     QPoint3dCR pos = mesh.m_vertices[index];
     uint16_t colorIdx = mesh.m_colorIndices[index];
     uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
@@ -1282,7 +1298,7 @@ uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitiv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCacheTileRebuilder::AddMesh(MeshPrimitive const& mesh)
+void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json)
     {
     BeAssert(MeshPrimitive::Type::Mesh == mesh.m_type);
 
@@ -1292,17 +1308,54 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive const& mesh)
     MeshBuilderR builder = m_builders[key];
     for (uint32_t i = 0; i < mesh.m_numIndices; i += 3)
         {
+        uint32_t i0, i1, i2;
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
         if (nullptr == feature)
-            continue;
-
-        uint32_t i0 = AddMeshVertex(builder, mesh, i, *feature);
-        uint32_t i1 = AddMeshVertex(builder, mesh, i+1, *feature);
-        uint32_t i2 = AddMeshVertex(builder, mesh, i+2, *feature);
-        builder.AddTriangle(Triangle(i0, i1, i2, false));
+            {
+            // -1 indicates this vertex no longer exists.
+            i0 = i1 = i2 = -1;
+            }
+        else
+            {
+            i0 = AddMeshVertex(builder, mesh, i, *feature);
+            i1 = AddMeshVertex(builder, mesh, i+1, *feature);
+            i2 = AddMeshVertex(builder, mesh, i+2, *feature);
+            builder.AddTriangle(Triangle(i0, i1, i2, false));
+            }
+        
+        if (i0 != index)
+            {
+            // If indices changed, map old to new index so we can remap edge indices later
+            mesh.m_indexMap.Insert(index, i0);
+            mesh.m_indexMap.Insert(mesh.m_indices[1], i1);
+            mesh.m_indexMap.Insert(mesh.m_indices[2], i2);
+            }
         }
+
+    AddMeshEdges(mesh, json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddMeshEdges(MeshPrimitive const& mesh, Json::Value const& primJson)
+    {
+    auto edgesJson = primJson["edges"];
+    if (edgesJson.isNull())
+        return;
+
+    // AddMesh() has removed any vertices belonging to features to be excluded from the reconstituted mesh;
+    // and has populated a mapping from old to new indices (with -1 == removed).
+    // All we need to do for edges is skip those which have been removed, and remap the indices of the rest.
+    MeshEdgesPtr edges = new MeshEdges();
+    AddPolylineEdges(*edges, mesh, edgesJson);
+    AddSilhouetteEdges(*edges, mesh, edgesJson);
+
+    // ###TODO: Overlooking some edges?? See:
+    //  DgnCacheTileWriter::CreateMeshEdges() - adds as "visibles"
+    //  GltfReader::ReadMeshEdges() - does not look for "visibles"
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1372,6 +1425,79 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
         uint16_t colorIdx = mesh.m_colorIndices[firstIndex];
         uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
         builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddPolylineEdges(MeshEdgesR edges, MeshPrimitive const& mesh, Json::Value const& json)
+    {
+    BufferView view = GetBufferView(json, "polylines");
+    if (!view.IsValid())
+        return;
+
+    bool useShortIndices = GLTF_UNSIGNED_SHORT == view.type;
+    BeAssert(useShortIndices || GLTF_UINT32 == view.type);
+
+    void const* pData = view.pData;
+    bvector<uint32_t> newIndices;
+    for (size_t i = 0; i < view.count; i++)
+        {
+        Polyline polyline = ReadPolyline(pData, useShortIndices);
+        if (polyline.m_header.m_numIndices == 0)
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        // If any vertex was removed, the entire polyline edge was removed...
+        uint32_t newFirstIndex = mesh.RemapIndex(polyline.m_indices[0]);
+        if (-1 == newFirstIndex)
+            continue;
+
+        newIndices.resize(polyline.m_header.m_numIndices);
+        newIndices[0] = newFirstIndex;
+        for (uint32_t i = 1; i < polyline.m_header.m_numIndices; i++)
+            newIndices[i] = mesh.RemapIndex(polyline.m_indices[i]);
+
+        MeshPolyline mpl(polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter, std::move(newIndices));
+        edges.m_polylines.push_back(std::move(mpl));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddSilhouetteEdges(MeshEdgesR edges, MeshPrimitive const& mesh, Json::Value const& edgesJson)
+    {
+    auto json = edgesJson["silhouettes"];
+    if (json.isNull())
+        return;
+
+    uint32_t numIndices;
+    BufferView32 indexView = ReadBufferView32(json, "indices", &numIndices);
+    if (!indexView.IsValid() || 0 == numIndices)
+        return;
+
+    // If any vertex was removed, the entire silhouette was removed...
+    uint32_t newFirstIndex = mesh.RemapIndex(indexView[0]);
+    if (-1 == newFirstIndex)
+        return;
+
+    if (SUCCESS != ReadNormalPairs(edges.m_silhouetteNormals, json, "normalPairs"))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    // m_silhouettes is a list of MeshEdge, which is a pair of indices...
+    edges.m_silhouette.resize(numIndices/2);
+    edges.m_silhouette[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
+    for (uint32_t i = 0; i < edges.m_silhouette.size(); i++)
+        {
+        uint32_t baseIndex = i * 2;
+        edges.m_silhouette[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
         }
     }
 
