@@ -21,6 +21,20 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 BEGIN_TILEREADER_NAMESPACE
 
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct BufferView
+{
+    void const* pData = nullptr;
+    size_t      count;
+    size_t      byteLength;
+    uint32_t    type;
+    Json::Value accessor;
+
+    bool IsValid() const { return nullptr != pData; }
+};
+
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2017
 +===============+===============+===============+===============+===============+======*/
@@ -37,10 +51,11 @@ struct GltfReader
 
     GltfReader(StreamBufferR buffer, DgnModelR model, Render::System& renderSystem) : m_buffer(buffer), m_model(model), m_renderSystem(renderSystem) { }
 
+    void Increment(void const*& in, size_t size) { in = (uint8_t const*) in + size; }
     void CopyAndIncrement(void* out, void const*& in, size_t size)
         {
-        memcpy (out, in, size);
-        in = (uint8_t const*) in + size;
+        memcpy(out, in, size);
+        Increment(in, size);
         }
 
     virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
@@ -51,6 +66,7 @@ struct GltfReader
 
     BentleyStatus GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bufferView, Json::Value const& rootValue, const char* accessorName);
     BentleyStatus GetBufferView (void const*& pData, size_t& count, size_t& byteLength, uint32_t& type, Json::Value& accessor, Json::Value const& primitiveValue, Utf8CP accessorName);
+    BufferView GetBufferView(Json::Value const& json, Utf8CP accessorName);
 
     BentleyStatus ReadIndices(bvector<uint32_t>& indices, Json::Value const& primitiveValue, Utf8CP accessorName);
     BentleyStatus ReadMeshIndices(MeshR mesh, Json::Value const& primitiveValue);
@@ -114,6 +130,17 @@ BentleyStatus GltfReader::GetBufferView (void const*& pData, size_t& count, size
     type = accessor["componentType"].asUInt();
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BufferView GltfReader::GetBufferView(Json::Value const& json, Utf8CP accessorName)
+    {
+    BufferView view;
+    auto stat = GetBufferView(view.pData, view.count, view.byteLength, view.type, view.accessor, json, accessorName);
+    BeAssert((SUCCESS == stat) == (view.IsValid()));
+    return view;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -993,8 +1020,30 @@ private:
         bvector<Entry>  m_entries;
 
         TileIO::ReadStatus Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems);
-        FeatureCR GetFeature(uint32_t index) const { BeAssert(index < m_entries.size()); return m_entries[index].m_feature; }
         bool RejectFeature(uint32_t index) const { BeAssert(index < m_entries.size()); return m_entries[index].m_omit; }
+
+        // Returns nullptr if the feature is to be excluded
+        FeatureCP GetFeature(uint32_t index) const
+            {
+            BeAssert(index < m_entries.size());
+            auto const& entry = m_entries[index];
+            return entry.m_omit ? nullptr : &entry.m_feature;
+            }
+    };
+
+    struct PolylineHeader
+    {
+        float           m_startDistance;
+        FPoint3d        m_rangeCenter;
+        uint32_t        m_numIndices;
+    };
+
+    struct Polyline
+    {
+        PolylineHeader  m_header;
+        BufferView32    m_indices;
+
+        bool IsValid() const { return m_indices.IsValid(); }
     };
 
     struct MeshPrimitive
@@ -1044,6 +1093,9 @@ private:
     uint16_t const* ReadNormals(Json::Value const&);
     void AddMesh(MeshPrimitive const& mesh);
     uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
+
+    void AddPolylines(MeshPrimitive const&, Json::Value const& json);
+    Polyline ReadPolyline(void const*& pData, bool useShortIndices); // increments pData past the end of the polyline
 public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
@@ -1154,7 +1206,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Js
             }
         case MeshPrimitive::Type::Point:
         case MeshPrimitive::Type::Polyline:
-            // ###TODO
+            AddPolylines(mesh, json);
             break;
         default:
             BeAssert(false && "Invalid mesh primitive type");
@@ -1202,19 +1254,29 @@ uint16_t const* DgnCacheTileRebuilder::ReadNormals(Json::Value const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FPoint2d const* DgnCacheTileRebuilder::ReadParams(Json::Value const& json)
     {
-    auto params = json["attributes"]["TEXCOORD_0"];
-    void const* pData;
-    size_t count, byteLen;
-    uint32_t type;
-    Json::Value accessor;
-
-    if (SUCCESS == GetBufferView(pData, count, byteLen, type, accessor, json["attributes"], "TEXCOORD_0"))
+    BufferView view = GetBufferView(json["attributes"], "TEXCOORD_0");
+    if (view.IsValid())
         {
-        BeAssert(GLTF_FLOAT == accessor["componentType"].asInt());
-        return reinterpret_cast<FPoint2d const*>(pData);
+        BeAssert(GLTF_FLOAT == view.accessor["componentType"].asInt());
+        return reinterpret_cast<FPoint2d const*>(view.pData);
         }
 
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitive const& mesh, uint32_t index, FeatureCR feature)
+    {
+    QPoint3dCR pos = mesh.m_vertices[index];
+    uint16_t colorIdx = mesh.m_colorIndices[index];
+    uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
+    OctEncodedNormalCP normal = mesh.GetNormal(index);
+    FPoint2dCP param = mesh.GetParam(index);
+
+    VertexKey key(pos, feature, fillColor, normal, param);
+    return builder.AddVertex(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1232,13 +1294,13 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive const& mesh)
         {
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
-        FeatureList::Entry const& featEntry = m_featureList.m_entries[featureId];
-        if (featEntry.m_omit)
+        FeatureCP feature = m_featureList.GetFeature(featureId);
+        if (nullptr == feature)
             continue;
 
-        uint32_t i0 = AddMeshVertex(builder, mesh, i, featEntry.m_feature);
-        uint32_t i1 = AddMeshVertex(builder, mesh, i+1, featEntry.m_feature);
-        uint32_t i2 = AddMeshVertex(builder, mesh, i+2, featEntry.m_feature);
+        uint32_t i0 = AddMeshVertex(builder, mesh, i, *feature);
+        uint32_t i1 = AddMeshVertex(builder, mesh, i+1, *feature);
+        uint32_t i2 = AddMeshVertex(builder, mesh, i+2, *feature);
         builder.AddTriangle(Triangle(i0, i1, i2, false));
         }
     }
@@ -1246,16 +1308,71 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive const& mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitive const& mesh, uint32_t index, FeatureCR feature)
+DgnCacheTileRebuilder::Polyline DgnCacheTileRebuilder::ReadPolyline(void const*& pData, bool useShortIndices)
     {
-    QPoint3dCR pos = mesh.m_vertices[index];
-    uint16_t colorIdx = mesh.m_colorIndices[index];
-    uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
-    OctEncodedNormalCP normal = mesh.GetNormal(index);
-    FPoint2dCP param = mesh.GetParam(index);
+    static_assert(sizeof(PolylineHeader) == sizeof(float)+sizeof(FPoint3d)+sizeof(uint32_t), "Unexpected sizeof");
 
-    VertexKey key(pos, feature, fillColor, normal, param);
-    return builder.AddVertex(key);
+    Polyline polyline;
+    CopyAndIncrement(&polyline.m_header, pData, sizeof(polyline.m_header));
+    polyline.m_indices = BufferView32(pData, useShortIndices);
+
+    size_t indexSize = useShortIndices ? sizeof(uint16_t) : sizeof(uint32_t);
+    Increment(pData, indexSize * polyline.m_header.m_numIndices);
+
+    return polyline;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value const& json)
+    {
+    BeAssert(MeshPrimitive::Type::Mesh != mesh.m_type);
+
+    BufferView view = GetBufferView(json, "indices");
+    if (!view.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    bool useShortIndices = GLTF_UNSIGNED_SHORT == view.type;
+    BeAssert(useShortIndices || GLTF_UINT32 == view.type);
+
+    // Add line/point strings, skipping those which belong to excluded features
+    bvector<QPoint3d> points;
+    MeshBuilderMap::Key key(*mesh.m_displayParams, false, mesh.m_type, mesh.m_isPlanar);
+    MeshBuilderR builder = m_builders[key];
+
+    void const* pData = view.pData;
+    for (size_t i = 0; i < view.count; i++)
+        {
+        Polyline polyline = ReadPolyline(pData, useShortIndices);
+        if (polyline.m_header.m_numIndices == 0)
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        // The feature ID will be the same for each individual point/line string...
+        uint32_t firstIndex = polyline.m_indices[0];
+        uint32_t featureId = mesh.m_features.GetFeatureId(firstIndex);
+        FeatureCP feature = m_featureList.GetFeature(featureId);
+        if (nullptr == feature)
+            continue;
+
+        points.resize(polyline.m_header.m_numIndices);
+        for (size_t j = 0; j < polyline.m_header.m_numIndices; j++)
+            {
+            uint32_t vertIdx = polyline.m_indices[j];
+            points[j] = mesh.m_vertices[vertIdx];
+            }
+
+        // Fill color will also be the same for all vertices
+        uint16_t colorIdx = mesh.m_colorIndices[firstIndex];
+        uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
+        builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1280,20 +1397,16 @@ bvector<uint32_t> DgnCacheTileRebuilder::ReadColorIndex(Json::Value const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCacheTileRebuilder::BufferView32 DgnCacheTileRebuilder::ReadBufferView32(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount)
     {
-    void const* pData;
-    size_t bufCount, bufByteLength;
-    uint32_t type;
-    Json::Value accessor;
-
-    if (SUCCESS != GetBufferView(pData, bufCount, bufByteLength, type, accessor, json, accessorName))
+    BufferView view = GetBufferView(json, accessorName);
+    if (!view.IsValid())
         return BufferView32();
 
     if (nullptr != pCount)
-        *pCount = static_cast<uint32_t>(bufCount);
+        *pCount = static_cast<uint32_t>(view.count);
 
-    bool isShort = GLTF_UNSIGNED_SHORT == type;
-    BeAssert(isShort || GLTF_UINT32 == type);
-    return BufferView32(pData, isShort);
+    bool isShort = GLTF_UNSIGNED_SHORT == view.type;
+    BeAssert(isShort || GLTF_UINT32 == view.type);
+    return BufferView32(view.pData, isShort);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1301,20 +1414,16 @@ DgnCacheTileRebuilder::BufferView32 DgnCacheTileRebuilder::ReadBufferView32(Json
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCacheTileRebuilder::BufferView16 DgnCacheTileRebuilder::ReadBufferView16(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount)
     {
-    void const* pData;
-    size_t bufCount, bufByteLength;
-    uint32_t type;
-    Json::Value accessor;
-
-    if (SUCCESS != GetBufferView(pData, bufCount, bufByteLength, type, accessor, json, accessorName))
+    BufferView view = GetBufferView(json, accessorName);
+    if (!view.IsValid())
         return BufferView16();
 
     if (nullptr != pCount)
-        *pCount = static_cast<uint32_t>(bufCount);
+        *pCount = static_cast<uint32_t>(view.count);
 
-    bool isByte = GLTF_UNSIGNED_BYTE == type;
-    BeAssert(isByte || GLTF_UNSIGNED_SHORT == type);
-    return BufferView16(pData, isByte);
+    bool isByte = GLTF_UNSIGNED_BYTE == view.type;
+    BeAssert(isByte || GLTF_UNSIGNED_SHORT == view.type);
+    return BufferView16(view.pData, isByte);
     }
 
 /*---------------------------------------------------------------------------------**//**

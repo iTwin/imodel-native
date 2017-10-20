@@ -962,6 +962,21 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter)
+    {
+    MeshPolyline newPolyline(startDistance, rangeCenter);
+    for (auto const& point : points)
+        {
+        VertexKey key(point, feature, fillColor, nullptr, nullptr);
+        newPolyline.GetIndices().push_back(AddVertex(key));
+        }
+
+    m_mesh->AddPolyline(newPolyline);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::AddPolyline(MeshPolylineCR polyline) 
