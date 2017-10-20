@@ -72,74 +72,108 @@
 #define AEC_KOQ_LUMINOUS_FLUX                 "LUMINOUS_FLUX"
 #define AEC_KOQ_ILLUMINANCE                   "ILLUMINANCE"
 #define AEC_KOQ_LUMINOUS_INTENSITY            "LUMINOUS_INTENSITY"
+#define AEC_KOQ_VELOCITY                      "VELOCITY"
+#define AEC_KOQ_FREQUENCY                     "FREQUENCY"
+#define AEC_KOQ_THERMAL_RESISTANCE            "THERMAL_RESISTANCE"
 
 
-#define AEC_UNIT_DEG                           "ARC_DEG"
-#define AEC_UNIT_RAD                           "RAD"
+// Angular Units
+#define AEC_UNIT_DEG                                        "ARC_DEG"
+#define AEC_UNIT_RAD                                        "RAD"
 
-#define AEC_UNIT_MM                            "MM"
-#define AEC_UNIT_IN                            "IN"
-#define AEC_UNIT_M                             "M"
-#define AEC_UNIT_FT                            "FT"
+// Length Units
+#define AEC_UNIT_MM                                         "MM"
+#define AEC_UNIT_IN                                         "IN"
+#define AEC_UNIT_M                                          "M"
+#define AEC_UNIT_FT                                         "FT"
 
-#define AEC_UNIT_SQ_MM                         "SQ.MM"
-#define AEC_UNIT_SQ_IN                         "SQ.IN"
-#define AEC_UNIT_SQ_M                          "SQ.M"
-#define AEC_UNIT_SQ_FT                         "SQ.FT"
+// Area Units
+#define AEC_UNIT_SQ_MM                                      "SQ.MM"
+#define AEC_UNIT_SQ_IN                                      "SQ.IN"
+#define AEC_UNIT_SQ_M                                       "SQ.M"
+#define AEC_UNIT_SQ_FT                                      "SQ.FT"
 
-#define AEC_UNIT_CUB_MM                        "CUB.MM"
-#define AEC_UNIT_CUB_IN                        "CUB.IN"
-#define AEC_UNIT_CUB_M                         "CUB.M"
-#define AEC_UNIT_CUB_FT                        "CUB.FT"
-#define AEC_UNIT_CUB_YRD                       "CUB.YRD"
-#define AEC_UNIT_LITRE                         "LITRE"
-//#define AEC_UNIT_ML                            "LITRE/1000"
-#define AEC_UNIT_GAL                           "GALLON"
+// Volume Units
+#define AEC_UNIT_CUB_MM                                     "CUB.MM"
+#define AEC_UNIT_CUB_IN                                     "CUB.IN"
+#define AEC_UNIT_CUB_M                                      "CUB.M"
+#define AEC_UNIT_CUB_FT                                     "CUB.FT"
+#define AEC_UNIT_CUB_YRD                                    "CUB.YRD"
+#define AEC_UNIT_LITRE                                      "LITRE"
+//#define AEC_UNIT_ML                                       "LITRE/1000"
+#define AEC_UNIT_GAL                                        "GALLON"
 
-#define AEC_UNIT_PSI                           "PSI"
-#define AEC_UNIT_PSIG                          "PSIG"
-#define AEC_UNIT_PA                            "PA"
-#define AEC_UNIT_PAG                           "PA_GAUGE"
+// Pressure Units
+#define AEC_UNIT_PSI                                        "PSI"
+#define AEC_UNIT_PSIG                                       "PSIG"
+#define AEC_UNIT_PA                                         "PA"
+#define AEC_UNIT_PAG                                        "PA_GAUGE"
 
-#define AEC_UNIT_CELSIUS                       "CELSIUS"
-#define AEC_UNIT_FAHRENHEIT                    "FAHRENHEIT"
-#define AEC_UNIT_KELVIN                        "K"
+// Temperature Units
+#define AEC_UNIT_CELSIUS                                    "CELSIUS"
+#define AEC_UNIT_FAHRENHEIT                                 "FAHRENHEIT"
+#define AEC_UNIT_KELVIN                                     "K"
 
+// Weight Units
+#define AEC_UNIT_G                                          "G"
+#define AEC_UNIT_KG                                         "KG"
+#define AEC_UNIT_LBM                                        "LBM"
 
-#define AEC_UNIT_G                             "G"
-#define AEC_UNIT_KG                            "KG"
-#define AEC_UNIT_LBM                           "LBM"
+// Current Units
+#define AEC_UNIT_AMP                                        "A"
 
-#define AEC_UNIT_AMP                           "A"
-
-#define AEC_UNIT_LBF                           "LBF"
-#define AEC_UNIT_N                             "N"
-#define AEC_UNIT_KN                            "KN"
-#define AEC_UNIT_KIP                           "KIPF"
-
-
-#define AEC_UNIT_W                             "W"
-#define AEC_UNIT_KW                            "KW"
-#define AEC_UNIT_MEGAW                         "MEGAW"
-#define AEC_UNIT_BTU_PER_HOUR                  "BTU/HR"
-#define AEC_UNIT_HP                            "HP"
-
-#define AEC_UNIT_CUB_M_PER_SEC                 "CUB.M/SEC"
-#define AEC_UNIT_LITRE_PER_MIN                 "LITRE/MIN"
-#define AEC_UNIT_CUB_FT_PER_MIN                "CUB.FT/MIN"
-#define AEC_UNIT_GALLON_PER_MIN                "GALLON/MIN"
-
-#define AEC_UNIT_VOLT                          "VOLT"
-#define AEC_UNIT_KILOVOLT                      "KILOVOLT"
-#define AEC_UNIT_MEGAVOLT                      "MEGAVOLT"
-
-#define AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN           "W/(SQ.M*K)"
-#define AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS           "W/(SQ.M*CELSIUS)"
-#define AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT    "BTU/(SQ.FT*HR*FAHRENHEIT)"
-
-#define AEC_UNIT_LUMEN                                  "LUMEN"
-#define AEC_UNIT_LUX                                    "LUX"
-#define AEC_UNIT_LUMEN_PER_SQUARE_FEET                  "LUMEN/SQ.FT"
-#define AEC_UNIT_CANDELA                                "CD"
+// Force Units
+#define AEC_UNIT_LBF                                        "LBF"
+#define AEC_UNIT_N                                          "N"
+#define AEC_UNIT_KN                                         "KN"
+#define AEC_UNIT_KIP                                        "KIPF"
 
 
+// Power Units
+#define AEC_UNIT_W                                          "W"
+#define AEC_UNIT_KW                                         "KW"
+#define AEC_UNIT_MEGAW                                      "MEGAW"
+#define AEC_UNIT_BTU_PER_HOUR                               "BTU/HR"
+#define AEC_UNIT_HP                                         "HP"
+
+// Flow Units
+#define AEC_UNIT_CUB_M_PER_SEC                              "CUB.M/SEC"
+#define AEC_UNIT_LITRE_PER_MIN                              "LITRE/MIN"
+#define AEC_UNIT_CUB_FT_PER_MIN                             "CUB.FT/MIN"
+#define AEC_UNIT_GALLON_PER_MIN                             "GALLON/MIN"
+
+// Electrical Potential Units
+#define AEC_UNIT_VOLT                                       "VOLT"
+#define AEC_UNIT_KILOVOLT                                   "KILOVOLT"
+#define AEC_UNIT_MEGAVOLT                                   "MEGAVOLT"
+
+//  Heat Transfer Units
+#define AEC_UNIT_WATT_PER_SQUARE_METER_KELVIN               "W/(SQ.M*K)"
+#define AEC_UNIT_WATT_PER_SQUARE_METER_CELIUS               "W/(SQ.M*CELSIUS)"
+#define AEC_UNIT_BTU_PER_SQUARE_FEET_HOUR_FAHRENHEIT        "BTU/(SQ.FT*HR*FAHRENHEIT)"
+
+//  Luminous Flux Units
+#define AEC_UNIT_LUMEN                                      "LUMEN"
+
+// Illuminance Units
+#define AEC_UNIT_LUX                                        "LUX"
+#define AEC_UNIT_LUMEN_PER_SQUARE_FEET                      "LUMEN/SQ.FT"
+
+// Luminous Intensity Units
+#define AEC_UNIT_CANDELA                                    "CD"
+
+// Velocity Units
+#define AEC_UNIT_M_PER_SEC                                  "M/SEC"
+#define AEC_UNIT_FT_PER_SEC                                 "FT/SEC"
+#define AEC_UNIT_MPH                                        "MPH"
+#define AEC_UNIT_KMPH                                       "KM/HR"
+
+// Frequency Units
+#define AEC_UNIT_HZ                                         "HZ"
+#define AEC_UNIT_KHZ                                        "KHZ"
+#define AEC_UNIT_MHZ                                        "MHZ"
+
+// Thermal Resistance Units
+#define AEC_UNIT_SQUARE_METER_KELVIN_PER_WATT               "(SQ.M*KELVIN)/WATT"
+#define AEC_UNIT_SQUARE_METER_CELIUS_PER_WATT               "(SQ.M*CELSIUS)/WATT"
+#define AEC_UNIT_SQUARE_FEET_HOUR_FAHRENHEIT_PER_BTU        "(SQ.FT*HR*FAHRENHEIT)/BTU"
