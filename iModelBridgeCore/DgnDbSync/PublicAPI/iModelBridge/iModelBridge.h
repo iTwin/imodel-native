@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <Bentley/Bentley.h>
+#include <Bentley/SHA1.h>
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
@@ -58,15 +59,17 @@ A bridge must be @ref ANCHOR_BridgeLoading "implemented by a shared library", an
 
 Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
-Here is a summary of the process that is conducted by the framework. The process shown here is for the case of a bridge doing an incremental update.
-The process of creating a new BIM is essentially similar. The differences are noted below.
+<h2>Data Conversion</h2>
+
+Here is a summary of the process that is conducted by the framework when running bridges to convert data, starting from a spatial root file. 
+The process shown here is for the case of a bridge doing an incremental update. The process of creating a new BIM is essentially similar. The differences are noted below.
 
 -# The framework first registers the DgnPlatformLib::Host
 -# The framework signs into iModelHub and gets access to the specified iModel
 -# The framework acquires a briefcse from iModelHub, if necessary, and pulls and merges revisions to make sure it is up to date.
 -# The framework @ref ANCHOR_BridgeLoading "loads the bridge dll specified for the job and asks it to create a bridge object".
 The framework then makes the following calls on the bridge object:
--# iModelBridge::_ParseCommandLine
+-# iModelBridge::_ParseCommandLine (standalone converters only)
 -# iModelBridge::_Initialize
 -# The framework opens the BIM.
     -# The framework calls BentleyApi::Dgn::DgnDomains::ImportSchemas, if necessary, in order to ensure that the domains
@@ -96,7 +99,7 @@ but no revision was created on the iModelHub. The framework will retry the pullm
 If pullmergepush succeeds, then a new revision containing the BIM conversion results is on the iModelHub
 and may be downloaded by other briefcases.
 
-<h2>Creating a New Repository</h2>
+<h3>Creating a New Repository</h3>
 
 The bridge framework may create a new repository. As far as the bridge is concerned, the process is the same as
 that described above, specifically the case where the bridge does an initial full conversion. There will be two
@@ -114,6 +117,37 @@ If the target iModel has a Geographic Coordinate System (GCS), the bridge must t
 Similarly, if the iModel has a global origin, the bridge must subtract off that global origin from the source data as part of the conversion.
 Call DgnDb::GeoLocation::GetDgnGCS to get the details of the iModel's GCS and global origin.
 
+<h2>Detecting Deleted Documents</h2>
+
+A bridge must be able to detect deleted files and clean up the iModel as appropriate. See _DetectDeletedDocuments. The algorithm must be along these lines
+@verbatim
+BentleyStatus SampleBridge::_DetectDeletedDocuments()
+    {
+    auto documentsInSyncInfo = GetSyncInfo().MakeIterator( ... document records ... );
+    
+    for (auto documentInSyncInfo : documentsInSyncInfo)
+        {
+        Utf8String docId = documentInSyncInfo.GetSourceIdentity().GetId();
+
+        if (IsDocumentAssignedToJob(docId))   // This is how to check if the document still exists.
+            continue;                         //  If it does, do nothing.
+
+        // Infer that that document was deleted. 
+
+        // Delete related elements and models in the briefcase
+        ...
+
+        // Delete corresponding items from syncinfo
+        GetSyncInfo().DeleteAllItemsInScope(documentInSyncInfo.GetSyncInfoID());
+        GetSyncInfo().DeleteItem(documentInSyncInfo.GetSyncInfoID());
+        }
+
+    return BSISUCCESS;
+    }
+
+@endverbatim
+
+
 <h2>Bridge Assets</h2>
 The bridge's assets are in the directory identified by iModelBridge::Params::GetAssetsDir.
 The bridge's assets are separate from the framework's assets. The DgnPlatformLib::Host::IKnownLocationsAdmin::GetDgnPlatformAssetsDirectory points to the assets of the framework, not the bridge.
@@ -125,15 +159,10 @@ A bridge must define its own translatable string tables using the IMODELBRIDGEFX
 
 @anchor ANCHOR_Provenance
 <h2>Provenance</h2>
-An iModelBridge is responsible for storing provenance data that relates the elements and models in the iModel to information in the source documents.
-Currently, the only required provenance is model to document. Provenance at the element level is currently optional.
+An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
+Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
 
-If a bridge tracks a file in its syncinfo, it should use the document GUID rather than the filename as the key. To get the document GUID, do this:
-@verbatim
-iModelBridgeDocumentProperties docProps;
-    if (nullptr != _GetParams().GetDocumentPropertiesAccessor())
-        _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
-@endverbatim
+If a bridge tracks a file in its syncinfo, it should use the document GUID, if available, rather than the filename as the key. See iModelBridge::QueryDocumentGuid.
 
 <h3>PartitionOriginatesFromRepository</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
@@ -188,18 +217,24 @@ struct iModelBridge
     //! Interface implemented by an agent that can get the document properties associated with a local file and can check of a file is assigned to a specified bridge
     struct IDocumentPropertiesAccessor
         {
-        // Check if the specified file is assigned to the specified bridge.
+        //! Check if the specified file is assigned to the specified bridge.
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
         //! @return true if the specified bridge should convert the specified file
-        // *** NEEDS WORK: Should probably use and check relative paths
         virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
 
-        // Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
+        //! Get the URN and other properties for a document from the host document control system (e.g., ProjectWise)
         //! @param[in] fn   The name of the file that is to be converted
         //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
-        // *** NEEDS WORK: Should probably use and check relative paths
-        virtual void _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
+        //! @return non-zero error status if doc properties could not be found for this file.
+        virtual BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) = 0;
+
+        //! Look up a document's properties by its document GUID. 
+        //! @param[out] props Properties that may be assigned to a document by its home document control system (DCS)
+        //! @param[out] localFilePath The local filepath of the staged document
+        //! @param[in] docGuid  The document's GUID in its home DCS
+        //! @return non-zero error status if the GUID is not in the table of registered documents.
+        virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
         };
 
     //! Parameters that are common to all bridges.
@@ -272,8 +307,20 @@ struct iModelBridge
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
+        void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
-        IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
+
+	    //! Check if a document is assigned to this job or not.
+        //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
+	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;
+
+	    //! Check if the specified file is assigned to this bridge or not.
+	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
+
+	    //! Get the document GUID for the specified file, if available.
+	    //! @param localFileName    The filename of the source file.
+	    //! @return the document GUID, if available.
+	    IMODEL_BRIDGE_EXPORT BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const;
         };
 
     private:
@@ -301,10 +348,11 @@ struct iModelBridge
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
+    //! @param[in] detectDeletedFiles If true, the bridge will also detect deleted files and delete content that was extracted from them.
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBim
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db);
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
 
     //! @}
 
@@ -337,10 +385,13 @@ public:
     //! in order to see the correct values.
     virtual Params& _GetParams() = 0;
 
+    Params const& GetParamsCR() const {return const_cast<iModelBridge*>(this)->_GetParams();}
+
     //! Print a message describing command line arguments
     virtual void _PrintUsage() {}
 
     //! Parse an individual command line argument. This is the way to handle bridge-specific arguments.
+    //! @note standalone converters only
     //! @param iarg the index of the command line argument to be parsed
     //! @param argc the number of command line arguments
     //! @param argv the command line arguments
@@ -349,6 +400,7 @@ public:
 
     //! The bridge should parse any bridge-specific command-line arguments. The framework takes care of the standard
     //! bridge command-line arguments. Note that the BIM is not yet open.
+    //! @note standalone converters only
     //! @note The bridge should @em em attempt to open the BIM.
     //! @param argc the number of command line arguments
     //! @param argv the command line arguments
@@ -379,7 +431,7 @@ public:
     //! <p>This function is called after _ParseCommandLine, _Initialize, and _OpenSyncInfo. It is called right after the
     //! framework opens the BIM. It is called after domains are imported.
     //! <p>The bridge should wait for the call to _FindJob/_InitializeJob before creating elements or models in the BIM.
-    //! @param db   The BIM or local DgnDb that will be updates
+    //! @param db   The BIM or local DgnDb that is being updated
     //! @return non-zero error status if the bridge cannot perform the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _OnConvertedToBim, _FindJob, _InitializeJob, _ConvertToBim
     //! @note _OnConvertToBim is called @em before domains and schemas are imported.
@@ -449,11 +501,6 @@ public:
     //! @see _OnConvertToBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
 
-    //! Called when the framework detects that a input file has been removed from the job and is presumably deleted in the ProjectWise source.
-    //! The bridge should delete all models and elements in the briefcase that came from this file.
-    //! @note In this scenario, the framework calls _Initialize and then this function. None of the other conversion-related setup functions are called.
-    virtual void _OnSourceFileDeleted() = 0;
-
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
@@ -464,10 +511,23 @@ public:
     //! @name Document Properties Helper Functions
     //! @{
 
+    //! Check if a document is assigned to this job or not.
+    //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
+    bool IsDocumentAssignedToJob(Utf8StringCR docId) const {return GetParamsCR().IsDocumentAssignedToJob(docId);}
+
+    //! Check if the specified file is assigned to this bridge or not.
+    bool IsFileAssignedToBridge(BeFileNameCR fn) const {return GetParamsCR().IsFileAssignedToBridge(fn);}
+
+    //! Get the document GUID for the specified file, if available.
+    //! @param localFileName    The filename of the source file.
+    //! @return the document GUID, if available.
+    BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const {return GetParamsCR().QueryDocumentGuid(localFileName);}
+
     // @private
     IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
 
-    //! Insert or update a RepositoryLink Element refers to a specified source file. 
+    // @private
+    //! Make a RepositoryLink Element that refers to a specified source file. 
     //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file. 
     //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found, 
     //! the CodeValue for the RepositoryLink Element will be set to the document's GUID, and the element's URI property will be set to the document's URN.
@@ -477,9 +537,14 @@ public:
     //! @param localFileName    The filename of the source file.
     //! @param defaultCode      The CodeValue to use if a document GUID cannot be found
     //! @param defaultURN       The URN to use if no URN can be found
-    //! @param queryOnly        If true, this function only checks to see if a RepositoryLink element is already in the briefcase. 
-    //! @return The ElementId of the RepositoryLink element in the briefcase or an invalid ID if none could be found or created.
-    IMODEL_BRIDGE_EXPORT static DgnElementId WriteRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool queryOnly = false);
+    //! @return An editable RepositoryLink element. It will have a valid DgnElementId if a RepositoryLink Element with the same code already exists in db.
+    IMODEL_BRIDGE_EXPORT static RepositoryLinkPtr MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN);
+
+    // @private
+    IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, LinkModelR lmodel);
+    // @private
+    IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 
     //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
     IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
@@ -502,7 +567,23 @@ public:
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
 
+    //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    IMODEL_BRIDGE_EXPORT void ReportIssue(WStringCR);
+
+    //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    IMODEL_BRIDGE_EXPORT void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+
     //! @}
+
+    //! @name Post-processing Callbacks
+    //! @{
+
+    //! The bridge should detect deleted documents and delete all all models and elements in the briefcase that came from deleted documents.
+    //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    virtual BentleyStatus _DetectDeletedDocuments() = 0;
+
+    //! @}
+
     };
 
 //=======================================================================================

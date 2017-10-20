@@ -308,11 +308,10 @@ Utf8String SyncInfo::GetUniqueName(WStringCR fullFileName)
     //  the unique names of the files must be unaffected.
 
     // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
-    iModelBridgeDocumentProperties docProps;
-    GetConverter().GetDocumentProperties(docProps, BeFileName(fullFileName));
-    if (!docProps.m_docGUID.empty())
+    BeGuid docGuid = GetConverter().GetParams().QueryDocumentGuid(BeFileName(fullFileName));
+    if (docGuid.IsValid())
         {
-        Utf8String lguid(docProps.m_docGUID);
+        Utf8String lguid = docGuid.ToString();
         lguid.ToLower();
         return lguid;
         }
@@ -695,6 +694,17 @@ Transform SyncInfo::ModelIterator::Entry::GetTransform()
     Transform t;
     memcpy(&t, m_sql->GetValueBlob(5), sizeof(t));
     return t;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::DeleteFile(V8FileSyncInfoId filesiid)
+    {
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE ROWID=?");
+    stmt.BindInt64(1, filesiid.GetValue());
+    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

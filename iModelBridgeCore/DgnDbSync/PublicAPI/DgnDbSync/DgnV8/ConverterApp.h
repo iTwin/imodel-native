@@ -97,7 +97,7 @@ protected:
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
-    void _OnSourceFileDeleted() override;
+    BentleyStatus _DetectDeletedDocuments() override;
 
 public:
     RootModelConverterApp()

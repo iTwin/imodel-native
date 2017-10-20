@@ -25,6 +25,26 @@ USING_NAMESPACE_DWGDB
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
+enum class DwgFileVersion
+    {
+    Invalid = -2,   // Not a DWG version at all
+    Newer   = -1,   // A newer version not currently supported
+    Unknown = 0,    // An old version not known to us but can potentially open
+    R2_5    = 1,
+    R2_6    = 2,
+    R9      = 3,
+    R10     = 4,
+    R11     = 5,
+    R13     = 6,
+    R14     = 7,
+    R2000   = 8,
+    R2004   = 9,
+    R2007   = 10,
+    R2010   = 11,
+    R2013   = 12,
+    MAX     = R2013
+    };  // DwgFileVersion
+
 struct DwgHelper : NonCopyableClass
     {
     DGNDBSYNC_EXPORT static StandardUnit     GetStandardUnitFromDwgUnit (DwgDbUnits const& dwgUnit);
@@ -60,6 +80,10 @@ struct DwgHelper : NonCopyableClass
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform = nullptr);
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbObjectId entityId, TransformCP transform = nullptr);
     DGNDBSYNC_EXPORT static ClipVectorPtr    CreateClipperFromEntity (DwgDbObjectId entityId, double* frontClip = nullptr, double* backClip = nullptr, TransformCP entityToClipper = nullptr, TransformCP clipperToModel = nullptr);
+    DGNDBSYNC_EXPORT static DwgFileVersion   CheckDwgVersionString (Utf8StringCR versionString);
+    DGNDBSYNC_EXPORT static Utf8String       GetStringFromDwgVersion (DwgFileVersion dwgVersion);
+    DGNDBSYNC_EXPORT static bool             SniffDwgFile (BeFileNameCR dwgName, DwgFileVersion* versionOut = nullptr);
+    DGNDBSYNC_EXPORT static bool             SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOut = nullptr);
     };  // DwgHelper
 
 END_DGNDBSYNC_DWG_NAMESPACE

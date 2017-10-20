@@ -43,11 +43,12 @@ $(o)DwgBridge.obj       : $(baseDir)DwgBridge.cpp $(DwgImportAppDepends) ${Multi
 
 %include MultiCppCompileGo.mki
 
-LINKER_LIBRARIES    = $(ContextDeliveryDir)DwgImporter.lib
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge.lib
+LINKER_LIBRARIES    = $(ContextDeliveryDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
 
-LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley.lib
-LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

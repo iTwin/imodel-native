@@ -10,6 +10,7 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/BeFileName.h>
+#include <BeSQLite/BeSQLite.h>
 
 #ifndef BEGIN_BENTLEY_DGN_NAMESPACE
   #define BEGIN_BENTLEY_DGN_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
@@ -22,17 +23,21 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! Properties that may be assigned to a document by its home document control system (DCS).
 struct iModelBridgeDocumentProperties
     {
-    Utf8String m_docGUID; //!< The GUID assigned to the document
+    Utf8String m_docGuid; //!< The GUID assigned to the document
     Utf8String m_webURN; //!< The URN to use when referring to this document over the Internet
     Utf8String m_desktopURN; //!< The URN to use when referring to this document from a desktop program
     Utf8String m_otherPropertiesJSON; //!< Other properties of the document, in JSON format
+
+    iModelBridgeDocumentProperties() {}
+    iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_otherPropertiesJSON(o) {}
     };
 
 struct IModelBridgeRegistry : IRefCounted
     {
     virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
     virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) = 0;
-    virtual void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) = 0;
+    virtual BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) = 0;
+    virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
     };
 
 //! The bridge's affinity to some source file.

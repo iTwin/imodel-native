@@ -646,6 +646,10 @@ public:
     //! @param[in] v8FileName  the name of the file on disk
     //! @param[in] uniqueName       the key that identifies the file in sync info
     DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR v8FileName);
+
+    //! @private
+    BentleyStatus DeleteFile(V8FileSyncInfoId);
+
     //! @}
 
     //! @name V8 Models

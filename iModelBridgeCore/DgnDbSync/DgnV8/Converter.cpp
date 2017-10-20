@@ -169,9 +169,38 @@ DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
     Utf8String codevalue, uri;
     ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
 
-    auto rlinkId = iModelBridge::WriteRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue, uri);
-    BeAssert(rlinkId.IsValid());
-    return rlinkId;
+    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue.c_str(), uri.c_str());
+
+    auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());
+    if (rlinkPersist.IsValid())
+        {
+        auto hashNew = iModelBridge::ComputeRepositoryLinkHash(*rlink);
+        auto hashOld = iModelBridge::ComputeRepositoryLinkHash(*rlinkPersist);
+        if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
+            {
+            // If the link hasn't changed, then don't request locks or write to the BIM.
+            return rlink->GetElementId();
+            }
+        }
+
+    if (!GetDgnDb().BriefcaseManager().IsBulkOperation())
+        {
+        // Request locks and codes explicity. That is because a bridge can possibly create a RepositoryLink in one of its callbacks
+        // such as _OpenSource that is called before we go into bulk insert mode.
+        IBriefcaseManager::Request req;
+        rlink->PopulateRequest(req, (rlink->GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+        GetDgnDb().BriefcaseManager().Acquire(req).Result();
+        }
+
+    auto rlinkPost = rlink->GetElementId().IsValid()? rlink->Update(): rlink->Insert();
+
+    if (!rlinkPost.IsValid())
+        {
+        _OnFatalError();
+        return DgnElementId();
+        }
+
+    return rlinkPost->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1449,8 +1478,6 @@ void Converter::_OnConversionComplete()
         OnCreateComplete();
     else
         OnUpdateComplete();
-
-    ValidateJob();
 
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
