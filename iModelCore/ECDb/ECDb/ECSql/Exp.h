@@ -410,7 +410,6 @@ struct Exp : NonCopyableClass
 
         static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
 
-        bool IsPartOfWhereExp() const;
         Exp const* FindParent(Exp::Type) const;
         bool Contains(Type candidateType) const;
         std::vector<Exp const*> Find(Type candidateType, bool recursive) const;

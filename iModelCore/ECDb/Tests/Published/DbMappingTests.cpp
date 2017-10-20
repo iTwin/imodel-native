@@ -12,7 +12,275 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct DbMappingTestFixture : ECDbTestFixture {};
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, UnionOrderBy)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='ClassA'  modifier='none'>"
+        "      <ECProperty propertyName='F1' typeName='int' />"
+        "      <ECProperty propertyName='p1' typeName='point2d' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ClassB'  modifier='none'>"
+        "      <ECProperty propertyName='F2' typeName='int' />"
+        "      <ECProperty propertyName='p2' typeName='point2d' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ClassC'  modifier='none'>"
+        "      <ECProperty propertyName='F3' typeName='int' />"
+        "      <ECProperty propertyName='p3' typeName='point2d' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
 
+    //    printf("ECSQL: %s\n  SQL:%s\n",stmt.GetECSql(), stmt.GetNativeSql());
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassA (F1,p1.X,p1.Y) VALUES (1000, 100,10)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassB (F2,p2.X,p2.Y) VALUES (2000, 60,60)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.ClassC (F3,p3.X,p3.Y) VALUES (3000, 10,100)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    m_ecdb.SaveChanges();
+    Utf8CP sql = 0;
+   //------------------------------------------------------------------------------------------------------------------
+    //case-0-a this should fail wih a usefull error message
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA  order by f1
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        
+    )";
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, sql));
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-0-b this should fail wih a usefull error message
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA  
+        union
+        select f2, 2000 val from ts.classB  order by f2
+        union
+        select f3, 1000 val from ts.classC
+        
+    )";
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, sql));
+    stmt.Finalize();
+    
+    //------------------------------------------------------------------------------------------------------------------
+    //case-1 this is successfull 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA  
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        order by f1
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-2 this is successfull 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        order by f1 desc
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-3 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        order by val
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-4
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 from ts.classA
+        union
+        select f2, 2000 from ts.classB
+        union
+        select f3, 1000 val from ts.classC
+        order by val
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-5 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 val from ts.classA
+        union
+        select f2, 2000 from ts.classB
+        union
+        select f3, 1000 from ts.classC
+        order by val
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    stmt.Finalize();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //case-6 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, 3000 from ts.classA
+        union
+        select f2, 2000 val from ts.classB
+        union
+        select f3, 1000 from ts.classC
+        order by val
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-7 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1 boo, 3000 from ts.classA
+        union
+        select f2 koo, 2000 val from ts.classB
+        union
+        select f3 doo, 1000 from ts.classC
+        order by boo
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-8 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1 boo, 3000 from ts.classA
+        union
+        select f2 koo, 2000 val from ts.classB
+        union
+        select f3 doo, 1000 from ts.classC
+        order by koo
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(1), 3000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(1), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(1), 1000);
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-9 This need to show better error as orderby in union must match columna and it cannot have computed expression
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1 boo, 3000 from ts.classA
+        union
+        select f2 koo, 2000 val from ts.classB
+        union
+        select f3 doo, 1000 from ts.classC
+        order by doo
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-10 This need to show better error as orderby in union must match columna and it cannot have computed expression
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1 boo, 3000 from ts.classA
+        union
+        select f2 koo, 2000 val from ts.classB
+        union
+        select f3 doo, 1000 from ts.classC
+        order by doo+val desc
+    )";
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, sql));
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-11 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select p1 boo, 3000 from ts.classA
+        union
+        select p2 koo, 2000 val from ts.classB
+        union
+        select p3 doo, 1000 from ts.classC
+        order by p1
+    )";
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, sql));
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    //case-12 
+    //------------------------------------------------------------------------------------------------------------------
+    sql = R"(
+        select f1, p1, 3000 from ts.classA
+        union
+        select f2, p2, 2000 val from ts.classB
+        union
+        select f3, p3, 1000 from ts.classC
+        order by val desc
+    )";
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 1000); ASSERT_EQ(stmt.GetValueDouble(2), 3000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 2000); ASSERT_EQ(stmt.GetValueDouble(2), 2000);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_EQ(stmt.GetValueDouble(0), 3000); ASSERT_EQ(stmt.GetValueDouble(2), 1000);
+    stmt.Finalize();
+    //------------------------------------------------------------------------------------------------------------------
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -88,15 +88,82 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PropertyNameExp::ResolveUnionOrderByArg(ECSqlParseContext& ctx)
+    {
+    BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::UnionOrderByArg);
+    ECSqlParseContext::UnionOrderByArg const* arg = static_cast<ECSqlParseContext::UnionOrderByArg const*>(ctx.CurrentArg());
+
+    Utf8CP firstPropPathEntry = m_propertyPath[0].GetPropertyName();
+    Utf8CP secondPropPathEntry = m_propertyPath.Size() > 1 ? m_propertyPath[1].GetPropertyName() : nullptr;
+    for (SingleSelectStatementExp const* selectExp : arg->GetUnionStmts())
+        for (Exp const* dpExp : selectExp->GetSelection()->GetChildren())
+            {
+            DerivedPropertyExp const& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
+            if (derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName)
+                {
+                PropertyNameExp const& propertyNameExp = derivedPropertyExp.GetExpression()->GetAs<PropertyNameExp>();
+                BeAssert(propertyNameExp.IsComplete());
+                PropertyMap const& propertyMap = propertyNameExp.GetPropertyMap();
+                if (secondPropPathEntry == nullptr)
+                    {
+                    if (propertyMap.GetName().EqualsI(firstPropPathEntry))
+                        {
+                        SetPropertyRef(derivedPropertyExp);
+                        return SUCCESS;
+                        }
+                    }
+                else
+                    {
+                    if (m_propertyPath.ToString(false, false).EqualsI(propertyNameExp.GetPropertyPath().ToString(false, false)))
+                        {
+                        SetPropertyRef(derivedPropertyExp);
+                        return SUCCESS;
+                        }
+                    if (m_propertyPath.ToString(false, false).EqualsI(GetPropertyPath().ToString(false, false)))
+                        {
+                        SetPropertyRef(derivedPropertyExp);
+                        return SUCCESS;
+                        }
+
+                    if (m_propertyPath.ToString(false, false).EqualsI(propertyMap.GetAccessString()))
+                        {
+                        SetPropertyRef(derivedPropertyExp);
+                        return SUCCESS;
+                        }
+                    }
+                }
+
+
+            if (derivedPropertyExp.GetColumnAlias().EqualsI(firstPropPathEntry))
+                {
+                SetPropertyRef(derivedPropertyExp);
+                return SUCCESS;
+                }
+
+            }
+        
+    return ERROR;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     {
     if (GetClassRefExp() != nullptr)
         return SUCCESS;
 
-    void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
-    BeAssert(finalizeParseArgs != nullptr && "PropertyNameExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-    RangeClassInfo::List const& rangeClassRefList = *static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
+    //ORDER BY must be one of the column or alias use in SELECT
+    BeAssert(ctx.CurrentArg() != nullptr && "PropertyNameExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
+    if (ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::UnionOrderByArg)
+        return ResolveUnionOrderByArg(ctx);
 
+    if (ctx.CurrentArg()->GetType() != ECSqlParseContext::ParseArg::Type::RangeClassArg)
+        {
+        BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClassArg);
+        return ERROR;
+        }
+
+    ECSqlParseContext::RangeClassArg const* arg = static_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
     BeAssert(!m_propertyPath.IsEmpty());
 
     //work with copy of property path
@@ -106,7 +173,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     bvector<RangeClassRefExp const*> aliasClassRefExpMatches;
     bvector<RangeClassRefExp const*> propNameClassRefExpMatches;
     int classAliasMatches = 0;
-    for (RangeClassInfo const& rangeClassRef : rangeClassRefList)
+    for (RangeClassInfo const& rangeClassRef : arg->GetRangeClassInfos())
         {
         if (rangeClassRef.IsInherited())
             {
@@ -127,7 +194,6 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                 classAliasMatches++;
                 if (rangeClassRef.GetExp().ContainProperty(secondPropPathEntry))
                     aliasClassRefExpMatches.push_back(&rangeClassRef.GetExp());
-
                 }
             }
         }
@@ -153,7 +219,6 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         }
 
     BeAssert(aliasClassRefExpMatches.size() <= 1);
-
     RangeClassRefExp const* classRefExp = nullptr;
     Utf8CP classAlias = nullptr;
     Utf8String error;
@@ -209,32 +274,31 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
     switch (classRefExp.GetType())
         {
             case Exp::Type::SubqueryRef:
-            {
-            SubqueryRefExp const& subQueryRef = classRefExp.GetAs<SubqueryRefExp>();
-            DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
-            if (derivedPropertyRef == nullptr)
                 {
-                //"Should not be nullptr as the classRefExp was found in the first place by checking that the property exists"
-                BeAssert(false);
-                return ERROR;
+                SubqueryRefExp const& subQueryRef = classRefExp.GetAs<SubqueryRefExp>();
+                DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
+                if (derivedPropertyRef == nullptr)
+                    {
+                    //"Should not be nullptr as the classRefExp was found in the first place by checking that the property exists"
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                SetPropertyRef(*derivedPropertyRef);
+                //1. Select statement must have a ECClass define it. 
+                //2. ECClass must have classMap info for this to work
+                //3. In context of query SELECT NewFoo.Prop1, NewFoo.Prop2 FROM (SELECT A Prop1, B + C Prop2 FROM Foo WHERE A = 12)  NewFoo;
+                //4. SELECT _a, [_b + _c]  FROM (SELECT _a "_a", _b + _c  "_b + _c" FROM _foo where _a = 12) NewFoo
+                //5. SELECT _a, [_b + _c] FROM newFoo;
+                //6. Scalar query.
+                return SUCCESS;
                 }
-
-            SetPropertyRef(*derivedPropertyRef);
-
-            //1. Select statement must have a ECClass define it. 
-            //2. ECClass must have classMap info for this to work
-            //3. In context of query SELECT NewFoo.Prop1, NewFoo.Prop2 FROM (SELECT A Prop1, B + C Prop2 FROM Foo WHERE A = 12)  NewFoo;
-            //4. SELECT _a, [_b + _c]  FROM (SELECT _a "_a", _b + _c  "_b + _c" FROM _foo where _a = 12) NewFoo
-            //5. SELECT _a, [_b + _c] FROM newFoo;
-            //6. Scalar query.
-            return SUCCESS;
-            }
             case Exp::Type::ClassName:
-            {
-            ClassNameExp const& classNameExp = classRefExp.GetAs<ClassNameExp>();
-            ClassMap const& classMap = classNameExp.GetInfo().GetMap();
-            return propPath.Resolve(classMap, &error);
-            }
+                {
+                ClassNameExp const& classNameExp = classRefExp.GetAs<ClassNameExp>();
+                ClassMap const& classMap = classNameExp.GetInfo().GetMap();
+                return propPath.Resolve(classMap, &error);
+                }
 
             default:
                 BeAssert(false && "New subclass of RangeClassRefExp was added, but is not yet processed in ValueExp::ResolveColumnRef");
@@ -253,7 +317,7 @@ void PropertyNameExp::SetClassRefExp(RangeClassRefExp const& resolvedClassRef) {
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp)
     {
-    m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp));
+    m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp)); 
     }
 
 //-----------------------------------------------------------------------------------------

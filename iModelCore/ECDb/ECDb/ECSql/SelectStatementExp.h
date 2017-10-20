@@ -64,6 +64,7 @@ struct DerivedPropertyExp final : Exp
 
         ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
         Utf8String GetName() const;
+        bool HasAlias() const { return !m_columnAlias.empty(); }
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetNestedAlias() const { return m_nestedAlias; }
         void SetNestedAlias(Utf8CP nestedAlias) { m_nestedAlias = nestedAlias; }
@@ -185,12 +186,15 @@ struct OrderBySpecExp final : Exp
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
+struct SingleSelectStatementExp;
 struct OrderByExp final : Exp
     {
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override { return "OrderBy"; }
-
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        std::vector<SingleSelectStatementExp const*> m_unionStmts;
+        ComputedExp const* GetFirstNonePropertyNamExpression() const;
     public:
         explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
             {
@@ -380,7 +384,7 @@ struct SelectStatementExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
 
         static Utf8CP OperatorToString(CompoundOperator);
-
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) override;
     public:
         explicit SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>);
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator, bool isAll, std::unique_ptr<SelectStatementExp> rhs);

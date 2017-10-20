@@ -2662,23 +2662,23 @@ BentleyStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlParseContext::PushFinalizeParseArg(void const* const arg) { m_finalizeParseArgs.push_back(arg);  }
+void ECSqlParseContext::PushArg(std::unique_ptr<ParseArg> arg) { m_finalizeParseArgs.push_back(std::move(arg));  }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void const* const ECSqlParseContext::GetFinalizeParseArg() const
+ECSqlParseContext::ParseArg const* ECSqlParseContext::CurrentArg() const
     {
     if (m_finalizeParseArgs.empty())
         return nullptr;
 
-    return m_finalizeParseArgs[m_finalizeParseArgs.size() - 1];
+    return m_finalizeParseArgs[m_finalizeParseArgs.size() - 1].get();
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlParseContext::PopFinalizeParseArg() { m_finalizeParseArgs.pop_back(); }
+void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
