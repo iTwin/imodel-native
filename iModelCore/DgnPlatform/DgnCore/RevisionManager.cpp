@@ -606,7 +606,8 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
     BeFileName changeStreamPathname = BuildRevisionChangesPathname(revisionId);
     
     DgnRevisionPtr revision = new DgnRevision(revisionId, parentRevisionId, dbGuid);
-    revision->SetRevisionChangesFile(changeStreamPathname);
+    revision->m_revChangesFile = changeStreamPathname;
+    revision->m_ownsRevChangesFile = true;
     status = RevisionStatus::Success;
     return revision;
     }
@@ -617,7 +618,7 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
 DgnRevision::~DgnRevision()
     {
 #ifndef DEBUG_REVISION_KEEP_FILES
-    if (m_revChangesFile.DoesPathExist())
+    if (m_ownsRevChangesFile && m_revChangesFile.DoesPathExist())
         {
         BeFileNameStatus status = m_revChangesFile.BeDeleteFile();
         BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
@@ -1151,6 +1152,18 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
+    if (m_dgndb.IsReadonly())
+        {
+        BeAssert(false && "Cannot merge changes into a Readonly database");
+        return RevisionStatus::CannotMergeIntoReadonly;
+        }
+
+    if (m_dgndb.IsMasterCopy())
+        {
+        BeAssert(false && "Cannot merge changes into the Master copy of a database");
+        return RevisionStatus::CannotMergeIntoMaster;
+        }
+
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     if (txnMgr.HasChanges())
@@ -1436,10 +1449,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedRevisionId();
-    if (currentParentRevId.empty())
-        currentParentRevId = GetParentRevisionId();
-
+    Utf8String currentParentRevId = HasReversedRevisions() ? GetReversedRevisionId() : GetParentRevisionId();
     if (currentParentRevId != revision.GetId())
         {
         BeAssert(false && "Parent of revision should match the parent revision id of the Db");
@@ -1466,10 +1476,7 @@ RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
-    Utf8String currentParentRevId = GetReversedRevisionId();
-    if (currentParentRevId.empty())
-        currentParentRevId = GetParentRevisionId();
-
+    Utf8String currentParentRevId = HasReversedRevisions() ? GetReversedRevisionId() : GetParentRevisionId();
     if (currentParentRevId != revision.GetParentId())
         {
         BeAssert(false && "Parent of revision should match the parent revision id of the Db");

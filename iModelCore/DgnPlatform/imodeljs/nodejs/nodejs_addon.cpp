@@ -18,37 +18,70 @@
 #include <node.h>
 #include <node_buffer.h>
 #include <node_version.h>
-
 #include <json/value.h>
-
 #include "../imodeljs.h"
 #include <ECObjects/ECSchema.h>
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentationRules/PresentationRulesTypes.h>
 #include <rapidjson/rapidjson.h>
-#define REQUIRE_ARGUMENT_STRING(i, var, errcode, errmsg)                        \
+
+#define REQUIRE_DB_TO_BE_OPEN \
+    if (!m_db->m_dgndb.IsValid())\
+        {\
+        m_status = DgnDbStatus::NotOpen;\
+        return;\
+        }
+
+#define MUST_HAVE_M_STMT(ns) \
+    if ((ns)->m_stmt.get() == nullptr)\
+        {\
+        info.GetReturnValue().Set((int)DgnDbStatus::NotOpen);\
+        return;\
+        }
+
+#define REQUIRE_ARGUMENT_STRING(i, var, errcode)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        ResolveArgumentError(info, errcode);                            \
         return;                                                                 \
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
-#define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode, errmsg)                   \
+#define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode)                   \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
-        info.GetReturnValue().Set(CreateErrorObject(errcode, errmsg));          \
+        info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(errcode));          \
         return;                                                                 \
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
-#define REQUIRE_ARGUMENT_OBJ(i, T, var, errcode, errmsg)                        \
+#define REQUIRE_ARGUMENT_STRING_SYNC_RV(i, var, errcode)                   \
+    if (info.Length() <= (i) || !info[i]->IsString()) {                         \
+        info.GetReturnValue().Set((int)errcode);          \
+        return;                                                                 \
+    }                                                                           \
+    Nan::Utf8String var(info[i]);
+
+#define REQUIRE_ARGUMENT_UINT32_SYNC_RV(i, var, errcode)                   \
+    if (info.Length() <= (i) || !info[i]->IsUint32()) {                         \
+        info.GetReturnValue().Set((int)errcode);          \
+        return;                                                                 \
+    }                                                                           \
+    auto var = v8::Uint32::New(info.GetIsolate(), info[i]->Uint32Value());
+
+#define REQUIRE_ARGUMENT_OBJ_SYNC(i, T, var, errcode)                           \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(errcode));       \
         return;                                                                 \
     }                                                                           \
     T* var = Nan::ObjectWrap::Unwrap<T>(info[i].As<Object>());
 
-#define OPTIONAL_ARGUMENT_INTEGER(i, var, default, errcode, errmsg)             \
+#define REQUIRE_ARGUMENT_OBJ_SYNC_RV(i, T, var, errcode)                           \
+    if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
+        info.GetReturnValue().Set((int)errcode);                                \
+        return;                                                                 \
+    }                                                                           \
+    T* var = Nan::ObjectWrap::Unwrap<T>(info[i].As<Object>());
+
+#define OPTIONAL_ARGUMENT_INTEGER(i, var, default, errcode)             \
     int var;                                                                    \
     if (info.Length() <= (i)) {                                                 \
         var = (default);                                                        \
@@ -57,11 +90,11 @@
         var = Nan::To<int32_t>(info[i]).FromJust();                             \
     }                                                                           \
     else {                                                                      \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        ResolveArgumentError(info, errcode);                            \
         return;                                                                 \
     }
 
-#define OPTIONAL_ARGUMENT_BOOLEAN(i, var, default, errcode, errmsg)             \
+#define OPTIONAL_ARGUMENT_BOOLEAN(i, var, default, errcode)             \
     bool var;                                                                   \
     if (info.Length() <= (i)) {                                                 \
         var = (default);                                                        \
@@ -70,18 +103,18 @@
         var = Nan::To<bool>(info[i]).FromJust();                                \
     }                                                                           \
     else {                                                                      \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        ResolveArgumentError(info, errcode);                            \
         return;                                                                 \
     }
 
-#define OPTIONAL_ARGUMENT_STRING(i, var, errcode, errmsg)                       \
+#define OPTIONAL_ARGUMENT_STRING(i, var, errcode)                       \
     v8::Local<v8::String> localString;                                          \
     if (info.Length() <= (i) || (info[i]->IsUndefined() || info[i]->IsNull()))  \
         localString = v8::String::Empty(info.GetIsolate());                     \
     else if (info[i]->IsString())                                               \
         localString = info[i]->ToString();                                      \
     else {                                                                      \
-        ResolveArgumentError(info, errcode, errmsg);                            \
+        ResolveArgumentError(info, errcode);                            \
         return;                                                                 \
     }                                                                           \
     Nan::Utf8String var(localString);
@@ -96,6 +129,46 @@ using namespace v8;
 using namespace node;
 
 //=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct NodeUtils
+    {
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename STATUSTYPE>
+    static v8::Local<v8::Object> CreateErrorObject0(STATUSTYPE errCode, Utf8CP msg)
+        {
+        v8::Local<v8::Object> error = Nan::New<v8::Object>();
+        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
+        if (nullptr != msg)
+            error->Set(Nan::New("message").ToLocalChecked(), Nan::New(msg).ToLocalChecked());
+        return error;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static v8::Local<v8::Object> CreateBentleyReturnSuccessObject(v8::Local<v8::Value> const& goodVal)
+        {
+        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
+        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
+        return retObj;
+        }
+        
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      09/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename STATUSTYPE>
+    static v8::Local<v8::Object> CreateBentleyReturnErrorObject(STATUSTYPE errCode)
+        {
+        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
+        retObj->Set(Nan::New("error").ToLocalChecked(), CreateErrorObject0(errCode, nullptr));
+        return retObj;
+        }
+    };
+
+//=======================================================================================
 //! Base class for helper functions. All such functions have the following in common:
 //  -- All return Promises and execute asynchronously
 //! @bsiclass
@@ -108,7 +181,6 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
 
     T_ResolverPersistent* m_resolver;
     STATUSTYPE m_status;
-    Utf8String m_errmsg;
 
     DgnDbPromiseAsyncWorkerBase(STATUSTYPE defaultStatus) : Nan::AsyncWorker(nullptr), m_resolver(nullptr), m_status(defaultStatus) {}
     ~DgnDbPromiseAsyncWorkerBase()
@@ -123,12 +195,12 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
 
     STATUSTYPE GetStatus() { return m_status; }
 
-    static void ResolveArgumentError(Nan::NAN_METHOD_ARGS_TYPE& info, STATUSTYPE errorStatus, Utf8CP errorMessage)
+    static void ResolveArgumentError(Nan::NAN_METHOD_ARGS_TYPE& info, STATUSTYPE errorStatus)
         {
         Nan::HandleScope scope;
         auto resolver = v8::Promise::Resolver::New(info.GetIsolate());
         info.GetReturnValue().Set(resolver->GetPromise());
-        v8::Local<v8::Object> retObj = CreateErrorObject(errorStatus, errorMessage);
+        v8::Local<v8::Object> retObj = NodeUtils::CreateBentleyReturnErrorObject(errorStatus);
         resolver->Resolve(retObj);
         }
 
@@ -140,59 +212,32 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         }
 
-    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
+    v8::Local<v8::Object> CreateBentleyReturnErrorObject()
         {
-        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
-        return retObj;
+        BeAssert(_HadError());
+        return NodeUtils::CreateBentleyReturnErrorObject(m_status);
         }
 
-        
-    static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode, Utf8CP errMessage)
+    v8::Local<v8::Object> CreateBentleyReturnSuccessObject()
         {
-        v8::Local<v8::Object> error = Nan::New<v8::Object>();
-        error->Set(Nan::New("status").ToLocalChecked(), Nan::New((int) errCode));
-        error->Set(Nan::New("message").ToLocalChecked(), Nan::New(errMessage).ToLocalChecked());
-
-        v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        retObj->Set(Nan::New("error").ToLocalChecked(), error);
-        return retObj;
-        }
-
-    v8::Local<v8::Object> CreateErrorObject()
-        {
-        BeAssert(HadError());
-        return CreateErrorObject(m_status, m_errmsg.c_str());
-        }
-
-    v8::Local<v8::Object> CreateSuccessObject()
-        {
-        BeAssert(!HadError());
-        return CreateSuccessObject(GetResultOrUndefined());
+        BeAssert(!_HadError());
+        return NodeUtils::CreateBentleyReturnSuccessObject(GetResultOrUndefined());
         }
 
     void HandleOKCallback() override
         {
         Nan::HandleScope scope;
-        Nan::New(*m_resolver)->Resolve(CreateSuccessObject());
+        Nan::New(*m_resolver)->Resolve(CreateBentleyReturnSuccessObject());
         }
 
     void HandleErrorCallback() override
         {
         Nan::HandleScope scope;
-        Nan::New(*m_resolver)->Resolve(CreateErrorObject());
+        Nan::New(*m_resolver)->Resolve(CreateBentleyReturnErrorObject());
         }
 
-    // Mark this worker as being in a failed state.
-    void SetupErrorReturn()
-        {
-        // Calling SetErrorMessage with non-Null is the only way to tell Nan::AsyncWorker to call HandleErrorCallback instead of HandleOKCallback
-        if (m_errmsg.empty())
-            m_errmsg = "error";
-        SetErrorMessage(m_errmsg.c_str());
-        }
-
-    bool HadError() { return nullptr != ErrorMessage(); }
+    virtual bool _HadError() = 0;
+    void WorkComplete() override {if (_HadError()) {SetErrorMessage("error");} Nan::AsyncWorker::WorkComplete();}
 
     // Implement one of these methods to return true if there are results after initializing the result string
     virtual bool _GetResult(v8::Local<v8::Value>& result) { return false; }
@@ -231,7 +276,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR, "Argument 0 must be a string giving the pathname of the ecdb");
+            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR);
             (new CreateDbWorker(db, *dbname))->ScheduleAndReturnPromise(info);
             }
 
@@ -240,18 +285,14 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (m_addon->m_ecdb.IsValid() && m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR_AlreadyOpen;
-                m_errmsg = "Close existing Db before creating a new one with the same handle";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_addon->m_ecdb = IModelJs::CreateECDb(m_status, m_errmsg, m_dbPathname);
+            m_addon->m_ecdb = IModelJs::CreateECDb(m_status, m_dbPathname);
             if (!m_addon->m_ecdb.IsValid())
-                {
                 m_addon->m_ecdb = nullptr;
-                SetupErrorReturn();
-                }
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct OpenDbWorker : WorkerBase<DbResult>
@@ -266,8 +307,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR, "Argument 0 must be a string giving the pathname of the ecdb");
-            OPTIONAL_ARGUMENT_INTEGER(1, mode, (int) BeSQLite::Db::OpenMode::Readonly, BE_SQLITE_ERROR, "Argument 1 must be an integer specifying the open mode (BE_SQLITE_OPEN_MODE_...)");
+            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_INTEGER(1, mode, (int) BeSQLite::Db::OpenMode::Readonly, BE_SQLITE_ERROR);
             (new OpenDbWorker(db, *dbname, (BeSQLite::Db::OpenMode)mode))->ScheduleAndReturnPromise(info);
             }
 
@@ -276,18 +317,14 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (m_addon->m_ecdb.IsValid() && m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR_AlreadyOpen;
-                m_errmsg = "Close existing Db before opening a new one with the same handle";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_addon->m_ecdb = IModelJs::OpenECDb(m_status, m_errmsg, m_dbPathname, m_mode);
+            m_addon->m_ecdb = IModelJs::OpenECDb(m_status, m_dbPathname, m_mode);
             if (!m_addon->m_ecdb.IsValid() || m_status != BE_SQLITE_OK)
-                {
                 m_addon->m_ecdb = nullptr;
-                SetupErrorReturn();
-                }
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct CloseDbWorker : WorkerBase<DbResult>
@@ -307,12 +344,11 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
             m_addon->m_ecdb->CloseDb();
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct SaveChangesWorker : WorkerBase<DbResult>
@@ -326,7 +362,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            OPTIONAL_ARGUMENT_STRING(0, changeSetName, BE_SQLITE_ERROR, "Argument 0 must be the name of the change set to be saved");
+            OPTIONAL_ARGUMENT_STRING(0, changeSetName, BE_SQLITE_ERROR);
             (new SaveChangesWorker(db, *changeSetName))->ScheduleAndReturnPromise(info);
             }
 
@@ -335,15 +371,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
             m_status = m_addon->m_ecdb->SaveChanges(m_changeSetName.empty() ? nullptr : m_changeSetName.c_str());
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct AbandonChangesWorker : WorkerBase<DbResult>
@@ -363,15 +396,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
             m_status = m_addon->m_ecdb->AbandonChanges();
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct ImportSchemaWorker : WorkerBase<DbResult>
@@ -385,7 +415,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, schemaPathname, BE_SQLITE_ERROR, "Argument 0 must be a string giving the pathname of the ECSchema");
+            REQUIRE_ARGUMENT_STRING(0, schemaPathname, BE_SQLITE_ERROR);
             (new ImportSchemaWorker(db, *schemaPathname))->ScheduleAndReturnPromise(info);
             }
 
@@ -394,15 +424,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::ImportSchema(m_errmsg, *m_addon->m_ecdb, m_schemaPathname);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::ImportSchema(*m_addon->m_ecdb, m_schemaPathname);
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct InsertInstanceWorker : WorkerBase<DbResult>
@@ -417,7 +444,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, strInstance, BE_SQLITE_ERROR, "Argument 0 must be a Json string of an instance to be inserted");
+            REQUIRE_ARGUMENT_STRING(0, strInstance, BE_SQLITE_ERROR);
             (new InsertInstanceWorker(db, strInstance))->ScheduleAndReturnPromise(info);
             }
 
@@ -426,14 +453,10 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::InsertInstance(m_errmsg, m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::InsertInstance(m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
@@ -441,6 +464,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             result = Nan::New(m_insertedId.c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct UpdateInstanceWorker : WorkerBase<DbResult>
@@ -454,7 +478,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, strInstance, BE_SQLITE_ERROR, "Argument 0 must be a Json string");
+            REQUIRE_ARGUMENT_STRING(0, strInstance, BE_SQLITE_ERROR);
             (new UpdateInstanceWorker(db, strInstance))->ScheduleAndReturnPromise(info);
             }
 
@@ -463,15 +487,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::UpdateInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstance);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::UpdateInstance(*m_addon->m_ecdb, m_jsonInstance);
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct ReadInstanceWorker : WorkerBase<DbResult>
@@ -486,7 +507,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR, "Argument 0 must be a JSON string representing an ECInstanceKey");
+            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR);
             (new ReadInstanceWorker(db, instanceKey))->ScheduleAndReturnPromise(info);
             }
 
@@ -495,24 +516,19 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::ReadInstance(m_errmsg, m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::ReadInstance(m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_jsonInstance);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_jsonInstance.ToString().c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
-
 
     struct DeleteInstanceWorker : WorkerBase<DbResult>
         {
@@ -525,7 +541,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR, "Argument 0 must be a JSON string representing an ECInstanceKey");
+            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR);
             (new DeleteInstanceWorker(db, instanceKey))->ScheduleAndReturnPromise(info);
             }
 
@@ -534,15 +550,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::DeleteInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstanceKey);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::DeleteInstance(*m_addon->m_ecdb, m_jsonInstanceKey);
             }
+        bool _HadError() override {return m_status != BE_SQLITE_DONE;}
         };
 
     struct ContainsInstanceWorker : WorkerBase<DbResult>
@@ -557,7 +570,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR, "Argument 0 must be a JSON string representing an ECInstanceKey");
+            REQUIRE_ARGUMENT_STRING(0, instanceKey, BE_SQLITE_ERROR);
             (new ContainsInstanceWorker(db, instanceKey))->ScheduleAndReturnPromise(info);
             }
 
@@ -566,14 +579,10 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::ContainsInstance(m_errmsg, m_containsInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
+            m_status = IModelJs::ContainsInstance(m_containsInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
@@ -581,6 +590,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
             result = Nan::New(m_containsInstance);
             return true;
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     struct ExecuteQueryWorker : WorkerBase<DbResult>
@@ -597,8 +607,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR, "Argument 0 must be an ECSql string");
-            OPTIONAL_ARGUMENT_STRING(1, strBindings, BE_SQLITE_ERROR, "Argument 1 must be a JSON string specifying the bindings");
+            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, BE_SQLITE_ERROR);
 
             (new ExecuteQueryWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
             }
@@ -608,8 +618,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
@@ -619,23 +627,19 @@ struct NodeAddonECDb : Nan::ObjectWrap
             CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(m_ecsql.c_str());
             if (!stmt.IsValid())
                 {
-                m_errmsg = IModelJs::GetLastEcdbIssue();
                 m_status = BE_SQLITE_ERROR;
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt, m_bindings);
-            if (m_status != BE_SQLITE_DONE)
-                SetupErrorReturn();
+            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_rowsJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_rowsJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override {return m_status != BE_SQLITE_DONE && m_status != BE_SQLITE_ROW ;}
         };
 
     struct ExecuteStatementWorker : WorkerBase<DbResult>
@@ -654,9 +658,9 @@ struct NodeAddonECDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR, "Argument 0 must be an ECSql string");
-            OPTIONAL_ARGUMENT_BOOLEAN(1, isInsertStmt, false, BE_SQLITE_ERROR, "Argument 1 must be a flag that specifies it's an insert statement");
-            OPTIONAL_ARGUMENT_STRING(2, strBindings, BE_SQLITE_ERROR, "Argument 2 must be a JSON string specifying the bindings");
+            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_BOOLEAN(1, isInsertStmt, false, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_STRING(2, strBindings, BE_SQLITE_ERROR);
 
             (new ExecuteStatementWorker(db, *ecsql, isInsertStmt, *strBindings))->ScheduleAndReturnPromise(info);
             }
@@ -666,8 +670,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
             if (!m_addon->m_ecdb.IsValid() || !m_addon->m_ecdb->IsDbOpen())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "ECDb must be open to complete this operation";
-                SetupErrorReturn();
                 return;
                 }
 
@@ -677,15 +679,11 @@ struct NodeAddonECDb : Nan::ObjectWrap
             CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(m_ecsql.c_str());
             if (!stmt.IsValid())
                 {
-                m_errmsg = IModelJs::GetLastEcdbIssue();
                 m_status = BE_SQLITE_ERROR;
-                SetupErrorReturn();
                 return;
                 }
             
-            m_status = IModelJs::ExecuteStatement(m_errmsg, m_instanceId, *stmt, m_isInsertStmt, m_bindings);
-            if (m_status != BE_SQLITE_DONE)
-                SetupErrorReturn();
+            m_status = IModelJs::ExecuteStatement(m_instanceId, *stmt, m_isInsertStmt, m_bindings);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
@@ -693,11 +691,20 @@ struct NodeAddonECDb : Nan::ObjectWrap
             result = Nan::New(m_instanceId.c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override 
+            {
+            switch(m_status) 
+                {
+                case BE_SQLITE_OK: 
+                case BE_SQLITE_ROW: 
+                case BE_SQLITE_DONE: 
+                    return false;
+                }
+            return true;
+            }
         };
 
-
-
-    private:
+private:
     JsECDbPtr m_ecdb;
     mutable Utf8String m_lastECDbIssue;
         
@@ -721,8 +728,6 @@ public:
 
     static NAN_MODULE_INIT(Init)
         {
-        printf("In NodeAddonECDb::Init method");
-
         Nan::HandleScope scope;
 
         Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
@@ -755,7 +760,7 @@ public:
         {
         if (!info.IsConstructCall())
             {
-            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonECDb objects");
+            return Nan::ThrowError("Use the new operator to create new NodeAddonECDb objects");
             }
 
         NodeAddonECDb *db = new NodeAddonECDb();
@@ -769,6 +774,11 @@ public:
         info.GetReturnValue().Set(db->m_ecdb.IsValid() && db->m_ecdb->IsDbOpen());
         }
 };
+
+//=======================================================================================
+// SimpleRulesetLocater
+//! @bsiclass
+//=======================================================================================
 struct SimpleRulesetLocater : RefCounted<RuleSetLocater>
 {
 private:
@@ -784,7 +794,7 @@ protected:
             {
             m_ruleset = PresentationRuleSet::CreateInstance(m_rulesetId, 1, 0, false, "", "", "", false);
             m_ruleset->AddPresentationRule(*new ContentRule("", 1, false));
-            m_ruleset->GetContentRules().back()->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", true));
+            m_ruleset->GetContentRules().back()->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
             }
         return bvector<PresentationRuleSetPtr>{m_ruleset};
         }
@@ -798,6 +808,7 @@ protected:
 public:
     static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
 };
+
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -815,6 +826,15 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         if (!val->IsObject()) return false;
         Local<Object> obj = val.As<Object>();
         return Nan::New(s_constructor_template)->HasInstance(obj);
+        }
+
+    void SetupPresentationManager()
+        {
+        BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
+        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+        IECPresentationManager::RegisterImplementation(m_presentationManager.get());
         }
 
     //=======================================================================================
@@ -848,23 +868,18 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             {
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR, "Argument 0 must be a string giving the name of the dgndb");
-            OPTIONAL_ARGUMENT_INTEGER(1, mode, (int) DgnDb::OpenMode::Readonly, BE_SQLITE_ERROR, "Argument 1 must be an integer specifying the open mode (BE_SQLITE_OPEN_MODE_...)");
+            REQUIRE_ARGUMENT_STRING(0, dbname, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_INTEGER(1, mode, (int) DgnDb::OpenMode::Readonly, BE_SQLITE_ERROR);
             (new OpenDgnDbWorker(db, *dbname, (DgnDb::OpenMode)mode))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
             {
-            IModelJs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode);
-            if (m_status != BE_SQLITE_OK)
-                SetupErrorReturn();
-
-            BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-            BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir,tempDir)));
-            m_db->m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-            IECPresentationManager::RegisterImplementation( m_db->m_presentationManager.get());
+            m_status = IModelJs::OpenDgnDb(m_db->m_dgndb, m_dbname, m_mode);
+            if (m_status == BE_SQLITE_OK)
+                m_db->SetupPresentationManager();
             }
+        bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
 
     //=======================================================================================
@@ -884,8 +899,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
-            REQUIRE_ARGUMENT_STRING(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
+            REQUIRE_ARGUMENT_STRING(0, s, DgnDbStatus::BadRequest);
+            REQUIRE_ARGUMENT_STRING(1, c, DgnDbStatus::BadRequest);
             (new GetECClassMetaData(db, *s, *c))->ScheduleAndReturnPromise(info);
             }
 
@@ -894,37 +909,22 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING_SYNC(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
-            REQUIRE_ARGUMENT_STRING_SYNC(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
+            REQUIRE_ARGUMENT_STRING_SYNC(0, s, DgnDbStatus::BadRequest);
+            REQUIRE_ARGUMENT_STRING_SYNC(1, c, DgnDbStatus::BadRequest);
 
             GetECClassMetaData worker(db, *s, *c);
             worker.Execute();
-            if (worker.HadError())
-                info.GetReturnValue().Set(worker.CreateErrorObject());
-            else
-                info.GetReturnValue().Set(worker.CreateSuccessObject());
+            info.GetReturnValue().Set(worker._HadError() ? worker.CreateBentleyReturnErrorObject() : worker.CreateBentleyReturnSuccessObject());
             }
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                m_errmsg = "DgnDb must be open";
-                SetupErrorReturn();
-                return;
-                }
-
-            if (BSISUCCESS != IModelJs::GetECClassMetaData(m_status, m_errmsg, m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str()))
-                SetupErrorReturn();
+            REQUIRE_DB_TO_BE_OPEN
+            m_status = IModelJs::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
             }
 
-        bool _GetResult(v8::Local<v8::Value>& result) override
-            {
-            Utf8String resultStr = Json::FastWriter::ToString(m_metaDataJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
-            return true;
-            }
+        bool _GetResult(v8::Local<v8::Value>& result) override {result = Nan::New(m_metaDataJson.ToString().c_str()).ToLocalChecked(); return true;}
+        bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
 
     //=======================================================================================
@@ -943,30 +943,22 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest, "Argument 0 must be a Json string");
+            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest);
             (new GetElementWorker(db, opts))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                m_errmsg = "DgnDb must be open";
-                SetupErrorReturn();
-                return;
-                }
-
-            if (BSISUCCESS != IModelJs::GetElement(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_opts))
-                SetupErrorReturn();
+            REQUIRE_DB_TO_BE_OPEN
+            m_status = IModelJs::GetElement(m_elementJson, GetDgnDb(), m_opts);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_elementJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_elementJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
 
     //=======================================================================================
@@ -985,75 +977,170 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest, "Argument 0 must be a Json string");
+            REQUIRE_ARGUMENT_STRING(0, opts, DgnDbStatus::BadRequest);
             (new GetModelWorker(db, opts))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
             {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                m_errmsg = "DgnDb must be open";
-                SetupErrorReturn();
-                return;
-                }
-
-            if (BSISUCCESS != IModelJs::GetModel(m_status, m_errmsg, m_modelJson, GetDgnDb(), m_opts))
-                SetupErrorReturn();
+            REQUIRE_DB_TO_BE_OPEN
+            m_status = IModelJs::GetModel(m_modelJson, GetDgnDb(), m_opts);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_modelJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_modelJson.ToString().c_str()).ToLocalChecked();
             return true;
             }
+        bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
 
     //=======================================================================================
-    // insert a new element
+    //  Sets up a briefcase and opens it
     //! @bsiclass
     //=======================================================================================
-    struct InsertElementWorker : WorkerBase<DgnDbStatus>
-    {
-    Json::Value m_props;       // input
-    Json::Value m_out;
-    
-    InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
-
-    static NAN_METHOD(Start)
+    static NAN_METHOD(OpenBriefcaseSync)
         {
         Nan::HandleScope scope;
         NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-        REQUIRE_ARGUMENT_STRING(0, props, DgnDbStatus::BadRequest, "Argument 0 must be a Json string");
-        (new InsertElementWorker(db, props))->ScheduleAndReturnPromise(info);
-        }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, briefcaseToken, BE_SQLITE_ERROR);
+        REQUIRE_ARGUMENT_STRING_SYNC(1, changeSetTokens, BE_SQLITE_ERROR);
 
-    void Execute() override
-        {
-        if (!m_db->m_dgndb.IsValid())
+        Json::Value jsonBriefcaseToken = Json::Value::From(*briefcaseToken);
+        Json::Value jsonChangeSetTokens = Json::Value::From(*changeSetTokens);
+
+        DbResult result = IModelJs::OpenBriefcase(db->m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
+        v8::Local<v8::Object> ret;
+        if (BE_SQLITE_OK != result)
             {
-            m_status = DgnDbStatus::NotOpen;
-            m_errmsg = "DgnDb must be open";
-            SetupErrorReturn();
+            ret = NodeUtils::CreateBentleyReturnErrorObject(result);
+            info.GetReturnValue().Set(ret);
             return;
             }
 
-        if (BSISUCCESS != IModelJs::InsertElement(m_status, m_errmsg, m_out, GetDgnDb(), m_props))
-            SetupErrorReturn();
+        db->SetupPresentationManager();
+
+        ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
+        info.GetReturnValue().Set(ret);
         }
 
-    bool _GetResult(v8::Local<v8::Value>& result) override
+    //=======================================================================================
+    //  Get cached imodels and their briefcase versions
+    //! @bsiclass
+    //=======================================================================================
+    static NAN_METHOD(GetCachedBriefcaseInfosSync)
         {
-        Utf8String resultStr = Json::FastWriter::ToString(m_out);
-        result = Nan::New(resultStr.c_str()).ToLocalChecked();
-        return true;
-        }
-    };
+        Nan::HandleScope scope;
+        REQUIRE_ARGUMENT_STRING_SYNC(0, cachePath, DgnDbStatus::BadRequest);
 
-//=======================================================================================
+        Json::Value cachedBriefcaseInfos;
+        BeFileName cacheFile(*cachePath, true);
+        DbResult result = IModelJs::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
+
+        v8::Local<v8::Object> ret;
+        if (BE_SQLITE_OK != result)
+            {
+            ret = NodeUtils::CreateBentleyReturnErrorObject(result);
+            }
+        else
+            {
+            auto retStrObj = Nan::New(cachedBriefcaseInfos.ToString().c_str()).ToLocalChecked();
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(retStrObj);
+            }
+
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
+    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    static NAN_METHOD(InsertElementSync)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
+
+        Json::Value elemProps = Json::Value::From(*elemPropsJsonStr, *elemPropsJsonStr+elemPropsJsonStr.length());
+        Json::Value elemIdJsonObj;
+        auto status = IModelJs::InsertElement(elemIdJsonObj, *db->m_dgndb, elemProps);
+
+        v8::Local<v8::Object> ret;
+        if (DgnDbStatus::Success != status)
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
+        else
+            {
+            auto elemIdStrJsObj = Nan::New(elemIdJsonObj.ToString().c_str()).ToLocalChecked();
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(elemIdStrJsObj);
+            }
+
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
+    // update an existing element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    static NAN_METHOD(UpdateElementSync)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
+
+        Json::Value elemProps = Json::Value::From(*elemPropsJsonStr, *elemPropsJsonStr+elemPropsJsonStr.length());
+        auto status = IModelJs::UpdateElement(*db->m_dgndb, elemProps);
+
+        v8::Local<v8::Object> ret;
+        if (DgnDbStatus::Success != status)
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
+        else
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
+
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
+    // delete an existing element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    static NAN_METHOD(DeleteElementSync)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(NodeUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen));
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC(0, elemPropsJsonStr, DgnDbStatus::BadRequest);
+
+        Json::Value elemId = Json::Value(*elemPropsJsonStr);
+        auto status = IModelJs::DeleteElement(*db->m_dgndb, elemId);
+
+        v8::Local<v8::Object> ret;
+        if (DgnDbStatus::Success != status)
+            ret = NodeUtils::CreateBentleyReturnErrorObject(status);
+        else
+            ret = NodeUtils::CreateBentleyReturnSuccessObject(Nan::Undefined());
+
+        info.GetReturnValue().Set(ret);
+        }
+
+    //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1071,7 +1158,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 Nan::HandleScope scope;
                 NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-                 REQUIRE_ARGUMENT_STRING(0, id, DgnDbStatus::BadRequest, "Argument 0 must be an ElementId string");
+                 REQUIRE_ARGUMENT_STRING(0, id, DgnDbStatus::BadRequest);
                 (new GetElementPropertiesForDisplayWorker(db,*id))->ScheduleAndReturnPromise(info);
                 }
 
@@ -1080,8 +1167,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 if (!m_db->m_dgndb.IsValid())
                     {
                     m_status = DgnDbStatus::NotOpen;
-                    m_errmsg = "DgnDb must be open";
-                    SetupErrorReturn();
                     return;
                     }
 
@@ -1089,8 +1174,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 if (!elemId.IsValid())
                     {
                     m_status = DgnDbStatus::BadElement;
-                    m_errmsg = "ElementId passed is invalid";
-                    SetupErrorReturn();
                     return;
                     }
                 
@@ -1098,8 +1181,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 if (!stmt.IsValid())
                     {
                     m_status = DgnDbStatus::SQLiteError;
-                    m_errmsg = "Failed to prepare statement";
-                    SetupErrorReturn();
                     return;
                     }
                 
@@ -1107,8 +1188,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 if (stmt->Step() != BE_SQLITE_ROW)
                     {
                     m_status = DgnDbStatus::SQLiteError;
-                    m_errmsg = "Failed to step statement";
-                    SetupErrorReturn();
                     return;
                     }
 
@@ -1118,20 +1197,16 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 keyList.push_back(nodeKey);
                 INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
                 SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
-                RulesDrivenECPresentationManager::ContentOptions options ("Items", false);
+                RulesDrivenECPresentationManager::ContentOptions options ("Items");
                 if ( m_db->m_presentationManager == nullptr)
                     {
-                    m_errmsg = "Presentation manager must be set when the imodel was openned";
                     m_status = DgnDbStatus::BadArg;
-                    SetupErrorReturn();
                     return;                
                     }
                 ContentDescriptorCPtr descriptor = m_db->m_presentationManager->GetContentDescriptor(*m_db->m_dgndb, ContentDisplayType::PropertyPane, selection, options.GetJson());
                 if (descriptor.IsNull())
                     {
-                    m_errmsg = "Failed to create content descriptor";
                     m_status = DgnDbStatus::BadArg;
-                    SetupErrorReturn();                        
                     }
                 PageOptions pageOptions;
                 pageOptions.SetPageStart(0);
@@ -1139,9 +1214,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 ContentCPtr content = m_db->m_presentationManager->GetContent(*m_db->m_dgndb, *descriptor, selection, pageOptions, options.GetJson());
                 if (content.IsNull())
                     {
-                    m_errmsg = "Content should not be null";
                     m_status = DgnDbStatus::BadArg;
-                    SetupErrorReturn();
                     return;                        
                     }                
 
@@ -1156,25 +1229,31 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 result = Nan::New(m_exportedJson.c_str()).ToLocalChecked();
                 return true;
                 }
+            bool _HadError() override {return m_status != DgnDbStatus::Success;}
         };
+
     //=======================================================================================
     //  Execute a query and return all rows, if any
     //! @bsiclass
     //=======================================================================================
     struct ExecuteQueryWorker : WorkerBase<DbResult>
         {
-        Utf8String m_ecsql;
+        Utf8String m_ecsql; // input
+        Json::Value m_bindings; // input
         Json::Value m_rowsJson;  // output
 
-        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql, Utf8CP strBindings) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue),
+            m_bindings(Utf8String::IsNullOrEmpty(strBindings) ? Json::nullValue : Json::Value::From(strBindings)) {}
 
         static NAN_METHOD(Start)
             {
             Nan::HandleScope scope;
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
-            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR, "Argument 0 must be an ECSql string");
-            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            REQUIRE_ARGUMENT_STRING(0, ecsql, BE_SQLITE_ERROR);
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, BE_SQLITE_ERROR);
+
+            (new ExecuteQueryWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
@@ -1182,8 +1261,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             if (!m_db->m_dgndb.IsValid())
                 {
                 m_status = BE_SQLITE_ERROR;
-                m_errmsg = "DgnDb must be open";
-                SetupErrorReturn();
                 return;
                 }
 
@@ -1193,21 +1270,27 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(m_ecsql.c_str());
             if (!stmt.IsValid())
                 {
-                m_errmsg = IModelJs::GetLastEcdbIssue();
                 m_status = BE_SQLITE_ERROR;
-                SetupErrorReturn();
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt, Json::nullValue);
-            if (m_status != BE_SQLITE_DONE)
-                SetupErrorReturn();
+            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            Utf8String resultStr = Json::FastWriter::ToString(m_rowsJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
+            result = Nan::New(m_rowsJson.ToString().c_str()).ToLocalChecked();
+            return true;
+            }
+        bool _HadError() override 
+            {
+            switch(m_status) 
+                {
+                case BE_SQLITE_OK: 
+                case BE_SQLITE_ROW: 
+                case BE_SQLITE_DONE: 
+                    return false;
+                }
             return true;
             }
         };
@@ -1224,11 +1307,87 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //  Destruct the native wrapper object itself
     ~NodeAddonDgnDb() {}
 
+    static NAN_METHOD(SaveChanges)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+
+        auto stat = db->m_dgndb->SaveChanges();
+        info.GetReturnValue().Set((int)stat);
+        }
+
+    static NAN_METHOD(ImportSchema)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(0, schemaPathnameStrObj, BE_SQLITE_ERROR);
+        BeFileName schemaPathname(*schemaPathnameStrObj, true);
+
+        auto stat = IModelJs::ImportSchema(*db->m_dgndb, schemaPathname);
+        info.GetReturnValue().Set((int)stat);
+        }
+
     static NAN_METHOD(CloseDgnDb)
         {
         Nan::HandleScope scope;
         NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        IModelJs::CloseDgnDb(*db->m_dgndb);
         db->m_dgndb = nullptr;
+        }
+
+    static NAN_METHOD(SetBriefcaseId)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        if (db->m_dgndb->IsBriefcase())
+            {
+            info.GetReturnValue().Set((int)BE_SQLITE_ERROR);
+            return;
+            }
+
+        REQUIRE_ARGUMENT_UINT32_SYNC_RV(0, bidUInt32Obj, BE_SQLITE_ERROR);
+
+        BeFileName name(db->m_dgndb->GetFileName());
+
+        DbResult result;
+        result = db->m_dgndb->SetAsBriefcase(BeBriefcaseId(bidUInt32Obj->Value()));
+        if (BE_SQLITE_OK == result)
+            result = db->m_dgndb->SaveChanges();
+        if (BE_SQLITE_OK == result)
+            db->m_dgndb->CloseDb();
+        if (BE_SQLITE_OK == result)
+            db->m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        info.GetReturnValue().Set((int)result);
+        }
+
+    static NAN_METHOD(GetBriefcaseId)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set(Nan::Undefined());
+            return;
+            }
+        auto bid = db->m_dgndb->GetBriefcaseId();
+        if (!bid.IsValid())
+            {
+            info.GetReturnValue().Set(Nan::Undefined());
+            return;
+            }
+        info.GetReturnValue().Set(bid.GetValue());
         }
     
     //  Create a native wrapper object that is linked to a new JS object
@@ -1236,7 +1395,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         {
         if (!info.IsConstructCall())
             {
-            return Nan::ThrowTypeError("Use the new operator to create new NodeAddonDgnDb objects");
+            return Nan::ThrowError("Use the new operator to create new NodeAddonDgnDb objects");
             }
 
         NodeAddonDgnDb* db = new NodeAddonDgnDb();
@@ -1261,15 +1420,23 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         t->SetClassName(Nan::New("DgnDb").ToLocalChecked());
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
+        Nan::SetPrototypeMethod(t, "openBriefcaseSync", OpenBriefcaseSync);
+        Nan::SetPrototypeMethod(t, "saveChanges", SaveChanges);
+        Nan::SetPrototypeMethod(t, "importSchema", ImportSchema);
         Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
+        Nan::SetPrototypeMethod(t, "setBriefcaseId", SetBriefcaseId);
+        Nan::SetPrototypeMethod(t, "getBriefcaseId", GetBriefcaseId);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
-        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
+        Nan::SetPrototypeMethod(t, "insertElementSync", InsertElementSync);
+        Nan::SetPrototypeMethod(t, "updateElementSync", UpdateElementSync);
+        Nan::SetPrototypeMethod(t, "deleteElementSync", DeleteElementSync);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
-
+        Nan::SetPrototypeMethod(t, "getCachedBriefcaseInfosSync", GetCachedBriefcaseInfosSync);
+        
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
         s_constructor_template.Reset(t);
@@ -1278,7 +1445,156 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         }
 };
 
+//=======================================================================================
+// Projects the ECSqlStatement class into JS
+//! @bsiclass
+//=======================================================================================
+struct NodeAddonECSqlStatement : Nan::ObjectWrap
+{
+    static Nan::Persistent<FunctionTemplate> s_constructor_template;
 
+    std::unique_ptr<ECSqlStatement> m_stmt;
+
+    NodeAddonECSqlStatement() : m_stmt(new ECSqlStatement())
+        {
+        }
+
+    static NAN_METHOD(New)
+        {
+        if (!info.IsConstructCall())
+            return Nan::ThrowError("Use the new operator to create new NodeAddonECSqlStatement objects");
+
+        NodeAddonECSqlStatement* ns = new NodeAddonECSqlStatement();
+
+        ns->Wrap(info.This());
+        info.GetReturnValue().Set(info.This());
+        }
+
+    static NAN_METHOD(Prepare)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+
+        REQUIRE_ARGUMENT_OBJ_SYNC_RV(0, NodeAddonDgnDb, db, DgnDbStatus::BadRequest);
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(1, ecsqlStr, DgnDbStatus::BadRequest);
+
+        if (!db->m_dgndb.IsValid())
+            {
+            info.GetReturnValue().Set((int)DgnDbStatus::NotOpen);
+            return;
+            }
+
+        BeSqliteDbMutexHolder serializeAccess(*db->m_dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+
+        auto status = ns->m_stmt->Prepare(*db->m_dgndb, *ecsqlStr);
+        
+        if (status.IsSuccess())
+            info.GetReturnValue().Set(Nan::Undefined());
+        else
+            {
+            DbResult dbres = status.IsSQLiteError()? status.GetSQLiteError(): BE_SQLITE_ERROR;
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject0(dbres, IModelJs::GetLastEcdbIssue().c_str()));
+            }
+        }
+
+    static NAN_METHOD(Reset)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->Reset();
+        info.GetReturnValue().Set((int)status.Get());
+        }
+
+    static NAN_METHOD(Dispose)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        ns->m_stmt = nullptr;
+        }
+
+    static NAN_METHOD(ClearBindings)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->ClearBindings();
+        info.GetReturnValue().Set((int)status.Get());
+        }
+
+    static NAN_METHOD(BindValues)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        REQUIRE_ARGUMENT_STRING_SYNC_RV(0, valuesStr, DgnDbStatus::BadRequest);
+        
+        //BeSqliteDbMutexHolder serializeAccess(*db->m_dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+
+        auto status = IModelJs::JsonBinder::BindValues(*ns->m_stmt, Json::Value::From(*valuesStr));
+
+        if (BSISUCCESS == status)
+            info.GetReturnValue().Set(Nan::Undefined());
+        else
+            info.GetReturnValue().Set(NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str()));
+        }
+
+    static NAN_METHOD(Step)
+        {
+        Nan::HandleScope scope;
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        auto status = ns->m_stmt->Step();
+        info.GetReturnValue().Set((int)status);
+        }
+
+    static NAN_METHOD(GetRow)
+        {
+        v8::EscapableHandleScope scope(info.GetIsolate());
+        NodeAddonECSqlStatement* ns = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
+        MUST_HAVE_M_STMT(ns);
+        Json::Value rowJson(Json::objectValue);
+        IModelJs::GetRowAsJson(rowJson, *ns->m_stmt);
+        // *** NEEDS WORK: Get the adapter to set the js object's properties directly
+        v8::Local<v8::String> rowJsonStr = v8::String::NewFromUtf8(info.GetIsolate(), rowJson.ToString().c_str());
+        v8::MaybeLocal<v8::Value> result = v8::JSON::Parse(info.GetIsolate(), rowJsonStr);
+        if (result.IsEmpty())
+            info.GetReturnValue().Set(v8::Local<v8::Value>(Nan::Undefined()));
+        else
+            info.GetReturnValue().Set(result.ToLocalChecked());
+        }
+
+    //  Create projections
+    static void Init(v8::Local<v8::Object> target)
+        {
+        Nan::HandleScope scope;
+        Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
+
+        t->InstanceTemplate()->SetInternalFieldCount(1);
+        t->SetClassName(Nan::New("ECSqlStatement").ToLocalChecked());
+
+        Nan::SetPrototypeMethod(t, "prepare", Prepare);
+        Nan::SetPrototypeMethod(t, "reset", Reset);
+        Nan::SetPrototypeMethod(t, "dispose", Dispose);
+        Nan::SetPrototypeMethod(t, "clearBindings", ClearBindings);
+        Nan::SetPrototypeMethod(t, "bindValues", BindValues);
+        Nan::SetPrototypeMethod(t, "step", Step);
+        Nan::SetPrototypeMethod(t, "getRow", GetRow);
+        
+        s_constructor_template.Reset(t);
+
+        Nan::Set(target, Nan::New("ECSqlStatement").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+    {
+    Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -1292,13 +1608,13 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     v8::String::Utf8Value v8utf8(v8filename);
     BeFileName addondir = BeFileName(*v8utf8, true).GetDirectoryName();
 
-    IModelJs::Initialize(addondir);
+    IModelJs::Initialize(addondir, throwJsExceptionOnAssert);
+    NodeAddonECSqlStatement::Init(target);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);
-
-    
     }
 
+Nan::Persistent<FunctionTemplate> NodeAddonECSqlStatement::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonDgnDb::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonECDb::s_constructor_template;
 

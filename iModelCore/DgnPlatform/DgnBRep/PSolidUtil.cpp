@@ -1047,18 +1047,20 @@ BentleyStatus   PSolidUtil::CheckBody (PK_BODY_t body, bool checkGeometry, bool 
 
     if (!checkGeometry)
         {
-        options.geom  = PK_check_geom_no_c;
-        options.bgeom = PK_check_bgeom_no_c;
+        options.geom      = PK_check_geom_no_c;
+        options.bgeom     = PK_check_bgeom_no_c;
+        options.mesh      = PK_check_mesh_no_c;
+        options.nmnl_geom = PK_check_nmnl_geom_no_c;
         }
 
     if (!checkTopology)
         {
-        options.top_geo = PK_check_top_geo_no_c;
-        options.fa_X    = PK_check_fa_X_no_c;
-        options.loops   = PK_check_loops_no_c;
-        options.fa_fa   = PK_check_fa_fa_no_c;
-        options.sh      = PK_check_sh_no_c;
-        options.corrupt = PK_check_corrupt_no_c;
+        options.top_geo   = PK_check_top_geo_no_c;
+        options.fa_X      = PK_check_fa_X_no_c;
+        options.loops     = PK_check_loops_no_c;
+        options.fa_fa     = PK_check_fa_fa_no_c;
+        options.sh        = PK_check_sh_no_c;
+        options.corrupt   = PK_check_corrupt_no_c;
         }
 
     if (!checkSize)
@@ -1083,6 +1085,17 @@ bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, dou
     if (bodyType1 != bodyType2)
         return false;
 
+    PK_BOX_t box1, box2;
+
+    if (SUCCESS != PK_TOPOL_find_box(body1, &box1) || SUCCESS != PK_TOPOL_find_box(body2, &box2))
+        return false;
+
+    DPoint3d origin1 = DPoint3d::From(box1.coord[0], box1.coord[1], box1.coord[2]);
+    DPoint3d origin2 = DPoint3d::From(box2.coord[0], box2.coord[1], box2.coord[2]);
+
+    if (!origin1.IsEqual(origin2, tolerance))
+        return false; // Don't instance if XGraphicsContainer::ExtractTransform used PSolidUtil::GetBoundingVolume and box doesn't match...
+
     switch (bodyType1)
         {
         case PK_BODY_type_solid_c:
@@ -1092,9 +1105,6 @@ bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, dou
             bvector<PK_FACE_t> faces2;
 
             if (SUCCESS != PSolidTopo::GetBodyFaces(faces1, body1) || SUCCESS != PSolidTopo::GetBodyFaces(faces2, body2) || faces1.size() != faces2.size())
-                return false;
-
-            if (SUCCESS != CheckBody(body1, true, true, false) || SUCCESS != CheckBody(body2, true, true, false))
                 return false;
 
             PK_VECTOR_t point;

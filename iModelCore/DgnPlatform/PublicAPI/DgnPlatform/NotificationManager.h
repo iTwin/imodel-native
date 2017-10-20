@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NotificationManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,29 @@
 #include    <Bentley/WString.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+//! Message Types for NotificationManager::OutputMessage
+enum class OutputMessageType
+{
+    Toast       = 0,
+    Pointer     = 1,
+    Sticky      = 2,
+    InputField  = 3,
+    Alert       = 4     //!< Modal
+};
+
+//! Relative Position for NotifyMessageDetails::SetPointerTypeDetails
+enum class RelativePosition
+{
+    Left        = 0,
+    Top         = 1,
+    Right       = 2,
+    Bottom      = 3,
+    TopLeft     = 4,
+    TopRight    = 5,
+    BottomLeft  = 6,
+    BottomRight = 7
+};
 
 //=======================================================================================
 //! Specifies the details of a message to be displayed to the user through the NotificationManager.
@@ -25,20 +48,26 @@ struct           NotifyMessageDetails
 private:
     OutputMessagePriority m_priority;
     OutputMessageAlert    m_openAlert;
-    long                  m_msgAttributes;
+    OutputMessageType     m_msgType;
     Utf8String            m_briefMsg;
     Utf8String            m_detailedMsg;
+    int32_t               m_displayTime;
+
+    // OutputMessageType.Pointer type message details
+    DgnViewportCP         m_viewport;
+    Point2d               m_displayPoint;
+    RelativePosition      m_relativePosition;
 
 public:
-    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgAttributes(0) {}
+    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast), m_viewport(nullptr), m_displayTime(4000) {}
 
     //! Construct a NotifyMessageDetails
     //! @param[in]  priority        The priority this message should be accorded by the NotificationManager.
     //! @param[in]  briefMsg        A short message that conveys the simplest explanation of the issue.
     //! @param[in]  detailedMsg     A comprehensive message that explains the issue in detail and potentially offers a solution.
-    //! @param[in]  msgAttr         Any combination of the MLTEXTATTR_xxx values from dlogbox.r.h.
+    //! @param[in]  msgType         The type of message.
     //! @param[in]  openAlert       Whether an alert box should be displayed or not, and if so what kind.
-    NotifyMessageDetails(OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, long msgAttr=0, OutputMessageAlert openAlert=OutputMessageAlert::None)
+    NotifyMessageDetails(OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, OutputMessageType msgType=OutputMessageType::Toast, OutputMessageAlert openAlert=OutputMessageAlert::None)
         {
         if (briefMsg)
             m_briefMsg.assign(briefMsg);
@@ -48,21 +77,44 @@ public:
 
         m_priority      = priority;
         m_openAlert     = openAlert;
-        m_msgAttributes = msgAttr;
+        m_msgType       = msgType;
+
+        m_displayTime = 4000;   // Default to 4 seconds
+        m_viewport = nullptr;
+        m_displayPoint.Init(0, 0);
+        m_relativePosition = RelativePosition::TopRight;
         }
 
     OutputMessagePriority GetPriority() const { return m_priority; } //!< Get the priority value of this NotifyMessageDetails.
-    OutputMessageAlert GetOpenAlert() const { return m_openAlert; } //!< Get the OpenAlert value of this NotifyMessageDetails
-    long GetMsgAttributes() const { return m_msgAttributes; } //!< Get the MsgAttributes value of this NotifyMessageDetails.
+    OutputMessageType GetMsgType() const { return m_msgType; } //!< Get the message type of this NotifyMessageDetails.
+    OutputMessageAlert GetOpenAlert() const { return m_openAlert; } //!< Get the OpenAlert value of this NotifyMessageDetails.
     Utf8StringCR GetBriefMsg() const { return m_briefMsg; } //!< Get the brief message for this NotifyMessageDetails.
     Utf8StringCR GetDetailedMsg() const { return m_detailedMsg; } //!< Get the detailed message for this NotifyMessageDetails.
+    int32_t GetDisplayTime() const { return m_displayTime; } //!< Get the display time of a Toast or Pointer type message.
 
     void SetPriority(OutputMessagePriority priority) { m_priority=priority; } //!< Set the priority value of this NotifyMessageDetails.
-    void SetOpenAlert(OutputMessageAlert openAlert) { m_openAlert=openAlert; } //!< Set the OpenAlert value of this NotifyMessageDetails
-    void SetMsgAttributes(long attrs) { m_msgAttributes=attrs; } //!< Set the MsgAttributes value of this NotifyMessageDetails.
+    void SetMsgType(OutputMessageType msgType) { m_msgType=msgType; } //!< Set the message type of this NotifyMessageDetails.
+    void SetOpenAlert(OutputMessageAlert openAlert) { m_openAlert=openAlert; } //!< Set the OpenAlert value of this NotifyMessageDetails.
     void SetBriefMsg(Utf8CP msg)  { m_briefMsg.AssignOrClear(msg); } //!< Set the brief message for this NotifyMessageDetails.
     void SetDetailedMsg(Utf8CP msg)  { m_detailedMsg.AssignOrClear(msg);} //!< Set the detailed message for this NotifyMessageDetails.
+    void SetDisplayTime(int32_t displayTime)  { m_displayTime = displayTime;} //!< Set the display time, in milliseconds, for a Toast or Pointer type message.
+
+    //! Set OutputMessageType.Pointer message details.
+    //! @param[in]  viewport            Viewport over which to display the Pointer type message.
+    //! @param[in]  displayPoint        Point at which to display the Pointer type message.
+    //! @param[in]  relativePosition    Position relative to displayPoint at which to display the Pointer type message.
+    void SetPointerTypeDetails (DgnViewportCP viewport, Point2dCR displayPoint, RelativePosition relativePosition=RelativePosition::TopRight)
+        {
+        m_viewport = viewport;
+        m_displayPoint = displayPoint;
+        m_relativePosition = relativePosition;
+        }
+
+    DgnViewportCP GetPointerTypeViewport() const { return m_viewport; } //!< Get the OutputMessageType.Pointer viewport of this NotifyMessageDetails.
+    Point2d GetPointerTypeDisplayPoint() const { return m_displayPoint; } //!< Get the OutputMessageType.Pointer display point of this NotifyMessageDetails.
+    RelativePosition GetPointerTypeRelativePosition() const { return m_relativePosition; } //!< Get the OutputMessageType.Pointer relative position of this NotifyMessageDetails.
 };
+
 
 //=======================================================================================
 //! The NotificationManager controls the interaction with the user for prompts, error messages, and alert dialogs.

@@ -234,6 +234,14 @@ struct PublisherContext : TileGenerator::ITileCollector
         Compressed,         
         };
 
+    enum class GlobeMode
+        {
+        FromDisplayStyle,   // Turn globe on based on display style setting.
+        Off,                // Turn globe off always.
+        On,                 // Turn globe on always.
+        };
+
+
     enum class Status
         {
         Success = SUCCESS,
@@ -244,6 +252,14 @@ struct PublisherContext : TileGenerator::ITileCollector
         ErrorWritingScene,
         ErrorWritingNode,
         CantOpenOutputFile,
+
+        // History publishing...
+        CantConnectToIModelHub,
+        RepositoryDoesNotExist,
+        CantAcquireBriefcase,
+        CantOpenBriefcase,
+        CantExtractHistory,
+        CantFindDefaultView,
         };
 
     struct  Statistics
@@ -275,7 +291,9 @@ struct PublisherContext : TileGenerator::ITileCollector
     typedef bvector<ClassifierInfo>             T_ClassifierInfos;
     typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
     typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
-      
+    typedef bmap<DgnElementId, uint32_t>        T_ScheduleEntryMap;
+    typedef bvector<T_ScheduleEntryMap>         T_ScheduleEntryMaps;
+
     Statistics                                  m_statistics;
 
 protected:
@@ -295,51 +313,63 @@ protected:
     bmap<DgnModelId, Utf8String>                m_directUrls;
     AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
+    bool                                        m_isGeoLocated;
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
-    bset<DgnCategoryId>                         m_usedCategories;
     bset<DgnSubCategoryId>                      m_usedSubCategories;
+    Json::Value                                 m_schedulesJson;
+    T_ScheduleEntryMaps                         m_scheduleEntryMaps;
+    GlobeMode                                   m_globeMode = GlobeMode::FromDisplayStyle;
 
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
+
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
-    TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT void CleanDirectories(BeFileNameCR dataDir);
-    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter);
     Status PublishClassifiers (DgnModelIdSet const& viewedModels, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
     Status PublishClassifier(ClassifierInfo& classifierInfo, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
 
 
     TILEPUBLISHER_EXPORT void WriteModelMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet);
-    WString GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const;
+    Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels);
+    void AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds);
     ClassifierInfo const* GetCurrentClassifier() const { return m_currentClassifier; }
 
 
     void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
-    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&);
+    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&, bool testUsed);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
     Json::Value GetClassifiersJson(T_ClassifierInfos const& classifiers);
     Json::Value GetAllClassifiersJson();
-    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const;
+    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views, bool testUsed) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
+    TILEPUBLISHER_EXPORT virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs);
 
-    BeFileName GetTilesetFileName(DgnModelId modelId);
-    Utf8String GetTilesetName(DgnModelId modelId, ClassifierInfo const* classifier);
+
+    BeFileName GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier);
+    Utf8String GetTilesetURL(DgnModelId modelId, ClassifierInfo const* classifier);
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
+    void ExtractSchedules();
+    void ExtractViewSelectors(DgnViewId& defaultViewId, DgnElementIdSet& allModelSelectors, T_CategorySelectorMap& allCategorySelectors, DgnElementIdSet& allDisplayStyles, DgnModelIdSet&   all2dModelIds);
+    Json::Value GetViewDefinitionsJson();
+
+
 public:
+    WString GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const;
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
+    BeFileName  GetModelDataDirectory(DgnModelId modelId, ClassifierInfo const* classifier, bool appendSeperator = true) const;
+    BeFileName  GetBinaryDataFileName(TileNodeCR tile) const;
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
     DgnDbR GetDgnDb() const { return m_db; }
@@ -347,20 +377,21 @@ public:
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
-    WString GetTileExtension (TileNodeCR tile);
+    WString GetTileExtension (TileNodeCR tile) const;
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
+    T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
-    void RecordUsage(TileDisplayParamsCR displayParams);
-    bool IsCategoryUsed(DgnCategoryId categoryId) const { return m_usedCategories.find(categoryId) != m_usedCategories.end(); }
+    void RecordUsage(FeatureAttributesMapCR attributes);
+    TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter);
     bool IsSubCategoryUsed(DgnSubCategoryId subCategoryId) const { return m_usedSubCategories.find(subCategoryId) != m_usedSubCategories.end(); }
-
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
-
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
-    TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
+    void AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) { _AddBatchTableAttributes(json, attrs); }
+
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
@@ -436,11 +467,11 @@ private:
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
 
     void AddMeshUInt16Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
-    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr);
+    void AddMeshUInt32Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& attributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
+    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint32_t> const& attributes, Utf8StringCR idStr);
     void AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colors, Utf8StringCR idStr);
 
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
-    BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
     void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
@@ -456,6 +487,7 @@ private:
 
     Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCPtr& textureImage, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
+
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();                                         

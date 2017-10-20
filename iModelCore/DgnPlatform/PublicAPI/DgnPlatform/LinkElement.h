@@ -308,6 +308,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
 
 public:
     //! Parameters used to construct a UrlLink
@@ -382,7 +383,19 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryLink : UrlLink
     friend struct dgn_ElementHandler::RepositoryLinkHandler;
 
 protected:
+    BeSQLite::BeGuid m_repositoryGuid;
+
     explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
+
+    DGNPLATFORM_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
+
+    BE_JSON_PROP_NAMESPACE(DocumentProperties);
+
+    BE_JSON_NAME(repositoryGuid);
 
 public:
     //! Create a DgnCode using the specified model (uniqueness scope) and name
@@ -399,6 +412,19 @@ public:
     //! @param[in] name The name of the RepositoryLink that will be used to form its DgnCode
     //! @param[in] description The optional description of the RepositoryLink
     DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(LinkModelR model, Utf8CP url, Utf8CP name, Utf8CP description = nullptr);
+
+    //! Get the RepositoryGuid property value
+    BeSQLite::BeGuid GetRepositoryGuid() const {return m_repositoryGuid;}
+
+    //! Set the RepositoryGuid property value
+    void SetRepositoryGuid(BeSQLite::BeGuid g) {m_repositoryGuid = g;}
+
+    //! Get the Document Properties for this InformationPartitionElement. Document Properties provide additional information about 
+    //! the document to which this link refers.
+    ECN::AdHocJsonValueCR GetDocumentProperties() const {return GetJsonProperties(json_prop_namespace_DocumentProperties());}
+
+    //! Set the Document Properties of this InformationPartitionElement. Document Properties 
+    void SetDocumentProperties(JsonValueCR value) {SetJsonProperties(json_prop_namespace_DocumentProperties(), value);}
 };
 
 //=======================================================================================
@@ -443,6 +469,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
 
 public:
     BE_JSON_NAME(name);

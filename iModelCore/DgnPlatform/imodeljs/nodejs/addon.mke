@@ -67,13 +67,13 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJsonCpp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibJpegTurbo.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJpeg.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibxml2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeomSerialization.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeOpenSSL.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBePng.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSecurity.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLiteEC.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeXml.a
@@ -82,11 +82,12 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libDgnPlatform.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECPresentation.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECObjects.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libiModelHubClient.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSecurity.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libiModelHubClient.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
 
 THIN_ARCHIVE_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.a
 THIN_ARCHIVE_RSP_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.rsp
@@ -127,8 +128,15 @@ $(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENT
     $(LinkFirstDepToFirstTarget)
 	
 #----------------------------------------------------------------------
+# Deliver package.json. That contains the package version number.
+#----------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
+    
+#----------------------------------------------------------------------
 # Deliver Presentation Rules
 #----------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
+
 	

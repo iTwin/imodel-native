@@ -270,7 +270,7 @@ BentleyStatus BRepUtil::GetFaceEdges(bvector<ISubEntityPtr>& subEntities, ISubEn
 
     PK_MEMORY_free(entities);
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -293,7 +293,7 @@ BentleyStatus BRepUtil::GetFaceVertices(bvector<ISubEntityPtr>& subEntities, ISu
 
     PK_MEMORY_free(entities);
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -316,7 +316,7 @@ BentleyStatus BRepUtil::GetEdgeFaces(bvector<ISubEntityPtr>& subEntities, ISubEn
 
     PK_MEMORY_free(entities);
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -339,7 +339,7 @@ BentleyStatus BRepUtil::GetEdgeVertices(bvector<ISubEntityPtr>& subEntities, ISu
     if (PK_ENTITY_null != entities[1])
         subEntities.push_back(PSolidSubEntity::CreateSubEntity(entities[1], PSolidSubEntity::GetSubEntityTransform(subEntity)));
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -362,7 +362,7 @@ BentleyStatus BRepUtil::GetVertexFaces(bvector<ISubEntityPtr>& subEntities, ISub
 
     PK_MEMORY_free(entities);
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -385,7 +385,7 @@ BentleyStatus BRepUtil::GetVertexEdges(bvector<ISubEntityPtr>& subEntities, ISub
 
     PK_MEMORY_free(entities);
 
-    return SUCCESS;
+    return (subEntities.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -596,7 +596,7 @@ BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, 
         adjacentFaces.push_back(PSolidSubEntity::CreateSubEntity(adjFaceTag, entityTransform));
         }
 
-    return SUCCESS;
+    return (adjacentFaces.empty() ? ERROR : SUCCESS);
 #else
     return ERROR;
 #endif
@@ -983,6 +983,27 @@ bool BRepUtil::IsLaminarEdge(ISubEntityCR subEntity)
     PK_EDGE_ask_type_t edgeTypes;
 
     return (SUCCESS == PK_EDGE_ask_type(PSolidSubEntity::GetSubEntityTag(subEntity), &edgeTypes) && PK_EDGE_type_laminar_c == edgeTypes.fins_type);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsLinearEdge(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_CURVE_t  curveTag = PK_ENTITY_null;
+
+    if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, nullptr, nullptr, nullptr, PSolidSubEntity::GetSubEntityTag(subEntity)))
+        return false;
+
+    PK_CLASS_t  curveClass = 0;
+
+    PK_ENTITY_ask_class(curveTag, &curveClass);
+
+    return (PK_CLASS_line == curveClass);
 #else
     return false;
 #endif
@@ -3167,6 +3188,346 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTERVAL_t>& intervals, PK_BODY_t bodyTag)
+    {
+    bvector<PK_EDGE_t>  edges;
+
+    if (SUCCESS != PSolidTopo::GetBodyEdges(edges, bodyTag))
+        return ERROR;
+
+    for (PK_EDGE_t edgeTag : edges)
+        {
+        PK_CURVE_t      curveTag;
+
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
+            continue;
+
+        PK_INTERVAL_t   interval;
+
+        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            continue;
+
+        curves.push_back(curveTag);
+        intervals.push_back(interval);
+        }
+
+    return SUCCESS;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& selectedEdges, DVec3dCR offsetDir, double offset, bool propagateSmooth, StepFacesOption addStep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (selectedEdges.empty())
+        return ERROR;
+
+    ISubEntityPtr refEdgePtr = selectedEdges.front();
+
+    if (ISubEntity::SubEntityType::Edge != refEdgePtr->GetSubEntityType())
+        return ERROR;
+
+    // Evaluate reference edge at pick location or center if not present...
+    double      uParam;
+    DVec3d      refEdgeTangent;
+    DPoint3d    refEdgePoint;
+
+    if (!refEdgePtr->GetEdgeLocation(refEdgePoint, uParam))
+        {
+        DRange1d    uRange;
+
+        if (SUCCESS != BRepUtil::GetEdgeParameterRange(*refEdgePtr, uRange))
+            return ERROR;
+
+        uParam = (uRange.low + uRange.high) / 2.0;
+        }
+
+    if (SUCCESS != BRepUtil::EvaluateEdge(*refEdgePtr, refEdgePoint, refEdgeTangent, uParam))
+        return ERROR;
+
+    // Find face of edge whose normal is closest to offsetDir...this will be the face to apply the taper to...
+    bvector<ISubEntityPtr> refEdgeFaces;
+
+    if (SUCCESS != BRepUtil::GetEdgeFaces(refEdgeFaces, *refEdgePtr))
+        return ERROR;
+
+    double          lastDot = 0.0;
+    DVec3d          refFaceNormal;
+    ISubEntityPtr   refFacePtr;
+
+    for (ISubEntityPtr facePtr : refEdgeFaces)
+        {
+        DPoint2d    uvParam;
+        DVec3d      faceNormal, uDir, vDir;
+        DPoint3d    facePoint;
+
+        if (!BRepUtil::ClosestPointToFace(*facePtr, refEdgePoint, facePoint, uvParam))
+            continue;
+
+        if (SUCCESS != BRepUtil::EvaluateFace(*facePtr, facePoint, faceNormal, uDir, vDir, uvParam))
+            continue;
+
+        double      thisDot = offsetDir.DotProduct(faceNormal);
+
+        if (refFacePtr.IsValid() && fabs(thisDot) < fabs(lastDot))
+            continue;
+
+        lastDot = thisDot;
+        refFaceNormal = faceNormal;
+        refFacePtr = facePtr;
+        }
+
+    if (!refFacePtr.IsValid())
+        return ERROR;
+
+    // Find an edge on the other side of the face to taper from the reference edge...
+    PK_ENTITY_t refFaceTag = PSolidSubEntity::GetSubEntityTag(*refFacePtr);
+    DRange3d    faceRange;
+
+    if (SUCCESS != PSolidUtil::GetEntityRange(faceRange, refFaceTag))
+        return ERROR;
+
+    Transform   fwdTargetTransform, invTargetTransform;
+ 
+    fwdTargetTransform = targetEntity.GetEntityTransform();
+    invTargetTransform.InverseOf(fwdTargetTransform);
+
+    DVec3d      extremeDir = DVec3d::FromNormalizedCrossProduct(refFaceNormal, refEdgeTangent);
+    DPoint3d    points[2];
+
+    extremeDir.ScaleToLength(faceRange.DiagonalDistance()); // Make sure projected curve completely splits face...
+    points[0].SumOf(refEdgePoint, extremeDir);
+    points[1].SumOf(refEdgePoint, DVec3d::FromScale(extremeDir, -1.0));
+
+    PK_POINT_t      pointVec;
+    PK_POINT_sf_t   pointSF;
+    PK_ENTITY_t     toolTag = PK_ENTITY_null;
+    PK_ENTITY_t     toolEdgeTag = PK_ENTITY_null;
+
+    memset(&pointSF, 0, sizeof(pointSF));
+    PK_POINT_create(&pointSF, &pointVec);
+
+    if (SUCCESS != PK_POINT_make_minimum_body(pointVec, &toolTag))
+        return ERROR;
+
+    invTargetTransform.Multiply(points, 2);
+
+    if (SUCCESS != PSolidUtil::ImprintSegment(toolTag, &toolEdgeTag, points))
+        {
+        PK_ENTITY_delete(1, &toolTag);
+        return ERROR;
+        }
+
+    bvector<PK_CURVE_t>     toolCurves;
+    bvector<PK_INTERVAL_t>  toolIntervals;
+
+    getBodyCurves(toolCurves, toolIntervals, toolTag);
+
+    PK_CURVE_project_o_t options;
+    PK_CURVE_project_r_t results;
+    PK_ENTITY_track_r_t  tracking;
+
+    PK_CURVE_project_o_m(options);
+    options.construction = PK_LOGICAL_false; // Create orphan curves instead of construction curves...note sure if those get persisted...
+
+    memset(&results, 0, sizeof(results));
+    memset(&tracking, 0, sizeof(tracking));
+
+    PK_ERROR_code_t failureCode = PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &refFaceTag, &options, &results, &tracking);
+
+    double      lastDist = 0.0;
+    DPoint3d    extremePt = DPoint3d::FromZero();
+
+    if (SUCCESS == failureCode && results.n_geoms > 0)
+        {
+        for (int iResult = 0; iResult < results.n_geoms; ++iResult)
+            {
+            for (int iPt = 0; iPt < 2; ++iPt)
+                {
+                PK_VECTOR_t pnt;
+
+                if (SUCCESS != PK_CURVE_eval(results.geoms[iResult].geom, results.geoms[iResult].range.value[iPt], 0, &pnt))
+                    continue;
+
+                DPoint3d    point = DPoint3d::From(pnt.coord[0], pnt.coord[1], pnt.coord[2]);
+
+                fwdTargetTransform.Multiply(point);
+
+                double      thisDist = point.Distance(refEdgePoint);
+
+                if (thisDist <= lastDist)
+                    continue;
+
+                extremePt = point;
+                lastDist = thisDist;
+                }
+
+            PK_ENTITY_delete(1, &results.geoms[iResult].geom); // Doesn't seem like PK_ENTITY_track_r_f/PK_CURVE_project_r_f would free orphan geometry?
+            }
+        }
+
+    PK_ENTITY_delete(1, &toolTag);
+    PK_ENTITY_track_r_f(&tracking);
+    PK_CURVE_project_r_f(&results);
+
+    if (0.0 == lastDist)
+        return ERROR;
+
+    // The closest sub-entity to the extreme point should be an edge if there wasn't a problem above and geometry can be sensibly tapered...
+    ISubEntityPtr extremePtr = ClosestSubEntity(targetEntity, extremePt);
+
+    if (!extremePtr.IsValid())
+        return ERROR;
+
+    // Get the other face from the opposite edge (not the one being tapered) to use to define the taper direction...
+    bvector<ISubEntityPtr> extremeEdgeFaces;
+
+    if (SUCCESS != BRepUtil::GetEdgeFaces(extremeEdgeFaces, *extremePtr))
+        return ERROR;
+
+    extremePtr = nullptr;
+
+    for (ISubEntityPtr facePtr : extremeEdgeFaces)
+        {
+        if (facePtr->IsEqual(*refFacePtr))
+            continue;
+
+        extremePtr = facePtr;
+        break;
+        }
+
+    if (!extremePtr.IsValid())
+        return ERROR;
+
+    // Calculate the taper angle using the extreme point, offset point, and taper direction...
+    DPoint2d    uvParam;
+    DVec3d      normal, uDir, vDir;
+    DPoint3d    point;
+
+    if (!BRepUtil::ClosestPointToFace(*extremePtr, extremePt, point, uvParam))
+        return ERROR;
+
+    if (SUCCESS != BRepUtil::EvaluateFace(*extremePtr, point, normal, uDir, vDir, uvParam))
+        return ERROR;
+
+    DPoint3d    offsetPt = DPoint3d::FromSumOf(refEdgePoint, offsetDir, offset);
+    DVec3d      taperDir = DVec3d::FromStartEndNormalize(offsetPt, extremePt);
+    double      angle = fabs(normal.AngleTo(taperDir));
+
+    if (angle < Angle::FromDegrees(1.0).Radians() || angle > Angle::FromDegrees(89.0).Radians())
+        return ERROR;
+
+    if (offsetDir.DotProduct(refFaceNormal) < 0.0)
+        angle = -angle;
+
+    ISubEntityPtr commonFacePtr;
+    bvector<ISubEntityPtr> taperFaces;
+    bvector<ISubEntityPtr> refEntities;
+    bvector<double> angles;
+
+    angles.push_back(angle);
+
+    // Add faces from any other edges (or tangent edges) that share a common face with the taper face found from the reference edge...
+    if (selectedEdges.size() > 1 || propagateSmooth)
+        {
+        for (ISubEntityPtr facePtr : refEdgeFaces)
+            {
+            if (facePtr->IsEqual(*refFacePtr))
+                continue;
+
+            commonFacePtr = facePtr;
+            break;
+            }
+        }
+
+    if (!commonFacePtr.IsValid())
+        {
+        taperFaces.push_back(refFacePtr);
+        refEntities.push_back(extremePtr);        
+        }
+    else
+        {
+        PK_FACE_t commonFaceTag = PSolidSubEntity::GetSubEntityTag(*commonFacePtr);
+        bset<PK_FACE_t> faceTags;
+
+        for (ISubEntityPtr edgePtr : selectedEdges)
+            {
+            if (ISubEntity::SubEntityType::Edge != edgePtr->GetSubEntityType())
+                continue;
+
+            PK_EDGE_t edgeTag;
+
+            if (0 == (edgeTag = PSolidSubEntity::GetSubEntityTag(*edgePtr)))
+                continue;
+
+            if (propagateSmooth)
+                {
+                bvector<PK_EDGE_t> smoothEdges;
+
+                if (SUCCESS != PSolidTopo::GetTangentBlendEdges(smoothEdges, edgeTag))
+                    continue;
+
+                for (PK_EDGE_t smoothEdgeTag : smoothEdges)
+                    {
+                    bvector<PK_FACE_t> otherFaces;
+
+                    if (SUCCESS != PSolidTopo::GetEdgeFaces(otherFaces, smoothEdgeTag))
+                        continue;
+
+                    if (otherFaces.end() == std::find(otherFaces.begin(), otherFaces.end(), commonFaceTag))
+                        continue;
+
+                    for (PK_FACE_t otherFaceTag : otherFaces)
+                        {
+                        if (otherFaceTag == commonFaceTag)
+                            continue;
+
+                        faceTags.insert(otherFaceTag);
+                        }
+                    }
+                }
+            else
+                {
+                bvector<PK_FACE_t> otherFaces;
+
+                if (SUCCESS != PSolidTopo::GetEdgeFaces(otherFaces, edgeTag))
+                    continue;
+
+                if (otherFaces.end() == std::find(otherFaces.begin(), otherFaces.end(), commonFaceTag))
+                    continue;
+
+                for (PK_FACE_t otherFaceTag : otherFaces)
+                    {
+                    if (otherFaceTag == commonFaceTag)
+                        continue;
+
+                    faceTags.insert(otherFaceTag);
+                    }
+                }
+            }
+
+        if (0 == faceTags.size())
+            return ERROR;
+
+        for (PK_EDGE_t faceTag : faceTags)
+            {
+            taperFaces.push_back(PSolidSubEntity::CreateSubEntity(faceTag, fwdTargetTransform));
+            refEntities.push_back(extremePtr);
+            }
+        }
+
+    return BRepUtil::Modify::TaperFaces(targetEntity, taperFaces, refEntities, BRepUtil::IsPlanarFace(*extremePtr) ? normal : DVec3d::From(0.0, 0.0, 0.0), angles, addStep);
+#else
+    return ERROR;
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3425,6 +3786,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
             edgeTransform.Multiply(refDirPt, edgePoint);
             fwdTargetTransform.Multiply(extremePt);
             DPlane3d::FromOriginAndNormal(edgePoint, edgeTangent).ProjectPoint(extremePt, extremePt);
+            DPlane3d::FromOriginAndNormal(edgePoint, faceNormal).ProjectPoint(extremePt, extremePt);
 
             DVec3d xVec = DVec3d::FromStartEndNormalize(extremePt, edgePoint);
             DVec3d yVec = DVec3d::FromStartEndNormalize(extremePt, refDirPt);
@@ -3447,37 +3809,6 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
     return ERROR;
 #endif
     }
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTERVAL_t>& intervals, PK_BODY_t bodyTag)
-    {
-    bvector<PK_EDGE_t>  edges;
-
-    if (SUCCESS != PSolidTopo::GetBodyEdges(edges, bodyTag))
-        return ERROR;
-
-    for (PK_EDGE_t edgeTag : edges)
-        {
-        PK_CURVE_t      curveTag;
-
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
-            continue;
-
-        PK_INTERVAL_t   interval;
-
-        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
-            continue;
-
-        curves.push_back(curveTag);
-        intervals.push_back(interval);
-        }
-
-    return SUCCESS;
-    }
-#endif
 
 #if defined (BENTLEYCONFIG_PARASOLID)
 //=======================================================================================
@@ -4149,10 +4480,10 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& edges, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep)
+BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<ISubEntityPtr>& refEntities, DVec3dCR direction, bvector<double>& angles, StepFacesOption addStep)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (faces.empty() || edges.empty() || angles.empty())
+    if (faces.empty() || refEntities.empty() || angles.empty())
         return ERROR;
 
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
@@ -4166,25 +4497,38 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
 
     bvector<PK_FACE_t> faceTags;
 
-    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+    for (ISubEntityPtr facePtr : faces)
         {
-        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+        if (ISubEntity::SubEntityType::Face != facePtr->GetSubEntityType())
             continue;
 
-        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*facePtr));
         }
 
-    bvector<PK_FACE_t> edgeTags;
+    bvector<PK_ENTITY_t> refEntityTags;
 
-    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+    for (ISubEntityPtr refEntityPtr : refEntities)
         {
-        if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
-            continue;
+        switch (refEntityPtr->GetSubEntityType())
+            {
+            case ISubEntity::SubEntityType::Edge:
+                {
+                refEntityTags.push_back(PSolidSubEntity::GetSubEntityTag(*refEntityPtr));
+                break;
+                }
 
-        edgeTags.push_back(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]));
+            case ISubEntity::SubEntityType::Face:
+                {
+                PK_SURF_t surfTag = PK_ENTITY_null;
+
+                if (SUCCESS == PK_FACE_ask_surf(PSolidSubEntity::GetSubEntityTag(*refEntityPtr), &surfTag) && PK_ENTITY_null != surfTag)
+                    refEntityTags.push_back(surfTag);
+                break;
+                }
+            }
         }
 
-    if (faceTags.size() != edgeTags.size())
+    if (faceTags.size() != refEntityTags.size())
         return ERROR;
 
     if (angles.size() > 1 && angles.size() != faceTags.size())
@@ -4202,7 +4546,7 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
     PK_FACE_taper_o_m(options);
 
     options.grow = PK_FACE_grow_auto_c;
-    options.method = PK_taper_method_curve_c;
+    options.method = (0.0 != direction.Magnitude() ? PK_taper_method_curve_c : PK_taper_method_normal_c);
 
     switch (addStep)
         {
@@ -4249,7 +4593,8 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
     memset(&tracking, 0, sizeof(tracking));
     memset(&results, 0, sizeof(results));
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_taper((int) faceTags.size(), &faceTags.front(), &edgeTags.front(), taperVec, taperAngle, 1.0e-5, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
+    PK_ERROR_code_t failureCode = PK_FACE_taper((int) faceTags.size(), &faceTags.front(), &refEntityTags.front(), taperVec, taperAngle, 1.0e-5, &options, &tracking, &results);
+    BentleyStatus   status = (PK_ERROR_no_errors == failureCode && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
 
     PK_TOPOL_local_r_f(&results);
     PK_TOPOL_track_r_f(&tracking);

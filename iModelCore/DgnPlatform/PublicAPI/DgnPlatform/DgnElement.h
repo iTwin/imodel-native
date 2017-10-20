@@ -366,8 +366,12 @@ struct AutoHandledPropertiesCollection
     ECN::ECClassCP m_autoHandledProperty;
     ECSqlClassParams::StatementType m_stype;
     bool m_wantCustomHandledProps;
+    static bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> s_orphanCustomHandledProperties;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
+    
+    static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
+    static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
@@ -432,6 +436,14 @@ public:
     DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementR, Utf8CP accessString);
 
     bool IsValid() const {return m_isPropertyIndexValid;}
+
+    bool IsAutoHandled() const {return nullptr == m_accessors;}
+
+    uint32_t GetPropertyIndex() const {return m_propIdx;}
+
+    DgnElementR GetElement() const {return m_element;}
+
+    DGNPLATFORM_EXPORT ECN::PropertyLayoutCP GetPropertyLayout() const;
 
     DGNPLATFORM_EXPORT Utf8CP GetAccessString() const;
 
@@ -603,6 +615,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 public:
     friend struct DgnElements;
     friend struct DgnModel;
+    friend struct IModelJs;
     friend struct ElemIdTree;
     friend struct dgn_ElementHandler::Element;
     friend struct dgn_TxnTable::Element;
@@ -1187,8 +1200,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Update this DgnElement from a Json::Value.
-    //! @note If you override this method, you @em must call T_Super::_UpdateFromJson()
-    DGNPLATFORM_EXPORT virtual void _UpdateFromJson(JsonValueCR props);
+    //! @note If you override this method, you @em must call T_Super::_FromJson()
+    DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1950,6 +1963,8 @@ public:
     //! Create a Json::Value that represents the state of this element.
     Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
 
+    void FromJson(JsonValueR props) {_FromJson(props);}
+    
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
@@ -2021,6 +2036,7 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
 
     //! Determine whether this Placement3d is valid.
     bool IsValid() const
@@ -2093,6 +2109,7 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
 
     //! Determine whether this Placement2d is valid
     bool IsValid() const
@@ -2266,6 +2283,7 @@ protected:
     virtual Utf8CP _GetGeometryColumnClassName() const = 0;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
@@ -2330,8 +2348,8 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
             : T_Super(params, category), m_placement(placement) {}
     };
-protected:
 
+protected:
     Placement3d m_placement;
     RelatedElement m_typeDefinition;
 
@@ -2355,6 +2373,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2438,6 +2457,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2862,6 +2882,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
@@ -3500,7 +3521,8 @@ public:
     //! @param stat  Optional. If not null, an error status is returned here if the element cannot be created.
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
     //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
-    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* stat = nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(ECN::IECInstanceCR properties, bool ignoreUnknownProperties, DgnDbStatus* stat = nullptr) const;
 
     template<class T> RefCountedPtr<T> Create(ECN::IECInstanceCR properties, DgnDbStatus* stat=nullptr) const {return dynamic_cast<T*>(CreateElement(properties,stat).get());}
 

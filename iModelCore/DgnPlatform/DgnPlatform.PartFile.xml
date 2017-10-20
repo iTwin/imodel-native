@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
@@ -43,7 +43,7 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1_241"/>
     </Part>
     <Part Name="PsolidShimIos" OnlyPlatforms="iOSARM64,iOSx64" WipPartEnable="ParasolidIos">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha1"/>
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha2"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
@@ -59,12 +59,12 @@
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeXml"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
-        <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart PartName="pnglib"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
@@ -123,6 +123,7 @@
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/PerfTestDomain.h</Files>
         </Bindings>
     </Part>
 
@@ -536,6 +537,7 @@
 
     <Part Name="DgnPlatformNoViewTested">
       <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
@@ -637,6 +639,13 @@
         </Bindings>
     </Part>
 
+    <!-- Presentation rules for tile publisher -->
+    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
+        </Bindings>
+    </Part>
+
     <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
@@ -646,7 +655,15 @@
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="Crunch"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
+        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+        <SubPart PartName="CrunchLib"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
+		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
+        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
+        <SubPart PartName="TilePublisherAssets" PartFile="DgnPlatform"          Repository="DgnPlatform"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
@@ -665,10 +682,10 @@
     <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherExe" />
     </Part>
-  
+  																																																		                    
     <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
         <SubPart PartName="TilePublisherExe" />
-    </Part>
+    </Part>																																										 
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
         <SubPart PartName="TilePublisherLib" />
@@ -700,6 +717,9 @@
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
     </ProductDirectoryList>
 
     <!-- *********************************************************** -->
@@ -730,12 +750,17 @@
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
         <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
     </ProductDirectoryList>
 
   <!-- //////////////////////////////////////////////////////////////////////////// -->
   <!-- // iModelJsNode_node_module - the node-specific wrapper around imodeljs   // -->
   <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+  <Part Name="MakeImodelJsAddonPackages" BentleyBuildMakeFile="imodeljs/nodejs/makeImodelJsAddonPackages.mke" >
+    <SubProduct ProductName="iModelJsNodeAddon"/>
+  </Part>
 
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
@@ -765,7 +790,7 @@
 
     <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot"/>
     <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-	
+
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
@@ -780,9 +805,10 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
-        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node
+        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_2_1/package.json
       </Files>
-	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
       </Files>
     </Bindings>
@@ -795,9 +821,10 @@
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of the imodeljs-dgnplatform/addon subdirectory, and that must match the version of electron node that is running. -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
-        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node
+        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node,
+        Delivery/iModelJsNodeAddon/E_1_6_11/package.json
       </Files>
-	  <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
       </Files>
     </Bindings>  </Part>
@@ -807,7 +834,8 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
-        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node
+        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_7_10_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -820,9 +848,9 @@
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-	<SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+    <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
+    <SubPart PartName="rapidjsonapi"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
   </Part>
 
 </BuildContext>

@@ -16,6 +16,7 @@
 #define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)         "bis_" name
 #define BE_PROP_NAME(__val__)   static constexpr Utf8CP prop_##__val__() {return #__val__;}
+#define BE_JSON_PROP_NAMESPACE(__val__) static constexpr Utf8CP json_prop_namespace_##__val__() {return #__val__;}
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with BIS_SCHEMA macro for use in ECSql)
@@ -750,6 +751,9 @@ public:
     //! include space occupied by elements or other artifacts of interest), they may disappear under some operations since they're not considered
     //! "of interest". Likewise, if this volume is too large, some operations may work poorly due to the large volume of "wasted space".
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
+
+    //! Get the union of the ranges of all elements in the iModel.
+    DGNPLATFORM_EXPORT AxisAlignedBox3d QueryRTreeExtents() const;
 
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outXyz The output XYZ point

@@ -98,6 +98,7 @@ enum class DgnDbStatus : int
     WrongElement           = DGNDB_ERROR_BASE + 62,
     WrongHandler           = DGNDB_ERROR_BASE + 63,
     WrongModel             = DGNDB_ERROR_BASE + 64,
+    ConstraintNotUnique    = DGNDB_ERROR_BASE + 65,
     };
 
 //! Status Values for DgnViewport methods
@@ -171,6 +172,8 @@ enum class RevisionStatus : int
     WrongDgnDb, //!< Revision originated in a different Db
     CouldNotOpenDgnDb, //!< Could not open the DgnDb to merge revision
     MergeSchemaChangesOnOpen, //! Cannot merge schema change in a previously opened DgnDb. Merge it when the file is opened. 
+    CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
+    CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
     };
 
 //=======================================================================================

@@ -326,6 +326,19 @@ void ViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_categorySelectorId()))
+        m_categorySelectorId.FromJson(val[json_categorySelectorId()]);
+
+    if (val.isMember(json_displayStyleId()))
+        m_displayStyleId.FromJson(val[json_displayStyleId()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::_CopyFrom(DgnElementCR el)
@@ -414,7 +427,29 @@ DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 void ViewDefinition2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_categorySelectorId()] = m_categorySelectorId.ToHexStr();
+    JsonUtils::DPoint2dToJson(val[json_origin()], m_origin);
+    JsonUtils::DPoint2dToJson(val[json_delta()], m_delta);
+    val[json_angle()] = JsonUtils::AngleInDegreesToJson(AngleInDegrees::FromRadians(m_rotAngle));
+    val[json_baseModelId()] = m_baseModelId.ToHexStr();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition2d::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_origin()))
+        JsonUtils::DPoint2dFromJson(m_origin, val[json_origin()]);
+
+    if (val.isMember(json_delta()))
+        JsonUtils::DPoint2dFromJson(m_delta, val[json_delta()]);
+
+    if (val.isMember(json_angle()))
+        m_rotAngle = JsonUtils::AngleInDegreesFromJson(val[json_angle()].asDouble()).Radians();
+
+    if (val.isMember(json_baseModelId()))
+        m_baseModelId.FromJson(val[json_baseModelId()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,6 +514,37 @@ size_t ViewDefinition::QueryCount(DgnDbR db, Utf8CP whereClause)
 
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(sql.c_str());
     return statement.IsValid() && BE_SQLITE_ROW == statement->Step() ? statement->GetValueInt(0) : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnViewId queryFirstPublicView(DgnDbR db, Utf8CP className)
+    {
+    Utf8PrintfString sql("SELECT ECInstanceId FROM %s WHERE IsPrivate=FALSE LIMIT 1", className);
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+    return (statement.IsValid() && (BE_SQLITE_ROW == statement->Step())) ? statement->GetValueId<DgnViewId>(0) : DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId ViewDefinition::QueryDefaultViewId(DgnDbR db)
+    {
+    DgnViewId viewId;
+    if (BeSQLite::BE_SQLITE_ROW == db.QueryProperty(&viewId, sizeof(viewId), DgnViewProperty::DefaultView()) && ViewDefinition::Get(db, viewId).IsValid())
+        return viewId;
+
+    viewId = queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition));
+    if (viewId.IsValid())
+        return viewId;
+
+    viewId = queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_SheetViewDefinition));
+    if (viewId.IsValid())
+        return viewId;
+
+    return queryFirstPublicView(db, BIS_SCHEMA(BIS_CLASS_DrawingViewDefinition));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -807,6 +873,29 @@ void ViewDefinition3d::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition3d::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+
+    if (val.isMember(json_cameraOn()))
+        m_cameraOn = val[json_cameraOn()].asBool();
+
+    if (val.isMember(json_origin()))
+        JsonUtils::DPoint3dFromJson(m_origin, val[json_origin()]);
+
+    if (val.isMember(json_extents()))
+        JsonUtils::DPoint3dFromJson(m_extents, val[json_extents()]);
+    
+    if (val.isMember(json_angles()))
+        m_rotation = JsonUtils::YawPitchRollFromJson(val[json_angles()]).ToRotMatrix();
+
+    if (val.isMember(json_camera()))
+        m_cameraDef.FromJson(val[json_camera()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition3d::_CopyFrom(DgnElementCR el)
@@ -958,6 +1047,16 @@ void SpatialViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_modelSelectorId()] = m_modelSelectorId.ToHexStr();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewDefinition::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_modelSelectorId()))
+        m_modelSelectorId.FromJson(val[json_modelSelectorId()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

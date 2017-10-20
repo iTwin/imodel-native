@@ -197,7 +197,7 @@ public:
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
-    void SetViewCmdTargetCenter(DPoint3dCP newCenter);
+    DGNVIEW_EXPORT void SetViewCmdTargetCenter(DPoint3dCP newCenter);
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;

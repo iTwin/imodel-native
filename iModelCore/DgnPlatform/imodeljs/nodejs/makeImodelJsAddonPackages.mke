@@ -1,0 +1,27 @@
+#----------------------------------------------------------------------
+#
+#     $Source: imodeljs/nodejs/makeImodelJsAddonPackages.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+ProductDir = $(OutputRootDir)Product/
+o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    Platform = "Windows"
+    PlatformAndArch = "WinX64"
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+    Platform = "Linux"
+    PlatformAndArch = "LinuxX64"
+%else
+    %error iModelJsNodeAddon is not available for this platform
+%endif
+
+# NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
+
+always:
+    -$(rmdirRecursiveCmd) $(o)
+    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)

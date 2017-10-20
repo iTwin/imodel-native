@@ -12,12 +12,18 @@
 #include <Raster/RasterApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <RealityPlatform/RealityDataService.h>
+#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+
+#define HISTORY_SUPPORT
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
 #endif
 
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
@@ -42,6 +48,14 @@ enum class ParamId
     NoReplace,
     VerboseStatistics,
     TextureMode,
+    History,
+    UserName,
+    Password,
+    Environment,
+    Project,
+    Repository,
+    GlobeOn,
+    GlobeOff,
     Invalid,
 };
 
@@ -77,6 +91,14 @@ static CommandParam s_paramTable[] =
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
         { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
+        { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
+        { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
+        { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
+        { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
+        { L"pr", L"project", L"Project for I-Model hub (History Publishing)", false, false },
+        { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
+        { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
+        { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -142,6 +164,7 @@ struct Params : PublisherParams
 {
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,12 +290,58 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
                 }
 
+            case ParamId::History:
+                m_wantHistory = true;
+                break;
+
+            case ParamId::UserName:
+                m_userName = Utf8String(arg.m_value.c_str());
+                break;
+
+
+            case ParamId::Password:
+                m_password = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Environment:
+                m_environment = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Project:
+                m_project = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::Repository:
+                m_repository = Utf8String(arg.m_value.c_str());
+                break;
+
+            case ParamId::GlobeOn:
+                m_globeMode = PublisherContext::GlobeMode::On;
+                break;
+
+            case ParamId::GlobeOff:
+                m_globeMode = PublisherContext::GlobeMode::Off;
+                break;
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
 
+
+    if (m_wantHistory)
+        {
+        if (m_userName.empty() || m_password.empty())
+            {
+            printf ("Username and password are reaquired for history publishing\n");
+            return false;
+            }
+        if (!m_repository.empty())
+            haveInput = true;       // Attempt to acquire briefcase from project.
+        }
+
+    
     if (!haveInput)
         {
         printf("Input filename is required\n");
@@ -283,7 +352,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         m_outputDir = m_inputFileName.GetDirectoryName();
 
     if (m_tilesetName.empty())
-        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        {
+        if (!m_inputFileName.empty())
+            m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
+        else if (!m_repository.empty())
+            m_tilesetName = WString(m_repository.c_str(), false);
+        }
+
 
     return true;
     }
@@ -346,43 +421,48 @@ public:
     Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
 };
 
-//=======================================================================================
-// Do-nothing boilerplate...
-// @bsistruct                                                   Paul.Connelly   08/17
-//=======================================================================================
-struct SMHost : ScalableMesh::ScalableMeshLib::Host
-{
-    template<typename T> static T GetUselessValue() { T t; return t; }
-    static Utf8String GetUselessString() { return GetUselessValue<Utf8String>(); }
-    template<typename T, typename F> static T& GetUselessAdmin(F f) { return *new T(f); }
 
-    SMHost() { }
-    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin() override
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  SMHost : ScalableMesh::ScalableMeshLib::Host
+    {
+    SMHost()
         {
-        struct SMAdmin : public ScalableMesh::ScalableMeshAdmin
+        }
+
+    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
-            IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override { return GetUselessValue<IScalableMeshTextureGeneratorPtr>(); }
-            bool _CanImportPODfile() const override { return false; }
+        struct CsScalableMeshAdmin : public ScalableMesh::ScalableMeshAdmin
+            {
+            virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
+                {
+                IScalableMeshTextureGeneratorPtr generator;
+                return generator;
+                }
+
+            virtual bool _CanImportPODfile() const override
+                {
+                return false;
+                }
+
+            virtual Utf8String _GetProjectID() const override
+                {
+                Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+                WString projectGUIDw;
+
+                if (BSISUCCESS == ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                    {
+                    projectGUID.Assign(projectGUIDw.c_str());
+                    }
+                return projectGUID;
+                }
+            };
+        return *new CsScalableMeshAdmin;
         };
 
-        return *new SMAdmin;
-        }
-
-    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin() override
-        {
-        return GetUselessAdmin<ScalableMesh::WsgTokenAdmin>([]() { return GetUselessString(); });
-        }
-
-    ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
-        {
-        return GetUselessAdmin<ScalableMesh::SASTokenAdmin>([](Utf8StringCR) { return GetUselessString(); });
-        }
-
-    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin() override
-        {
-        return GetUselessAdmin<ScalableMesh::SSLCertificateAdmin>([]() { return GetUselessString(); });
-        }
-};
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -408,8 +488,17 @@ int wmain(int ac, wchar_t const** av)
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
-                                                                                  
+
+
+#ifdef HISTORY_SUPPORT
+    if (createParams.WantHistory())
+        {
+        return static_cast<int> (TilesetHistoryPublisher::PublishTilesetWithHistory (createParams));
+        }
+#endif
+
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
@@ -445,3 +534,4 @@ int wmain(int ac, wchar_t const** av)
     return static_cast<int>(status);
     }
 
+                       

@@ -1,8 +1,9 @@
 @ECHO OFF
+SETLOCAL
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: DgnCore/CompileDgnFontFbs.bat $
-rem   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=DgnFont

@@ -13,6 +13,8 @@
 #define URLLINK_UserLabel "UserLabel"
 #define URLLINK_Description "Description"
 
+#define REPOLINK_RepositoryGuid "RepositoryGuid"
+
 #define EMBEDDEDFILELINK_Name "Name"
 #define EMBEDDEDFILELINK_UserLabel "UserLabel"
 #define EMBEDDEDFILELINK_Description "Description"
@@ -299,6 +301,19 @@ void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void UrlLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_url()))
+        m_url = val[json_url()].asString();
+
+    if (val.isMember(json_description()))
+        m_description = val[json_description()].asString();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
 void UrlLink::_CopyFrom(DgnElementCR other)
@@ -409,6 +424,67 @@ RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP na
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    10/2017
+//---------------------------------------------------------------------------------------
+void RepositoryLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    auto idx = stmt.GetParameterIndex(REPOLINK_RepositoryGuid);
+    if (!m_repositoryGuid.IsValid())
+        stmt.BindNull(idx);
+    else
+        stmt.BindGuid(idx, m_repositoryGuid);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    10/2017
+//---------------------------------------------------------------------------------------
+DgnDbStatus RepositoryLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_repositoryGuid = stmt.GetValueGuid(params.GetSelectIndex(REPOLINK_RepositoryGuid));
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    10/2017
+//---------------------------------------------------------------------------------------
+void RepositoryLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    out[json_repositoryGuid()] = m_repositoryGuid.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    10/2017
+//---------------------------------------------------------------------------------------
+void RepositoryLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_repositoryGuid()))
+        m_repositoryGuid.FromString(val[json_repositoryGuid()].asString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    10/2017
+//---------------------------------------------------------------------------------------
+void RepositoryLink::_CopyFrom(DgnElementCR other)
+    {
+    T_Super::_CopyFrom(other);
+
+    RepositoryLinkCP otherLink = dynamic_cast<RepositoryLinkCP> (&other);
+    if (otherLink)
+        {
+        m_repositoryGuid = otherLink->m_repositoryGuid;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
 EmbeddedFileLink::CreateParams::CreateParams(LinkModelR linkModel, Utf8CP name, Utf8CP label /*=nullptr*/, Utf8CP description /*= nullptr*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), EmbeddedFileLink::QueryClassId(linkModel.GetDgnDb()), DgnCode(), label), name, description)
@@ -470,6 +546,19 @@ void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const
     T_Super::_ToJson(out, opts);
     out[json_name()] = m_name;
     out[json_description()] = m_description;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void EmbeddedFileLink::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_name()))
+        m_name = val[json_name()].asString();
+
+    if (val.isMember(json_description()))
+        m_description = val[json_description()].asString();
     }
 
 //---------------------------------------------------------------------------------------
@@ -676,19 +765,28 @@ void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSql
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
     
-#define NOT_AVAILABLE_VIA_PROPERTY_API(PROPNAME)\
-    params.RegisterPropertyAccessors(layout, PROPNAME,\
-        [] (ECValueR value, DgnElementCR elIn)\
-            {\
-            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
-            },\
-        [] (DgnElementR elIn, ECValueCR value)\
-            {\
-            BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
+    params.RegisterPropertyAccessors(layout, REPOLINK_RepositoryGuid,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (RepositoryLink&) elIn;
+            auto beguid = el.GetRepositoryGuid();
+            value.SetBinary(beguid.m_guid.b, sizeof(BeGuid), true);
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            auto& el = (RepositoryLink&) elIn;
+            size_t sz;
+            auto bytes = value.GetBinary(sz);
+            if (sz != sizeof(BeGuid))
+                return DgnDbStatus::BadArg;
+            BeGuid guid;
+            memcpy (guid.m_guid.b, bytes, sizeof(BeGuid));
+            el.SetRepositoryGuid(guid);
+            return DgnDbStatus::Success;
             });
 
-    NOT_AVAILABLE_VIA_PROPERTY_API("RepositoryGuid")
-
-#undef NOT_AVAILABLE_VIA_PROPERTY_API
     }
 END_BENTLEY_DGN_NAMESPACE

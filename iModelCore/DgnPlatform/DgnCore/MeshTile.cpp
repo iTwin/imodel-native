@@ -21,206 +21,10 @@ USING_NAMESPACE_BENTLEY_RENDER
 BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
-// unused - static size_t s_maxFacetDensity;
-
-#if defined (BENTLEYCONFIG_PARASOLID) 
-
-// The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
-// by all threads.
-
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>       ThreadedParasolidErrorHandlerInnerMarkPtr;
-
-class   ParasolidException {};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Called from the main thread to register Thread Local Storage used by
-*  all threads for Parasolid error handling.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedLocalParasolidHandlerStorageMark
-{
-    BeThreadLocalStorage*       m_previousLocalStorage;
-
-    ThreadedLocalParasolidHandlerStorageMark ();
-    ~ThreadedLocalParasolidHandlerStorageMark ();
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Inner mark.   Included around code sections that should be rolled back in case
-*                Of serious error.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerInnerMark : RefCountedBase
-{
-    static ThreadedParasolidErrorHandlerInnerMarkPtr Create () { return new ThreadedParasolidErrorHandlerInnerMark(); }                                                 
-
-protected:
-
-    ThreadedParasolidErrorHandlerInnerMark();
-    ~ThreadedParasolidErrorHandlerInnerMark();
-};
-      
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerOuterMark>     ThreadedParasolidErrorHandlerOuterMarkPtr;
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2015
-*  Outer mark.   Included once to set up Parasolid error handling for a single thread.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerOuterMark  : RefCountedBase 
-{
-    PK_ERROR_frustrum_t     m_previousErrorFrustum;
-
-    static ThreadedParasolidErrorHandlerOuterMarkPtr Create () { return new ThreadedParasolidErrorHandlerOuterMark(); }
-
-protected:
-
-    ThreadedParasolidErrorHandlerOuterMark();
-    ~ThreadedParasolidErrorHandlerOuterMark();
-};
-    
-static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015                                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMark ()
-    {
-    if (nullptr == (m_previousLocalStorage = s_threadLocalParasolidHandlerStorage))
-        s_threadLocalParasolidHandlerStorage = new BeThreadLocalStorage;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
-    { 
-    if (nullptr == m_previousLocalStorage) 
-        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
-
-    }
-
-typedef bvector<PK_MARK_t>  T_RollbackMarks;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static T_RollbackMarks*  getRollbackMarks () 
-    { 
-    static T_RollbackMarks      s_unthreadedMarks;
-
-    return nullptr == s_threadLocalParasolidHandlerStorage ? &s_unthreadedMarks : reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());   
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearRollbackMarks () 
-    {    
-    T_RollbackMarks*    rollbackMarks;
-             
-    if (nullptr != s_threadLocalParasolidHandlerStorage &&
-        nullptr != (rollbackMarks = reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer())))
-        {
-        delete rollbackMarks;
-        s_threadLocalParasolidHandlerStorage->SetValueAsPointer(nullptr);
-        } 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearExclusions()
-    {
-    PK_THREAD_exclusion_t       clearedExclusion;
-    PK_LOGICAL_t                clearedThisThread;
-
-    PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
-    {
-    if (errorSf->severity > PK_ERROR_mild)
-        {
-        switch (errorSf->code)
-            {
-            case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
-            case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
-            case 1083:        // Degenerate trim loop.
-                break;
-
-            default:
-                printf ("Error %d caught in parasolid error handler\n", errorSf->code);
-                BeAssert (false && "Severe error during threaded processing");
-                break;
-            }
-        PK_MARK_goto (getRollbackMarks()->back());
-        clearExclusions ();
-        
-        PK_THREAD_tidy();
-
-        throw ParasolidException();
-        }
-    
-    return 0; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    BeAssert (nullptr == getRollbackMarks());      // The outer mark is not nestable.
-
-    PK_THREAD_ask_error_cbs (&m_previousErrorFrustum);
-
-    PK_ERROR_frustrum_t     errorFrustum;
-
-    errorFrustum.handler_fn = threadedParasolidErrorHandler;
-    PK_THREAD_register_error_cbs (errorFrustum);
-
-    s_threadLocalParasolidHandlerStorage->SetValueAsPointer (new T_RollbackMarks());
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    PK_THREAD_register_error_cbs (m_previousErrorFrustum);
-    clearRollbackMarks(); 
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_t       mark;
-
-    PK_MARK_create (&mark);
-    getRollbackMarks()->push_back (mark);
-    }
-      
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_delete (getRollbackMarks()->back());
-    getRollbackMarks()->pop_back();
-    }
-
-#endif
-
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
 static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
-static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
@@ -733,7 +537,7 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t attribute, uint32_t color)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -897,6 +701,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
     bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
 
+    doVertexCluster=false;
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
         {
         if (doVertexCluster)
@@ -1040,12 +845,8 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
 
     opts->SetChordTolerance(chordTolerance);
     opts->SetAngleTolerance(s_defaultAngleTolerance);
-#ifdef PRE_TRIANGLE_CONVEX
-    opts->SetMaxPerFace(3);
-#else
     opts->SetMaxPerFace(100);
     opts->SetConvexFacetsRequired(true);
-#endif
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
@@ -1567,6 +1368,10 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
 TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
+    // We need to generate facets in this threads parasolid partition so that we
+    // can roll them back correctly in the event of a server parasolid error.
+    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -1671,9 +1476,8 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
-    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
-      m_totalTiles(0), m_totalModels(0), m_completedModels(0)
+TileGenerator::TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
+    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), m_totalTiles(0), m_totalModels(0), m_completedModels(0), m_filter(filter)
     {
 #if defined(WIP_MESHTILE_3SM)
     m_spatialTransformFromDgn.InitIdentity();
@@ -1682,47 +1486,6 @@ TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileG
     m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
 #endif
     }
-
-#if defined (BENTLEYCONFIG_PARASOLID) 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     08/2009
-+===============+===============+===============+===============+===============+========*/
-struct PSolidPartitionMark
-{
-    PK_PARTITION_t                      m_originalPartition;
-    PK_PARTITION_t                      m_lightweightPartition;
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-PSolidPartitionMark ()
-    {
-    PK_SESSION_ask_curr_partition (&m_originalPartition);
-
-    if (SUCCESS == PK_PARTITION_create_empty(&m_lightweightPartition))
-        {
-        PK_PARTITION_set_type(m_lightweightPartition, PK_PARTITION_type_light_c);
-        PK_PARTITION_set_current(m_lightweightPartition);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-~PSolidPartitionMark ()
-    {
-    PK_PARTITION_delete_o_t options;
-
-    PK_PARTITION_delete_o_m (options);
-
-    options.delete_non_empty = true;
-    /* unused - StatusInt   status = */PK_PARTITION_delete (m_lightweightPartition, &options);
-
-    PK_PARTITION_set_current (m_originalPartition);
-    }
-};
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
@@ -1736,9 +1499,8 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
     // unused - auto nCompletedModels = 0;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    PSolidPartitionMark     partitionMark;
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
     PSolidKernelManager::StartSession();
+    PSolidThreadUtil::MainThreadMark    psolidMainThreadMark;
 #endif
 
     StopWatch timer(true);
@@ -1812,7 +1574,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     else if (nullptr != getTileTree)
         {
+#ifndef SKIP_3MX
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
+#else
+        return folly::makeFuture(TileGeneratorStatus::Success);
+#endif
         }
     else if (nullptr != generateMeshTiles)
         {
@@ -1924,14 +1690,12 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
-(ElementTileNodePtr parent, ElementTileContext context)
+TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile (ElementTileNodePtr parent, ElementTileContext context)
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
     #if defined (BENTLEYCONFIG_PARASOLID) 
-        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+        PSolidThreadUtil::WorkerThreadOuterMark     psolidWorkerThreadOuterMark;
     #endif
 
         auto& tile = *parent;
@@ -1948,7 +1712,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile
         // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
         // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
         // elements too small to be included in this tile)
-        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
+        tile.CollectGeometry(generationCache, m_dgndb, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile, m_filter); // ###TODO: Check return status
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
@@ -2013,11 +1777,6 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureGenerateTileResult TileGenerator::ProcessChildTiles(TileGeneratorStatus status, ElementTileNodePtr parent, ElementTileContext context)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
     auto root = static_cast<ElementTileNodeP>(parent->GetRoot());
     if (parent->GetChildren().empty() || TileGeneratorStatus::Success != status)
         return folly::makeFuture(GenerateTileResult(status, root));
@@ -2261,6 +2020,7 @@ private:
     SolidPrimitivePartMap       m_solidPrimitiveParts;
     TileDisplayParamsCPtr       m_polyfaceCacheDisplay;
     IPolyfaceConstructionPtr    m_polyfaceCache;
+    ITileCollectionFilterCP      m_filter;
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
@@ -2295,8 +2055,8 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
-        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn),
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, ITileCollectionFilterCP filter, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
+        : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_filter(filter), m_range(range), m_transformFromDgn(transformFromDgn),
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
@@ -2536,6 +2296,10 @@ size_t TileGeomPart::GetFacetCount(FacetCounter& counter) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, DRange3dCR dgnRange)
     {
+    if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
+        return;
+    
+
     try
         {
         m_curElemGeometries.clear();
@@ -2552,7 +2316,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
         }
     catch (...)
         {
-        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
+        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. 
         }
     }
 
@@ -2718,6 +2482,12 @@ void TileGeometryProcessor::FlushPolyfaceCache ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
+    // We need to generate these in this threads parasolid partition so that we 
+    // can roll them back correctly in the event of a server parasolid error.
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+#endif
+
     IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
     DRange3d        range = clone->GetEntityRange();
     Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
@@ -2811,21 +2581,16 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-            Sheet::Model::DrawBorder (context, sheetModel->GetSheetSize());
-            PushCurrentGeometry();
-            }
 
-        // We sort by size in order to ensure the largest geometries are assigned batch IDs
-        // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
-        if (m_geometries.size() > s_maxGeometryIdCount)
-            {
-            std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
-                {
-                DRange3d lhsRange, rhsRange;
-                lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
-                rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
-                return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
-                });
+            // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
+            DPoint2d sheetSize = sheetModel->GetSheetSize();
+            if (0.0 == sheetSize.x)
+                sheetSize.x = 0.1;
+            if (0.0 == sheetSize.y)
+                sheetSize.y = 0.1;
+
+            Sheet::Model::DrawBorder (context, sheetSize);
+            PushCurrentGeometry();
             }
         }
 
@@ -2881,7 +2646,7 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
 
     if (!geomPart.IsValid())
         {
-        BeAssert(false);
+//      BeAssert(false);
         return nullptr;
         }
 
@@ -2953,24 +2718,51 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Beastings 09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLID) 
+static bool hasBRep(GeometrySourceCR source)
+    {
+    GeometryCollection collection(source);
+
+    for (auto iter : collection)
+        {
+        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+            return true;
+        }
+
+    return false;
+    }
+#endif
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    // If the geometry has a parasolid BRep then create a mark so that work is done in this threads lightweight partition and
+    // error handling works properly..
+    PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
+    if (hasBRep(source))
+        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
+
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter)
     {
     // Collect geometry from elements in this node, sorted by size
     auto is2d = cache.GetModel().Is2dModel();
     IFacetOptionsPtr                facetOptions = TileGenerator::CreateTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
-
+    TileGeometryProcessor           processor(m_geometries, cache, db, filter, GetDgnRange(), *facetOptions, m_transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
@@ -3078,6 +2870,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             TileDisplayParamsCPtr   displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->HasTexture(db);  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+
+            if (0 != polyface->NormalIndex().size() && polyface->GetPointIndexCount() != polyface->NormalIndex().size())
+                {
+                BeAssert(false && "mismatched Normal and Point index counts");        // Crash in ChinaPlant...
+                continue;
+                }
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -3224,7 +3022,7 @@ FeatureAttributesMap::FeatureAttributesMap()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
+uint32_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
     {
     return GetIndex(geom.GetAttributes());
     }

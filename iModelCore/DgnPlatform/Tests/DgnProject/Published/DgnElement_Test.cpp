@@ -1131,6 +1131,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
 TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     {
     SetupSeedProject();
+
     DgnElementId elementId;
     uint32_t iArrayOfStructs;
     ECN::ECValue checkValue;
@@ -2306,4 +2307,59 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
     ASSERT_EQ(elep->GetDisplayLabel(), "SubjectChild2");
     info = m_db->Elements().Get<Subject>(subele2->GetElementId());
     ASSERT_EQ(info->GetDescription(), "Child2");
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                    Sam.Wilson      10/17
+//----------------------------------------------------------------------------------------
+struct ImodelJsTest : public DgnDbTestFixture
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImodelJsTest, MeasureInsertPerformance)
+    {
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true); // Imports the DgnPlatformTest schema and sets the briefcaseid=standalone
+
+    PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+    DgnModelId modelId = model->GetModelId();
+
+    auto defaultCategoryId = SpatialCategory::QueryCategoryId(m_db->GetDictionaryModel(), "DefaultCategory");
+
+    int elementCount = 10000;
+    for (int i=0; i<elementCount; ++i)
+        {
+        DgnClassId ecClassId(m_db->Schemas().GetClassId("DgnPlatformTest", "ImodelJsTestElement").GetValue());
+        DgnElementPtr el = new ImodelJsTestElement(ImodelJsTestElement::CreateParams(*m_db, modelId, ecClassId, defaultCategoryId, Dgn::Placement3d()));
+        el->SetPropertyValue("IntegerProperty1", i);
+        el->SetPropertyValue("IntegerProperty2", i);
+        el->SetPropertyValue("IntegerProperty3", i);
+        el->SetPropertyValue("IntegerProperty4", i);
+        el->SetPropertyValue("DoubleProperty1", (double)i);
+        el->SetPropertyValue("DoubleProperty2", (double)i);
+        el->SetPropertyValue("DoubleProperty3", (double)i);
+        el->SetPropertyValue("DoubleProperty4", (double)i);
+        el->SetPropertyValue("b", (0 == (i % 100)));
+        DPoint3d pt = DPoint3d::From(i, 0, 0);
+        el->SetPropertyValue("PointProperty1", pt);
+        el->SetPropertyValue("PointProperty2", pt);
+        el->SetPropertyValue("PointProperty3", pt);
+        el->SetPropertyValue("PointProperty4", pt);
+        DateTime dtUtc;
+        DateTime::FromString(dtUtc, "2013-09-15 12:05:39Z");
+        el->SetPropertyValue("dtUtc", dtUtc);
+
+        ASSERT_TRUE(el->Insert().IsValid());
+        if (0 == (i % 100))
+            m_db->SaveChanges();
+        }
+
+    m_db->SaveChanges();
+
+    ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "select count(*) from DgnPlatformTest.ImodelJsTestElement");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(elementCount, stmt.GetValueInt(0));
     }

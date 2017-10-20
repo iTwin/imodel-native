@@ -10,12 +10,12 @@
 #include "ElementECInstanceAdapter.h"
 
 /*---------------------------------------------------------------------------------**//**
-* get the class id from a string in the form "Schema.ClassName"
+* get the class id from a string in the form "Schema:ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
     {
-    auto dot = name.find('.');
+    auto dot = name.find(':');
     if (Utf8String::npos == dot || name.length() <= dot + 1)
         return DgnClassId();
 
@@ -355,6 +355,16 @@ void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_isPrivate()] = m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_isPrivate()))
+        m_isPrivate = val[json_isPrivate()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1126,12 +1136,19 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     _BindWriteParams(*statement, ForInsert::Yes);
  
-    auto stmtResult = statement->Step();
-    if (BE_SQLITE_DONE != stmtResult)
+    switch (statement->Step())
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
-        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-        return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+        case BE_SQLITE_DONE:
+            break;
+
+        case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
+            return DgnDbStatus::ForeignKeyConstraint;
+
+        case BE_SQLITE_CONSTRAINT_UNIQUE:
+            return DgnDbStatus::ConstraintNotUnique;
+
+        default:
+            return DgnDbStatus::WriteError;
         }
 
     if (PropState::Dirty == m_flags.m_propState)
@@ -1226,6 +1243,295 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         m_relClassId = getClassId(db, val[json_relClass()].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
+    {
+    auto eclass = elem.GetElementClass();
+    
+    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
+    if (autoHandledProps.empty())
+        return;
+
+    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(autoHandledProps.c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindId(1, elem.GetElementId());
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return;
+        }
+        
+    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
+    adapter.GetRow(elementJson, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus convertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
+    {
+    if (jsonValue.isBool())
+        v = ECN::ECValue(jsonValue.asBool());
+    else if (jsonValue.isIntegral())
+        v = ECN::ECValue(jsonValue.asInt64());
+    else if (jsonValue.isDouble())
+        v = ECN::ECValue(jsonValue.asDouble());
+    else if (jsonValue.isString())
+        {
+        if (ECN::PRIMITIVETYPE_DateTime == typeRequired)
+            {
+            DateTime dt;
+            if (BSISUCCESS == DateTime::FromString(dt, jsonValue.asCString()))
+                v = ECN::ECValue(dt);
+            else
+                v.SetIsNull(true);
+            }
+        else if (ECN::PRIMITIVETYPE_Binary == typeRequired)
+            {
+            // *** TBD: need extended type to recognize GUID
+            // *** TBD: buffer = base64-decode(jsonValue.asCString());
+            // *** TBD: v = ECN::ECValue(buffer, buffersize);
+            v.SetIsNull(true);
+            }
+        else
+            {
+            v = ECN::ECValue(jsonValue.asCString());
+            }
+        }
+    else if (jsonValue.isObject())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
+            }
+        else
+            {
+            v.SetIsNull(true);
+            }
+        }
+    else if (jsonValue.isArray())
+        {
+        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint3d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble(), jsonValue[2].asDouble()));
+            }
+        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
+            {
+            v = ECN::ECValue(DPoint2d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble()));
+            }
+        else
+            {
+            v.SetIsNull(true);
+            }
+        }
+    else
+        {
+        v.SetIsNull(true);
+        }
+
+    if (!v.IsNull() && !v.ConvertToPrimitiveType(typeRequired))
+        v.SetIsNull(true);
+
+    return v.IsNull()? BSIERROR: BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+#ifdef WIP_STRUCT_ARRAY
+static ECN::IECInstancePtr ecStructInstanceFromJson(ECN::ECClassCR eclass, JsonValueCR structJson)
+    {
+    auto inst = eclass.GetDefaultStandaloneEnabler()->CreateInstance();
+
+    for (auto const& jsPropName : structJson.getMemberNames())
+        {
+        }
+
+    return inst;
+    }
+#endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, ValueKind itemKind, PrimitiveType primitiveItemType, JsonValueCR jsonProp, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
+    {
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Primitive == itemKind)
+        {
+        ECN::ECValue ecvalue;
+        if (BSISUCCESS != convertJsonToECValue(ecvalue, jsonProp, primitiveItemType))
+            {
+            BeAssert(false && "unsupported property type");
+            return BSIERROR;
+            }
+
+        if (DgnDbStatus::Success != propAccessor.SetPropertyValue(ecvalue, arrayIdx))
+            {
+            BeAssert(false && "SetPropertyValue failed!?");
+            return BSIERROR;
+            }
+
+        return BSISUCCESS;
+        }
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Navigation == itemKind)
+        {
+        BeInt64Id id;
+        ECClassId relationshipClassId;
+        if (jsonProp.isObject())
+            {
+            id.FromString(jsonProp["id"].asCString());
+            bvector<Utf8String> classNameParts;
+            BeStringUtilities::Split(jsonProp["relClass"].asCString(), ":", classNameParts);
+            relationshipClassId = propAccessor.GetElement().GetDgnDb().Schemas().GetClassId(classNameParts[0], classNameParts[1]);
+            }
+        else
+            {
+            id.FromString(jsonProp.asCString());
+            }
+        ECN::ECValue nav(id, relationshipClassId);
+        return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nav, arrayIdx))? BSISUCCESS: BSIERROR;
+        }
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Struct == itemKind)
+        {
+        if (!jsonProp.isObject())
+            {
+            BeAssert(false && "must have a json struct value for a struct-valued ECProperty");
+            return BSIERROR;
+            }
+
+        for (auto const& jsPropName: jsonProp.getMemberNames())
+            {
+            Utf8String accessString(propAccessor.GetAccessString());
+            Utf8String ecStructPropName(jsPropName);
+            ecStructPropName[0] = (char)toupper(ecStructPropName[0]);
+            accessString.append(".").append(ecStructPropName.c_str());
+
+            ElementECPropertyAccessor structPropAccessor(propAccessor.GetElement(), accessString.c_str());
+            if (!structPropAccessor.IsValid())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            ECN::PropertyLayoutCP memberPropLayout = structPropAccessor.GetPropertyLayout();
+            auto memberTdesc = memberPropLayout->GetTypeDescriptor();
+
+            if (BSISUCCESS != setPropertyFromJson(structPropAccessor, memberTdesc.GetTypeKind(), memberTdesc.GetPrimitiveType(), jsonProp[jsPropName], arrayIdx))
+                return BSIERROR;
+            }
+
+        return BSISUCCESS;
+        }
+
+    //  ----------------------------------------------------
+    if (ECN::VALUEKIND_Array == itemKind)
+        {
+        if (!jsonProp.isArray())
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+
+        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
+        auto tdesc = propLayout->GetTypeDescriptor();
+    
+        if (DgnDbStatus::Success != propAccessor.GetElement().AddPropertyArrayItems(propAccessor.GetPropertyIndex(), jsonProp.size()))
+            {
+            BeAssert(false);
+            return BSIERROR;
+            }
+
+        for (Json::ArrayIndex i = 0; i < jsonProp.size(); ++i)
+            {
+            if (ECN::ARRAYKIND_Struct == tdesc.GetArrayKind())
+                {
+#ifdef WIP_STRUCT_ARRAY
+                ECN::ECClassCP structECClass = propAccessor.GetElement().GetDgnDb().Schemas().GetECClass(
+                auto structInstance = ecStructInstanceFromJson(*..., jsonProp[i]);
+                ECN::ECValue value;
+                value.SetStruct(structInstance.get());
+                propAccessor.SetPropertValue(value, PropertyArrayIndex(i));
+#else
+                BeAssert(false && "WIP_STRUCT_ARRAY");
+#endif
+                }
+            else
+                {
+                if (BSISUCCESS != setPropertyFromJson(propAccessor, ECN::VALUEKIND_Primitive, tdesc.GetPrimitiveType(), jsonProp[i], PropertyArrayIndex(i)))
+                    return BSIERROR;
+                }
+            }
+
+        return BSISUCCESS;
+        }
+
+    BeAssert(false && "unrecognized kind");
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static bool isDefinitelyNotAutoHandled(Utf8CP jsPropName)
+    {
+    // *** NEEDS WORK: We have defined a bunch of special properties in our element wire format
+    // ***              That are not in the biscore ECSchema. So, we have no way of checking
+    // ***              if they are auto-handled or not using metadata. Only some _FromJson method somewhere
+    // ***              knows what these properties are. Here, I check for the few special properties
+    // ***              that I happen to know about by looking at the code.
+
+    switch (jsPropName[0])
+        {
+        case 'i': return 0==strcmp(jsPropName, "id");
+        case 'c': return 0==strcmp(jsPropName, "classFullName") || 0==strcmp(jsPropName, "code");
+        case 'p': return 0==strcmp(jsPropName, "placement");
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJson)
+    {
+    // I will loop over the props passed in, rather than the auto-handled properties that are defined for this element class.
+    // The caller will typically set only a small subset of the properties.
+    for (auto const& jsPropName : elementJson.getMemberNames())
+        {
+        if (isDefinitelyNotAutoHandled(jsPropName.c_str()))  // filter out some special properties that are not actually in the ECSChema (and are certainly not auto-handled)
+            continue;
+
+        ElementECPropertyAccessor propAccessor(elem, jsPropName.c_str());
+        if (!propAccessor.IsValid())
+            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
+            
+        if (!propAccessor.IsAutoHandled())
+            continue;
+
+        //  This is an auto-handled property. Set it.
+        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
+        auto tdesc = propLayout->GetTypeDescriptor();
+        setPropertyFromJson(propAccessor, tdesc.GetTypeKind(), tdesc.GetPrimitiveType(), elementJson[jsPropName]);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1234,7 +1540,7 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     val[json_id()] = m_elementId.ToHexStr();
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
@@ -1249,18 +1555,37 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+
+    autoHandlePropertiesToJson(val, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_UpdateFromJson(JsonValueCR props) 
+void DgnElement::_FromJson(JsonValueR props) 
     {
-    m_modelId.FromJson(props[DgnElement::json_model()]);
-    m_code.FromJson(props[DgnElement::json_code()]);
-    m_federationGuid.FromString(props[DgnElement::json_federationGuid()].asString().c_str());
-    m_userLabel = props[DgnElement::json_userLabel()].asString();
-    m_parent.FromJson(m_dgndb, props[json_parent()]);
+    if (props.isMember(json_model()))
+        m_modelId.FromJson(props[json_model()]);
+
+    if (props.isMember(json_code()))
+        m_code.FromJson2(props[json_code()]);
+
+    if (props.isMember(json_federationGuid()))
+        m_federationGuid.FromString(props[json_federationGuid()].asString().c_str());
+
+    if (props.isMember(json_userLabel()))
+        m_userLabel = props[json_userLabel()].asString();
+
+    if (props.isMember(json_parent()))
+        m_parent.FromJson(m_dgndb, props[json_parent()]);
+
+    if (props.isMember(json_jsonProperties()))
+        {
+        m_jsonProperties.From(std::move(props[json_jsonProperties()]));
+        _OnLoadedJsonProperties();
+        }
+
+    autoHandlePropertiesFromJson(*this, props);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1843,6 +2168,16 @@ Json::Value Placement3d::ToJson() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Placement3d::FromJson(JsonValueCR val)
+    {
+    JsonUtils::DPoint3dFromJson(m_origin, val[json_origin()]);
+    m_angles = JsonUtils::YawPitchRollFromJson(val[json_angles()]);
+    JsonUtils::DRange3dFromJson(m_boundingBox, val[json_bbox()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d Placement2d::CalculateRange() const
@@ -1875,6 +2210,15 @@ Json::Value Placement2d::ToJson() const
     return val;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Placement2d::FromJson(JsonValueCR val)
+    {
+    JsonUtils::DPoint2dFromJson(m_origin, val[json_origin()]);
+    m_angle = JsonUtils::AngleInDegreesFromJson(val[json_angle()]);
+    JsonUtils::DRange2dFromJson(m_boundingBox, val[json_bbox()]);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -3596,6 +3940,19 @@ void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+    if (props.isMember(json_category()))
+        m_categoryId.FromJson(props[json_category()]);
+    
+    if (props.isMember(json_geom()))
+        m_geom.FromBase64(props[json_geom()].asString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -3808,6 +4165,20 @@ void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.isMember(json_placement()))
+        m_placement.FromJson(props[json_placement()]);
+
+    if (props.isMember(json_typeDefinition()))
+        m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3846,6 +4217,18 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (m_typeDefinition.IsValid())
         val[json_typeDefinition()] = m_typeDefinition.ToJson(GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+    if (props.isMember(json_placement()))
+        m_placement.FromJson(props[json_placement()]);
+    if (props.isMember(json_typeDefinition()))
+        m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

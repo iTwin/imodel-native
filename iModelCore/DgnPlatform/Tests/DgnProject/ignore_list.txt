@@ -8,6 +8,8 @@ IndirectLocksTest.*
 
 BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
 
+ImodelJsTest.MeasureInsertPerformance # WIP Temporary "test" being used to compare C++ and imodeljs performance
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -428,19 +430,6 @@ DgnDbTest.CreateTrackedDgnDb
     # 
     # [  FAILED  ] ECInstancesCompatibility.ModifyPreservedBim (581 ms)
 
-#DgnMarkupProjectTest.CreateDgnMarkupProject
-    # bim0200holdouts, x64, DEBUG
-    # [ RUN      ] DgnMarkupProjectTest.CreateDgnMarkupProject
-    # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb F:\Bim0200Holdouts\out\Winx64\Product\DgnPlatform-Gtest\run\Output\CreateDgnMarkupProject.markupdb
-    # 2017-06-05 14:25:04,083 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\PropertyMap.cpp(107): ASSERTION FAILURE (0): false && "PropertyMap with same name or may be different case already exist" 
-    # 
-    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
-    # F:\Bim0200Holdouts\src\ECDb\ECDb\PropertyMap.cpp(107): ASSERTION FAILURE (0): false && "PropertyMap with same name or may be different case already exist" 
-    # F:\Bim0200Holdouts\src\DgnPlatform\Tests\DgnProject\Published\MarkupProject_Test.cpp(42): error: Value of: status == BE_SQLITE_OK
-    # Actual: false
-    # Expected: true
-    # [  FAILED  ] DgnMarkupProjectTest.CreateDgnMarkupProject (3680 ms)
-
 #SchemaVersionTestFixture.ImportDomainSchemas
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] SchemaVersionTestFixture.ImportDomainSchemas
@@ -616,3 +605,20 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # To be equal to: instance.MakeValueIterator().QueryCount()
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (83 ms)
+
+ECInstancesCompatibility.ReadInstances
+    # bim0200dev, x64, DEBUG
+    # Affan: These classes have been moved into there on PerfDomain. Either the test should not use those classes anymore or it should import following domain.
+    # [ RUN      ] ECInstancesCompatibility.ReadInstances
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElement]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHBase]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] BeAssert - F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
+    # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)

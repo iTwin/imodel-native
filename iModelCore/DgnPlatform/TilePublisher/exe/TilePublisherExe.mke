@@ -64,11 +64,13 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubPartLibs)Raster.lib            \
                       $(SubPartLibs)ScalableMeshSchema$(libext) \
                       $(SubPartLibs)ScalableMesh$(libext) \
+                      $(SubpartLibs)BeHttp.lib            \
                       $(SubpartLibs)BeFolly.lib           \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \
                       user32.lib                          \
-
+                      $(SubpartLibs)RealityPlatform.lib   \
+                      $(SubpartLibs)ConnectClientWrapperNative.VC120.lib
 %endif
 
 %include $(SharedMki)linktool.mki

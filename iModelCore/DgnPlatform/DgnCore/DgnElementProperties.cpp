@@ -409,6 +409,14 @@ void DgnElement::Dump(Utf8StringR str, ComparePropertyFilter const& filter) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, DgnDbStatus* inStat) const
     {
+    return CreateElement(properties, false, inStat);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, bool ignoreUnknownProperties, DgnDbStatus* inStat) const
+    {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
@@ -420,7 +428,7 @@ DgnElementPtr DgnElements::CreateElement(ECN::IECInstanceCR properties, DgnDbSta
         return nullptr;
         }
 
-    return handler->_CreateNewElement(GetDgnDb(), properties, inStat);
+    return handler->_CreateNewElement(GetDgnDb(), properties, ignoreUnknownProperties, inStat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,7 +512,7 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR source, SetPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, DgnDbStatus* inStat)
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IECInstanceCR properties, bool ignoreErrors, DgnDbStatus* inStat)
     {
     auto params = DgnElement::InitCreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
@@ -517,7 +525,7 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbR db, ECN::IEC
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping);
+    DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, ignoreErrors);
     stat = ele->_SetPropertyValues(properties, filter);
 
     return (DgnDbStatus::Success == stat) ? ele : nullptr;
@@ -536,7 +544,6 @@ void ElementAutoHandledPropertiesECInstanceAdapter::Init(bool loadProperties, si
     if ((DgnElement::PropState::Unknown == m_element.m_flags.m_propState) && loadProperties)
         LoadProperties();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
@@ -1224,6 +1231,16 @@ void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECN::PropertyLayoutCP ElementECPropertyAccessor::GetPropertyLayout() const
+    {
+    ECN::PropertyLayoutCP playout;
+    m_layout->GetPropertyLayoutByIndex(playout, m_propIdx);
+    return playout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
     if (!IsValid() || (nullptr != m_accessors))
@@ -1743,45 +1760,4 @@ void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonUtils::NavigationPropertyToJson(JsonValueR json, ECValue::NavigationInfo const& navValue)
-    {
-    json = Json::objectValue;
-    
-    JsonUtils::IdToJson(json["ecinstanceid"], navValue.GetId<DgnElementId>());
-    
-    auto relClass = navValue.GetRelationshipClass();
-    if (nullptr != relClass)
-        {
-        json["ecclass"] = relClass->GetName();
-        json["ecschema"] = relClass->GetSchema().GetName();
-        }
-
-#ifndef NDEBUG
-    auto ee = JsonUtils::IdFromJson<DgnElementId>(json["ecinstanceid"]);
-    BeAssert(ee == navValue.GetId<DgnElementId>());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonUtils::NavigationPropertyFromJson(ECN::ECValue& navValue, JsonValueCR json, DgnDbR db)
-    {
-    if (!json.isMember("ecinstanceid"))
-        {
-        BeDataAssert(false);
-        navValue.SetToNull();
-        return;
-        }
-    auto eid = IdFromJson<DgnElementId>(json["ecinstanceid"]);
-    
-    DgnClassId relClassId;
-    if (json.isMember("ecclass") && json.isMember("eschema"))
-        relClassId = db.Schemas().GetClassId(json["eschema"].asCString(), json["ecclass"].asCString());
-
-    navValue = ECValue(eid, relClassId);
-    }
 

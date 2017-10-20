@@ -690,7 +690,7 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
 
-    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_classFullName()] = ecClass->GetFullName();
     if (m_parentModelId.IsValid())
         val[json_parentModel()] = m_parentModelId.ToHexStr();
 
@@ -699,6 +699,25 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+
+    if (m_isPrivate)
+        val[json_isPrivate()] = true;
+
+    if (m_isTemplate)
+        val[json_isTemplate()] = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_FromJson(JsonValueR val)
+    {
+    if (val.isMember(json_jsonProperties()))
+        m_jsonProperties.From(std::move(val[json_jsonProperties()]));
+    if (val.isMember(json_isPrivate()))
+        m_isPrivate = val[json_isPrivate()].asBool();
+    if (val.isMember(json_isTemplate()))
+        m_isPrivate = val[json_isTemplate()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -54,7 +54,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -77,6 +77,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".json")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".schemastats")->GetUsage().c_str());
     BimConsole::WriteLine();
@@ -582,34 +583,49 @@ void ImportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    BeFileName path(args[1]);
-    path.Trim(L"\"");
-    if (!path.DoesPathExist())
-        {
-        BimConsole::WriteErrorLine("Import failed. Specified path '%s' does not exist.", path.GetNameUtf8().c_str());
-        return;
-        }
-
+   
     Utf8StringCR commandSwitch = args[switchArgIndex];
     if (commandSwitch.EqualsIAscii(ECSCHEMA_SWITCH))
         {
         if (!session.IsECDbFileLoaded(true))
             return;
 
-        RunImportSchema(session, path);
+        RunImportSchema(session, args);
         return;
         }
 
     BeAssert(commandSwitch.EqualsIAscii(CSV_SWITCH));
-    RunImportCsv(session, path, args);
+    RunImportCsv(session, args);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath) const
+void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> const& args) const
     {
+    Utf8StringCR firstArg = args[1];
+    size_t pathIx = 1;
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None;
+    if (firstArg.EqualsIAscii("legacy"))
+        {
+        options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues;
+        pathIx = 2;
+        }
+    else if (firstArg.EqualsIAscii("poisoning"))
+        {
+        options = SchemaManager::SchemaImportOptions::Poisoning;
+        pathIx = 2;
+        }
+
+    BeFileName ecschemaPath(args[pathIx]);
+    ecschemaPath.Trim(L"\"");
+    if (!ecschemaPath.DoesPathExist())
+        {
+        BimConsole::WriteErrorLine("Schema Import failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8().c_str());
+        return;
+        }
+
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
 
@@ -650,7 +666,18 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         return;
         }
 
-    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas()))
+    bool schemaImportSuccessful = false;
+    if (session.GetFile().GetType() == SessionFile::Type::Bim)
+        {
+        if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<BimFile>().GetDgnDbHandleR().ImportV8LegacySchemas(context->GetCache().GetSchemas());
+        else
+            schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<BimFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+        }
+    else
+        schemaImportSuccessful = SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
+
+    if (schemaImportSuccessful)
         {
         session.GetFile().GetHandleR().SaveChanges();
         BimConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
@@ -679,11 +706,19 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std::vector<Utf8String> const& args) const
+void ImportCommand::RunImportCsv(Session& session, std::vector<Utf8String> const& args) const
     {
     if(args.size() < 3)
         {
         BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    BeFileName csvFilePath(args[1]);
+    csvFilePath.Trim(L"\"");
+    if (!csvFilePath.DoesPathExist())
+        {
+        BimConsole::WriteErrorLine("CSV Import failed. Specified path '%s' does not exist.", csvFilePath.GetNameUtf8().c_str());
         return;
         }
 
@@ -1025,11 +1060,9 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                 {
                     case DbValueType::BlobVal:
                     {
-                    if (SUCCESS != ECJsonUtilities::BinaryToJson(row[stmt.GetColumnName(i)], (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i)))
-                        {
-                        BimConsole::WriteErrorLine("Failed to export table %s", tableName);
-                        return;
-                        }
+                    Utf8String base64Str;
+                    Base64Utilities::Encode(base64Str, (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i));
+                    row[stmt.GetColumnName(i)] = base64Str;
                     break;
                     }
                     case DbValueType::FloatVal:
@@ -1370,18 +1403,24 @@ void SqliteCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (BeStringUtilities::Strnicmp(sql.c_str(), "SELECT", 6) == 0)
-        ExecuteSelect(stmt);
-    else
-        ExecuteNonSelect(session, stmt);
+    ExecuteSelect(stmt, session);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     07/2015
 //---------------------------------------------------------------------------------------
-void SqliteCommand::ExecuteSelect(Statement& statement) const
+void SqliteCommand::ExecuteSelect(Statement& statement, Session& session) const
     {
     const int columnCount = statement.GetColumnCount();
+    if (columnCount == 0)
+        {
+        if (statement.Step() != BE_SQLITE_DONE)
+            {
+            BimConsole::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
+            return;
+            }
+        }
+
     for (int i = 0; i < columnCount; i++)
         {
         BimConsole::Write("%s\t", statement.GetColumnName(i));
@@ -1389,6 +1428,7 @@ void SqliteCommand::ExecuteSelect(Statement& statement) const
 
     BimConsole::WriteLine();
     BimConsole::WriteLine("-------------------------------------------------------------");
+
 
     while (statement.Step() == BE_SQLITE_ROW)
         {
@@ -1417,6 +1457,58 @@ void SqliteCommand::ExecuteNonSelect(Session& session, Statement& statement) con
         BimConsole::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
         }
+    }
+
+//******************************* JsonCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     09/2017
+//---------------------------------------------------------------------------------------
+Utf8String JsonCommand::_GetUsage() const
+    {
+    return " .json <ECSQL SELECT>           Returns the results of the ECSQL SELECT as JSON";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     09/2017
+//---------------------------------------------------------------------------------------
+void JsonCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    Utf8StringCR ecsql = argsUnparsed;
+    if (ecsql.empty() || !ecsql.StartsWithIAscii("SELECT"))
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    ECSqlStatement stmt;
+    ECSqlStatus status = stmt.Prepare(*session.GetFile().GetECDbHandle(), ecsql.c_str());
+    if (status != ECSqlStatus::Success)
+        {
+        BimConsole::WriteErrorLine("Failed to prepare ECSQL statement %s: %s", ecsql.c_str(), session.GetIssues().GetIssue());
+        return;
+        }
+
+    BimConsole::WriteLine("Row Count | Row JSON");
+    BimConsole::WriteLine("--------------------");
+    JsonECSqlSelectAdapter adapter(stmt);
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        Json::Value json;
+        if (SUCCESS != adapter.GetRow(json))
+            {
+            BimConsole::WriteErrorLine("Failed to retrieve the result of the ECSQL as JSON.");
+            return;
+            }
+
+        BimConsole::WriteLine("%d | %s", rowCount, json.ToString().c_str());
+        }
+
     }
 
 //******************************* DbSchemaCommand ******************
