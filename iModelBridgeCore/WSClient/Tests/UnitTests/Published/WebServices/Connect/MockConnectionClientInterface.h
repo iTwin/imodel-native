@@ -33,8 +33,7 @@ struct MockConnectionClientInterface : public IConnectionClientInterface
         MOCK_METHOD1(GetSerializedDelegateSecurityToken, SamlTokenPtr(Utf8StringCR rpUri));
         MOCK_METHOD1(AddClientEventListener, void(event_callback callback));
         MOCK_METHOD0(StartClientApp, BentleyStatus());
-
-#endif
     };
+#endif
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
