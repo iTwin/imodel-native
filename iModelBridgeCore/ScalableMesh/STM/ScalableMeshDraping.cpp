@@ -1067,7 +1067,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     bool ret = false;
     for (auto& node : nodes)
         {
-        if (!node->ArePoints3d())
+        if (!node->ArePoints3d() && !m_scmPtr->IsCesium3DTiles())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
             if (dtmP == nullptr) continue;
