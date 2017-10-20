@@ -328,13 +328,13 @@ public:
     //! Gets the Quantity for the value stored in the specified ECProperty.  Property must be of type double and specify a KindOfQuantity for this to succeed.
     //! @param[out] q   If successful, will contain the Quantity of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
-    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure.
+    //! @returns ECObjectsStatus::Success if successful.  If property value is null ECObjectsStatus::PropertyValueNull is returned and a Quantity with magnitude 0 is output.  Otherwise an error code indicating the failure.
     ECOBJECTS_EXPORT ECObjectsStatus    GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString) const;
     //! Gets the Quantity for the value stored in the specified ECProperty.  Property must be of type double and specify a KindOfQuantity for this to succeed.
     //! @param[out] q                       If successful, will contain the Quantity of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
     //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful.  If property value is null ECObjectsStatus::PropertyValueNull is returned and a Quantity with magnitude 0 is output.  Otherwise an error code indicating the failure.
     ECOBJECTS_EXPORT ECObjectsStatus    GetQuantity(Units::QuantityR q, Utf8CP propertyAccessString, uint32_t arrayIndex) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property

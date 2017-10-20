@@ -288,7 +288,10 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
         return status;
 
     if (v.IsNull())
+        {
+        q = Units::Quantity(0.0, *koq->GetPersistenceUnit().GetUnit());
         return ECObjectsStatus::PropertyValueNull;
+        }
 
     if (!v.IsDouble())
         {
