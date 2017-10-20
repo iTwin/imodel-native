@@ -11,6 +11,8 @@ static double s_undercutLocalRelTol = 1.0e-14;
 void CompressCyclicPointsAndZingers (bvector<DPoint3d> &points, double tolerance)
     {
     DPoint3dOps::Compress (points, tolerance);
+    while (points.size () > 1 && points.front ().Distance (points.back ()) < tolerance)
+        points.pop_back ();
     double angleTol = Angle::SmallAngle ();
     size_t n = points.size ();
     for (size_t i1 = 0; i1 < n; i1++)
@@ -171,7 +173,8 @@ IPolyfaceVisitorFilter *filterA,
 PolyfaceHeaderCR polyfaceB,
 IPolyfaceVisitorFilter *filterB,
 PolyfaceHeaderPtr &polyfaceAOverB,
-PolyfaceHeaderPtr &polyfaceBOverA
+PolyfaceHeaderPtr &polyfaceBOverA,
+bool computeAndApplyTransform
 )
     {
     polyfaceAOverB = nullptr;
@@ -194,8 +197,16 @@ PolyfaceHeaderPtr &polyfaceBOverA
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
 
     Transform localToWorld, worldToLocal;
-    localToWorld.InitFrom (rangeCenter);
-    worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+    if (computeAndApplyTransform)
+        {
+        localToWorld.InitFrom (rangeCenter);
+        worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+        }
+    else
+        {
+        localToWorld.InitIdentity ();
+        worldToLocal.InitIdentity ();
+        }
 
     PolygonVectorOps::Multiply (polygonA, worldToLocal);
     PolygonVectorOps::Multiply (polygonB, worldToLocal);
@@ -321,7 +332,27 @@ bool ShardHealer::SetupInteriorFaceNumbers (VuMask exteriorMask)
     END_VU_SET_LOOP (nodeB, m_graph)
     return true;
     }
-
+bool SameClusterAroundVertex (VuP nodeA, bvector<size_t > &faceClusters, VuMask exteriorMask)
+    {
+    size_t clusterA = UnionFind::FindClusterRoot (faceClusters, (size_t)vu_getUserData1 (nodeA));
+    VU_VERTEX_LOOP (nodeB, nodeA)
+        {
+        VuP nodeC = vu_fsucc(nodeB);
+        if (vu_getMask (nodeB, exteriorMask))
+            {
+            if (vu_fsucc (nodeC ) != nodeB)
+                return false;           // nontrivial exterior face
+            }
+        else
+            {
+            size_t clusterB = UnionFind::FindClusterRoot (faceClusters, (size_t)vu_getUserData1 (nodeB));
+            if (clusterB != clusterA)
+                return false;
+            }
+        }
+    END_VU_VERTEX_LOOP (nodeB, nodeA)
+    return true;
+    }
 size_t ShardHealer::MergeFacesAcrossNullFaces
 (
 VuMask exteriorMask,
@@ -351,7 +382,19 @@ VuMask mergeMask        // apply to all 4 edges of deletable pair
                     {
                     size_t parentA = UnionFind::FindClusterRoot (m_faceClusters, (size_t)clusterA);
                     size_t parentD = UnionFind::FindClusterRoot (m_faceClusters, (size_t)clusterD);
-                    if (parentA != parentD)
+                    bool merge = parentA != parentD;
+                    if (parentA == parentD)
+                        {
+                        static int s_checkVertex = 1;
+                        if (s_checkVertex)
+                            {
+                            if (SameClusterAroundVertex (nodeA, m_faceClusters, exteriorMask))
+                                merge = true;
+                            if (SameClusterAroundVertex (nodeD, m_faceClusters, exteriorMask))
+                                merge = true;
+                            }
+                        }
+                    if (merge)
                         {
                         // the parents are distinct faces.
                         // merge them and mark the edges:
@@ -372,6 +415,12 @@ VuMask mergeMask        // apply to all 4 edges of deletable pair
 
 void ShardHealer::AnnotateSuccessorIfTurnOrOriginal (VuP nodeA, VuMask mask)
     {
+    static int s_acceptAll = false;
+    if (s_acceptAll)
+        {
+        vu_setMask (nodeA, mask);
+        return;
+        }
     VuP nodeB = vu_fsucc (nodeA);
     DPoint3d xyzB;
     vu_getDPoint3d (&xyzB, nodeB);
@@ -379,7 +428,7 @@ void ShardHealer::AnnotateSuccessorIfTurnOrOriginal (VuP nodeA, VuMask mask)
     vu_getDPoint3dDXY (&vectorAB, nodeA);
     vu_getDPoint3dDXY (&vectorBC, nodeB);
     vu_setMask (nodeB, mask);
-    if (vectorAB.IsParallelTo (vectorBC))
+    if (/* vectorAB.DotProduct (vectorBC) > 0.0 && */vectorAB.IsParallelTo (vectorBC))
         {
         if (FindOriginalIndex (xyzB) < 0)
             vu_clrMask (nodeB, mask);
@@ -392,7 +441,11 @@ bool ShardHealer::HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> 
     vu_reinitializeVuSet (m_graph);
     for (auto &shard : shards)
         {
+        CompressCyclicPointsAndZingers (shard, m_vertexTolerance);
         size_t n = shard.size ();
+        if (0 == n)
+            continue;
+
         m_loopIndex.clear ();
         m_loopXYZ.clear ();
         for (size_t i = 0; i < n; i++)

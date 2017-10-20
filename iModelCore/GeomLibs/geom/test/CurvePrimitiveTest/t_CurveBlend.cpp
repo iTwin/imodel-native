@@ -2958,3 +2958,110 @@ TEST (MatrixWeightedBezier,WobbleStress)
         }
     Check::ClearGeometry ("MatrixWeightedBezier.WobbleStress");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(LineString,OffsetA)
+    {
+    auto pointA = bvector<DPoint3d> {
+        DPoint3d::From (427369.30676537694,4502732.6026837705,1319.3960517455339),
+        DPoint3d::From (427371.99373941735,4502732.5242798980,1319.4318933145964),
+        DPoint3d::From (427372.14851206850,4502732.5133412220,1319.4384689670742),
+        DPoint3d::From (427372.30185038043,4502732.4896433270,1319.4450446195526),
+        DPoint3d::From (427372.45270432608,4502732.4533484895,1319.4516202720311),
+        DPoint3d::From (427372.60004089068,4502732.4047052478,1319.4581959245097),
+        DPoint3d::From (427372.74285114580,4502732.3440467017,1319.4647715769881),
+        DPoint3d::From (427372.88015715819,4502732.2717882274,1319.4713472294666),
+        DPoint3d::From (427373.01101868640,4502732.1884246338,1319.4779228819450),
+        DPoint3d::From (427373.07375084038,4502732.1427539438,1319.4812107081843),
+        DPoint3d::From (427373.13453961944,4502732.0945267789,1319.4844985344234),
+        DPoint3d::From (427373.24987411301,4502731.9907376524,1319.4910741869021),
+        DPoint3d::From (427373.35623238189,4502731.8777679801,1319.4976498393805),
+        DPoint3d::From (427373.45288610796,4502731.7563913539,1319.5042254918590),
+        DPoint3d::From (427373.53917342779,4502731.6274389345,1319.5108011443376),
+        DPoint3d::From (427373.61450346466,4502731.4917937582,1319.5173767968161),
+        DPoint3d::From (427373.67836037517,4502731.3503846945,1319.5239525618533),
+        DPoint3d::From (427373.73030688107,4502731.2041800823,1319.5305284730707),
+        DPoint3d::From (427373.79967465845,4502730.9857642436,1319.5306565102262),
+        DPoint3d::From (427373.87231885275,4502730.7684161626,1319.5307555235697),
+        DPoint3d::From (427373.91649177019,4502730.6196782002,1319.5242357537195),
+        DPoint3d::From (427373.94821572211,4502730.4677972635,1319.5177159838729),
+        DPoint3d::From (427373.96727346996,4502730.3138133986,1319.5111962140263),
+        DPoint3d::From (427373.97353451035,4502730.1587810554,1319.5046764441795),
+        DPoint3d::From (427373.96695596923,4502730.0037618605,1319.4981566743331),
+        DPoint3d::From (427373.94758289482,4502729.8498173505,1319.4916369044865),
+        DPoint3d::From (427373.91554794967,4502729.6980017032,1319.4851171346399),
+        DPoint3d::From (427373.89484747837,4502729.6232178444,1319.4818572497165),
+        DPoint3d::From (427373.87107050221,4502729.5493545206,1319.4785973647931),
+        DPoint3d::From (427373.81445512420,4502729.4048937056,1319.4720775949468),
+        DPoint3d::From (427373.74608950526,4502729.2656084942,1319.4655578251002),
+        DPoint3d::From (427373.66644179809,4502729.1324526789,1319.4590380552536),
+        DPoint3d::From (427373.57605741278,4502729.0063380841,1319.4525182854070),
+        DPoint3d::From (427373.47555528180,4502728.8881283142,1319.4459985155604),
+        DPoint3d::From (427373.36562362156,4502728.7786328420,1319.4394785114293),
+        DPoint3d::From (427373.24701521971,4502728.6786014717,1319.4329696665602),
+        DPoint3d::From (427366.15277712437,4502723.1812729146,1319.3133222813860)
+        };
+
+    auto cvA = CurveVector::CreateLinear (pointA);
+    DRange3d range;
+    cvA->GetRange (range);
+    auto dX = range.XLength ();
+    auto dY = range.YLength ();
+    double offsetDistance = -0.079999999548142409;
+    CurveOffsetOptions options (offsetDistance);
+    auto cvB = cvA->CloneOffsetCurvesXY (options);
+    static double tol = 1.0e-3;
+
+    {
+    SaveAndRestoreCheckTransform shifter (dX, 0, 0);
+    Check::SaveTransformed (*cvA);
+    Check::SaveTransformed (*cvB);
+    cvB->SimplifyLinestrings (tol, true, true, true);
+    Check::Shift (0, dY, 0);
+    Check::SaveTransformed (*cvA);
+    Check::SaveTransformed (*cvB);
+    }
+
+    for (double f : bvector<double>{1.0, 2.0, 3.0, 5.0, 10.0})
+        {
+        bvector<DPoint3d> pointB;
+        PolylineOps::OffsetLineString (pointB, pointA, f * offsetDistance, DVec3d::From (0,0,1), false, 1.0);
+        Check::SaveTransformed (pointA);
+        Check::SaveTransformed (pointB);
+        Check::Shift (0, dY, 0);
+        }
+    Check::ClearGeometry ("LineString.OffsetA");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(LineString,OffsetB)
+    {
+    double x0 = 427369.30676537694;
+    double y0 = 4502732.6026837705;
+    double a = 0.1;
+    auto points = bvector<DPoint3d> {
+        DPoint3d::From (x0, y0),
+        DPoint3d::From (x0 + 2 * a, y0),
+        DPoint3d::From (x0 + 4 * a, y0 + 1 * a),
+        DPoint3d::From (x0 + 5 * a, y0 + 3 * a),
+        DPoint3d::From (x0 + 7 * a, y0 + 4 * a),
+        DPoint3d::From (x0 + 8 * a, y0 + 6 * a),
+        DPoint3d::From (x0 + 8 * a, y0 + 8 * a)
+        };
+    // create various inflections at point3 
+    for (auto f : bvector<double> { 0.1, 0.01, 0.001, 0.0001})
+        {
+        points[3] = DPoint3d::FromInterpolateAndPerpendicularXY (points[2], 0.5, points[4], f);
+        auto cvA = CurveVector::CreateLinear (points);
+        double offsetDistance = -0.079999999548142409;
+        CurveOffsetOptions options (offsetDistance);
+        auto cvB = cvA->CloneOffsetCurvesXY (options);
+        Check::SaveTransformed (*cvA);
+        Check::SaveTransformed (*cvB);
+        Check::Shift (0, 10.0 * a, 0);
+        }
+    Check::ClearGeometry ("LineString.OffsetB");
+    }

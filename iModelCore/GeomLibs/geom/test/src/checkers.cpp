@@ -1421,7 +1421,7 @@ void Check::SaveTransformed(IGeometryPtr const &data)
         }
     else if (range.IsNull ())
         {
-        Check::True (false, "SaveTransformed null range");
+        // Check::True (false, "SaveTransformed null range");
         }
     else if (range.MaxAbs () > s_maxCoordinate)
         {

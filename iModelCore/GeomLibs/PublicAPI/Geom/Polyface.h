@@ -1139,7 +1139,8 @@ IPolyfaceVisitorFilter *filterA,        //!< [in] optional filter object
 PolyfaceHeaderCR polyfaceB,             //!< [in] lower surface of upper geometry (for instance, downward facing facets of bridge)
 IPolyfaceVisitorFilter *filterB,        //!< [in] optional filter object
 PolyfaceHeaderPtr &polyfaceAOverB,      //!< [out] parts of polyfaceA that are over polyfaceB
-PolyfaceHeaderPtr &polyfaceBUnderA      //!< [out] parts of polyfaceB that are over polyfaceA
+PolyfaceHeaderPtr &polyfaceBUnderA,      //!< [out] parts of polyfaceB that are over polyfaceA
+bool computeAndApplyTransform = true     //!< [in] if true, compute a transform to move data to the origin.
 );
 template <typename T>
 struct AnnotatedMesh
@@ -1207,7 +1208,8 @@ PolyfaceQueryCR punch,  //!< [in] each facet of this is used as a "punch"
 PolyfaceQueryCR target, //!< [in] facets to be split by the punch.
 PolyfaceHeaderPtr *inside,  //!< [out] (target intersect punch)
 PolyfaceHeaderPtr *outside,  //!< [out] (target outsideOf punch)
-PolyfaceHeaderPtr *debugMesh = nullptr //!< [in] debugMesh
+PolyfaceHeaderPtr *debugMesh = nullptr,  //!< [inout] debug output
+bool computeAndApplyTransform = true     //!< [in] if true, compute a transform to move data to the origin.
 );
 
 
@@ -2041,7 +2043,8 @@ GEOMDLLIMPEXP void static MeshHidesMeshXYByPlaneSets (
 PolyfaceHeaderPtr &hider,   //!< [in] mesh that might hid part of hidable.
 PolyfaceHeaderPtr &hidable, //!< [in] mesh that might be partially hidden
 PolyfaceHeaderPtr &meshBVisible,    //!< [out] visible parts of the hidable mesh
-PolyfaceHeaderPtr &meshBHidden      //!< [out] hidden parts of the hidable mesh
+PolyfaceHeaderPtr &meshBHidden,      //!< [out] hidden parts of the hidable mesh
+bool computeAndApplyTransform = true //!< [in] if true, compute a transform to move data to the origin.
 );
 
 //< Compute pairwise hidden-visible splits, and replace each input mesh by its visible parts.

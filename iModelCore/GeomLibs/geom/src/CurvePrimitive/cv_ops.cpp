@@ -200,7 +200,7 @@ static bool CompatiblePrimitiveRange (CurveVectorCR source, size_t baseIndex, Co
 +--------------------------------------------------------------------------------------*/
 void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateOverdraw, bool wrap, bool xyOnly)
     {
-    if (distanceTolerance < 0.0)
+    if (distanceTolerance <= 0.0)
         distanceTolerance = DoubleOps::ComputeTolerance (FastMaxAbs (), 0.0, Angle::SmallAngle ());
     bvector<DPoint3d> *points;
     if (   wrap && size () == 1

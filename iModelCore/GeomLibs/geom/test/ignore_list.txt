@@ -12,3 +12,5 @@ General.GFormat
 MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negative number for i=893; notified Earlin
 
 #CurvePrimitive.SizeSampler # Fails after merge - notified Earlir
+
+Polyface.MultiMeshVisibilityCS4
