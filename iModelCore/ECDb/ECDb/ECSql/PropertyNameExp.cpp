@@ -341,7 +341,10 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
             DerivedPropertyExp const& referencedDerivedPropertyRef = propertyRef->LinkedTo();
-            BeAssert(referencedDerivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+            if (referencedDerivedPropertyRef.GetExpression()->GetType() != Exp::Type::PropertyName)
+                {
+                BeAssert(referencedDerivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+                }
             propertyMap = &referencedDerivedPropertyRef.GetExpression()->GetAs<PropertyNameExp>().GetPropertyMap();
             break;
             }

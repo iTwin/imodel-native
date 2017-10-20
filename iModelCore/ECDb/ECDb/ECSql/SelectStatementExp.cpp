@@ -426,7 +426,7 @@ ComputedExp const* OrderByExp::GetFirstNonePropertyNamExpression() const
     for (auto children : GetChildren())
         {
         ComputedExp const* exp = children->GetAs<OrderBySpecExp>().GetSortExpression();
-        if (exp->GetType() != Exp::Type::PropertyName)
+        if (exp->GetType() != Exp::Type::PropertyName && exp->GetType() != Exp::Type::FunctionCall)
             return exp;
         }
 
@@ -444,8 +444,18 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
         while (exp->GetParent())
             {
             exp = exp->GetParent();
+
             if (exp->GetType() == Exp::Type::Select)
                 m_unionStmts.push_back(&exp->GetAsCP<SelectStatementExp>()->GetFirstStatement());
+            else if (exp->GetType() == Exp::Type::SingleSelect)
+                {
+                continue;
+                }
+            else //SubQuery or other parent should not included here
+                {
+                m_unionStmts.clear();
+                break;
+                }
             }
 
         if (m_unionStmts.size() > 1)
