@@ -5,7 +5,7 @@
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SdkSource>V8_InternalSDK</SdkSource>
         <Bindings>
-            <PublicAPI Domain="VersionedDgnV8Api" />
+            <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api"/>
             <Files ProductDirectoryName="DgnV8Dlls" SubPartDirectory="DgnPlatformV8Sdk/Dlls" Required="true">
                 Delivery/DgnPlatformV8Sdk/Dlls/*.dll
             </Files>
@@ -64,7 +64,7 @@
     <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
       <SdkSource>ScalableMeshSDK</SdkSource>
       <Bindings>
-        <PublicAPI Domain="VersionedDgnV8Api" />
+        <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api" />
         <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
         <Directory SourceName="SdkSources/ScalableMeshSDK/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />        
         <Files ProductDirectoryName="VendorNotices">
@@ -160,6 +160,7 @@
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VersionedDgnV8Api" Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="VendorApi"      Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="Libs"           Path=""         RelativeTo="Assemblies"/>
         <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
