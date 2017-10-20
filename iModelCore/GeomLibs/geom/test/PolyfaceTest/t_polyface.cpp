@@ -4203,3 +4203,52 @@ TEST(Polyface,PunchOverlapB)
     ExercisePunchAndMaximal (clipper, inside1);
     Check::ClearGeometry ("Polyface.PunchOverlapB");
     }
+
+ TEST(Polyface,PunchOverlapC)
+    {
+    PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();
+    static int s_numTargetFace = 1;
+    double dX = 20;
+    double dY = 20;
+    target->AddPolygon({{15.000000000000002, 17.500000000000000},
+                        {2.5000000000000000, 17.500000000000000},
+                        {2.5000000000000018, 2.5000000000000000},
+                        {14.376355634263669, 2.5000000000000036},
+                        {19.376355634263668, 12.500000000000000},
+                        {14.999999999999998, 12.500000000000000},
+                        {15.000000000000002, 17.500000000000000}});
+    if (s_numTargetFace > 1)
+        target->AddPolygon({{20.000000000000000, 12.500000000000000},
+                        {19.376355634263668, 12.500000000000000},
+                        {14.376355634263669, 2.5000000000000036},
+                        {20.000000000000000, 2.5000000000000000},
+                        {20.000000000000000, 12.500000000000000}});
+
+    // Punch out holes:
+    PolyfaceHeaderPtr clipper = PolyfaceHeader::CreateVariableSizeIndexed();
+    clipper->AddPolygon({{2.5,2.5}, {15,2.5}, {15,10}, {2.5,10}, {2.5,2.5}});
+    clipper->AddPolygon({{15,8}, {15,5}, {18,5}, {18,4}, {19,4}, {19,8}, {15,8}});
+    clipper->AddPolygon({{15,2.5}, {18,2.5}, {18,5}, {15,5}, {15,2.5}});
+#define JustPunchnot
+#ifdef JustPunch
+    PolyfaceHeaderPtr inside, outside, debugPolygons;
+    PolyfaceHeader::ComputePunchXYByPlaneSets(*clipper, *target, &inside, &outside, nullptr, false);
+    Check::SaveTransformed (clipper);
+    Check::Shift (0, dY, 0);
+    Check::SaveTransformed (target);
+    Check::Shift (dX, -dY, 0);
+    Check::SaveTransformed (inside);
+    Check::SaveTransformed (outside);
+    Check::Shift (0, dY, 0);
+    Check::SaveTransformed (debugPolygons);
+#elif defined(PunchAndExpand)
+    PolyfaceHeaderPtr inside, outside;
+    PolyfaceHeader::ComputePunchXYByPlaneSets(*clipper, *target, &inside, &outside);
+    PolyfaceHeaderPtr outsideCloneTrue = outside->CloneWithMaximalPlanarFacets(false, true);
+    PolyfaceHeaderPtr outsideCloneFalse = outside->CloneWithMaximalPlanarFacets(false, false);
+#else
+    ExercisePunchAndMaximal (clipper, target);
+#endif
+    Check::ClearGeometry("Polyface.PunchOverlapC");
+
+    }
