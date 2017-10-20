@@ -1180,3 +1180,210 @@ ClipVectorPtr   DwgHelper::CreateClipperFromEntity (DwgDbObjectId entityId, doub
 
     return ClipVector::CreateFromGPA (*gpa, 0.001, 0.1, frontClip, backClip, clipperToModel);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bmap<Utf8String, DwgFileVersion> CreateStringToVersionMap ()
+    {
+    // DWG version telltale strings to our supported enum versions
+    bmap<Utf8String, DwgFileVersion> mappedVersion;
+
+    mappedVersion["AC1002"] = DwgFileVersion::R2_5;
+    mappedVersion["AC1003"] = DwgFileVersion::R2_6;
+    mappedVersion["AC1004"] = DwgFileVersion::R9;
+    mappedVersion["AC1005"] = DwgFileVersion::R9;
+    mappedVersion["AC1006"] = DwgFileVersion::R10;
+    mappedVersion["AC1007"] = DwgFileVersion::R10;
+    mappedVersion["AC1008"] = DwgFileVersion::R10;
+    mappedVersion["AC1009"] = DwgFileVersion::R11;
+    mappedVersion["AC1010"] = DwgFileVersion::R11;
+    mappedVersion["AC1011"] = DwgFileVersion::R11;
+    mappedVersion["AC1012"] = DwgFileVersion::R13;
+    mappedVersion["AC1013"] = DwgFileVersion::R14;
+    mappedVersion["AC1014"] = DwgFileVersion::R14;
+    mappedVersion["AC1015"] = DwgFileVersion::R2000;
+    mappedVersion["AC1018"] = DwgFileVersion::R2004;
+    mappedVersion["AC1021"] = DwgFileVersion::R2007;
+    mappedVersion["AC1024"] = DwgFileVersion::R2010;
+    mappedVersion["AC1027"] = DwgFileVersion::R2013;
+    return  mappedVersion;
+    };
+static bmap<Utf8String, DwgFileVersion> const s_stringToVersionMap = CreateStringToVersionMap ();
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bmap<DwgFileVersion, Utf8String> CreateDisplayVersionMap ()
+    {
+    // read-able DWG version strings
+    bmap<DwgFileVersion, Utf8String> mappedString;
+
+    mappedString[DwgFileVersion::Invalid] = "Invalid";
+    mappedString[DwgFileVersion::Newer]   = "Too new";
+    mappedString[DwgFileVersion::Unknown] = "Unknown";
+    mappedString[DwgFileVersion::R2_6]    = "R2.6";
+    mappedString[DwgFileVersion::R9]      = "R9";
+    mappedString[DwgFileVersion::R10]     = "R10";
+    mappedString[DwgFileVersion::R11]     = "R11";
+    mappedString[DwgFileVersion::R13]     = "R13";
+    mappedString[DwgFileVersion::R14]     = "R14";
+    mappedString[DwgFileVersion::R2000]   = "R2000";
+    mappedString[DwgFileVersion::R2004]   = "R2004";
+    mappedString[DwgFileVersion::R2007]   = "R2007";
+    mappedString[DwgFileVersion::R2010]   = "R2010";
+    mappedString[DwgFileVersion::R2013]   = "R2013";
+    return  mappedString;
+    };
+static bmap<DwgFileVersion, Utf8String> const s_displayVersions = CreateDisplayVersionMap ();
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgFileVersion  DwgHelper::CheckDwgVersionString (Utf8StringCR versionString)
+    {
+    if (versionString.size() < 3 || versionString.size() > 6)
+        return  DwgFileVersion::Invalid;
+
+    auto found = s_stringToVersionMap.find (versionString.c_str());
+    if (found != s_stringToVersionMap.end())
+        return found->second;
+
+    // The file could be a newer version, unsupported version or not a DWG at all - now check for "AC1" or "AC2":
+    if ('A' == versionString[0] && 'C' == versionString[1] && ('1' == versionString[2] || '2' == versionString[2]))
+        {
+        // smells like a valid DWG, but is it a newer version not yet supported or a version not known to us?  Check the number followed by AC1:
+        char    verBuffer[4];
+        ::strncpy (verBuffer, &versionString[3], 3);
+        verBuffer[3] = 0;
+
+        char*   end = nullptr;
+        int     verFromFile = ::strtol(verBuffer, &end, 10);
+        int     maxSupported = LONG_MAX;
+
+        // lookup the telltale string we support as the MAX version
+        for (auto entry : s_stringToVersionMap)
+            {
+            if (DwgFileVersion::MAX == entry.second)
+                {
+                maxSupported = ::strtol(&entry.first[3], &end, 10);
+                break;
+                }
+            }
+
+        if (LONG_MAX == verFromFile || LONG_MIN == verFromFile || 0 == verFromFile)
+            return DwgFileVersion::Invalid;
+        else if (verFromFile > maxSupported)
+            return DwgFileVersion::Newer;
+        else
+            return DwgFileVersion::Unknown;
+        }
+
+    return  DwgFileVersion::Invalid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String  DwgHelper::GetStringFromDwgVersion (DwgFileVersion dwgVersion)
+    {
+    // get a readable string for a DWG version
+    auto found = s_displayVersions.find (dwgVersion);
+    if (found != s_displayVersions.end())
+        return  found->second;
+
+    return  "Invalid";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::SniffDwgFile (BeFileNameCR dwgName, DwgFileVersion* versionOut)
+    {
+    BeFile          dwgFile;
+    BeFileStatus    readStatus = dwgFile.Open (dwgName.c_str(), BeFileAccess::Read);
+    if (BeFileStatus::Success != readStatus)
+        return  false;
+
+    // sniff only the first 6 ascii chars in file
+    char    header[7] = { 0 };
+    readStatus = dwgFile.Read (header, nullptr, 6);
+    dwgFile.Close ();
+
+    if (BeFileStatus::Success != readStatus)
+        return  false;
+
+    DwgFileVersion  foundVersion = DwgHelper::CheckDwgVersionString (header);
+    if (nullptr != versionOut)
+        *versionOut = foundVersion;
+
+    // treat unknown version as a valid DWG file
+    return DwgFileVersion::Invalid != foundVersion && DwgFileVersion::Newer != foundVersion;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOut)
+    {
+    /*-----------------------------------------------------------------------------------
+    A fully qualified DXF file starts with a header section like this:
+        0
+    SECTION
+        2
+    HEADER
+        9
+    $ACADVER
+        1
+    AC10XX
+        ...
+    where AC10XX is the same string format as in DWG.  We check for "$ACADVER" followed
+    by "AC10".  We do not want to read any file that happens to contain the string "AC10".
+    -----------------------------------------------------------------------------------*/
+    BeFile  dxfFile;
+    BeFileStatus readStatus = dxfFile.Open (dxfName.c_str(), BeFileAccess::Read);
+    if (BeFileStatus::Success != readStatus)
+        return  false;
+
+    // sniff first 4KB
+    char header[4097] = { 0 };
+    readStatus = dxfFile.Read (header, nullptr, sizeof(header));
+    dxfFile.Close ();
+
+    if (BeFileStatus::Success != readStatus)
+        return  false;
+
+    // check DXB
+    if (0 == ::strncmp (header, "AutoCAD Binary DXF", 18))
+        {
+        if (nullptr != versionOut)
+            *versionOut = DwgHelper::CheckDwgVersionString (Utf8String(&header[54], 6));
+        return  true;
+        }
+
+    // check DXF
+    CharCP  checkString = ::strstr (header, "$ACADVER");
+    if (nullptr != checkString && nullptr != (checkString = ::strstr(checkString, "AC10")))
+        {
+        if (nullptr != versionOut)
+            *versionOut = DwgHelper::CheckDwgVersionString (Utf8String(checkString, 6));
+        return  true;
+        }
+
+    /*-----------------------------------------------------------------------------------
+    A file with incomplete header or no header at all can still be a valid DXF file. A valid
+    DXF should generally start with ENTITIES section. Unfortunately some crappy DXF files 
+    may have huge table sections before reaching to ENTITIES section - TFS#346565.  Opening 
+    the entire file just to sniff ENTITIES section suffers performance penalty.  We have 
+    settled with sniffing SECTION instead.
+    -----------------------------------------------------------------------------------*/
+    if (nullptr != (checkString = ::strstr(header, "SECTION")))
+        {
+        // a DXF file without a version specified will be treated as the lowest version the toolkit supports:
+        if (nullptr != versionOut)
+            *versionOut = DwgFileVersion::Unknown;
+        return true;
+        }
+    
+    return  false;
+    }

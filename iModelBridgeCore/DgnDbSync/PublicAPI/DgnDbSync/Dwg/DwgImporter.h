@@ -778,6 +778,7 @@ public:
         L10N_STRING(ModelFilteredOut)            // =="Model [%s] was not imported."==
         L10N_STRING(NotADgnDb)                   // =="The file is not a DgnDb"==
         L10N_STRING(NotRecognizedFormat)         // =="File [%s] is not in a recognized format"==
+        L10N_STRING(NewerDwgVersion)             // =="File [%s] is a newer version not currently supported"==
         L10N_STRING(CantCreateRaster)            // =="Cannot create raster attachment [%s]."==
         L10N_STRING(RootModelChanged)            // =="The original root model was deleted or has changed units."==
         L10N_STRING(RootModelMustBePhysical)     // =="Root model [%s] is not a physical model."==
@@ -792,8 +793,9 @@ public:
 
     //! Progress messages for the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
+        L10N_STRING(STEP_INITIALIZING)                 // =="Initializing"==
         L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
-        L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls"==
+        L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls [%s]"==
         L10N_STRING(STEP_COMPACTING)                   // =="Compacting File"==
         L10N_STRING(STEP_IMPORTING_ENTITIES)           // =="Importing Entities"==
         L10N_STRING(STEP_IMPORTING_VIEWS)              // =="Importing Views"==
@@ -806,13 +808,13 @@ public:
         L10N_STRING(STEP_IMPORTING_LAYERS)             // =="Importing Layers"==
         L10N_STRING(STEP_IMPORTING_TEXTSTYLES)         // =="Importing Text Styles"==
         L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==
-        L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
         L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
+        L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
+        L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
+        L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
         L10N_STRING(TASK_IMPORTING_MODEL)              // =="Model: %s"==
         L10N_STRING(TASK_IMPORTING_RASTERDATA)         // =="Importing raster data file: %s"==
         L10N_STRING(TASK_CREATING_THUMBNAIL)           // =="Creating thumbnail for: %s"==
-        L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
-        L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Miscellaneous strings needed for DwgImporter
@@ -949,6 +951,7 @@ protected:
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
+    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
 
     //! @name The ImportJob
     //! @{
