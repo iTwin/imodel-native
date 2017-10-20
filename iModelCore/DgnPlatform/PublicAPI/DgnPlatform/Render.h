@@ -1665,6 +1665,7 @@ struct ColorIndex
 
     ColorIndex() { Reset(); }
 
+    bool IsValid() const { return m_numColors > 0; }
     bool IsUniform() const { BeAssert(m_numColors > 0); return 1 == m_numColors; }
     bool HasAlpha() const { return IsUniform() ? 0 != (m_uniform & 0xff000000) : m_nonUniform.m_hasAlpha; }
 
@@ -2604,8 +2605,6 @@ public:
     // Used by tile reader...
     void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
-
-
 };
 
 //=======================================================================================

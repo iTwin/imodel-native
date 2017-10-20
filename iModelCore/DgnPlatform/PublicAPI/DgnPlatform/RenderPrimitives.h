@@ -322,6 +322,7 @@ private:
     bool    m_quantized;
 public:
     QVertex3d() { }
+    explicit QVertex3d(QPoint3dCR qpt) : m_q(*reinterpret_cast<Quantized const*>(&qpt)), m_quantized(true) { } // onus on caller to ensure in quantization range...
     QVertex3d(DPoint3dCR dpt, ParamsCR params) : QVertex3d(FPoint3d::From(dpt), params) { }
     QVertex3d(FPoint3dCR fpt, ParamsCR params)
         {
@@ -563,6 +564,7 @@ public:
     const_iterator end() const { return m_map.end(); }
 
     DRange3dCR GetRange() const { return m_range; }
+    void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
 };
 
 //=======================================================================================
@@ -580,6 +582,7 @@ struct VertexKey
 
     VertexKey() { }
     VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param);
 
     OctEncodedNormalCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
     DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }

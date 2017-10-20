@@ -921,24 +921,129 @@ TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitiv
 struct DgnCacheTileRebuilder : GltfReader
 {
 private:
-    Render::Primitives::MeshBuilderMapR m_builders;
-    std::vector<bool> m_skipFeatures;
+    struct BufferView32
+    {
+        void const* m_data;
+        bool        m_short;
 
-    bool AcceptFeature(uint32_t featureId) const
+        BufferView32() : m_data(nullptr) { }
+        BufferView32(void const* data, bool isShort) : m_data(data), m_short(isShort) { }
+
+        uint32_t operator[](size_t index) const
+            {
+            if (m_short)
+                return (reinterpret_cast<uint16_t const*>(m_data))[index];
+            else
+                return reinterpret_cast<uint32_t const*>(m_data)[index];
+            }
+
+        bool IsValid() const { return nullptr != m_data; }
+    };
+
+    struct BufferView16
+    {
+        void const* m_data;
+        bool        m_byte;
+
+        BufferView16() : m_data(nullptr) { }
+        BufferView16(void const* data, bool isByte) : m_data(data), m_byte(isByte) { }
+
+        uint16_t operator[](size_t index) const
+            {
+            if (m_byte)
+                return (reinterpret_cast<uint8_t const*>(m_data))[index];
+            else
+                return (reinterpret_cast<uint16_t const*>(m_data))[index];
+            }
+
+        bool IsValid() const { return nullptr != m_data; }
+    };
+
+    struct Features
+    {
+        BufferView32    m_nonUniform;
+        uint32_t        m_uniform = 0;
+
+        Features() = default;
+        explicit Features(uint32_t uniform) : m_uniform(uniform) { }
+        explicit Features(BufferView32 nonUniform) : m_nonUniform(nonUniform) { }
+
+        bool IsValid() const { return 0 == m_uniform && !m_nonUniform.IsValid(); }
+        bool IsUniform() const { BeAssert(IsValid()); return 0 != m_uniform; }
+        bool IsNonUniform() const { BeAssert(IsValid()); return m_nonUniform.IsValid(); }
+
+        uint32_t GetFeatureId(uint32_t index) const
+            {
+            BeAssert(IsValid());
+            return IsUniform() ? m_uniform : m_nonUniform[index];
+            }
+    };
+
+    struct FeatureList
+    {
+        struct Entry
         {
-        BeAssert(m_skipFeatures.empty() || featureId < m_skipFeatures.size());
-        return m_skipFeatures.empty() || m_skipFeatures[featureId];
-        }
-    bool RejectFeature(uint32_t featureId) const { return !AcceptFeature(featureId); }
+            Feature m_feature;
+            bool    m_omit;
+
+            Entry() { }
+            Entry(FeatureCR feature, bool omit) : m_feature(feature), m_omit(omit) { }
+        };
+
+        bvector<Entry>  m_entries;
+
+        TileIO::ReadStatus Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems);
+        FeatureCR GetFeature(uint32_t index) const { BeAssert(index < m_entries.size()); return m_entries[index].m_feature; }
+        bool RejectFeature(uint32_t index) const { BeAssert(index < m_entries.size()); return m_entries[index].m_omit; }
+    };
+
+    struct MeshPrimitive
+    {
+        using Type = Render::Primitives::Mesh::PrimitiveType;
+
+        uint32_t            m_numIndices;
+        uint32_t            m_numVertices;
+        DisplayParamsCPtr   m_displayParams;
+        BufferView32        m_indices;
+        QPoint3dCP          m_vertices;
+        Features            m_features;
+        uint16_t const*     m_normals;
+        FPoint2d const*     m_params;
+        bvector<uint32_t>   m_colorsByIndex;
+        BufferView16        m_colorIndices;
+        Type                m_type;
+        bool                m_isPlanar;
+
+        OctEncodedNormalCP GetNormal(size_t index) const { return nullptr != m_normals ? reinterpret_cast<OctEncodedNormalCP>(m_normals+index) : nullptr; }
+        FPoint2d const* GetParam(size_t index) const { return nullptr != m_params ? m_params+index : nullptr; }
+    };
+
+    Render::Primitives::MeshBuilderMapR m_builders;
+    FeatureList m_featureList;
 
     DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
         {
         return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem);
         }
 
+    BufferView32 ReadBufferView32(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount=nullptr);
+    BufferView16 ReadBufferView16(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount=nullptr);
+
+    QPoint3d const* ReadVertices(uint32_t& numVertices, Json::Value const& json);
+    BufferView16 ReadColorIndices(Json::Value const& json) { return ReadBufferView16(json["attributes"], "_COLORINDEX"); }
+    Features ReadFeatures(Json::Value const& json);
+    bvector<uint32_t> ReadColorIndex(Json::Value const& json);
+
     TileIO::ReadStatus ReadFeatureTable(DgnElementIdSet const& skipElems);
     TileIO::ReadStatus ReadGltf();
     TileIO::ReadStatus ReadMeshPrimitive(Json::Value const& primitive);
+    TileIO::ReadStatus AddMeshPrimitive(Features features, Json::Value const& primitive);
+
+    BufferView32 ReadMeshIndices(uint32_t& numIndices, Json::Value const& json) { return ReadBufferView32(json, "indices", &numIndices); }
+    FPoint2d const* ReadParams(Json::Value const&);
+    uint16_t const* ReadNormals(Json::Value const&);
+    void AddMesh(MeshPrimitive const& mesh);
+    uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
 public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
@@ -951,41 +1056,42 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileIO::ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const& skipElems)
     {
-    // Use the feature table to identify features which should not be included in the MeshBuilderMap.
     uint32_t startPos = m_buffer.GetPos();
 
     FeatureTableHeader header;
     if (!header.Read(m_buffer))
         return TileIO::ReadStatus::ReadError;
 
-    if (skipElems.empty())
-        {
-        // No point reading data if not skipping anything...
-        m_buffer.SetPos(startPos + header.length);
-        return TileIO::ReadStatus::Success;
-        }
+    m_builders.SetMaxFeatures(header.maxFeatures);
 
-    m_skipFeatures.resize(header.count);
+    auto status = m_featureList.Read(m_buffer, header, skipElems);
+    m_buffer.SetPos(startPos);
+    return status;
+    }
 
-    constexpr uint32_t bytesToSkip = sizeof(uint64_t) // sub category ID
-                                   + sizeof(uint32_t); // geometry class
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::ReadStatus DgnCacheTileRebuilder::FeatureList::Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems)
+    {
+    m_entries.resize(header.count);
     for (uint32_t i = 0; i < header.count; i++)
         {
-        uint64_t elemId = 0;
-        uint32_t index = 0;
+        uint64_t elemId;
+        uint64_t subCatId;
+        uint32_t geomClass;
+        uint32_t index;
 
-        if (!m_buffer.Read(elemId) || !m_buffer.Skip(bytesToSkip) || !m_buffer.Read(index))
+        if (!buffer.Read(elemId) || !buffer.Read(subCatId) || !buffer.Read(geomClass) || !buffer.Read(index))
             {
             BeAssert(false);
             return TileIO::ReadStatus::FeatureTableError;
             }
 
-        if (skipElems.end() != skipElems.find(DgnElementId(elemId)))
-            m_skipFeatures[index] = true;
+        BeAssert(index < m_entries.size());
+        Feature feature(DgnElementId(elemId), DgnSubCategoryId(subCatId), static_cast<DgnGeometryClass>(geomClass));
+        m_entries[index] = Entry(feature, skipElems.end() != skipElems.find(feature.GetElementId()));
         }
-
-    m_buffer.SetPos(startPos + header.length);
 
     return TileIO::ReadStatus::Success;
     }
@@ -993,27 +1099,244 @@ TileIO::ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::ReadMeshPrimitive(Json::Value const& prim)
+TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Json::Value const& json)
     {
-    bvector<uint32_t> featureIndices;
-    if (SUCCESS != ReadFeatures(featureIndices, prim))
+    MeshPrimitive mesh;
+
+    auto materialName = json["material"];
+    if (!materialName.isString())
         return TileIO::ReadStatus::ReadError;
 
-    switch (featureIndices.size())
+    auto materialValue = m_materialValues[materialName.asString()];
+    if (!materialValue.isObject())
         {
-        case 0:
-            return TileIO::ReadStatus::Success;
-        case 1:
-            // If only one feature, can trivially skip this mesh
-            if (RejectFeature(featureIndices[0]))
-                return TileIO::ReadStatus::Success;
-
-            // ###TODO: Optimize uniform feature case - add entire mesh to builder map at once
-            break;
+        BeAssert(false && "Material not found");
+        return TileIO::ReadStatus::ReadError;
         }
 
-    // ###TODO...
+    mesh.m_displayParams = _CreateDisplayParams(materialValue);
+    if (mesh.m_displayParams.IsNull())
+        return TileIO::ReadStatus::ReadError;
+
+    mesh.m_vertices = ReadVertices(mesh.m_numVertices, json);
+    mesh.m_features = features;
+    mesh.m_type = static_cast<MeshPrimitive::Type>(json["type"].asUInt());
+    mesh.m_isPlanar = json["isPlanar"].asBool();
+    mesh.m_colorIndices = ReadColorIndices(json);
+    mesh.m_colorsByIndex = ReadColorIndex(json);
+    
+    if (nullptr == mesh.m_vertices || mesh.m_colorsByIndex.empty())
+        {
+        BeAssert(false);
+        return TileIO::ReadStatus::ReadError;
+        }
+
+    switch (mesh.m_type)
+        {
+        case MeshPrimitive::Type::Mesh:
+            {
+            mesh.m_indices = ReadMeshIndices(mesh.m_numIndices, json);
+            if (!mesh.m_indices.IsValid())
+                return TileIO::ReadStatus::ReadError;
+
+            if (!mesh.m_displayParams->IgnoresLighting())
+                {
+                mesh.m_normals = ReadNormals(json);
+                if (nullptr == mesh.m_normals)
+                    return TileIO::ReadStatus::ReadError;
+                }
+
+            mesh.m_params = ReadParams(json);
+            // ###TODO: Edges...
+
+            AddMesh(mesh);
+            break;
+            }
+        case MeshPrimitive::Type::Point:
+        case MeshPrimitive::Type::Polyline:
+            // ###TODO
+            break;
+        default:
+            BeAssert(false && "Invalid mesh primitive type");
+            return TileIO::ReadStatus::ReadError;
+        }
+
     return TileIO::ReadStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCacheTileRebuilder::Features DgnCacheTileRebuilder::ReadFeatures(Json::Value const& prim)
+    {
+    if (prim.isMember("featureID"))
+        return Features(prim["featureID"].asUInt());
+
+    BufferView32 bufView = ReadBufferView32(prim, "featureIDs");
+    BeAssert(bufView.IsValid());
+    return Features(bufView);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+QPoint3dCP DgnCacheTileRebuilder::ReadVertices(uint32_t& numVertices, Json::Value const& json)
+    {
+    auto view = ReadBufferView16(json["attributes"], "POSITION", &numVertices);
+    BeAssert(!view.m_byte);
+    return reinterpret_cast<QPoint3dCP>(view.m_data);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint16_t const* DgnCacheTileRebuilder::ReadNormals(Json::Value const& json)
+    {
+    BufferView16 view = ReadBufferView16(json["attributes"], "NORMAL");
+    BeAssert(!view.m_byte);
+    return reinterpret_cast<uint16_t const*>(view.m_data);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+FPoint2d const* DgnCacheTileRebuilder::ReadParams(Json::Value const& json)
+    {
+    auto params = json["attributes"]["TEXCOORD_0"];
+    void const* pData;
+    size_t count, byteLen;
+    uint32_t type;
+    Json::Value accessor;
+
+    if (SUCCESS == GetBufferView(pData, count, byteLen, type, accessor, json["attributes"], "TEXCOORD_0"))
+        {
+        BeAssert(GLTF_FLOAT == accessor["componentType"].asInt());
+        return reinterpret_cast<FPoint2d const*>(pData);
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddMesh(MeshPrimitive const& mesh)
+    {
+    BeAssert(MeshPrimitive::Type::Mesh == mesh.m_type);
+
+    // Add triangles, skipping those which belong to excluded features
+    // ###TODO: Optimize for the case in which this mesh contains no excluded features...in particular, if feature table is uniform we *know* no triangles will be omitted.
+    MeshBuilderMap::Key key(*mesh.m_displayParams, nullptr != mesh.m_normals, mesh.m_type, mesh.m_isPlanar);
+    MeshBuilderR builder = m_builders[key];
+    for (uint32_t i = 0; i < mesh.m_numIndices; i += 3)
+        {
+        uint32_t index = mesh.m_indices[i];
+        uint32_t featureId = mesh.m_features.GetFeatureId(index);
+        FeatureList::Entry const& featEntry = m_featureList.m_entries[featureId];
+        if (featEntry.m_omit)
+            continue;
+
+        uint32_t i0 = AddMeshVertex(builder, mesh, i, featEntry.m_feature);
+        uint32_t i1 = AddMeshVertex(builder, mesh, i+1, featEntry.m_feature);
+        uint32_t i2 = AddMeshVertex(builder, mesh, i+2, featEntry.m_feature);
+        builder.AddTriangle(Triangle(i0, i1, i2, false));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitive const& mesh, uint32_t index, FeatureCR feature)
+    {
+    QPoint3dCR pos = mesh.m_vertices[index];
+    uint16_t colorIdx = mesh.m_colorIndices[index];
+    uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
+    OctEncodedNormalCP normal = mesh.GetNormal(index);
+    FPoint2dCP param = mesh.GetParam(index);
+
+    VertexKey key(pos, feature, fillColor, normal, param);
+    return builder.AddVertex(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<uint32_t> DgnCacheTileRebuilder::ReadColorIndex(Json::Value const& json)
+    {
+    bvector<uint32_t> colors;
+    auto colorTable = json["colorTable"];
+    if (!colorTable.isArray())
+        return colors;
+
+    colors.reserve(colorTable.size());
+    for (size_t i = 0; i < colorTable.size(); i++)
+        colors.push_back(colorTable[static_cast<int>(i)].asUInt());
+
+    return colors;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCacheTileRebuilder::BufferView32 DgnCacheTileRebuilder::ReadBufferView32(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount)
+    {
+    void const* pData;
+    size_t bufCount, bufByteLength;
+    uint32_t type;
+    Json::Value accessor;
+
+    if (SUCCESS != GetBufferView(pData, bufCount, bufByteLength, type, accessor, json, accessorName))
+        return BufferView32();
+
+    if (nullptr != pCount)
+        *pCount = static_cast<uint32_t>(bufCount);
+
+    bool isShort = GLTF_UNSIGNED_SHORT == type;
+    BeAssert(isShort || GLTF_UINT32 == type);
+    return BufferView32(pData, isShort);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCacheTileRebuilder::BufferView16 DgnCacheTileRebuilder::ReadBufferView16(Json::Value const& json, Utf8CP accessorName, uint32_t* pCount)
+    {
+    void const* pData;
+    size_t bufCount, bufByteLength;
+    uint32_t type;
+    Json::Value accessor;
+
+    if (SUCCESS != GetBufferView(pData, bufCount, bufByteLength, type, accessor, json, accessorName))
+        return BufferView16();
+
+    if (nullptr != pCount)
+        *pCount = static_cast<uint32_t>(bufCount);
+
+    bool isByte = GLTF_UNSIGNED_BYTE == type;
+    BeAssert(isByte || GLTF_UNSIGNED_SHORT == type);
+    return BufferView16(pData, isByte);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::ReadStatus DgnCacheTileRebuilder::ReadMeshPrimitive(Json::Value const& prim)
+    {
+    Features features = ReadFeatures(prim);
+    if (!features.IsValid())
+        return TileIO::ReadStatus::ReadError;
+
+    if (!features.IsValid())
+        {
+        BeAssert(false);
+        return TileIO::ReadStatus::Success;
+        }
+
+    // If only one feature, can trivially skip this mesh
+    if (features.IsUniform() && m_featureList.RejectFeature(features.m_uniform))
+        return TileIO::ReadStatus::Success;
+
+    return AddMeshPrimitive(features, prim);
     }
 
 /*---------------------------------------------------------------------------------**//**

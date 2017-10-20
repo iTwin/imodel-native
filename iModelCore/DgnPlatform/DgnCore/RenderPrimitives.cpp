@@ -862,6 +862,19 @@ VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+VertexKey::VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
+    : m_position(point), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
+    {
+    if (m_normalValid)
+        m_normal = *normal;
+
+    if (m_paramValid)
+        m_param = DPoint2d::From(*param);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddTriangle(TriangleCR triangle)
