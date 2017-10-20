@@ -12,6 +12,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
@@ -34,13 +35,13 @@ ECDb::~ECDb()
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
     {
-    m_pimpl->m_settings.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
+    m_pimpl->m_settingsManager.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                02/2017
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Settings const& ECDb::GetECDbSettings() const { return m_pimpl->GetSettings(); }
+ECDb::SettingsManager const& ECDb::GetECDbSettingsManager() const { return m_pimpl->m_settingsManager; }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                01/2017
@@ -132,7 +133,7 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetIdSequences(briefcaseId, ecClassIgnoreList);}
+BentleyStatus ECDb::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetInstanceIdSequence(briefcaseId, ecClassIgnoreList);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
@@ -199,6 +200,59 @@ DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, 
     return Impl::InitializeLib(ecdbTempDir, hostAssetsDir, logSqliteErrors);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   09/2015
+//---------------------------------------------------------------------------------------
+void ECDb::IIssueListener::ReportIssue(Utf8CP message) const { _OnIssueReported(message); }
+
+
+//*****************************************************************************************
+//SettingsManager
+//*****************************************************************************************
+
+struct ECCrudWriteToken final {};
+struct SchemaImportToken final {};
+
+//---------------------------------------------------------------------------------------
+//not inlined to prevent being called outside ECDb
+// @bsimethod                                                   Krischan.Eberle   10/2017
+//---------------------------------------------------------------------------------------
+ECDb::SettingsManager::SettingsManager() {}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+ECDb::SettingsManager::~SettingsManager()
+    {
+    if (m_crudWriteToken != nullptr)
+        {
+        delete m_crudWriteToken;
+        m_crudWriteToken = nullptr;
+        }
+
+    if (m_schemaImportToken != nullptr)
+        {
+        delete m_schemaImportToken;
+        m_schemaImportToken = nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//not inlined to prevent being called outside ECDb
+// @bsimethod                                                   Krischan.Eberle   10/2017
+//---------------------------------------------------------------------------------------
+void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
+    {
+    m_settings = ECDb::Settings(requireECCrudWriteToken, requireECSchemaImportToken, allowChangesetMergingIncompatibleECSchemaImport);
+
+    if (requireECCrudWriteToken)
+        m_crudWriteToken = new ECCrudWriteToken();
+
+    if (requireECSchemaImportToken)
+        m_schemaImportToken = new SchemaImportToken();
+    }
+
 //---------------------------------------------------------------------------------------
 //not inlined to prevent being called outside ECDb
 // @bsimethod                                                   Krischan.Eberle   02/2017
@@ -207,17 +261,11 @@ ECDb::Settings::Settings() {}
 
 //---------------------------------------------------------------------------------------
 //not inlined to prevent being called outside ECDb
-// @bsimethod                                                   Krischan.Eberle   02/2017
+// @bsimethod                                                   Krischan.Eberle   10/2017
 //---------------------------------------------------------------------------------------
-ECDb::Settings::Settings(ECCrudWriteToken const* ecCrudWriteToken, SchemaImportToken const* schemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
-    : m_crudWriteToken(ecCrudWriteToken), m_schemaImportToken(schemaImportToken), m_allowChangesetMergingIncompatibleSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
+ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
+    : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken), m_allowChangesetMergingIncompatibleSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
     {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   09/2015
-//---------------------------------------------------------------------------------------
-void ECDb::IIssueListener::ReportIssue(Utf8CP message) const { _OnIssueReported(message); }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

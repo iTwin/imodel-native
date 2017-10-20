@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
+#include <Bentley/BeTextFile.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -105,7 +106,7 @@ BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem) const
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult TestHelper::ExecuteNonSelectECSql(Utf8CP ecsql) const
+DbResult TestHelper::ExecuteECSql(Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
@@ -355,6 +356,338 @@ bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnNam
     fkSearchString.Sprintf("foreign key([%s]", foreignKeyColumnName);
 
     return ddl.ContainsI(fkSearchString);
+    }
+
+//**************************************************************************************
+// TestUtilities
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus TestUtilities::ReadFile(Json::Value& json, BeFileNameCR jsonFilePath)
+    {
+    Utf8String jsonFileContent;
+    if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))
+        return ERROR;
+
+    return ParseJson(json, jsonFileContent);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus TestUtilities::ReadFile(rapidjson::Document& json, BeFileNameCR jsonFilePath)
+    {
+    Utf8String jsonFileContent;
+    if (SUCCESS != ReadFile(jsonFileContent, jsonFilePath))
+        return ERROR;
+
+    return ParseJson(json, jsonFileContent);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle      10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus TestUtilities::ReadFile(Utf8StringR fileContent, BeFileNameCR filePath)
+    {
+    BeFileStatus stat = BeFileStatus::Success;
+    BeTextFilePtr file = BeTextFile::Open(stat, filePath, TextFileOpenType::Read, TextFileOptions::None, TextFileEncoding::Utf8);
+    if (BeFileStatus::Success != stat)
+        {
+        EXPECT_EQ(BeFileStatus::Success, stat) << "Reading file " << filePath.GetNameUtf8();
+        return ERROR;
+        }
+
+    TextFileReadStatus readStat;
+    WString line;
+    while (TextFileReadStatus::Success == (readStat = file->GetLine(line)))
+        {
+        fileContent.append(Utf8String(line));
+        }
+
+    if (readStat != TextFileReadStatus::Eof)
+        {
+        EXPECT_EQ(TextFileReadStatus::Eof, readStat) << "Reading file " << filePath.GetNameUtf8();
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//**************************************************************************************
+// ComparableJsonCppValue
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     10/17
+//---------------------------------------------------------------------------------------
+bool ComparableJsonCppValue::operator==(ComparableJsonCppValue const& rhs) const
+    {
+    if (m_value.type() != rhs.m_value.type())
+        return false;
+
+    switch (m_value.type())
+        {
+            case Json::ValueType::arrayValue:
+            {
+            if (m_value.size() != rhs.m_value.size())
+                return false;
+
+            for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
+                {
+                if (ComparableJsonCppValue(m_value[i]) != ComparableJsonCppValue(rhs.m_value[i]))
+                    return false;
+                }
+
+            return true;
+            }
+            case Json::ValueType::booleanValue:
+                return m_value.asBool() == rhs.m_value.asBool();
+
+            case Json::ValueType::intValue:
+                return m_value.asInt64() == rhs.m_value.asInt64();
+
+            case Json::ValueType::nullValue:
+                return m_value.isNull() == rhs.m_value.isNull();
+
+            case Json::ValueType::objectValue:
+            {
+            bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
+            if (lhsMemberNames.size() != rhs.m_value.size())
+                return false;
+
+            for (Utf8StringCR memberName : lhsMemberNames)
+                {
+                if (!rhs.m_value.isMember(memberName))
+                    return false;
+
+                if (ComparableJsonCppValue(m_value[memberName]) != ComparableJsonCppValue(rhs.m_value[memberName]))
+                    return false;
+                }
+
+            return true;
+            }
+
+            case Json::ValueType::realValue:
+                return TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
+
+            case Json::ValueType::stringValue:
+                return strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
+
+            case Json::ValueType::uintValue:
+                return m_value.asUInt64() == rhs.m_value.asUInt64();
+
+            default:
+                BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
+                return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ComparableJsonCppValue const& json, std::ostream* os) { *os << json.m_value.ToString(); }
+
+//**************************************************************************************
+// ECInstancePopulator
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     03/12
+//---------------------------------------------------------------------------------------
+//static
+void ECInstancePopulator::Populate(ECN::IECInstance& ecInstance, bool skipStructs, bool skipArrays, bool skipReadOnlyProps)
+    {
+    ECValue value;
+    for (ECPropertyCP ecProperty : ecInstance.GetClass().GetProperties(true))
+        {
+        if (ecProperty->GetIsReadOnly() && skipReadOnlyProps)
+            continue;
+
+        if (!skipStructs && ecProperty->GetIsStruct())
+            {
+            PopulateStructValue(value, ecProperty->GetAsStructProperty()->GetType());
+            CopyStruct(ecInstance, *value.GetStruct(), ecProperty->GetName().c_str());
+            }
+        else if (ecProperty->GetIsPrimitive())
+            {
+            PopulatePrimitiveValue(value, ecProperty->GetAsPrimitiveProperty()->GetType(), ecProperty);
+            ecInstance.SetValue(ecProperty->GetName().c_str(), value);
+            }
+        else if (!skipArrays && ecProperty->GetIsArray())
+            {
+            ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
+            if (arrayProperty->GetIsPrimitiveArray() && arrayProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
+                continue;
+
+            uint32_t arrayCount = 3;
+            if (arrayCount < arrayProperty->GetMinOccurs())
+                arrayCount = arrayProperty->GetMinOccurs();
+            else if (arrayCount > arrayProperty->GetMaxOccurs())
+                arrayCount = arrayProperty->GetMaxOccurs();
+
+            ecInstance.AddArrayElements(ecProperty->GetName().c_str(), arrayCount);
+            if (arrayProperty->GetIsStructArray())
+                {
+                StructArrayECPropertyCP structArrayProperty = ecProperty->GetAsStructArrayProperty();
+                for (uint32_t i = 0; i < arrayCount; i++)
+                    {
+                    PopulateStructValue(value, structArrayProperty->GetStructElementType());
+                    ecInstance.SetValue(ecProperty->GetName().c_str(), value, i);
+                    }
+                }
+            else if (arrayProperty->GetIsPrimitiveArray())
+                {
+                PrimitiveArrayECPropertyCP primitiveArrayProperty = ecProperty->GetAsPrimitiveArrayProperty();
+                for (uint32_t i = 0; i < arrayCount; i++)
+                    {
+                    PopulatePrimitiveValue(value, primitiveArrayProperty->GetPrimitiveElementType(), ecProperty);
+                    ecInstance.SetValue(ecProperty->GetName().c_str(), value, i);
+                    }
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     9/2013
+//---------------------------------------------------------------------------------------
+//static
+void ECInstancePopulator::PopulateStructValue(ECValueR value, ECClassCR structType)
+    {
+    value.Clear();
+    IECInstancePtr structInst = structType.GetDefaultStandaloneEnabler()->CreateInstance();
+    Populate(*structInst);
+    value.SetStruct(structInst.get());
+    }
+
+//-------------------------------------------------------------------------------------
+/// <author>Carole.MacDonald</author>                     <date>11/2013</date>
+//---------------+---------------+---------------+---------------+---------------+-----
+//static
+void ECInstancePopulator::PopulatePrimitiveValue(ECValueR ecValue, PrimitiveType primitiveType, ECPropertyCP ecProperty)
+    {
+    ecValue.Clear();
+
+    int randomNumber = rand();
+    switch (primitiveType)
+        {
+            case PRIMITIVETYPE_String:
+            {
+            Utf8String text;
+            text.Sprintf("Sample text with random number: %d", randomNumber);
+            ecValue.SetUtf8CP(text.c_str(), true);
+            }
+            break;
+
+            case PRIMITIVETYPE_Integer:
+            {
+            ecValue.SetInteger(randomNumber);
+            }
+            break;
+
+            case PRIMITIVETYPE_Long:
+            {
+            const int32_t intMax = std::numeric_limits<int32_t>::max();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
+            ecValue.SetLong(longValue);
+            }
+            break;
+
+            case PRIMITIVETYPE_Double:
+            {
+            ecValue.SetDouble(randomNumber / 4.0);
+            }
+            break;
+
+            case PRIMITIVETYPE_DateTime:
+            {
+            DateTime utcTime = DateTime::GetCurrentTimeUtc();
+            ecValue.SetDateTime(utcTime);
+            }
+            break;
+
+            case PRIMITIVETYPE_Boolean:
+            {
+            ecValue.SetBoolean(randomNumber % 2 != 0);
+            }
+            break;
+
+            case PRIMITIVETYPE_Point2d:
+            {
+            DPoint2d point2d;
+            point2d.x = randomNumber * 1.0;
+            point2d.y = randomNumber * 1.5;
+            ecValue.SetPoint2d(point2d);
+            break;
+            }
+            case PRIMITIVETYPE_Point3d:
+            {
+            DPoint3d point3d;
+            point3d.x = randomNumber * 1.0;
+            point3d.y = randomNumber * 1.5;
+            point3d.z = randomNumber * 2.0;
+            ecValue.SetPoint3d(point3d);
+            break;
+            }
+
+            case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(randomNumber, randomNumber*2.0, randomNumber*3.0,
+                                                                                               -randomNumber, randomNumber*(-2.0), randomNumber*(-3.0))));
+            ecValue.SetIGeometry(*line);
+            break;
+            }
+
+            default:
+                break;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     9/2013
+//---------------------------------------------------------------------------------------
+//static
+ECObjectsStatus ECInstancePopulator::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    for (auto& propertyValue : collection)
+        {
+        auto pvAccessString = propertyValue.GetValueAccessor().GetPropertyName();
+        auto accessString = baseAccessPath == nullptr ? pvAccessString : Utf8String(baseAccessPath) + "." + pvAccessString;
+
+        if (propertyValue.HasChildValues())
+            {
+            status = CopyStruct(source, *propertyValue.GetChildValues(), accessString.c_str());
+            if (status != ECObjectsStatus::Success)
+                {
+                return status;
+                }
+            continue;
+            }
+
+        auto& location = propertyValue.GetValueAccessor().DeepestLocationCR();
+
+        //auto property = location.GetECProperty(); 
+        //BeAssert(property != nullptr);
+        if (location.GetArrayIndex() >= 0)
+            {
+            source.AddArrayElements(accessString.c_str(), 1);
+            status = source.SetValue(accessString.c_str(), propertyValue.GetValue(), location.GetArrayIndex());
+            }
+        else
+            status = source.SetValue(accessString.c_str(), propertyValue.GetValue());
+
+        if (status != ECObjectsStatus::Success)
+            {
+            return status;
+            }
+        }
+    return status;
     }
 
 END_ECDBUNITTESTS_NAMESPACE

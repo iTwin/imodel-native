@@ -734,16 +734,16 @@ TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
     ASSERT_EQ(Table::Type::Primary, ts_TargetEnd.GetType()) << "Mapped table ts_TargetEnd";
     ASSERT_EQ(2, ts_TargetEnd.GetColumns().size()) << "Mapped table ts_TargetEnd";
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceEnd FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.ISourceEnd"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceEnd (ECInstanceId) VALUES(NULL)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.TargetEnd (ECInstanceId) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId FROM ts.ISourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.SourceEnd (ECInstanceId) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.TargetEnd (ECInstanceId) VALUES(NULL)"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
 
     m_ecdb.SaveChanges();
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -759,12 +759,12 @@ TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
     ASSERT_TRUE(tri_TargetImpl0.Exists()) << "Mapped table tri_TargetImpl0";
     ASSERT_EQ(Table::Type::Joined, tri_TargetImpl0.GetType()) << "Mapped table tri_TargetImpl0";
     ASSERT_EQ(2 + 2, tri_TargetImpl0.GetColumns().size()) << "Mapped table tri_TargetImpl0";
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO tri.TargetImpl0 (SourceEnd.Id) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO tri.TargetImpl0 (SourceEnd.Id) VALUES(1)"));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<ECSchema schemaName='SourceImpl' alias='sri' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='TestSchema' version='01.00.00' alias='ts'/>"
@@ -778,10 +778,10 @@ TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
     ASSERT_TRUE(sri_SourceImpl0.Exists()) << "Mapped table sri_SourceImpl0";
     ASSERT_EQ(Table::Type::Joined, sri_SourceImpl0.GetType()) << "Mapped table sri_SourceImpl0";
     ASSERT_EQ(2, sri_SourceImpl0.GetColumns().size()) << "Mapped table sri_SourceImpl0";
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO sri.SourceImpl0 (ECInstanceId) VALUES(null)"));
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO sri.SourceImpl0 (ECInstanceId) VALUES(null)"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
     }
 
 
@@ -1002,10 +1002,10 @@ TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
     ECClassId relId = m_ecdb.Schemas().GetClassId("TestSchema", "CarHasEndPoint");
     ECClassId carId = m_ecdb.Schemas().GetClassId("TestSchema", "Car");
     ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ExtendedLater(Code, Type1,Type2 ) VALUES ('CODE-3', 'TYPE-1', 'TYPE-2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.ExtendedLater(Code, Type1,Type2 ) VALUES ('CODE-3', 'TYPE-1', 'TYPE-2')"));
 
     m_ecdb.SaveChanges();
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -1023,7 +1023,7 @@ TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
     stmt.Finalize();
 
     ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema2", "Sterring");
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts2.Sterring(Code, www, Type,Car.Id,Car.RelECClassId) VALUES ('CODE-2','www2', 'S-Type',1,%s)", relId.ToString().c_str())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts2.Sterring(Code, www, Type,Car.Id,Car.RelECClassId) VALUES ('CODE-2','www2', 'S-Type',1,%s)", relId.ToString().c_str())));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -8108,16 +8108,16 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     SubObject22(P0, IB1, P21, IB2, P22)
     SubObject23(P0, IB1, P21, IB2, P22, IB3, P23)
     */
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject1    (P0, IB1, P1)                       VALUES ('P0-1', 'IB1-1', 'P1-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject2    (P0, IB2, P2)                       VALUES ('P0-2', 'IB2-1', 'P2-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject3    (P0, IB3, P3)                       VALUES ('P0-3', 'IB3-1', 'P3-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject123  (P0, IB1, IB2, IB3, P123)           VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject11   (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject12   (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject13   (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject21   (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject22   (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO Foo.SubObject23   (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject1    (P0, IB1, P1)                       VALUES ('P0-1', 'IB1-1', 'P1-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject2    (P0, IB2, P2)                       VALUES ('P0-2', 'IB2-1', 'P2-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject3    (P0, IB3, P3)                       VALUES ('P0-3', 'IB3-1', 'P3-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject123  (P0, IB1, IB2, IB3, P123)           VALUES ('P0-4', 'IB1-2', 'IB2-2', 'IB3-2', 'P123-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject11   (P0, IB1, P11)                      VALUES ('P0-5', 'IB1-3', 'P11-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject12   (P0, IB1, P11, IB2, P12)            VALUES ('P0-6', 'IB1-4', 'P11-2', 'IB2-3', 'P12-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject13   (P0, IB1, P11, IB2, P12, IB3, P13)  VALUES ('P0-7', 'IB1-5', 'P11-3', 'IB2-4', 'P12-2', 'IB3-3', 'P13-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject21   (P0, IB1, P21)                      VALUES ('P0-8', 'IB1-6', 'P21-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject22   (P0, IB1, P21, IB2, P22)            VALUES ('P0-9', 'IB1-7', 'P21-2', 'IB2-5', 'P22-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO Foo.SubObject23   (P0, IB1, P21, IB2, P22, IB3, P23)  VALUES ('P0-0', 'IB1-0', 'P21-3', 'IB2-6', 'P22-2', 'IB3-4', 'P23-1')"));
     m_ecdb.SaveChanges();
 
     //====[Foo.Object]====================================================
@@ -8295,9 +8295,9 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
         "  </ECEntityClass>"
         "</ECSchema>"))) << "Diamond Problem";
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)"));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
     ECSqlStatement stmt;
@@ -8387,10 +8387,10 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
                                             "  </ECEntityClass>"
                                             "</ECSchema>")));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D1_AB (P1, P2, P3, P4, P6) VALUES (11, 21, 31, 41, 61)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D1_AB (P1, P2, P3, P4, P6) VALUES (11, 21, 31, 41, 61)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)"));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
     ECSqlStatement stmt;
@@ -8491,9 +8491,9 @@ TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.ClassA (P1, S1, Z1        ) VALUES ('P1-ClassA', 'S1-ClassA', 'Z1-ClassA')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.ClassC (P1, P3, P4, S1, Z1) VALUES ('P1-ClassC', 'P3-ClassC', 'P4-ClassC', 'S1-ClassC', 'Z1-ClassC')"));
 
 
     m_ecdb.SaveChanges();
@@ -9576,9 +9576,22 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     //compare instance ids
     ASSERT_STREQ(expectedCAInstanceWithInstanceId->GetInstanceId().c_str(), actualCAInstanceWithInstanceId->GetInstanceId().c_str()) << "Instance Ids of retrieved custom attribute instance doesn't match.";
 
-    //compare rest of instance
-    bool equal = ECDbTestUtility::CompareECInstances(*expectedCAInstanceWithInstanceId, *actualCAInstanceWithInstanceId);
-    ASSERT_TRUE(equal) << "Read custom attribute instance with instance id differs from expected.";
+    auto compareCA = [] (IECInstanceCR expected, IECInstanceCR actual)
+        {
+        Json::Value expectedJson, actualJson;
+        if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(expectedJson, expected, nullptr, true))
+            return ERROR;
+
+        if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(actualJson, actual, nullptr, true))
+            return ERROR;
+
+        return expectedJson.compare(actualJson) == 0 ? SUCCESS : ERROR;
+        };
+
+    Json::Value expectedCAJson, actualCAJson;
+    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithInstanceId, nullptr, true));
+    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithInstanceId, nullptr, true));
+    ASSERT_EQ(ComparableJsonCppValue(expectedCAJson), ComparableJsonCppValue(actualCAJson)) << "Read custom attribute instance with instance id differs from expected.";
 
     //*** assert custom attribute instance without instance id
     ECClassCP domainClass2 = readSchema->GetClassCP("domain2");
@@ -9591,8 +9604,9 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     ASSERT_STREQ("", actualCAInstanceWithoutInstanceId->GetInstanceId().c_str()) << "Instance Ids of retrieved custom attribute instance is expected to be empty";
 
     //compare rest of instance
-    equal = ECDbTestUtility::CompareECInstances(*expectedCAInstanceWithoutInstanceId, *actualCAInstanceWithoutInstanceId);
-    ASSERT_TRUE(equal) << "Read custom attribute instance without instance id differs from expected.";
+    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithoutInstanceId, nullptr, true));
+    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithoutInstanceId, nullptr, true));
+    ASSERT_EQ(ComparableJsonCppValue(expectedCAJson), ComparableJsonCppValue(actualCAJson)) << "Read custom attribute instance without instance id differs from expected.";
     }
 
 //---------------------------------------------------------------------------------------

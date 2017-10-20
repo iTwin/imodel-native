@@ -11,8 +11,8 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct RelationshipMappingTestFixture : ECDbTestFixture
-    {};
+
+struct RelationshipMappingTestFixture : ECDbTestFixture {};
 
 
 //---------------------------------------------------------------------------------------
@@ -1077,16 +1077,16 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     ECClassId primaryClassAHasSecondaryClassAId = m_ecdb.Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
     ECClassId primaryClassAHasSecondaryClassBId = m_ecdb.Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(Utf8PrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     m_ecdb.SaveChanges();
     }
@@ -1171,10 +1171,10 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
     ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema", "Sterring");
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1275,10 +1275,10 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
     ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema", "Sterring");
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(                "INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%s)", relId.ToString().c_str())));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%s)", relId.ToString().c_str())));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(                "INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(                "INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%s)", relId.ToString().c_str())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%s)", relId.ToString().c_str())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(                "INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1412,10 +1412,10 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
                          "  </ECEntityClass>"
                          "</ECSchema>")));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id) VALUES ('CODE-1','www1', 2000.0,1 )"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Sterring(Code, www, Type,Car.Id) VALUES ('CODE-2','www2', 'S-Type',1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id) VALUES ('CODE-1','www1', 2000.0,1 )"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Sterring(Code, www, Type,Car.Id) VALUES ('CODE-2','www2', 'S-Type',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1596,10 +1596,10 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     ReopenECDb();
 
     TestHelper test(m_ecdb);
-    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )"));
-    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')"));
-    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteECSql("INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteECSql("INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteECSql("INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteECSql("INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)"));
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
@@ -1666,9 +1666,9 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
     m_ecdb.SaveChanges();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -3782,31 +3782,31 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRel
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -3855,26 +3855,26 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
     }
 
     //Select Statements
     {
     Utf8String ecsql;
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101"));
     //Verify Deletion
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -3923,26 +3923,26 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(401, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
 
     //update Statement
     {
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401"));
     }
 
     //Delete Statements
@@ -3950,10 +3950,10 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(),
                   item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     //verify Deltion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -4121,31 +4121,19 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
             </ECSchema>
             )xml")));
 
-    ECClassCP civilModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModel");
-    ASSERT_TRUE(civilModelClass != nullptr);
-    ECClassCP datasetModelClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "DataSetModel");
-    ASSERT_TRUE(datasetModelClass != nullptr);
-    ECClassCP relClass = m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModelHasDataSetModel");
-    ASSERT_TRUE(relClass != nullptr);
-    ECClassCP geometricModelClass = m_ecdb.Schemas().GetClass("DiegoSchema2", "GeometricModel");
-    ASSERT_TRUE(geometricModelClass != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModel") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("DiegoSchema1", "DataSetModel") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("DiegoSchema1", "CivilModelHasDataSetModel") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("DiegoSchema2", "GeometricModel") != nullptr);
 
-    IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
-    IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
-
-    ECInstanceInserter civilModelInserter(m_ecdb, *civilModelClass, nullptr);
-    ASSERT_TRUE(civilModelInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(*civilModel1));
-    ECInstanceKey civilModel2Key;
-    ASSERT_EQ(BE_SQLITE_OK, civilModelInserter.Insert(civilModel2Key, *civilModel2));
-
-    IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
-    ECValue navPropValue(civilModel2Key.GetInstanceId());
-    ASSERT_EQ(ECObjectsStatus::Success, geometricModel->SetValue("CivilModel", navPropValue));
-
-    ECInstanceInserter geometricModelInserter(m_ecdb, *geometricModelClass, nullptr);
-    ASSERT_TRUE(geometricModelInserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
+    ECInstanceKey civilModel1Key, civilModel2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(civilModel1Key, "INSERT INTO ds1.CivilModel(CMId) VALUES('M-1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(civilModel2Key, "INSERT INTO ds1.CivilModel(CMId) VALUES('M-2')"));
+    
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ds2.GeometricModel(Name,CivilModel) VALUES('GM-10',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, civilModel2Key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
 

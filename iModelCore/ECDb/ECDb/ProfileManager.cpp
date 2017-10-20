@@ -133,7 +133,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 
     //let upgraders incrementally upgrade the profile
     //to the latest state
-    if (BE_SQLITE_OK != RunUpgraders(ecdb, actualProfileVersion))
+    if (BE_SQLITE_OK != RunUpgraders(ecdb))
         {
         ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -171,12 +171,13 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 // @bsimethod                                                   Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& currentProfileVersion)
+DbResult ProfileManager::RunUpgraders(ECDbCR ecdb)
     {
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
-    
+    upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
+
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(ecdb);
