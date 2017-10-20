@@ -1,4 +1,4 @@
-auto materialName = prim["material"];
+/*-------------------------------------------------------------------------------------+                                                                                           
 |
 |     $Source: DgnCore/TileReader.cpp $
 |
