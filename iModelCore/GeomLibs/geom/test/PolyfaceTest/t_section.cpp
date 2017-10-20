@@ -1633,7 +1633,7 @@ void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bve
 
 bool DGNJSFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry);
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  10/17
+* @bsimethod                                                    Earlin.Lutz     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityB)
     {
@@ -1706,6 +1706,9 @@ void AddToCounts (PolyfaceHeaderPtr &mesh)
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityC)
     {
     BeFileName dataPath;
@@ -1764,6 +1767,7 @@ TEST(Polyface,MultiMeshVisibilityC)
 bool ReadDgnjsGeometry (bvector<IGeometryPtr> &geometry, size_t minGeometry, WCharCP nameA, WCharCP nameB, WCharCP nameC)
     {
     static double s_scale = 10000.0;
+    s_scale = 1.0;	
     BeFileName dataPath;
     BeTest::GetHost().GetDocumentsRoot(dataPath);
     dataPath.AppendToPath (L"GeomLibsTestData");
@@ -1789,6 +1793,10 @@ bool ReadDgnjsGeometry (bvector<IGeometryPtr> &geometry, size_t minGeometry, WCh
         }
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityD)
     {
     bvector<IGeometryPtr> allGeometry;
@@ -1930,6 +1938,9 @@ bool oneCall = true     // true ==> one call to MultiMeshVisiblePartsXYByPlaneSe
         }
     return false;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityE)
     {
     bvector<IGeometryPtr> allGeometry;
@@ -1988,6 +1999,9 @@ TEST(Polyface,MultiMeshVisibilityE)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,MultiMeshVisibilityF)
     {
     LoadAndRunMMV (
@@ -1999,5 +2013,62 @@ TEST(Polyface,MultiMeshVisibilityF)
             },
         "Polyface.MultiMeshVisibilityF",
         false
+        );
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,MultiMeshVisibilityCS4)
+    {
+    LoadAndRunMMV (
+        L"MultiMeshVisibilityCS4",
+        bvector<WCharCP> {
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_0.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_1.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_10.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_11.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_12.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_13.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_14.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_15.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_16.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_17.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_18.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_19.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_2.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_20.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_21.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_22.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_23.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_24.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_25.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_26.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_27.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_28.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_29.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_3.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_30.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_31.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_32.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_33.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_34.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_35.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_36.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_37.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_38.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_39.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_4.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_40.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_41.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_5.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_6.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_7.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_8.dgnjs",
+            L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_9.dgnjs"
+            },
+        "Polyface.MultiMeshVisibilityCS4",
+        true
         );
     }

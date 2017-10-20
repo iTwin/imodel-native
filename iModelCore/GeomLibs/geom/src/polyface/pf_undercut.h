@@ -11,6 +11,8 @@ static double s_undercutLocalRelTol = 1.0e-14;
 void CompressCyclicPointsAndZingers (bvector<DPoint3d> &points, double tolerance)
     {
     DPoint3dOps::Compress (points, tolerance);
+    while (points.size () > 1 && points.front ().Distance (points.back ()) < tolerance)
+        points.pop_back ();
     double angleTol = Angle::SmallAngle ();
     size_t n = points.size ();
     for (size_t i1 = 0; i1 < n; i1++)
@@ -171,7 +173,8 @@ IPolyfaceVisitorFilter *filterA,
 PolyfaceHeaderCR polyfaceB,
 IPolyfaceVisitorFilter *filterB,
 PolyfaceHeaderPtr &polyfaceAOverB,
-PolyfaceHeaderPtr &polyfaceBOverA
+PolyfaceHeaderPtr &polyfaceBOverA,
+bool computeAndApplyTransform
 )
     {
     polyfaceAOverB = nullptr;
@@ -194,8 +197,16 @@ PolyfaceHeaderPtr &polyfaceBOverA
     rangeCenter.Interpolate (inputRange.low, 0.5, inputRange.high);
 
     Transform localToWorld, worldToLocal;
-    localToWorld.InitFrom (rangeCenter);
-    worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+    if (computeAndApplyTransform)
+        {
+        localToWorld.InitFrom (rangeCenter);
+        worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
+        }
+    else
+        {
+        localToWorld.InitIdentity ();
+        worldToLocal.InitIdentity ();
+        }
 
     PolygonVectorOps::Multiply (polygonA, worldToLocal);
     PolygonVectorOps::Multiply (polygonB, worldToLocal);

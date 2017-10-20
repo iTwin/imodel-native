@@ -1526,6 +1526,12 @@ TaggedPolygonVectorR polygons
         builder.FindOrAddPoints (
                 polygons[i].GetPointsR (),
                 polygons[i].GetPointSize (), 0, indices);
+        // purge duplicates ... this is very rare, so don't worry about repeated erase ...
+        while (indices.size () > 2 && indices.back () == indices.front ())
+            indices.pop_back ();
+        for (size_t i = 1; i < indices.size (); i++)
+            if (indices[i] == indices[i-1])
+                indices.erase (indices.begin () + i);
         for (size_t i = 0; i < indices.size (); i++)
             pointIndex.push_back ((int)(indices[i] + indexShift));
         pointIndex.push_back (0);
@@ -2086,7 +2092,8 @@ PolyfaceQueryCR punch,
 PolyfaceQueryCR target,
 PolyfaceHeaderPtr *inside,
 PolyfaceHeaderPtr *outside,
-PolyfaceHeaderPtr *debug
+PolyfaceHeaderPtr *debug,
+bool computeAndApplyTransform
 )
     {
     TaggedPolygonVector punchPolygons, targetPolygons;
@@ -2103,7 +2110,7 @@ PolyfaceHeaderPtr *debug
     localToWorld.InitFrom (rangeCenter);
     worldToLocal.InitFrom (-rangeCenter.x, -rangeCenter.y, -rangeCenter.z);
     static bool s_useWorld = false;
-    if (s_useWorld)
+    if (s_useWorld || !computeAndApplyTransform)
         {
         worldToLocal.InitIdentity ();
         localToWorld.InitIdentity ();
@@ -2136,15 +2143,16 @@ void PolyfaceHeader::MeshHidesMeshXYByPlaneSets (
 PolyfaceHeaderPtr &hider,   // 
 PolyfaceHeaderPtr &hidable,
 PolyfaceHeaderPtr &meshBVisible,
-PolyfaceHeaderPtr &meshBHidden
+PolyfaceHeaderPtr &meshBHidden,
+bool computeAndApplyTransform
 )
     {
     PolyfaceHeaderPtr meshAOverB, meshBUnderA;
-    PolyfaceHeader::ComputeOverAndUnderXY (*hider, nullptr, *hidable, nullptr, meshAOverB, meshBUnderA);
+    PolyfaceHeader::ComputeOverAndUnderXY (*hider, nullptr, *hidable, nullptr, meshAOverB, meshBUnderA, computeAndApplyTransform);
     if (meshBUnderA.IsValid ())
         {
         meshBUnderA->Triangulate();
-        PolyfaceHeader::ComputePunchXYByPlaneSets (*meshBUnderA, *hidable, &meshBHidden, &meshBVisible);
+        PolyfaceHeader::ComputePunchXYByPlaneSets (*meshBUnderA, *hidable, &meshBHidden, &meshBVisible, nullptr, computeAndApplyTransform);
         }
     }
 // Compute pairwise hidden-visible splits, and replace each input mesh by its visible parts.
@@ -2152,6 +2160,19 @@ PolyfaceHeaderPtr &meshBHidden
 // Each mesh is individually assumed "upward facing"
 void PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (bvector<PolyfaceHeaderPtr> &allMesh, bvector<PolyfaceHeaderPtr> &visibleParts)
     {
+    // Pretransform to an origin-centered range with sensible size ..
+    BentleyApi::Transform localToWorld, worldToLocal;
+    DRange3d worldRange;
+    worldRange.Init ();
+    for (auto &mesh : allMesh)
+        worldRange.Extend (mesh->PointRange ());
+
+    double a = 1000.0;
+    DRange3d localRange = DRange3d::From (-a, -a, -a, a, a, a);
+    Transform::TryUniformScaleXYRangeFit (worldRange, localRange, worldToLocal, localToWorld);
+    for (auto &mesh : allMesh)
+        mesh->Transform (worldToLocal);
+
     bvector<DRange3d> ranges;
     visibleParts.clear ();
     for (auto &mesh : allMesh)
@@ -2171,7 +2192,7 @@ void PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (bvector<PolyfaceHeaderP
                 && ranges[index0].IntersectsWith (ranges[index1], 2))
                 {
                 PolyfaceHeaderPtr visibleFacets, hiddenFacets;
-                MeshHidesMeshXYByPlaneSets (allMesh[index1], visibleParts[index0], visibleFacets, hiddenFacets);
+                MeshHidesMeshXYByPlaneSets (allMesh[index1], visibleParts[index0], visibleFacets, hiddenFacets, false);
                 // !!! double null means nothing hidden -- leave everything alone.
                 if (visibleFacets.IsValid () || hiddenFacets.IsValid ())
                     {
@@ -2184,5 +2205,9 @@ void PolyfaceHeader::MultiMeshVisiblePartsXYByPlaneSets (bvector<PolyfaceHeaderP
                 }
             }
         }
+    for (auto &mesh : allMesh)
+        mesh->Transform (localToWorld);
+    for (auto &mesh : visibleParts)
+        mesh->Transform (localToWorld);
     }
 
