@@ -301,7 +301,7 @@
                         </xs:sequence>
                         <xs:attribute name="searchPaths" use="optional">
                             <xs:annotation>
-                                <xs:documentation>A semi-colon delimited list of paths to search for fonts found in DgnV8 files. The special token $(AppRoot) can be used to reference the path of the converter executable.</xs:documentation>
+                                <xs:documentation>A semi-colon delimited list of paths to search for fonts found in DWG files. The special token $(AppRoot) can be used to reference the path of the importer executable.</xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
                     </xs:complexType>
@@ -373,6 +373,39 @@
                                 </xs:element>
                             </xs:list>
                         </xs:complexType>
+                </xs:element>
+                <xs:element name="Materials" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Controls how materials are imported.</xs:documentation>
+                    </xs:annotation>
+                    <xs:element name="SearchPaths" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation> A path list to search for material texture files </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:list>
+                                <xs:element name="Path" minOccurs="0" maxOccurs="unbounded">
+                                    <xs:annotation>
+                                        <xs:documentation> A folder containing material textures </xs:documentation>
+                                    </xs:annotation>
+                                <xs:attribute name="name" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation> Full path name </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                </xs:element>
+                            </xs:list>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="SearchOptions" minOccurs="0" maxOccurs="1">
+                        <xs:complexType>
+                            <xs:attribute name="IncludeDwgPath" type="xs:boolean" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation> Should the input DWG path also be included in the material search? </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        <xs:complexType>
+                    </xs:element>
                 </xs:element>
                 <xs:element name="Thumbnails" minOccurs="1" maxOccurs="1">
                     <xs:annotation>

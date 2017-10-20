@@ -234,6 +234,7 @@ struct DwgImporter
     friend struct DwgSyncInfo;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
+    friend struct MaterialFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -310,6 +311,7 @@ public:
         uint16_t            m_pointCloudLevelOfDetails;
         bool                m_preferRenderableGeometry;
         Utf8String          m_namePrefix;
+        bool                m_includeDwgPathInMaterialSearchPaths;
 
     public:
         Options ()
@@ -325,6 +327,7 @@ public:
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
             m_preferRenderableGeometry = false;
+            m_includeDwgPathInMaterialSearchPaths = false;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -347,6 +350,7 @@ public:
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
+        void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -371,6 +375,7 @@ public:
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
+        bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         };  // Options : iModelBridge::Params
 
     struct GeometryOptions : public IDwgDrawOptions
@@ -909,6 +914,7 @@ protected:
     T_LineStyleIdMap            m_importedLinestyles;
     T_MaterialIdMap             m_importedMaterials;
     T_MaterialTextureIdMap      m_materialTextures;
+    bvector<BeFileName>         m_materialSearchPaths;
     uint32_t                    m_entitiesImported;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
@@ -1029,6 +1035,7 @@ protected:
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNDBSYNC_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    DGNDBSYNC_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities
     //! @{

@@ -28,6 +28,8 @@ USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DGNDBSYNC_DWG
 USING_NAMESPACE_IMAGEPP
 
+BEGIN_DGNDBSYNC_DWG_NAMESPACE
+
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          10/16
 +===============+===============+===============+===============+===============+======*/
@@ -58,7 +60,7 @@ private:
     Utf8String                              m_materialName;
     Json::Value                             m_materialJson;
     Json::Value                             m_mapNodeJson;
-    RenderingAsset::TextureMap::Units   m_textureMapUnits;
+    RenderingAsset::TextureMap::Units       m_textureMapUnits;
     double                                  m_unitConversionScale;
     uint32_t                                m_mapLayer;
 
@@ -70,6 +72,7 @@ private:
     BentleyStatus       ReadToRgba (Render::ImageR image, BeFileNameCR filename, bool pseudoBackgroundTransparency) const;
     BentleyStatus       CreateTextureFromImageFile (Json::Value& mapJson, DwgGiImageFileTextureCR imageFile, bool inverted);
     BentleyStatus       CreateTextureMap (Json::Value& mapJson, DwgGiMaterialMapCR map, bool isOn);
+    bool                FindTextureFile (BeFileNameR filename);
     void                ConvertDiffuse ();
     void                ConvertBump ();
     void                ConvertSpecular ();
@@ -98,6 +101,7 @@ public:
     // update existing material from DWG
     BentleyStatus       Update (RenderMaterialR out);
     }; // MaterialFactory
+END_DGNDBSYNC_DWG_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -321,12 +325,59 @@ BentleyStatus   MaterialFactory::ReadToRgba (Render::ImageR image, BeFileNameCR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    MaterialFactory::FindTextureFile (BeFileNameR filename)
+    {
+    if (filename.empty())
+        return  false;
+
+    // absolute path precedes search paths
+    if (filename.DoesPathExist())
+        return  true;
+
+    BeFileName basename (BeFileName::GetFileNameAndExtension(filename.c_str()));
+    if (basename.empty())
+        return  false;
+
+    // search user paths
+    for (auto path : m_importer.GetMaterialSearchPaths())
+        {
+        BeFileName  fullspec (path);
+        fullspec.AppendToPath (basename);
+        if (fullspec.DoesPathExist())
+            {
+            filename = fullspec;
+            return  true;
+            }
+        }
+    
+    // search input DWG path as requested
+    if (m_importer.GetOptions().IsDwgPathInMaterialSearch())
+        {
+        BeFileName  fullspec (m_importer.GetRootDwgFileName().GetDirectoryName());
+        fullspec.AppendToPath (basename);
+        if (fullspec.DoesPathExist())
+            {
+            filename = fullspec;
+            return  true;
+            }
+        }
+
+    // warn about the missing material texture file
+    Utf8PrintfString    context("Material \"%s\"", m_materialName.c_str());
+    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::FileNotFound(), Utf8String(filename).c_str(), context.c_str());
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJson, DwgGiImageFileTextureCR imageFile, bool inverted)
     {
     BeFileName  fileName(imageFile.GetSourceFileName());
-    if (!fileName.DoesPathExist())
+    if (!this->FindTextureFile(fileName))
         return  BSIERROR;
 
     Utf8String      utf8Name = fileName.GetNameUtf8 ();
@@ -902,7 +953,7 @@ BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSyncInfo::Material const& syn
         return  BSIERROR;
 
     // re-create the material and update BIM:
-    MaterialFactory factory (*this, dwgMaterial, oldElement->GetPaletteName(), newSyncMaterial.m_name);   
+    MaterialFactory factory (*this, dwgMaterial, oldElement->GetPaletteName(), newSyncMaterial.m_name);
     BentleyStatus   status = factory.Update (*newElement.get());
 
     // update syncInfo

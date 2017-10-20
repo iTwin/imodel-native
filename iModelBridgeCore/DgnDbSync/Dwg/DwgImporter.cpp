@@ -1556,6 +1556,7 @@ DwgImporter::DwgImporter (DwgImporter::Options const& options) : m_options(optio
     m_modelspaceId.SetNull ();
     m_currentspaceId.SetNull ();
     m_dwgModelMap.clear ();
+    m_materialSearchPaths.clear ();
     m_isProcessingDwgModelMap = false;
 
     this->SetStepName (ProgressMessage::STEP_INITIALIZING());
@@ -1695,6 +1696,35 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
         if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str, "name") && !str.empty())
             userObjectEnablers.push_back (str);
         }   
+
+    // check material search paths
+    xmlDom->SelectNodes (nodes, "/ConvertConfig/Materials", nullptr);
+    for (auto node : nodes)
+        {
+        // collect explicit search paths
+        BeXmlDom::IterableNodeSet   childNodes;
+        node->SelectChildNodes (childNodes, "SearchPaths/Path");
+        for (auto childNode : childNodes)
+            {
+            if (BeXmlStatus::BEXML_Success == childNode->GetAttributeStringValue(str, "name"))
+                {
+                BeFileName  dir(str.c_str(), BentleyCharEncoding::Utf8);
+                if (dir.IsDirectory())
+                    {
+                    dir.AppendSeparator ();
+                    m_materialSearchPaths.push_back (dir);
+                    }
+                }
+            }
+        // check if the input DWG path should also be searched, in addition to explicit search paths
+        bool    boolValue = false;
+        node->SelectChildNodes (childNodes, "SearchOptions");
+        for (auto childNode : childNodes)
+            {
+            if (BeXmlStatus::BEXML_Success == childNode->GetAttributeBooleanValue(boolValue, "IncludeDwgPath"))
+                m_options.SetDwgPathInMaterialSearch (boolValue);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
