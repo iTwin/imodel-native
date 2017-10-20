@@ -1529,9 +1529,17 @@ TaggedPolygonVectorR polygons
         // purge duplicates ... this is very rare, so don't worry about repeated erase ...
         while (indices.size () > 2 && indices.back () == indices.front ())
             indices.pop_back ();
-        for (size_t i = 1; i < indices.size (); i++)
+        for (size_t i = 1; i < indices.size ();)
+            {
             if (indices[i] == indices[i-1])
+                {
                 indices.erase (indices.begin () + i);
+                }
+            else
+                {
+                i++;
+                }
+            }
         for (size_t i = 0; i < indices.size (); i++)
             pointIndex.push_back ((int)(indices[i] + indexShift));
         pointIndex.push_back (0);

@@ -441,6 +441,7 @@ bool ShardHealer::HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> 
     vu_reinitializeVuSet (m_graph);
     for (auto &shard : shards)
         {
+        CompressCyclicPointsAndZingers (shard, m_vertexTolerance);
         size_t n = shard.size ();
         if (0 == n)
             continue;
