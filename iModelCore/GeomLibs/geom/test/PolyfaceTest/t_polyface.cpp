@@ -4208,8 +4208,6 @@ TEST(Polyface,PunchOverlapB)
     {
     PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();
     static int s_numTargetFace = 1;
-    double dX = 20;
-    double dY = 20;
     target->AddPolygon({{15.000000000000002, 17.500000000000000},
                         {2.5000000000000000, 17.500000000000000},
                         {2.5000000000000018, 2.5000000000000000},
@@ -4231,6 +4229,8 @@ TEST(Polyface,PunchOverlapB)
     clipper->AddPolygon({{15,2.5}, {18,2.5}, {18,5}, {15,5}, {15,2.5}});
 #define JustPunchnot
 #ifdef JustPunch
+    double dX = 20;
+    double dY = 20;
     PolyfaceHeaderPtr inside, outside, debugPolygons;
     PolyfaceHeader::ComputePunchXYByPlaneSets(*clipper, *target, &inside, &outside, nullptr, false);
     Check::SaveTransformed (clipper);
