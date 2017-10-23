@@ -55,6 +55,8 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual ProxyInfo _GetProxyInfo() const { return ProxyInfo(); }
 
+        virtual uint64_t  _GetProductId() const { return UINT64_MAX; }
+
     #ifdef VANCOUVER_API
         virtual DgnModelRefP _GetActiveModelRef() const
             {
