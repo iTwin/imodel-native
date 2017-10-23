@@ -794,7 +794,7 @@ protected:
             {
             m_ruleset = PresentationRuleSet::CreateInstance(m_rulesetId, 1, 0, false, "", "", "", false);
             m_ruleset->AddPresentationRule(*new ContentRule("", 1, false));
-            m_ruleset->GetContentRules().back()->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", true));
+            m_ruleset->GetContentRules().back()->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
             }
         return bvector<PresentationRuleSetPtr>{m_ruleset};
         }

@@ -390,10 +390,10 @@ TEST_F(PerformanceElementsTests, ElementsInsertStrategies)
 //Pragma("cache_size=200000");
 //Pragma("temp_store=MEMORY");
 
-TEST_F(PerformanceElementsTests, ClientElementsInsert) { Execute(Op::Insert); }
-TEST_F(PerformanceElementsTests, ClientElementsRead)   { Execute(Op::Select); }
-TEST_F(PerformanceElementsTests, ClientElementsUpdate) { Execute(Op::Update); }
-TEST_F(PerformanceElementsTests, ClientElementsDelete) { Execute(Op::Delete); }
+TEST_F(PerformanceElementsTests, ElementsInsert) { Execute(Op::Insert); }
+TEST_F(PerformanceElementsTests, ElementsRead)   { Execute(Op::Select); }
+TEST_F(PerformanceElementsTests, ElementsUpdate) { Execute(Op::Update); }
+TEST_F(PerformanceElementsTests, ElementsDelete) { Execute(Op::Delete); }
 
 #define CACHE_SPILL Pragma ("cache_spill = off")
 #define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 300000));

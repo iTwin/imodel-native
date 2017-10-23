@@ -274,6 +274,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
+    m_request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
     if (nullptr != loads)
         m_request.SetCancellationToken(loads);
     }
