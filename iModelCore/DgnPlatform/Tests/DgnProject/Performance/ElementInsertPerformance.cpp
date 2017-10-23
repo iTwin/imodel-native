@@ -393,19 +393,19 @@ TEST_F(PerformanceElementsTests, ElementsInsertStrategies)
 /*---------------------------------------------------------------------------------**//**
 // @betest                                     Affan.Khan                       10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceElementsTests, ClientElementsInsert) { Execute(Op::Insert); }
+TEST_F(PerformanceElementsTests, ElementsInsert) { Execute(Op::Insert); }
 /*---------------------------------------------------------------------------------**//**
 // @betest                                     Affan.Khan                       10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceElementsTests, ClientElementsRead)   { Execute(Op::Select); }
+TEST_F(PerformanceElementsTests, ElementsRead)   { Execute(Op::Select); }
 /*---------------------------------------------------------------------------------**//**
 // @betest                                     Affan.Khan                       10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceElementsTests, ClientElementsUpdate) { Execute(Op::Update); }
+TEST_F(PerformanceElementsTests, ElementsUpdate) { Execute(Op::Update); }
 /*---------------------------------------------------------------------------------**//**
 // @betest                                     Affan.Khan                       10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceElementsTests, ClientElementsDelete) { Execute(Op::Delete); }
+TEST_F(PerformanceElementsTests, ElementsDelete) { Execute(Op::Delete); }
 
 #define CACHE_SPILL Pragma ("cache_spill = off")
 #define CACHE_SIZE  Pragma (SqlPrintfString ("cache_size = %d", 300000));

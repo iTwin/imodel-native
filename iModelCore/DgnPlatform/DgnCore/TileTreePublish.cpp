@@ -189,7 +189,7 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
         {                                
         TileTree::TileLoadStatePtr          loadState;
 
-        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem) : SUCCESS;
+        return (context.m_inputTile->_HasChildren() && context.m_inputTile->IsNotLoaded()) ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem) : SUCCESS;
         })
     .then([=](BentleyStatus status)
         {
