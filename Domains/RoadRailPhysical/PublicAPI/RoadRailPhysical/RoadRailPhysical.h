@@ -170,6 +170,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CODESPEC_TravelwaySide                                "TravelwaySide"
 #define BRRP_CODESPEC_TypicalSectionParameter                      "TypicalSectionParameter"
 #define BRRP_CODESPEC_TypicalSectionPoint                          "TypicalSectionPoint"
+#define BRRP_CODESPEC_TravelwayStructure                           "TravelwayStructure"
 
 
 //-----------------------------------------------------------------------------------------

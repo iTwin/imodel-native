@@ -186,6 +186,14 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
+	codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TravelwayStructure, CodeScopeSpec::CreateModelScope());
+	BeAssert(codeSpecPtr.IsValid());
+	if (codeSpecPtr.IsValid())
+		{
+		codeSpecPtr->Insert();
+		BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+		}
+
     codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_OverallTypicalSection, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())

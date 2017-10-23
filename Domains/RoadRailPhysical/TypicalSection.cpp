@@ -222,6 +222,37 @@ TravelwayStructureDefinition::TravelwayStructureDefinition(CreateParams const& p
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Jonathan.DeCarlo                  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecId TravelwayStructureDefinition::QueryCodeSpecId(DgnDbCR dgndb)
+    {
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_TravelwayStructure);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Jonathan.DeCarlo                   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode TravelwayStructureDefinition::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_TravelwayStructure, scope, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Jonathan.DeCarlo                  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayStructureDefinitionPtr TravelwayStructureDefinition::Create(DefinitionModelCR model, Utf8StringCR code)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
+
+    return new TravelwayStructureDefinition(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TravelwayStructureDefinitionCPtr TravelwayStructureDefinition::Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, DgnDbStatus* stat)
