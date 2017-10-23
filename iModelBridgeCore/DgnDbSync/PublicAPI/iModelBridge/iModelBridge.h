@@ -117,6 +117,49 @@ If the target iModel has a Geographic Coordinate System (GCS), the bridge must t
 Similarly, if the iModel has a global origin, the bridge must subtract off that global origin from the source data as part of the conversion.
 Call DgnDb::GeoLocation::GetDgnGCS to get the details of the iModel's GCS and global origin.
 
+Also see iModelBridge::GetTransformCorrectionFromJobSubject for an additional transform that the bridge may be required to apply to all converted spatial data.
+
+@anchor ANCHOR_TrackingDocuments
+<h2>Tracking Documents</h2>
+
+A bridge must track documents. That means that the bridge must record documents in its syncinfo file, and must use each document's syncinfo ID as the scope when adding 
+syncinfo records to record elements that were created from that document. The iModelBridgeWithSyncInfoBase base class has convenience methods to make this easy. See 
+iModelBridgeWithSyncInfoBase::RecordDocument and the ToyTileBridge::_ConvertToBim example.
+
+A bridge should identify a document by using the GUID assigned to it by its home DMS, if available. The document's GUID is more stable than the document's local filename. 
+See iModelBridge::QueryDocumentGuid.
+
+Use the GUID for tracking the document in syncinfo.
+
+Use the document GUID for generating codes that relate to the document, especially for the @ref ANCHOR_BridgeJobSubject "Job Subject" element. A job subject must be specific
+to the root document. Here is an example of how to compute a unique job subject name.
+@verbatim
+Utf8String ToyTileBridge::ComputeJobSubjectName()
+    {
+    Utf8String docId;
+    BeGuid docGuid = QueryDocumentGuid(_GetParams().GetInputFileName());
+    if (docGuid.IsValid())
+        docId = docGuid.ToString();                                 // Use the document GUID, if available, to ensure a stable and unique Job subject name.
+    else
+        docId = Utf8String(_GetParams().GetInputFileName());        // fall back on using local file name -- not as stable!
+
+    Utf8String name(GetRegistrySubKey()); // start job name with my registry subkey. That will help ensure uniqueness.
+    name.append(":");
+    name.append(docId.c_str());
+    return name;
+    }
+@endverbatim
+
+@anchor ANCHOR_Provenance
+<h2>Provenance</h2>
+An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
+Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
+
+<h3>PartitionOriginatesFromRepository</h3>
+A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
+Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
+
 <h2>Detecting Deleted Documents</h2>
 
 A bridge must be able to detect deleted files and clean up the iModel as appropriate. See _DetectDeletedDocuments. The algorithm must be along these lines
@@ -147,6 +190,9 @@ BentleyStatus SampleBridge::_DetectDeletedDocuments()
 
 @endverbatim
 
+The iModelBridgeWithSyncInfoBase base class implements this algorithm to detect deleted documents and clean up syncinfo, delegating the briefcase cleanup to the 
+derived class. So, if you subclass your bridge from iModelBridgeWithSyncInfoBase, you only need to implement a callback that can find and delete elements and models 
+that the bridge previously converted from the specified document.
 
 <h2>Bridge Assets</h2>
 The bridge's assets are in the directory identified by iModelBridge::Params::GetAssetsDir.
@@ -156,18 +202,6 @@ The bridge's assets are separate from the framework's assets. The DgnPlatformLib
 A bridge should call BentleyApi::Dgn::iModelBridge::L10N::GetString to look up its own translatable strings.
 A bridge must override _SupplySqlangRelPath to specify the location of its .db3 file, relative to its own assets directory.
 A bridge must define its own translatable string tables using the IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START macro, and @em not the BENTLEY_TRANSLATABLE_STRINGS_START macro.
-
-@anchor ANCHOR_Provenance
-<h2>Provenance</h2>
-An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
-Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
-
-If a bridge tracks a file in its syncinfo, it should use the document GUID, if available, rather than the filename as the key. See iModelBridge::QueryDocumentGuid.
-
-<h3>PartitionOriginatesFromRepository</h3>
-A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
-Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
-to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
 
 */
 
@@ -180,11 +214,6 @@ struct iModelBridge
 {
     static WCharCP str_BriefcaseIExt() {return L"ibim";}
     static WCharCP str_BriefcaseExt() {return L"bim";}
-
-    // *** NEEDS WORK: We need some kind of registry of unique bridge types. This can then be
-    // ***              used by a given bridge to help make its job name unique in the iModel's dictionary model.
-    static Utf8CP str_BridgeType_DgnV8() {return "DgnV8";}
-    static Utf8CP str_BridgeType_DWG() {return "DWG";}
 
     //! The bridge's affinity to some source file.
     typedef iModelBridgeAffinityLevel Affinity;
@@ -306,6 +335,7 @@ struct iModelBridge
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
         WString GetBridgeRegSubKey() const {return m_thisBridgeRegSubKey;}
+        Utf8String GetBridgeRegSubKeyUtf8() const {return Utf8String(m_thisBridgeRegSubKey);}
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}

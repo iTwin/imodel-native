@@ -44,6 +44,8 @@ a bridge to do one-off publishing or to serve as a test harness for the bridge's
 
 See @ref ANCHOR_iModelUnitsAndGCS "Units and GCS" for converting source data into the coordinate system of the iModel.
 
+See @ref ANCHOR_TrackingDocuments "Tracking Documents" for information on how a bridge must track documents.
+
 See @ref ANCHOR_Provenance "Provenance" for the provenance that bridges must created and maintain.
 
 @anchor iModelBridge_getInstance
@@ -125,7 +127,7 @@ The framework initializes Bentley logging before running the bridge.
 
 @anchor ANCHOR_BridgeJobSubject
 <h2>Bridge Job Subject</h2>
-A bridge is required to create a uniquely named Subject element in the iModel. The job subject element should be a child of the root subject and must have a unique code. See @ref BentleyApi::Dgn::iModelBridge::_InitializeJob. 
+A bridge is required to create a uniquely named Subject element in the iModel. The job subject element should be a child of the root subject and must have a unique code. See @ref BentleyApi::Dgn::iModelBridge::_InitializeJob. The job subject's code value should incorporate the bridge's @ref ANCHOR_BridgeRegistration "subkey" and the @ref ANCHOR_BridgeJobSubject "GUID of input document", at a minimum.
 
 A bridge is required to scope all of the subjects and definitions and their models under its job subject element. That is, 
 - Subjects and partitions that a bridge creates should be children of the job subject element, 

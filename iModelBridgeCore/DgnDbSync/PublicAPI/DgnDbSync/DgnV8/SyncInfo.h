@@ -280,11 +280,13 @@ struct SyncInfo
 
         bool IsValid() const {return m_syncInfoId.IsValid();}
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult Update (BeSQLite::Db&) const;
         V8FileSyncInfoId GetV8FileSyncInfoId() const { return m_source.m_v8FileSyncInfoId; }
         V8ModelSyncInfoId GetV8ModelSyncInfoId() const {return m_syncInfoId;}
         DgnModelId GetModelId() const { return m_modelId; }
         V8ModelId GetV8ModelId() const {return m_source.m_modelId;}
         TransformCR GetTransform() const { return m_transform; }
+        void SetTransform(TransformCR t) { m_transform = t; }
         V8ModelSource const& GetV8ModelSource() const {return m_source;}
         Utf8StringCR GetV8Name() const {return m_v8Name;}
         };
@@ -490,16 +492,19 @@ struct SyncInfo
         enum class Type {RootModels, TiledFile}; 
 
         private:
+        mutable int64_t m_ROWID {};
         SyncInfo::V8ModelSyncInfoId m_v8RootModel;
         Type m_type;
         Utf8String m_prefix;
         DgnElementId m_subjectId;
+        Transform m_transform;
 
         public:
         static Utf8String GetSelectSql();
         void FromSelect(BeSQLite::Statement&);
 
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult Update (BeSQLite::Db&) const;
         static BentleyStatus FindById(ImportJob&, DgnDbCR&, SyncInfo::V8ModelSyncInfoId);
         static void CreateTable(BeSQLite::Db&);
 
@@ -511,6 +516,8 @@ struct SyncInfo
         void SetPrefix(Utf8StringCR p) {m_prefix = p;}
         DgnElementId GetSubjectId() const {return m_subjectId;}
         void SetSubjectId(DgnElementId s) {m_subjectId = s;}
+        void SetTransform(TransformCR t) {m_transform = t;}
+        Transform GetTransform() const {return m_transform;}
         };
 
     struct ImportJobIterator : BeSQLite::DbTableIterator
@@ -796,6 +803,10 @@ public:
     //! Record the fact that the specified importJob has been converted and stored in the DgnDb
     //! @param importJob    The importJob info to insert
     DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
+
+    //! Update the import job's transform, prefix, and subjectid.
+    //! @param importJob    The importJob info to update
+    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
     //! @}
     };
 

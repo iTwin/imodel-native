@@ -240,6 +240,8 @@ struct DwgImporter
     friend class DwgViewportExt;
 
 public:
+    static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
+
     //! Configuration for the conversion process
     struct Config
         {

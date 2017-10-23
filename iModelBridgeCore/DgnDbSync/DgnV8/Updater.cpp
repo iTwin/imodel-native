@@ -164,22 +164,6 @@ ResolvedImportJob Converter::GetResolvedImportJob(SyncInfo::ImportJob const& imp
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::CheckModelUnitsUnchanged(DgnV8ModelR rootModel, TransformCR rootTrans)
-    {
-    // Note: FindV8ModelMapping will fail if rootTrans (i.e., units scaling) is different from what it was at create time.
-
-    SyncInfo::V8ModelMapping modelInfo;
-    if (BSISUCCESS != GetSyncInfo().FindModel(&modelInfo, rootModel, &rootTrans, GetCurrentIdPolicy())
-        || modelInfo.GetV8ModelSyncInfoId() != GetImportJob().GetV8ModelSyncInfoId())
-        {
-        ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::RootModelChanged(), "");
-        OnFatalError();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
@@ -217,6 +201,9 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
         //  This V8 element was previously mapped to at least one element in the BIM. See if the V8 element has changed.
         res.m_v8ElementMapping = found.GetV8ElementMapping();
         res.m_changeType = found.GetProvenance().IsSame(res.m_currentElementProvenance)? ChangeType::None: ChangeType::Update;
+
+        if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
+            res.m_changeType = ChangeType::Update;
         }
 
     iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!
@@ -233,6 +220,9 @@ bool ChangeDetector::_ShouldSkipFileByName(Converter& converter, BeFileNameCR fi
         return false;
 
     if (converter.GetSyncInfo().HasDiskFileChanged(file))
+        return false;
+
+    if (converter.HasRootTransChanged())  // must re-visit all elements if root transform has changed
         return false;
 
     SyncInfo::V8FileProvenance prov(file, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
@@ -257,6 +247,9 @@ bool ChangeDetector::_ShouldSkipFileByName(Converter& converter, BeFileNameCR fi
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
     {
+    if (converter.HasRootTransChanged())  // must re-visit all elements if root transform has changed
+        return false;
+
     // if it hasn't changed per the "last saved time", don't bother with it.
     if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file))
         return false;

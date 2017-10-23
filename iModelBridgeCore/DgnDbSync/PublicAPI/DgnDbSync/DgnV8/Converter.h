@@ -258,6 +258,7 @@ struct ResolvedModelMapping
     bool operator< (ResolvedModelMapping const &o) const {return m_v8model < o.m_v8model;}
 
     TransformCR GetTransform() const {return m_mapping.GetTransform();}
+    void SetTransform(TransformCR t) {m_mapping.SetTransform(t);}
     DgnV8ModelR GetV8Model() const {BeAssert(IsValid()); return *m_v8model;}
     DgnModelR GetDgnModel() const {BeAssert(IsValid()); return *m_model;}
     SyncInfo::V8ModelId GetV8ModelId() const {BeAssert(IsValid()); return m_mapping.GetV8ModelId();}
@@ -926,10 +927,14 @@ protected:
     bool                 m_skipECContent = true;
     bool                 m_addDebugDgnCodes = false;
     bool                 m_needReimportSchemas = false;
+    bool                 m_rootTransHasChanged = false;
+    bool                 m_spatialTransformCorrectionsApplied = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
-    Transform            m_rootTrans; // this is usually identity. It is non-identity in the case where we are pulling in a new dgnv8 file and we need to do a GCS or other coordinate transform to map it in
+    Transform            m_rootTrans; // this is usually identity. It is non-identity in the case where we are pulling in a new dgnv8 file and we need to do a GCS or other coordinate transform to map it in. 
+    Transform            m_jobTrans; // this is usually identity. It is non-identity in the case where the bridge job needs to apply a correction on top of the computed GCS/units transform.
+    Transform            m_rootTransChange;
     DgnDbPtr             m_dgndb;
     Config               m_config;
     SyncInfo             m_syncInfo;
@@ -973,6 +978,11 @@ protected:
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+
+    //! This returns false if the V8 file should not be converted by the bridge.
+    DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
+
+    bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
 
@@ -2166,16 +2176,18 @@ protected:
     ResolvedModelMapping m_rootModelMapping;
     ResolvedImportJob m_importJob;
     SubjectCPtr m_spatialParentSubject;
-
-    // This is the GCS to which we are converting input DgnV8 models.
-    DgnGCSPtr m_outputDgnGcs;
+    bmap<Bentley::DgnModelP, DgnV8Api::DgnAttachment*> m_modelAttachmentMapping;
+    DgnGCSPtr m_outputDgnGcs; // This is the GCS to which we are converting input DgnV8 models.
 
     enum class ModelSubjectType {Hierarchy, References};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
 
     virtual void _SetChangeDetector(bool isUpdate) = 0;
 
-    bmap<Bentley::DgnModelP, DgnV8Api::DgnAttachment*> m_modelAttachmentMapping;
+    virtual void _AddResolvedModelMapping(ResolvedModelMapping const&) {}
+
+    bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
+    void CorrectSpatialTransform(ResolvedModelMapping&);
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 
@@ -2239,8 +2251,6 @@ public:
     //! Set the current spatial parent subject. This is the root model subject at the outset and is then set to referenced model subjects as we recurse through the hierarchy.
     void SetSpatialParentSubject(SubjectCR s) {m_spatialParentSubject = &s;}
 
-    //! Check that the specified model matches the current importJob root model and has the same units transform.
-    DGNDBSYNC_EXPORT void CheckModelUnitsUnchanged(DgnV8ModelR rootModel, TransformCR rootTrans);
     //! @}
 
     //! @name  Converting Elements
@@ -2393,6 +2403,8 @@ protected:
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
 
+    void CorrectSpatialTransforms();
+
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
     DGNDBSYNC_EXPORT void _SetChangeDetector(bool isUpdate) override;
@@ -2412,7 +2424,7 @@ protected:
 
     //! @name  Models
     //! @{
-    DGNDBSYNC_EXPORT void AddResolvedModelMapping(ResolvedModelMapping const&);
+    DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) override;
@@ -2481,10 +2493,9 @@ protected:
     void UpdateCalculatedProperties();
 
 public:
-    DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
+    static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
-    //! This returns false if the V8 file should not be converted by the bridge.
-    DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
+    DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
@@ -2559,6 +2570,8 @@ protected:
     DGNDBSYNC_EXPORT void ConvertElements(ResolvedModelMapping const&);
 
 public:
+    static WCharCP GetRegistrySubKey() {return L"TiledDgnV8Bridge";}
+
     TiledFileConverter(SpatialParams& p) : T_Super(p), m_params(p) {;}
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! @param comments         Optional description of the job
@@ -2947,13 +2960,14 @@ public:
     //! Compute the units transform from the specified root model into meters, and *also* prepare the transformation of geo-located data 
     //! in the root model and its attachments into the GCS of the target BIM.
     //! @param rootV8Model    The root DgnModel in the input V8
+    //! @param jobSubject     The Job Subject element. Its transform property, if any, is post-multiplied onto the GCS root transform.
     //! @note This function will modify the data in rootV8Model and its attachments if reprojection is necessary.
     //! @note You must call this once up front, before calling ConvertElement.
     //! @note If you want to set up a GCS on the output BIM (if it does not have one), do that before calling this function. @see Dgn::DgnGCS
     //! @note If you later call RecordModelMapping to enroll a model that is attached to this root model, you must call #ComputeAttachmentTransform
     //! in order to compute the units transform for the attached model and then pass that as the optional third argument to RecordModelMapping.
     //! @see GetRootTrans
-    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model);
+    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject);
 
     //! Record a V8->BIM model mapping
     //! @param sourceV8Model    A DgnModel in the input V8

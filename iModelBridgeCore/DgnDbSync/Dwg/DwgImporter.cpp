@@ -1224,9 +1224,9 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
         }
     else
         {
-        if (!jobName.StartsWithI(iModelBridge::str_BridgeType_DWG()))
+        if (!jobName.StartsWithI(this->GetOptions().GetBridgeRegSubKeyUtf8().c_str()))
             {
-            jobName = iModelBridge::str_BridgeType_DWG();
+            jobName = this->GetOptions().GetBridgeRegSubKeyUtf8();
             jobName.append(":");
             jobName.append(this->GetOptions().GetBridgeJobName());
             }
@@ -1255,17 +1255,7 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
     if (!newSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
 
-    Json::Value dwgJobProps(Json::objectValue);
-    dwgJobProps["ImporterType"] = (int)jobType;
-    dwgJobProps["NamePrefix"] = this->GetImportJobNamePrefix ();
-    dwgJobProps["DwgFile"] = syncInfoFile.GetUniqueName();
-
-    Json::Value jobProps(Json::objectValue);
-    if (!Utf8String::IsNullOrEmpty(comments))
-        jobProps["Comments"] = comments;
-    jobProps[iModelBridge::str_BridgeType_DWG()] = dwgJobProps;
-
-    newSubject->SetSubjectJsonProperties(Subject::json_Job(), jobProps);
+    JobSubjectUtils::InitializeProperties(*newSubject, this->GetOptions().GetBridgeRegSubKeyUtf8(), comments);
 
     SubjectCPtr jobSubject = newSubject->InsertT<Subject>();
     if (!jobSubject.IsValid())

@@ -71,6 +71,9 @@ iModelBridge::CmdLineArgStatus TiledConverterApp::_ParseCommandLineArg(int iArg,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledConverterApp::_Initialize(int argc, WCharCP argv[])
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(TiledFileConverter::GetRegistrySubKey());
+
     m_params.SetInputFileName(_GetParams().GetInputFileName());
     return T_Super::_Initialize(argc, argv);
     }

@@ -337,7 +337,7 @@ void SyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
         return;
     db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob),
                          "V8ModelSyncInfoId INTEGER PRIMARY KEY,"
-                         "Unused INTEGER,"
+                         "Transform BLOB,"
                          "Type INTEGER,"
                          "Prefix TEXT,"
                          "SubjectId BIGINT NOT NULL"
@@ -350,23 +350,39 @@ void SyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
 BeSQLite::DbResult SyncInfo::ImportJob::Insert (BeSQLite::Db& db) const
     {
     Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(V8ModelSyncInfoId,Unused,Type,Prefix,SubjectId) VALUES (?,?,?,?,?)");
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(V8ModelSyncInfoId,Transform,Type,Prefix,SubjectId) VALUES (?,?,?,?,?)");
     int col = 1;
     stmt.BindInt(col++, m_v8RootModel.GetValue());
-    stmt.BindInt(col++, 0);     // future use
+    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
     stmt.BindInt(col++, (int)m_type);
     stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
     stmt.BindId(col++, m_subjectId);
-    return stmt.Step();
+    auto res = stmt.Step();
+    m_ROWID = db.GetLastInsertRowId();
+    return res;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult SyncInfo::ImportJob::Update (BeSQLite::Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " SET Transform=?,Prefix=?,SubjectId=? WHERE(ROWID=?)");
+    int col = 1;
+    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
+    stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
+    stmt.BindId(col++, m_subjectId);
+    stmt.BindInt64(col++, m_ROWID);
+    return stmt.Step();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SyncInfo::ImportJob::GetSelectSql()
     {
-    return "SELECT V8ModelSyncInfoId,Unused,Type,Prefix,SubjectId FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
+    return "SELECT ROWID,V8ModelSyncInfoId,Transform,Type,Prefix,SubjectId FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,10 +390,13 @@ Utf8String SyncInfo::ImportJob::GetSelectSql()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncInfo::ImportJob::FromSelect(BeSQLite::Statement& stmt)
     {
-    m_v8RootModel = V8ModelSyncInfoId(stmt.GetValueInt(0));
-    m_type = (Type)stmt.GetValueInt(2);
-    m_prefix = stmt.GetValueText(3);
-    m_subjectId = stmt.GetValueId<DgnElementId>(4);
+    int col = 0;
+    m_ROWID = stmt.GetValueInt64(col++);
+    m_v8RootModel = V8ModelSyncInfoId(stmt.GetValueInt(col++));
+    memcpy(&m_transform, stmt.GetValueBlob(col++), sizeof(Transform));
+    m_type = (Type)stmt.GetValueInt(col++);
+    m_prefix = stmt.GetValueText(col++);
+    m_subjectId = stmt.GetValueId<DgnElementId>(col++);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -516,6 +535,14 @@ DgnV8Api::ModelId SyncInfo::GetV8ModelIdFromV8ModelSyncInfoId(V8ModelSyncInfoId 
 BentleyStatus SyncInfo::InsertImportJob(ImportJob const& importJob)
     {
     return (BE_SQLITE_DONE == importJob.Insert(*m_dgndb))? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::UpdateImportJob(ImportJob const& importJob)
+    {
+    return (BE_SQLITE_DONE == importJob.Update(*m_dgndb))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,6 +780,35 @@ DbResult SyncInfo::V8ModelMapping::Insert(Db& db) const
     if (BE_SQLITE_DONE == rc)
         m_syncInfoId = V8ModelSyncInfoId(db.GetLastInsertRowId());
 
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SyncInfo::V8ModelMapping::Update(Db& db) const
+    {
+    if (!m_syncInfoId.IsValid() || !m_modelId.IsValid())
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Model) " SET ModelId=?,V8FileSyncInfoId=?,V8Id=?,V8Name=?,Transform=? WHERE (ROWID=?)");
+    int col = 1;
+    stmt.BindId(col++, m_modelId);
+    stmt.BindInt(col++, m_source.m_v8FileSyncInfoId.GetValue());
+    stmt.BindInt(col++, m_source.m_modelId.GetValue());
+    stmt.BindText(col++, m_v8Name, Statement::MakeCopy::No);
+    if (m_transform.IsIdentity())
+        stmt.BindNull(col++);
+    else
+        stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
+    stmt.BindInt64(col++, m_syncInfoId.GetValue());
+
+    auto rc = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == rc);
     return rc;
     }
 

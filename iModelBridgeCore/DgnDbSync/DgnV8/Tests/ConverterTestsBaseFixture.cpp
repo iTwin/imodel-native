@@ -42,6 +42,10 @@ void ConverterTestBaseFixture::SetUp_CreateNewDgnDb()
     {
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetRootSubjectName("ConverterTestBaseFixture");
+    if (m_seedDgnDbFileName.DoesPathExist())
+        {
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, m_seedDgnDbFileName.BeDeleteFile());
+        }
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
     ASSERT_TRUE(dgndb.IsValid());
 
@@ -325,6 +329,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
     if (!m_opts.m_useTiledConverter)
         {
         TestRootModelCreator creator(params, this);
+        params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
         creator.SetWantDebugCodes(true);
         creator.SetDgnDb(*db);
         creator.SetIsUpdating(false);
@@ -340,6 +345,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
     else
         {
         TiledFileConverter creator(params);
+        params.SetBridgeRegSubKey(TiledFileConverter::GetRegistrySubKey());
         creator.SetWantDebugCodes(true);
         creator.SetDgnDb(*db);
         creator.SetIsUpdating(false);
@@ -654,7 +660,7 @@ SubjectCPtr ConverterTestBaseFixture::GetFirstJobSubject(DgnDbR db)
     for (auto childid : childids)
         {
         auto subj = db.Elements().Get<Subject>(childid);
-        if (subj.IsValid() && subj->GetSubjectJsonProperties().isMember(Subject::json_Job()))
+        if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
             return subj;
         }
     return nullptr;
