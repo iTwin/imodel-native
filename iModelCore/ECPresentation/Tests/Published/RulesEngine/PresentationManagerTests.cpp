@@ -79,7 +79,7 @@ void RulesDrivenECPresentationManagerTests::SetUp()
     Localization::Init();
 
     m_locater = TestRuleSetLocater::Create();
-    m_manager = new RulesDrivenECPresentationManager(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    m_manager = new RulesDrivenECPresentationManager(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_manager->GetLocaters().RegisterLocater(*m_locater);
     IECPresentationManager::RegisterImplementation(m_manager);
     IECPresentationManager::GetManager().GetConnections().NotifyConnectionOpened(s_project->GetECDb());

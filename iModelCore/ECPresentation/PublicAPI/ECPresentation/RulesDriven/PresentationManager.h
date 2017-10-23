@@ -227,7 +227,9 @@ protected:
 public:
     //! Constructor.
     //! @param[in] paths Application paths provider.
-    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Paths const& paths);
+    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep this enabled unless being used
+    //! for testing.
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Paths const& paths, bool disableDiskCache = false);
 
     //! Destructor.
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManager();
