@@ -686,6 +686,12 @@ void Tile::_UnloadChildren(BeTimePoint olderThan) const
     for (auto const& child : m_children)
         child->SetAbandoned();
 
+#if defined(DEBUG_UNLOAD_CHILDREN)
+    BeDuration elapsed(BeTimePoint::Now() - olderThan);
+    BeDuration sinceLastUsed(BeTimePoint::Now() - m_childrenLastUsed);
+    THREADLOG.debugv("Unloading children after %f seconds (children last used %f seconds ago)", elapsed.ToSeconds(), sinceLastUsed.ToSeconds());
+#endif
+
     _OnChildrenUnloaded();
     m_children.clear();
     }
@@ -876,7 +882,7 @@ void Root::DrawInView(SceneContextR context)
 
 #if defined(DEBUG_TILE_SELECTION)
     if (!selectedTiles.empty())
-        THREADLOG.debugv("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
+        THREADLOG.debugv("Selected %u tiles requested %u tiles", static_cast<uint32_t>(selectedTiles.size()), static_cast<uint32_t>(context.m_requests.GetMissing(*this).size()));
 #endif
 
     args.DrawGraphics();
@@ -1004,7 +1010,9 @@ TileLoadState::~TileLoadState()
     {
     if (m_canceled.load())
         {
-        DEBUG_PRINTF("Tile load canceled", m_canceled.load());
+#if defined(DEBUG_TILE_CANCEL)
+        THREADLOG.errorv("Tile load canceled", m_canceled.load());
+#endif
         }
     }
 
@@ -1091,7 +1099,9 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
             }
         }
 
-    //DEBUG_PRINTF("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
+#if defined(DEBUG_TILE_REQUESTS)
+    THREADLOG.warningv("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
+#endif
     UNUSED_VARIABLE(numCanceled);
     }
 
@@ -1723,6 +1733,9 @@ Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& 
     if (!tooCoarse)
         {
         // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
+        // Unloading a 3mx tile's children sets the parent as 'not ready', requiring us to reload the parent (which also loads the children again)
+        // - so consider the children 'used' when the parent is selected
+        m_childrenLastUsed = args.m_now;
         _UnloadChildren(args.m_purgeOlderThan);
         }
 
